@@ -39,5 +39,9 @@ export function videoInteractionContext(user: User) {
         isAdmin(): boolean {
             return this.user.isAdmin;
         },
+
+        isPopOut(): boolean {
+            return window.location.href.includes("/chat/popup");
+        },
     } as AlpineComponent;
 }

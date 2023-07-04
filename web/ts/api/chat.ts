@@ -22,6 +22,8 @@ export class ChatMessage implements Identifiable {
     visible: boolean;
     resolved: boolean;
 
+    isGrayedOut: boolean;
+
     ShowReplies = new ToggleableElement();
     ShowEmojiPicker = new ToggleableElement();
     ShowAdminTools = new ToggleableElement();

@@ -10,7 +10,7 @@ const RealtimeMessageTypes = {
 };
 
 export class Realtime {
-    private debugging = true;
+    private debugging = false;
     private ws: WebSocket;
     private handler: object = {};
     private subscribedChannels: string[] = [];

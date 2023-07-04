@@ -1,4 +1,5 @@
-import { deregisterTimeWatcher, getPlayers, registerTimeWatcher } from "../TUMLiveVjs";
+import { getPlayers } from "../TUMLiveVjs";
+import { deregisterTimeWatcher, registerTimeWatcher } from "../video/watchers";
 
 export class Chat {
     readonly userId: number;
@@ -49,7 +50,7 @@ export class Chat {
      * registers for updates regarding current player time
      */
     registerPlayerTimeWatcher(): void {
-        this.timeWatcherCallBackFunction = registerTimeWatcher(this.grayOutMessagesAfterPlayerTime);
+        this.timeWatcherCallBackFunction = registerTimeWatcher(getPlayers()[0], this.grayOutMessagesAfterPlayerTime);
     }
 
     /**
@@ -57,7 +58,7 @@ export class Chat {
      */
     deregisterPlayerTimeWatcher(): void {
         if (this.timeWatcherCallBackFunction) {
-            deregisterTimeWatcher(this.timeWatcherCallBackFunction);
+            deregisterTimeWatcher(getPlayers()[0], this.timeWatcherCallBackFunction);
             this.timeWatcherCallBackFunction = null;
         }
     }

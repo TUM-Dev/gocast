@@ -14,33 +14,47 @@
             class="h-full">
         <template x-if="isChat()">
             <article
-                    x-data="interaction.chatContext({{$stream.ID}}, user)"
+                    x-data="interaction.chatContext({{ $stream.ID }}, user, {{ $stream.Recording }})"
+                    x-init="if (isPopOut()) { afterInitPopout(); }
+                            else { afterInitNotPopout(watch.getPlayers()[0], '{{$stream.ParsableStartTime}}') }"
                     x-on:wsrealtimeconnectionchange.window="(e) => setStatus(e.detail.status);"
                     class="flex relative flex-col text-1 h-full">
-                <header
-                        class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 rounded-t-lg bg-white dark:bg-secondary border-b dark:border-gray-800"
+                <header class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 rounded-t-lg bg-white dark:bg-secondary border-b dark:border-gray-800"
                         style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
-                    <section class="relative flex items-center space-x-3 text-sm" @click.outside="showSortSelect.toggle(false);">
+                    <section class="relative flex items-center space-x-3 text-sm"
+                             @click.outside="showSortSelect.toggle(false);">
                         <button type="button" @click="showSortSelect.toggle()"
                                 class="tum-live-button-secondary px-3 py-1 rounded-full"
                                 title="Change to 'Popular First Order'">
-                            <i class = "fa-solid fa-chevron-down mr-2"></i>
-                            <span x-cloak x-show="isPopularFirst()">Popular First</span>
-                            <span x-cloak x-show="isLiveFirst()">Live First</span>
+                            <i class="fa-solid fa-chevron-down mr-2"></i>
+                            <span x-cloak x-show="isPopularFirst() && !isReplaying()">Popular First</span>
+                            <span x-cloak x-show="isLiveFirst() && !isReplaying()">Live First</span>
+                            <span x-cloak x-show="isReplaying()">Chat Replay</span>
                         </button>
-                        <article x-cloak x-show = "showSortSelect.value" class = "tum-live-menu absolute top-full left-3 w-56 font-light">
-                            <button type ="button" @click="sortLiveFirst()"
-                                    class = "tum-live-menu-item"
-                                    :class = "{'active' : isLiveFirst()}">
-                                <i class = "fa-solid fa-arrow-down-a-z w-8 mr-2"></i>
+                        <article x-cloak x-show="showSortSelect.value"
+                                 class="tum-live-menu absolute top-full left-3 w-56 font-light">
+                            <button type="button" @click="sortLiveFirst()"
+                                    class="tum-live-menu-item"
+                                    :class="{'active' : (isLiveFirst() && !isReplaying())}">
+                                <i class="fa-solid fa-arrow-down-a-z w-8 mr-2"></i>
                                 Live first
                             </button>
-                            <button type ="button" @click="sortPopularFirst()"
-                                    class = "tum-live-menu-item"
-                                    :class = "{'active' : isPopularFirst()}">
-                                <i class = "fa-solid fa-fire w-8 mr-2"></i>
+                            <button type="button" @click="sortPopularFirst()"
+                                    class="tum-live-menu-item"
+                                    :class="{'active' : (isPopularFirst() && !isReplaying())}">
+                                <i class="fa-solid fa-fire w-8 mr-2"></i>
                                 Popular first
                             </button>
+                            {{if $stream.Recording}}
+                                <template x-if="!isPopOut()">
+                                    <button type="button" @click="toggleReplay()"
+                                            class="tum-live-menu-item"
+                                            :class="{'active' : isReplaying()}">
+                                        <i class="fa-solid fa-clock-rotate-left w-8 mr-2"></i>
+                                        Chat Replay
+                                    </button>
+                                </template>
+                            {{end}}
                         </article>
                     </section>
                     <button type="button"
@@ -53,7 +67,9 @@
                 <article id="chat-box" class="relative h-full w-full overflow-y-scroll overflow-x-hidden z-30">
                     <div class="grid gap-y-8 content-start px-4 py-3 min-h-full">
                         <template x-for="m in messages.get(chatSortFn)" :key="m.ID">
-                            <section class="grid gap-y-1 text-4 text-sm">
+                            <section class="grid gap-y-1 text-4 text-sm scroll-mb-4"
+                                     :class="{'opacity-60' : m.isGrayedOut}"
+                                     :id="'chat-message-' + m.ID">
                                 <div class="text-xs">
                                     <span x-show="m.admin"
                                           class="fa-video text-white bg-red-400 p-1 rounded fas"></span>
@@ -199,7 +215,7 @@
                     </div>
                     <article class="grid gap-2 sticky bottom-3">
                         <section x-cloak x-show="unreadMessages" class="flex justify-center">
-                            <button type = "button" @click="scrollToBottom()"
+                            <button type="button" @click="scrollToBottom()"
                                     class="tum-live-badge flex items-center space-x-2 text-xs uppercase font-semibold shadow text-white bg-blue-500 dark:bg-indigo-600">
                                 <i class="fas fa-arrow-down"></i>
                                 New messages
@@ -284,24 +300,26 @@
                                    class="tum-live-border border-b bg-transparent text-sm font-normal placeholder:text-sm focus:outline-none py-1 w-full"
                                    autocomplete="off">
                         </label>
-                        <section class = "flex justify-between">
-                            <div class = "relative">
-                                <button type = "button" @click="showOptions.toggle()" class = "text-sm">
-                                    <i class = "fa-solid fa-gear"></i>
+                        <section class="flex justify-between">
+                            <div class="relative">
+                                <button type="button" @click="showOptions.toggle()" class="text-sm">
+                                    <i class="fa-solid fa-gear"></i>
                                 </button>
-                                <article x-cloak x-show="showOptions.value" class = "tum-live-menu absolute w-56 bottom-full"
+                                <article x-cloak x-show="showOptions.value"
+                                         class="tum-live-menu absolute w-56 bottom-full"
                                          @click.outside="showOptions.toggle(false)">
                                     <template x-if="!isPopOut()">
-                                        <button type = "button" @click="openPopOut()" class = "tum-live-menu-item">
-                                            <i class = "fa-solid fa-arrow-up-right-from-square w-8 mr-2"></i>
+                                        <button type="button" @click="openPopOut()" class="tum-live-menu-item">
+                                            <i class="fa-solid fa-arrow-up-right-from-square w-8 mr-2"></i>
                                             Pop-out chat
                                         </button>
                                     </template>
                                     {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
-                                        <section class = "tum-live-menu-item">
+                                        <section class="tum-live-menu-item">
                                             <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                                                    x-model="isAnonymous" :disabled="!isLoggedIn()">
-                                            <label for="anonymous" title="Don't show my name." class="flex hover:cursor-pointer">
+                                            <label for="anonymous" title="Don't show my name."
+                                                   class="flex hover:cursor-pointer">
                                                 <i class="fas fa-ghost flex items-center justify-center w-8 mr-2"></i>
                                                 Send anonymously
                                             </label>
@@ -309,17 +327,15 @@
                                     {{end}}
                                 </article>
                             </div>
-                            <div class = "text-sm">
-                                <div class="absolute right-5 top-0 bottom-0 flex py-2">
-                                    <div x-cloak x-show="!isConnected()" class="m-auto">
-                                        <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"
-                                             viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                                                  fill="currentColor"/>
-                                            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                                                  fill="currentFill"/>
-                                        </svg>
-                                    </div>
+                            <div class="text-sm">
+                                <div x-cloak x-show="!isConnected()">
+                                    <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"
+                                         viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                                              fill="currentColor"/>
+                                        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                                              fill="currentFill"/>
+                                    </svg>
                                 </div>
                                 <button x-cloak x-show="isConnected()"
                                         type="button" tabindex="-1" @click="send()"
@@ -327,7 +343,7 @@
                                         title="Send message"
                                         :disabled="!isLoggedIn()">
                                     Send
-                                    <i class = "fa-solid fa-paper-plane ml-2"></i>
+                                    <i class="fa-solid fa-paper-plane ml-2"></i>
                                 </button>
                             </div>
                         </section>

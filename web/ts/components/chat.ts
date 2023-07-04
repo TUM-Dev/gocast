@@ -7,11 +7,14 @@ import { User } from "../api/users";
 import { Tunnel } from "../utilities/tunnels";
 import Alpine from "alpinejs";
 import { ToggleableElement } from "../utilities/ToggleableElement";
+import { VideoJsPlayer } from "video.js";
+import { registerTimeWatcher, deregisterTimeWatcher } from "../video/watchers";
 
-export function chatContext(streamId: number, user: User): AlpineComponent {
+export function chatContext(streamId: number, user: User, isRecording: boolean): AlpineComponent {
     return {
         streamId: streamId as number,
         user: user as User,
+        isRecording: isRecording,
 
         chatSortMode: ChatSortMode.LiveChat,
         chatSortFn: ChatMessageSorter.GetSortFn(ChatSortMode.LiveChat),
@@ -25,18 +28,45 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         serverMessage: {},
         unreadMessages: false,
 
+        attachedPlayer: undefined as VideoJsPlayer,
+        streamStart: undefined as Date,
+        replay: ChatReplay.get(),
+
         showSortSelect: new ToggleableElement(),
 
         preprocessors: [ChatMessagePreprocessor.AggregateReactions, ChatMessagePreprocessor.AddressedToCurrentUser],
 
+        __initpromise: null as Promise<any>,
         async init() {
-            Promise.all([this.loadMessages(), this.initWebsocket()]).then(() => {
+            this.__initpromise = Promise.all([this.loadMessages(), this.initWebsocket()]);
+        },
+
+        afterInitNotPopout(player: VideoJsPlayer, streamStart: string) {
+            console.log("init not popout");
+            if (this.isRecording) {
+                this.__initpromise.then(() => {
+                    this.preprocessors.push(ChatMessagePreprocessor.GrayOut);
+                    this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.user)));
+                    this.replay.activate(player, this.updateGrayedOut.bind(this));
+                });
+            } else {
+                Alpine.nextTick(() => this.scrollToBottom());
+            }
+            this.attachedPlayer = player;
+            this.streamStart = new Date(streamStart);
+        },
+
+        afterInitPopout() {
+            this.__initpromise.then(() => {
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                this.deactivateReplay = () => {}; // for the popout chat this is simply a NOOP
                 this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.user)));
                 Alpine.nextTick(() => this.scrollToBottom());
             });
         },
 
         sortLiveFirst() {
+            this.deactivateReplay();
             this.chatSortMode = ChatSortMode.LiveChat;
             this.chatSortFn = ChatMessageSorter.GetSortFn(ChatSortMode.LiveChat);
             Alpine.nextTick(() => this.scrollToBottom());
@@ -47,6 +77,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         },
 
         sortPopularFirst() {
+            this.deactivateReplay();
             this.chatSortMode = ChatSortMode.PopularFirst;
             this.chatSortFn = ChatMessageSorter.GetSortFn(ChatSortMode.PopularFirst);
             Alpine.nextTick(() => this.scrollToTop());
@@ -54,6 +85,23 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
 
         isPopularFirst(): boolean {
             return this.chatSortMode === ChatSortMode.PopularFirst;
+        },
+
+        toggleReplay() {
+            if (this.isReplaying()) this.replay.deactivate(this.attachedPlayer);
+            else {
+                this.messages.forEach((msg: ChatMessage, _) => (msg.isGrayedOut = true));
+                this.replay.activate(this.attachedPlayer, this.updateGrayedOut.bind(this));
+            }
+        },
+
+        isReplaying(): boolean {
+            return this.replay.isActivated();
+        },
+
+        deactivateReplay() {
+            this.replay.deactivate(this.attachedPlayer);
+            this.messages.forEach((msg: ChatMessage, _) => (msg.isGrayedOut = false));
         },
 
         reactToMessage(id: number, reaction: string) {
@@ -142,6 +190,32 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
             this.chatBoxEl.scrollTo({ top: 0, behavior: "smooth" });
         },
 
+        scrollToMessage(id: number) {
+            document
+                .getElementById("chat-message-" + id)
+                .scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+        },
+
+        updateGrayedOut(t: number) {
+            let next;
+            const referenceTime = new Date(this.streamStart);
+            referenceTime.setSeconds(referenceTime.getSeconds() + t);
+
+            const grayOutCondition = (createdAt: string) => {
+                return (
+                    Math.trunc(t) !== Math.trunc(this.attachedPlayer.duration()) && new Date(createdAt) > referenceTime
+                );
+            };
+
+            this.messages.forEach((msg: ChatMessage, _) => {
+                msg.isGrayedOut = grayOutCondition(msg.CreatedAt);
+                if (!msg.isGrayedOut) next = msg;
+            });
+
+            if (next) this.scrollToMessage(next.ID);
+            else this.scrollToTop();
+        },
+
         handleDelete(messageId: number) {
             this.messages.delete({ ID: messageId });
         },
@@ -185,4 +259,33 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
             return this.ws.resolveMessage(id);
         },
     } as AlpineComponent;
+}
+
+class ChatReplay {
+    private static instance: ChatReplay;
+    static get(): ChatReplay {
+        if (this.instance == null) this.instance = new ChatReplay();
+        return this.instance;
+    }
+
+    private activated: boolean;
+    private callback: () => void;
+
+    constructor() {
+        this.activated = false;
+    }
+
+    isActivated(): boolean {
+        return this.activated;
+    }
+
+    deactivate(player: VideoJsPlayer) {
+        this.activated = false;
+        deregisterTimeWatcher(player, this.callback);
+    }
+
+    activate(player: VideoJsPlayer, callback: (t: number) => void) {
+        this.activated = true;
+        this.callback = registerTimeWatcher(player, callback);
+    }
 }

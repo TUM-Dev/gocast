@@ -113,10 +113,6 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             this.reply = NewReply.NoReply;
         },
 
-        isPopOut(): boolean {
-            return window.location.href.includes("/chat/popup");
-        },
-
         openPopOut() {
             const height = window.innerHeight * 0.8;
             window.open(

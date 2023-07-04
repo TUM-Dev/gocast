@@ -74,4 +74,9 @@ export abstract class ChatMessagePreprocessor {
         }
         return m;
     }
+
+    static GrayOut(m: ChatMessage, user: User): ChatMessage {
+        m.isGrayedOut = true;
+        return m;
+    }
 }

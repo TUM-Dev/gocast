@@ -406,10 +406,10 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *realtime.Context, msg []byte) {
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
-		log.WithError(err).Error("error unmarshaling chat message")
+		log.WithError(err).Error("error unmarshalling chat message")
 		return
 	}
-	if !ctx.Course.ChatEnabled {
+	if !ctx.Course.ChatEnabled && !ctx.Stream.ChatEnabled {
 		return
 	}
 	uname := ctx.User.GetPreferredName()
