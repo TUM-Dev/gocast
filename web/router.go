@@ -178,12 +178,6 @@ func (r mainRoutes) home(c *gin.Context) {
 	}
 }
 
-func (r mainRoutes) TestChat(c *gin.Context) {
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "test.gohtml", nil); err != nil {
-		log.WithError(err).Errorf("Could not execute template: 'test.gohtml'")
-	}
-}
-
 func configCourseRoute(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
