@@ -75,8 +75,6 @@ export function chatPromptContext(streamId: number): AlpineComponent {
         },
 
         keyup() {
-            // console.log("🌑 keyup '", this.message, "'");
-
             this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
             this.emojis.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
             this.users.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
