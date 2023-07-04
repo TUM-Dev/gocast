@@ -42,7 +42,6 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
         },
 
         afterInitNotPopout(player: VideoJsPlayer, streamStart: string) {
-            console.log("init not popout");
             if (this.isRecording) {
                 this.__initpromise.then(() => {
                     this.preprocessors.push(ChatMessagePreprocessor.GrayOut);
@@ -88,7 +87,7 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
         },
 
         toggleReplay() {
-            if (this.isReplaying()) this.replay.deactivate(this.attachedPlayer);
+            if (this.isReplaying()) this.deactivateReplay();
             else {
                 this.messages.forEach((msg: ChatMessage, _) => (msg.isGrayedOut = true));
                 this.replay.activate(this.attachedPlayer, this.updateGrayedOut.bind(this));
@@ -99,9 +98,16 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
             return this.replay.isActivated();
         },
 
+        activateReplay() {
+            this.preprocessors.push(ChatMessagePreprocessor.GrayOut);
+            this.messages.forEach((msg: ChatMessage, _) => (msg.isGrayedOut = true));
+            this.replay.activate(this.attachedPlayer, this.updateGrayedOut.bind(this));
+        },
+
         deactivateReplay() {
-            this.replay.deactivate(this.attachedPlayer);
+            this.preprocessors.pop(); // Remove GrayOut
             this.messages.forEach((msg: ChatMessage, _) => (msg.isGrayedOut = false));
+            this.replay.deactivate(this.attachedPlayer);
         },
 
         reactToMessage(id: number, reaction: string) {

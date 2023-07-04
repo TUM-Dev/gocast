@@ -23,7 +23,6 @@ export function videoInformationContext(): AlpineComponent {
         },
 
         async initWebsocket() {
-            console.log("init websocket");
             const handler = (data) => {
                 if ("viewers" in data) {
                     this.handleViewersUpdate(data);
