@@ -1,0 +1,27 @@
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+    <button class="modal-close" onclick="closeModal()">close</button>
+    <div class="modal-content">
+        <img class="modal-pic" id="modalPic" onclick="closeModal()" style="max-width: 100%; max-height: 80vh; margin: auto;">
+    </div>
+</div>
+
+<script>
+    // Open the Modal
+    function openModal(clicked_id) {
+        var src = document.getElementById(clicked_id).src;
+        if (src.includes("#")) {
+            src = src.substring(0, src.indexOf( "#" ));
+        };
+        document.getElementById("modalPic").src = src;
+        document.getElementById("myModal").style.display = "block";
+    }
+
+    // Close the Modal
+    function closeModal() {
+        // prevents flashing last modal image while new id is loading on open
+        document.getElementById("modalPic").src = "";
+        document.getElementById("myModal").style.display = "none";
+    }
+</script>

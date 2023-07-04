@@ -1,4 +1,78 @@
 .book-brand img {
-  height: 50px;
+  height: 75px;
   width: auto;
+  margin: auto;
+}
+
+img[src$='#showcase'] {
+  padding: 10px;
+  border-radius: 10px;
+  border: solid rgba(69, 69, 69, 0.3) thin;
+}
+
+.md__image {
+  cursor: pointer;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  padding-top: 4em;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: black;
+}
+
+/* Modal Content */
+.modal-content {
+  position: relative;
+  background-color: black;
+  margin: auto;
+  padding: 0;
+  width: 90%;
+  max-width: 1400px;
+}
+
+.modal-pic {
+  display: flex;
+  align-content: center;
+  cursor: pointer;
+}
+
+/* The Close Button */
+/* Optimized for accessibility by using a button named close but
+  shifting the close text out of the button and only showing x */
+.modal-close {
+  color: white;
+  background-color: black;
+  position: absolute;
+  top: .5em;
+  right: .5em;
+  font-size: 2em;
+  font-weight: bold;
+  height: 1em;
+  width: 1em;
+  text-indent: 10em;
+  overflow: hidden;
+  border: 0;
+}
+
+.modal-close::after {
+  position: absolute;
+  line-height: 0.5;
+  top: 0.2em;
+  left: 0.1em;
+  text-indent: 0;
+  content: "\00D7"
+}
+
+.modal-close:hover,
+.modal-close:focus {
+  color: #999;
+  text-decoration: none;
+  cursor: pointer;
 }
