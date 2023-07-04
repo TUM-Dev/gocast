@@ -36,7 +36,7 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
 
         preprocessors: [ChatMessagePreprocessor.AggregateReactions, ChatMessagePreprocessor.AddressedToCurrentUser],
 
-        __initpromise: null as Promise<any>,
+        __initpromise: null as Promise<never>,
         async init() {
             this.__initpromise = Promise.all([this.loadMessages(), this.initWebsocket()]);
         },
