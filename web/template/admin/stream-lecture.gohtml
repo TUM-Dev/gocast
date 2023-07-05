@@ -16,11 +16,12 @@
 {{$url := .LivestreamUrl}}
 
 
-<div x-data="{ liveStream: new admin.Livestream({{$stream.ID}}, '{{$url}}', '{{$token}}') }" class="text-white container mx-auto">
+<div x-data="{ liveStream: new admin.Livestream({{$course.ID}}, {{$stream.ID}}, '{{$url}}', '{{$token}}') }" class="text-white container mx-auto">
     <div class="mt-7 min-w-screen flex items-center justify-between">
         <button @click="liveStream.connect($refs.screenDisplay, $refs.camDisplay)">Connect</button>
         <button @click="liveStream.enableScreen()">Enable Screen</button>
         <button @click="liveStream.enableCam()">Enable Cam</button>
+        <button @click="liveStream.goLive()">Go Live</button>
     </div>
 
     <div class="flex flex-col items-end mt-7">

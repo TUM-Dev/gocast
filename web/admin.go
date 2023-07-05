@@ -238,6 +238,24 @@ func (r mainRoutes) StreamLecture(c *gin.Context) {
 	}
 }
 
+func (r mainRoutes) StreamLectureGoLive(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	roomName := fmt.Sprintf("live_lecture_%d", tumLiveContext.Stream.ID)
+
+	if _, err := tools.StartLivekitEgress(roomName); err != nil {
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+}
+
 func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {

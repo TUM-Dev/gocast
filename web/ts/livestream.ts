@@ -8,8 +8,10 @@ import {
     RoomEvent,
     VideoPresets,
 } from 'livekit-client';
+import {post} from "./utilities/fetch-wrappers";
 
 export class Livestream {
+    private courseId: number;
     private streamId: number;
     private url: string;
     private token: string;
@@ -18,11 +20,11 @@ export class Livestream {
     private camDisplay: HTMLElement;
 
 
-    constructor(streamId: number, url: string, token: string) {
+    constructor(courseId: number, streamId: number, url: string, token: string) {
+        this.courseId = courseId;
         this.streamId = streamId;
         this.url = url;
         this.token = token;
-        console.log("init", streamId);
     }
 
     public async connect(screenDisplay: HTMLElement, camDisplay: HTMLElement) {
@@ -71,5 +73,9 @@ export class Livestream {
                 console.log(this.camDisplay, element);
             }
         })
+    }
+
+    public async goLive() {
+        await post(`/admin/stream/${this.courseId}/${this.streamId}/go-live`, {})
     }
 }
