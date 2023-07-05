@@ -102,8 +102,8 @@ export function unhideCourse(id: string) {
     document.location.reload();
 }
 
-export function pinCourse(id: number) {
-    postData(`/api/users/pinCourse`, { courseID: id }).then((response: Response) => {
+export function pinCourse(courseID: number) {
+    postData("/api/users/courses/pin", { courseID }).then((response: Response) => {
         if (response.status !== StatusCodes.OK) {
             showMessage("There was an error pinning the course: " + response.body);
         }
@@ -111,8 +111,8 @@ export function pinCourse(id: number) {
     });
 }
 
-export function unpinCourse(id: number) {
-    postData(`/api/users/unpinCourse`, { courseID: id }).then((response: Response) => {
+export function unpinCourse(courseID: number) {
+    postData("/api/users/courses/unpin", { courseID }).then((response: Response) => {
         if (response.status !== StatusCodes.OK) {
             showMessage("There was an error unpinning the course: " + response.body);
         }

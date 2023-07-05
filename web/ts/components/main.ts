@@ -1,6 +1,6 @@
-import { date_eq } from "../utilities/time-utils";
+import { same_day } from "../utilities/time-utils";
 import { Course, CoursesAPI } from "../api/courses";
-import { Paginator } from "../utilities/paginator";
+import { AutoPaginator, Paginator } from "../utilities/paginator";
 import { ProgressAPI } from "../api/progress";
 
 export function mainContext(year: number, term: string) {
@@ -11,7 +11,7 @@ export function mainContext(year: number, term: string) {
         publicCourses: [] as Course[],
         userCourses: [] as Course[],
         liveToday: [] as Course[],
-        recently: new Paginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
+        recently: new AutoPaginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -52,8 +52,8 @@ export function mainContext(year: number, term: string) {
         getLiveToday() {
             const today = new Date();
             return this.userCourses
-                .filter((c) => c.NextLecture.ID !== 0)
-                .filter((c) => date_eq(today, new Date(c.NextLecture.Start)));
+                .filter((c: Course) => c.NextLecture.ID !== 0)
+                .filter((c: Course) => c.NextLecture.IsToday() && c.NextLecture.MinutesLeftToStart() > 0);
         },
 
         /**

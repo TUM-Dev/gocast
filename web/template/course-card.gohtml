@@ -14,7 +14,7 @@
                {{if $course.Pinned}}title="Unpin this course" onclick="global.unpinCourse({{$course.Model.ID}})" {{else}}title="Pin this course" onclick="global.pinCourse({{$course.Model.ID}})"{{end}}></i>
             {{end}}
         </div>
-        <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}" class="text-lg text-3">{{$course.Name}}</a>
+        <a href="/old/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}" class="text-lg text-3">{{$course.Name}}</a>
     </div>
     <div class="flex">
         <i class="icon-eye invisible mr-2"></i>

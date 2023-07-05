@@ -285,7 +285,6 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 		pinnedCourses = []model.Course{}
 	}
 
-	sortCourses(pinnedCourses)
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
