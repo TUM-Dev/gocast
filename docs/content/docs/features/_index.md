@@ -3,8 +3,7 @@ title: "Features"
 draft: false
 bookCollapseSection: true
 class: "features"
-menu:
-    main:
-        weight: 20
+weight: 30
+
 ---
 

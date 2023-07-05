@@ -1,0 +1,38 @@
+[entryPoints]
+  [entryPoints.web]
+  address = ":80"
+  [entryPoints.webs]
+  address = ":443"
+  [entryPoints.rtmp]
+  address = ":1935"
+
+[api]
+  dashboard = true
+  insecure = true
+
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  exposedByDefault = false
+  swarmMode = true
+
+[accessLog]
+  filePath = "/var/log/traefik/access.log"
+  bufferingSize = 20
+    [accessLog.fields.headers]
+      defaultMode = "keep"
+      [accessLog.fields.headers.names]
+        "User-Agent" = "keep"
+        "Authorization" = "drop"
+        "Content-Type" = "drop"
+
+[log]
+    level = "INFO"
+
+[certificatesResolvers.liveresolver.acme]
+  email = "some.name@mail.de"
+  storage = "/acme/acme-v2.json"
+  [certificatesResolvers.liveresolver.acme.httpChallenge]
+    entryPoint = "web"
+
+[metrics]
+  [metrics.prometheus]
