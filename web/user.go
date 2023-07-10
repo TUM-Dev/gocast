@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
@@ -144,16 +143,6 @@ func (r mainRoutes) LoginPage(c *gin.Context) {
 		d.IDPColor = tools.Cfg.Saml.IdpColor
 	}
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", d)
-}
-func (r mainRoutes) LoginPage2(c *gin.Context) {
-	d := NewLoginPageData(false)
-	d.UseSAML = tools.Cfg.Saml != nil
-	if d.UseSAML {
-		d.IDPName = tools.Cfg.Saml.IdpName
-		d.IDPColor = tools.Cfg.Saml.IdpColor
-	}
-	err := templateExecutor.ExecuteTemplate(c.Writer, "login2.gohtml", d)
-	fmt.Println(err)
 }
 
 func (r mainRoutes) LogoutPage(c *gin.Context) {

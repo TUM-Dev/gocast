@@ -141,7 +141,6 @@ func configMainRoute(router *gin.Engine) {
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
 	router.GET("/login", routes.LoginPage)
-	router.GET("/login2", routes.LoginPage2)
 	router.GET("/logout", routes.LogoutPage)
 	router.GET("/setPassword/:key", routes.CreatePasswordPage)
 	router.POST("/setPassword/:key", routes.CreatePasswordPage)
