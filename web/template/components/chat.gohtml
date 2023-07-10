@@ -117,13 +117,13 @@
                                             </button>
 
                                             <div x-data="interaction.emojiPickerContext(m.ID)"
-                                                 class="absolute ease-out duration-100 bg-white dark:bg-secondary border border-gray-200 dark:border-black rounded-full left-[-10px] top-[-32px] text-left overflow-hidden whitespace-nowrap p-1 flex flex-row"
+                                                 class="absolute ease-out duration-100 bg-white dark:bg-secondary border-2 border-solid border-gray-200 dark:border-black rounded left-[-10px] top-[-36px] text-left overflow-hidden whitespace-nowrap p-1 flex flex-row"
                                                  :class="m.ShowEmojiPicker.value ? 'scale-100 opacity-1 translate-x-0 translate-y-0' : 'scale-0 opacity-0 translate-x-[-42px] translate-y-[42px]'">
                                                 <template x-for="emoji in emojiSuggestions">
                                                     <button type="button" x-text="emoji.emoji"
                                                             :title="`:${emoji.short_names[0]}:`"
                                                             @click="reactToMessage(m.ID, emoji.short_names[0]); m.ShowEmojiPicker.toggle(false);"
-                                                            class="cursor-pointer mr-1 ml-1 h-8 w-8 rounded-full text-sm hover:bg-gray-100 hover:dark:bg-gray-600">
+                                                            class="cursor-pointer mr-1 ml-1 w-7 h-7 rounded text-sm hover:bg-gray-100 hover:dark:bg-gray-600">
                                                     </button>
                                                 </template>
                                             </div>
