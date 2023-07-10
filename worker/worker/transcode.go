@@ -202,6 +202,7 @@ func transcodeAudio(ctx *StreamContext) error {
 	input := ctx.getTranscodingFileName()
 	output := ctx.getAudioTranscodingFileName()
 	cmd := exec.Command("ffmpeg",
+		"-y",
 		"-v", "quiet",
 		"-i", input,
 		"-c:a", "aac",

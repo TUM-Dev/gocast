@@ -50,26 +50,66 @@
                         <span class="px-6 py-3">Actions</span>
                     </div>
                     <div>
-                    <template x-for="failure in transcodingFailures" :key="failure.ID">
-                        <div x-data="{ toggled: false }">
-                            <div class="flex justify-between bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                <span class="px-6 py-3" x-text="failure.StreamID + ' - ' + failure.Version"></span>
-                                <span class="px-6 py-3" x-text="failure.FriendlyTime"></span>
-                                <span class="px-6 py-3" x-text="failure.Hostname"></span>
-                                <span>
+                        <template x-for="failure in transcodingFailures" :key="failure.ID">
+                            <div x-data="{ toggled: false }">
+                                <div class="flex justify-between bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                    <span class="px-6 py-3" x-text="failure.StreamID + ' - ' + failure.Version"></span>
+                                    <span class="px-6 py-3" x-text="failure.FriendlyTime"></span>
+                                    <span class="px-6 py-3" x-text="failure.Hostname"></span>
+                                    <span>
                                     <button class="btn" @click="toggled=!toggled" x-text="toggled?'Collapse':'Expand'"></button>
                                     <button class="btn bg-red-500 text-white hover:bg-red-600" @click="deleteTranscodingFailure(failure.ID)"><i class="fas fa-trash"></i></button>
                                 </span>
-                            </div>
-                            <div x-show="toggled" class="px-6 py-3">
-                                <span class="font-semibold block">Filename</span>
-                                <span x-text="failure.FilePath"></span>
+                                </div>
+                                <div x-show="toggled" class="px-6 py-3">
+                                    <span class="font-semibold block">Filename</span>
+                                    <span x-text="failure.FilePath"></span>
 
-                                <span class="font-semibold block">Logs</span>
-                                <div class="w-full whitespace-pre-wrap overflow-scroll" x-text="failure.Logs"></div>
+                                    <span class="font-semibold block">Logs</span>
+                                    <div class="w-full whitespace-pre-wrap overflow-scroll" x-text="failure.Logs"></div>
+                                </div>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="form-container" x-init="fetchEmailFailures()">
+            <div class="form-container-title">Failed Emails</div>
+            <div class="form-container-body">
+                <div class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <div class="flex justify-between text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <span class="px-6 py-3">To</span>
+                        <span class="px-6 py-3">Last Retry</span>
+                        <span class="px-6 py-3">Attempts</span>
+                        <span class="px-6 py-3">Actions</span>
+                    </div>
+                    <div>
+                        <template x-for="failure in emailFailures" :key="failure.ID">
+                            <div x-data="{ toggled: false }">
+                                <div class="flex justify-between bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                    <span class="px-6 py-3" x-text="failure.To"></span>
+                                    <span class="px-6 py-3" x-text="failure.LastTry"></span>
+                                    <span class="px-6 py-3" x-text="failure.Retries"></span>
+                                    <span>
+                                    <button class="btn" @click="toggled=!toggled" x-text="toggled?'Collapse':'Expand'"></button>
+                                    <button class="btn bg-red-500 text-white hover:bg-red-600" @click="deleteEmailFailure(failure.ID)"><i class="fas fa-trash"></i></button>
+                                </span>
+                                </div>
+                                <div x-show="toggled" class="px-6 py-3">
+                                    <span class="font-semibold block">To/Subj.</span>
+                                    <div class="w-full whitespace-pre-wrap overflow-scroll" x-text="failure.To + ': ' + failure.Subject"></div>
+
+                                    <span class="font-semibold block">Body</span>
+                                    <div class="w-full whitespace-pre-wrap overflow-scroll" x-text="failure.Body"></div>
+
+                                    <span class="font-semibold block">Errors</span>
+                                    <div class="w-full whitespace-pre-wrap overflow-scroll" x-text="failure.Errors"></div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>

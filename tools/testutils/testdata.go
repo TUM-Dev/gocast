@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"math"
@@ -29,7 +28,7 @@ var (
 
 // Models
 var (
-	Student          = model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType}
+	Student          = model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType, PinnedCourses: []model.Course{CourseFPV}}
 	Lecturer         = model.User{Model: gorm.Model{ID: 31}, Role: model.LecturerType}
 	Admin            = model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}
 	EmptyLectureHall = model.LectureHall{}
@@ -85,6 +84,23 @@ var (
 		ModeratedChatEnabled: false,
 		VodChatEnabled:       false,
 		Visibility:           "public",
+	}
+	CourseTensNet = model.Course{
+		Model:                gorm.Model{ID: uint(55)},
+		UserID:               1,
+		Name:                 "Tensor Networks (IN2388)",
+		Slug:                 "TensNet",
+		Year:                 2023,
+		TeachingTerm:         "S",
+		TUMOnlineIdentifier:  "2023",
+		VODEnabled:           false,
+		DownloadsEnabled:     false,
+		ChatEnabled:          true,
+		AnonymousChatEnabled: false,
+		ModeratedChatEnabled: false,
+		VodChatEnabled:       false,
+		Visibility:           "enrolled",
+		Streams:              []model.Stream{StreamTensNetLive},
 	}
 	StreamFPVLive = model.Stream{
 		Model:            gorm.Model{ID: 1969},
@@ -150,6 +166,15 @@ var (
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
 		LectureHallID:    LectureHall.ID,
+	}
+	StreamTensNetLive = model.Stream{
+		Model:       gorm.Model{ID: 3333},
+		Name:        "Tensor Contraction",
+		Description: "C = A . B",
+		CourseID:    55,
+		Start:       time.Time{},
+		End:         time.Time{},
+		LiveNow:     true,
 	}
 	StreamGBSLive = model.Stream{
 		Model:            gorm.Model{ID: 96},
@@ -368,6 +393,17 @@ func GetCoursesMock(t *testing.T) dao.CoursesDao {
 		RemoveAdminFromCourse(Admin.ID, CourseFPV.ID).
 		Return(nil).
 		AnyTimes()
+	coursesMock.
+		EXPECT().
+		GetCourseByToken("t0k3n").
+		Return(CourseFPV, nil).
+		AnyTimes()
+	coursesMock.
+		EXPECT().
+		CreateCourse(gomock.Any(), gomock.Any(), true).
+		Return(nil).
+		AnyTimes()
+	coursesMock.EXPECT().DeleteCourse(CourseFPV).AnyTimes()
 	return coursesMock
 }
 
@@ -377,15 +413,6 @@ func GetLectureHallMock(t *testing.T) dao.LectureHallsDao {
 		EXPECT().
 		GetLectureHallByID(LectureHall.ID).
 		Return(LectureHall, nil)
-	return lectureHallMock
-}
-
-func GetLectureHallMockError(t *testing.T) dao.LectureHallsDao {
-	lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-	lectureHallMock.
-		EXPECT().
-		GetLectureHallByID(gomock.Any()).
-		Return(model.LectureHall{}, errors.New(""))
 	return lectureHallMock
 }
 
@@ -435,7 +462,7 @@ func GetUploadKeyMock(t *testing.T) dao.UploadKeyDao {
 	streamsMock := mock_dao.NewMockUploadKeyDao(gomock.NewController(t))
 	streamsMock.
 		EXPECT().
-		CreateUploadKey(gomock.Any(), gomock.Any()).
+		CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil)
 	return streamsMock
 }

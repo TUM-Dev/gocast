@@ -35,17 +35,17 @@ func (m *MockUploadKeyDao) EXPECT() *MockUploadKeyDaoMockRecorder {
 }
 
 // CreateUploadKey mocks base method.
-func (m *MockUploadKeyDao) CreateUploadKey(key string, stream uint) error {
+func (m *MockUploadKeyDao) CreateUploadKey(key string, stream uint, videoType model.VideoType) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUploadKey", key, stream)
+	ret := m.ctrl.Call(m, "CreateUploadKey", key, stream, videoType)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateUploadKey indicates an expected call of CreateUploadKey.
-func (mr *MockUploadKeyDaoMockRecorder) CreateUploadKey(key, stream interface{}) *gomock.Call {
+func (mr *MockUploadKeyDaoMockRecorder) CreateUploadKey(key, stream, videoType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).CreateUploadKey), key, stream)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).CreateUploadKey), key, stream, videoType)
 }
 
 // DeleteUploadKey mocks base method.

@@ -544,6 +544,7 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 		StreamStart: timestamppb.New(key.Stream.Start),
 		StreamEnd:   timestamppb.New(key.Stream.End),
 		StreamID:    uint32(key.StreamID),
+		VideoType:   string(key.VideoType),
 	}, nil
 }
 

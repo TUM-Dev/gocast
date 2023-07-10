@@ -231,6 +231,7 @@ message GetStreamInfoForUploadResponse {
   google.protobuf.Timestamp StreamStart = 4;
   google.protobuf.Timestamp StreamEnd = 5;
   uint32 StreamID = 6;
+  string VideoType = 7;
 }
 
 message LivePreviewRequest {

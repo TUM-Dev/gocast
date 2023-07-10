@@ -61,7 +61,8 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.Use(tools.InitCourse(daoWrapper))
 			courses.Use(tools.AdminOfCourse)
 			courses.DELETE("/", routes.deleteCourse)
-			courses.POST("/uploadVOD", routes.uploadVOD)
+			courses.POST("/createVOD", routes.createVOD)
+			courses.POST("/uploadVODMedia", routes.uploadVODMedia)
 			courses.POST("/copy", routes.copyCourse)
 			courses.POST("/createLecture", routes.createLecture)
 			courses.POST("/presets", routes.updateSourceSettings)
@@ -106,9 +107,14 @@ const (
 	CutOffLength   = 256
 )
 
-type uploadVodReq struct {
+type createVODReq struct {
 	Start time.Time `form:"start" binding:"required"`
 	Title string    `form:"title"`
+}
+
+type uploadVodMediaReq struct {
+	StreamID  string          `form:"streamID" binding:"required"`
+	VideoType model.VideoType `form:"videoType" binding:"required"`
 }
 
 func (r coursesRoutes) getLive(c *gin.Context) {
@@ -116,8 +122,12 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 
 	streams, err := r.GetCurrentLive(context.Background())
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("could not get current live streams")
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "Could not load current livestream from database.",
+			Err:           err,
+		})
+		return
 	}
 
 	type CourseStream struct {
@@ -221,6 +231,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 			CustomMessage: "invalid year",
 			Err:           err,
 		})
+		return
 	}
 	term = c.DefaultQuery("term", term)
 
@@ -228,7 +239,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
-			courses = routes.GetAllCoursesForSemester(year, term, c)
+			courses = r.GetAllCoursesForSemester(year, term, c)
 		case model.LecturerType:
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
@@ -263,6 +274,7 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 			CustomMessage: "invalid year",
 			Err:           err,
 		})
+		return
 	}
 	term = c.DefaultQuery("term", term)
 
@@ -273,7 +285,6 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 		pinnedCourses = []model.Course{}
 	}
 
-	sortCourses(pinnedCourses)
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
@@ -334,7 +345,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
+				Status:        http.StatusNotFound,
 				CustomMessage: "can't find course",
 			})
 		} else {
@@ -372,9 +383,9 @@ func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bo
 	return false
 }
 
-func (r coursesRoutes) uploadVOD(c *gin.Context) {
-	log.Info("uploadVOD")
-	var req uploadVodReq
+func (r coursesRoutes) createVOD(c *gin.Context) {
+	log.Info("createVOD")
+	var req createVODReq
 	err := c.BindQuery(&req)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -400,8 +411,44 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"streamID": stream.ID,
+	})
+}
+
+func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
+	log.Info("uploadVODMedia")
+
+	var req uploadVodMediaReq
+	if err := c.BindQuery(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
+		return
+	}
+
+	if !req.VideoType.Valid() {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid video type",
+		})
+		return
+	}
+
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), req.StreamID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+
 	key := uuid.NewV4().String()
-	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID)
+	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID, req.VideoType)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -1151,6 +1198,12 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	seriesIdentifier := uuid.NewV4().String()
 	req.DateSeries = append(req.DateSeries, req.Start)
 
+	// To get new ids after insert
+	var oldStreamIds []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		oldStreamIds = append(oldStreamIds, stream.ID)
+	}
+
 	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
@@ -1169,6 +1222,9 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			LiveNow:       false,
 			Recording:     req.Vodup,
 			Premiere:      req.Premiere,
+		}
+		if req.AdHoc {
+			lecture.Start = time.Now().Add(time.Minute * 2) // add 2 minutes to start time to ensure a worker will pick it up
 		}
 
 		// add Series Identifier
@@ -1202,6 +1258,28 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		})
 		return
 	}
+
+	var newStreamIds []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		isNewStream := true
+		for _, s := range oldStreamIds {
+			if stream.ID == s {
+				isNewStream = false
+				break
+			}
+		}
+		if isNewStream {
+			newStreamIds = append(newStreamIds, stream.ID)
+		}
+	}
+
+	if req.AdHoc {
+		go NotifyWorkers(r.DaoWrapper)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ids": newStreamIds,
+	})
 }
 
 type createLectureRequest struct {
@@ -1212,6 +1290,7 @@ type createLectureRequest struct {
 	ChatEnabled   bool        `json:"isChatEnabled"`
 	Premiere      bool        `json:"premiere"`
 	Vodup         bool        `json:"vodup"`
+	AdHoc         bool        `json:"adHoc"`
 	DateSeries    []time.Time `json:"dateSeries"`
 }
 

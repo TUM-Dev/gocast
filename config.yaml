@@ -88,6 +88,7 @@ mail:
   server: mailrelay.example.org
   smimecert: /path/to/cert.pem
   smimekey: /path/to/key.pem
+  maxMailsPerMinute: 10
 paths:
   mass: /mass
   static: /var/www/static
