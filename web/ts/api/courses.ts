@@ -1,7 +1,8 @@
 import { get } from "../utilities/fetch-wrappers";
 import { Progress } from "./progress";
 import { ToggleableElement } from "../utilities/ToggleableElement";
-import { date_eq } from "../utilities/time-utils";
+import { same_day } from "../utilities/time-utils";
+import { CustomURL } from "../utilities/url";
 
 type DownloadableVOD = {
     readonly FriendlyName: string;
@@ -50,11 +51,20 @@ export class Stream implements Identifiable {
     }
 
     public IsToday(): boolean {
-        return date_eq(new Date(this.Start), new Date());
+        return same_day(new Date(this.Start), new Date());
     }
 
     public MinutesLeftToStart(): number {
         return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
+    }
+
+    public DurationString() {
+        const diff = new Date(this.End).getTime() - new Date(this.Start).getTime();
+        return new Date(diff).toLocaleTimeString("default", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        });
     }
 
     public UntilString(): string {
@@ -121,6 +131,10 @@ export class Course implements Identifiable {
         return c;
     }
 
+    static Compare(a: Course, b: Course): number {
+        return a.Name.localeCompare(b.Name);
+    }
+
     public URL(): string {
         return `?year=${this.Year}&term=${this.TeachingTerm}&slug=${this.Slug}&view=3`;
     }
@@ -182,24 +196,23 @@ export const CoursesAPI = {
         return get("/api/courses/live").then((livestreams) => livestreams.map((l) => new Livestream(l)));
     },
 
-    async getPublic(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/public${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
+    async getPublic(year?: number, term?: string): Promise<Course[]> {
+        const url = new CustomURL("/api/courses/public", { year, term });
+        return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    async getUsers(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
+    async getUsers(year?: number, term?: string): Promise<Course[]> {
+        const url = new CustomURL("/api/courses/users", { year, term });
+        return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    async getPinned(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/users/pinned${this.query(year, term)}`).then((courses) =>
-            courses.map((c) => Course.New(c)),
-        );
+    async getPinned(year?: number, term?: string): Promise<Course[]> {
+        const url = new CustomURL("/api/courses/users/pinned", { year, term });
+        return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
     async get(slug: string, year?: number, term?: string) {
-        return get(`/api/courses/${slug}${this.query(year, term)}`, {}, true).then((course) => Course.New(course));
+        const url = new CustomURL(`/api/courses/${slug}`, { year, term });
+        return get(url.toString(), {}, true).then((course) => Course.New(course));
     },
-
-    query: (year?: number, term?: string) =>
-        year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "",
 };

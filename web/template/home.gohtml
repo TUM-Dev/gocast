@@ -29,6 +29,12 @@
     <style>[x-cloak] {
             display: none !important;
         }</style>
+    <script defer type='text/javascript'>
+        const link = !!document.querySelector("link[rel='canonical']") ? document.querySelector("link[rel='canonical']") : document.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        link.setAttribute('href', location.href);
+        document.head.appendChild(link);
+    </script>
 </head>
 <body x-data="home.skeleton()"
       @popstate.window="onPopState"
@@ -221,8 +227,8 @@
                 <a href="/privacy">Data Privacy</a>
                 <a href="/imprint">Imprint</a>
             </div>
-            <a href="/public/licenses.txt" class="block mt-2 text-center">
-                We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource
+            <a href="https://github.com/joschahenningsen/TUM-Live" class="block mt-2 text-center">
+                <i class="fa-brands fa-github"></i> GitHub
             </a>
         </footer>
     </section>
@@ -442,6 +448,9 @@
                                                                 </template>
                                                             </div>
                                                         </div>
+                                                        <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-4 right-2 z-40 text-xs">
+                                                            <span x-text="vod.DurationString()"></span>
+                                                        </div>
                                                     </div>
                                                 </a>
                                                 <div class="relative flex justify-between px-1 min-h-[32px]">
@@ -586,7 +595,7 @@
                     {{end}}
                 {{end}}
 
-                <div class="tum-live-content-grid" x-data="home.livestreams()">
+                <span class="tum-live-content-grid" x-data="home.livestreams()">
                     <!-- Livestreams -->
                     <template x-if="hasLivestreams()">
                         <article id="livestreams" class="tum-live-content-grid-item">
@@ -614,7 +623,7 @@
                                                 <div :style="`background-image:url('/api/stream/${livestream.Stream.ID}/thumbs/live')`"
                                                      class="h-full tum-live-thumbnail"></div>
                                             </a>
-                                            <div class="absolute bg-black/[.8] text-white text-xs bottom-3 left-3 z-40 px-2 py-px rounded">
+                                            <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-2 right-2 z-40 text-xs">
                                                 <span x-text="livestream.Viewers"></span>
                                                 <span x-text="(livestream.Viewers > 1 || livestream.Viewers === 0) ? 'viewers' : 'viewer'"></span>
                                             </div>
@@ -700,6 +709,9 @@
                                                         </template>
                                                     </div>
                                                 </div>
+                                                <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-4 right-2 z-40 text-xs">
+                                                    <span x-text="course.LastRecording.DurationString()"></span>
+                                                </div>
                                             </div>
                                         </a>
                                         <div class="px-1">
@@ -718,13 +730,7 @@
                                 </template>
                             </section>
                             <template x-if="recently.hasNext()">
-                                <div class="flex flex-grow justify-center">
-                                    <button class="tum-live-button tum-live-button-secondary" type="button"
-                                            @click="recently.next()">
-                                        <i class="fa-solid fa-angles-down mr-2"></i>
-                                        More
-                                    </button>
-                                </div>
+                                <span x-init="recently.registerAutoNextButton($el)"></span>
                             </template>
                         </article>
                     </template>
@@ -740,7 +746,7 @@
         <a href="/privacy">Data Privacy</a>
         <a href="/imprint">Imprint</a>
     </div>
-    <a href="/public/licenses.txt">We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource</a>
+    <a href="https://github.com/joschahenningsen/TUM-Live"><i class="fa-brands fa-github"></i> GitHub</a>
 </footer>
 </body>
 </html>

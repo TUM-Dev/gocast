@@ -20,7 +20,7 @@
                 </div>
                 <div class="my-auto w-full h-60 overflow-y-scroll">
                     {{range $s := .Semesters}}
-                        <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
+                        <a href="/old/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
                             <div class="{{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}
                                             bg-gray-100 dark:bg-secondary-lighter{{end}}
                                         flex justify-center items-center h-12 border-b dark:border-gray-800">

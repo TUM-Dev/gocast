@@ -100,15 +100,15 @@ export function skeleton(): AlpineComponent {
         },
 
         async loadPublicCourses() {
-            this.publicCourses = await CoursesAPI.getPublic(this.state.year, this.state.term);
+            this.publicCourses = (await CoursesAPI.getPublic(this.state.year, this.state.term)).sort(Course.Compare);
         },
 
         async loadUserCourses() {
-            this.userCourses = await CoursesAPI.getUsers(this.state.year, this.state.term);
+            this.userCourses = (await CoursesAPI.getUsers(this.state.year, this.state.term)).sort(Course.Compare);
         },
 
         async loadPinnedCourses() {
-            this.pinnedCourses = await CoursesAPI.getPinned(this.state.year, this.state.term);
+            this.pinnedCourses = (await CoursesAPI.getPinned(this.state.year, this.state.term)).sort(Course.Compare);
         },
 
         /**
@@ -138,7 +138,7 @@ export function skeleton(): AlpineComponent {
 
         updatePinned(update: PinnedUpdate) {
             if (update.pin) {
-                this.pinnedCourses.push(update.course);
+                this.pinnedCourses = [...this.pinnedCourses, update.course].sort(Course.Compare);
             } else {
                 this.pinnedCourses = this.pinnedCourses.filter((c) => c.ID !== update.course.ID);
             }
