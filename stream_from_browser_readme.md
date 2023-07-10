@@ -1,23 +1,71 @@
-# Lights, Camera, Browser Stream!
+# Setting Up a Local Environment for Browser Streaming
 
-Welcome, intrepid explorer of the digital stream-iverse! Prepare for an exciting journey that will take you from the comfort of your browser to the far reaches of live streaming with Livekit. We've designed this guide to be your trusty map as you set up your local environment to stream from the browser via Livekit. Buckle up; it's going to be a fun ride!
+This guide will assist you in setting up a local environment for browser streaming using Livekit and Livekit Egress.
 
-## Pre-Flight Checks
+## Prerequisites
 
-Before we blast off, we'll need to make sure your spaceship (read: computer) is outfitted with the right gear. You will need the following software installed. Don't worry, these aren't alien tech; they are readily available for your acquisition:
+Before we start, ensure your system has the following software installed:
 
-- [livego](https://github.com/gwuhaolin/livego): Like the engine of our spacecraft, enabling us to cruise through the video streaming galaxy.
-- [livekit-server](https://github.com/livekit/livekit): Think of it as the command center, receiving, coordinating, and managing signals.
-- [redis instance](https://hub.docker.com/_/redis): Our navigational star chart, storing data and ensuring a smooth journey.
+- [livego](https://github.com/gwuhaolin/livego): A powerful live streaming server.
+- [livekit-server](https://github.com/livekit/livekit): A scalable, open-source video and audio rooms as a service solution.
+- [redis instance](https://hub.docker.com/_/redis): A widely-used, open-source in-memory data structure store.
 
-Once you've got these installed, power them up to run locally. They will erect a server fortress that stands ready to accept incoming transmission requests.
+After installing these tools, initialize them to run locally. They will establish a server prepared to manage incoming transmission requests.
 
-## Configuring The Booster Rocket
+## Configuring Livekit Egress
 
-There's one last bit of kit we need to optimize before we're off to the races:
+Next, you'll need to set up and configure [Livekit Egress](https://github.com/livekit/egress). Livekit Egress is designed to address interoperability issues with WebRTC and other services, providing a consistent set of APIs to export your LiveKit sessions and tracks. This process is handled automatically irrespective of the method used, thanks to GStreamer, which transcodes streams when moving between protocols, containers, or encodings.
 
-- [livekit egress container](https://github.com/livekit/egress)
+Here are the steps to run Livekit Egress against a local Livekit server:
 
-Think of this egress server as our booster rocket, enabling us to break free of gravity and stream into the cosmos. You can find setup instructions on its dedicated GitHub page. These should guide you through the setup, just like a short and sweet astronaut training session!
+1. Open `/usr/local/etc/redis.conf` and comment out the line that says `bind 127.0.0.1`.
+2. Change `protected-mode yes` to `protected-mode no` in the same file.
+3. Determine your IP as seen by Docker. This IP will be used to set the `ws_url`.
 
-Now you're fully equipped for your mission. Godspeed on your streaming adventure!
+Create a new directory to mount. For instance, `~/egress-test`.
+
+Next, create a `config.yaml` file in the directory you've just created with the following information:
+
+```yaml
+log_level: debug
+api_key: devkey
+api_secret: secret
+ws_url: ws://<Your Docker IP>:7880
+insecure: true
+redis:
+  address: <Your Docker IP>:6379
+```
+Replace `<Your Docker IP>` with your Docker IP address.
+
+Now, run the egress service with the following command:
+
+```bash
+docker run --rm \
+    -e EGRESS_CONFIG_FILE=/out/config.yaml \
+    -v ~/egress-test:/out \
+    livekit/egress
+```
+
+At this point, your Livekit Egress is ready and will automatically transcode streams based on your requirements.
+
+## Starting Services
+
+With everything set up, you can now start the services:
+
+- Begin with starting Redis
+- Start the livekit server:
+
+```bash
+livekit-server --dev --redis-host 127.0.0.1:6379
+```
+
+- Lastly, start the livekit egress server:
+
+```bash
+docker run --rm \
+    -e EGRESS_CONFIG_FILE=/out/config.yaml \
+    -v ~/egress-test:/out \
+    livekit/egress
+```
+
+You have now successfully established a local environment for browser streaming using Livekit and Livekit Egress. These servers are ready to be incorporated into your larger system.

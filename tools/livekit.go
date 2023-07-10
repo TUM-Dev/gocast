@@ -49,7 +49,7 @@ func StartLivekitEgress(room string) (string, error) {
 		Output: &livekit.RoomCompositeEgressRequest_Stream{
 			Stream: &livekit.StreamOutput{
 				Protocol: livekit.StreamProtocol_RTMP,
-				Urls:     []string{"rtmp://localhost:1935/live/rfBd56ti2SMtYvSgD5xAV0YU99zampta7Z7S575KLkIZ9PYk"},
+				Urls:     []string{"rtmp://host.docker.internal:1935/live/rfBd56ti2SMtYvSgD5xAV0YU99zampta7Z7S575KLkIZ9PYk"},
 			},
 		},
 	}
