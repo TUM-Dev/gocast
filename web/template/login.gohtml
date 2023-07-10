@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content="{{.Branding.Description}}"/>
+    <link rel="canonical" href="{{.CanonicalURL.Login}}" />
+    <link rel="manifest" href="/static/assets/manifest.json">
 
     <title>{{.Branding.Title}} | Login</title>
 
@@ -18,7 +20,6 @@
     <script src="static/assets/init.js"></script>
     <script src="/static/assets/ts-dist/global.bundle.js?v={{if .}}{{.}}{{else}}development{{end}}"></script>
 
-    <link rel="manifest" href="/static/assets/manifest.json">
     <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
     <style>[x-cloak] {
