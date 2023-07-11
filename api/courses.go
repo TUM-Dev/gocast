@@ -1527,6 +1527,11 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 	course := tlctx.Course
 	streams := course.Streams
 
+	admins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(course.ID)
+	if err != nil {
+		log.WithError(err).Error("Error getting course admins")
+		admins = []model.User{}
+	}
 	course.Model = gorm.Model{}
 	course.Streams = nil
 	yearInt, err := strconv.Atoi(request.Year)
@@ -1558,6 +1563,13 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 		err := r.StreamsDao.CreateStream(&stream)
 		if err != nil {
 			log.WithError(err).Error("Can't create stream")
+			numErrors++
+		}
+	}
+	for _, admin := range admins {
+		err := r.CoursesDao.AddAdminToCourse(admin.ID, course.ID)
+		if err != nil {
+			log.WithError(err).Error("Can't add admin to course")
 			numErrors++
 		}
 	}
