@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
     <link rel="stylesheet" href="/static/assets/css-dist/watch.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}">
+    <link rel="stylesheet" href="/static/assets/css-dist/home.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}">
     {{/* Remove this when using KaTeX in other locations than the chat */}}
     {{if $stream.ChatEnabled}}
         <link rel="stylesheet" href="/static/node_modules/katex/dist/katex.min.css">
@@ -388,6 +389,7 @@
             </div>
         </div>
         <!-- Chat -->
+        {{/*
         {{if and $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="sidebar === watch.SidebarState.Chat"
                  :class="sidebar === watch.SidebarState.Chat ? 'lg:basis-1/4' : 'lg:basis-0'"
@@ -398,7 +400,7 @@
                     {{template "chat" .ChatData}}
                 </div>
             </div>
-        {{end}}
+        {{end}} */}}
 
         <!-- Bookmarks -->
         {{if .IndexData.TUMLiveContext.User}}

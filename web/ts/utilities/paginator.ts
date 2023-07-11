@@ -1,8 +1,7 @@
 export class Paginator<T> {
-    private list: T[];
-    private split_number: number;
-
-    private index: number;
+    protected list: T[];
+    protected split_number: number;
+    protected index: number;
 
     private readonly preloader: Preload<T>;
 

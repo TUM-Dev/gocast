@@ -1,17 +1,36 @@
 {{define "videosections"}}
-    <div>
-        <div class="hidden md:block">
-            {{template "videosections-desktop" .ID}}
-        </div>
-        <div class="md:hidden">
-            {{template "videosections-mobile" .ID}}
-        </div>
-    </div>
+    {{template "videosections-desktop" .ID}}
 {{end}}
 
 {{define "videosections-desktop"}}
-    <div x-data="{vs: new watch.VideoSectionsDesktop({{.}})}"
-         x-init="watch.attachCurrentTimeEvent(vs);">
+    <div x-data="watch.videoSectionContext({{.}})">
+        <article class="relative flex space-x-2">
+            <template x-if="sections.hasNext()">
+                <button type="button" @click="sections.next()"
+                        class="bg-gray-100 border flex items-center justify-center absolute -right-4 my-auto top-0 bottom-0 rounded-full h-10 w-10 z-50">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </template>
+            <template x-if="sections.hasPrev()">
+                <button type="button" @click="sections.prev()"
+                        class="bg-gray-100 border flex items-center justify-center absolute -left-4 my-auto top-0 bottom-0 rounded-full h-10 w-10 z-50">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            </template>
+            <template x-for="s in sections.get()" :key="s.ID">
+                <button type="button"
+                        @click="watch.jumpTo({ timeParts: {hours: s.startHours, minutes: s.startMinutes, seconds: s.startSeconds }});"
+                        class="flex flex-col group z-40 rounded-lg">
+                        <span :style="`background-image:url('/api/download/${s.fileID}?type=serve')`"
+                              class="relative block h-24 aspect-video bg-gray-100 rounded-lg dark:bg-gray-800 dark:shadow-gray-900/75 group-hover:shadow-lg">
+                            <span class="tum-live-badge text-xs text-sky-800 bg-sky-200 dark:text-indigo-200 dark:bg-indigo-800 absolute bottom-2 right-2 px-1 py-1px"
+                                  x-text="s.friendlyTimestamp"></span>
+                        </span>
+                        <span x-text="s.description" class="font-semibold text-xs text-3 text-left p-1"></span>
+                </button>
+            </template>
+        </article>
+        <!--
         <div class="group relative">
             <div class="grid gap-1 px-2">
                 <div class="flex justify-between items-center border-b mb-3 dark:border-gray-800 lg:justify-start">
@@ -66,7 +85,7 @@
                     </template>
                 </div>
             </div>
-        </div>
+        </div>-->
     </div>
 {{end}}
 
