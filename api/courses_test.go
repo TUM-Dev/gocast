@@ -791,6 +791,15 @@ func TestCoursesCRUD(t *testing.T) {
 								CreateCourse(gomock.Any(), gomock.Any(), true).
 								Return(errors.New("")).
 								AnyTimes()
+							coursesMock.
+								EXPECT().GetCourseAdmins(testutils.CourseFPV.ID).
+								Return([]model.User{testutils.Admin}, nil).
+								MinTimes(1).MaxTimes(1)
+							coursesMock.
+								EXPECT().
+								AddAdminToCourse(gomock.Any(), gomock.Any()).
+								Return(nil).
+								AnyTimes()
 							return coursesMock
 						}(),
 					}
@@ -803,7 +812,34 @@ func TestCoursesCRUD(t *testing.T) {
 			"success": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
-						CoursesDao: testutils.GetCoursesMock(t),
+						CoursesDao: func() dao.CoursesDao {
+							coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+							coursesMock.
+								EXPECT().
+								GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+								Return(testutils.CourseFPV, nil).
+								AnyTimes()
+							coursesMock.
+								EXPECT().
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								Return(testutils.CourseFPV, nil).
+								AnyTimes()
+							coursesMock.
+								EXPECT().
+								CreateCourse(gomock.Any(), gomock.Any(), true).
+								Return(nil).
+								AnyTimes()
+							coursesMock.
+								EXPECT().GetCourseAdmins(testutils.CourseFPV.ID).
+								Return([]model.User{testutils.Admin}, nil).
+								MinTimes(1).MaxTimes(1)
+							coursesMock.
+								EXPECT().
+								AddAdminToCourse(gomock.Any(), gomock.Any()).
+								Return(nil).
+								AnyTimes()
+							return coursesMock
+						}(),
 						StreamsDao: testutils.GetStreamMock(t),
 					}
 					configGinCourseRouter(r, wrapper)
