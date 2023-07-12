@@ -1520,6 +1520,7 @@ type copyCourseRequest struct {
 func (r coursesRoutes) copyStream(c *gin.Context) {
 	type req struct {
 		TargetCourse uint `json:"targetCourse"`
+		Move         bool `json:"move"`
 	}
 	var request req
 	err := c.BindJSON(&request)
@@ -1563,6 +1564,9 @@ func (r coursesRoutes) copyStream(c *gin.Context) {
 			CustomMessage: "Can't save stream",
 			Err:           err,
 		})
+	}
+	if request.Move {
+		r.StreamsDao.DeleteStream(strconv.Itoa(int(tlctx.Stream.ID)))
 	}
 }
 

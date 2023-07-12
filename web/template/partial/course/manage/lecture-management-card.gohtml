@@ -459,7 +459,7 @@
         <template x-if="lecture.isCopying">
             <form class="p-4" x-data="{move: false, selected: -1, success: undefined}"
                 @submit.prevent="fetch(`/api/course/${lecture.courseId}/stream/${lecture.lectureId}/copy`,
-                {method: 'POST', body: JSON.stringify({targetCourse: selected})}).then(r=>{success=r.ok})">
+                {method: 'POST', body: JSON.stringify({targetCourse: selected, move: move})}).then(r=>{success=r.ok})">
                 <div x-show="success===undefined">
                     <div class="w-full grid grid-cols-2">
                         <button @click="move=false" class="w-full py-2 mt-2 rounded" :class="!move && 'bg-indigo-500/70'" type="button">
