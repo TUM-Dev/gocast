@@ -345,6 +345,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"courseSlug":            course.Slug,
 		"private":               s.Private,
 		"downloadableVods":      s.GetVodFiles(),
+		"isCopying":             false,
 	}
 }
 
