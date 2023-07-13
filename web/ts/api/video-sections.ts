@@ -18,6 +18,8 @@ export type Section = {
     streamID: number;
     friendlyTimestamp?: string;
     fileID?: number;
+
+    isCurrent: boolean;
 };
 
 /**

@@ -20,9 +20,10 @@
             <template x-for="s in sections.get()" :key="s.ID">
                 <button type="button"
                         @click="watch.jumpTo({ timeParts: {hours: s.startHours, minutes: s.startMinutes, seconds: s.startSeconds }});"
-                        class="flex flex-col group z-40 rounded-lg">
+                        class="flex flex-col group w-36 z-40 rounded-lg">
                         <span :style="`background-image:url('/api/download/${s.fileID}?type=serve')`"
-                              class="relative block h-24 aspect-video bg-gray-100 rounded-lg dark:bg-gray-800 dark:shadow-gray-900/75 group-hover:shadow-lg">
+                              class="relative block w-full aspect-video bg-gray-100 border-2 rounded-lg dark:bg-gray-800 dark:shadow-gray-900/75 group-hover:shadow-lg"
+                              :class="s.isCurrent ? 'border-blue-500/50 dark:border-indigo-600/50 shadow-lg' : 'border-transparent'">
                             <span class="tum-live-badge text-xs text-sky-800 bg-sky-200 dark:text-indigo-200 dark:bg-indigo-800 absolute bottom-2 right-2 px-1 py-1px"
                                   x-text="s.friendlyTimestamp"></span>
                         </span>
