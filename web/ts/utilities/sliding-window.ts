@@ -12,6 +12,16 @@ export class SlidingWindow<T> extends Paginator<T> {
             : copy.slice(0, this.index * this.split_number);
     }
 
+    isInWindow(o: T): boolean {
+        const i = this.list.findIndex((o1) => o1 === o);
+        return i !== -1 && this.filterPred(o, i);
+    }
+
+    slideToWindowFor(o: T) {
+        const i = this.list.findIndex((o1) => o1 === o);
+        if (i !== -1) this.index = i / this.split_number;
+    }
+
     prev() {
         this.index--;
     }
@@ -26,4 +36,3 @@ export class SlidingWindow<T> extends Paginator<T> {
 }
 
 type CompareFunction<T> = (a: T, b: T) => number;
-type FilterPredicate<T> = (o: T, index: number) => boolean;
