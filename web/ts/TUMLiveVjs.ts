@@ -1,5 +1,4 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
-import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs, { VideoJsPlayer } from "video.js";
 import airplay from "@silvermine/videojs-airplay";
@@ -695,21 +694,6 @@ export class SeekLogger {
     }
 }
 
-export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
-    for (let j = 0; j < players.length; j++) {
-        players[j].ready(() => {
-            let timer;
-            (function checkTimestamp() {
-                timer = setTimeout(() => {
-                    highlight(players[j], videoSection);
-                    checkTimestamp();
-                }, 500);
-            })();
-            players[j].on("seeked", () => highlight(players[j], videoSection));
-        });
-    }
-}
-
 export function switchView(baseUrl: string) {
     const isDVR = getQueryParam("dvr") === "";
 
@@ -721,18 +705,6 @@ export function switchView(baseUrl: string) {
         redirectUrl = url.toString();
     }
     window.location.assign(redirectUrl);
-}
-
-function highlight(player, videoSection) {
-    const currentTime = player.currentTime();
-    videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
-        const next = list[i + 1];
-        const sectionSeconds = new Time(section.startHours, section.startMinutes, section.startSeconds).toSeconds();
-        return next === undefined || next === null // if last element and no next exists
-            ? sectionSeconds <= currentTime
-            : sectionSeconds <= currentTime &&
-                  currentTime <= new Time(next.startHours, next.startMinutes, next.startSeconds).toSeconds() - 1;
-    });
 }
 
 function debounce(func, timeout) {
