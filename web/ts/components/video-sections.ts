@@ -18,13 +18,16 @@ export function videoSectionContext(streamId: number): AlpineComponent {
 
         setCurrent(t: number) {
             this.sections.forEach((s, _) => (s.isCurrent = false));
-            const section: Section = this.sections.find(
-                (s, _) => new Time(s.startHours, s.startMinutes, s.startSeconds).toSeconds() >= t,
-            );
+            const section = this.sections.find((s, i, arr) => {
+                const next = arr[i + 1];
+                const sectionSeconds = new Time(s.startHours, s.startMinutes, s.startSeconds).toSeconds();
+                return next === undefined || next === null // if last element and no next exists
+                    ? sectionSeconds <= t
+                    : sectionSeconds <= t &&
+                          t <= new Time(next.startHours, next.startMinutes, next.startSeconds).toSeconds() - 1;
+            });
 
             if (section) section.isCurrent = true;
-
-            // if (!this.sections.isInWindow(section)) this.sections.slideToWindowFor(section);
         },
 
         isCurrent(i: number) {
