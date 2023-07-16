@@ -17,9 +17,9 @@ export class SlidingWindow<T> extends Paginator<T> {
         return i !== -1 && this.filterPred(o, i);
     }
 
-    slideToWindowFor(o: T) {
+    show(o: T) {
         const i = this.list.findIndex((o1) => o1 === o);
-        if (i !== -1) this.index = i / this.split_number;
+        this.index = Math.floor(i / this.split_number) + 1;
     }
 
     prev() {

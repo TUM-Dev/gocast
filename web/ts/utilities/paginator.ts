@@ -38,7 +38,7 @@ export class Paginator<T> {
         return this;
     }
 
-    find(callback: (obj: T, i: number) => boolean): T {
+    find(callback: (obj: T, i: number, arr?: T[]) => boolean): T {
         return this.list.find(callback);
     }
 

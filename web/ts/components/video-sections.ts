@@ -27,7 +27,10 @@ export function videoSectionContext(streamId: number): AlpineComponent {
                           t <= new Time(next.startHours, next.startMinutes, next.startSeconds).toSeconds() - 1;
             });
 
-            if (section) section.isCurrent = true;
+            if (section) {
+                section.isCurrent = true;
+                if (!this.sections.isInWindow(section)) this.sections.show(section);
+            }
         },
 
         isCurrent(i: number) {
