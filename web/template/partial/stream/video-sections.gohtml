@@ -1,5 +1,5 @@
 {{define "videosections"}}
-    <article x-data="watch.videoSectionContext({{.ID}})">
+    <article x-data="watch.videoSectionContext({{.ID}})" class = "p-3 md:p-0">
         <header class="flex space-x-2 mb-3 text-3 justify-between md:justify-start">
             <h3 class="font-bold">Sections</h3>
             <button @click="autoScroll.toggle()"
@@ -8,88 +8,36 @@
                 Auto-Scroll
             </button>
         </header>
-        <article class="relative flex space-x-2">
+        <article class="relative flex flex-col space-y-2 md:space-y-0 md:space-x-2 md:flex-row md:items-stretch">
             <template x-if="sections.hasNext()">
-                <button type="button" @click="nextSection()"
-                        class="tum-live-icon-button tum-live-border tum-live-bg text-3 border absolute -right-4 my-auto top-0 bottom-0 z-50 rounded-full h-8 w-8">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
+                <section class = "flex items-end absolute -left-2 z-30 md:items-center h-full md:left-auto md:-right-4">
+                    <button type="button" @click="nextSection()"
+                            class="tum-live-icon-button tum-live-border tum-live-bg text-3 border rounded-full h-8 w-8">
+                        <i class="fa-solid fa-chevron-right rotate-90 md:rotate-0"></i>
+                    </button>
+                </section>
             </template>
             <template x-if="sections.hasPrev()">
-                <button type="button" @click="prevSection()"
-                        class="tum-live-icon-button tum-live-border tum-live-bg text-3 border absolute -left-4 my-auto top-0 bottom-0 z-50 rounded-full h-8 w-8">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
+                <section class = "flex items-baseline absolute -left-2 z-30 md:items-center h-full md:-left-4">
+                    <button type="button" @click="prevSection()"
+                            class="tum-live-icon-button tum-live-border tum-live-bg text-3 border rounded-full h-8 w-8">
+                        <i class="fa-solid fa-chevron-left rotate-90 md:rotate-0"></i>
+                    </button>
+                </section>
             </template>
             <template x-for="s in sections.get()" :key="s.ID">
                 <button type="button"
                         @click="watch.jumpTo({ timeParts: {hours: s.startHours, minutes: s.startMinutes, seconds: s.startSeconds }});"
-                        class="flex flex-col group w-36 z-40 rounded-lg">
+                        class="flex flex-row h-16 group rounded-lg md:flex-col md:h-auto md:w-36">
                         <span :style="`background-image:url('/api/download/${s.fileID}?type=serve')`"
-                              class="relative block w-full aspect-video bg-gray-100 border-2 rounded-lg dark:bg-gray-800 dark:shadow-gray-900/75 group-hover:shadow-lg"
+                              class="relative block h-full aspect-video bg-gray-100 border-2 rounded-lg dark:bg-gray-800 dark:shadow-gray-900/75 md:group-hover:shadow-lg md:h-auto md:w-full"
                               :class="s.isCurrent ? 'border-blue-500/50 dark:border-indigo-600/50 shadow-lg' : 'border-transparent'">
                             <span class="tum-live-badge text-xs text-sky-800 bg-sky-200 dark:text-indigo-200 dark:bg-indigo-800 absolute bottom-2 right-2 px-1 py-1px"
                                   x-text="s.friendlyTimestamp"></span>
                         </span>
-                    <span x-text="s.description" class="font-semibold text-xs text-3 text-left p-1"></span>
+                    <span x-text="s.description" class="font-semibold text-xs text-3 text-left p-1 my-auto pl-3 md:my-0 md:pl-1"></span>
                 </button>
             </template>
         </article>
     </article>
-    <!--
-    <div class="group relative">
-        <div class="grid gap-1 px-2">
-            <div class="flex justify-between items-center border-b mb-3 dark:border-gray-800 lg:justify-start">
-                <h3 class="text-4 font-semibold">Sections</h3>
-                <button @click="vs.followSections = !vs.followSections;"
-                        class="text-xs rounded h-fit w-fit font-semibold uppercase lg:ml-3 px-1"
-                        :class="vs.followSections ? 'text-7' : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1'"
-                        :disabled="vs.followSections">
-                    Follow sections
-                </button>
-            </div>
-            <div class="relative flex w-fit">
-                <template x-if="vs.showPrev()">
-                    <button @click="vs.prev();vs.followSections = false;"
-                            class="group-hover:block hidden absolute -left-4 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
-                        <i class="fa fa-chevron-left text-3"></i>
-                    </button>
-                </template>
-                <template x-if="vs.showNext()">
-                    <button @click="vs.next();vs.followSections = false;"
-                            class="group-hover:block hidden absolute -right-2 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
-                        <i class="fa fa-chevron-right text-3"></i>
-                    </button>
-                </template>
-                <template x-for="(s, i) in vs.getList()" :key="s.ID">
-                    <button x-cloak
-                            class="relative flex h-40 w-32 mb-1 mr-2 bg-transparent outline-none border-0 rounded-lg"
-                            x-data="{previewImgLoaded: false}"
-                            @click="watch.jumpTo({ timeParts: {hours: s.startHours, minutes: s.startMinutes, seconds: s.startSeconds }}); vs.followSections = false;">
-                <span class="flex flex-col h-full p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
-                      :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50 dark:border-indigo-600/50' : 'dark:border-gray-800'">
-                    <template x-if="s.fileID !== 0">
-                        <img x-cloak x-show="previewImgLoaded"
-                             src=""
-                             :src="`/api/download/${s.fileID}?type=serve`"
-                             width="128" height="32"
-                             @load="previewImgLoaded=true"
-                             alt="preview"
-                             class="w-full h-16 rounded object-cover z-10">
-                    </template>
-                    <span x-show="!previewImgLoaded"
-                          class="block w-full h-16 bg-gray-50 dark:bg-gray-700 rounded"></span>
-                     <span x-text="s.description"
-                           class="block text-left text-xs text-3 mt-2 mb-auto px-1"></span>
-                    <span class="absolute bottom-1 right-1 px-1 py-1">
-                        <span x-text="s.friendlyTimestamp"
-                              class="block text-sky-800 ml-auto w-fit bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
-                        </span>
-                    </span>
-                </span>
-                    </button>
-                </template>
-            </div>
-        </div>
-    </div>-->
 {{end}}
