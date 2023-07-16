@@ -43,6 +43,9 @@
     scrollbar-width: none; /* Firefox */
 }
 
+.tum-live-border {
+    @apply dark:border-gray-800
+}
 
 /* Background colors */
 .tum-live-bg {
