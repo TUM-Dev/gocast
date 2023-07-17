@@ -1530,20 +1530,23 @@ func (r coursesRoutes) copyStream(c *gin.Context) {
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	targetCourseAdmins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(request.TargetCourse)
-	if err != nil {
-		log.WithError(err).Error("Error getting course admins")
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can't determine admins of target course",
-			Err:           err,
-		})
-	}
-	isAdmin := false
-	for _, admin := range targetCourseAdmins {
-		if admin.ID == tlctx.User.ID {
-			isAdmin = true
-			break
+	isAdmin := tlctx.User.Role == model.AdminType
+
+	if !isAdmin {
+		targetCourseAdmins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(request.TargetCourse)
+		if err != nil {
+			log.WithError(err).Error("Error getting course admins")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't determine admins of target course",
+				Err:           err,
+			})
+		}
+		for _, admin := range targetCourseAdmins {
+			if admin.ID == tlctx.User.ID {
+				isAdmin = true
+				break
+			}
 		}
 	}
 	if !isAdmin {
