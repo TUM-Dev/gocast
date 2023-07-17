@@ -1,6 +1,6 @@
 {{define "videosections"}}
-    <article x-data="watch.videoSectionContext({{.ID}})" class = "p-3 md:p-0">
-        <header class="flex space-x-2 mb-3 text-3 justify-between md:justify-start">
+    <article x-data="watch.videoSectionContext({{.ID}})" class = "p-3 lg:p-0 lg:h-48 overflow-y-clip">
+        <header class="flex space-x-2 mb-3 text-3 justify-between lg:justify-start">
             <h3 class="font-bold">Sections</h3>
             <button @click="autoScroll.toggle()"
                     class="tum-live-button tum-live-button-tertiary"
@@ -8,34 +8,34 @@
                 Auto-Scroll
             </button>
         </header>
-        <article class="relative flex flex-col space-y-2 md:space-y-0 md:space-x-2 md:flex-row md:items-stretch">
+        <article class="relative flex flex-col space-y-2 lg:space-y-0 lg:space-x-2 lg:flex-row lg:items-stretch">
             <template x-if="sections.hasNext()">
-                <section class = "flex items-end absolute -left-2 z-30 md:items-center h-full md:left-auto md:-right-4">
+                <section class = "flex items-end absolute -left-2 z-40 h-full lg:items-baseline lg:pt-8 lg:left-auto lg:-right-4">
                     <button type="button" @click="nextSection()"
                             class="tum-live-icon-button tum-live-border tum-live-bg text-3 border rounded-full h-8 w-8">
-                        <i class="fa-solid fa-chevron-right rotate-90 md:rotate-0"></i>
+                        <i class="fa-solid fa-chevron-right rotate-90 lg:rotate-0"></i>
                     </button>
                 </section>
             </template>
             <template x-if="sections.hasPrev()">
-                <section class = "flex items-baseline absolute -left-2 z-30 md:items-center h-full md:-left-4">
+                <section class = "flex items-baseline absolute -left-2 z-40 h-full lg:items-baseline lg:pt-8 lg:-left-4">
                     <button type="button" @click="prevSection()"
                             class="tum-live-icon-button tum-live-border tum-live-bg text-3 border rounded-full h-8 w-8">
-                        <i class="fa-solid fa-chevron-left rotate-90 md:rotate-0"></i>
+                        <i class="fa-solid fa-chevron-left rotate-90 lg:rotate-0"></i>
                     </button>
                 </section>
             </template>
             <template x-for="s in sections.get()" :key="s.ID">
                 <button type="button"
                         @click="watch.jumpTo({ timeParts: {hours: s.startHours, minutes: s.startMinutes, seconds: s.startSeconds }});"
-                        class="flex flex-row h-16 group rounded-lg md:flex-col md:h-auto md:w-36">
+                        class="flex flex-row h-16 group rounded-lg lg:flex-col lg:h-auto lg:w-36">
                         <span :style="`background-image:url('/api/download/${s.fileID}?type=serve')`"
-                              class="relative block h-full aspect-video bg-gray-100 border-2 rounded-lg dark:bg-gray-800 dark:shadow-gray-900/75 md:group-hover:shadow-lg md:h-auto md:w-full"
+                              class="relative block shrink-0 h-full aspect-video bg-gray-100 border-2 rounded-lg dark:bg-gray-800 dark:shadow-gray-900/75 lg:group-hover:shadow-lg lg:h-auto lg:w-full"
                               :class="s.isCurrent ? 'border-blue-500/50 dark:border-indigo-600/50 shadow-lg' : 'border-transparent'">
                             <span class="tum-live-badge text-xs text-sky-800 bg-sky-200 dark:text-indigo-200 dark:bg-indigo-800 absolute bottom-2 right-2 px-1 py-1px"
                                   x-text="s.friendlyTimestamp"></span>
                         </span>
-                    <span x-text="s.description" class="font-semibold text-xs text-3 text-left p-1 my-auto pl-3 md:my-0 md:pl-1"></span>
+                    <span x-text="s.description" class="block font-semibold overflow-ellipsis text-xs text-3 text-left p-1 my-auto pl-3 lg:my-0 lg:pl-1"></span>
                 </button>
             </template>
         </article>
