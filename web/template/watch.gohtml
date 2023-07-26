@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <title>{{.IndexData.Branding.Title}} | {{$course.Name}}: {{$stream.Name}}</title>
+    {{$displayName := or $stream.Name (printf "Lecture: %s %02d. %d" $stream.Start.Month $stream.Start.Day $stream.Start.Year)}}
+    <title>{{.IndexData.Branding.Title}} | {{$course.Name}}: {{$displayName}}</title>
     <link rel="canonical" href="{{.IndexData.CanonicalURL.Stream $course.Slug $stream.ID .Version}}" />
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
@@ -426,11 +427,7 @@
                 <div class="pb-3 border-b dark:border-gray-600 grid shrink mb-auto lg:pb-0 lg:border-0">
                     <h1 class="font-bold text-4 text-lg grow lg:text-2xl"
                         @titleupdate.window="$el.innerText=$event.detail.title">
-                        {{if $stream.Name}}
-                            {{$stream.Name}}
-                        {{else}}
-                            Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}
-                        {{end}}
+                        {{$displayName}}
                     </h1>
                     <div class="flex justify-between flex-col sm:flex-row text-sm lg:text-base">
                         <div class="flex my-auto">
