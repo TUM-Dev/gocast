@@ -303,6 +303,8 @@ func sortCourses(courses []model.Course) {
 }
 
 func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	type URI struct {
 		Slug string `uri:"slug" binding:"required"`
 	}
@@ -357,6 +359,10 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 			})
 		}
 		return
+	}
+
+	if (course.IsLoggedIn() && tumLiveContext.User == nil) || (course.IsEnrolled() && !tumLiveContext.User.IsEligibleToWatchCourse(course)) {
+		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 
 	streams := course.Streams

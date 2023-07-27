@@ -315,6 +315,16 @@ func (c Course) IsHidden() bool {
 	return c.Visibility == "hidden"
 }
 
+// IsLoggedIn returns true if visibility is set to 'loggedin' and false if not
+func (c Course) IsLoggedIn() bool {
+	return c.Visibility == "loggedin"
+}
+
+// IsEnrolled returns true if visibility is set to 'loggedin' and false if not
+func (c Course) IsEnrolled() bool {
+	return c.Visibility == "enrolled"
+}
+
 // AdminJson is the JSON representation of a courses streams for the admin panel
 func (c Course) AdminJson(lhs []LectureHall) []gin.H {
 	var res []gin.H
