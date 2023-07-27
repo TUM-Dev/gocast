@@ -415,7 +415,7 @@ func TestCoursesCRUD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			},
