@@ -43,6 +43,10 @@
     scrollbar-width: none; /* Firefox */
 }
 
+#notification-list a{
+    @apply underline;
+}
+
 
 /* Background colors */
 .tum-live-bg {
