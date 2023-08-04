@@ -33,6 +33,7 @@ var initializers = []initializer{
 	tools.LoadConfig,
 	api.ServeWorkerGRPC,
 	tools.InitBranding,
+	tools.InitLivekitClients,
 }
 
 func initAll(initializers []initializer) {

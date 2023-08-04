@@ -137,6 +137,8 @@ func configMainRoute(router *gin.Engine) {
 	withStream.Use(tools.InitStream(daoWrapper))
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
+	withStream.GET("/admin/stream/:courseID/:streamID", routes.StreamLecture)
+	withStream.POST("/admin/stream/:courseID/:streamID/go-live", routes.StreamLectureGoLive)
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)

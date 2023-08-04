@@ -1,7 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="run-production" type="CompoundRunConfigurationType">
     <toRun name="run-tumlive-go" type="GoApplicationRunConfiguration" />
-    <toRun name="build" type="js.build_tools.npm" />
     <method v="2" />
   </configuration>
 </component>
