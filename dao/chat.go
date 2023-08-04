@@ -88,8 +88,12 @@ func (d chatDao) GetReactions(chatID uint) ([]model.ChatReaction, error) {
 // or sent by user with id 'userID'
 func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("Reactions").Preload("AddressedToUsers")
-	query.Where("(visible = 1) OR (user_id = ?)", userID).Find(&chats, "stream_id = ?", streamID)
+	query := DB.
+		Preload("Replies").
+		Preload("Reactions").
+		Preload("AddressedToUsers").
+		Where("(visible = 1) OR (user_id = ?)", userID).
+		Find(&chats, "stream_id = ? AND reply_to is null", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err
@@ -104,7 +108,11 @@ func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, erro
 // Number of likes are inserted and the user's like status is determined
 func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("Reactions").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
+	query := DB.
+		Preload("Replies").
+		Preload("Reactions").
+		Preload("AddressedToUsers").
+		Find(&chats, "stream_id = ? AND reply_to is null", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err
@@ -164,7 +172,7 @@ func (d chatDao) RetractChat(id uint) error {
 
 // DeleteChat removes a chat with the given id from the database.
 func (d chatDao) DeleteChat(id uint) error {
-	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
+	return DB.Where("id = ? OR reply_to = ?", id, id).Delete(&model.Chat{}).Error
 }
 
 // ResolveChat sets the attribute resolved of chat with the given id to true

@@ -2,6 +2,7 @@ package web
 
 import (
 	"embed"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 	"html/template"
@@ -55,7 +56,6 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinStaticRouter(router)
 	configSaml(router, dao.NewDaoWrapper())
 	configMainRoute(router)
-	configCourseRoute(router)
 }
 
 func configGinStaticRouter(router *gin.Engine) {
@@ -77,22 +77,41 @@ func configGinStaticRouter(router *gin.Engine) {
 	})
 }
 
-// todo: un-export functions
+func newStartPage(router *gin.Engine, routes *mainRoutes) {
+	router.GET("/", routes.home)
+	router.GET("/semester/:year/:term", routes.semesterRedirect)
+	router.GET("/course/:year/:term/:slug", routes.courseRedirect)
+}
+
+func oldStartPage(router *gin.Engine, routes *mainRoutes) {
+	old := router.Group("/old")
+	{
+		old.GET("/", routes.MainPage)
+		old.GET("/semester/:year/:term", routes.MainPage)
+
+		course := old.Group("/course")
+		course.Use(tools.InitCourse(routes.DaoWrapper))
+		course.GET("/:year/:teachingTerm/:slug", routes.CoursePage)
+	}
+}
+
 func configMainRoute(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
 	streamGroup := router.Group("/")
 
+	// lecturers
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
 	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
 	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
 
-	// INFO: Make sure the IDs are correct!
+	// info-pages (Make sure the IDs are correct!)
 	router.GET("/privacy", routes.InfoPage(1, "privacy"))
 	router.GET("/imprint", routes.InfoPage(2, "imprint"))
 	router.GET("/about", routes.InfoPage(3, "about"))
 
+	// admins
 	adminGroup := router.Group("/")
 	adminGroup.GET("/admin/users", routes.AdminPage)
 	adminGroup.GET("/admin/lectureHalls", routes.AdminPage)
@@ -119,18 +138,24 @@ func configMainRoute(router *gin.Engine) {
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
 
+	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
 	router.GET("/login", routes.LoginPage)
 	router.GET("/logout", routes.LogoutPage)
 	router.GET("/setPassword/:key", routes.CreatePasswordPage)
 	router.POST("/setPassword/:key", routes.CreatePasswordPage)
+
+	// home & course pages
+	oldStartPage(router, &routes)
+	newStartPage(router, &routes)
+
+	// watch
 	streamGroup.Use(tools.InitStream(daoWrapper))
 	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopUpChat)
-	router.GET("/", routes.MainPage)
-	router.GET("/new", routes.home)
-	router.GET("/semester/:year/:term", routes.MainPage)
+
+	// misc
 	router.GET("/healthcheck", routes.HealthCheck)
 	router.GET("/jwtPubKey", routes.JWTPubKey)
 
@@ -138,17 +163,18 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/edit-course", routes.editCourseByTokenPage)
 	router.GET("/edit-course/opt-out", routes.optOutPage)
 
+	loggedIn := router.Group("/")
+	loggedIn.Use(tools.LoggedIn)
+	loggedIn.GET("/settings", routes.settingsPage)
+
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/")
 	})
+
 	router.NoRoute(func(c *gin.Context) {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
 	})
-
-	loggedIn := router.Group("/")
-	loggedIn.Use(tools.LoggedIn)
-	loggedIn.GET("/settings", routes.settingsPage)
 }
 
 type mainRoutes struct {
@@ -156,7 +182,7 @@ type mainRoutes struct {
 }
 
 func (r mainRoutes) home(c *gin.Context) {
-	tName := sentry.TransactionName("GET /")
+	tName := sentry.WithTransactionSource("GET /")
 	spanMain := sentry.StartSpan(c.Request.Context(), "HomePageHandler", tName)
 	defer spanMain.Finish()
 
@@ -177,12 +203,15 @@ func (r mainRoutes) home(c *gin.Context) {
 	}
 }
 
-func configCourseRoute(router *gin.Engine) {
-	daoWrapper := dao.NewDaoWrapper()
-	routes := mainRoutes{daoWrapper}
-	g := router.Group("/course")
-	g.Use(tools.InitCourse(daoWrapper))
-	g.GET("/:year/:teachingTerm/:slug", routes.CoursePage)
+func (r mainRoutes) semesterRedirect(c *gin.Context) {
+	c.Redirect(http.StatusFound,
+		fmt.Sprintf("/?year=%s&term=%s", c.Param("year"), c.Param("term")))
+}
+
+func (r mainRoutes) courseRedirect(c *gin.Context) {
+	c.Redirect(http.StatusFound,
+		fmt.Sprintf("/?year=%s&term=%s&slug=%s&view=3",
+			c.Param("year"), c.Param("term"), c.Param("slug")))
 }
 
 func (r mainRoutes) HealthCheck(context *gin.Context) {

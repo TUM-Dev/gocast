@@ -1,24 +1,47 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-    <title>{{.Branding.Title}} | Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
     <link rel="canonical" href="{{.CanonicalURL.Login}}" />
-    {{template "headImports" .VersionTag}}
+    <link rel="manifest" href="/static/assets/manifest.json">
+
+    <title>{{.Branding.Title}} | Login</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+
+    <script src="static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/global.bundle.js?v={{if .}}{{.}}{{else}}development{{end}}"></script>
+
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
 </head>
-<body>
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.LoginPageData*/ -}}
-{{template "header"}}
-<div class="bg-white border shadow-md shadow rounded-lg m-auto my-10
-             dark:bg-secondary-light dark:border-gray-800 dark:shadow-0 lg:w-4/12 md:6/12 w-10/12"
-     x-data="{ showInternalLogin: {{not .UseSAML}}, resetPassword: false }">
-    <div>
-        <div class="border-b py-2 px-5 dark:border-gray-800">
-            <h6 class="text-3 font-bold">Login</h6>
-        </div>
+<body class="h-screen flex flex-col items-stretch tum-live-bg">
+<header class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
+        <a href="/" class="mx-3" type="button" id="logo" title="Start">
+            <img src="/logo.svg" width="42" alt="TUM-Live Logo">
+        </a>
+    </div>
+</header>
+<main id="content" class="flex justify-center grow h-full overflow-y-scroll">
+    <section class="grid gap-y-5 content-start lg:w-2/6 md:w-3/4 w-full p-6"
+             x-data="{ showInternalLogin: {{not .UseSAML}}, resetPassword: false }">
+        <header>
+            <h1 class="font-bold text-3">Login</h1>
+        </header>
         {{if .UseSAML}}
-            <div class="text-center w-full border-b dark:border-gray-800 p-4">
+            <article class="text-center w-full">
                 <a href="/saml/out"
-                   class="block w-full px-3 py-1 rounded text-white hover:text-white font-semibold"
+                   class="block w-full tum-live-button text-white"
                    style="background-color: {{if .IDPColor}}{{.IDPColor}}{{else}}#3070B3{{end}}">
                     {{.IDPName}}
                 </a>
@@ -27,57 +50,66 @@
                     <button @click="showInternalLogin = true" class="text-3 underline">use an internal account
                     </button>
                 </div>
-            </div>
+            </article>
         {{end}}
         <template x-if="showInternalLogin && !resetPassword">
-            <form id="loginForm" method="post" class="grid gap-3 py-4 px-5">
+            <form id="loginForm" method="post" class="grid gap-3">
                 <div class="text-sm">
                     <label for="username" class="block text-5">Username</label>
                     <input type="text" name="username" id="username" autocomplete="off"
                            {{if not .UseSAML}}autofocus {{end}}
                            autocomplete="username"
-                           required placeholder="Username"
-                           class="tl-input mt-3"/>
+                           required placeholder="hansi.admin"
+                           class="tum-live-input"/>
                 </div>
                 <div class="text-sm">
                     <label for="password" class="block text-5">Password</label>
                     <input type="password" name="password" id="password" required
-                           class="tl-input mt-3" autocomplete="current-password"
-                           placeholder="Password"/>
+                           class="tum-live-input" autocomplete="current-password"
+                           placeholder="**********"/>
                 </div>
-                <button type="submit"
-                        class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
-                    <span class="text-white uppercase text-sm font-semibold">Login</span>
+                <button type="submit" class="tum-live-input-submit tum-live-button-primary py-2 text-sm">
+                    Login
                 </button>
                 {{if .Error}}
-                    <p class="text-warn text-sm mt-2">Couldn't log in. Please double-check your credentials.</p>
+                    <p class="text-warn text-sm mt-2">Couldn't log in. Please double check your credentials.</p>
                 {{end}}
-                <button type="button" class="text-sm mt-2" @click="resetPassword=true">Reset Password</button>
+                <button type="button" class="text-5 text-sm" @click="resetPassword=true">Reset Password</button>
             </form>
         </template>
-
         <template x-if="resetPassword">
-            <form class="grid gap-3 py-4 px-5" x-data="{username: '', success: false}"
+            <form class="grid gap-3" x-data="{username: '', success: false}"
                   @submit.prevent="fetch('/api/users/resetPassword', {method: 'POST', body: JSON.stringify({username: username})}).then(success=true)">
                 <div class="text-sm" x-show="!success">
                     <label for="username" class="block text-5">Username/Email</label>
-                    <input type="text"
+                    <input id="username"
+                           type="text"
                            autocomplete="username"
                            required placeholder="Username"
                            x-model="username"
-                           class="tl-input mt-3"/>
+                           class="tum-live-input"/>
                 </div>
                 <button type="submit" x-show="!success"
-                        class="diabled:bg-gray-600 block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
-                    <span class="text-white uppercase text-sm font-semibold">Reset Password</span>
+                        class="tum-live-input-submit tum-live-button-primary py-2 text-sm">
+                    Reset Password
                 </button>
-                <p x-show="success" x-cloak class="text-success text-sm mt-2">
+                <button type="button" class="text-5 text-sm" @click="resetPassword=false">Back to Login</button>
+                <p x-show="success" x-cloak class="text-success text-center text-sm mt-2">
                     We emailed you instructions to reset your password if the username
                     you provided is associated with an account.
                 </p>
             </form>
         </template>
+    </section>
+</main>
+<footer id="desktop-footer"
+        class="tum-live-footer justify-between space-x-3 items-center hidden md:flex">
+    <div class="flex space-x-3">
+        <a href="/about">About</a>
+        <a href="/privacy">Data Privacy</a>
+        <a href="/imprint">Imprint</a>
     </div>
-</div>
+    <a href="/public/licenses.txt">We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource</a>
+</footer>
 </body>
 </html>

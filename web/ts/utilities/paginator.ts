@@ -60,6 +60,18 @@ export class Paginator<T> {
     }
 }
 
+export class AutoPaginator<T> extends Paginator<T> {
+    constructor(list: T[], split_number: number, preloader?: Preload<T>) {
+        super(list, split_number, preloader);
+    }
+
+    registerAutoNextButton(el: HTMLElement) {
+        const options = { root: document.getElementsByTagName("body")[0], rootMargin: "16px", threshold: 0.75 };
+        const observer = new IntersectionObserver((_) => this.next(), options);
+        observer.observe(el);
+    }
+}
+
 type Preload<T> = (o: T) => void;
 
 type CompareFunction<T> = (a: T, b: T) => number;

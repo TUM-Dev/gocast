@@ -118,6 +118,8 @@ func TestNotifications(t *testing.T) {
 			SanitizedBody: "Brand new Features!",
 		}
 
+		noticationNoTitle := model.Notification{Title: new(string), SanitizedBody: "Brand new Features!"}
+
 		gomino.TestCases{
 			"invalid body": {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -142,6 +144,28 @@ func TestNotifications(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         notification,
 				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success empty title": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: func() dao.NotificationsDao {
+							noticationNoTitle.Body = noticationNoTitle.SanitizedBody // reverse json binding here too
+							noticationNoTitle.Title = nil
+
+							mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								AddNotification(&noticationNoTitle).
+								Return(nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         noticationNoTitle,
+				ExpectedCode: http.StatusOK,
 			},
 			"success": {
 				Router: func(r *gin.Engine) {
@@ -222,5 +246,63 @@ func TestNotifications(t *testing.T) {
 			Method(http.MethodDelete).
 			Url(url).
 			Run(t, testutils.Equal)
+	})
+
+	t.Run("GET/api/notifications/server", func(t *testing.T) {
+		url := "/api/notifications/server"
+
+		notifications := []model.ServerNotification{
+			{
+				Text: "This is not a warning!",
+				Warn: false,
+			},
+			{
+				Text: "But this is!",
+				Warn: true,
+			},
+		}
+
+		gomino.TestCases{
+			"error": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ServerNotificationDao: func() dao.ServerNotificationDao {
+							mock := mock_dao.NewMockServerNotificationDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetCurrentServerNotifications().
+								Return([]model.ServerNotification{}, errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextLecturer)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ServerNotificationDao: func() dao.ServerNotificationDao {
+							mock := mock_dao.NewMockServerNotificationDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetCurrentServerNotifications().
+								Return(notifications, nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
+				},
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextLecturer)),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: notifications,
+			}}.
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
+
 	})
 }

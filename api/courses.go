@@ -122,8 +122,12 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 
 	streams, err := r.GetCurrentLive(context.Background())
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("could not get current live streams")
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "Could not load current livestream from database.",
+			Err:           err,
+		})
+		return
 	}
 
 	type CourseStream struct {
@@ -227,6 +231,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 			CustomMessage: "invalid year",
 			Err:           err,
 		})
+		return
 	}
 	term = c.DefaultQuery("term", term)
 
@@ -234,7 +239,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
-			courses = routes.GetAllCoursesForSemester(year, term, c)
+			courses = r.GetAllCoursesForSemester(year, term, c)
 		case model.LecturerType:
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
@@ -269,6 +274,7 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 			CustomMessage: "invalid year",
 			Err:           err,
 		})
+		return
 	}
 	term = c.DefaultQuery("term", term)
 
@@ -279,7 +285,6 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 		pinnedCourses = []model.Course{}
 	}
 
-	sortCourses(pinnedCourses)
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
@@ -340,7 +345,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
+				Status:        http.StatusNotFound,
 				CustomMessage: "can't find course",
 			})
 		} else {
@@ -1522,6 +1527,11 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 	course := tlctx.Course
 	streams := course.Streams
 
+	admins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(course.ID)
+	if err != nil {
+		log.WithError(err).Error("Error getting course admins")
+		admins = []model.User{}
+	}
 	course.Model = gorm.Model{}
 	course.Streams = nil
 	yearInt, err := strconv.Atoi(request.Year)
@@ -1553,6 +1563,13 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 		err := r.StreamsDao.CreateStream(&stream)
 		if err != nil {
 			log.WithError(err).Error("Can't create stream")
+			numErrors++
+		}
+	}
+	for _, admin := range admins {
+		err := r.CoursesDao.AddAdminToCourse(admin.ID, course.ID)
+		if err != nil {
+			log.WithError(err).Error("Can't add admin to course")
 			numErrors++
 		}
 	}

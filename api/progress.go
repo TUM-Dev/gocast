@@ -177,7 +177,6 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 
 func (r progressRoutes) getProgressBatch(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
 	if tumLiveContext.User == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusForbidden,
@@ -196,13 +195,13 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 		return
 	}
 
-	ids := make([]uint, len(stringIds))
-	for i, stringId := range stringIds {
+	ids := make([]uint, 0, len(stringIds))
+	for _, stringId := range stringIds {
 		id, err := strconv.Atoi(stringId)
 		if err != nil {
 			continue
 		}
-		ids[i] = uint(id)
+		ids = append(ids, uint(id))
 	}
 
 	streamProgresses := make([]model.StreamProgress, len(ids))
@@ -218,6 +217,7 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 					Status:        http.StatusInternalServerError,
 					CustomMessage: "can't retrieve streamProgresses for user",
 				})
+				return
 			}
 		} else {
 			streamProgresses[i] = p

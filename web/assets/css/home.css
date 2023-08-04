@@ -43,6 +43,10 @@
     scrollbar-width: none; /* Firefox */
 }
 
+#notification-list a{
+    @apply underline;
+}
+
 
 /* Background colors */
 .tum-live-bg {
@@ -70,12 +74,20 @@
     @apply bg-gray-100 hover:bg-gray-800 hover:text-white dark:bg-gray-800 dark:hover:bg-gray-600
 }
 
+.tum-live-button-tertiary > i {
+    @apply mr-2;
+}
+
 .tum-live-button-tertiary.active {
     @apply bg-gray-800 text-white dark:bg-gray-600
 }
 
 .tum-live-icon-button {
     @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
+}
+
+.tum-live-input-submit {
+    @apply font-semibold rounded;
 }
 
 .tum-live-badge {
@@ -320,6 +332,18 @@
 
 .tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item .date{
     @apply text-xs text-5
+}
+
+.tum-live-input {
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+}
+
+.tum-live-input:focus{
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
+}
+
+label:has(~ .tum-live-input) {
+    @apply text-sm text-5 font-light mb-2;
 }
 
 
