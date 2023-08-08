@@ -67,8 +67,8 @@
         {{else}}
             <div>
                 <button type="button" @click="userContext.toggle(true)"
-                        class="tum-live-button-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
-                    <span class="text-white font-semibold uppercase">{{printf "%.1s" $user.GetPreferredName}}</span>
+                        class="border-2 tum-live-border-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
+                    <i class = "fa-solid fa-user tum-live-font-primary"></i>
                 </button>
                 <div class="relative">
                     <article x-cloak x-show="userContext.value"

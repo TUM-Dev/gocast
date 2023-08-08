@@ -121,6 +121,8 @@ export class Course {
 
     readonly Pinned: boolean = false;
 
+    readonly UserID: number;
+
     private readonly Streams?: Stream[];
 
     readonly Recordings?: Stream[];

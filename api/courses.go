@@ -266,18 +266,6 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 func (r coursesRoutes) getPinned(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	year, term := tum.GetCurrentSemester()
-	year, err := strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid year",
-			Err:           err,
-		})
-		return
-	}
-	term = c.DefaultQuery("term", term)
-
 	var pinnedCourses []model.Course
 	if tumLiveContext.User != nil {
 		pinnedCourses = tumLiveContext.User.PinnedCourses
@@ -288,7 +276,7 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
-		if !course.IsHidden() && course.Year == year && course.TeachingTerm == term {
+		if !course.IsHidden() {
 			resp = append(resp, course.ToDTO())
 		}
 	}

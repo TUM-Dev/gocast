@@ -57,6 +57,14 @@
     @apply bg-blue-500 dark:bg-indigo-600
 }
 
+.tum-live-border-primary {
+    @apply border-blue-500 dark:border-indigo-600
+}
+
+.tum-live-font-primary {
+    @apply text-blue-500 dark:text-indigo-600
+}
+
 /* Elements */
 .tum-live-button {
     @apply rounded-full px-3 py-1 text-sm font-semibold
