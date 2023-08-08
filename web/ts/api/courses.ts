@@ -31,10 +31,10 @@ export class Stream {
     }
 
     public FriendlyDateStart(): string {
-        return new Date(this.Start).toLocaleString(undefined, {
+        return new Date(this.Start).toLocaleString("default", {
             weekday: "long",
             year: "numeric",
-            month: "long",
+            month: "numeric",
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
