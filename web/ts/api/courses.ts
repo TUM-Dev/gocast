@@ -31,7 +31,14 @@ export class Stream {
     }
 
     public FriendlyDateStart(): string {
-        return new Date(this.Start).toLocaleString();
+        return new Date(this.Start).toLocaleString(undefined, {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     }
 
     public MonthOfStart(): string {
