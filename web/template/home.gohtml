@@ -68,7 +68,7 @@
             <div>
                 <button type="button" @click="userContext.toggle(true)"
                         class="border-2 tum-live-border-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
-                    <i class = "fa-solid fa-user tum-live-font-primary"></i>
+                    <i class="fa-solid fa-user tum-live-font-primary"></i>
                 </button>
                 <div class="relative">
                     <article x-cloak x-show="userContext.value"
@@ -304,7 +304,7 @@
             </article>
         </template>
         <template x-if="state.isCourse()">
-            <article x-data="home.courseContext(state.slug, state.year, state.term)"
+            <article x-data="home.courseContext(state.slug, state.year, state.term, {{$user.ID}})"
                      x-init="$watch('state', (s) => reload(s.slug, s.year, s.term))"
                      class="tum-live-course-view">
                 <header>
@@ -331,14 +331,14 @@
                             .ics
                         </a>
                         {{if $user}}
-                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                            <template x-if="course.IsAdmin || {{$user.Role}} === 1">
                                 <a :href="`/admin/course/${course.ID}`"
                                    class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
                                    title="Go to admin page">
                                     <i class="fa-solid fa-hammer mr-2"></i>
                                     Admin
                                 </a>
-                            {{end}}
+                            </template>
                         {{end}}
                     </section>
                 </header>
@@ -740,7 +740,7 @@
                             </template>
                         </article>
                     </template>
-                    </div>
+                </span>
             </article>
         </template>
     </article>

@@ -298,8 +298,9 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	}
 
 	type Query struct {
-		Year int    `form:"year"`
-		Term string `form:"term"`
+		Year   int    `form:"year"`
+		Term   string `form:"term"`
+		UserID uint   `form:"userId"`
 	}
 
 	var uri URI
@@ -359,8 +360,17 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		streamsDTO[i] = s.ToDTO()
 	}
 
+	isAdmin := course.UserID == query.UserID
+	for _, user := range course.Admins {
+		if user.ID == query.UserID {
+			isAdmin = true
+			break
+		}
+	}
+
 	courseDTO := course.ToDTO()
 	courseDTO.Streams = streamsDTO
+	courseDTO.IsAdmin = isAdmin
 
 	c.JSON(http.StatusOK, courseDTO)
 }

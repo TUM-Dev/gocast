@@ -121,7 +121,7 @@ export class Course {
 
     readonly Pinned: boolean = false;
 
-    readonly UserID: number;
+    readonly IsAdmin: boolean;
 
     private readonly Streams?: Stream[];
 
@@ -220,8 +220,8 @@ export const CoursesAPI = {
         return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    async get(slug: string, year?: number, term?: string) {
-        const url = new CustomURL(`/api/courses/${slug}`, { year, term });
+    async get(slug: string, year?: number, term?: string, userId?: number) {
+        const url = new CustomURL(`/api/courses/${slug}`, { year, term, userId });
         return get(url.toString(), {}, true).then((course) => Course.New(course));
     },
 };

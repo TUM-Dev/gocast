@@ -18,8 +18,10 @@ export enum StreamFilterMode {
     HideWatched,
 }
 
-export function courseContext(slug: string, year: number, term: string): AlpineComponent {
+export function courseContext(slug: string, year: number, term: string, userId: number): AlpineComponent {
     return {
+        userId: userId as number,
+
         slug: slug as string,
         year: year as number,
         term: term as string,
@@ -136,7 +138,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
         },
 
         async loadCourse() {
-            this.course = await CoursesAPI.get(this.slug, this.year, this.term);
+            this.course = await CoursesAPI.get(this.slug, this.year, this.term, this.userId);
         },
 
         async loadPinned() {

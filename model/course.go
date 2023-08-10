@@ -53,6 +53,7 @@ type CourseDTO struct {
 	NextLecture      StreamDTO
 	LastRecording    StreamDTO
 	Streams          []StreamDTO
+	IsAdmin          bool // Set in API handler
 }
 
 func (c *Course) ToDTO() CourseDTO {
@@ -66,6 +67,7 @@ func (c *Course) ToDTO() CourseDTO {
 		DownloadsEnabled: c.DownloadsEnabled,
 		NextLecture:      c.GetNextLecture().ToDTO(),
 		LastRecording:    c.GetLastRecording().ToDTO(),
+		IsAdmin:          false,
 	}
 }
 
