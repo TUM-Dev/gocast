@@ -319,12 +319,6 @@ func TestCoursesCRUD(t *testing.T) {
 		url := "/api/courses/users/pinned"
 
 		gomino.TestCases{
-			"invalid year": {
-				Router:       CourseRouterWrapper,
-				Url:          fmt.Sprintf("%s?year=XX&term=S", url),
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusBadRequest,
-			},
 			"not logged-in": {
 				Router:           CourseRouterWrapper,
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
@@ -339,7 +333,7 @@ func TestCoursesCRUD(t *testing.T) {
 			},
 		}.
 			Method(http.MethodGet).
-			Url(fmt.Sprintf("%s?year=2022&term=W", url)).
+			Url(url).
 			Run(t, testutils.Equal)
 	})
 
