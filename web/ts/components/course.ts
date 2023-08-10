@@ -6,6 +6,7 @@ import { copyToClipboard } from "../utilities/input-interactions";
 import { AlpineComponent } from "./alpine-component";
 import { Tunnel } from "../utilities/tunnels";
 import { ToggleableElement } from "../utilities/ToggleableElement";
+import { getFromStorage, setInStorage } from "../utilities/storage";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -29,8 +30,8 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
         plannedStreams: new Paginator<Stream>([], 3),
         upcomingStreams: new Paginator<Stream>([], 3),
 
-        streamSortMode: StreamSortMode.NewestFirst,
-        streamFilterMode: StreamFilterMode.ShowWatched,
+        streamSortMode: +getFromStorage("streamSortMode") ?? StreamSortMode.NewestFirst,
+        streamFilterMode: +getFromStorage("streamFilterMode") ?? StreamFilterMode.ShowWatched,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -88,18 +89,20 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
 
         sortNewestFirst() {
             this.streamSortMode = StreamSortMode.NewestFirst;
+            setInStorage("streamSortMode", StreamSortMode.NewestFirst.toString());
         },
 
         isNewestFirst(): boolean {
-            return this.streamSortMode === StreamSortMode.NewestFirst;
+            return this.streamSortMode === StreamSortMode.NewestFirst.valueOf();
         },
 
         sortOldestFirst() {
             this.streamSortMode = StreamSortMode.OldestFirst;
+            setInStorage("streamSortMode", StreamSortMode.OldestFirst.toString());
         },
 
         isOldestFirst(): boolean {
-            return this.streamSortMode === StreamSortMode.OldestFirst;
+            return this.streamSortMode === StreamSortMode.OldestFirst.valueOf();
         },
 
         toggleShowWatched() {
@@ -107,6 +110,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
                 this.streamFilterMode === StreamFilterMode.ShowWatched
                     ? StreamFilterMode.HideWatched
                     : StreamFilterMode.ShowWatched;
+            setInStorage("streamFilterMode", this.streamFilterMode.toString());
         },
 
         isHideWatched() {
