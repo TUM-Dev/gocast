@@ -357,6 +357,17 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	streams := course.Streams
 	streamsDTO := make([]model.StreamDTO, len(streams))
 	for i, s := range streams {
+		err := tools.SetSignedPlaylists(&s, &model.User{
+			Model: gorm.Model{ID: query.UserID},
+		}, course.DownloadsEnabled)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't sign stream",
+			})
+			return
+		}
 		streamsDTO[i] = s.ToDTO()
 	}
 
