@@ -173,7 +173,7 @@
                 <template x-for="course in pinnedCourses" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item hover"
                        :href="course.URL()"
-                       @click.prevent="showCourse(course.Slug)"
+                       @click.prevent="showCourse(course.Slug, course.Year, course.TeachingTerm)"
                        x-text="course.Name">
                     </a>
                 </template>
