@@ -329,5 +329,5 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if len(u.Name) == 0 {
 		return ErrUsernameNoText
 	}
-	return nil;
+	return nil
 }
