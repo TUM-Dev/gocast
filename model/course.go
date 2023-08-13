@@ -322,7 +322,7 @@ func (c Course) IsLoggedIn() bool {
 	return c.Visibility == "loggedin"
 }
 
-// IsEnrolled returns true if visibility is set to 'loggedin' and false if not
+// IsEnrolled returns true if visibility is set to 'enrolled' and false if not
 func (c Course) IsEnrolled() bool {
 	return c.Visibility == "enrolled"
 }
