@@ -1,5 +1,7 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
+{{$userID := 0}}
+{{if $user}}{{$userID = $user.ID}}{{end}}
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -304,7 +306,7 @@
             </article>
         </template>
         <template x-if="state.isCourse()">
-            <article x-data="home.courseContext(state.slug, state.year, state.term, {{$user.ID}})"
+            <article x-data="home.courseContext(state.slug, state.year, state.term, {{$userID}})"
                      x-init="$watch('state', (s) => reload(s.slug, s.year, s.term))"
                      class="tum-live-course-view">
                 <header>
