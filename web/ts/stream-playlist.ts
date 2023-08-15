@@ -19,9 +19,23 @@ export class StreamPlaylist {
         const { prev, next } = this.findNextAndPrev();
         this.elem.dispatchEvent(new CustomEvent("update", { detail: { list: this.list, prev, next } }));
 
+        // if playlist is hidden and will be visible later
+        new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if(entry.intersectionRatio > 0) {
+                    this.scrollSelectedIntoView()
+                    observer.disconnect();
+                }
+            });
+        }).observe(this.elem);
+
         setTimeout(() => {
-            this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
+            this.scrollSelectedIntoView();
         }, 10);
+    }
+
+    public scrollSelectedIntoView() {
+        this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
     }
 
     private findNextAndPrev(): { next: StreamPlaylistEntry; prev: StreamPlaylistEntry } {
