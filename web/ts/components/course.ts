@@ -1,6 +1,6 @@
 import { Course, CoursesAPI, Stream } from "../api/courses";
 import { ProgressAPI } from "../api/progress";
-import { Paginator } from "../utilities/paginator";
+import { Paginator, SmartArray } from "../utilities/paginator";
 import { HasPinnedCourseDTO, UserAPI } from "../api/user";
 import { copyToClipboard } from "../utilities/input-interactions";
 import { AlpineComponent } from "./alpine-component";
@@ -28,7 +28,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         course: new Course() as Course,
 
-        courseStreams: new Paginator<Stream>([], 8, (s: Stream) => s.FetchThumbnail()),
+        courseStreams: new SmartArray<Stream>([]),
         plannedStreams: new Paginator<Stream>([], 3),
         upcomingStreams: new Paginator<Stream>([], 3),
 
@@ -64,9 +64,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
                         this.courseStreams
                             .set(this.course.Recordings)
-                            .forEach((s: Stream, i) => (s.Progress = progresses[i]))
-                            .reset()
-                            .preload(this.sortFn(this.streamSortMode));
+                            .forEach((s: Stream, i) => (s.Progress = progresses[i]));
                     });
                     console.log("🌑 init course", this.course);
                 });
