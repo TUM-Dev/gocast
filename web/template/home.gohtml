@@ -238,7 +238,7 @@
     <!-- views -->
     <article class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
         <template x-if="state.isPublicCourses()">
-            <article id="public-courses" class="tum-live-course-list">
+            <article id="public-courses" class="tum-live-course-list h-full overflow-y-scroll">
                 <header>
                     <h1>
                         <i class="text-base fa-solid fa-chalkboard mr-2"></i>
@@ -272,7 +272,7 @@
             </article>
         </template>
         <template x-if="state.isUserCourses()">
-            <article id="user-courses" class="tum-live-course-list">
+            <article id="user-courses" class="tum-live-course-list h-full overflow-y-scroll">
                 <header>
                     <h1>
                         <i class="text-base fa-solid fa-graduation-cap mr-2"></i>

@@ -33,12 +33,13 @@
 }
 
 /* Chrome, Safari and Opera */
-#content::-webkit-scrollbar, #notification-list::-webkit-scrollbar, .tum-live-side-navigation::-webkit-scrollbar {
+#content::-webkit-scrollbar, #notification-list::-webkit-scrollbar, .tum-live-side-navigation::-webkit-scrollbar,
+#public-courses::-webkit-scrollbar, #user-courses::-webkit-scrollbar{
     display: none;
 }
 
 /* IE, Edge and Firefox */
-#content, #notification-list, .tum-live-side-navigation {
+#content, #notification-list, .tum-live-side-navigation, #public-courses, #user-courses {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
 }
