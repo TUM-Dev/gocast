@@ -3,8 +3,8 @@ import { StreamPlaylistEntry } from "./data-store/stream-playlist";
 
 function onVisible(element, callback) {
     new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if(entry.intersectionRatio > 0) {
+        entries.forEach((entry) => {
+            if (entry.intersectionRatio > 0) {
                 callback(element);
                 observer.disconnect();
             }
