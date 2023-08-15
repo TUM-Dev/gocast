@@ -170,6 +170,7 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
     }) as any;
 
     const settings = new PlayerSettings(player, live, isEmbedded);
