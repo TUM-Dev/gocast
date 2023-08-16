@@ -6,6 +6,7 @@ import { copyToClipboard } from "../utilities/input-interactions";
 import { AlpineComponent } from "./alpine-component";
 import { Tunnel } from "../utilities/tunnels";
 import { ToggleableElement } from "../utilities/ToggleableElement";
+import { getFromStorage, setInStorage } from "../utilities/storage";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -17,8 +18,10 @@ export enum StreamFilterMode {
     HideWatched,
 }
 
-export function courseContext(slug: string, year: number, term: string): AlpineComponent {
+export function courseContext(slug: string, year: number, term: string, userId: number): AlpineComponent {
     return {
+        userId: userId as number,
+
         slug: slug as string,
         year: year as number,
         term: term as string,
@@ -29,8 +32,8 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
         plannedStreams: new Paginator<Stream>([], 3),
         upcomingStreams: new Paginator<Stream>([], 3),
 
-        streamSortMode: StreamSortMode.NewestFirst,
-        streamFilterMode: StreamFilterMode.ShowWatched,
+        streamSortMode: +getFromStorage("streamSortMode") ?? StreamSortMode.NewestFirst,
+        streamFilterMode: +getFromStorage("streamFilterMode") ?? StreamFilterMode.ShowWatched,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -47,8 +50,12 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
             this.year = year;
             this.term = term;
             this.loadCourse()
-                .catch((_) => {
-                    document.location.href = `/?year=${year}&term=${term}`; // redirect to start page on error
+                .catch((err) => {
+                    if (err.message === "Unauthorized") {
+                        document.location.href = "/login";
+                    } else {
+                        document.location.href = `/?year=${year}&term=${term}`; // redirect to start page on error
+                    }
                 })
                 .then(() => {
                     this.loadPinned();
@@ -84,18 +91,20 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
 
         sortNewestFirst() {
             this.streamSortMode = StreamSortMode.NewestFirst;
+            setInStorage("streamSortMode", StreamSortMode.NewestFirst.toString());
         },
 
         isNewestFirst(): boolean {
-            return this.streamSortMode === StreamSortMode.NewestFirst;
+            return this.streamSortMode === StreamSortMode.NewestFirst.valueOf();
         },
 
         sortOldestFirst() {
             this.streamSortMode = StreamSortMode.OldestFirst;
+            setInStorage("streamSortMode", StreamSortMode.OldestFirst.toString());
         },
 
         isOldestFirst(): boolean {
-            return this.streamSortMode === StreamSortMode.OldestFirst;
+            return this.streamSortMode === StreamSortMode.OldestFirst.valueOf();
         },
 
         toggleShowWatched() {
@@ -103,6 +112,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
                 this.streamFilterMode === StreamFilterMode.ShowWatched
                     ? StreamFilterMode.HideWatched
                     : StreamFilterMode.ShowWatched;
+            setInStorage("streamFilterMode", this.streamFilterMode.toString());
         },
 
         isHideWatched() {
@@ -128,7 +138,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
         },
 
         async loadCourse() {
-            this.course = await CoursesAPI.get(this.slug, this.year, this.term);
+            this.course = await CoursesAPI.get(this.slug, this.year, this.term, this.userId);
         },
 
         async loadPinned() {

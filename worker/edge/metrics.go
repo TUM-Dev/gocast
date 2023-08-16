@@ -28,6 +28,11 @@ var (
 		Help: "The number of concurrent users (users active in the last 5 minutes)",
 	})
 
+	err404Playlists = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "edge_404_playlists_total",
+		Help: "The total number of 404 responses per playlist",
+	}, []string{"stream", "playlist"})
+
 	usersMap = NewTTLMap(300)
 )
 

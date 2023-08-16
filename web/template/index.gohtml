@@ -15,7 +15,7 @@
     {{if .ServerNotifications}}
         {{range $notification := .ServerNotifications}}
             <p class="{{if $notification.Warn}} text-red-400{{else}} text-yellow-400{{end}}"><i
-                        class="fas fa-exclamation-triangle mr-2"></i><span>{{$notification.Text}}</span></p>
+                        class="fas fa-exclamation-triangle mr-2"></i><span>{{$notification.HTML}}</span></p>
         {{end}}
     {{end}}
     {{if not .TUMLiveContext.User}}

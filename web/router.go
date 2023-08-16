@@ -255,6 +255,7 @@ func getDefaultStaticBrandingFiles() []staticFile {
 		{Name: "favicon.ico", Path: "assets/favicon.ico"},
 		{Name: "icons-192.png", Path: "assets/img/icons-192.png"},
 		{Name: "icons-512.png", Path: "assets/img/icons-512.png"},
+		{Name: "thumb-fallback.png", Path: "assets/img/thumb-fallback.png"},
 	}
 }
 

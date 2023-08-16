@@ -68,8 +68,8 @@ export function skeleton(): AlpineComponent {
             this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.PublicCourses });
         },
 
-        showCourse(slug: string) {
-            this.state.update({ slug });
+        showCourse(slug: string, year?: number, term?: string) {
+            this.state.update({ slug, year, term });
             this.switchView(View.Course);
             this.state.pushHistory({
                 year: this.state.year,
@@ -170,7 +170,10 @@ class PageState {
     constructor(url: URL) {
         this.url = url;
         this.term = url.searchParams.get("term") ?? undefined;
-        this.year = +url.searchParams.get("year");
+        this.year = +url.searchParams.get("year") ?? undefined;
+        if (this.year === 0) {
+            this.year = undefined;
+        }
         this.slug = url.searchParams.get("slug") ?? undefined;
         this.view = url.searchParams.get("view") ?? View.Main;
     }
