@@ -1,4 +1,4 @@
-FROM golang:1.20 as authBuilder
+FROM golang:1.21 as authBuilder
 
 COPY main.go .
 RUN CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o /auth main.go
