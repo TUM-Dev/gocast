@@ -238,7 +238,7 @@
     <!-- views -->
     <article class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
         <template x-if="state.isPublicCourses()">
-            <article id="public-courses" class="tum-live-course-list">
+            <article id="public-courses" class="tum-live-course-list h-full overflow-y-scroll">
                 <header>
                     <h1>
                         <i class="text-base fa-solid fa-chalkboard mr-2"></i>
@@ -272,7 +272,7 @@
             </article>
         </template>
         <template x-if="state.isUserCourses()">
-            <article id="user-courses" class="tum-live-course-list">
+            <article id="user-courses" class="tum-live-course-list h-full overflow-y-scroll">
                 <header>
                     <h1>
                         <i class="text-base fa-solid fa-graduation-cap mr-2"></i>
@@ -369,7 +369,7 @@
                                                 </span>
                                                 </div>
                                                 <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                                                    <div :style="`background:url('/api/stream/${livestream.Stream.ID}/thumbs/live'), url('/thumb-fallback.png')`"
+                                                    <div :style="`background:url('/api/stream/${livestream.Stream.ID}/thumbs/live'), url('/thumb-fallback.png'); background-size: cover;`"
                                                          class="h-full tum-live-thumbnail"></div>
                                                 </a>
                                             </div>
@@ -439,7 +439,7 @@
                                             <article class="tum-live-stream group sm:col-span-1 col-span-full"
                                                      @click.outside="vod.Dropdown.toggle(false)">
                                                 <a :href="course.WatchURL(vod.ID)" class="block mb-2">
-                                                    <div :style="`background: url('/api/stream/${vod.ID}/thumbs/vod'), url('/thumb-fallback.png')`"
+                                                    <div :style="`background: url('/api/stream/${vod.ID}/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;`"
                                                          class="aspect-video tum-live-thumbnail">
                                                         <div :id="`vod-progress-${vod.ID}`"
                                                              class="tum-live-thumbnail-progress">
@@ -628,7 +628,7 @@
                                                 </template>
                                             </div>
                                             <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                                                <div :style="`background:url('/api/stream/${livestream.Stream.ID}/thumbs/live'), url('/thumb-fallback.png')`"
+                                                <div :style="`background:url('/api/stream/${livestream.Stream.ID}/thumbs/live'), url('/thumb-fallback.png'); background-size: cover;`"
                                                      class="h-full tum-live-thumbnail"></div>
                                             </a>
                                             <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-2 right-2 z-40 text-xs">
@@ -706,7 +706,7 @@
                                 <template x-for="course in recently.get()" :key="course.ID">
                                     <article class="tum-live-stream sm:col-span-1 col-span-full p-3">
                                         <a :href="course.LastRecordingURL()" class="block mb-2">
-                                            <div :style="`background:url('/api/stream/${course.LastRecording.ID}/thumbs/vod'), url('/thumb-fallback.png')`"
+                                            <div :style="`background:url('/api/stream/${course.LastRecording.ID}/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;`"
                                                  class="aspect-video tum-live-thumbnail">
                                                 <div :id="`vod-progress-${course.LastRecording.ID}`"
                                                      class="tum-live-thumbnail-progress">

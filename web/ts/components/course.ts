@@ -1,7 +1,7 @@
 import { Course, CoursesAPI, Stream } from "../api/courses";
 import { ProgressAPI } from "../api/progress";
 import { Paginator, SmartArray } from "../utilities/paginator";
-import { HasPinnedCourseDTO, UserAPI } from "../api/user";
+import { HasPinnedCourseDTO, UserAPI } from "../api/users";
 import { copyToClipboard } from "../utilities/input-interactions";
 import { AlpineComponent } from "./alpine-component";
 import { Tunnel } from "../utilities/tunnels";

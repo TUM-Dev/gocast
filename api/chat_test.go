@@ -99,10 +99,10 @@ func TestActivePoll(t *testing.T) {
 		}
 
 		res := gin.H{
-			"active":      true,
-			"question":    testutils.PollStreamFPVLive.Question,
-			"pollOptions": pollOptions,
-			"submitted":   submitted,
+			"active":    true,
+			"question":  testutils.PollStreamFPVLive.Question,
+			"options":   pollOptions,
+			"submitted": submitted,
 		}
 
 		gomino.TestCases{
