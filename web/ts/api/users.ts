@@ -1,5 +1,11 @@
 import { get, post } from "../utilities/fetch-wrappers";
 
+export class User implements Identifiable {
+    ID: number;
+    name: string;
+    isAdmin: boolean;
+}
+
 export type HasPinnedCourseDTO = {
     has: boolean;
 };
