@@ -2,8 +2,7 @@
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <div x-data="{ viewers: 0 }" @viewers.window="viewers = $event.detail.viewers"
-         class="text-5 text-xs mt-2 lg:text-sm">
+    <div class="text-5 text-xs mt-2 lg:text-sm">
         {{if not $stream.Recording}}
             {{if not $stream.LiveNow}}
                 {{if $stream.Ended }}

@@ -266,18 +266,6 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 func (r coursesRoutes) getPinned(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	year, term := tum.GetCurrentSemester()
-	year, err := strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid year",
-			Err:           err,
-		})
-		return
-	}
-	term = c.DefaultQuery("term", term)
-
 	var pinnedCourses []model.Course
 	if tumLiveContext.User != nil {
 		pinnedCourses = tumLiveContext.User.PinnedCourses
@@ -288,7 +276,7 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
-		if !course.IsHidden() && course.Year == year && course.TeachingTerm == term {
+		if !course.IsHidden() {
 			resp = append(resp, course.ToDTO())
 		}
 	}
@@ -303,13 +291,16 @@ func sortCourses(courses []model.Course) {
 }
 
 func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	type URI struct {
 		Slug string `uri:"slug" binding:"required"`
 	}
 
 	type Query struct {
-		Year int    `form:"year"`
-		Term string `form:"term"`
+		Year   int    `form:"year"`
+		Term   string `form:"term"`
+		UserID uint   `form:"userId"`
 	}
 
 	var uri URI
@@ -359,14 +350,38 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		return
 	}
 
+	if (course.IsLoggedIn() && tumLiveContext.User == nil) || (course.IsEnrolled() && !tumLiveContext.User.IsEligibleToWatchCourse(course)) {
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
+
 	streams := course.Streams
 	streamsDTO := make([]model.StreamDTO, len(streams))
 	for i, s := range streams {
+		err := tools.SetSignedPlaylists(&s, &model.User{
+			Model: gorm.Model{ID: query.UserID},
+		}, course.DownloadsEnabled)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't sign stream",
+			})
+			return
+		}
 		streamsDTO[i] = s.ToDTO()
+	}
+
+	isAdmin := course.UserID == query.UserID
+	for _, user := range course.Admins {
+		if user.ID == query.UserID {
+			isAdmin = true
+			break
+		}
 	}
 
 	courseDTO := course.ToDTO()
 	courseDTO.Streams = streamsDTO
+	courseDTO.IsAdmin = isAdmin
 
 	c.JSON(http.StatusOK, courseDTO)
 }
@@ -1527,6 +1542,11 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 	course := tlctx.Course
 	streams := course.Streams
 
+	admins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(course.ID)
+	if err != nil {
+		log.WithError(err).Error("Error getting course admins")
+		admins = []model.User{}
+	}
 	course.Model = gorm.Model{}
 	course.Streams = nil
 	yearInt, err := strconv.Atoi(request.Year)
@@ -1558,6 +1578,13 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 		err := r.StreamsDao.CreateStream(&stream)
 		if err != nil {
 			log.WithError(err).Error("Can't create stream")
+			numErrors++
+		}
+	}
+	for _, admin := range admins {
+		err := r.CoursesDao.AddAdminToCourse(admin.ID, course.ID)
+		if err != nil {
+			log.WithError(err).Error("Can't add admin to course")
 			numErrors++
 		}
 	}

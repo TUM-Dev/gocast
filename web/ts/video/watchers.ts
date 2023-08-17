@@ -16,7 +16,7 @@ export const registerTimeWatcher = function (
 };
 
 /**
- * Deregisters a time watching observer from the current player
+ * Deregisters a time watching obeserver from the current player
  * @param player The player to deregister the watcher.
  * @param callback regestered callBack function
  */

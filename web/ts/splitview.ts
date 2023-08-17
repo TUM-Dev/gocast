@@ -6,6 +6,7 @@ const mouseMovingTimeout = 2200;
 
 export class SplitView {
     private camPercentage: number;
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     private players: any[];
     private split: Split.Instance;
     private gutterWidth = 10;
