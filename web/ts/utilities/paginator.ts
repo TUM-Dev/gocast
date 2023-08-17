@@ -1,8 +1,7 @@
 export class Paginator<T> {
-    private list: T[];
-    private split_number: number;
-
-    private index: number;
+    protected list: T[];
+    protected split_number: number;
+    protected index: number;
 
     private readonly preloader: Preload<T>;
 
@@ -37,6 +36,10 @@ export class Paginator<T> {
     forEach(callback: (obj: T, i: number) => void): Paginator<T> {
         this.list.forEach(callback);
         return this;
+    }
+
+    find(callback: (obj: T, i: number, arr?: T[]) => boolean): T {
+        return this.list.find(callback);
     }
 
     hasElements() {

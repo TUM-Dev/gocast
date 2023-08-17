@@ -1,112 +1,6 @@
-import { Section, Time } from "./global";
+import { Time } from "./global";
 import { DataStore } from "./data-store/data-store";
-import { UpdateVideoSectionRequest } from "./data-store/video-sections";
-
-export abstract class VideoSectionList {
-    private streamId: number;
-
-    protected list: Section[];
-
-    currentHighlightIndex: number;
-
-    protected constructor(streamId: number) {
-        this.streamId = streamId;
-        this.list = [];
-        this.currentHighlightIndex = -1;
-        DataStore.videoSections.subscribe(this.streamId, (data) => this.onUpdate(data));
-    }
-
-    private onUpdate(data: Section[]) {
-        this.list = data;
-    }
-
-    abstract getList(): Section[];
-
-    abstract isCurrent(i: number): boolean;
-}
-
-/**
- * Mobile VideoSection Functionality
- * @category watch-page
- */
-export class VideoSectionsMobile extends VideoSectionList {
-    minimize: boolean;
-
-    constructor(streamId: number) {
-        super(streamId);
-        this.minimize = true;
-    }
-
-    getList(): Section[] {
-        return this.minimize && this.list.length > 0 ? [this.list.at(this.currentHighlightIndex)] : this.list;
-    }
-
-    isCurrent(i: number): boolean {
-        return this.minimize ? true : this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
-    }
-}
-
-/**
- * Desktop VideoSection Functionality
- * @category watch-page
- */
-export class VideoSectionsDesktop extends VideoSectionList {
-    readonly sectionsPerGroup: number;
-
-    private followSections: boolean;
-    private currentIndex: number;
-
-    constructor(streamId: number) {
-        super(streamId);
-        this.currentIndex = 0;
-        this.followSections = false;
-        this.sectionsPerGroup = 4;
-    }
-
-    getList(): Section[] {
-        const currentHighlightPage = Math.floor(this.currentHighlightIndex / this.sectionsPerGroup);
-        const startIndex = this.followSections && this.validHighlightIndex() ? currentHighlightPage : this.currentIndex;
-        return this.list.slice(
-            startIndex * this.sectionsPerGroup,
-            startIndex * this.sectionsPerGroup + this.sectionsPerGroup,
-        );
-    }
-
-    isCurrent(i: number): boolean {
-        const idx =
-            this.currentHighlightIndex -
-            Math.floor(this.currentHighlightIndex / this.sectionsPerGroup) * this.sectionsPerGroup;
-        return this.validHighlightIndex() && this.onCurrentPage() && i === idx;
-    }
-
-    showNext(): boolean {
-        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
-    }
-
-    showPrev(): boolean {
-        return this.currentIndex > 0;
-    }
-
-    next() {
-        this.currentIndex = (this.currentIndex + 1) % this.list.length;
-    }
-
-    prev() {
-        this.currentIndex = (this.currentIndex - 1) % this.list.length;
-    }
-
-    private validHighlightIndex(): boolean {
-        return this.currentHighlightIndex !== -1;
-    }
-
-    private onCurrentPage(): boolean {
-        const currentHighlightPage = Math.floor(this.currentHighlightIndex / this.sectionsPerGroup);
-        return (
-            (this.followSections ? currentHighlightPage : this.currentIndex) ===
-            Math.floor(this.currentHighlightIndex / this.sectionsPerGroup)
-        );
-    }
-}
+import { Section, UpdateVideoSectionRequest } from "./api/video-sections";
 
 /**
  * Admin Page VideoSection Management
@@ -190,6 +84,7 @@ export class VideoSectionsAdminController {
             startMinutes: 0,
             startSeconds: 0,
             streamID: this.streamId,
+            isCurrent: false,
         };
     }
 }
