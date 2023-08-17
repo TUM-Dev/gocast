@@ -1,8 +1,7 @@
 {{define "editvideosections"}}
-    <article
-            x-data="{ videoSectionController: new admin.VideoSectionsAdminController(lecture.lectureId), videoSections: [] }"
+    <article x-data="{ videoSectionController: new admin.VideoSectionsAdminController(lecture.lectureId) }"
             x-init="() => videoSectionController.init(`edit-video-sections-${lecture.lectureId}`, $el)"
-            @update="(e) => (videoSections = e.detail)" class="grid gap-y-3">
+            class="grid gap-y-3">
         <header class="flex justify-between items-center border-b dark:border-gray-600">
             <div class="flex items-center">
                 <h6 class="text-sm text-5 font-light">Video Sections</h6>
@@ -95,11 +94,11 @@
                 </section>
             </template>
         </form>
-        <template x-if="videoSections.length > 0">
+        <template x-if="videoSectionController.existingSections.length > 0">
             <div class="">
                 <div class="grid gap-2">
-                    <template x-if="videoSections.length > 0">
-                        <template x-for="section in videoSections" :key="section.ID">
+                    <template x-if="videoSectionController.existingSections.length > 0">
+                        <template x-for="section in videoSectionController.existingSections" :key="section.ID">
                             <div x-data="{updater: {}}"
                                  x-init="updater = new admin.VideoSectionUpdater(lecture.lectureId, section);"
                                  class="flex align-middle items-stretch w-full border dark:border-gray-600 rounded">

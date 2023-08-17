@@ -48,7 +48,6 @@ export class VideoSectionsAdminController {
 
     onUpdate(data: Section[]) {
         this.existingSections = data;
-        this.elem.dispatchEvent(new CustomEvent("update", { detail: this.existingSections }));
     }
 
     pushNewSection() {
@@ -75,6 +74,7 @@ export class VideoSectionsAdminController {
 
     async removeExistingSection(id: number) {
         await DataStore.videoSections.delete(this.streamId, id);
+        this.existingSections = this.existingSections.filter((s) => s.ID !== id);
     }
 
     private resetCurrent() {
