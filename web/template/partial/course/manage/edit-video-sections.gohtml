@@ -36,7 +36,7 @@
                 <span class="font-light">Unsaved Changes</span>
             </div>
         </header>
-        <form @submit.prevent="videoSectionController.publishNewSections()">
+        <form id = "new-section-form" @submit.prevent="videoSectionController.publishNewSections()">
             <div class="flex align-middle">
                 <input id="startHours"
                        x-model.number="videoSectionController.current.startHours"
@@ -60,7 +60,7 @@
                        placeholder="Introduction"
                        class="mx-2 rounded px-4 py-3 tl-input">
                 <button type="button"
-                        class="w-fit bg-gray-100 text-center px-3 rounded w-full dark:bg-gray-600"
+                        class="w-fit bg-gray-100 text-center px-3 rounded dark:bg-gray-600"
                         @click="videoSectionController.pushNewSection()"
                         :disabled="videoSectionController.current.description === ''">
                     <i class="fa fa-plus text-3"></i>
@@ -87,8 +87,8 @@
                         </template>
                     </article>
                     <div class="flex items-center justify-center grow py-2">
-                        <button class="rounded-lg text-center w-full py-2 font-semibold bg-blue-500 dark:bg-indigo-600"
-                                type="submit">
+                        <button type="submit" form="new-section-form" value="Submit"
+                                class="rounded-lg text-center w-full py-2 font-semibold bg-blue-500 dark:bg-indigo-600">
                             <span class="text-white text-sm">Save new sections</span>
                         </button>
                     </div>
