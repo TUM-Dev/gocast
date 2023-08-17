@@ -35,21 +35,24 @@
                 <span class="font-light">Unsaved Changes</span>
             </div>
         </header>
-        <form id = "new-section-form" @submit.prevent="videoSectionController.publishNewSections()">
+        <form id = "new-section-form" @submit="videoSectionController.publishNewSections()">
             <div class="flex align-middle">
                 <input id="startHours"
+                       onkeyup="this.value=this.value.replace(/[^\d]/,'')"
                        x-model.number="videoSectionController.current.startHours"
                        type="number" min="0" max="23" step="1"
                        placeholder="0"
                        class="w-20 rounded px-4 py-3 tl-input">
                 <span class="px-2 my-auto font-semibold text-5">:</span>
                 <input id="startMinutes"
+                       onkeyup="this.value=this.value.replace(/[^\d]/,'')"
                        x-model.number="videoSectionController.current.startMinutes"
                        type="number" min="0" max="59" step="1"
                        placeholder="0"
                        class="w-20 rounded px-4 py-3 tl-input">
                 <span class="px-2 my-auto font-semibold text-5">:</span>
                 <input id="startSeconds"
+                       onkeyup="this.value=this.value.replace(/[^\d]/,'')"
                        x-model.number="videoSectionController.current.startSeconds"
                        type="number" min="0" max="59" step="1"
                        placeholder="0"
@@ -61,7 +64,7 @@
                 <button type="button"
                         class="w-fit bg-gray-100 text-center px-3 rounded dark:bg-gray-600"
                         @click="videoSectionController.pushNewSection()"
-                        :disabled="videoSectionController.current.description === ''">
+                        :disabled="!videoSectionController.currentIsValid()">
                     <i class="fa fa-plus text-3"></i>
                 </button>
             </div>

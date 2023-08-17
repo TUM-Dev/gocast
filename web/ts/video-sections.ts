@@ -77,6 +77,15 @@ export class VideoSectionsAdminController {
         this.existingSections = this.existingSections.filter((s) => s.ID !== id);
     }
 
+    currentIsValid(): boolean {
+        return (
+            this.current.description !== "" &&
+            this.current.startHours !== null &&
+            this.current.startMinutes !== null &&
+            this.current.startSeconds !== null
+        );
+    }
+
     private resetCurrent() {
         this.current = {
             description: "",
