@@ -35,7 +35,7 @@
                 <span class="font-light">Unsaved Changes</span>
             </div>
         </header>
-        <form id = "new-section-form" @submit="videoSectionController.publishNewSections()">
+        <form id = "new-section-form" @submit.prevent="videoSectionController.publishNewSections()">
             <div class="flex align-middle">
                 <input id="startHours"
                        onkeyup="this.value=this.value.replace(/[^\d]/,'')"
