@@ -27,6 +27,7 @@ var staticFS embed.FS
 
 var templatePaths = []string{
 	"template/*.gohtml",
+	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
 	"template/admin/admin_tabs/*.gohtml",
 	"template/partial/*.gohtml",
@@ -153,7 +154,7 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.Use(tools.InitStream(daoWrapper))
 	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
-	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopUpChat)
+	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopOutChat)
 
 	// misc
 	router.GET("/healthcheck", routes.HealthCheck)
@@ -240,7 +241,6 @@ type CacheMetrics struct {
 type ChatData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
 	IndexData       IndexData
-	IsPopUp         bool
 }
 
 type staticFile struct {
@@ -255,6 +255,7 @@ func getDefaultStaticBrandingFiles() []staticFile {
 		{Name: "favicon.ico", Path: "assets/favicon.ico"},
 		{Name: "icons-192.png", Path: "assets/img/icons-192.png"},
 		{Name: "icons-512.png", Path: "assets/img/icons-512.png"},
+		{Name: "thumb-fallback.png", Path: "assets/img/thumb-fallback.png"},
 	}
 }
 

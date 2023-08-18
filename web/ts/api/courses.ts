@@ -9,7 +9,7 @@ type DownloadableVOD = {
     readonly DownloadURL: string;
 };
 
-export class Stream {
+export class Stream implements Identifiable {
     readonly ID: number;
     readonly Name: string;
     readonly IsRecording: boolean;
@@ -31,7 +31,14 @@ export class Stream {
     }
 
     public FriendlyDateStart(): string {
-        return new Date(this.Start).toLocaleString();
+        return new Date(this.Start).toLocaleString("default", {
+            weekday: "long",
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     }
 
     public MonthOfStart(): string {
@@ -99,7 +106,7 @@ export class Stream {
     }
 }
 
-export class Course {
+export class Course implements Identifiable {
     readonly ID: number;
     readonly Visibility: string;
     readonly Slug: string;
@@ -113,6 +120,8 @@ export class Course {
     readonly LastRecording?: Stream;
 
     readonly Pinned: boolean = false;
+
+    readonly IsAdmin: boolean;
 
     private readonly Streams?: Stream[];
 
@@ -211,8 +220,8 @@ export const CoursesAPI = {
         return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    async get(slug: string, year?: number, term?: string) {
-        const url = new CustomURL(`/api/courses/${slug}`, { year, term });
+    async get(slug: string, year?: number, term?: string, userId?: number) {
+        const url = new CustomURL(`/api/courses/${slug}`, { year, term, userId });
         return get(url.toString(), {}, true).then((course) => Course.New(course));
     },
 };

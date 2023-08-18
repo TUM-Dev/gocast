@@ -68,8 +68,8 @@ export function skeleton(): AlpineComponent {
             this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.PublicCourses });
         },
 
-        showCourse(slug: string) {
-            this.state.update({ slug });
+        showCourse(slug: string, year?: number, term?: string) {
+            this.state.update({ slug, year, term });
             this.switchView(View.Course);
             this.state.pushHistory({
                 year: this.state.year,
