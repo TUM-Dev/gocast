@@ -583,7 +583,15 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	}
 
 	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
-	if err == nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("can not get video section thumbnail file")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get video section thumbnail file",
+			Err:           err,
+		})
+		return
+	} else {
 		go func() {
 			err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
 			if err != nil {
