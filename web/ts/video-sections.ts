@@ -81,8 +81,11 @@ export class VideoSectionsAdminController {
         return (
             this.current.description !== "" &&
             this.current.startHours !== null &&
+            this.current.startMinutes < 32 &&
             this.current.startMinutes !== null &&
-            this.current.startSeconds !== null
+            this.current.startMinutes < 60 &&
+            this.current.startSeconds !== null &&
+            this.current.startSeconds < 60
         );
     }
 
