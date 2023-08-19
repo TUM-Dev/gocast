@@ -571,17 +571,6 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
-	if err != nil {
-		log.WithError(err).Error("can not find file")
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find file",
-			Err:           err,
-		})
-		return
-	}
-
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("can not delete video-section")
@@ -593,12 +582,23 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	go func() {
-		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
-		if err != nil {
-			log.WithError(err).Error("failed to generate video section images")
-		}
-	}()
+	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("can not get video section thumbnail file")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get video section thumbnail file",
+			Err:           err,
+		})
+		return
+	} else {
+		go func() {
+			err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
+			if err != nil {
+				log.WithError(err).Error("failed to generate video section images")
+			}
+		}()
+	}
 
 	c.Status(http.StatusAccepted)
 }

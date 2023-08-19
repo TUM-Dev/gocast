@@ -33,7 +33,6 @@ var templatePaths = []string{
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
-	"template/partial/stream/chat/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
 	"template/partial/course/manage/create-lecture-form-slides/*.gohtml",
 }
