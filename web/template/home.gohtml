@@ -519,7 +519,7 @@
                                                                                          class="grid gap-1">
                                                                                         <template
                                                                                                 x-for="file in vod.Downloads">
-                                                                                            <a href="" download
+                                                                                            <a :href="file.DownloadURL" download
                                                                                                class="block text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
                                                                                                x-text="file.FriendlyName">
                                                                                             </a>
