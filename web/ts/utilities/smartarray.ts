@@ -37,11 +37,7 @@ export class GroupedSmartArray<T, K extends keyof never> {
     get(sortFn?: CompareFunction<T>, filterPred?: FilterPredicate<T>) {
         const copy = filterPred ? [...this.list].filter(filterPred) : [...this.list];
         const _list = sortFn ? copy.sort(sortFn) : copy;
-        // @ts-ignore
-        return _list.reduce((groups, item) => {
-            (groups[this.key(item)] ||= []).push(item);
-            return groups;
-        }, {} as Record<K, T[]>);
+        return groupBy(_list, this.key);
     }
 
     set(list: T[], key: (i: T) => K): GroupedSmartArray<T, K> {
@@ -57,3 +53,9 @@ export class GroupedSmartArray<T, K extends keyof never> {
 
 export type CompareFunction<T> = (a: T, b: T) => number;
 export type FilterPredicate<T> = (o: T) => boolean;
+
+const groupBy = <T, K extends keyof never>(arr: T[], key: (i: T) => K) =>
+    arr.reduce((groups, item) => {
+        (groups[key(item)] ||= []).push(item);
+        return groups;
+    }, {} as Record<K, T[]>);
