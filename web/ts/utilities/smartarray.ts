@@ -25,7 +25,7 @@ export class SmartArray<T> {
     }
 }
 
-export class GroupedSmartArray<T, K extends keyof any> {
+export class GroupedSmartArray<T, K extends keyof never> {
     private list: T[];
     private key: (i: T) => K;
 
