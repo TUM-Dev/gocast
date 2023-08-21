@@ -55,7 +55,7 @@ export type CompareFunction<T> = (a: T, b: T) => number;
 export type FilterPredicate<T> = (o: T) => boolean;
 
 function groupBy<T, K extends keyof never>(list: T[], getKey: (item: T) => K) {
-    return list.reduce((previous, currentItem) => {
+    return list.reduce(function (previous, currentItem) {
         const group = getKey(currentItem);
         if (!previous[group]) previous[group] = [];
         previous[group].push(currentItem);
