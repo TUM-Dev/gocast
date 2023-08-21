@@ -46,7 +46,7 @@ export class Stream implements Identifiable {
     }
 
     public NumericMonthOfStart(): number {
-        return new Date(this.Start).getMonth();
+        return new Date(this.Start).getMonth() + 1;
     }
 
     public DayOfStart(): number {

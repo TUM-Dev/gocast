@@ -430,19 +430,18 @@
                                 </header>
                                 <section>
                                     <template x-if="courseStreams.hasElements()">
-                                        <article class="grid gap-y-8">
-                                            <template x-for="[m, streams] of Object.entries(courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode)))">
-                                                <article>
+                                        <article class="flex flex-col" :class="{'flex-col-reverse' : isOldestFirst() }">
+                                            <template
+                                                    x-for="[m, streams] of Object.entries(courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode)))">
+                                                <article class="mb-8">
                                                     <header class="mb-2">
                                                         <h6 class="font-semibold" x-text="getMonthName(m)"></h6>
                                                     </header>
-                                                    <section class="grid gap-3"
+                                                    <section class="grid gap-3 md:grid-cols-2 grid-cols-1"
                                                              :class="plannedStreams.hasElements()
-                                                ? 'xl:grid-cols-4 lg:grid-cols-3 grid-cols-1'
-                                                : 'xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-2 grid-cols-1'">
-                                                        <template
-                                                                x-for="vod in streams"
-                                                                :key="vod.ID">
+                                                                        ? 'xl:grid-cols-4 lg:grid-cols-3'
+                                                                        : 'xl:grid-cols-5 lg:grid-cols-4'">
+                                                        <template x-for="vod in streams" :key="vod.ID">
                                                             <article
                                                                     class="tum-live-stream group sm:col-span-1 col-span-full"
                                                                     @click.outside="vod.Dropdown.toggle(false)">
@@ -454,8 +453,8 @@
                                                                             <div>
                                                                                 <template
                                                                                         x-if="vod.Progress !== undefined">
-                                                    <span :style="`width: ${vod.Progress.Percentage()}%`"
-                                                          :class="{'rounded-br-lg': vod.Progress.HasProgressOne()}"></span>
+                                                                                    <span :style="`width: ${vod.Progress.Percentage()}%`"
+                                                                                          :class="{'rounded-br-lg': vod.Progress.HasProgressOne()}"></span>
                                                                                 </template>
                                                                             </div>
                                                                         </div>
@@ -491,13 +490,9 @@
                                                                                         @click="vod.Progress.ToggleWatched()"
                                                                                         class="tum-live-menu-item">
                                                                                     <i class="fa-solid mr-4"
-                                                                                       :class="vod.Progress.watched
-                                                                ? 'fa-eye-slash'
-                                                                : 'fa-eye'"></i>
+                                                                                       :class="vod.Progress.watched ? 'fa-eye-slash' : 'fa-eye'"></i>
                                                                                     <span class="block"
-                                                                                          x-text="vod.Progress.watched
-                                                                ? 'Unmark as watched'
-                                                                : 'Mark as watched'"></span>
+                                                                                          x-text="vod.Progress.watched ? 'Unmark as watched' : 'Mark as watched'"></span>
                                                                                 </button>
                                                                             {{end}}
                                                                             <button type="button"
