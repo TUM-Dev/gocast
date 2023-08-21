@@ -77,8 +77,7 @@ docker run --detach \
   mariadb:latest --init-file /init.sql
 ```
 - Alternatively, install mariadb on its own.
-  - Create the database `tumlive` using [this](https://github.com/joschahenningsen/TUM-Live/files/12395380/tum-live-starter.zip)
-) script.
+  - Create the database `tumlive` using [this](https://github.com/joschahenningsen/TUM-Live/files/12395380/tum-live-starter.zip) script.
   - Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
 - The database contains the users `admin`, `prof1`, `prof2`, `studi1`, `studi2` and `studi3` with the password `password`.
 
