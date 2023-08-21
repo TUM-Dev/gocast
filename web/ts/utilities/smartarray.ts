@@ -54,7 +54,9 @@ export class GroupedSmartArray<T, K extends keyof never> {
 export type CompareFunction<T> = (a: T, b: T) => number;
 export type FilterPredicate<T> = (o: T) => boolean;
 
+/* eslint-disable */
 function groupBy<T, K extends keyof never>(list: T[], getKey: (item: T) => K) {
+    /* eslint-disable */
     return list.reduce(function (previous, currentItem) {
         const group = getKey(currentItem);
         if (!previous[group]) previous[group] = [];
