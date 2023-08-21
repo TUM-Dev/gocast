@@ -10,13 +10,12 @@
 
 {{template "header" .IndexData.TUMLiveContext}}
 {{$indexData := .IndexData}}
-{{$course := .IndexData.TUMLiveContext.Course}}
 {{$stream := .IndexData.TUMLiveContext.Stream}}
 {{$token := .LivestreamToken}}
 {{$url := .LivestreamUrl}}
 
 
-<div x-data="{ liveStream: new admin.Livestream({{$course.ID}}, {{$stream.ID}}, '{{$url}}', '{{$token}}') }" class="text-white container mx-auto">
+<div x-data="{ liveStream: new admin.Livestream({{$stream.CourseID}}, {{$stream.ID}}, '{{$url}}', '{{$token}}') }" class="text-white container mx-auto">
     <div class="mt-7 min-w-screen flex items-center justify-between">
         <button @click="liveStream.connect($refs.screenDisplay, $refs.camDisplay)">Connect</button>
         <button @click="liveStream.enableScreen()">Enable Screen</button>

@@ -21,6 +21,8 @@ export class Livestream {
 
 
     constructor(courseId: number, streamId: number, url: string, token: string) {
+
+        console.log("testa", courseId, streamId);
         this.courseId = courseId;
         this.streamId = streamId;
         this.url = url;
