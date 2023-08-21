@@ -2,9 +2,9 @@ import { CompareFunction, FilterPredicate, SmartArray } from "./smartarray";
 
 export class Paginator<T> extends SmartArray<T> {
     private readonly preloader: Preload<T>;
-    private split_number: number;
 
-    private index: number;
+    protected split_number: number;
+    protected index: number;
 
     constructor(list: T[], split_number: number, preloader?: Preload<T>) {
         super(list);
@@ -27,6 +27,10 @@ export class Paginator<T> extends SmartArray<T> {
 
     hasNext() {
         return Math.ceil(this.list.length / this.split_number) >= this.index + 1;
+    }
+
+    find(callback: (obj: T, i: number, arr?: T[]) => boolean): T {
+        return this.list.find(callback);
     }
 
     reset(): Paginator<T> {

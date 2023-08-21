@@ -1,8 +1,7 @@
 {{define "editvideosections"}}
-    <article
-            x-data="{ videoSectionController: new admin.VideoSectionsAdminController(lecture.lectureId), videoSections: [] }"
+    <article x-data="{ videoSectionController: new admin.VideoSectionsAdminController(lecture.lectureId) }"
             x-init="() => videoSectionController.init(`edit-video-sections-${lecture.lectureId}`, $el)"
-            @update="(e) => (videoSections = e.detail)" class="grid gap-y-3">
+            class="grid gap-y-3">
         <header class="flex justify-between items-center border-b dark:border-gray-600">
             <div class="flex items-center">
                 <h6 class="text-sm text-5 font-light">Video Sections</h6>
@@ -36,21 +35,24 @@
                 <span class="font-light">Unsaved Changes</span>
             </div>
         </header>
-        <form @submit.prevent="videoSectionController.publishNewSections()">
+        <form id = "new-section-form" @submit.prevent="videoSectionController.publishNewSections()">
             <div class="flex align-middle">
                 <input id="startHours"
+                       onkeyup="this.value=this.value.replace(/[^\d]/,'')"
                        x-model.number="videoSectionController.current.startHours"
                        type="number" min="0" max="23" step="1"
                        placeholder="0"
                        class="w-20 rounded px-4 py-3 tl-input">
                 <span class="px-2 my-auto font-semibold text-5">:</span>
                 <input id="startMinutes"
+                       onkeyup="this.value=this.value.replace(/[^\d]/,'')"
                        x-model.number="videoSectionController.current.startMinutes"
                        type="number" min="0" max="59" step="1"
                        placeholder="0"
                        class="w-20 rounded px-4 py-3 tl-input">
                 <span class="px-2 my-auto font-semibold text-5">:</span>
                 <input id="startSeconds"
+                       onkeyup="this.value=this.value.replace(/[^\d]/,'')"
                        x-model.number="videoSectionController.current.startSeconds"
                        type="number" min="0" max="59" step="1"
                        placeholder="0"
@@ -60,9 +62,9 @@
                        placeholder="Introduction"
                        class="mx-2 rounded px-4 py-3 tl-input">
                 <button type="button"
-                        class="w-fit bg-gray-100 text-center px-3 rounded w-full dark:bg-gray-600"
+                        class="w-fit bg-gray-100 text-center px-3 rounded dark:bg-gray-600"
                         @click="videoSectionController.pushNewSection()"
-                        :disabled="videoSectionController.current.description === ''">
+                        :disabled="!videoSectionController.currentIsValid()">
                     <i class="fa fa-plus text-3"></i>
                 </button>
             </div>
@@ -87,19 +89,19 @@
                         </template>
                     </article>
                     <div class="flex items-center justify-center grow py-2">
-                        <button class="rounded-lg text-center w-full py-2 font-semibold bg-blue-500 dark:bg-indigo-600"
-                                type="submit">
+                        <button type="submit" form="new-section-form" value="Submit"
+                                class="rounded-lg text-center w-full py-2 font-semibold bg-blue-500 dark:bg-indigo-600">
                             <span class="text-white text-sm">Save new sections</span>
                         </button>
                     </div>
                 </section>
             </template>
         </form>
-        <template x-if="videoSections.length > 0">
+        <template x-if="videoSectionController.existingSections.length > 0">
             <div class="">
                 <div class="grid gap-2">
-                    <template x-if="videoSections.length > 0">
-                        <template x-for="section in videoSections" :key="section.ID">
+                    <template x-if="videoSectionController.existingSections.length > 0">
+                        <template x-for="section in videoSectionController.existingSections" :key="section.ID">
                             <div x-data="{updater: {}}"
                                  x-init="updater = new admin.VideoSectionUpdater(lecture.lectureId, section);"
                                  class="flex align-middle items-stretch w-full border dark:border-gray-600 rounded">

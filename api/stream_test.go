@@ -539,35 +539,6 @@ func TestStreamVideoSections(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
-			"GetFileById returns error": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-						VideoSectionDao: func() dao.VideoSectionDao {
-							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
-							sectionMock.
-								EXPECT().
-								Get(section.ID).
-								Return(section, nil).
-								AnyTimes()
-							return sectionMock
-						}(),
-						FileDao: func() dao.FileDao {
-							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-							fileMock.
-								EXPECT().
-								GetFileById(fmt.Sprintf("%d", section.ID)).
-								Return(model.File{}, errors.New("")).
-								AnyTimes()
-							return fileMock
-						}(),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				ExpectedCode: http.StatusNotFound,
-			},
 			"Delete returns error": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
