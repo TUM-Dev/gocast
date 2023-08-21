@@ -71,13 +71,33 @@ docker run --detach \
   --name mariadb-tumlive \
   --env MARIADB_USER=root \
   --env MARIADB_ROOT_PASSWORD=example \
+  --env MARIADB_DATABASE=tumlive \
   --restart always \
   -p 3306:3306 \
   --volume "$(pwd)"/docs/static/tum-live-starter.sql:/init.sql \
   mariadb:latest --init-file /init.sql
 ```
-- Alternatively, install mariadb on its own.
-  - Create the database `tumlive` using [this](https://github.com/joschahenningsen/TUM-Live/files/12395380/tum-live-starter.zip) script.
+- Alternative 1, use `docker-compose up` with the following docker-compose.yml file. Make sure you have [tum-live-starter.sql](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip) inside the same folder.
+```yaml
+version: "3.8"
+
+services:
+   mariadb-tumlive:
+      image: mariadb:latest
+      container_name: mariadb-tumlive
+      environment:
+        MARIADB_USER: root
+        MARIADB_ROOT_PASSWORD: example
+        MARIADB_DATABASE: tumlive
+      ports:
+        - 3306:3306
+      expose:
+        - 3306
+      volumes:
+        - ./tum-live-starter.sql:/docker-entrypoint-initdb.d/init.sql
+```
+- Alternative 2, install mariadb on its own.
+  - Create the database `tumlive` using [this](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip) script.
   - Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
 - The database contains the users `admin`, `prof1`, `prof2`, `studi1`, `studi2` and `studi3` with the password `password`.
 
