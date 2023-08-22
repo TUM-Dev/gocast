@@ -20,6 +20,7 @@ export class Stream implements Identifiable {
     readonly End: string;
     readonly Start: string;
     readonly Downloads: DownloadableVOD[];
+    readonly Duration: number;
 
     Progress?: Progress;
 
@@ -70,12 +71,7 @@ export class Stream implements Identifiable {
     }
 
     public DurationString() {
-        const diff = new Date(this.End).getTime() - new Date(this.Start).getTime();
-        return new Date(diff).toLocaleTimeString("default", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        });
+        return new Date(this.Duration * 1000).toISOString().slice(11, 19);
     }
 
     public UntilString(): string {

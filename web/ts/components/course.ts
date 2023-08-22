@@ -8,6 +8,7 @@ import { Tunnel } from "../utilities/tunnels";
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { getFromStorage, setInStorage } from "../utilities/storage";
 import { GroupedSmartArray, SmartArray } from "../utilities/smartarray";
+import { retinaScale } from "chart.js/helpers";
 
 export enum StreamSortMode {
     NewestFirst,

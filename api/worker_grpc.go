@@ -3,6 +3,7 @@ package api
 // worker_grpc.go handles communication with workers via grpc
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -387,7 +388,7 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	}
 
 	if request.Duration != 0 {
-		stream.Duration = request.Duration
+		stream.Duration = sql.NullInt32{Int32: int32(request.Duration)}
 	}
 	err = s.DaoWrapper.StreamsDao.SaveStream(&stream)
 	if err != nil {
