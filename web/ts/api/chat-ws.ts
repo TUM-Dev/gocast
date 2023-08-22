@@ -11,7 +11,7 @@ enum ChatMessageType {
 }
 
 export abstract class SocketConnections {
-    static ws: RealtimeFacade = new RealtimeFacade("chat/12845");
+    static ws: RealtimeFacade;
 }
 
 export type NewChatMessage = {
