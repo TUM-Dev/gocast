@@ -136,7 +136,20 @@ export function courseContext(slug: string, year: number, term: string, userId: 
         },
 
         getMonthName(m: number): string {
-            return Intl.DateTimeFormat("locale", { month: "long" }).format(new Date(m)); // January
+            return [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ][m - 1];
         },
 
         async loadCourse() {
