@@ -45,6 +45,10 @@ export class Stream implements Identifiable {
         return new Date(this.Start).toLocaleString("default", { month: "short" });
     }
 
+    public NumericMonthOfStart(): number {
+        return new Date(this.Start).getMonth() + 1;
+    }
+
     public DayOfStart(): number {
         return new Date(this.Start).getDate();
     }
