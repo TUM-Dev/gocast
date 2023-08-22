@@ -17,6 +17,6 @@
     <link href="/static/assets/css-dist/home.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
 </head>
-<body class="bg-white dark:bg-secondary h-screen">
+<body class="bg-white dark:bg-secondary h-screen" x-data="interaction.popupContext({{$stream.ID}})">
     {{template "chat-component" .}}
 </body>
