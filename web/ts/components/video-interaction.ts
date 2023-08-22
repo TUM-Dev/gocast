@@ -1,18 +1,20 @@
 import { AlpineComponent } from "./alpine-component";
 import { User } from "../api/users";
 import { SocketConnections } from "../api/chat-ws";
+import { RealtimeFacade } from "../utilities/ws";
 
 enum InteractionType {
     Chat,
     Polls,
 }
 
-export function videoInteractionContext(user: User) {
+export function videoInteractionContext(streamId: number, user: User) {
     return {
         type: InteractionType.Chat,
         user: user as User,
 
         init() {
+            SocketConnections.ws = new RealtimeFacade("chat/" + streamId);
             SocketConnections.ws.subscribe();
         },
 
