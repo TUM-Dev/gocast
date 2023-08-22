@@ -31,12 +31,12 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 		return err
 	}
 
-	if (pos / float64(stream.Duration)) > 1 {
+	if (pos / float64(stream.Duration.Int32)) > 1 {
 		log.Error("position is bigger than stream duration")
 		return errors.New("position is bigger than stream duration")
 	}
 
-	chunkTimeRange := float64(stream.Duration) / maxChunksPerVideo
+	chunkTimeRange := float64(stream.Duration.Int32) / maxChunksPerVideo
 	chunk := uint(pos / chunkTimeRange)
 
 	return DB.Clauses(clause.OnConflict{

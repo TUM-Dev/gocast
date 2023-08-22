@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -47,7 +48,7 @@ type Stream struct {
 	Files                 []File `gorm:"foreignKey:StreamID"`
 	ThumbInterval         uint32 `gorm:"default:null"`
 	StreamName            string
-	Duration              uint32           `gorm:"default:null"`
+	Duration              sql.NullInt32    `gorm:"default:null"`
 	StreamWorkers         []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses      []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections         []VideoSection
@@ -369,12 +370,17 @@ type StreamDTO struct {
 	Downloads   []DownloadableVod
 	Start       time.Time
 	End         time.Time
+	Duration    int32
 }
 
 func (s Stream) ToDTO() StreamDTO {
 	downloads := []DownloadableVod{}
 	if s.IsDownloadable() {
 		downloads = s.GetVodFiles()
+	}
+	duration := int32(s.End.Sub(s.Start).Seconds())
+	if s.Duration.Valid {
+		duration = s.Duration.Int32
 	}
 	return StreamDTO{
 		ID:          s.ID,
@@ -387,5 +393,6 @@ func (s Stream) ToDTO() StreamDTO {
 		HLSUrl:      s.HLSUrl(),
 		Start:       s.Start,
 		End:         s.End,
+		Duration:    duration,
 	}
 }
