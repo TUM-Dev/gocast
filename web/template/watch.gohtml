@@ -87,7 +87,7 @@
 <div id="watchPageMainWrapper">
     <input type="hidden" id="description" value="{{.Description}}">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-    <div x-data="interaction.videoInformationContext();"
+    <div x-data="interaction.videoInformationContext({{$stream.ID}});"
          class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
         <div id="watchWrapper"
              x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }"

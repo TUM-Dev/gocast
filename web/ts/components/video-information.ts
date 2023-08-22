@@ -1,10 +1,11 @@
 import { AlpineComponent } from "./alpine-component";
 import { SocketConnections } from "../api/chat-ws";
 import { ToggleableElement } from "../utilities/ToggleableElement";
+import { RealtimeFacade } from "../utilities/ws";
 
 const CUTOFFLENGTH = 256;
 
-export function videoInformationContext(): AlpineComponent {
+export function videoInformationContext(streamId: number): AlpineComponent {
     // TODO: REST
     const descriptionEl = document.getElementById("description") as HTMLInputElement;
     return {
@@ -15,6 +16,7 @@ export function videoInformationContext(): AlpineComponent {
         showFullDescription: new ToggleableElement(),
 
         init() {
+            SocketConnections.ws = new RealtimeFacade("chat/" + streamId);
             Promise.all([this.initWebsocket()]);
         },
 
