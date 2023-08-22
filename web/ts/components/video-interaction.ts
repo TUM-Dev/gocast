@@ -1,6 +1,7 @@
 import { AlpineComponent } from "./alpine-component";
 import { User } from "../api/users";
 import { SocketConnections } from "../api/chat-ws";
+import { RealtimeFacade } from "../utilities/ws";
 
 enum InteractionType {
     Chat,

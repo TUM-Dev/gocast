@@ -699,6 +699,40 @@
                         </article>
                     </template>
 
+                    <!-- my courses -->
+                    <template x-if="userCourses.length > 0">
+                        <article class="tum-live-content-grid-item my-3" id="my-courses">
+                            <h3><i class="fa-solid fa-graduation-cap mr-2"></i>My Courses</h3>
+                            <article class="grid gap-2 py-3 pl-2">
+                                <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
+                                    <section class="tum-live-course-list-item">
+                                        <a class="title"
+                                           :href="course.URL()"
+                                           @click.prevent="showCourse(course.Slug)"
+                                           x-text="course.Name">
+                                        </a>
+                                        <div class="links">
+                                            <span x-text="course.LastRecording.ID !== 0
+                                                    ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
+                                                    : 'No upcoming lecture.'"></span>
+                                            <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
+                                                <i class="fa-solid fa-square-up-right"></i>
+                                                <span class="hover:underline">Most recent lecture</span>
+                                            </a>
+                                        </div>
+                                    </section>
+                                </template>
+                            </article>
+                            <template x-if="userCourses.length > 8 && !state.isUserCourses()">
+                                <button @click="showUserCourses()"
+                                        class="tum-live-side-navigation-group-item hover ml-2">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                    Show all my courses
+                                </button>
+                            </template>
+                        </article>
+                    </template>
+
                     <!-- Recently -->
                     <template x-if="recently.hasElements()">
                         <article class="tum-live-content-grid-item" id="recent-vods">
