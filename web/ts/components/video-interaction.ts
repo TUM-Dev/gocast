@@ -8,13 +8,12 @@ enum InteractionType {
     Polls,
 }
 
-export function videoInteractionContext(streamId: number, user: User) {
+export function videoInteractionContext(user: User) {
     return {
         type: InteractionType.Chat,
         user: user as User,
 
         init() {
-            SocketConnections.ws = new RealtimeFacade("chat/" + streamId);
             SocketConnections.ws.subscribe();
         },
 

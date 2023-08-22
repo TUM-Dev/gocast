@@ -10,7 +10,7 @@
         {{$userId = .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <article
-            x-data="interaction.videoInteractionContext({{$stream.ID}}, {ID: {{$userId}}, name: '{{$userName}}', isAdmin: {{$isAdmin}}})"
+            x-data="interaction.videoInteractionContext({ID: {{$userId}}, name: '{{$userName}}', isAdmin: {{$isAdmin}}})"
             class="h-full">
         <template x-if="isChat()">
             <article
