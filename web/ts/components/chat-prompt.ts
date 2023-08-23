@@ -90,7 +90,7 @@ export function chatPromptContext(streamId: number): AlpineComponent {
 
             // https://stackoverflow.com/a/21079335
             this.inputEl.style.height = "0px";
-            this.inputEl.style.height = (this.inputEl.scrollHeight) + "px";
+            this.inputEl.style.height = this.inputEl.scrollHeight + "px";
         },
 
         keypressAlphanumeric(e) {

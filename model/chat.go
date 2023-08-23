@@ -3,14 +3,15 @@ package model
 import (
 	"database/sql"
 	"errors"
-	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
-	"gorm.io/gorm"
 	"html"
-	"mvdan.cc/xurls/v2"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
+	"gorm.io/gorm"
+	"mvdan.cc/xurls/v2"
 )
 
 var (
@@ -36,7 +37,7 @@ var (
 )
 
 const (
-	maxMessageLength = 250
+	maxMessageLength = 1000
 	coolDown         = time.Minute * 2
 	coolDownMessages = 5 // 5 messages -> 5 messages per 2 minutes max
 )
