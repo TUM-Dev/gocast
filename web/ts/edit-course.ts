@@ -1077,10 +1077,11 @@ export function createLectureForm(args: { s: [] }) {
                 postData("/api/course/" + this.courseID + "/createLecture", payload)
                     .then(async (res) => {
                         const { ids } = await res.json();
-                        const url = new URL(window.location.href);
+                        /*const url = new URL(window.location.href);
                         url.hash = `lectures:${ids.join(",")}`;
                         window.location.assign(url);
-                        window.location.reload();
+                        window.location.reload();*/
+
                     })
                     .catch((e) => {
                         console.log(e);
