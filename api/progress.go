@@ -1,9 +1,11 @@
 package api
 
 import (
+	"errors"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"sync"
@@ -201,8 +203,9 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 		ids = append(ids, uint(id))
 	}
 
+	progressResults := make([]model.StreamProgress, len(ids))
 	streamProgresses, err := r.LoadProgress(tumLiveContext.User.ID, ids)
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not load progress",
@@ -210,6 +213,16 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 		})
 		return
 	}
+	for i, id := range ids {
+		progressResults[i] = model.StreamProgress{StreamID: id}
+		for _, progress := range streamProgresses {
+			if progress.StreamID == id {
+				progressResults[i].Progress = progress.Progress
+				progressResults[i].Watched = progress.Watched
+				break
+			}
+		}
+	}
 
-	c.JSON(http.StatusOK, streamProgresses)
+	c.JSON(http.StatusOK, progressResults)
 }
