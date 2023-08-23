@@ -150,7 +150,7 @@
                 <i class="fa-solid fa-calendar"></i>
                 Semesters
             </header>
-            <span class="tum-live-side-navigation-group-item mb-1 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
+            <span class="tum-live-side-navigation-group-item mb-4 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
                   x-text="semesters[selectedSemesterIndex]?.FriendlyString()"></span>
             <template x-if="navigation.getChild('allSemesters').value">
                 <template x-for="s in semesters">
