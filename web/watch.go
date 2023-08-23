@@ -84,14 +84,14 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
 
-		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, []uint{tumLiveContext.Stream.ID})
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				log.WithError(err).Warn("Couldn't fetch progress from the database.")
 			}
-		} else {
-			data.Progress = progress
+		} else if len(progress) > 0 {
+			data.Progress = progress[0]
 		}
 	}
 	if c.Query("restart") == "1" {

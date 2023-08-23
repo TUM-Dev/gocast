@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
@@ -204,25 +203,26 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 		ids = append(ids, uint(id))
 	}
 
-	streamProgresses := make([]model.StreamProgress, len(ids))
+	progressResults := make([]model.StreamProgress, len(ids))
+	streamProgresses, err := r.LoadProgress(tumLiveContext.User.ID, ids)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not load progress",
+			Err:           err,
+		})
+		return
+	}
 	for i, id := range ids {
-		p, err := r.LoadProgress(tumLiveContext.User.ID, id)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				streamProgresses[i] = model.StreamProgress{StreamID: id}
-			} else {
-				sentry.CaptureException(err)
-				_ = c.Error(tools.RequestError{
-					Err:           err,
-					Status:        http.StatusInternalServerError,
-					CustomMessage: "can't retrieve streamProgresses for user",
-				})
-				return
+		progressResults[i] = model.StreamProgress{StreamID: id}
+		for _, progress := range streamProgresses {
+			if progress.StreamID == id {
+				progressResults[i].Progress = progress.Progress
+				progressResults[i].Watched = progress.Watched
+				break
 			}
-		} else {
-			streamProgresses[i] = p
 		}
 	}
 
-	c.JSON(http.StatusOK, streamProgresses)
+	c.JSON(http.StatusOK, progressResults)
 }

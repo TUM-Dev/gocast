@@ -13,7 +13,7 @@ var Progress = NewProgressDao()
 type ProgressDao interface {
 	SaveProgresses(progresses []model.StreamProgress) error
 	GetProgressesForUser(userID uint) ([]model.StreamProgress, error)
-	LoadProgress(userID uint, streamID uint) (streamProgress model.StreamProgress, err error)
+	LoadProgress(userID uint, streamIDs []uint) (streamProgress []model.StreamProgress, err error)
 	SaveWatchedState(progress *model.StreamProgress) error
 }
 
@@ -47,7 +47,7 @@ func (d progressDao) SaveWatchedState(progress *model.StreamProgress) error {
 }
 
 // LoadProgress retrieves the current StreamProgress from the database for a given user and stream.
-func (d progressDao) LoadProgress(userID uint, streamID uint) (streamProgress model.StreamProgress, err error) {
-	err = DB.First(&streamProgress, "user_id = ? AND stream_id = ?", userID, streamID).Error
+func (d progressDao) LoadProgress(userID uint, streamIDs []uint) (streamProgress []model.StreamProgress, err error) {
+	err = DB.Find(&streamProgress, "user_id = ? AND stream_id IN ?", userID, streamIDs).Error
 	return streamProgress, err
 }
