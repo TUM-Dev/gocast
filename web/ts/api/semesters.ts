@@ -15,7 +15,8 @@ export class Semester {
     }
 
     public FriendlyString(): string {
-        return `${this.TeachingTerm === "W" ? "Winter" : "Summer"} ${this.Year}`;
+        if (this.TeachingTerm === "W") return `Winter ${this.Year}/${this.Year + 1}`;
+        else return `Summer ${this.Year}`;
     }
 }
 
