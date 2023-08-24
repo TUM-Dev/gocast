@@ -12,10 +12,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/realtime"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/realtime"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"

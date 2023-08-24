@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joschahenningsen/TUM-Live/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/cfg"
 	log "github.com/sirupsen/logrus"
 )
 

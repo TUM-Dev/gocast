@@ -1,4 +1,4 @@
-module github.com/joschahenningsen/TUM-Live
+module github.com/TUM-Dev/gocast
 
 go 1.18
 
@@ -40,7 +40,7 @@ require (
 	github.com/crewjam/saml v0.4.13
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.22
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20230813170152-4b40e4b3a301
+	github.com/TUM-Dev/gocast/worker v0.0.0-20230813170152-4b40e4b3a301
 	github.com/stretchr/testify v1.8.4
 	github.com/u2takey/go-utils v0.3.1
 )

@@ -3,7 +3,7 @@ package tools
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 	"strings"
 	"time"
 )

@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
+	"github.com/TUM-Dev/gocast/worker/pb"
 
-	"github.com/joschahenningsen/TUM-Live/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/cfg"
 )
 
 var s StreamContext

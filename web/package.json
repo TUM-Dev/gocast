@@ -4,7 +4,7 @@
   "description": "Backend of TUMs live streaming service",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joschahenningsen/TUM-Live.git"
+    "url": "git+https://github.com/TUM-Dev/gocast.git"
   },
   "scripts": {
     "postinstall": "npm run build && npm run tailwind-compile",
@@ -19,9 +19,9 @@
   "author": "Joscha Henningsen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/joschahenningsen/TUM-Live/issues"
+    "url": "https://github.com/TUM-Dev/gocast/issues"
   },
-  "homepage": "https://github.com/joschahenningsen/TUM-Live#readme",
+  "homepage": "https://github.com/TUM-Dev/gocast#readme",
   "dependencies": {
     "@alpinejs/focus": "^3.12.3",
     "@alpinejs/persist": "^3.12.3",
