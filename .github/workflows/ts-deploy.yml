@@ -20,7 +20,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/joschahenningsen/tum-live/test-server
+          images: ghcr.io/tum-dev/gocast/test-server
           tags: |
             type=sha
           flavor: |
@@ -46,7 +46,7 @@ jobs:
         id: metaWorker
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/joschahenningsen/tum-live/test-worker
+          images: ghcr.io/tum-dev/gocast/test-worker
           tags: |
             type=sha
           flavor: |

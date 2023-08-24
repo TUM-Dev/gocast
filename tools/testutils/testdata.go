@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/mock_dao"
-	"github.com/joschahenningsen/TUM-Live/mock_tools"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/mock_dao"
+	"github.com/TUM-Dev/gocast/mock_tools"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	"gorm.io/gorm"
 )
 

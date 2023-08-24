@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/joschahenningsen/TUM-Live/model"
+	model "github.com/TUM-Dev/gocast/model"
 )
 
 // MockUsersDao is a mock of UsersDao interface.

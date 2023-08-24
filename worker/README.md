@@ -1,6 +1,6 @@
 # TUM-Live-Worker
 
-The worker for [TUM-Live](https://github.com/joschahenningsen/TUM-Live)
+The worker for [TUM-Live](https://github.com/TUM-Dev/gocast)
 
 features include:
 

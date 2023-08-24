@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-ldap/ldap/v3"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	"time"
 )
 

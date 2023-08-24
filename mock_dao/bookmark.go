@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/joschahenningsen/TUM-Live/model"
+	model "github.com/TUM-Dev/gocast/model"
 )
 
 // MockBookmarkDao is a mock of BookmarkDao interface.

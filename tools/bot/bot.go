@@ -2,8 +2,8 @@ package bot
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 	"github.com/microcosm-cc/bluemonday"
 	log "github.com/sirupsen/logrus"
 	"strings"

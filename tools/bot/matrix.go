@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/tools"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
