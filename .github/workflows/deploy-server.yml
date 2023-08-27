@@ -6,6 +6,9 @@ on:
     tags:
       - '*'
 
+permissions:
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest

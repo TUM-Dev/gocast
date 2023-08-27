@@ -3,7 +3,7 @@
     <module name="TUM-Live-Backend" />
     <working_directory value="$PROJECT_DIR$" />
     <kind value="PACKAGE" />
-    <package value="github.com/joschahenningsen/TUM-Live/cmd/tumlive" />
+    <package value="github.com/TUM-Dev/gocast/cmd/tumlive" />
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$/cmd/tumlive/tumlive.go" />
     <output_directory value="$PROJECT_DIR$/bin" />

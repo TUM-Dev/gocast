@@ -40,13 +40,13 @@ require (
 	github.com/crewjam/saml v0.4.13
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.22
-	github.com/TUM-Dev/gocast/worker v0.0.0-20230813170152-4b40e4b3a301
 	github.com/stretchr/testify v1.8.4
 	github.com/u2takey/go-utils v0.3.1
 )
 
 require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
+	github.com/TUM-Dev/gocast/worker v0.0.0-20230824080536-8d3e387e4f8d
 	github.com/asticode/go-astisub v0.26.0
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.25.0
