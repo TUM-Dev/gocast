@@ -17,11 +17,11 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
     protected async fetcher(courseId: number): Promise<Lecture[]> {
         const result = await AdminLectureList.get(courseId);
         return result.map((s) => {
-            s.startDate = new Date(s.Start);
+            s.startDate = new Date(s.start);
             s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);
             s.startTimeFormatted = s.startDate.toLocaleTimeString("en-US", timeFormatOptions);
 
-            s.endDate = new Date(s.End);
+            s.endDate = new Date(s.end);
             s.endDateFormatted = s.endDate.toLocaleDateString("en-US", dateFormatOptions);
             s.endTimeFormatted = s.endDate.toLocaleTimeString("en-US", timeFormatOptions);
 

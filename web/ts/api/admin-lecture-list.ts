@@ -2,14 +2,14 @@ import { del, get, post, put } from "../utilities/fetch-wrappers";
 import {StatusCodes} from "http-status-codes";
 import {patchData, postData} from "../global";
 
-export type UpdateLectureMetaRequest = {
+export interface UpdateLectureMetaRequest {
     name?: string;
     description?: string;
     lectureHallId?: number;
     isChatEnabled?: boolean;
 }
 
-export type CreateNewLectureRequest = {
+export interface CreateNewLectureRequest {
     title: "",
     lectureHallId: 0,
     start: "",
@@ -30,40 +30,28 @@ export type CreateNewLectureRequest = {
 }
 
 export interface Lecture {
-    ID: number;
-    CreatedAt: string;
-    UpdatedAt: string;
-    DeletedAt: string;
-    Name: string;
-    Description: string;
-    CourseID: number;
-    Start: string;
-    End: string;
-    ChatEnabled: boolean;
-    RoomName: string;
-    RoomCode: string;
-    EventTypeName: string;
-    TUMOnlineEventID: number;
-    SeriesIdentifier: string;
-    StreamKey: string;
-    PlaylistUrl: string;
-    PlaylistUrlPRES: string;
-    PlaylistUrlCAM: string;
-    LiveNow: boolean;
-    LiveNowTimestamp: string;
-    Recording: boolean;
-    Premiere: boolean;
-    Ended: boolean;
-    VodViews: number;
-    StartOffset: number;
-    EndOffset: number;
-    LectureHallID: number;
-    ThumbInterval: number;
-    StreamName: string;
-    Duration: LectureDuration;
-    //VideoSections?: null;
-    Private: boolean;
-    Watched: boolean;
+    color:                 string;
+    courseId:              number;
+    courseSlug:            string;
+    description:           string;
+    downloadableVods:      DownloadableVOD[];
+    end:                   string;
+    files:                 null;
+    hasStats:              boolean;
+    isChatEnabled:         boolean;
+    isConverting:          boolean;
+    isLiveNow:             boolean;
+    isPast:                boolean;
+    isRecording:           boolean;
+    lectureHallId:         number;
+    lectureHallName:       string;
+    lectureId:             number;
+    name:                  string;
+    private:               boolean;
+    seriesIdentifier:      string;
+    start:                 string;
+    streamKey:             string;
+    transcodingProgresses: any[];
 
     // Clientside computed fields
     startDate: Date;
@@ -74,9 +62,9 @@ export interface Lecture {
     endTimeFormatted: string;
 }
 
-export interface LectureDuration {
-    Int32: number;
-    Valid: boolean;
+export interface DownloadableVOD {
+    FriendlyName: string;
+    DownloadURL:  string;
 }
 
 /**
