@@ -41,8 +41,8 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             this.users.reset();
         },
 
-        send(event: KeyboardEvent) {
-            if (event.shiftKey) {
+        send(event?: KeyboardEvent) {
+            if (event !== undefined && event.shiftKey) {
                 return;
             }
             console.log("🌑 send message '", this.message, "'");
