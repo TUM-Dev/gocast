@@ -29,28 +29,47 @@ export type CreateNewLectureRequest = {
     camFile: [],
 }
 
-export type Lecture = {
-    ID?: number;
-    courseId: number;
-    courseSlug: string;
-    lectureId: number;
-    streamKey: string;
-    seriesIdentifier: string;
-    color: string;
-    vodViews: number;
-    start: Date;
-    end: Date;
-    isLiveNow: boolean;
-    isConverting: boolean;
-    isRecording: boolean;
-    isPast: boolean;
-    hasStats: boolean;
-    name: string;
-    description: string;
-    lectureHallId: string;
-    lectureHallName: string;
-    isChatEnabled: false;
-};
+export interface Lecture {
+    ID: number;
+    CreatedAt: string;
+    UpdatedAt: string;
+    DeletedAt: string;
+    Name: string;
+    Description: string;
+    CourseID: number;
+    Start: string;
+    End: string;
+    ChatEnabled: boolean;
+    RoomName: string;
+    RoomCode: string;
+    EventTypeName: string;
+    TUMOnlineEventID: number;
+    SeriesIdentifier: string;
+    StreamKey: string;
+    PlaylistUrl: string;
+    PlaylistUrlPRES: string;
+    PlaylistUrlCAM: string;
+    LiveNow: boolean;
+    LiveNowTimestamp: string;
+    Recording: boolean;
+    Premiere: boolean;
+    Ended: boolean;
+    VodViews: number;
+    StartOffset: number;
+    EndOffset: number;
+    LectureHallID: number;
+    ThumbInterval: number;
+    StreamName: string;
+    Duration: LectureDuration;
+    //VideoSections?: null;
+    Private: boolean;
+    Watched: boolean;
+}
+
+export interface LectureDuration {
+    Int32: number;
+    Valid: boolean;
+}
 
 /**
  * REST API Wrapper for /api/stream/:id/sections

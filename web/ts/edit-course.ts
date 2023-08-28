@@ -24,7 +24,7 @@ export class LectureList {
     lectures: Lecture[] = [];
     markedIds: number[] = [];
 
-    LectureList(courseId: number) {
+    constructor(courseId: number) {
         this.courseId = courseId;
         this.markedIds = this.parseUrlHash();
 
@@ -45,6 +45,7 @@ export class LectureList {
 
     async setup() {
         await DataStore.adminLectureList.subscribe(this.courseId, (lectures) => {
+            console.log(lectures);
             this.lectures = lectures;
             this.triggerUpdateEvent();
         });
@@ -70,7 +71,7 @@ export class LectureList {
         const lectures = this.lectures;
         if (lectures.length < 2) return false;
         const first = lectures[0];
-        return lectures.slice(1).some((lecture) => lecture.isChatEnabled !== first.isChatEnabled);
+        return lectures.slice(1).some((lecture) => lecture.ChatEnabled !== first.ChatEnabled);
     }
 
     triggerUpdateEvent() {
@@ -155,23 +156,24 @@ export class LectureOLD {
     downloadableVods: DownloadableVod[];
 
     clone() {
-        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+        return null;
+        //return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     }
 
     startDateFormatted() {
-        return this.start.toLocaleDateString("en-US", Lecture.dateFormatOptions);
+        return this.start.toLocaleDateString("en-US", LectureOLD.dateFormatOptions);
     }
 
     startTimeFormatted() {
-        return this.start.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
+        return this.start.toLocaleTimeString("en-US", LectureOLD.timeFormatOptions);
     }
 
     endFormatted() {
-        return this.end.toLocaleDateString("en-US", Lecture.dateFormatOptions);
+        return this.end.toLocaleDateString("en-US", LectureOLD.dateFormatOptions);
     }
 
     endTimeFormatted() {
-        return this.end.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
+        return this.end.toLocaleTimeString("en-US", LectureOLD.timeFormatOptions);
     }
 
     updateIsDirty() {
@@ -390,10 +392,10 @@ export class LectureOLD {
     async saveSeries() {
         const res = await postData("/api/course/" + this.courseId + "/updateLectureSeries/" + this.lectureId);
 
-        if (res.status == StatusCodes.OK) {
+        /*if (res.status == StatusCodes.OK) {
             LectureList.lectures = LectureList.lectures.map((lecture) => {
                 if (this.lectureId !== lecture.lectureId && lecture.seriesIdentifier === this.seriesIdentifier) {
-                    /* cloning, as otherwise alpine doesn't detect the changed object in the array ... */
+                    // cloning, as otherwise alpine doesn't detect the changed object in the array ...
                     lecture = lecture.clone();
                     lecture.name = this.name;
                     lecture.description = this.description;
@@ -403,7 +405,7 @@ export class LectureOLD {
                 return lecture;
             });
             LectureList.triggerUpdate();
-        }
+        }*/
 
         return res;
     }
@@ -419,13 +421,13 @@ export class LectureOLD {
                 return;
             }
 
-            LectureList.lectures = LectureList.lectures.filter((l) => l.lectureId !== this.lectureId);
-            LectureList.triggerUpdate();
+            /*LectureList.lectures = LectureList.lectures.filter((l) => l.lectureId !== this.lectureId);
+            LectureList.triggerUpdate();*/
         }
     }
 
     async deleteLectureSeries() {
-        const lectureCount = LectureList.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
+        /*const lectureCount = LectureList.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
         if (confirm("Confirm deleting " + lectureCount + " videos in the lecture series?")) {
             const res = await Delete("/api/course/" + this.courseId + "/deleteLectureSeries/" + this.lectureId);
 
@@ -435,7 +437,7 @@ export class LectureOLD {
             }
 
             return res;
-        }
+        }*/
     }
 
     getDownloads() {
@@ -523,8 +525,8 @@ export async function deleteLectures(cid: number, lids: number[]) {
             return;
         }
 
-        LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
-        LectureList.triggerUpdate();
+        //LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
+        //LectureList.triggerUpdate();
     }
 }
 
@@ -534,9 +536,9 @@ export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean) {
 
 export async function saveIsChatEnabledForAllLectures(isChatEnabled: boolean) {
     const promises = [];
-    for (const lecture of LectureList.lectures) {
+    /*for (const lecture of LectureList.lectures) {
         promises.push(saveIsChatEnabled(lecture.lectureId, isChatEnabled));
-    }
+    }*/
     const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
     return errors.length <= 0;
 }
