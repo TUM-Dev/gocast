@@ -112,20 +112,27 @@ interface VideoFile {
     key: string;
     type: string;
     title: string;
+    file?: File;
 }
 
 export class LectureEditor {
     private changeSet: ChangeSet<Lecture>;
 
-    public readonly videoFiles: VideoFile[] = [
+    public readonly _videoFiles: VideoFile[] = [
         { key: "newCombinedVideo", type: "PRES", title: "Combined Video" },
         { key: "newPresentationVideo", type: "PRES", title: "Presentation Video" },
         { key: "newCameraVideo", type: "PRES", title: "Camera Video" },
     ]
 
+    get videoFiles() : VideoFile[] {
+        return this._videoFiles.map((video) => ({
+            ...video,
+            file: this.lectureData[video.key]
+        }));
+    }
+
     lastErrors: string[];
     uiEditMode: UIEditMode;
-    lastErrors: string[] = [];
     lectureData: Lecture;
     isDirty: boolean;
 
@@ -169,13 +176,13 @@ export class LectureEditor {
 
     startSeriesEdit() {
         if (this.uiEditMode !== UIEditMode.none) return;
-        this.changes.reset();
+        this.changeSet.reset();
         this.uiEditMode = UIEditMode.series;
     }
 
     startSingleEdit() {
         if (this.uiEditMode !== UIEditMode.none) return;
-        this.changes.reset();
+        this.changeSet.reset();
         this.uiEditMode = UIEditMode.single;
     }
 
@@ -382,7 +389,7 @@ export class LectureEditor {
     async deleteLecture() {
         if (confirm("Confirm deleting video?")) {
             try {
-                await DataStore.adminLectureList.delete(this.data.courseId, [this.data.lectureId]);
+                await DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
             } catch (e) {
                 alert("An unknown error occurred during the deletion process!");
                 return;

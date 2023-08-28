@@ -185,7 +185,7 @@
                             class="absolute left-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-black rounded shadow-md overflow-hidden"
                     >
                         <div>
-                            <button @click="uiEditMode = admin.UIEditMode.single; closeMoreDropdown();"
+                            <button @click="lecture.startSingleEdit(); closeMoreDropdown();"
                                     class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300">
                                 Edit Lecture
                             </button>
@@ -203,7 +203,7 @@
                         </div>
                         <template x-if="lectureData.seriesIdentifier.length > 0">
                             <div class="border-t border-black">
-                                <button @click="lecture.reset(); uiEditMode = admin.UIEditMode.series; closeMoreDropdown();"
+                                <button @click="lecture.startSeriesEdit(); closeMoreDropdown();"
                                         class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300">
                                     Edit Series
                                 </button>
@@ -219,7 +219,7 @@
         </div>
 
         <button x-show="uiEditMode == 0"
-                @click="uiEditMode = admin.UIEditMode.single;"
+                @click="lecture.startSingleEdit"
                 class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-b">
             <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>
         </button>
@@ -245,10 +245,10 @@
                                     <span class="text-green-400" x-text="file.name"></span>
                                 </template>
                             </div>
-                            <div x-on:click="() => { changeSet.patch(video.key, null); }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
+                            <div x-on:click="() => { $event.stopPropagation(); changeSet.patch(video.key, null); video = null; }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
                                 <i class="fa fa-xmark text-3"></i>
                             </div>
-                            <input :id="inputId" class="hidden" :name="video.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" />
+                            <input :id="inputId" class="hidden" :name="video.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" @change="(e) => { console.log(e.target.files, video); file = e.target.files[0]; }" />
                             <div x-show="lectureData.isSaving && file !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
                                 <span x-text="`${progress[video.type]}%`"></span>
                             </div>
