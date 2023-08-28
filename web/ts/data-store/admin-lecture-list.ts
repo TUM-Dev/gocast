@@ -1,6 +1,6 @@
 import { StreamableMapProvider } from "./provider";
 import {AdminLectureList, Lecture, UpdateLectureMetaRequest} from "../api/admin-lecture-list";
-import {Time} from "../utilities/time";
+import {FileType} from "../edit-course";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -17,6 +17,8 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
     protected async fetcher(courseId: number): Promise<Lecture[]> {
         const result = await AdminLectureList.get(courseId);
         return result.map((s) => {
+            s.hasAttachments = (s.files || []).some((f) => f.fileType === FileType.attachment);
+
             s.startDate = new Date(s.start);
             s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);
             s.startTimeFormatted = s.startDate.toLocaleTimeString("en-US", timeFormatOptions);

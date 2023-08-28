@@ -54,6 +54,7 @@ export interface Lecture {
     transcodingProgresses: any[];
 
     // Clientside computed fields
+    hasAttachments: boolean;
     startDate: Date;
     startDateFormatted: string;
     startTimeFormatted: string;
