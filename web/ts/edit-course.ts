@@ -112,24 +112,16 @@ interface VideoFile {
     key: string;
     type: string;
     title: string;
-    file?: File;
 }
 
 export class LectureEditor {
     private changeSet: ChangeSet<Lecture>;
 
-    public readonly _videoFiles: VideoFile[] = [
+    public readonly videoFiles: VideoFile[] = [
         { key: "newCombinedVideo", type: "PRES", title: "Combined Video" },
         { key: "newPresentationVideo", type: "PRES", title: "Presentation Video" },
         { key: "newCameraVideo", type: "PRES", title: "Camera Video" },
-    ]
-
-    get videoFiles() : VideoFile[] {
-        return this._videoFiles.map((video) => ({
-            ...video,
-            file: this.lectureData[video.key]
-        }));
-    }
+    ];
 
     lastErrors: string[];
     uiEditMode: UIEditMode;

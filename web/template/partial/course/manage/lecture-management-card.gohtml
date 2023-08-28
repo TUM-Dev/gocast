@@ -232,9 +232,9 @@
                 <article x-data="{ id: `lecture_media_${lectureData.lectureId}`, progress: { 'COMB': 0, 'PRES': 0, 'CAM': 0 } }"
                          @voduploadprogressedit.window="({ detail: { type, progress, lectureId } }) => { if (lectureId === lectureData.lectureId) { progress[type] = progress; }}"
                          class="w-full flex justify-center flex-wrap">
-                    <template x-for="video in lecture.videoFiles">
-                        <div x-data="{ inputId: `${id}_${video.type}`, file: lectureData[video.key] }"
-                             x-on:click="document.querySelector(`#${inputId}`).click()"
+                    <template x-for="video in lecture.videoFiles" :key="video.key">
+                        <div x-data="{ video, inputId: `${id}_${video.type}`, file: lectureData[video.key] }"
+                             x-on:click="() => document.querySelector(`#${inputId}`).click()"
                              class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
                         >
                             <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lectureData.lectureId}/thumbs/vod?type=${video.type}')`"></div>
@@ -245,7 +245,7 @@
                                     <span class="text-green-400" x-text="file.name"></span>
                                 </template>
                             </div>
-                            <div x-on:click="() => { $event.stopPropagation(); changeSet.patch(video.key, null); video = null; }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
+                            <div x-on:click="() => { $event.stopPropagation(); changeSet.patch(video.key, null); file = null; }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
                                 <i class="fa fa-xmark text-3"></i>
                             </div>
                             <input :id="inputId" class="hidden" :name="video.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" @change="(e) => { console.log(e.target.files, video); file = e.target.files[0]; }" />
