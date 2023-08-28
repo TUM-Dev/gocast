@@ -64,6 +64,14 @@ export interface Lecture {
     //VideoSections?: null;
     Private: boolean;
     Watched: boolean;
+
+    // Clientside computed fields
+    startDate: Date;
+    startDateFormatted: string;
+    startTimeFormatted: string;
+    endDate: Date;
+    endDateFormatted: string;
+    endTimeFormatted: string;
 }
 
 export interface LectureDuration {
@@ -76,7 +84,8 @@ export interface LectureDuration {
  */
 export const AdminLectureList = {
     get: async function (courseId: number): Promise<Lecture[]> {
-        return get(`/api/course/${courseId}/lectures`);
+        const result = await get(`/api/course/${courseId}/lectures`);
+        return result["streams"];
     },
 
     add: async function (courseId: number, request: object) {

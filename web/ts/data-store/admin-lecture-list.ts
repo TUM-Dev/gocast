@@ -1,10 +1,32 @@
 import { StreamableMapProvider } from "./provider";
 import {AdminLectureList, Lecture, UpdateLectureMetaRequest} from "../api/admin-lecture-list";
+import {Time} from "../utilities/time";
+
+const dateFormatOptions: Intl.DateTimeFormatOptions = {
+    weekday: "long",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+};
+const timeFormatOptions: Intl.DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+};
 
 export class AdminLectureListProvider extends StreamableMapProvider<number, Lecture[]> {
     protected async fetcher(courseId: number): Promise<Lecture[]> {
         const result = await AdminLectureList.get(courseId);
-        return result;
+        return result.map((s) => {
+            s.startDate = new Date(s.Start);
+            s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);
+            s.startTimeFormatted = s.startDate.toLocaleTimeString("en-US", timeFormatOptions);
+
+            s.endDate = new Date(s.End);
+            s.endDateFormatted = s.endDate.toLocaleDateString("en-US", dateFormatOptions);
+            s.endTimeFormatted = s.endDate.toLocaleTimeString("en-US", timeFormatOptions);
+
+            return s;
+        });
     }
 
     async add(courseId: number, lecture: Lecture): Promise<void> {

@@ -6,9 +6,9 @@
     {{$ingestBase := .IngestBase}}
     {{$lectureHalls := .LectureHalls}}
 
-    <li :id="`lecture-${lecture.lectureId}`"
+    <li :id="`lecture-${lecture.ID}`"
         x-show="!filterPast || !lecture.isPast"
-        :key="lecture.lectureId"
+        :key="lecture.ID"
         class="w-full mb-4 relative bg-white dark:bg-gray-800 border dark:border-0 rounded shadow">
         <div class="border-t-2 flex justify-between mb-2 rounded-t" :class="'border-' + lecture.color">
             <div class="pt-2 px-2 w-full">

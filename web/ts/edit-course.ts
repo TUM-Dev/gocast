@@ -2,6 +2,7 @@ import { Delete, patchData, postData, putData, sendFormData, showMessage } from 
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import { Lecture } from "./api/admin-lecture-list";
+import {ChangeSet} from "./change-set";
 
 export enum UIEditMode {
     none,
@@ -21,7 +22,7 @@ export enum FileType {
 
 export class LectureList {
     courseId: number;
-    lectures: Lecture[] = [];
+    lectures: LectureEditor[] = [];
     markedIds: number[] = [];
 
     constructor(courseId: number) {
@@ -45,9 +46,9 @@ export class LectureList {
 
     async setup() {
         await DataStore.adminLectureList.subscribe(this.courseId, (lectures) => {
-            console.log(lectures);
-            this.lectures = lectures;
+            this.lectures = lectures.map((lecture) => new LectureEditor(lecture));
             this.triggerUpdateEvent();
+            console.log("testyyy", this.lectures);
         });
     }
 
@@ -71,7 +72,7 @@ export class LectureList {
         const lectures = this.lectures;
         if (lectures.length < 2) return false;
         const first = lectures[0];
-        return lectures.slice(1).some((lecture) => lecture.ChatEnabled !== first.ChatEnabled);
+        return lectures.slice(1).some((l) => l.data.ChatEnabled !== l.data.ChatEnabled);
     }
 
     triggerUpdateEvent() {
@@ -107,18 +108,15 @@ class TranscodingProgress {
     progress: number;
 }
 
-export class LectureOLD {
-    static dateFormatOptions: Intl.DateTimeFormatOptions = {
-        weekday: "long",
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-    };
-    static timeFormatOptions: Intl.DateTimeFormatOptions = {
-        hour: "2-digit",
-        minute: "2-digit",
-    };
-    readonly courseId: number;
+export class LectureEditor {
+    changes: ChangeSet<Lecture>;
+    uiEditMode: UIEditMode = UIEditMode.none;
+
+    get data() : Lecture {
+        return this.changes.get();
+    }
+
+    /*readonly courseId: number;
     readonly courseSlug: string;
     readonly lectureId: number;
     readonly streamKey: string;
@@ -131,9 +129,19 @@ export class LectureOLD {
     isConverting: boolean;
     readonly isRecording: boolean;
     readonly isPast: boolean;
-    readonly hasStats: boolean;
+    readonly hasStats: boolean;*/
 
-    name: string;
+    constructor(lecture: Lecture) {
+        this.changes = new ChangeSet<Lecture>(lecture, this.lectureComparator);
+    }
+
+    lectureComparator(key: string, a: Lecture, b: Lecture): boolean|null {
+        // here we can set some custom comparisons
+
+        return null;
+    }
+
+    /*name: string;
     description: string;
     lectureHallId: string;
     lectureHallName: string;
@@ -153,66 +161,22 @@ export class LectureOLD {
     transcodingProgresses: TranscodingProgress[];
     files: LectureFile[];
     private: boolean;
-    downloadableVods: DownloadableVod[];
-
-    clone() {
-        return null;
-        //return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    }
-
-    startDateFormatted() {
-        return this.start.toLocaleDateString("en-US", LectureOLD.dateFormatOptions);
-    }
-
-    startTimeFormatted() {
-        return this.start.toLocaleTimeString("en-US", LectureOLD.timeFormatOptions);
-    }
-
-    endFormatted() {
-        return this.end.toLocaleDateString("en-US", LectureOLD.dateFormatOptions);
-    }
-
-    endTimeFormatted() {
-        return this.end.toLocaleTimeString("en-US", LectureOLD.timeFormatOptions);
-    }
-
-    updateIsDirty() {
-        this.isDirty =
-            this.newName !== this.name ||
-            this.newDescription !== this.description ||
-            this.newLectureHallId !== this.lectureHallId ||
-            this.newIsChatEnabled !== this.isChatEnabled ||
-            this.newCombinedVideo !== null ||
-            this.newPresentationVideo !== null ||
-            this.newCameraVideo !== null;
-    }
-
-    resetNewFields() {
-        this.newName = this.name;
-        this.newDescription = this.description;
-        this.newLectureHallId = this.lectureHallId;
-        this.newIsChatEnabled = this.isChatEnabled;
-        this.isDirty = false;
-        this.lastErrors = [];
-        this.newCombinedVideo = null;
-        this.newPresentationVideo = null;
-        this.newCameraVideo = null;
-    }
+    downloadableVods: DownloadableVod[];*/
 
     startSeriesEdit() {
         if (this.uiEditMode !== UIEditMode.none) return;
-        this.resetNewFields();
+        this.changes.reset();
         this.uiEditMode = UIEditMode.series;
     }
 
     startSingleEdit() {
         if (this.uiEditMode !== UIEditMode.none) return;
-        this.resetNewFields();
+        this.changes.reset();
         this.uiEditMode = UIEditMode.single;
     }
 
     async toggleVisibility() {
-        fetch(`/api/stream/${this.lectureId}/visibility`, {
+        /*fetch(`/api/stream/${this.lectureId}/visibility`, {
             method: "PATCH",
             body: JSON.stringify({ private: !this.private }),
             headers: { "Content-Type": "application/json" },
@@ -225,11 +189,11 @@ export class LectureOLD {
                     this.color = "success";
                 }
             }
-        });
+        });*/
     }
 
     async keepProgressesUpdated() {
-        if (!this.isConverting) {
+        /*if (!this.isConverting) {
             return;
         }
         setTimeout(() => {
@@ -250,11 +214,11 @@ export class LectureOLD {
             }
             this.isConverting = this.transcodingProgresses.length > 0;
             this.keepProgressesUpdated();
-        }, 5000);
+        }, 5000);*/
     }
 
     async saveEdit() {
-        this.lastErrors = [];
+        /*this.lastErrors = [];
         if (this.uiEditMode === UIEditMode.none) return;
 
         this.isSaving = true;
@@ -303,7 +267,7 @@ export class LectureOLD {
 
         this.uiEditMode = UIEditMode.none;
         this.isSaving = false;
-        return true;
+        return true;*/
     }
 
     discardEdit() {
@@ -311,7 +275,7 @@ export class LectureOLD {
     }
 
     async saveNewLectureName() {
-        const res = await postData("/api/course/" + this.courseId + "/renameLecture/" + this.lectureId, {
+        /*const res = await postData("/api/course/" + this.courseId + "/renameLecture/" + this.lectureId, {
             name: this.newName,
         });
 
@@ -319,11 +283,11 @@ export class LectureOLD {
             this.name = this.newName;
         }
 
-        return res;
+        return res;*/
     }
 
     async saveNewLectureDescription() {
-        const res = await putData("/api/course/" + this.courseId + "/updateDescription/" + this.lectureId, {
+        /*const res = await putData("/api/course/" + this.courseId + "/updateDescription/" + this.lectureId, {
             name: this.newDescription,
         });
 
@@ -331,33 +295,33 @@ export class LectureOLD {
             this.description = this.newDescription;
         }
 
-        return res;
+        return res;*/
     }
 
     async saveNewLectureHall() {
-        const res = await saveLectureHall([this.lectureId], this.newLectureHallId);
+        /*const res = await saveLectureHall([this.lectureId], this.newLectureHallId);
 
         if (res.status == StatusCodes.OK) {
             this.lectureHallId = this.newLectureHallId;
             this.lectureHallName = "";
         }
 
-        return res;
+        return res;*/
     }
 
     async saveNewIsChatEnabled() {
-        const res = await saveIsChatEnabled(this.lectureId, this.newIsChatEnabled);
+        /*const res = await saveIsChatEnabled(this.lectureId, this.newIsChatEnabled);
 
         if (res.status == StatusCodes.OK) {
             this.isChatEnabled = this.newIsChatEnabled;
         } else {
             res.text().then((t) => showMessage(t));
         }
-        return res;
+        return res;*/
     }
 
     async saveNewVODMedia(): Promise<string[]> {
-        const errors = [];
+        /*const errors = [];
         const mediaInfo = [
             { key: "newCombinedVideo", type: "COMB" },
             { key: "newPresentationVideo", type: "PRES" },
@@ -386,11 +350,11 @@ export class LectureOLD {
                 errors.push(error);
             }
         }
-        return errors;
+        return errors;*/
     }
 
     async saveSeries() {
-        const res = await postData("/api/course/" + this.courseId + "/updateLectureSeries/" + this.lectureId);
+        //const res = await postData("/api/course/" + this.courseId + "/updateLectureSeries/" + this.lectureId);
 
         /*if (res.status == StatusCodes.OK) {
             LectureList.lectures = LectureList.lectures.map((lecture) => {
@@ -407,22 +371,17 @@ export class LectureOLD {
             LectureList.triggerUpdate();
         }*/
 
-        return res;
+        //return res;
     }
 
     async deleteLecture() {
         if (confirm("Confirm deleting video?")) {
-            const res = await postData("/api/course/" + this.courseId + "/deleteLectures", {
-                streamIDs: [this.lectureId.toString()],
-            });
-
-            if (res.status !== StatusCodes.OK) {
+            try {
+                await DataStore.adminLectureList.delete(this.data.CourseID, [this.data.ID]);
+            } catch (e) {
                 alert("An unknown error occurred during the deletion process!");
                 return;
             }
-
-            /*LectureList.lectures = LectureList.lectures.filter((l) => l.lectureId !== this.lectureId);
-            LectureList.triggerUpdate();*/
         }
     }
 
@@ -441,29 +400,30 @@ export class LectureOLD {
     }
 
     getDownloads() {
-        return this.downloadableVods;
+        //return this.downloadableVods;
     }
 
     async deleteFile(fileId: number) {
-        await fetch(`/api/stream/${this.lectureId}/files/${fileId}`, {
+        /*await fetch(`/api/stream/${this.lectureId}/files/${fileId}`, {
             method: "DELETE",
         })
             .catch((err) => console.log(err))
             .then(() => {
                 this.files = this.files.filter((f) => f.id !== fileId);
-            });
+            });*/
     }
 
     hasAttachments(): boolean {
-        if (this.files !== undefined && this.files !== null) {
+        /*if (this.files !== undefined && this.files !== null) {
             const filtered = this.files.filter((f) => f.fileType === FileType.attachment);
             return filtered.length > 0;
         }
-        return false;
+        return false;*/
+        return true;
     }
 
     onFileDrop(e) {
-        if (e.dataTransfer.items) {
+        /*if (e.dataTransfer.items) {
             const kind = e.dataTransfer.items[0].kind;
             switch (kind) {
                 case "file": {
@@ -474,11 +434,11 @@ export class LectureOLD {
                     this.postFileAsURL(e.dataTransfer.getData("URL"));
                 }
             }
-        }
+        }*/
     }
 
     private async postFile(file) {
-        const formData = new FormData();
+        /*const formData = new FormData();
         formData.append("file", file);
         await fetch(`/api/stream/${this.lectureId}/files?type=file`, {
             method: "POST",
@@ -489,11 +449,11 @@ export class LectureOLD {
                 const fileType = 2;
                 this.files.push(new LectureFile({ id, fileType, friendlyName }));
             }),
-        );
+        );*/
     }
 
     private async postFileAsURL(fileURL) {
-        const formData = new FormData();
+        /*const formData = new FormData();
         formData.append("file_url", fileURL);
         await fetch(`/api/stream/${this.lectureId}/files?type=url`, {
             method: "POST",
@@ -504,7 +464,7 @@ export class LectureOLD {
                 const fileType = 2;
                 this.files.push(new LectureFile({ id, fileType, friendlyName }));
             }),
-        );
+        );*/
     }
 }
 
