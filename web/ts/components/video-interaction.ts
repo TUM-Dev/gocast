@@ -1,7 +1,6 @@
 import { AlpineComponent } from "./alpine-component";
 import { User } from "../api/users";
 import { SocketConnections } from "../api/chat-ws";
-import { RealtimeFacade } from "../utilities/ws";
 
 enum InteractionType {
     Chat,
@@ -13,9 +12,8 @@ export function videoInteractionContext(user: User) {
         type: InteractionType.Chat,
         user: user as User,
 
-        init() {
-            SocketConnections.ws.subscribe();
-        },
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        init() {},
 
         showChat() {
             this.type = InteractionType.Chat;
