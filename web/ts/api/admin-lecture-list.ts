@@ -57,7 +57,7 @@ export type Lecture = {
  */
 export const AdminLectureList = {
     get: async function (courseId: number): Promise<Lecture[]> {
-        return get(`/api/stream/${courseId}/sections`);
+        return get(`/api/course/${courseId}/lectures`);
     },
 
     add: async function (courseId: number, request: object) {

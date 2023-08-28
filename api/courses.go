@@ -61,7 +61,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.Use(tools.InitCourse(daoWrapper))
 			courses.Use(tools.AdminOfCourse)
 			courses.DELETE("/", routes.deleteCourse)
-			courses.GET("/", routes.fetchLectures)
+			courses.GET("/lectures", routes.fetchLectures)
 			courses.POST("/createVOD", routes.createVOD)
 			courses.POST("/uploadVODMedia", routes.uploadVODMedia)
 			courses.POST("/copy", routes.copyCourse)
