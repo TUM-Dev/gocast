@@ -1041,15 +1041,9 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 
 func (r coursesRoutes) fetchLectures(c *gin.Context) {
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	streams, err := r.StreamsDao.GetAllStreamsForCourse(tlctx.Course.ID)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find streams",
-			Err:           err,
-		})
-		return
-	}
+
+	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
+	streams := tlctx.Course.AdminJson(lectureHalls)
 
 	c.JSON(http.StatusOK, gin.H{
 		"streams": streams,
