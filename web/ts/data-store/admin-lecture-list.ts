@@ -13,9 +13,10 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async delete(courseId: number, streamId: number) {
-        await AdminLectureList.delete(courseId, streamId);
-        this.data[courseId] = (await this.getData(courseId)).filter((s) => s.ID !== streamId);
+    async delete(courseId: number, lectureIds: number[]) {
+        await AdminLectureList.delete(courseId, lectureIds);
+        this.data[courseId] = (await this.getData(courseId)).filter((s) => !lectureIds.includes(s.ID));
+        await this.triggerUpdate(courseId);
     }
 
     async updateMeta(courseId: number, streamId: number, request: UpdateLectureMetaRequest) {
@@ -30,7 +31,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
                 // Path updated keys in local data
                 for (const requestKey in request) {
                     const val = request[requestKey];
-                    if (val !== null) {
+                    if (val !== undefined) {
                         s[requestKey] = val;
                     }
                 }

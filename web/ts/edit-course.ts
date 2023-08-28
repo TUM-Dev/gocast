@@ -1,5 +1,7 @@
 import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
+import { DataStore } from "./data-store/data-store";
+import { Lecture } from "./api/admin-lecture-list";
 
 export enum UIEditMode {
     none,
@@ -18,16 +20,15 @@ export enum FileType {
 }
 
 export class LectureList {
-    static lectures: Lecture[] = [];
-    static markedIds: number[] = [];
+    courseId: number;
+    lectures: Lecture[] = [];
+    markedIds: number[] = [];
 
-    static init(initialState: Lecture[]) {
-        if (initialState === null) {
-            initialState = [];
-        }
-
+    LectureList(courseId: number) {
+        this.courseId = courseId;
         this.markedIds = this.parseUrlHash();
 
+        /*
         // load initial state into lecture objects
         for (const lecture of initialState) {
             let l = new Lecture();
@@ -35,19 +36,27 @@ export class LectureList {
             l.start = new Date(lecture.start);
             l.end = new Date(lecture.end);
             LectureList.lectures.push(l);
-        }
+        }*/
+        this.setup();
 
-        LectureList.triggerUpdate();
-        setTimeout(() => this.scrollSelectedLecturesIntoView(), 500);
+        //LectureList.triggerUpdate();
+        //setTimeout(() => this.scrollSelectedLecturesIntoView(), 500);
     }
 
-    static scrollSelectedLecturesIntoView() {
+    async setup() {
+        await DataStore.adminLectureList.subscribe(this.courseId, (lectures) => {
+            this.lectures = lectures;
+            this.triggerUpdateEvent();
+        });
+    }
+
+    scrollSelectedLecturesIntoView() {
         if (this.markedIds.length > 0) {
             document.querySelector(`#lecture-${this.markedIds[0]}`).scrollIntoView({ behavior: "smooth" });
         }
     }
 
-    static parseUrlHash(): number[] {
+    parseUrlHash(): number[] {
         if (!window.location.hash.startsWith("#lectures:")) {
             return [];
         }
@@ -57,17 +66,17 @@ export class LectureList {
             .map((s) => parseInt(s));
     }
 
-    static hasIndividualChatEnabledSettings(): boolean {
+    hasIndividualChatEnabledSettings(): boolean {
         const lectures = this.lectures;
         if (lectures.length < 2) return false;
         const first = lectures[0];
         return lectures.slice(1).some((lecture) => lecture.isChatEnabled !== first.isChatEnabled);
     }
 
-    static triggerUpdate() {
+    triggerUpdateEvent() {
         const event = new CustomEvent("newlectures", {
             detail: {
-                lectures: LectureList.lectures,
+                lectures: this.lectures,
                 markedIds: this.markedIds,
             },
         });
@@ -97,7 +106,7 @@ class TranscodingProgress {
     progress: number;
 }
 
-export class Lecture {
+export class LectureOLD {
     static dateFormatOptions: Intl.DateTimeFormatOptions = {
         weekday: "long",
         year: "numeric",

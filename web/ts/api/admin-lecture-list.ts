@@ -64,21 +64,22 @@ export const AdminLectureList = {
         return post(`/api/stream/${courseId}/sections`, request);
     },
 
+    // TODO: make one unified endpoint
     update: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
         const promises = [];
-        if (request.name !== null) {
+        if (request.name !== undefined) {
             promises.push(postData("/api/course/" + courseId + "/renameLecture/" + lectureId, { name: request.name }));
         }
 
-        if (request.description !== null) {
+        if (request.description !== undefined) {
             promises.push(postData("/api/course/" + courseId + "/updateDescription/" + lectureId, { name: request.description }));
         }
 
-        if (request.lectureHallId !== null) {
+        if (request.lectureHallId !== undefined) {
             promises.push(postData("/api/setLectureHall", { streamIds: [lectureId], lectureHall: request.lectureHallId }));
         }
 
-        if (request.isChatEnabled !== null) {
+        if (request.isChatEnabled !== undefined) {
             promises.push(patchData("/api/stream/" + lectureId + "/chat/enabled", { lectureId, isChatEnabled: request.isChatEnabled }));
         }
 
@@ -89,9 +90,9 @@ export const AdminLectureList = {
         }
     },
 
-    delete: async function (courseId: number, lectureId: number): Promise<Response> {
+    delete: async function (courseId: number, lectureIds: number[]): Promise<Response> {
         return await postData(`/api/course/${courseId}/deleteLectures`, {
-            streamIDs: [lectureId],
+            streamIDs: lectureIds,
         });
     },
 };

@@ -26,6 +26,7 @@ type StreamsDao interface {
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
 	GetAllStreams() ([]model.Stream, error)
+	GetAllStreamsForCourse(courseID uint) ([]model.Stream, error)
 	ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error)
@@ -207,6 +208,13 @@ func (d streamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worker, er
 func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error
+	return res, err
+}
+
+// GetAllStreamsForCourse returns all streams of a course
+func (d streamsDao) GetAllStreamsForCourse(courseID uint) ([]model.Stream, error) {
+	var res []model.Stream
+	err := DB.Where("course_id = ?", courseID).Find(&res).Error
 	return res, err
 }
 

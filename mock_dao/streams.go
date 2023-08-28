@@ -164,10 +164,25 @@ func (m *MockStreamsDao) GetAllStreams() ([]model.Stream, error) {
 	return ret0, ret1
 }
 
+// GetAllStreamsForCourse mocks base method.
+func (m MockStreamsDao) GetAllStreamsForCourse(courseID uint) ([]model.Stream, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllStreamsForCourse", courseID)
+	ret0, _ := ret[0].([]model.Stream)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
 // GetAllStreams indicates an expected call of GetAllStreams.
 func (mr *MockStreamsDaoMockRecorder) GetAllStreams() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllStreams", reflect.TypeOf((*MockStreamsDao)(nil).GetAllStreams))
+}
+
+// GetAllStreamsForCourse indicates an expected call of GetAllStreamsForCourse.
+func (mr *MockStreamsDaoMockRecorder) GetAllStreamsForCourse(courseID uint) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllStreamsForCourse", reflect.TypeOf((*MockStreamsDao)(nil).GetAllStreamsForCourse), courseID)
 }
 
 // GetCurrentLive mocks base method.
