@@ -27,6 +27,10 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             s.endDateFormatted = s.endDate.toLocaleDateString("en-US", dateFormatOptions);
             s.endTimeFormatted = s.endDate.toLocaleTimeString("en-US", timeFormatOptions);
 
+            s.newCombinedVideo = null;
+            s.newPresentationVideo = null;
+            s.newCameraVideo = null;
+
             return s;
         });
     }
@@ -39,7 +43,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
 
     async delete(courseId: number, lectureIds: number[]) {
         await AdminLectureList.delete(courseId, lectureIds);
-        this.data[courseId] = (await this.getData(courseId)).filter((s) => !lectureIds.includes(s.ID));
+        this.data[courseId] = (await this.getData(courseId)).filter((s) => !lectureIds.includes(s.lectureId));
         await this.triggerUpdate(courseId);
     }
 
@@ -47,7 +51,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await AdminLectureList.update(courseId, streamId, request);
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.ID === streamId) {
+            if (s.lectureId === streamId) {
                 s = {
                     ...s,
                 };

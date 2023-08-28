@@ -72,7 +72,7 @@ export class LectureList {
         const lectures = this.lectures;
         if (lectures.length < 2) return false;
         const first = lectures[0];
-        return lectures.slice(1).some((l) => l.data.ChatEnabled !== l.data.ChatEnabled);
+        return lectures.slice(1).some((l) => l.data.isChatEnabled !== l.data.isChatEnabled);
     }
 
     triggerUpdateEvent() {
@@ -108,13 +108,26 @@ class TranscodingProgress {
     progress: number;
 }
 
-export class LectureEditor {
-    changes: ChangeSet<Lecture>;
-    uiEditMode: UIEditMode = UIEditMode.none;
+interface VideoFile {
+    key: string;
+    type: string;
+    title: string;
+}
 
-    get data() : Lecture {
-        return this.changes.get();
-    }
+export class LectureEditor {
+    private changeSet: ChangeSet<Lecture>;
+
+    public readonly videoFiles: VideoFile[] = [
+        { key: "newCombinedVideo", type: "PRES", title: "Combined Video" },
+        { key: "newPresentationVideo", type: "PRES", title: "Presentation Video" },
+        { key: "newCameraVideo", type: "PRES", title: "Camera Video" },
+    ]
+
+    lastErrors: string[];
+    uiEditMode: UIEditMode;
+    lastErrors: string[] = [];
+    lectureData: Lecture;
+    isDirty: boolean;
 
     /*readonly courseId: number;
     readonly courseSlug: string;
@@ -132,7 +145,12 @@ export class LectureEditor {
     readonly hasStats: boolean;*/
 
     constructor(lecture: Lecture) {
-        this.changes = new ChangeSet<Lecture>(lecture, this.lectureComparator);
+        this.changeSet = new ChangeSet<Lecture>(lecture, this.lectureComparator, (data, dirtyState) => {
+            this.lectureData = data;
+            this.isDirty = dirtyState.isDirty;
+        });
+        this.uiEditMode = UIEditMode.none;
+        this.lastErrors = [];
     }
 
     lectureComparator(key: string, a: Lecture, b: Lecture): boolean|null {
@@ -351,6 +369,7 @@ export class LectureEditor {
             }
         }
         return errors;*/
+        return [];
     }
 
     async saveSeries() {
@@ -377,7 +396,7 @@ export class LectureEditor {
     async deleteLecture() {
         if (confirm("Confirm deleting video?")) {
             try {
-                await DataStore.adminLectureList.delete(this.data.CourseID, [this.data.ID]);
+                await DataStore.adminLectureList.delete(this.data.courseId, [this.data.lectureId]);
             } catch (e) {
                 alert("An unknown error occurred during the deletion process!");
                 return;

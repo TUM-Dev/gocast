@@ -62,7 +62,7 @@
         <div x-data="{ lectureList: new admin.LectureList({{$course.Model.ID}}), lectures: [], marked: [] }"
              x-on:newlectures.window="e => {lectures = e.detail.lectures; marked = e.detail.markedIds; }">
             <ul class="flex" :class="sortAsc ? 'flex-col' : 'flex-col-reverse'">
-                <template x-for="lecture in lectures" :key="lecture.data.lectureId">
+                <template x-for="lecture in lectures" :key="lecture.lectureData.lectureId">
                     {{template "lecture-management-card" .}}
                 </template>
             </ul>

@@ -6,49 +6,50 @@
     {{$ingestBase := .IngestBase}}
     {{$lectureHalls := .LectureHalls}}
 
-    <li :id="`lecture-${lecture.data.lectureId}`"
-        x-show="!filterPast || !lecture.data.isPast"
-        :key="lecture.data.lectureId"
+    <li x-data="lecture"
+        x-show="!filterPast || !lectureData.isPast"
+        :id="`lecture-${lectureData.lectureId}`"
+        :key="lectureData.lectureId"
         class="w-full mb-4 relative bg-white dark:bg-gray-800 border dark:border-0 rounded shadow">
-        <div class="border-t-2 flex justify-between mb-2 rounded-t" :class="'border-' + lecture.data.color">
+        <div class="border-t-2 flex justify-between mb-2 rounded-t" :class="'border-' + lectureData.color">
             <div class="pt-2 px-2 w-full">
                 <div class="text-3 font-semibold flex justify-start items-center">
-                    <input @change="$event.target.checked ? selectedLectures.push({ id: lecture.data.lectureId, isPast: lecture.data.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.data.lectureId))"
+                    <input @change="$event.target.checked ? selectedLectures.push({ id: lectureData.lectureId, isPast: lectureData.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lectureData.lectureId))"
                            class="w-auto mr-2" type="checkbox"/>
-                    <div x-show="marked.includes(lecture.data.lectureId)" class="rounded-full bg-green-400 dark:bg-green-600 w-11 h-4 mr-2 text-center text-xs inline-block">
+                    <div x-show="marked.includes(lectureData.lectureId)" class="rounded-full bg-green-400 dark:bg-green-600 w-11 h-4 mr-2 text-center text-xs inline-block">
                         NEW
                     </div>
-                    <a :href="`/w/${lecture.data.courseSlug}/${lecture.data.lectureId}`"><span
-                                x-text="lecture.data.startDateFormatted"></span> <i class="fas fa-external-link"></i></a>
+                    <a :href="`/w/${lectureData.courseSlug}/${lectureData.lectureId}`"><span
+                                x-text="lectureData.startDateFormatted"></span> <i class="fas fa-external-link"></i></a>
                 </div>
                 <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
-                    <span x-text="lecture.data.startTimeFormatted"></span>
+                    <span x-text="lectureData.startTimeFormatted"></span>
                     -
-                    <span x-text="lecture.data.endTimeFormatted"></span>
+                    <span x-text="lectureData.endTimeFormatted"></span>
                     <i class="ml-2 fas fa-location-pin text-5"></i>
-                    <span x-text="lecture.data.lectureHallName" class="text-5"></span>
-                    <button @click="showKeys=!showKeys" x-show="lecture.data.lectureHallId===0 && !lecture.data.isPast"
+                    <span x-text="lectureData.lectureHallName" class="text-5"></span>
+                    <button @click="showKeys=!showKeys" x-show="lectureData.lectureHallId===0 && !lectureData.isPast"
                             class="bg-indigo-500 rounded px-2 py-0 font-semibold">
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
                         <span class="font-semibold">Stream Server:</span>
-                        <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lecture.data.lectureId +'?secret=' + lecture.data.streamKey"></span>
+                        <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lecture.data.lectureId +'?secret=' + lecture.data.streamKey)"></i>
+                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey)"></i>
                         <br>
                         <span class="font-semibold">Stream Key:</span>
-                        <span x-text="lecture.data.courseSlug + '-' + lecture.data.lectureId"></span>
+                        <span x-text="lectureData.courseSlug + '-' + lectureData.lectureId"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard(lecture.data.courseSlug + '-' + lecture.data.lectureId)"></i>
+                           @click="() => global.copyToClipboard(lectureData.courseSlug + '-' + lectureData.lectureId)"></i>
                         <br>
                         {{if ne $user.Role 1}}
                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
                         {{end}}
                     </p>
                 </div>
-                <div x-show="lecture.data.isConverting" class="p-4" x-init="lecture.keepProgressesUpdated()">
+                <div x-show="lectureData.isConverting" class="p-4" x-init="lecture.keepProgressesUpdated()">
                     <span class="text-1 font-semibold text-sm">Converting:</span>
-                    <template x-for="p in lecture.data.transcodingProgresses">
+                    <template x-for="p in lectureData.transcodingProgresses">
                         <div class="w-full ml-2">
                             <div class="font-semibold text-sm text-4" x-text="`${p.version} (${p.progress}%)`"></div>
                             <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
@@ -58,17 +59,17 @@
                         </div>
                     </template>
                 </div>
-                <div x-show="lecture.data.uiEditMode == 0"
+                <div x-show="uiEditMode == 0"
                      class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-gray-500 dark:border-white">
-                    <span class="italic text-gray-400 dark:text-gray-600" x-show="lecture.data.name.length === 0">Unknown Name</span>
-                    <span class="text-gray-700 dark:text-white" x-show="lecture.data.name.length > 0"
-                          x-text="lecture.data.name"></span>
+                    <span class="italic text-gray-400 dark:text-gray-600" x-show="lectureData.name.length === 0">Unknown Name</span>
+                    <span class="text-gray-700 dark:text-white" x-show="lectureData.name.length > 0"
+                          x-text="lectureData.name"></span>
                 </div>
             </div>
 
             <div class="flex items-center justify-end h-8">
                 <!-- generate subtitles button -->
-                <template x-if="lecture.data.isRecording">
+                <template x-if="lectureData.isRecording">
                     <div class="relative mr-2" x-data="{'showLanguageSelect': false}">
                         <button @click="showLanguageSelect = !showLanguageSelect"
                                 @click.outside="showLanguageSelect = false"
@@ -82,13 +83,13 @@
                                 <span class="text-xs text-3">Generate subtitles</span>
                             </div>
                             <div class="pt-3">
-                                <button @click="await admin.requestSubtitles(lecture.data.lectureId, 'de')"
+                                <button @click="await admin.requestSubtitles(lectureData.lectureId, 'de')"
                                         class="flex items-center justify-start
                                     py-1 px-2 text-3 w-full hover:bg-gray-200 hover:dark:bg-gray-600">
                                     <i class="text-lg w-8">🇩🇪</i>
                                     <span class="font-light text-sm ">German</span>
                                 </button>
-                                <button @click="await admin.requestSubtitles(lecture.data.lectureId, 'en')"
+                                <button @click="await admin.requestSubtitles(lectureData.lectureId, 'en')"
                                         class="flex items-center justify-start
                                     py-1 px-2 text-3 w-full hover:bg-gray-200 hover:dark:bg-gray-600">
                                     <i class="text-lg w-8">🇬🇧</i>
@@ -98,7 +99,7 @@
                         </div>
                     </div>
                 </template>
-                <template x-if="lecture.data.isRecording && lecture.data.downloadableVods && lecture.data.downloadableVods.length > 0">
+                <template x-if="lectureData.isRecording && lectureData.downloadableVods && lectureData.downloadableVods.length > 0">
                     <span class="relative mr-2" x-data="{expand:false}">
                         <button @click="expand=!expand" type="button"
                                 id="menu-button" aria-expanded="true"
@@ -124,22 +125,22 @@
                         </span>
                     </span>
                 </template>
-                <div x-show="lecture.data.isRecording">
+                <div x-show="lectureData.isRecording">
                     <div class="font-semibold border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black"
-                         :class="lecture.data.private?'bg-gray-500':'bg-success'">
-                        <i title="This lecture is hidden" x-show="lecture.data.private" class="fas fa-eye-slash"></i>
-                        <span x-show="!lecture.data.isConverting">VoD</span>
+                         :class="lectureData.private?'bg-gray-500':'bg-success'">
+                        <i title="This lecture is hidden" x-show="lectureData.private" class="fas fa-eye-slash"></i>
+                        <span x-show="!lectureData.isConverting">VoD</span>
                     </div>
                 </div>
-                <div x-show="lecture.data.isLiveNow"
+                <div x-show="lectureData.isLiveNow"
                      class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
                     Live
                 </div>
-                <div x-show="!lecture.data.isRecording && lecture.data.isPast"
+                <div x-show="!lectureData.isRecording && lectureData.isPast"
                      class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
                     Past
                 </div>
-                <div x-show="!lecture.data.isPast && !lecture.data.isLiveNow && !lecture.data.isRecording"
+                <div x-show="!lectureData.isPast && !lectureData.isLiveNow && !lectureData.isRecording"
                      class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
                     Scheduled
                 </div>
@@ -184,7 +185,7 @@
                             class="absolute left-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-black rounded shadow-md overflow-hidden"
                     >
                         <div>
-                            <button @click="lecture.startSingleEdit(); closeMoreDropdown();"
+                            <button @click="uiEditMode = admin.UIEditMode.single; closeMoreDropdown();"
                                     class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300">
                                 Edit Lecture
                             </button>
@@ -192,17 +193,17 @@
                                     class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300">
                                 Delete Lecture
                             </button>
-                            <button x-text="lecture.data.private?'Make public': 'Make private'"
+                            <button x-text="lectureData.private?'Make public': 'Make private'"
                                     class="block w-full px-4 py-2 text-left text-sm"
                                     @click="lecture.toggleVisibility(); closeMoreDropdown()"
-                                    x-show="lecture.data.isRecording"
-                                    :class="lecture.data.private?'text-gray-400 dark:hover:text-gray-500 hover:text-gray-300':'text-red-400 dark:hover:text-red-500 hover:text-red-300'">
+                                    x-show="lectureData.isRecording"
+                                    :class="lectureData.private?'text-gray-400 dark:hover:text-gray-500 hover:text-gray-300':'text-red-400 dark:hover:text-red-500 hover:text-red-300'">
                                 Make private
                             </button>
                         </div>
-                        <template x-if="lecture.data.seriesIdentifier.length > 0">
+                        <template x-if="lectureData.seriesIdentifier.length > 0">
                             <div class="border-t border-black">
-                                <button @click="lecture.startSeriesEdit(); closeMoreDropdown();"
+                                <button @click="lecture.reset(); uiEditMode = admin.UIEditMode.series; closeMoreDropdown();"
                                         class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300">
                                     Edit Series
                                 </button>
@@ -217,87 +218,42 @@
             </div>
         </div>
 
-        <button x-show="lecture.data.uiEditMode == 0"
-                @click="lecture.startSingleEdit(); closeMoreDropdown();"
+        <button x-show="uiEditMode == 0"
+                @click="uiEditMode = admin.UIEditMode.single;"
                 class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-b">
             <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>
         </button>
 
-        <div x-show="lecture.data.uiEditMode > 0" class="grid gap-y-4 p-4">
+        <div x-show="uiEditMode > 0" class="grid gap-y-4 p-4">
             <article class="grid gap-2 w-full">
                 <header class="border-b dark:border-gray-600 w-full">
                     <h6 class="text-sm text-5 font-light">Media</h6>
                 </header>
-                <article x-data="{ id: `lecture_media_${lecture.data.lectureId}`, progress: { 'COMB': 0, 'PRES': 0, 'CAM': 0 } }"
-                         @voduploadprogressedit.window="({ detail: { type, progress, lectureId } }) => { if (lectureId === lecture.data.lectureId) { progress[type] = progress; }}"
+                <article x-data="{ id: `lecture_media_${lectureData.lectureId}`, progress: { 'COMB': 0, 'PRES': 0, 'CAM': 0 } }"
+                         @voduploadprogressedit.window="({ detail: { type, progress, lectureId } }) => { if (lectureId === lectureData.lectureId) { progress[type] = progress; }}"
                          class="w-full flex justify-center flex-wrap">
-                    <div x-data="{ inputId: `${id}_comb` }"
-                         x-on:click="document.querySelector(`#${inputId}`).click()"
-                         class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
-                    >
-                        <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lecture.data.lectureId}/thumbs/vod?type=COMB')`"></div>
-                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
-                            Combined Video
+                    <template x-for="video in lecture.videoFiles">
+                        <div x-data="{ inputId: `${id}_${video.type}`, file: lectureData[video.key] }"
+                             x-on:click="document.querySelector(`#${inputId}`).click()"
+                             class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
+                        >
+                            <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lectureData.lectureId}/thumbs/vod?type=${video.type}')`"></div>
+                            <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2" x-text="video.title"></div>
+                            <div class="w-full h-full flex justify-center items-center drop-shadow-[2px_4px_6px_black]">
+                                <span x-show="!file">Click to upload new Video</span>
+                                <template x-if="file !== null">
+                                    <span class="text-green-400" x-text="file.name"></span>
+                                </template>
+                            </div>
+                            <div x-on:click="() => { changeSet.patch(video.key, null); }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
+                                <i class="fa fa-xmark text-3"></i>
+                            </div>
+                            <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-bind-change-set.single:newCombinedVideo="changeSet" />
+                            <div x-show="lectureData.isSaving && file !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
+                                <span x-text="`${progress[video.type]}%`"></span>
+                            </div>
                         </div>
-                        <div class="w-full h-full flex justify-center items-center drop-shadow-[2px_4px_6px_black]">
-                            <span x-show="!lecture.data.newCombinedVideo">Click to upload new Video</span>
-                            <template x-if="lecture.data.newCombinedVideo !== null">
-                                <span class="text-green-400" x-text="lecture.data.newCombinedVideo.name"></span>
-                            </template>
-                        </div>
-                        <div x-on:click="() => { $event.stopPropagation(); lecture.data.newCombinedVideo = null; lecture.updateIsDirty(); }" x-show="lecture.data.newCombinedVideo" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
-                            <i class="fa fa-xmark text-3"></i>
-                        </div>
-                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.data.newCombinedVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
-                        <div x-show="lecture.data.isSaving && lecture.data.newCombinedVideo !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
-                            <span x-text="`${progress.COMB}%`"></span>
-                        </div>
-                    </div>
-                    <div x-data="{ inputId: `${id}_pres` }"
-                         x-on:click="document.querySelector(`#${inputId}`).click()"
-                         class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
-                    >
-                        <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lecture.data.lectureId}/thumbs/vod?type=PRES')`"></div>
-                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
-                            Presentation Video
-                        </div>
-                        <div class="w-full h-full flex justify-center items-center p-2 drop-shadow-[2px_4px_6px_black]">
-                            <span x-show="!lecture.data.newPresentationVideo">Click to upload new Video</span>
-                            <template x-if="lecture.data.newPresentationVideo !== null">
-                                <span class="text-green-400" x-text="lecture.data.newPresentationVideo.name"></span>
-                            </template>
-                        </div>
-                        <div x-on:click="() => { $event.stopPropagation(); lecture.data.newPresentationVideo = null; lecture.updateIsDirty(); }" x-show="lecture.data.newPresentationVideo" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
-                            <i class="fa fa-xmark text-3"></i>
-                        </div>
-                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.data.newPresentationVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
-                        <div x-show="lecture.data.isSaving && lecture.data.newPresentationVideo !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
-                            <span x-text="`${progress.PRES}%`"></span>
-                        </div>
-                    </div>
-                    <div
-                            x-data="{ inputId: `${id}_cam` }"
-                            x-on:click="document.querySelector(`#${inputId}`).click()"
-                            class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
-                    >
-                        <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lecture.data.lectureId}/thumbs/vod?type=CAM')`"></div>
-                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
-                            Camera Video
-                        </div>
-                        <div class="w-full h-full flex justify-center items-center p-2 drop-shadow-[2px_4px_6px_black]">
-                            <span x-show="!lecture.data.newCameraVideo">Click to upload new Video</span>
-                            <template x-if="lecture.data.newCameraVideo !== null">
-                                <span class="text-green-400" x-text="lecture.data.newCameraVideo.name"></span>
-                            </template>
-                        </div>
-                        <div x-on:click="() => { $event.stopPropagation(); lecture.data.newCameraVideo = null; lecture.updateIsDirty(); }" x-show="lecture.data.newCameraVideo" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
-                            <i class="fa fa-xmark text-3"></i>
-                        </div>
-                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.data.newCameraVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
-                        <div x-show="lecture.data.isSaving && lecture.data.newCameraVideo !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
-                            <span x-text="`${progress.CAM}%`"></span>
-                        </div>
-                    </div>
+                    </template>
                 </article>
                 <header class="border-b dark:border-gray-600 w-full">
                     <h6 class="text-sm text-5 font-light">Title and Description</h6>
@@ -307,8 +263,7 @@
                     <label :for="id" class="hidden">Lecture Title</label>
                     <input :id="id"
                            class="grow tl-input" type="text"
-                           x-model="lecture.data.newName"
-                           x-on:keyup="lecture.updateIsDirty()"
+                           x-bind-change-set:name="changeSet"
                            placeholder="Lecture 2: Dark-Patterns I"
                            autocomplete="off">
                 </article>
@@ -322,8 +277,7 @@
                                   class="tl-textarea grow"
                                   placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
                                   autocomplete="off"
-                                  x-model="lecture.data.newDescription"
-                                  x-on:keyup="lecture.updateIsDirty()"></textarea>
+                                  x-bind-change-set:description="changeSet"></textarea>
                     </article>
                     <article class="flex justify-center">
                         <span class="text-xs text-3 my-auto">Attach files or URL to files by Drag & Drop in the description field.</span>
@@ -350,7 +304,7 @@
                     </article>
                 </section>
 
-                <div x-show="!lecture.data.isPast && !lecture.data.isRecording"
+                <div x-show="!lectureData.isPast && !lectureData.isRecording"
                      class="p-3 border dark:border-gray-600 rounded mt-3">
                     {{if eq $user.Role 1}}
                         <div x-data="{ id: $id('select') }">
@@ -359,14 +313,14 @@
                                 <select class="text-gray-700 dark:text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                         :id="id"
                                         x-on:change="lecture.updateIsDirty()"
-                                        x-model="lecture.data.newLectureHallId">
+                                        x-model="lectureData.newLectureHallId">
                                     <option class="text-gray-700 dark:text-gray-300" value="0">
                                         Self streaming
                                     </option>
                                     {{range $lectureHall := $lectureHalls}}
                                         <option class="text-gray-700 dark:text-gray-300"
                                                 value="{{$lectureHall.Model.ID}}"
-                                                :selected="lecture.data.lectureHallId === '{{$lectureHall.Model.ID}}'">
+                                                :selected="lectureData.lectureHallId === '{{$lectureHall.Model.ID}}'">
                                             {{$lectureHall.Name}}
                                         </option>
                                     {{end}}
@@ -375,10 +329,10 @@
                         </div>
                     {{end}}
                     {{if eq $user.Role 2}}
-                        <div x-show="lecture.data.newLectureHallId !== '0'">
+                        <div x-show="lectureData.newLectureHallId !== '0'">
                             This lecture will be streamed from <span
                                     class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span
-                                        x-show="lecture.data.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
+                                        x-show="lectureData.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
                             If you need this changed or want to stream from home (with obs, zoom etc.), please reach
                             out to the RBG.
                         </div>
@@ -386,11 +340,11 @@
                 </div>
             </article>
 
-            <template x-if="lecture.data.hasAttachments">
+            <template x-if="lectureData.hasAttachments">
                 <article>
                     <h6 class="text-sm text-5 font-light border-b dark:border-gray-600">Attachments</h6>
                     <ul class="list-disc grid py-2 ml-6">
-                        <template x-for="file in lecture.data.files">
+                        <template x-for="file in lectureData.files">
                             <template x-if="file.fileType === admin.FileType.attachment">
                                 <li>
                                     <section class="flex items-center">
@@ -408,17 +362,17 @@
                 </article>
             </template>
 
-            <template x-if="lecture.data.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
+            <template x-if="uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
                 {{template "editvideosections"}}
             </template>
 
-            <span x-show="lecture.data.isRecording" class="absolute left-0 bottom-0 p-4">
+            <span x-show="lectureData.isRecording" class="absolute left-0 bottom-0 p-4">
                 <!-- buttons go here -->
             </span>
 
-            <div x-show="lecture.data.lastErrors.length > 0" class="px-6 py-3 bg-red-400 my-3 rounded">
+            <div x-show="lastErrors.length > 0" class="px-6 py-3 bg-red-400 my-3 rounded">
                 <ul>
-                    <template x-for="error in lecture.data.lastErrors">
+                    <template x-for="error in lastErrors">
                         <li x-text="error"></li>
                     </template>
                 </ul>
@@ -428,7 +382,7 @@
                 <section class="flex items-center py-1 px-3">
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" value="" class="sr-only peer" @change="lecture.updateIsDirty()"
-                               x-model="lecture.data.newIsChatEnabled">
+                               x-model="lectureData.newIsChatEnabled">
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
                         dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
                         peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
@@ -438,15 +392,15 @@
                     </label>
                 </section>
                 <div>
-                    <button :disabled="lecture.data.isSaving" @click="lecture.discardEdit();"
+                    <button :disabled="lectureData.isSaving" @click="lecture.discardEdit();"
                             class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
                         Discard Changes
                     </button>
                     <button
                             @click="lecture.saveEdit();"
-                            :disabled="!lecture.data.isDirty || lecture.data.isSaving"
+                            :disabled="!lectureData.isDirty || lectureData.isSaving"
                             class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
-                            x-text="lecture.data.isSaving ? 'loading ...' : (lecture.data.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
+                            x-text="lectureData.isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>
                 </div>
             </div>

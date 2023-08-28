@@ -1,12 +1,27 @@
+export interface DirtyState {
+    isDirty: boolean;
+    dirtyKeys: string[];
+}
+
 export class ChangeSet<T> {
     private state: T;
     private changeState: T;
     private readonly comparator?: (key: string, a: T, b: T) => boolean|null;
+    private onUpdate: ((changeState: T, dirtyState: DirtyState) => void)[];
 
-    constructor(state: T, comparator?: (key: string, a: T, b: T) => boolean) {
+    constructor(state: T, comparator?: (key: string, a: T, b: T) => boolean, onUpdate?: (changeState: T, dirtyState: DirtyState) => void) {
         this.state = state;
+        this.onUpdate = onUpdate ? [onUpdate] : [];
         this.comparator = comparator;
         this.reset();
+    }
+
+    listen(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
+        this.onUpdate.push(onUpdate);
+    }
+
+    removeListener(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
+        this.onUpdate = this.onUpdate.filter((o) => o !== onUpdate);
     }
 
     get(): T {
@@ -15,6 +30,12 @@ export class ChangeSet<T> {
 
     set(val: T) {
         this.changeState = {...val};
+        this.dispatchUpdate();
+    }
+
+    patch(key: string, val: T) {
+        this.changeState = {...this.changeState, [key]: val};
+        this.dispatchUpdate();
     }
 
     commit(): void {
@@ -23,6 +44,7 @@ export class ChangeSet<T> {
 
     reset(): void {
         this.changeState = {...this.state};
+        this.dispatchUpdate();
     }
 
     isDirty(): boolean {
@@ -58,5 +80,17 @@ export class ChangeSet<T> {
             return true;
         }
         return false;
+    }
+
+    dispatchUpdate() {
+        if (this.onUpdate.length > 0) {
+            const dirtyKeys = this.changedKeys();
+            for (const onUpdate of this.onUpdate) {
+                onUpdate(this.changeState, {
+                    dirtyKeys,
+                    isDirty: dirtyKeys.length > 0,
+                });
+            }
+        }
     }
 }

@@ -61,6 +61,11 @@ export interface Lecture {
     endDate: Date;
     endDateFormatted: string;
     endTimeFormatted: string;
+
+    // Clientside pseudo fields
+    newCombinedVideo: File|null;
+    newPresentationVideo: File|null;
+    newCameraVideo: File|null;
 }
 
 export interface DownloadableVOD {
