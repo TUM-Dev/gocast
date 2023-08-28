@@ -129,26 +129,12 @@ export class LectureEditor {
     lectureData: Lecture;
     isDirty: boolean;
 
-    /*readonly courseId: number;
-    readonly courseSlug: string;
-    readonly lectureId: number;
-    readonly streamKey: string;
-    readonly seriesIdentifier: string;
-    color: string;
-    readonly vodViews: number;
-    start: Date;
-    end: Date;
-    readonly isLiveNow: boolean;
-    isConverting: boolean;
-    readonly isRecording: boolean;
-    readonly isPast: boolean;
-    readonly hasStats: boolean;*/
-
     constructor(lecture: Lecture) {
         this.changeSet = new ChangeSet<Lecture>(lecture, this.lectureComparator, (data, dirtyState) => {
             this.lectureData = data;
             this.isDirty = dirtyState.isDirty;
         });
+        this.isDirty = false;
         this.uiEditMode = UIEditMode.none;
         this.lastErrors = [];
     }

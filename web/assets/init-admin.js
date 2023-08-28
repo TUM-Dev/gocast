@@ -1,11 +1,10 @@
 document.addEventListener("alpine:init", () => {
     Alpine.directive("bind-change-set", (el, { expression, value, modifiers }, { evaluate, cleanup }) => {
         const changeSet = evaluate(expression);
-        const fieldName = value;
+        const fieldName = value || el.name;
 
         if (el.type === "file") {
-            const [type] = modifiers;
-            const isSingle = type === "single";
+            const isSingle = modifiers.includes("single")
 
             const changeHandler = (e) => {
                 changeSet.patch(fieldName, isSingle ? e.target.files[0] : e.target.files);
