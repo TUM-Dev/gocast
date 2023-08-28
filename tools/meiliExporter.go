@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asticode/go-astisub"
-	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/TUM-Dev/gocast/dao"
 	"github.com/meilisearch/meilisearch-go"
 	log "github.com/sirupsen/logrus"
 	"strings"

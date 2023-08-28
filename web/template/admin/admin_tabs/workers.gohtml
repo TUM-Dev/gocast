@@ -13,7 +13,7 @@
                     </tr>
                     </thead>
                     <tbody class="text-3">
-                        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WorkersData*/ -}}
+                        {{- /*gotype: github.com/TUM-Dev/gocast/web.WorkersData*/ -}}
                         {{range $worker := .Workers}}
                             <tr class="border-gray-500">
                                 <td class="pt-3 px-6">
@@ -79,7 +79,7 @@
             <span class="flex">
                 {{template "terminalprompt"}}
                 <span class="text-gray-300">docker run -p 50051:50051 -e "Host=vm1234" -e "Token=<span
-                      x-text="token"></span>" ghcr.io/joschahenningsen/tum-live/worker:latest</span>
+                      x-text="token"></span>" ghcr.io/TUM-Dev/gocast/worker:latest</span>
             </span>
             </p>
             <p class="dark:bg-secondary-lighter text-white shadow rounded bg-gray-400 p-3" x-show="show==='swarm'">

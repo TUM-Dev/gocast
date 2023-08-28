@@ -21,7 +21,7 @@ export function chatPromptContext(streamId: number): AlpineComponent {
 
         ws: new ChatWebsocketConnection(SocketConnections.ws),
 
-        inputEl: document.getElementById("chat-input") as HTMLInputElement,
+        inputEl: document.getElementById("chat-input") as HTMLTextAreaElement,
         usersEl: document.getElementById("chat-user-list") as HTMLInputElement,
         emojiEl: document.getElementById("chat-emoji-list") as HTMLInputElement,
 
@@ -41,7 +41,10 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             this.users.reset();
         },
 
-        send() {
+        send(event: KeyboardEvent) {
+            if (event.shiftKey) {
+                return;
+            }
             console.log("🌑 send message '", this.message, "'");
             this.ws.sendMessage({
                 msg: this.message,
@@ -84,6 +87,10 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             } else if (this.emojis.hasSuggestions()) {
                 this.emojiEl.focus();
             }
+
+            // https://stackoverflow.com/a/21079335
+            this.inputEl.style.height = "0px";
+            this.inputEl.style.height = this.inputEl.scrollHeight + "px";
         },
 
         keypressAlphanumeric(e) {

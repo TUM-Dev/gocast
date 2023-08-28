@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/joschahenningsen/TUM-Live/model"
+	model "github.com/TUM-Dev/gocast/model"
 )
 
 // MockProgressDao is a mock of ProgressDao interface.
@@ -50,18 +50,18 @@ func (mr *MockProgressDaoMockRecorder) GetProgressesForUser(userID interface{}) 
 }
 
 // LoadProgress mocks base method.
-func (m *MockProgressDao) LoadProgress(userID, streamID uint) (model.StreamProgress, error) {
+func (m *MockProgressDao) LoadProgress(userID uint, streamIDs []uint) ([]model.StreamProgress, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadProgress", userID, streamID)
-	ret0, _ := ret[0].(model.StreamProgress)
+	ret := m.ctrl.Call(m, "LoadProgress", userID, streamIDs)
+	ret0, _ := ret[0].([]model.StreamProgress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // LoadProgress indicates an expected call of LoadProgress.
-func (mr *MockProgressDaoMockRecorder) LoadProgress(userID, streamID interface{}) *gomock.Call {
+func (mr *MockProgressDaoMockRecorder) LoadProgress(userID, streamIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadProgress", reflect.TypeOf((*MockProgressDao)(nil).LoadProgress), userID, streamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadProgress", reflect.TypeOf((*MockProgressDao)(nil).LoadProgress), userID, streamIDs)
 }
 
 // SaveProgresses mocks base method.

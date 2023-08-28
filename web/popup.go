@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/tools"
 	"log"
 	"net/http"
 )

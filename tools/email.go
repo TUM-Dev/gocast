@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/TUM-Dev/gocast/dao"
 	"log"
 	"net/smtp"
 	"os/exec"

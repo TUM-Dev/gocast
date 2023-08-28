@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/TUM-Dev/gocast/dao"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )

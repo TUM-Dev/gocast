@@ -12,8 +12,8 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 var templateExecutor tools.TemplateExecutor

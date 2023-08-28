@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/icholy/digest"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 	"io"
 	"net/http"
 	"os"

@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools/camera"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools/camera"
 	log "github.com/sirupsen/logrus"
 	"time"
 )

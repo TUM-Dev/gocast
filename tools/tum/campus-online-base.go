@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/antchfx/xmlquery"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/tools"
 	log "github.com/sirupsen/logrus"
 )
 

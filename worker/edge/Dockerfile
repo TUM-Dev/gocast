@@ -1,6 +1,6 @@
 FROM golang:1.21-alpine3.18 as builder
 
-WORKDIR /go/src/github.com/joschahenningsen/TUM-Live/worker
+WORKDIR /go/src/github.com/TUM-Dev/gocast/worker
 COPY . .
 
 RUN GO111MODULE=on go mod download

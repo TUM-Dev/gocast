@@ -2,9 +2,9 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools/realtime"
-	"github.com/joschahenningsen/TUM-Live/tools/realtime/connector"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/tools/realtime"
+	"github.com/TUM-Dev/gocast/tools/realtime/connector"
 	log "github.com/sirupsen/logrus"
 )
 

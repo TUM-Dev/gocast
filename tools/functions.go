@@ -2,7 +2,7 @@ package tools
 
 import (
 	"errors"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 	"log"
 	"os/exec"
 	"regexp"

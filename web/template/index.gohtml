@@ -9,7 +9,7 @@
 <body>
 {{template "header" .TUMLiveContext}}
 
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
 <div x-init="global.liveUpdateListener.init()" class="container flex flex-col pb-16">
     {{if .ServerNotifications}}

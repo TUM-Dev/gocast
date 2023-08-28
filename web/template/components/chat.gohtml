@@ -1,5 +1,5 @@
 {{define "chat-component"}}
-    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
+    {{- /*gotype: github.com/TUM-Dev/gocast/web.ChatData*/ -}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$userName := ""}}
@@ -288,11 +288,11 @@
                             </button>
                         </template>
                     </section>
-                    <article class="flex flex-col space-y-2 px-5 border-t dark:border-gray-800 py-2 font-light">
+                    <article class="flex flex-col space-y-2 px-3 border-t dark:border-gray-800 py-2 font-light">
                         <label class="grow">
-                            <input id="chat-input" type="text" spellcheck="true" maxlength="200"
+                            <textarea id="chat-input" type="text" spellcheck="true" maxlength="1000"
                                    @keyup="keyup()"
-                                   @keyup.enter="send()"
+                                   @keyup.enter="send(event)"
                                    @keyup.esc="cancelReply()"
                                    :disabled="!isLoggedIn()"
                                    x-model="message"

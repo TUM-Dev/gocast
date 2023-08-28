@@ -2,7 +2,7 @@ package camera
 
 import (
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
