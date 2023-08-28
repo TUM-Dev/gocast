@@ -1,7 +1,3 @@
-import {CacheOptions} from "./data-store/cache";
-
-
-
 export class ChangeSet<T> {
     private state: T;
     private changeState: T;
