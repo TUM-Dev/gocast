@@ -23,6 +23,23 @@ document.addEventListener("alpine:init", () => {
                 changeSet.removeListener(onChangeSetUpdateHandler);
                 el.removeEventListener('change', changeHandler)
             })
+        } else if (el.type === "checkbox") {
+            const changeHandler = (e) => {
+                changeSet.patch(fieldName, e.target.checked);
+            };
+
+            const onChangeSetUpdateHandler = (data) => {
+                el.checked = !!data[fieldName];
+            };
+
+            changeSet.listen(onChangeSetUpdateHandler);
+            el.addEventListener('change', changeHandler)
+            el.checked = changeSet.get()[fieldName];
+
+            cleanup(() => {
+                changeSet.removeListener(onChangeSetUpdateHandler);
+                el.removeEventListener('change', changeHandler)
+            })
         } else {
             const keyupHandler = (e) => {
                 changeSet.patch(fieldName, e.target.value);

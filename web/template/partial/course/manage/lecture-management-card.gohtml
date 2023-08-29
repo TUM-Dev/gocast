@@ -381,8 +381,7 @@
             <div class="mt-6 flex items-center justify-between">
                 <section class="flex items-center py-1 px-3">
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer" @change="updateIsDirty()"
-                               x-model="lectureData.newIsChatEnabled">
+                        <input type="checkbox" name="isChatEnabled" class="sr-only peer" x-bind-change-set="changeSet" />
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
                         dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
                         peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
@@ -392,15 +391,15 @@
                     </label>
                 </section>
                 <div>
-                    <button :disabled="lectureData.isSaving" @click="discardEdit();"
+                    <button :disabled="isSaving" @click="discardEdit();"
                             class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
                         Discard Changes
                     </button>
                     <button
                             @click="saveEdit();"
-                            :disabled="!lectureData.isDirty || lectureData.isSaving"
+                            :disabled="!isDirty || isSaving"
                             class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
-                            x-text="lectureData.isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
+                            x-text="isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>
                 </div>
             </div>

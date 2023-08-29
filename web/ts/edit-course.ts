@@ -126,6 +126,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         lastErrors: [] as string[],
         uiEditMode: UIEditMode.none,
         isDirty: false,
+        isSaving: false,
 
         // Lecture Data
         changeSet: null,
@@ -163,7 +164,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
         getVideoFile(key: string): File {
             return this.lectureData[key];
-        }
+        },
 
         /**
          * Opens the series lecture editor UI
@@ -182,6 +183,11 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             this.changeSet.reset();
             this.uiEditMode = UIEditMode.single;
         },
+
+        discardEdit() {
+            this.changeSet.reset();
+            this.uiEditMode = UIEditMode.none;
+        }
 
     }  as AlpineComponent;
 }
