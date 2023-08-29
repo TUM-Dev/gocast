@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import { Lecture } from "./api/admin-lecture-list";
 import {ChangeSet} from "./change-set";
+import { AlpineComponent } from "./components/alpine-component";
 
 export enum UIEditMode {
     none,
@@ -22,7 +23,7 @@ export enum FileType {
 
 export class LectureList {
     courseId: number;
-    lectures: LectureEditor[] = [];
+    lectures: Lecture[] = [];
     markedIds: number[] = [];
 
     constructor(courseId: number) {
@@ -46,9 +47,8 @@ export class LectureList {
 
     async setup() {
         await DataStore.adminLectureList.subscribe(this.courseId, (lectures) => {
-            this.lectures = lectures.map((lecture) => new LectureEditor(lecture));
+            this.lectures = lectures;
             this.triggerUpdateEvent();
-            console.log("testyyy", this.lectures);
         });
     }
 
@@ -114,7 +114,79 @@ interface VideoFile {
     title: string;
 }
 
-export class LectureEditor {
+export function lectureEditor(lecture: Lecture): AlpineComponent {
+    return {
+        videoFiles: [
+            { key: "newCombinedVideo", type: "PRES", title: "Combined Video", inputId: `input_${lecture.lectureId}_comb` },
+            { key: "newPresentationVideo", type: "PRES", title: "Presentation Video", inputId: `input_${lecture.lectureId}_pres` },
+            { key: "newCameraVideo", type: "PRES", title: "Camera Video", inputId: `input_${lecture.lectureId}_cam` },
+        ] as VideoFile[],
+
+        // UI Data
+        lastErrors: [] as string[],
+        uiEditMode: UIEditMode.none,
+        isDirty: false,
+
+        // Lecture Data
+        changeSet: null,
+        lectureData: null,
+
+        /**
+         * AlpineJS init function which is called automatically in addition to 'x-init'
+         */
+        init() {
+            this.changeSet = new ChangeSet<Lecture>(lecture, this.lectureComparator, (data, dirtyState) => {
+                this.lectureData = data;
+                this.isDirty = dirtyState.isDirty;
+            });
+        },
+
+        /**
+         * A custom comparator to setup special comparison strategies for specific keys
+         * @param key key in Lecture
+         * @param a
+         * @param b
+         * @return return 0 to use naive default comparator
+         */
+        lectureComparator(key: string, a: Lecture, b: Lecture): boolean|null {
+            // here we can set some custom comparisons
+            return null;
+        },
+
+        async keepProgressesUpdated() {
+
+        },
+
+        getDownloads() {
+            //return this.downloadableVods;
+        },
+
+        getVideoFile(key: string): File {
+            return this.lectureData[key];
+        }
+
+        /**
+         * Opens the series lecture editor UI
+         */
+        startSeriesEdit() {
+            if (this.uiEditMode !== UIEditMode.none) return;
+            this.changeSet.reset();
+            this.uiEditMode = UIEditMode.series;
+        },
+
+        /**
+         * Opens the single lecture editor UI
+         */
+        startSingleEdit() {
+            if (this.uiEditMode !== UIEditMode.none) return;
+            this.changeSet.reset();
+            this.uiEditMode = UIEditMode.single;
+        },
+
+    }  as AlpineComponent;
+}
+
+export class LectureEditorX {
     private changeSet: ChangeSet<Lecture>;
 
     public readonly videoFiles: VideoFile[] = [
