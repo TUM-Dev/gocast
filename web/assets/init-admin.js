@@ -2,6 +2,7 @@ document.addEventListener("alpine:init", () => {
     Alpine.directive("bind-change-set", (el, { expression, value, modifiers }, { evaluate, cleanup }) => {
         const changeSet = evaluate(expression);
         const fieldName = value || el.name;
+        const nativeEventName = "csupdate";
 
         if (el.type === "file") {
             const isSingle = modifiers.includes("single")
@@ -14,6 +15,7 @@ document.addEventListener("alpine:init", () => {
                 if (!data[fieldName]) {
                     el.value = "";
                 }
+                el.dispatchEvent(new CustomEvent(nativeEventName, { detail: data[fieldName] }));
             };
 
             changeSet.listen(onChangeSetUpdateHandler);
@@ -30,6 +32,7 @@ document.addEventListener("alpine:init", () => {
 
             const onChangeSetUpdateHandler = (data) => {
                 el.checked = !!data[fieldName];
+                el.dispatchEvent(new CustomEvent(nativeEventName, { detail: !!data[fieldName] }));
             };
 
             changeSet.listen(onChangeSetUpdateHandler);
@@ -47,6 +50,7 @@ document.addEventListener("alpine:init", () => {
 
             const onChangeSetUpdateHandler = (data) => {
                 el.value = data[fieldName];
+                el.dispatchEvent(new CustomEvent(nativeEventName, { detail: data[fieldName] }));
             };
 
             changeSet.listen(onChangeSetUpdateHandler);

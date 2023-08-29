@@ -248,7 +248,7 @@
                             <div x-on:click="() => { $event.stopPropagation(); changeSet.patch(video.key, null); file = getVideoFile(video.key); }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
                                 <i class="fa fa-xmark text-3"></i>
                             </div>
-                            <input :id="video.inputId" class="hidden" :name="video.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" @change="() => { file = getVideoFile(video.key); }" />
+                            <input :id="video.inputId" class="hidden" :name="video.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" @csupdate="(e) => { file = e.detail; }" />
                             <div x-show="lectureData.isSaving && file !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
                                 <span x-text="`${progress[video.type]}%`"></span>
                             </div>
