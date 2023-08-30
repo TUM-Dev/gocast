@@ -6,10 +6,10 @@ export class StreamPlaylistProvider extends StreamableMapProvider<number, Stream
         const result = await StreamPlaylist.get(streamId);
         return result
             .map((e) => {
-                e.createdAtDate = new Date(e.createdAt);
+                e.startDate = new Date(e.start);
                 return e;
             })
-            .sort((a, b) => a.createdAtDate.getTime() - b.createdAtDate.getTime());
+            .sort((a, b) => (a.startDate < b.startDate ? -1 : 1));
     }
 }
 
@@ -23,7 +23,7 @@ export type StreamPlaylistEntry = {
     createdAt: string;
 
     // Client Generated
-    createdAtDate: Date;
+    startDate: Date;
 };
 
 const StreamPlaylist = {
