@@ -2,6 +2,7 @@
     {{- /*gotype: github.com/TUM-Dev/gocast/web.AdminPageData*/ -}}
 
     {{$course := .IndexData.TUMLiveContext.Course}}
+    {{$courses := .Courses}}
     {{$user := .IndexData.TUMLiveContext.User}}
     {{$ingestBase := .IngestBase}}
     {{$lectureHalls := .LectureHalls}}
@@ -199,6 +200,10 @@
                                     :class="lecture.private?'text-gray-400 dark:hover:text-gray-500 hover:text-gray-300':'text-red-400 dark:hover:text-red-500 hover:text-red-300'">
                                 Make private
                             </button>
+                            <button class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300"
+                                    @click="lecture.isCopying = true; closeMoreDropdown()">
+                                Move/Copy to other course
+                            </button>
                         </div>
                         <template x-if="lecture.seriesIdentifier.length > 0">
                             <div class="border-t border-black">
@@ -217,7 +222,7 @@
             </div>
         </div>
 
-        <button x-show="lecture.uiEditMode == 0"
+        <button x-show="lecture.uiEditMode == 0 && !lecture.isCopying"
                 @click="lecture.startSingleEdit(); closeMoreDropdown();"
                 class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-b">
             <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>
@@ -451,5 +456,53 @@
                 </div>
             </div>
         </div>
+
+        <template x-if="lecture.isCopying">
+            <form class="p-4" x-data="{move: false, selected: -1, success: undefined}"
+                @submit.prevent="fetch(`/api/course/${lecture.courseId}/stream/${lecture.lectureId}/copy`,
+                {method: 'POST', body: JSON.stringify({targetCourse: selected, move: move})}).then(r=>{success=r.ok})">
+                <div x-show="success===undefined">
+                    <div class="w-full grid grid-cols-2">
+                        <button @click="move=false" class="w-full py-2 mt-2 rounded" :class="!move && 'bg-indigo-500/70'" type="button">
+                            <span class="text-gray-700 dark:text-gray-300">Copy</span>
+                        </button>
+                        <button @click="move=true" class="w-full py-2 mt-2 rounded" :class="move && 'bg-indigo-500/70'" type="button">
+                            <span class="text-gray-700 dark:text-gray-300">Move</span>
+                        </button>
+                    </div>
+                    <span class="text-3 mt-3">Select target course:</span>
+                    <div class="flex flex-col m-2 mb-4">
+                        {{range $c := $courses}}
+                            {{if ne $c.ID $course.ID}}
+                                <label class="w-full">
+                                    <input name="targetcourse" type="radio" @click="selected={{$c.ID}}">
+                                    <span>
+                                        {{$c.Name}}
+                                        <span class="font-semibold">{{$c.Year}} | {{$c.TeachingTerm}}</span>
+                                    </span>
+                                </label>
+                            {{end}}
+                        {{end}}
+                    </div>
+                    <button @click="lecture.isCopying = false"
+                            type="button"
+                            class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4"
+                            :disabled="selected === -1">
+                        Done
+                    </button>
+                </div>
+                <div x-show="success===true">
+                    <span class="text-success font-semibold">Lecture copied successfully.</span>
+                </div>
+                <div x-show="success===false">
+                    <span class="text-red-500 font-semibold">Lecture could not be copied!</span>
+                </div>
+            </form>
+        </template>
     </li>
 {{end}}
