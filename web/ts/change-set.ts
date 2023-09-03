@@ -16,18 +16,33 @@ export class ChangeSet<T> {
         this.reset();
     }
 
+    /**
+     * Add listener to receive change set updates
+     * @param onUpdate
+     */
     listen(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
         this.onUpdate.push(onUpdate);
     }
 
+    /**
+     * Remove listener from change set.
+     * @param onUpdate
+     */
     removeListener(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
         this.onUpdate = this.onUpdate.filter((o) => o !== onUpdate);
     }
 
+    /**
+     * Returns the current uncommitted change state.
+     */
     get(): T {
         return this.changeState;
     }
 
+    /**
+     * Sets the change state.
+     * @param val
+     */
     set(val: T) {
         this.changeState = {...val};
         this.dispatchUpdate();
@@ -47,15 +62,24 @@ export class ChangeSet<T> {
         this.dispatchUpdate();
     }
 
+    /**
+     * Commits the change state to the state. State is updated to the latest change state afterwards.
+     */
     commit(): void {
         this.state = {...this.changeState};
     }
 
+    /**
+     * Resets the change state to the state. Change state is the most current state afterwards.
+     */
     reset(): void {
         this.changeState = {...this.state};
         this.dispatchUpdate();
     }
 
+    /**
+     * A flag that indicated whether the change state is the same then the state or not.
+     */
     isDirty(): boolean {
         for (const key of Object.keys(this.state)) {
             if (this.keyChanged(key)) {
@@ -65,6 +89,9 @@ export class ChangeSet<T> {
         return false;
     }
 
+    /**
+     * Returns the keys that are not the same between the state and the change state.
+     */
     changedKeys(): string[] {
         const res = [];
         for (const key of Object.keys(this.state)) {
@@ -75,6 +102,10 @@ export class ChangeSet<T> {
         return res;
     }
 
+    /**
+     * Checks if a specific key's value is different on the state and the change state.
+     * @param key Key that should be checked
+     */
     keyChanged(key: string): boolean {
         // Check with custom comparator if set
         if (this.comparator !== undefined) {
@@ -84,13 +115,13 @@ export class ChangeSet<T> {
             }
         }
 
-        // Otherwise just check if equiv
-        if (this.state[key] !== this.changeState[key]) {
-            return true;
-        }
-        return false;
+        // else just check if equiv
+        return this.state[key] !== this.changeState[key];
     }
 
+    /**
+     * Executes all onUpdate listeners
+     */
     dispatchUpdate() {
         if (this.onUpdate.length > 0) {
             const dirtyKeys = this.changedKeys();
