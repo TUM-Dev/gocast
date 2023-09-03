@@ -41,6 +41,20 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
+    async setPrivate(courseId: number, lectureId: number, isPrivate: boolean) {
+        await AdminLectureList.setPrivate(lectureId, isPrivate);
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId !== lectureId) {
+                return s;
+            }
+            return {
+                ...s,
+                private: !s.private
+            }
+        });
+        await this.triggerUpdate(courseId);
+    }
+
     async delete(courseId: number, lectureIds: number[]) {
         await AdminLectureList.delete(courseId, lectureIds);
         this.data[courseId] = (await this.getData(courseId)).filter((s) => !lectureIds.includes(s.lectureId));

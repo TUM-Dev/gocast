@@ -90,11 +90,11 @@ export const AdminLectureList = {
     update: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
         const promises = [];
         if (request.name !== undefined) {
-            promises.push(postData("/api/course/" + courseId + "/renameLecture/" + lectureId, { name: request.name }));
+            promises.push(postData(`/api/course/${courseId}/renameLecture/${lectureId}`, { name: request.name }));
         }
 
         if (request.description !== undefined) {
-            promises.push(postData("/api/course/" + courseId + "/updateDescription/" + lectureId, { name: request.description }));
+            promises.push(postData(`/api/course/${courseId}/updateDescription/${lectureId}`, { name: request.description }));
         }
 
         if (request.lectureHallId !== undefined) {
@@ -102,13 +102,20 @@ export const AdminLectureList = {
         }
 
         if (request.isChatEnabled !== undefined) {
-            promises.push(patchData("/api/stream/" + lectureId + "/chat/enabled", { lectureId, isChatEnabled: request.isChatEnabled }));
+            promises.push(patchData(`/api/stream/${lectureId}/chat/enabled`, { lectureId, isChatEnabled: request.isChatEnabled }));
         }
 
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
         if (errors.length > 0) {
             console.error(errors);
             throw Error("Failed to update all data.");
+        }
+    },
+
+    setPrivate: async (lectureId: number, isPrivate: boolean): Promise<void> => {
+        const res = await patchData(`/api/stream/${lectureId}/visibility`, { private: isPrivate });
+        if (res.status !== StatusCodes.OK) {
+            throw Error(res.body.toString());
         }
     },
 

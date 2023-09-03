@@ -217,32 +217,8 @@ export class LectureEditorX {
     }
 
     lectureComparator(key: string, a: Lecture, b: Lecture): boolean|null {
-        // here we can set some custom comparisons
-
         return null;
     }
-
-    /*name: string;
-    description: string;
-    lectureHallId: string;
-    lectureHallName: string;
-    isChatEnabled = false;
-    uiEditMode: UIEditMode = UIEditMode.none;
-    newName: string;
-    newDescription: string;
-    newLectureHallId: string;
-    newIsChatEnabled = false;
-    newCombinedVideo = null;
-    newPresentationVideo = null;
-    newCameraVideo = null;
-    isDirty = false;
-    isSaving = false;
-    isDeleted = false;
-    lastErrors: string[] = [];
-    transcodingProgresses: TranscodingProgress[];
-    files: LectureFile[];
-    private: boolean;
-    downloadableVods: DownloadableVod[];*/
 
     startSeriesEdit() {
         if (this.uiEditMode !== UIEditMode.none) return;
@@ -257,6 +233,7 @@ export class LectureEditorX {
     }
 
     async toggleVisibility() {
+        //this.changeSet.patch("private", !this.lectureData.private, { isCommitted: true });
         /*fetch(`/api/stream/${this.lectureId}/visibility`, {
             method: "PATCH",
             body: JSON.stringify({ private: !this.private }),
