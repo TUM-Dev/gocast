@@ -14,6 +14,13 @@ const timeFormatOptions: Intl.DateTimeFormatOptions = {
     minute: "2-digit",
 };
 
+export interface UpdateMetaProps {
+    payload: UpdateLectureMetaRequest;
+    options?: {
+        saveSeries?: boolean;
+    };
+}
+
 export class AdminLectureListProvider extends StreamableMapProvider<number, Lecture[]> {
     protected async fetcher(courseId: number): Promise<Lecture[]> {
         const result = await AdminLectureList.get(courseId);
@@ -62,18 +69,27 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async updateMeta(courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
-        await AdminLectureList.update(courseId, lectureId, request);
+    async updateMeta(courseId: number, lectureId: number, props: UpdateMetaProps) {
+        const updateSeries = props?.options?.saveSeries === true;
+        const seriesIdentifier = this.data[courseId].find((l) => l.lectureId === lectureId)?.seriesIdentifier ?? null;
+
+        await AdminLectureList.updateMetadata(courseId, lectureId, props.payload);
+        if (updateSeries) {
+            await AdminLectureList.saveSeriesMetadata(courseId, lectureId);
+        }
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
+            const isLecture = s.lectureId === lectureId;
+            const isInLectureSeries = s.seriesIdentifier === seriesIdentifier;
+
+            if (isLecture || (updateSeries && isInLectureSeries)) {
                 s = {
                     ...s,
                 };
 
                 // Patch updated keys in local data
-                for (const requestKey in request) {
-                    const val = request[requestKey];
+                for (const requestKey in props.payload) {
+                    const val = props.payload[requestKey];
                     if (val !== undefined) {
                         s[requestKey] = val;
                     }

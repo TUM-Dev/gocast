@@ -93,16 +93,32 @@ export interface DownloadableVOD {
  * REST API Wrapper for /api/stream/:id/sections
  */
 export const AdminLectureList = {
+
+    /**
+     * Fetches all lectures for a course
+     * @param courseId
+     */
     get: async function (courseId: number): Promise<Lecture[]> {
         const result = await get(`/api/course/${courseId}/lectures`);
         return result["streams"];
     },
 
+    /**
+     * Adds a new lecture to a course.
+     * @param courseId
+     * @param request
+     */
     add: async function (courseId: number, request: object) {
         return post(`/api/stream/${courseId}/sections`, request);
     },
 
-    update: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
+    /**
+     * Updates metadata of a lecture.
+     * @param courseId
+     * @param lectureId
+     * @param request
+     */
+    updateMetadata: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
         const promises = [];
         if (request.name !== undefined) {
             promises.push(postData(`/api/course/${courseId}/renameLecture/${lectureId}`, { name: request.name }));
@@ -127,6 +143,20 @@ export const AdminLectureList = {
         }
     },
 
+    /**
+     * Distributes the lecture metadata of given lecture to all lectures in its series.
+     * @param courseId
+     * @param lectureId
+     */
+    saveSeriesMetadata: async (courseId: number, lectureId: number) => {
+        return await postData(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
+    },
+
+    /**
+     * Updates the private state of a lecture.
+     * @param lectureId
+     * @param isPrivate
+     */
     setPrivate: async (lectureId: number, isPrivate: boolean): Promise<void> => {
         const res = await patchData(`/api/stream/${lectureId}/visibility`, { private: isPrivate });
         if (res.status !== StatusCodes.OK) {
@@ -134,6 +164,14 @@ export const AdminLectureList = {
         }
     },
 
+    /**
+     * Uploads a video to a lecture.
+     * @param courseId
+     * @param lectureId
+     * @param videoType
+     * @param file
+     * @param listener
+     */
     uploadVideo: async (courseId: number, lectureId: number, videoType: string, file: File, listener : UploadFileListener = {}) => {
         await UploadFile(
             `/api/course/${courseId}/uploadVODMedia?streamID=${lectureId}&videoType=${videoType}`,
@@ -142,6 +180,11 @@ export const AdminLectureList = {
         );
     },
 
+    /**
+     * Deletes a lecture
+     * @param courseId
+     * @param lectureIds
+     */
     delete: async function (courseId: number, lectureIds: number[]): Promise<Response> {
         return await postData(`/api/course/${courseId}/deleteLectures`, {
             streamIDs: lectureIds,

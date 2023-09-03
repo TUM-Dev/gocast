@@ -207,10 +207,15 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             try {
                 // Saving new meta data
                 await DataStore.adminLectureList.updateMeta(courseId, lectureId, {
-                    name: changedKeys.includes("name") ? name : undefined,
-                    description: changedKeys.includes("description") ? description : undefined,
-                    lectureHallId: changedKeys.includes("lectureHallId") ? lectureHallId : undefined,
-                    isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
+                    payload: {
+                        name: changedKeys.includes("name") ? name : undefined,
+                        description: changedKeys.includes("description") ? description : undefined,
+                        lectureHallId: changedKeys.includes("lectureHallId") ? lectureHallId : undefined,
+                        isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
+                    },
+                    options: {
+                        saveSeries: this.uiEditMode === UIEditMode.series
+                    }
                 });
 
                 // Uploading new videos
