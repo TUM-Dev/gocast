@@ -180,6 +180,10 @@ export const AdminLectureList = {
         );
     },
 
+    getTranscodingProgress: async (courseId: number, lectureId: number, version: number): Promise<Number> => {
+        return (await fetch(`/api/course/${courseId}/stream/${lectureId}/transcodingProgress?v=${version}`)).json();
+    },
+
     /**
      * Deletes a lecture
      * @param courseId

@@ -2,6 +2,7 @@ import { Delete, patchData, postData, putData, sendFormData, showMessage } from 
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
+    AdminLectureList,
     Lecture,
     LectureVideoType, LectureVideoTypeCam,
     LectureVideoTypeComb,
@@ -160,11 +161,21 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         async keepProgressesUpdated() {
-
-        },
-
-        getDownloads() {
-            //return this.downloadableVods;
+            if (!this.isConverting) {
+                return;
+            }
+            setTimeout(async () => {
+                for (let i = 0; i < this.transcodingProgresses.length; i++) {
+                    const res = await AdminLectureList.getTranscodingProgress(this.lectureData.courseId, this.lectureData.lectureId, this.transcodingProgresses[i].version);
+                    if (res === 100) {
+                        this.transcodingProgresses.splice(i, 1);
+                    } else {
+                        this.transcodingProgresses[i].progress = res;
+                    }
+                }
+                this.isConverting = this.transcodingProgresses.length > 0;
+                this.keepProgressesUpdated();
+            }, 5000);
         },
 
         getVideoFile(key: string): File {

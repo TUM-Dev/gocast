@@ -114,7 +114,7 @@
                               aria-labelledby="menu-button" tabindex="-1">
                             <span class="py-1" role="none">
                             <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                                <template x-for="file in getDownloads()">
+                                <template x-for="file in lectureData.downloadableVods">
                                     <a :href="file.DownloadURL" download
                                        class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
                                     block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
