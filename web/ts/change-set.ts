@@ -54,7 +54,7 @@ export class ChangeSet<T> {
      * @param val
      * @param isCommitted if true, the data will be passed also to the state, and won't make the model dirty.
      */
-    patch(key: string, val: any, { isCommitted = false }: { isCommitted : boolean }) {
+    patch(key: string, val: any, { isCommitted = false }: { isCommitted : boolean } = {}) {
         this.changeState = {...this.changeState, [key]: val};
         if (isCommitted) {
             this.state = {...this.state, [key]: val};

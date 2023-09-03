@@ -185,8 +185,29 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             this.uiEditMode = UIEditMode.single;
         },
 
+        /**
+         * Discards current changes
+         */
         discardEdit() {
             this.changeSet.reset();
+            this.uiEditMode = UIEditMode.none;
+        },
+
+        /**
+         * Save changes send them to backend and commit change set.
+         */
+        async saveEdit() {
+            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled } = this.lectureData;
+            const changedKeys = this.changeSet.changedKeys();
+
+            await DataStore.adminLectureList.updateMeta(courseId, lectureId, {
+                name: changedKeys.includes("name") ? name : undefined,
+                description: changedKeys.includes("description") ? description : undefined,
+                lectureHallId: changedKeys.includes("lectureHallId") ? lectureHallId : undefined,
+                isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
+            });
+
+            this.changeSet.commit();
             this.uiEditMode = UIEditMode.none;
         }
 
