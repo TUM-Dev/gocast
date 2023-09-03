@@ -81,8 +81,12 @@ export class ChangeSet<T> {
 
     /**
      * Commits the change state to the state. State is updated to the latest change state afterwards.
+     * @param discardKeys List of keys that should be discarded and not committed.
      */
-    commit(): void {
+    commit({ discardKeys = [] }: { discardKeys: string[] } = {}): void {
+        for (const key in discardKeys) {
+            this.changeState[key] = this.state[key];
+        }
         this.state = {...this.changeState};
         this.dispatchUpdate();
     }

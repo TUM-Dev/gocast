@@ -1,6 +1,7 @@
 import { StreamableMapProvider } from "./provider";
 import {AdminLectureList, Lecture, UpdateLectureMetaRequest} from "../api/admin-lecture-list";
 import {FileType} from "../edit-course";
+import {UploadFileListener} from "../global";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -61,16 +62,16 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async updateMeta(courseId: number, streamId: number, request: UpdateLectureMetaRequest) {
-        await AdminLectureList.update(courseId, streamId, request);
+    async updateMeta(courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
+        await AdminLectureList.update(courseId, lectureId, request);
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === streamId) {
+            if (s.lectureId === lectureId) {
                 s = {
                     ...s,
                 };
 
-                // Path updated keys in local data
+                // Patch updated keys in local data
                 for (const requestKey in request) {
                     const val = request[requestKey];
                     if (val !== undefined) {
@@ -80,6 +81,10 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             }
             return s;
         });
-        await this.triggerUpdate(streamId);
+        await this.triggerUpdate(courseId);
+    }
+
+    async uploadVideo(courseId: number, lectureId: number, videoType: string, file: File, listener : UploadFileListener = {}) {
+        await AdminLectureList.uploadVideo(courseId, lectureId, videoType, file, listener);
     }
 }

@@ -232,12 +232,12 @@
                 <article x-data="{ id: `lecture_media_${lectureData.lectureId}`, progress: { 'COMB': 0, 'PRES': 0, 'CAM': 0 } }"
                          @voduploadprogressedit.window="({ detail: { type, progress, lectureId } }) => { if (lectureId === lectureData.lectureId) { progress[type] = progress; }}"
                          class="w-full flex justify-center flex-wrap">
-                    <template x-for="video in videoFiles" :key="video.key">
-                        <div x-data="{ file: getVideoFile(video.key) }"
+                    <template x-for="video in videoFiles" :key="video.info.key">
+                        <div x-data="{ file: getVideoFile(video.info.key) }"
                              x-on:click="() => document.querySelector(`#${video.inputId}`).click()"
                              class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
                         >
-                            <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lectureData.lectureId}/thumbs/vod?type=${video.type}')`"></div>
+                            <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lectureData.lectureId}/thumbs/vod?type=${video.info.type}')`"></div>
                             <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2" x-text="video.title"></div>
                             <div class="w-full h-full flex justify-center items-center drop-shadow-[2px_4px_6px_black]">
                                 <span x-show="!file">Click to upload new Video</span>
@@ -245,12 +245,12 @@
                                     <span class="text-green-400" x-text="file.name"></span>
                                 </template>
                             </div>
-                            <div x-on:click="() => { $event.stopPropagation(); changeSet.patch(video.key, null); file = getVideoFile(video.key); }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
+                            <div x-on:click="() => { $event.stopPropagation(); changeSet.patch(video.info.key, null); file = getVideoFile(video.info.key); }" x-show="file" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
                                 <i class="fa fa-xmark text-3"></i>
                             </div>
-                            <input :id="video.inputId" class="hidden" :name="video.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" @csupdate="(e) => { file = e.detail; }" />
+                            <input :id="video.inputId" class="hidden" :name="video.info.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" @csupdate="(e) => { file = e.detail; }" />
                             <div x-show="lectureData.isSaving && file !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
-                                <span x-text="`${progress[video.type]}%`"></span>
+                                <span x-text="`${progress[video.info.type]}%`"></span>
                             </div>
                         </div>
                     </template>

@@ -45,6 +45,35 @@ export async function Delete(url = "") {
     });
 }
 
+export interface UploadFileListener {
+    onProgress?: (progress: number) => void
+}
+
+export function UploadFile(url: string, file: File, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {
+    const xhr = new XMLHttpRequest();
+    const vodUploadFormData = new FormData();
+    vodUploadFormData.append("file", file);
+    return new Promise((resolve, reject) => {
+        xhr.onloadend = () => {
+            if (xhr.status === 200) {
+                resolve(xhr);
+            } else {
+                reject(xhr);
+            }
+        };
+        xhr.upload.onprogress = (e: ProgressEvent) => {
+            if (!e.lengthComputable) {
+                return;
+            }
+            if (listener.onProgress) {
+                listener.onProgress(Math.floor(100 * (e.loaded / e.total)));
+            }
+        };
+        xhr.open("POST", url);
+        xhr.send(vodUploadFormData);
+    });
+}
+
 export function sendFormData(url, formData: FormData) {
     const HttpReq = new XMLHttpRequest();
     HttpReq.open("POST", url, false);

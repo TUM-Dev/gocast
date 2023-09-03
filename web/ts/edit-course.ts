@@ -1,7 +1,13 @@
 import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
-import { Lecture } from "./api/admin-lecture-list";
+import {
+    Lecture,
+    LectureVideoType, LectureVideoTypeCam,
+    LectureVideoTypeComb,
+    LectureVideoTypePres,
+    LectureVideoTypes
+} from "./api/admin-lecture-list";
 import {ChangeSet} from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 
@@ -95,20 +101,18 @@ class TranscodingProgress {
     progress: number;
 }
 
-interface VideoFile {
-    key: string;
-    type: string;
-    title: string;
+interface VideoFileUI {
+    info: LectureVideoType,
     inputId: string;
 }
 
 export function lectureEditor(lecture: Lecture): AlpineComponent {
     return {
         videoFiles: [
-            { key: "newCombinedVideo", type: "PRES", title: "Combined Video", inputId: `input_${lecture.lectureId}_comb` },
-            { key: "newPresentationVideo", type: "PRES", title: "Presentation Video", inputId: `input_${lecture.lectureId}_pres` },
-            { key: "newCameraVideo", type: "PRES", title: "Camera Video", inputId: `input_${lecture.lectureId}_cam` },
-        ] as VideoFile[],
+            { info: LectureVideoTypeComb, title: "Combined Video", inputId: `input_${lecture.lectureId}_comb` },
+            { info: LectureVideoTypePres, title: "Presentation Video", inputId: `input_${lecture.lectureId}_pres` },
+            { info: LectureVideoTypeCam, title: "Camera Video", inputId: `input_${lecture.lectureId}_cam` },
+        ] as VideoFileUI[],
 
         // UI Data
         lastErrors: [] as string[],
@@ -200,14 +204,38 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             const { courseId, lectureId, name, description, lectureHallId, isChatEnabled } = this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
-            await DataStore.adminLectureList.updateMeta(courseId, lectureId, {
-                name: changedKeys.includes("name") ? name : undefined,
-                description: changedKeys.includes("description") ? description : undefined,
-                lectureHallId: changedKeys.includes("lectureHallId") ? lectureHallId : undefined,
-                isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
-            });
+            try {
+                // Saving new meta data
+                await DataStore.adminLectureList.updateMeta(courseId, lectureId, {
+                    name: changedKeys.includes("name") ? name : undefined,
+                    description: changedKeys.includes("description") ? description : undefined,
+                    lectureHallId: changedKeys.includes("lectureHallId") ? lectureHallId : undefined,
+                    isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
+                });
 
-            this.changeSet.commit();
+                // Uploading new videos
+                for (const videoFile: VideoFileUI in this.videoFiles) {
+                    if (!changedKeys.includes(videoFile.info.key)) {
+                        continue;
+                    }
+
+                    const file = this.lectureData[videoFile.info.key];
+                    await DataStore.adminLectureList.uploadVideo(courseId, lectureId, videoFile.info.type, file, {
+                        onProgress: (progress) => {
+                            window.dispatchEvent(
+                                new CustomEvent(`voduploadprogressedit`, {
+                                    detail: { type: videoFile.info.type, progress, lectureId: this.lectureId },
+                                }),
+                            );
+                        }
+                    });
+                }
+            } catch (e) {
+                this.lastErrors = [e.description];
+                return;
+            }
+
+            this.changeSet.commit({ discardKeys: this.videoFiles.map((v) => v.info.key) });
             this.uiEditMode = UIEditMode.none;
         }
 
@@ -217,11 +245,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 export class LectureEditorX {
     private changeSet: ChangeSet<Lecture>;
 
-    public readonly videoFiles: VideoFile[] = [
-        { key: "newCombinedVideo", type: "PRES", title: "Combined Video", inputId:"" },
-        { key: "newPresentationVideo", type: "PRES", title: "Presentation Video", inputId:"" },
-        { key: "newCameraVideo", type: "PRES", title: "Camera Video", inputId:"" },
-    ];
+    public readonly videoFiles: VideoFileUI[] = [];
 
     lastErrors: string[];
     uiEditMode: UIEditMode;
@@ -254,23 +278,7 @@ export class LectureEditorX {
         this.uiEditMode = UIEditMode.single;
     }
 
-    async toggleVisibility() {
-        //this.changeSet.patch("private", !this.lectureData.private, { isCommitted: true });
-        /*fetch(`/api/stream/${this.lectureId}/visibility`, {
-            method: "PATCH",
-            body: JSON.stringify({ private: !this.private }),
-            headers: { "Content-Type": "application/json" },
-        }).then((r) => {
-            if (r.status == StatusCodes.OK) {
-                this.private = !this.private;
-                if (this.private) {
-                    this.color = "gray-500";
-                } else {
-                    this.color = "success";
-                }
-            }
-        });*/
-    }
+    async toggleVisibility() {}
 
     async keepProgressesUpdated() {
         /*if (!this.isConverting) {
@@ -1198,29 +1206,6 @@ export function createLectureForm(args: { s: [] }) {
             return streamID;
         },
     };
-}
-
-function uploadFilePost(url: string, file: File, onProgress: (progress: number) => void): Promise<string> {
-    const xhr = new XMLHttpRequest();
-    const vodUploadFormData = new FormData();
-    vodUploadFormData.append("file", file);
-    return new Promise((resolve, reject) => {
-        xhr.onloadend = () => {
-            if (xhr.status === 200) {
-                resolve(xhr.responseText);
-            } else {
-                reject();
-            }
-        };
-        xhr.upload.onprogress = (e: ProgressEvent) => {
-            if (!e.lengthComputable) {
-                return;
-            }
-            onProgress(Math.floor(100 * (e.loaded / e.total)));
-        };
-        xhr.open("POST", url);
-        xhr.send(vodUploadFormData);
-    });
 }
 
 export function sendCourseSettingsForm(courseId: number) {

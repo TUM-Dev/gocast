@@ -1,6 +1,6 @@
 import { del, get, post, put } from "../utilities/fetch-wrappers";
 import {StatusCodes} from "http-status-codes";
-import {patchData, postData} from "../global";
+import {patchData, postData, putData, UploadFile, UploadFileListener} from "../global";
 
 export interface UpdateLectureMetaRequest {
     name?: string;
@@ -28,6 +28,22 @@ export interface CreateNewLectureRequest {
     presFile: [],
     camFile: [],
 }
+
+export interface LectureVideoType {
+    key: string;
+    type: string;
+}
+
+export const LectureVideoTypeComb = { key: "newCombinedVideo", type: "COMB" } as LectureVideoType;
+export const LectureVideoTypePres = { key: "newPresentationVideo", type: "PRES" } as LectureVideoType;
+export const LectureVideoTypeCam = { key: "newCameraVideo", type: "CAM" } as LectureVideoType;
+
+
+export const LectureVideoTypes = [
+    LectureVideoTypeComb,
+    LectureVideoTypePres,
+    LectureVideoTypeCam,
+] as LectureVideoType[];
 
 export interface Lecture {
     color:                 string;
@@ -86,7 +102,6 @@ export const AdminLectureList = {
         return post(`/api/stream/${courseId}/sections`, request);
     },
 
-    // TODO: make one unified endpoint
     update: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
         const promises = [];
         if (request.name !== undefined) {
@@ -94,7 +109,7 @@ export const AdminLectureList = {
         }
 
         if (request.description !== undefined) {
-            promises.push(postData(`/api/course/${courseId}/updateDescription/${lectureId}`, { name: request.description }));
+            promises.push(putData(`/api/course/${courseId}/updateDescription/${lectureId}`, { name: request.description }));
         }
 
         if (request.lectureHallId !== undefined) {
@@ -117,6 +132,14 @@ export const AdminLectureList = {
         if (res.status !== StatusCodes.OK) {
             throw Error(res.body.toString());
         }
+    },
+
+    uploadVideo: async (courseId: number, lectureId: number, videoType: string, file: File, listener : UploadFileListener = {}) => {
+        await UploadFile(
+            `/api/course/${courseId}/uploadVODMedia?streamID=${lectureId}&videoType=${videoType}`,
+            file,
+            listener,
+        );
     },
 
     delete: async function (courseId: number, lectureIds: number[]): Promise<Response> {
