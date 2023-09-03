@@ -63,10 +63,28 @@ export class ChangeSet<T> {
     }
 
     /**
+     * Updates the state. Also updates all keys that are not dirty on the change-state, so they remain "undirty".
+     * @param state
+     */
+    updateState(state: T) {
+        const changedKeys = this.changedKeys()
+        this.state = {...state};
+
+        for (const key of Object.keys(this.state)) {
+            if (!changedKeys.includes(key)) {
+                this.changeState[key] = this.state[key];
+            }
+        }
+
+        this.dispatchUpdate();
+    }
+
+    /**
      * Commits the change state to the state. State is updated to the latest change state afterwards.
      */
     commit(): void {
         this.state = {...this.changeState};
+        this.dispatchUpdate();
     }
 
     /**

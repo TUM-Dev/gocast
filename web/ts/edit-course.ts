@@ -29,20 +29,7 @@ export class LectureList {
     constructor(courseId: number) {
         this.courseId = courseId;
         this.markedIds = this.parseUrlHash();
-
-        /*
-        // load initial state into lecture objects
-        for (const lecture of initialState) {
-            let l = new Lecture();
-            l = Object.assign(l, lecture);
-            l.start = new Date(lecture.start);
-            l.end = new Date(lecture.end);
-            LectureList.lectures.push(l);
-        }*/
         this.setup();
-
-        //LectureList.triggerUpdate();
-        //setTimeout(() => this.scrollSelectedLecturesIntoView(), 500);
     }
 
     async setup() {
@@ -72,7 +59,7 @@ export class LectureList {
         const lectures = this.lectures;
         if (lectures.length < 2) return false;
         const first = lectures[0];
-        return lectures.slice(1).some((l) => l.data.isChatEnabled !== l.data.isChatEnabled);
+        return lectures.slice(1).some((l) => l.isChatEnabled !== first.isChatEnabled);
     }
 
     triggerUpdateEvent() {
@@ -112,6 +99,7 @@ interface VideoFile {
     key: string;
     type: string;
     title: string;
+    inputId: string;
 }
 
 export function lectureEditor(lecture: Lecture): AlpineComponent {
@@ -129,16 +117,25 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         isSaving: false,
 
         // Lecture Data
-        changeSet: null,
-        lectureData: null,
+        changeSet: null as ChangeSet<Lecture>|null,
+        lectureData: null as Lecture|null,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
+            // This tracks changes that are not saved yet
             this.changeSet = new ChangeSet<Lecture>(lecture, this.lectureComparator, (data, dirtyState) => {
                 this.lectureData = data;
                 this.isDirty = dirtyState.isDirty;
+            });
+
+            // This updates the state live in background
+            DataStore.adminLectureList.subscribe(lecture.courseId, (lectureList) => {
+                const update = lectureList.find((l) => l.lectureId === lecture.lectureId);
+                if (update) {
+                    this.changeSet.updateState(update);
+                }
             });
         },
 
@@ -152,6 +149,10 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         lectureComparator(key: string, a: Lecture, b: Lecture): boolean|null {
             // here we can set some custom comparisons
             return null;
+        },
+
+        toggleVisibility() {
+            DataStore.adminLectureList.setPrivate(this.lectureData.courseId, this.lectureData.lectureId, !this.lectureData.private);
         },
 
         async keepProgressesUpdated() {
@@ -196,9 +197,9 @@ export class LectureEditorX {
     private changeSet: ChangeSet<Lecture>;
 
     public readonly videoFiles: VideoFile[] = [
-        { key: "newCombinedVideo", type: "PRES", title: "Combined Video" },
-        { key: "newPresentationVideo", type: "PRES", title: "Presentation Video" },
-        { key: "newCameraVideo", type: "PRES", title: "Camera Video" },
+        { key: "newCombinedVideo", type: "PRES", title: "Combined Video", inputId:"" },
+        { key: "newPresentationVideo", type: "PRES", title: "Presentation Video", inputId:"" },
+        { key: "newCameraVideo", type: "PRES", title: "Camera Video", inputId:"" },
     ];
 
     lastErrors: string[];
