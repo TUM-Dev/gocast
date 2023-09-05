@@ -49,7 +49,7 @@ export interface UploadFileListener {
     onProgress?: (progress: number) => void;
 }
 
-export function UploadFile(url: string, file: File, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {
+export function uploadFile(url: string, file: File, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
     const vodUploadFormData = new FormData();
     vodUploadFormData.append("file", file);

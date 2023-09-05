@@ -1,4 +1,4 @@
-import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
+import {Delete, patchData, postData, putData, sendFormData, showMessage, uploadFile} from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
@@ -100,6 +100,7 @@ class DownloadableVod {
 
 interface VideoFileUI {
     info: LectureVideoType;
+    title: string;
     inputId: string;
 }
 
@@ -234,7 +235,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 });
 
                 // Uploading new videos
-                for (const videoFile: VideoFileUI of this.videoFiles) {
+                for (const videoFile of this.videoFiles) {
                     if (!changedKeys.includes(videoFile.info.key)) {
                         continue;
                     }
@@ -891,12 +892,14 @@ export function createLectureForm(args: { s: [] }) {
             // Upload media
             try {
                 for (const mediaUpload of mediaFiles) {
-                    await uploadFilePost(
+                    await uploadFile(
                         `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
                         mediaUpload.file,
-                        (progress) => {
-                            mediaUpload.progress = progress;
-                            this.dispatchMediaProgress(mediaFiles);
+                        {
+                            onProgress: (progress) => {
+                                mediaUpload.progress = progress;
+                                this.dispatchMediaProgress(mediaFiles);
+                            }
                         },
                     );
                 }

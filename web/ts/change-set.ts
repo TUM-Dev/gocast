@@ -108,7 +108,7 @@ export class ChangeSet<T> {
      * @param isCommitted if true, the data will be passed also to the state, and won't make the model dirty.
      */
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    patch(key: string, val: any, { isCommitted = false }: { isCommitted: boolean } = {}) {
+    patch(key: string, val: any, { isCommitted = false }: { isCommitted?: boolean } = {}) {
         this.changeState = { ...this.changeState, [key]: val };
         if (isCommitted) {
             this.state = { ...this.state, [key]: val };
@@ -137,7 +137,7 @@ export class ChangeSet<T> {
      * Commits the change state to the state. State is updated to the latest change state afterwards.
      * @param discardKeys List of keys that should be discarded and not committed.
      */
-    commit({ discardKeys = [] }: { discardKeys: string[] } = {}): void {
+    commit({ discardKeys = [] }: { discardKeys?: string[] } = {}): void {
         for (const key in discardKeys) {
             this.changeState[key] = this.state[key];
         }

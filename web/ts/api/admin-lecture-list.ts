@@ -1,6 +1,6 @@
 import { del, get, post, put } from "../utilities/fetch-wrappers";
 import { StatusCodes } from "http-status-codes";
-import { patchData, postData, putData, UploadFile, UploadFileListener } from "../global";
+import { patchData, postData, putData, uploadFile, UploadFileListener } from "../global";
 
 export interface UpdateLectureMetaRequest {
     name?: string;
@@ -216,7 +216,7 @@ export const AdminLectureList = {
         file: File,
         listener: UploadFileListener = {},
     ) => {
-        await UploadFile(
+        await uploadFile(
             `/api/course/${courseId}/uploadVODMedia?streamID=${lectureId}&videoType=${videoType}`,
             file,
             listener,
