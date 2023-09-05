@@ -431,7 +431,7 @@
                             </header>
                             <section>
                                 <template x-if="courseStreams.hasElements()">
-                                    <article class="flex flex-col" :class="{'flex-col-reverse' : isOldestFirst() }">
+                                    <article class="flex flex-col" :class="{'flex-col-reverse' : !isOldestFirst() }">
                                         <template
                                                 x-for="[m, streams] of Object.entries(courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode)))">
                                             <article class="mb-8">

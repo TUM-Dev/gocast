@@ -32,7 +32,7 @@ export function videoInformationContext(streamId: number): AlpineComponent {
                     this.handleDescriptionUpdate(data);
                 }
             };
-            SocketConnections.ws.addHandler(handler);
+            SocketConnections.ws.subscribe(handler);
         },
 
         handleViewersUpdate(upd: { viewers: number }) {

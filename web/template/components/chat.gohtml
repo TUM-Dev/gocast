@@ -202,7 +202,7 @@
                                             </div>
                                             <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                                                 <div class="flex justify-between">
-                                                    <span class="w-5/6 my-auto" x-html="reply.message"></span>
+                                                    <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="reply.message"></span>
                                                     <span class="hidden group-hover:inline text-xs text-5 font-light mt-auto"
                                                           x-text="reply.friendlyCreatedAt()"></span>
                                                 </div>
@@ -255,7 +255,7 @@
                                       class="h-fit fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
                                 <span class="text-2 font-semibold mr-2" x-text="`${reply.message.name}:`"
                                       :style="'color:'+reply.message.color"></span>
-                                <span class="" x-html="reply.message.message"
+                                <span class="w-5/6 overflow-wrap-anywhere" x-html="reply.message.message"
                                       x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))"></span>
                             </div>
                         </article>
@@ -298,7 +298,7 @@
                                    x-model="message"
                                    :placeholder="!isConnected() ? 'Reconnecting to chat...' : isLoggedIn() ? 'Send a message' : 'Log in to chat'"
                                    class="tum-live-border border-b bg-transparent text-sm font-normal placeholder:text-sm focus:outline-none py-1 w-full"
-                                   autocomplete="off">
+                                      autocomplete="off"></textarea>
                         </label>
                         <section class="flex justify-between">
                             <div class="relative">
