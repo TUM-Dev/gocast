@@ -313,14 +313,12 @@
                                 <select class="text-gray-700 dark:text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                         :id="id"
                                         name="lectureHallId"
-                                        x-bind-change-set="changeSet">
+                                        x-bind-change-set.int="changeSet">
                                     <option class="text-gray-700 dark:text-gray-300" value="0">
                                         Self streaming
                                     </option>
                                     {{range $lectureHall := $lectureHalls}}
-                                        <option class="text-gray-700 dark:text-gray-300"
-                                                value="{{$lectureHall.Model.ID}}"
-                                                :selected="lectureData.lectureHallId === '{{$lectureHall.Model.ID}}'">
+                                        <option class="text-gray-700 dark:text-gray-300" value="{{$lectureHall.Model.ID}}">
                                             {{$lectureHall.Name}}
                                         </option>
                                     {{end}}

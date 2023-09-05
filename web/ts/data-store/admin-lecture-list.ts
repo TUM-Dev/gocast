@@ -71,7 +71,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
 
     async updateMeta(courseId: number, lectureId: number, props: UpdateMetaProps) {
         const updateSeries = props?.options?.saveSeries === true;
-        const seriesIdentifier = this.data[courseId].find((l) => l.lectureId === lectureId)?.seriesIdentifier ?? null;
+        const seriesIdentifier = (await this.getData(courseId)).find((l) => l.lectureId === lectureId)?.seriesIdentifier ?? null;
 
         await AdminLectureList.updateMetadata(courseId, lectureId, props.payload);
         if (updateSeries) {

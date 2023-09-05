@@ -15,6 +15,15 @@ document.addEventListener("alpine:init", () => {
         'color'
     ];
 
+    const convert = (modifiers, value) => {
+        if (modifiers.includes("int")) {
+            return parseInt(value);
+        } else if (modifiers.includes("float")) {
+            return parseFloat(value);
+        }
+        return value;
+    }
+
     /**
      * Alpine.js Directive: `x-bind-change-set`
      *
@@ -51,6 +60,8 @@ document.addEventListener("alpine:init", () => {
      * ## Modifiers
      *
      * - `single`: Use this modifier for file inputs when you want to work with a single file instead of a FileList.
+     * - `int`: Use this modifier to convert the inserted value to integer.
+     * - `float`: Use this modifier to convert the inserted value to float.
      *
      * ```html
      * <input type="file" x-bind-change-set.single="changeSet" />
@@ -110,37 +121,32 @@ document.addEventListener("alpine:init", () => {
                 el.removeEventListener('change', changeHandler)
             })
         } else  if (el.tagName === "textarea" || textInputTypes.includes(el.type)) {
-            const keyupHandler = (e) => {
-                changeSet.patch(fieldName, e.target.value);
-            };
+            const keyupHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
 
             const onChangeSetUpdateHandler = (data) => {
-                el.value = data[fieldName];
+                el.value = `${data[fieldName]}`;
                 el.dispatchEvent(new CustomEvent(nativeEventName, { detail: data[fieldName] }));
             };
 
             changeSet.listen(onChangeSetUpdateHandler);
             el.addEventListener('keyup', keyupHandler)
-            el.value = changeSet.get()[fieldName];
+            el.value = `${changeSet.get()[fieldName]}`;
 
             cleanup(() => {
                 changeSet.removeListener(onChangeSetUpdateHandler);
                 el.removeEventListener('keyup', keyupHandler)
             })
         } else {
-            const changeHandler = (e) => {
-                changeSet.patch(fieldName, e.target.value);
-            };
+            const changeHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
 
             const onChangeSetUpdateHandler = (data) => {
-                console.log(changeSet);
-                el.value = data[fieldName];
+                el.value = `${data[fieldName]}`;
                 el.dispatchEvent(new CustomEvent(nativeEventName, { detail: data[fieldName] }));
             };
 
             changeSet.listen(onChangeSetUpdateHandler);
             el.addEventListener('change', changeHandler)
-            el.value = changeSet.get()[fieldName];
+            el.value = `${changeSet.get()[fieldName]}`;
 
             cleanup(() => {
                 changeSet.removeListener(onChangeSetUpdateHandler);

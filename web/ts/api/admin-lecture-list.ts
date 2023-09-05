@@ -119,6 +119,7 @@ export const AdminLectureList = {
      * @param request
      */
     updateMetadata: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
+        console.log({request});
         const promises = [];
         if (request.name !== undefined) {
             promises.push(postData(`/api/course/${courseId}/renameLecture/${lectureId}`, { name: request.name }));
