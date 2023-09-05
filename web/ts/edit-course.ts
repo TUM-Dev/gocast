@@ -1,4 +1,4 @@
-import {Delete, patchData, postData, putData, sendFormData, showMessage, uploadFile} from "./global";
+import { Delete, patchData, postData, putData, sendFormData, showMessage, uploadFile } from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
@@ -899,7 +899,7 @@ export function createLectureForm(args: { s: [] }) {
                             onProgress: (progress) => {
                                 mediaUpload.progress = progress;
                                 this.dispatchMediaProgress(mediaFiles);
-                            }
+                            },
                         },
                     );
                 }
