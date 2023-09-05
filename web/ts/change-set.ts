@@ -3,6 +3,55 @@ export interface DirtyState {
     dirtyKeys: string[];
 }
 
+/**
+ * ## ChangeSet Class
+ *
+ * The `ChangeSet` class is designed to manage and track changes to a state object.
+ * It provides an encapsulated way of observing state changes, committing them,
+ * or rolling them back. Essentially, it helps in maintaining two versions of a state:
+ * one that represents the current, committed state and another that captures all the changes (dirty state).
+ *
+ * ### Features
+ * - **DirtyState**: Utilizes a `DirtyState` object to indicate if the state is dirty (modified but not committed)
+ *   and which keys in the state object are dirty.
+ * - **Custom Comparators**: Optionally, you can pass in a custom comparator function to determine how to compare state objects.
+ * - **Event Subscriptions**: Offers an API for listening to changes in the state.
+ *
+ * ### Example Usage
+ * ```typescript
+ * const myState = { key1: 'value1', key2: 'value2' };
+ * const changeSet = new ChangeSet(myState);
+ *
+ * changeSet.listen((changeState, dirtyState) => {
+ *   console.log("Changed State:", changeState);
+ *   console.log("Is Dirty:", dirtyState.isDirty);
+ * });
+ *
+ * changeSet.patch('key1', 'new_value1');
+ * ```
+ *
+ * ### Methods
+ * - `listen(onUpdate)`: Subscribe to state changes.
+ * - `removeListener(onUpdate)`: Unsubscribe from state changes.
+ * - `get()`: Get the current uncommitted state.
+ * - `set(val)`: Set the change state.
+ * - `patch(key, val, options)`: Patch a specific key in the state object.
+ * - `updateState(state)`: Update the state object, and reconcile it with the change state.
+ * - `commit(options)`: Commit the change state, making it the new committed state.
+ * - `reset()`: Reset the change state back to the last committed state.
+ * - `isDirty()`: Check if the state has changes that are not yet committed.
+ * - `changedKeys()`: Get the keys that have uncommitted changes.
+ *
+ * ### Alpine.js `bind-change-set` Directive Example
+ * The `ChangeSet` class seamlessly integrates with Alpine.js through the `bind-change-set` directive.
+ * For example, to bind a text input element to a `ChangeSet` instance, you can use the following HTML snippet:
+ *
+ * ```html
+ * <input type="text" name="firstName" x-bind-change-set="changeSet">
+ * ```
+ *
+ * This makes it a useful utility for handling state changes in a predictable way.
+ */
 export class ChangeSet<T> {
     private state: T;
     private changeState: T;
