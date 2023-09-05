@@ -46,7 +46,7 @@ export async function Delete(url = "") {
 }
 
 export interface UploadFileListener {
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void;
 }
 
 export function UploadFile(url: string, file: File, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {

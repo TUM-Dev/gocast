@@ -55,10 +55,14 @@ export interface DirtyState {
 export class ChangeSet<T> {
     private state: T;
     private changeState: T;
-    private readonly comparator?: (key: string, a: T, b: T) => boolean|null;
+    private readonly comparator?: (key: string, a: T, b: T) => boolean | null;
     private onUpdate: ((changeState: T, dirtyState: DirtyState) => void)[];
 
-    constructor(state: T, comparator?: (key: string, a: T, b: T) => boolean, onUpdate?: (changeState: T, dirtyState: DirtyState) => void) {
+    constructor(
+        state: T,
+        comparator?: (key: string, a: T, b: T) => boolean,
+        onUpdate?: (changeState: T, dirtyState: DirtyState) => void,
+    ) {
         this.state = state;
         this.onUpdate = onUpdate ? [onUpdate] : [];
         this.comparator = comparator;
@@ -93,7 +97,7 @@ export class ChangeSet<T> {
      * @param val
      */
     set(val: T) {
-        this.changeState = {...val};
+        this.changeState = { ...val };
         this.dispatchUpdate();
     }
 
@@ -103,10 +107,11 @@ export class ChangeSet<T> {
      * @param val
      * @param isCommitted if true, the data will be passed also to the state, and won't make the model dirty.
      */
-    patch(key: string, val: any, { isCommitted = false }: { isCommitted : boolean } = {}) {
-        this.changeState = {...this.changeState, [key]: val};
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    patch(key: string, val: any, { isCommitted = false }: { isCommitted: boolean } = {}) {
+        this.changeState = { ...this.changeState, [key]: val };
         if (isCommitted) {
-            this.state = {...this.state, [key]: val};
+            this.state = { ...this.state, [key]: val };
         }
         this.dispatchUpdate();
     }
@@ -116,8 +121,8 @@ export class ChangeSet<T> {
      * @param state
      */
     updateState(state: T) {
-        const changedKeys = this.changedKeys()
-        this.state = {...state};
+        const changedKeys = this.changedKeys();
+        this.state = { ...state };
 
         for (const key of Object.keys(this.state)) {
             if (!changedKeys.includes(key)) {
@@ -136,7 +141,7 @@ export class ChangeSet<T> {
         for (const key in discardKeys) {
             this.changeState[key] = this.state[key];
         }
-        this.state = {...this.changeState};
+        this.state = { ...this.changeState };
         this.dispatchUpdate();
     }
 
@@ -144,7 +149,7 @@ export class ChangeSet<T> {
      * Resets the change state to the state. Change state is the most current state afterwards.
      */
     reset(): void {
-        this.changeState = {...this.state};
+        this.changeState = { ...this.state };
         this.dispatchUpdate();
     }
 

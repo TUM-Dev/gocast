@@ -4,12 +4,13 @@ import { DataStore } from "./data-store/data-store";
 import {
     AdminLectureList,
     Lecture,
-    LectureVideoType, LectureVideoTypeCam,
+    LectureVideoType,
+    LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    LectureVideoTypes
+    LectureVideoTypes,
 } from "./api/admin-lecture-list";
-import {ChangeSet} from "./change-set";
+import { ChangeSet } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 
 export enum UIEditMode {
@@ -97,13 +98,8 @@ class DownloadableVod {
     friendlyName: string;
 }
 
-class TranscodingProgress {
-    version: string;
-    progress: number;
-}
-
 interface VideoFileUI {
-    info: LectureVideoType,
+    info: LectureVideoType;
     inputId: string;
 }
 
@@ -122,8 +118,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         isSaving: false,
 
         // Lecture Data
-        changeSet: null as ChangeSet<Lecture>|null,
-        lectureData: null as Lecture|null,
+        changeSet: null as ChangeSet<Lecture> | null,
+        lectureData: null as Lecture | null,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -151,13 +147,17 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * @param b
          * @return return 0 to use naive default comparator
          */
-        lectureComparator(key: string, a: Lecture, b: Lecture): boolean|null {
+        lectureComparator(key: string, a: Lecture, b: Lecture): boolean | null {
             // here we can set some custom comparisons
             return null;
         },
 
         toggleVisibility() {
-            DataStore.adminLectureList.setPrivate(this.lectureData.courseId, this.lectureData.lectureId, !this.lectureData.private);
+            DataStore.adminLectureList.setPrivate(
+                this.lectureData.courseId,
+                this.lectureData.lectureId,
+                !this.lectureData.private,
+            );
         },
 
         async keepProgressesUpdated() {
@@ -166,7 +166,11 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             }
             setTimeout(async () => {
                 for (let i = 0; i < this.transcodingProgresses.length; i++) {
-                    const res = await AdminLectureList.getTranscodingProgress(this.lectureData.courseId, this.lectureData.lectureId, this.transcodingProgresses[i].version);
+                    const res = await AdminLectureList.getTranscodingProgress(
+                        this.lectureData.courseId,
+                        this.lectureData.lectureId,
+                        this.transcodingProgresses[i].version,
+                    );
                     if (res === 100) {
                         this.transcodingProgresses.splice(i, 1);
                     } else {
@@ -225,8 +229,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
                     },
                     options: {
-                        saveSeries: this.uiEditMode === UIEditMode.series
-                    }
+                        saveSeries: this.uiEditMode === UIEditMode.series,
+                    },
                 });
 
                 // Uploading new videos
@@ -243,7 +247,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                                     detail: { type: videoFile.info.type, progress, lectureId: this.lectureId },
                                 }),
                             );
-                        }
+                        },
                     });
                 }
             } catch (e) {
@@ -254,9 +258,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
             this.changeSet.commit({ discardKeys: this.videoFiles.map((v) => v.info.key) });
             this.uiEditMode = UIEditMode.none;
-        }
-
-    }  as AlpineComponent;
+        },
+    } as AlpineComponent;
 }
 
 export function decodeHtml(html) {
@@ -843,7 +846,6 @@ export function createLectureForm(args: { s: [] }) {
                         url.hash = `lectures:${ids.join(",")}`;
                         window.location.assign(url);
                         window.location.reload();*/
-
                     })
                     .catch((e) => {
                         console.log(e);

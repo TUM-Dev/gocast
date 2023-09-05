@@ -1,6 +1,6 @@
 import { del, get, post, put } from "../utilities/fetch-wrappers";
-import {StatusCodes} from "http-status-codes";
-import {patchData, postData, putData, UploadFile, UploadFileListener} from "../global";
+import { StatusCodes } from "http-status-codes";
+import { patchData, postData, putData, UploadFile, UploadFileListener } from "../global";
 
 export interface UpdateLectureMetaRequest {
     name?: string;
@@ -10,23 +10,28 @@ export interface UpdateLectureMetaRequest {
 }
 
 export interface CreateNewLectureRequest {
-    title: "",
-    lectureHallId: 0,
-    start: "",
-    end: "",
-    isChatEnabled: false,
-    duration: 0, // Duration in Minutes
-    formatedDuration: "", // Duration in Minutes
-    premiere: false,
-    vodup: false,
-    adHoc: false,
-    recurring: false,
-    recurringInterval: "weekly",
-    eventsCount: 10,
-    recurringDates: [],
-    combFile: [],
-    presFile: [],
-    camFile: [],
+    title: "";
+    lectureHallId: 0;
+    start: "";
+    end: "";
+    isChatEnabled: false;
+    duration: 0; // Duration in Minutes
+    formatedDuration: ""; // Duration in Minutes
+    premiere: false;
+    vodup: false;
+    adHoc: false;
+    recurring: false;
+    recurringInterval: "weekly";
+    eventsCount: 10;
+    recurringDates: [];
+    combFile: [];
+    presFile: [];
+    camFile: [];
+}
+
+export interface TranscodingProgress {
+    version: string;
+    progress: number;
 }
 
 export interface LectureVideoType {
@@ -34,10 +39,20 @@ export interface LectureVideoType {
     type: string;
 }
 
-export const LectureVideoTypeComb = { key: "newCombinedVideo", type: "COMB" } as LectureVideoType;
-export const LectureVideoTypePres = { key: "newPresentationVideo", type: "PRES" } as LectureVideoType;
-export const LectureVideoTypeCam = { key: "newCameraVideo", type: "CAM" } as LectureVideoType;
+export const LectureVideoTypeComb = {
+    key: "newCombinedVideo",
+    type: "COMB",
+} as LectureVideoType;
 
+export const LectureVideoTypePres = {
+    key: "newPresentationVideo",
+    type: "PRES",
+} as LectureVideoType;
+
+export const LectureVideoTypeCam = {
+    key: "newCameraVideo",
+    type: "CAM",
+} as LectureVideoType;
 
 export const LectureVideoTypes = [
     LectureVideoTypeComb,
@@ -46,28 +61,28 @@ export const LectureVideoTypes = [
 ] as LectureVideoType[];
 
 export interface Lecture {
-    color:                 string;
-    courseId:              number;
-    courseSlug:            string;
-    description:           string;
-    downloadableVods:      DownloadableVOD[];
-    end:                   string;
-    files:                 null;
-    hasStats:              boolean;
-    isChatEnabled:         boolean;
-    isConverting:          boolean;
-    isLiveNow:             boolean;
-    isPast:                boolean;
-    isRecording:           boolean;
-    lectureHallId:         number;
-    lectureHallName:       string;
-    lectureId:             number;
-    name:                  string;
-    private:               boolean;
-    seriesIdentifier:      string;
-    start:                 string;
-    streamKey:             string;
-    transcodingProgresses: any[];
+    color: string;
+    courseId: number;
+    courseSlug: string;
+    description: string;
+    downloadableVods: DownloadableVOD[];
+    end: string;
+    files: null;
+    hasStats: boolean;
+    isChatEnabled: boolean;
+    isConverting: boolean;
+    isLiveNow: boolean;
+    isPast: boolean;
+    isRecording: boolean;
+    lectureHallId: number;
+    lectureHallName: string;
+    lectureId: number;
+    name: string;
+    private: boolean;
+    seriesIdentifier: string;
+    start: string;
+    streamKey: string;
+    transcodingProgresses: TranscodingProgress[];
 
     // Clientside computed fields
     hasAttachments: boolean;
@@ -79,21 +94,20 @@ export interface Lecture {
     endTimeFormatted: string;
 
     // Clientside pseudo fields
-    newCombinedVideo: File|null;
-    newPresentationVideo: File|null;
-    newCameraVideo: File|null;
+    newCombinedVideo: File | null;
+    newPresentationVideo: File | null;
+    newCameraVideo: File | null;
 }
 
 export interface DownloadableVOD {
     FriendlyName: string;
-    DownloadURL:  string;
+    DownloadURL: string;
 }
 
 /**
  * REST API Wrapper for /api/stream/:id/sections
  */
 export const AdminLectureList = {
-
     /**
      * Fetches all lectures for a course
      * @param courseId
@@ -119,22 +133,42 @@ export const AdminLectureList = {
      * @param request
      */
     updateMetadata: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
-        console.log({request});
+        console.log({
+            request,
+        });
         const promises = [];
         if (request.name !== undefined) {
-            promises.push(postData(`/api/course/${courseId}/renameLecture/${lectureId}`, { name: request.name }));
+            promises.push(
+                postData(`/api/course/${courseId}/renameLecture/${lectureId}`, {
+                    name: request.name,
+                }),
+            );
         }
 
         if (request.description !== undefined) {
-            promises.push(putData(`/api/course/${courseId}/updateDescription/${lectureId}`, { name: request.description }));
+            promises.push(
+                putData(`/api/course/${courseId}/updateDescription/${lectureId}`, {
+                    name: request.description,
+                }),
+            );
         }
 
         if (request.lectureHallId !== undefined) {
-            promises.push(postData("/api/setLectureHall", { streamIds: [lectureId], lectureHall: request.lectureHallId }));
+            promises.push(
+                postData("/api/setLectureHall", {
+                    streamIds: [lectureId],
+                    lectureHall: request.lectureHallId,
+                }),
+            );
         }
 
         if (request.isChatEnabled !== undefined) {
-            promises.push(patchData(`/api/stream/${lectureId}/chat/enabled`, { lectureId, isChatEnabled: request.isChatEnabled }));
+            promises.push(
+                patchData(`/api/stream/${lectureId}/chat/enabled`, {
+                    lectureId,
+                    isChatEnabled: request.isChatEnabled,
+                }),
+            );
         }
 
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
@@ -159,7 +193,9 @@ export const AdminLectureList = {
      * @param isPrivate
      */
     setPrivate: async (lectureId: number, isPrivate: boolean): Promise<void> => {
-        const res = await patchData(`/api/stream/${lectureId}/visibility`, { private: isPrivate });
+        const res = await patchData(`/api/stream/${lectureId}/visibility`, {
+            private: isPrivate,
+        });
         if (res.status !== StatusCodes.OK) {
             throw Error(res.body.toString());
         }
@@ -173,7 +209,13 @@ export const AdminLectureList = {
      * @param file
      * @param listener
      */
-    uploadVideo: async (courseId: number, lectureId: number, videoType: string, file: File, listener : UploadFileListener = {}) => {
+    uploadVideo: async (
+        courseId: number,
+        lectureId: number,
+        videoType: string,
+        file: File,
+        listener: UploadFileListener = {},
+    ) => {
         await UploadFile(
             `/api/course/${courseId}/uploadVODMedia?streamID=${lectureId}&videoType=${videoType}`,
             file,
@@ -181,7 +223,7 @@ export const AdminLectureList = {
         );
     },
 
-    getTranscodingProgress: async (courseId: number, lectureId: number, version: number): Promise<Number> => {
+    getTranscodingProgress: async (courseId: number, lectureId: number, version: number): Promise<number> => {
         return (await fetch(`/api/course/${courseId}/stream/${lectureId}/transcodingProgress?v=${version}`)).json();
     },
 

@@ -1,7 +1,7 @@
 import { StreamableMapProvider } from "./provider";
-import {AdminLectureList, Lecture, UpdateLectureMetaRequest} from "../api/admin-lecture-list";
-import {FileType} from "../edit-course";
-import {UploadFileListener} from "../global";
+import { AdminLectureList, Lecture, UpdateLectureMetaRequest } from "../api/admin-lecture-list";
+import { FileType } from "../edit-course";
+import { UploadFileListener } from "../global";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -57,8 +57,8 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             }
             return {
                 ...s,
-                private: !s.private
-            }
+                private: !s.private,
+            };
         });
         await this.triggerUpdate(courseId);
     }
@@ -71,7 +71,8 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
 
     async updateMeta(courseId: number, lectureId: number, props: UpdateMetaProps) {
         const updateSeries = props?.options?.saveSeries === true;
-        const seriesIdentifier = (await this.getData(courseId)).find((l) => l.lectureId === lectureId)?.seriesIdentifier ?? null;
+        const seriesIdentifier =
+            (await this.getData(courseId)).find((l) => l.lectureId === lectureId)?.seriesIdentifier ?? null;
 
         await AdminLectureList.updateMetadata(courseId, lectureId, props.payload);
         if (updateSeries) {
@@ -100,7 +101,13 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async uploadVideo(courseId: number, lectureId: number, videoType: string, file: File, listener : UploadFileListener = {}) {
+    async uploadVideo(
+        courseId: number,
+        lectureId: number,
+        videoType: string,
+        file: File,
+        listener: UploadFileListener = {},
+    ) {
         await AdminLectureList.uploadVideo(courseId, lectureId, videoType, file, listener);
     }
 }
