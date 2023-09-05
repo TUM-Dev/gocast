@@ -312,8 +312,8 @@
                                 <span>Select Lecture Hall</span>
                                 <select class="text-gray-700 dark:text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                         :id="id"
-                                        x-on:change="updateIsDirty()"
-                                        x-model="lectureData.newLectureHallId">
+                                        name="lectureHallId"
+                                        x-bind-change-set="changeSet">
                                     <option class="text-gray-700 dark:text-gray-300" value="0">
                                         Self streaming
                                     </option>
