@@ -431,18 +431,18 @@
                             </header>
                             <section>
                                 <template x-if="courseStreams.hasElements()">
-                                    <article class="flex flex-col" :class="{'flex-col-reverse' : !isOldestFirst() }">
+                                    <article class="grid">
                                         <template
-                                                x-for="[m, streams] of Object.entries(courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode)))">
+                                                x-for="group in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                             <article class="mb-8">
                                                 <header class="mb-2">
-                                                    <h6 class="font-semibold" x-text="getMonthName(m)"></h6>
+                                                    <h6 class="font-semibold" x-text="group[0].GetMonthName()"></h6>
                                                 </header>
                                                 <section class="grid gap-3 md:grid-cols-2 grid-cols-1"
                                                          :class="plannedStreams.hasElements()
                                                                         ? 'xl:grid-cols-4 lg:grid-cols-3'
                                                                         : 'xl:grid-cols-5 lg:grid-cols-4'">
-                                                    <template x-for="vod in streams" :key="vod.ID">
+                                                    <template x-for="vod in group" :key="vod.ID">
                                                         <article
                                                                 class="tum-live-stream group sm:col-span-1 col-span-full"
                                                                 @click.outside="vod.Dropdown.toggle(false)">

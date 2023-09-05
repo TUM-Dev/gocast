@@ -42,12 +42,12 @@ export class Stream implements Identifiable {
         });
     }
 
-    public MonthOfStart(): string {
-        return new Date(this.Start).toLocaleString("default", { month: "short" });
+    public StartDate(): Date {
+        return new Date(this.Start);
     }
 
-    public NumericMonthOfStart(): number {
-        return new Date(this.Start).getMonth() + 1;
+    public MonthOfStart(): string {
+        return new Date(this.Start).toLocaleString("default", { month: "short" });
     }
 
     public DayOfStart(): number {
@@ -99,6 +99,23 @@ export class Stream implements Identifiable {
     public FetchThumbnail() {
         this.Thumbnail = new Image();
         this.Thumbnail.src = `/api/stream/${this.ID}/thumbs/vod`;
+    }
+
+    public GetMonthName(): string {
+        return [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ][this.StartDate().getMonth()];
     }
 
     private static TimeOf(d: string): string {

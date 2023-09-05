@@ -29,7 +29,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         course: new Course() as Course,
 
-        courseStreams: new GroupedSmartArray<Stream, number>([], (_) => 0),
+        courseStreams: new GroupedSmartArray<Stream, number>(),
         plannedStreams: new Paginator<Stream>([], 3),
         upcomingStreams: new Paginator<Stream>([], 3),
 
@@ -64,7 +64,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.upcomingStreams.set(this.course.Upcoming).reset();
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
                         this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));
-                        this.courseStreams.set(this.course.Recordings, (s: Stream) => s.NumericMonthOfStart());
+                        this.courseStreams.set(this.course.Recordings, (s: Stream) => s.StartDate().getMonth());
                     });
                     console.log("🌑 init course", this.course);
                 });
@@ -133,23 +133,6 @@ export function courseContext(slug: string, year: number, term: string, userId: 
         copyHLS(stream: Stream, dropdown: ToggleableElement) {
             copyToClipboard(stream.HLSUrl);
             dropdown.toggle(false);
-        },
-
-        getMonthName(m: number): string {
-            return [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ][m - 1];
         },
 
         async loadCourse() {

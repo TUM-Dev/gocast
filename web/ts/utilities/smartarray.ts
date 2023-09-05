@@ -25,19 +25,18 @@ export class SmartArray<T> {
     }
 }
 
-export class GroupedSmartArray<T, K extends keyof never> {
+export class GroupedSmartArray<T, K> {
     private list: T[];
     private key: (i: T) => K;
 
-    constructor(list: T[], key: (i: T) => K) {
-        this.list = list;
-        this.key = key;
+    constructor() {
+        this.list = [];
     }
 
     get(sortFn?: CompareFunction<T>, filterPred?: FilterPredicate<T>) {
         const copy = filterPred ? [...this.list].filter(filterPred) : [...this.list];
         const _list = sortFn ? copy.sort(sortFn) : copy;
-        return groupBy(_list, this.key);
+        return this.group(_list, this.key);
     }
 
     set(list: T[], key: (i: T) => K): GroupedSmartArray<T, K> {
@@ -49,18 +48,25 @@ export class GroupedSmartArray<T, K extends keyof never> {
     hasElements() {
         return this.list.length > 0;
     }
+
+    private group(list: T[], key: (i: T) => K) {
+        const groups = [];
+
+        let lastKey = null;
+        let currentGroup = [];
+
+        list.forEach((l) => {
+            if (lastKey !== null && key(l) != lastKey) {
+                groups.push(currentGroup);
+                currentGroup = [];
+            }
+            currentGroup.push(l);
+            lastKey = key(l);
+        });
+        groups.push(currentGroup);
+        return groups;
+    }
 }
 
 export type CompareFunction<T> = (a: T, b: T) => number;
 export type FilterPredicate<T> = (o: T) => boolean;
-
-/* eslint-disable */
-function groupBy<T, K extends keyof never>(list: T[], getKey: (item: T) => K) {
-    /* eslint-disable */
-    return list.reduce(function (previous, currentItem) {
-        const group = getKey(currentItem);
-        if (!previous[group]) previous[group] = [];
-        previous[group].push(currentItem);
-        return previous;
-    }, {} as Record<K, T[]>);
-}
