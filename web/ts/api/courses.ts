@@ -42,16 +42,16 @@ export class Stream implements Identifiable {
         });
     }
 
-    public MonthOfStart(): string {
-        return new Date(this.Start).toLocaleString("default", { month: "short" });
+    public StartDate(): Date {
+        return new Date(this.Start);
     }
 
-    public NumericMonthOfStart(): number {
-        return new Date(this.Start).getMonth() + 1;
+    public MonthOfStart(): string {
+        return this.StartDate().toLocaleString("default", { month: "short" });
     }
 
     public DayOfStart(): number {
-        return new Date(this.Start).getDate();
+        return this.StartDate().getDate();
     }
 
     public TimeOfStart(): string {
@@ -63,11 +63,11 @@ export class Stream implements Identifiable {
     }
 
     public IsToday(): boolean {
-        return same_day(new Date(this.Start), new Date());
+        return same_day(this.StartDate(), new Date());
     }
 
     public MinutesLeftToStart(): number {
-        return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
+        return Math.round((this.StartDate().valueOf() - new Date().valueOf()) / 60000);
     }
 
     public DurationString() {
@@ -86,7 +86,7 @@ export class Stream implements Identifiable {
     }
 
     public CompareStart(other: Stream) {
-        const a = new Date(this.Start);
+        const a = this.StartDate();
         const b = new Date(other.Start);
         if (a < b) {
             return 1;
@@ -99,6 +99,23 @@ export class Stream implements Identifiable {
     public FetchThumbnail() {
         this.Thumbnail = new Image();
         this.Thumbnail.src = `/api/stream/${this.ID}/thumbs/vod`;
+    }
+
+    public GetMonthName(): string {
+        return [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ][this.StartDate().getMonth()];
     }
 
     private static TimeOf(d: string): string {
