@@ -1,12 +1,27 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
+{{- /*gotype: github.com/TUM-Dev/gocast/web*/ -}}
 <head>
     <meta charset="UTF-8">
-    <title>{{.IndexData.Branding.Title}}</title>
-    {{template "headImports" .IndexData.VersionTag}}
-    <link href="/static/assets/css-dist/home.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
+    <link rel="manifest" href="/static/assets/manifest.json">
+
+    <title>{{.Branding.Title}} | Settings</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+    <script src="static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/global.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
 </head>
 
 <body class="h-screen flex flex-col items-stretch tum-live-bg">
@@ -22,17 +37,18 @@
         <header>
             <h1 class="font-bold text-3">Settings</h1>
         </header>
-        <div x-cloak x-show="err!==''" class = "bg-danger/25 text-sm rounded-lg px-2 py-1 space-x-3 py-2">
-            <i class = "fa-solid fa-triangle-exclamation"></i>
+        <div x-cloak x-show="err!==''" class="bg-danger/25 text-sm rounded-lg px-2 py-1 space-x-3 py-2">
+            <i class="fa-solid fa-triangle-exclamation"></i>
             <span x-text="err">Error</span>
         </div>
-        <section x-data="{initialName: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', name: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}'}">
+        <section
+                x-data="{initialName: '{{.TUMLiveContext.User.GetPreferredName}}', name: '{{.TUMLiveContext.User.GetPreferredName}}'}">
             <h2>Preferred Name<span class="italic font-bold pl-2">You can change this once every three months.</span>
             </h2>
             <div class="grid gap-y-2">
                 <label for="displayName">
                     <input class="tum-live-input" type="text" x-model="name" id="displayName" {{ if not
-                    .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
+                    .TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
                 </label>
                 <button type="button" :disabled="name === initialName"
                         class="tum-live-input-submit tum-live-button-primary py-2 text-sm"
@@ -41,7 +57,7 @@
                 </button>
             </div>
         </section>
-        <section x-data="{ currentGreeting: {{toJson .IndexData.TUMLiveContext.User.GetPreferredGreeting}}}">
+        <section x-data="{ currentGreeting: {{toJson .TUMLiveContext.User.GetPreferredGreeting}}}">
             <h2>Preferred greeting</h2>
             <input class="w-auto" type="radio" name="greet" value="Moin" id="greeting1" x-model="currentGreeting"
                    :checked="currentGreeting==='Moin'"
@@ -52,7 +68,7 @@
                    @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r;})">
             <label for="greeting2">Servus</label>
         </section>
-        <section x-data="{ playbackspeeds: {{toJson .IndexData.TUMLiveContext.User.GetPlaybackSpeeds}} }">
+        <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetPlaybackSpeeds}} }">
             <h2>Playback Speeds</h2>
             <template x-for="ps in playbackspeeds">
                     <span class="mr-2">
