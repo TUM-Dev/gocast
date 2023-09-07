@@ -5,29 +5,44 @@
     <meta charset="UTF-8">
     <title>{{.IndexData.Branding.Title}}</title>
     {{template "headImports" .IndexData.VersionTag}}
+    <link href="/static/assets/css-dist/home.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
 </head>
 
-<body class="text-4">
-{{- /*gotype: github.com/TUM-Dev/gocast/web.userSettingsData*/ -}}
-{{template "header" .IndexData.TUMLiveContext}}
-<div class="form-container">
-    <h1 class="form-container-title">Settings</h1>
-
-    <div class="form-container-body"
-         x-data=" { initialName: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', name: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', err: '' } ">
-        <label class="text-sm text-5" for="displayName">Preferred Name <span class="italic font-bold">You can change
-                    this once every three months.</span></label>
-        <p x-cloak x-show="err!==''" class="text-red-500" x-text="err"></p>
-        <div class="flex gap-3">
-            <input class="tl-input" type="text" x-model="name" id="displayName" {{ if not
-            .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
-            <button type="button" :disabled="name === initialName" class="btn w-auto whitespace-nowrap"
-                    @click="global.updatePreference(global.UserSetting.Name, name).then((r) => {err=r; if(r==='') {initialName=name;}})">
-                Update Name
-            </button>
+<body class="h-screen flex flex-col items-stretch tum-live-bg">
+<header class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
+        <a href="/" class="mx-3" type="button" id="logo" title="Start">
+            <img src="/logo.svg" width="42" alt="TUM-Live Logo">
+        </a>
+    </div>
+</header>
+<main id="content" class="flex justify-center grow h-full overflow-y-scroll">
+    <article class="tum-live-settings-grid" x-data=" { err: '' } ">
+        <header>
+            <h1 class="font-bold text-3">Settings</h1>
+        </header>
+        <div x-cloak x-show="err!==''" class = "bg-danger/25 text-sm rounded-lg px-2 py-1 space-x-3 py-2">
+            <i class = "fa-solid fa-triangle-exclamation"></i>
+            <span x-text="err">Error</span>
         </div>
-        <h2 class="text-sm text-5">Preferred greeting</h2>
-        <div x-data="{ currentGreeting: {{toJson .IndexData.TUMLiveContext.User.GetPreferredGreeting}}, err:'' }">
+        <section x-data="{initialName: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', name: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}'}">
+            <h2>Preferred Name<span class="italic font-bold pl-2">You can change this once every three months.</span>
+            </h2>
+            <div class="grid gap-y-2">
+                <label for="displayName">
+                    <input class="tum-live-input" type="text" x-model="name" id="displayName" {{ if not
+                    .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
+                </label>
+                <button type="button" :disabled="name === initialName"
+                        class="tum-live-input-submit tum-live-button-primary py-2 text-sm"
+                        @click="global.updatePreference(global.UserSetting.Name, name).then((r) => {err=r; if(r==='') {initialName=name;}})">
+                    Update Name
+                </button>
+            </div>
+        </section>
+        <section x-data="{ currentGreeting: {{toJson .IndexData.TUMLiveContext.User.GetPreferredGreeting}}}">
+            <h2>Preferred greeting</h2>
             <input class="w-auto" type="radio" name="greet" value="Moin" id="greeting1" x-model="currentGreeting"
                    :checked="currentGreeting==='Moin'"
                    @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r})">
@@ -36,11 +51,9 @@
                    :checked="currentGreeting==='Servus'"
                    @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r;})">
             <label for="greeting2">Servus</label>
-            <p class="text-danger" x-cloak x-show="err!==''" x-text="err"></p>
-        </div>
-        <h2 class="text-sm text-5">Playback Speeds</h2>
-        <div class="pl-2"
-             x-data="{ playbackspeeds: {{toJson .IndexData.TUMLiveContext.User.GetPlaybackSpeeds}}, err:'' }">
+        </section>
+        <section x-data="{ playbackspeeds: {{toJson .IndexData.TUMLiveContext.User.GetPlaybackSpeeds}} }">
+            <h2>Playback Speeds</h2>
             <template x-for="ps in playbackspeeds">
                     <span class="mr-2">
                         <label>
@@ -50,22 +63,23 @@
                         </label>
                     </span>
             </template>
-            <p class="text-danger" x-cloak x-show="err!==''" x-text="err"></p>
-        </div>
+        </section>
+        <section>
+            <h2>Privacy & Data Protection</h2>
+            <a href="/api/users/exportData" download="personal_data.json"
+               class="tum-live-input-submit tum-live-button-muted block py-2 text-center text-sm">
+                <i class="fas fa-download"></i> Export my personal data
+            </a>
+        </section>
 
-        <h2 class="text-sm text-5">Privacy & Data Protection</h2>
-        <a href="/api/users/exportData" download="personal_data.json" class="btn block">
-            <i class="fas fa-download"></i> Export my personal data
-        </a>
-
-        <div class="text-center p-3">
-            <i class="text-5">Not a lot going on here <b>yet</b>.
+        <footer class="text-5 text-sm text-center">
+            <i>Not a lot going on here <b>yet</b>.
                 <a class="underline" target="_blank" rel="noopener"
                    href="https://github.com/TUM-Dev/gocast/issues/new/choose">Open an issue</a>
                 if you have any ideas what settings you miss :)
             </i>
-        </div>
-    </div>
-</div>
+        </footer>
+    </article>
+</main>
 </body>
 </html>
