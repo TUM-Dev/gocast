@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="TUM-Live, frontend, worker" type="CompoundRunConfigurationType">
-    <toRun name="go build github.com/joschahenningsen/TUM-Live/worker/cmd/worker" type="GoApplicationRunConfiguration" />
+    <toRun name="go build github.com/TUM-Dev/gocast/worker/cmd/worker" type="GoApplicationRunConfiguration" />
     <toRun name="run-tumlive-go" type="GoApplicationRunConfiguration" />
     <toRun name="build-dev" type="js.build_tools.npm" />
     <method v="2" />

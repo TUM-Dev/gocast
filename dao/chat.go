@@ -3,7 +3,7 @@ package dao
 import (
 	"errors"
 	"github.com/go-sql-driver/mysql"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 )
 

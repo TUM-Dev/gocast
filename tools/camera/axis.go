@@ -3,7 +3,7 @@ package camera
 import (
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 	uuid "github.com/satori/go.uuid"
 	"strconv"
 	"strings"

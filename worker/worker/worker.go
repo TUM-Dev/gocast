@@ -1,8 +1,8 @@
 package worker
 
 import (
-	"github.com/joschahenningsen/TUM-Live/worker/cfg"
-	"github.com/joschahenningsen/TUM-Live/worker/worker/vmstat"
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/worker/vmstat"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"os"

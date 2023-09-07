@@ -1,4 +1,4 @@
-module github.com/joschahenningsen/tum-live/worker/edge
+module github.com/TUM-Dev/gocast/worker/edge
 
 go 1.19
 

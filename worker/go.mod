@@ -1,4 +1,4 @@
-module github.com/joschahenningsen/TUM-Live/worker
+module github.com/TUM-Dev/gocast/worker
 
 go 1.19
 

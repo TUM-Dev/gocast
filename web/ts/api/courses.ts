@@ -20,6 +20,7 @@ export class Stream implements Identifiable {
     readonly End: string;
     readonly Start: string;
     readonly Downloads: DownloadableVOD[];
+    readonly Duration: number;
 
     Progress?: Progress;
 
@@ -41,12 +42,16 @@ export class Stream implements Identifiable {
         });
     }
 
+    public StartDate(): Date {
+        return new Date(this.Start);
+    }
+
     public MonthOfStart(): string {
-        return new Date(this.Start).toLocaleString("default", { month: "short" });
+        return this.StartDate().toLocaleString("default", { month: "short" });
     }
 
     public DayOfStart(): number {
-        return new Date(this.Start).getDate();
+        return this.StartDate().getDate();
     }
 
     public TimeOfStart(): string {
@@ -58,20 +63,15 @@ export class Stream implements Identifiable {
     }
 
     public IsToday(): boolean {
-        return same_day(new Date(this.Start), new Date());
+        return same_day(this.StartDate(), new Date());
     }
 
     public MinutesLeftToStart(): number {
-        return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
+        return Math.round((this.StartDate().valueOf() - new Date().valueOf()) / 60000);
     }
 
     public DurationString() {
-        const diff = new Date(this.End).getTime() - new Date(this.Start).getTime();
-        return new Date(diff).toLocaleTimeString("default", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        });
+        return new Date(this.Duration * 1000).toISOString().slice(11, 19);
     }
 
     public UntilString(): string {
@@ -86,7 +86,7 @@ export class Stream implements Identifiable {
     }
 
     public CompareStart(other: Stream) {
-        const a = new Date(this.Start);
+        const a = this.StartDate();
         const b = new Date(other.Start);
         if (a < b) {
             return 1;
@@ -99,6 +99,23 @@ export class Stream implements Identifiable {
     public FetchThumbnail() {
         this.Thumbnail = new Image();
         this.Thumbnail.src = `/api/stream/${this.ID}/thumbs/vod`;
+    }
+
+    public GetMonthName(): string {
+        return [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ][this.StartDate().getMonth()];
     }
 
     private static TimeOf(d: string): string {

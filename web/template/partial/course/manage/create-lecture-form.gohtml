@@ -1,5 +1,5 @@
 {{define "create-lecture-form"}}
-    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
+    {{- /*gotype: github.com/TUM-Dev/gocast/web.AdminPageData*/ -}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <form method="post" action="/api/createLecture"
           x-data="admin.createLectureForm({ s: {{toJson ($course.StreamTimes)}} })" @submit.prevent="submitData"
@@ -52,7 +52,7 @@
 
             {{- /* Tab 2 */ -}}
             <div x-show="currentTab === 1" class="grid grid-cols-2 space-x-2">
-                {{template "lecture-details-slide"}}
+                {{template "lecture-details-slide" .}}
             </div>
 
             {{- /* Tab 3 */ -}}

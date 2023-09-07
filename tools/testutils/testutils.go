@@ -2,7 +2,7 @@ package testutils
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

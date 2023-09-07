@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/joschahenningsen/TUM-Live/model"
+	model "github.com/TUM-Dev/gocast/model"
 )
 
 // MockVideoSeekDao is a mock of VideoSeekDao interface.

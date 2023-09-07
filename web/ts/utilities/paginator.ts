@@ -1,12 +1,13 @@
-export class Paginator<T> {
-    protected list: T[];
+import { CompareFunction, FilterPredicate, SmartArray } from "./smartarray";
+
+export class Paginator<T> extends SmartArray<T> {
+    private readonly preloader: Preload<T>;
+
     protected split_number: number;
     protected index: number;
 
-    private readonly preloader: Preload<T>;
-
     constructor(list: T[], split_number: number, preloader?: Preload<T>) {
-        this.list = list;
+        super(list);
         this.split_number = split_number;
         this.index = 1;
         this.preloader = preloader;
@@ -19,11 +20,6 @@ export class Paginator<T> {
             : copy.slice(0, this.index * this.split_number);
     }
 
-    set(list: T[]): Paginator<T> {
-        this.list = list;
-        return this;
-    }
-
     next(all = false) {
         this.index = all ? this.list.length / this.split_number : this.index + 1;
         this.preload();
@@ -33,17 +29,8 @@ export class Paginator<T> {
         return Math.ceil(this.list.length / this.split_number) >= this.index + 1;
     }
 
-    forEach(callback: (obj: T, i: number) => void): Paginator<T> {
-        this.list.forEach(callback);
-        return this;
-    }
-
     find(callback: (obj: T, i: number, arr?: T[]) => boolean): T {
         return this.list.find(callback);
-    }
-
-    hasElements() {
-        return this.list.length > 0;
     }
 
     reset(): Paginator<T> {
@@ -76,6 +63,3 @@ export class AutoPaginator<T> extends Paginator<T> {
 }
 
 type Preload<T> = (o: T) => void;
-
-type CompareFunction<T> = (a: T, b: T) => number;
-type FilterPredicate<T> = (o: T) => boolean;

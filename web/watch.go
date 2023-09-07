@@ -4,10 +4,10 @@ import (
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/api"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/api"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"html/template"
@@ -84,14 +84,14 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
 
-		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, []uint{tumLiveContext.Stream.ID})
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				log.WithError(err).Warn("Couldn't fetch progress from the database.")
 			}
-		} else {
-			data.Progress = progress
+		} else if len(progress) > 0 {
+			data.Progress = progress[0]
 		}
 	}
 	if c.Query("restart") == "1" {
