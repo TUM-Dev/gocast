@@ -92,6 +92,13 @@ export class ChatMessageArray {
         this.messages = filtered;
     }
 
+    approveReply(m: ChatMessage) {
+        const base = this.messages.find((msg) => msg.ID === m.replyTo.Int64);
+        const filtered = base.replies.filter((msg) => msg.ID !== m.ID);
+        filtered.push(Object.assign(new ChatMessage(), m));
+        base.replies = filtered;
+    }
+
     retract(msg: ChatMessage, isAdmin: boolean) {
         if (isAdmin) {
             this.messages.find((m) => m.ID === msg.ID).visible = false;

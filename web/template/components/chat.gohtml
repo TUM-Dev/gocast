@@ -74,9 +74,7 @@
                                     <span x-show="m.admin"
                                           class="fa-video text-white bg-red-400 p-1 rounded fas"></span>
                                     <span class="text-2 font-semibold" x-text="m.name" :style="'color:'+m.color"></span>
-                                    <span x-show="!m.visible" class="text-5 font-light">
-                        This message is currently only visible to you and admins.
-                    </span>
+                                    <span x-show="!m.visible" class="text-5 font-light">This message is currently only visible to you and admins.</span>
                                 </div>
                                 <div class="relative group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="flex justify-between">
@@ -190,26 +188,39 @@
 
 
                                 <!-- replies -->
-                                <div x-cloak x-show="m.ShowReplies.value"
-                                     class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
+                                <article x-cloak x-show="m.ShowReplies.value"
+                                         class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
                                     <template x-for="reply in m.replies">
-                                        <div class="grid gap-y-1">
+                                        <section class="grid gap-y-1">
                                             <div>
-                            <span x-show="reply.admin"
-                                  class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
+                                                <span x-show="reply.admin"
+                                                      class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
                                                 <span class="text-2 font-semibold" x-text="reply.name"
                                                       :style="'color:'+reply.color"></span>
+                                                <span x-show="!reply.visible" class="text-xs text-5 font-light">This message is currently only visible to you and admins.</span>
                                             </div>
-                                            <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                <div class="flex justify-between">
-                                                    <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="reply.message"></span>
-                                                    <span class="hidden group-hover:inline text-xs text-5 font-light mt-auto"
-                                                          x-text="reply.friendlyCreatedAt()"></span>
+                                            <div class="flex">
+                                                <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex-grow">
+                                                    <div class="flex justify-between">
+                                                        <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="reply.message"></span>
+                                                        <span class="hidden group-hover:inline text-xs text-5 font-light mt-auto"
+                                                              x-text="reply.friendlyCreatedAt()"></span>
+                                                    </div>
                                                 </div>
+                                                {{if $course.ModeratedChatEnabled}}
+                                                    <template x-if="isAdmin()">
+                                                        <button x-cloak x-show="!reply.visible"
+                                                                @click="approveMessage(reply.ID)"
+                                                                title="Approve Message"
+                                                                class="tum-live-icon-button shrink mx-2">
+                                                            <i class="fa-solid fa-spell-check"></i>
+                                                        </button>
+                                                    </template>
+                                                {{end}}
                                             </div>
-                                        </div>
+                                        </section>
                                     </template>
-                                </div>
+                                </article>
                             </section>
                         </template>
                     </div>
