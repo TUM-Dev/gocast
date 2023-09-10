@@ -50,9 +50,13 @@ export interface UploadFileListener {
 }
 
 export function uploadFile(url: string, file: File, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {
-    const xhr = new XMLHttpRequest();
     const vodUploadFormData = new FormData();
     vodUploadFormData.append("file", file);
+    return postFormData(url, vodUploadFormData, listener);
+}
+
+export function postFormData(url: string, data: FormData, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {
+    const xhr = new XMLHttpRequest();
     return new Promise((resolve, reject) => {
         xhr.onloadend = () => {
             if (xhr.status === 200) {
@@ -70,7 +74,7 @@ export function uploadFile(url: string, file: File, listener: UploadFileListener
             }
         };
         xhr.open("POST", url);
-        xhr.send(vodUploadFormData);
+        xhr.send(data);
     });
 }
 

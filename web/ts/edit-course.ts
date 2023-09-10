@@ -10,7 +10,7 @@ import {
     LectureVideoTypePres,
     LectureVideoTypes,
 } from "./api/admin-lecture-list";
-import { ChangeSet } from "./change-set";
+import {ChangeSet, ignoreKeys} from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 
 export enum UIEditMode {
@@ -81,18 +81,6 @@ export class LectureList {
     }
 }
 
-class LectureFile {
-    readonly id: number;
-    readonly fileType: number;
-    readonly friendlyName: string;
-
-    constructor({ id, fileType, friendlyName }) {
-        this.id = id;
-        this.fileType = fileType;
-        this.friendlyName = friendlyName;
-    }
-}
-
 class DownloadableVod {
     downloadURL: string;
     friendlyName: string;
@@ -127,7 +115,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          */
         init() {
             // This tracks changes that are not saved yet
-            this.changeSet = new ChangeSet<Lecture>(lecture, this.lectureComparator, (data, dirtyState) => {
+            this.changeSet = new ChangeSet<Lecture>(lecture, ignoreKeys(["files"]), (data, dirtyState) => {
                 this.lectureData = data;
                 this.isDirty = dirtyState.isDirty;
             });
@@ -139,18 +127,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                     this.changeSet.updateState(update);
                 }
             });
-        },
-
-        /**
-         * A custom comparator to setup special comparison strategies for specific keys
-         * @param key key in Lecture
-         * @param a
-         * @param b
-         * @return return 0 to use naive default comparator
-         */
-        lectureComparator(key: string, a: Lecture, b: Lecture): boolean | null {
-            // here we can set some custom comparisons
-            return null;
         },
 
         toggleVisibility() {
@@ -185,6 +161,38 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
         getVideoFile(key: string): File {
             return this.lectureData[key];
+        },
+
+        onAttachmentFileDrop(e) {
+            if (e.dataTransfer.items) {
+                const item = e.dataTransfer.items[0];
+                const { kind } = item;
+                switch (kind) {
+                    case "file": {
+                        DataStore.adminLectureList.uploadAttachmentFile(
+                            this.lectureData.courseId,
+                            this.lectureData.lectureId,
+                            item.getAsFile(),
+                        );
+                        break;
+                    }
+                    case "string": {
+                        DataStore.adminLectureList.uploadAttachmentUrl(
+                            this.lectureData.courseId,
+                            this.lectureData.lectureId,
+                            e.dataTransfer.getData("URL"),
+                        );
+                    }
+                }
+            }
+        },
+
+        deleteAttachment(id: number) {
+            DataStore.adminLectureList.deleteAttachment(
+                this.lectureData.courseId,
+                this.lectureData.lectureId,
+                id,
+            );
         },
 
         /**

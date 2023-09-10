@@ -1,5 +1,5 @@
 import { StreamableMapProvider } from "./provider";
-import { AdminLectureList, Lecture, UpdateLectureMetaRequest } from "../api/admin-lecture-list";
+import {AdminLectureList, Lecture, LectureFile, UpdateLectureMetaRequest} from "../api/admin-lecture-list";
 import { FileType } from "../edit-course";
 import { UploadFileListener } from "../global";
 
@@ -95,6 +95,61 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
                         s[requestKey] = val;
                     }
                 }
+            }
+            return s;
+        });
+        await this.triggerUpdate(courseId);
+    }
+
+    async uploadAttachmentFile(courseId: number, lectureId: number, file: File) {
+        const res = await AdminLectureList.uploadAttachmentFile(courseId, lectureId, file);
+        const newFile = new LectureFile({
+            id: JSON.parse(res.responseText),
+            fileType: 2,
+            friendlyName: file.name
+        });
+
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId === lectureId) {
+                return {
+                    ...s,
+                    files: [...s.files, newFile]
+                };
+            }
+            return s;
+        });
+        await this.triggerUpdate(courseId);
+    }
+
+    async uploadAttachmentUrl(courseId: number, lectureId: number, url: String) {
+        const res = await AdminLectureList.uploadAttachmentUrl(courseId, lectureId, url);
+        const newFile = new LectureFile({
+            id: JSON.parse(res.responseText),
+            fileType: 2,
+            friendlyName: url.substring(url.lastIndexOf("/") + 1) }
+        );
+
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId === lectureId) {
+                return {
+                    ...s,
+                    files: [...s.files, newFile]
+                };
+            }
+            return s;
+        });
+        await this.triggerUpdate(courseId);
+    }
+
+    async deleteAttachment(courseId: number, lectureId: number, attachmentId: number) {
+        await AdminLectureList.deleteAttachment(courseId, lectureId, attachmentId);
+
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId === lectureId) {
+                return {
+                    ...s,
+                    files: [...s.files.filter(((a)=> a.id !== attachmentId))],
+                };
             }
             return s;
         });

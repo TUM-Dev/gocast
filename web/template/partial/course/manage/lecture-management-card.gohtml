@@ -272,7 +272,7 @@
                              class="w-full">
                         <label :for="id" class="hidden">Lecture description</label>
                         <textarea :id="id"
-                                  @drop.prevent="(e) => lecture.onFileDrop(e)"
+                                  @drop.prevent="(e) => onAttachmentFileDrop(e)"
                                   @dragover.prevent=""
                                   class="tl-textarea grow"
                                   placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
@@ -349,7 +349,7 @@
                                     <span class="text-xs font-semibold text-3 my-auto"
                                           x-text="file.friendlyName"></span>
                                         <button class="px-3"
-                                                @click="lecture.deleteFile(file.id)">
+                                                @click="deleteAttachment(file.id)">
                                             <i class="fa fa-xmark"></i>
                                         </button>
                                     </section>

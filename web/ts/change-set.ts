@@ -55,7 +55,7 @@ export interface DirtyState {
 export class ChangeSet<T> {
     private state: T;
     private changeState: T;
-    private readonly comparator?: (key: string, a: T, b: T) => boolean | null;
+    private readonly comparator?: LectureComparator<T>;
     private onUpdate: ((changeState: T, dirtyState: DirtyState) => void)[];
 
     constructor(
@@ -208,5 +208,16 @@ export class ChangeSet<T> {
                 });
             }
         }
+    }
+}
+
+export type LectureComparator<T> = (key: string, a: T, b: T) => boolean | null;
+
+export function ignoreKeys<T>(list: string[]): LectureComparator<T> {
+    return (key: string, a, b) => {
+        if (list.includes(key)) {
+            return false;
+        }
+        return null;
     }
 }

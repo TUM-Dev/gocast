@@ -1,12 +1,24 @@
 import { del, get, post, put } from "../utilities/fetch-wrappers";
 import { StatusCodes } from "http-status-codes";
-import { patchData, postData, putData, uploadFile, UploadFileListener } from "../global";
+import {Delete, patchData, postData, postFormData, putData, uploadFile, UploadFileListener} from "../global";
 
 export interface UpdateLectureMetaRequest {
     name?: string;
     description?: string;
     lectureHallId?: number;
     isChatEnabled?: boolean;
+}
+
+export class LectureFile {
+    readonly id: number;
+    readonly fileType: number;
+    readonly friendlyName: string;
+
+    constructor({ id, fileType, friendlyName }) {
+        this.id = id;
+        this.fileType = fileType;
+        this.friendlyName = friendlyName;
+    }
 }
 
 export interface CreateNewLectureRequest {
@@ -67,7 +79,7 @@ export interface Lecture {
     description: string;
     downloadableVods: DownloadableVOD[];
     end: string;
-    files: null;
+    files: LectureFile[];
     hasStats: boolean;
     isChatEnabled: boolean;
     isConverting: boolean;
@@ -223,6 +235,58 @@ export const AdminLectureList = {
         );
     },
 
+    /**
+     * Upload a file as attachment for a lecture
+     * @param courseId
+     * @param lectureId
+     * @param file
+     * @param listener
+     */
+    uploadAttachmentFile: async (
+        courseId: number,
+        lectureId: number,
+        file: File,
+        listener: UploadFileListener = {},
+    ) => {
+        return await uploadFile(
+            `/api/stream/${lectureId}/files?type=file`,
+            file,
+            listener,
+        );
+    },
+
+    /**
+     * Upload a url as attachment for a lecture
+     * @param courseId
+     * @param lectureId
+     * @param url
+     * @param listener
+     */
+    uploadAttachmentUrl: async (
+        courseId: number,
+        lectureId: number,
+        url: string,
+        listener: UploadFileListener = {},
+    ) => {
+        const vodUploadFormData = new FormData();
+        vodUploadFormData.append("file_url", url);
+        return postFormData(`/api/stream/${lectureId}/files?type=url`, vodUploadFormData, listener);
+    },
+
+    deleteAttachment: async (
+        courseId: number,
+        lectureId: number,
+        attachmentId: number,
+    ) => {
+        return Delete(`/api/stream/${lectureId}/files/${attachmentId}`);
+    },
+
+    /**
+     * Get transcoding progress
+     * @param courseId
+     * @param lectureId
+     * @param version
+     */
     getTranscodingProgress: async (courseId: number, lectureId: number, version: number): Promise<number> => {
         return (await fetch(`/api/course/${courseId}/stream/${lectureId}/transcodingProgress?v=${version}`)).json();
     },
