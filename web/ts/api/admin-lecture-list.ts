@@ -1,6 +1,6 @@
 import { del, get, post, put } from "../utilities/fetch-wrappers";
 import { StatusCodes } from "http-status-codes";
-import {Delete, patchData, postData, postFormData, putData, uploadFile, UploadFileListener} from "../global";
+import { Delete, patchData, postData, postFormData, putData, uploadFile, UploadFileListener } from "../global";
 
 export interface UpdateLectureMetaRequest {
     name?: string;
@@ -248,11 +248,7 @@ export const AdminLectureList = {
         file: File,
         listener: UploadFileListener = {},
     ) => {
-        return await uploadFile(
-            `/api/stream/${lectureId}/files?type=file`,
-            file,
-            listener,
-        );
+        return await uploadFile(`/api/stream/${lectureId}/files?type=file`, file, listener);
     },
 
     /**
@@ -273,11 +269,7 @@ export const AdminLectureList = {
         return postFormData(`/api/stream/${lectureId}/files?type=url`, vodUploadFormData, listener);
     },
 
-    deleteAttachment: async (
-        courseId: number,
-        lectureId: number,
-        attachmentId: number,
-    ) => {
+    deleteAttachment: async (courseId: number, lectureId: number, attachmentId: number) => {
         return Delete(`/api/stream/${lectureId}/files/${attachmentId}`);
     },
 

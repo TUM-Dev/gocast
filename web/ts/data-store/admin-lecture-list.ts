@@ -1,5 +1,5 @@
 import { StreamableMapProvider } from "./provider";
-import {AdminLectureList, Lecture, LectureFile, UpdateLectureMetaRequest} from "../api/admin-lecture-list";
+import { AdminLectureList, Lecture, LectureFile, UpdateLectureMetaRequest } from "../api/admin-lecture-list";
 import { FileType } from "../edit-course";
 import { UploadFileListener } from "../global";
 
@@ -106,14 +106,14 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         const newFile = new LectureFile({
             id: JSON.parse(res.responseText),
             fileType: 2,
-            friendlyName: file.name
+            friendlyName: file.name,
         });
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
             if (s.lectureId === lectureId) {
                 return {
                     ...s,
-                    files: [...s.files, newFile]
+                    files: [...s.files, newFile],
                 };
             }
             return s;
@@ -121,19 +121,19 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async uploadAttachmentUrl(courseId: number, lectureId: number, url: String) {
+    async uploadAttachmentUrl(courseId: number, lectureId: number, url: string) {
         const res = await AdminLectureList.uploadAttachmentUrl(courseId, lectureId, url);
         const newFile = new LectureFile({
             id: JSON.parse(res.responseText),
             fileType: 2,
-            friendlyName: url.substring(url.lastIndexOf("/") + 1) }
-        );
+            friendlyName: url.substring(url.lastIndexOf("/") + 1),
+        });
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
             if (s.lectureId === lectureId) {
                 return {
                     ...s,
-                    files: [...s.files, newFile]
+                    files: [...s.files, newFile],
                 };
             }
             return s;
@@ -148,7 +148,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             if (s.lectureId === lectureId) {
                 return {
                     ...s,
-                    files: [...s.files.filter(((a)=> a.id !== attachmentId))],
+                    files: [...s.files.filter((a) => a.id !== attachmentId)],
                 };
             }
             return s;

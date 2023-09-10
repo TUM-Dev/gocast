@@ -10,7 +10,7 @@ import {
     LectureVideoTypePres,
     LectureVideoTypes,
 } from "./api/admin-lecture-list";
-import {ChangeSet, ignoreKeys} from "./change-set";
+import { ChangeSet, ignoreKeys } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 
 export enum UIEditMode {
@@ -188,11 +188,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         deleteAttachment(id: number) {
-            DataStore.adminLectureList.deleteAttachment(
-                this.lectureData.courseId,
-                this.lectureData.lectureId,
-                id,
-            );
+            DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
         },
 
         /**

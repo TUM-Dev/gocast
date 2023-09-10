@@ -219,5 +219,5 @@ export function ignoreKeys<T>(list: string[]): LectureComparator<T> {
             return false;
         }
         return null;
-    }
+    };
 }
