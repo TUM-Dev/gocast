@@ -80,6 +80,26 @@ export const LectureVideoTypes = [
     LectureVideoTypeCam,
 ] as LectureVideoType[];
 
+export type VideoSection = {
+    id?: number;
+    description: string;
+
+    startHours: number;
+    startMinutes: number;
+    startSeconds: number;
+
+    streamID?: number;
+    fileID?: number;
+};
+
+export function videoSectionTimestamp(a: VideoSection) : number {
+    return a.startHours * 3600 + a.startMinutes * 60 + a.startSeconds;
+}
+
+export function videoSectionSort(a: VideoSection, b: VideoSection) : number {
+    return videoSectionTimestamp(a) - videoSectionTimestamp(b);
+}
+
 export interface Lecture {
     color: string;
     courseId: number;
@@ -103,6 +123,7 @@ export interface Lecture {
     start: string;
     streamKey: string;
     transcodingProgresses: TranscodingProgress[];
+    videoSections: VideoSection[];
 
     // Clientside computed fields
     hasAttachments: boolean;
@@ -202,6 +223,47 @@ export const AdminLectureList = {
      */
     saveSeriesMetadata: async (courseId: number, lectureId: number): Promise<void> => {
         await post(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
+    },
+
+    /**
+     * Add sections to a lecture
+     * @param lectureId
+     * @param sections
+     */
+    addSections: async (lectureId: number, sections: VideoSection[]): Promise<void> => {
+        const res = await postData(`/api/stream/${lectureId}/sections`, sections);
+        if (res.status !== StatusCodes.OK) {
+            throw Error(res.body.toString());
+        }
+    },
+
+    /**
+     * Updates a section
+     * @param lectureId
+     * @param section
+     */
+    updateSection: async (lectureId: number, section: VideoSection): Promise<void> => {
+        const res = await putData(`/api/stream/${lectureId}/sections/${section.id}`, {
+            Description: section.description,
+            StartHours: section.startHours,
+            StartMinutes: section.startMinutes,
+            StartSeconds: section.startSeconds,
+        });
+        if (res.status !== StatusCodes.OK) {
+            throw Error(res.body.toString());
+        }
+    },
+
+    /**
+     * Remove a section from a lecture
+     * @param lectureId
+     * @param sectionId
+     */
+    removeSection: async (lectureId: number, sectionId: number): Promise<void> => {
+        const res = await Delete(`/api/stream/${lectureId}/sections/${sectionId}`);
+        if (res.status !== StatusCodes.OK) {
+            throw Error(res.body.toString());
+        }
     },
 
     /**

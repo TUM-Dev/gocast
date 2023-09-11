@@ -8,9 +8,9 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    LectureVideoTypes,
+    LectureVideoTypes, VideoSection, videoSectionSort,
 } from "./api/admin-lecture-list";
-import { ChangeSet, ignoreKeys } from "./change-set";
+import {ChangeSet, comparatorPipeline, ignoreKeys, singleProperty} from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 
 export enum UIEditMode {
@@ -114,8 +114,20 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
+            const customComparator = comparatorPipeline([
+                ignoreKeys(["files"]),
+                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean|null => {
+                    if (a.videoSections.length !== b.videoSections.length) {
+                        return true;
+                    }
+                    if (a.videoSections.some(({ id }) => !b.videoSections.some(({id: bId}) => id === bId))) {
+                        return true;
+                    }
+                }),
+            ]);
+
             // This tracks changes that are not saved yet
-            this.changeSet = new ChangeSet<Lecture>(lecture, ignoreKeys(["files"]), (data, dirtyState) => {
+            this.changeSet = new ChangeSet<Lecture>(lecture, customComparator, (data, dirtyState) => {
                 this.lectureData = data;
                 this.isDirty = dirtyState.isDirty;
             });
@@ -189,6 +201,31 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
         deleteAttachment(id: number) {
             DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
+        },
+
+        addSection(section: VideoSection) {
+            this.changeSet.patch("videoSections", [
+                ...this.lectureData.videoSections,
+                section,
+            ].sort(videoSectionSort));
+        },
+
+        deleteSection(id: number) {
+            this.changeSet.patch("videoSections", this.lectureData.videoSections.filter(
+                (s) => s.id !== id,
+            ));
+        },
+
+        isValidVideoSection(section: VideoSection): boolean {
+            return (
+                section.description !== "" &&
+                section.startHours !== null &&
+                section.startHours < 32 &&
+                section.startMinutes !== null &&
+                section.startMinutes < 60 &&
+                section.startSeconds !== null &&
+                section.startSeconds < 60
+            );
         },
 
         /**
