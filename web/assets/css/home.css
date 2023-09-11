@@ -145,7 +145,11 @@
 }
 
 .tum-live-thumbnail {
-    @apply relative bg-gray-100 dark:bg-gray-800 rounded-lg mb-2 bg-cover transition-all duration-500 hover:shadow-xl dark:shadow-gray-900/75;
+    @apply relative bg-gray-100 dark:bg-gray-800 rounded-lg mb-2 bg-cover transition-all duration-500 dark:shadow-gray-900/75;
+}
+
+.tum-live-thumbnail.hover{
+    @apply hover:shadow-xl;
 }
 
 .tum-live-thumbnail-progress {

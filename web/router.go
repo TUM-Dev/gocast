@@ -11,9 +11,9 @@ import (
 	"path"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -154,6 +154,10 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopOutChat)
+
+	// audio
+	streamGroup.Use(tools.InitStream(daoWrapper))
+	streamGroup.GET("/a/:slug/:streamID", routes.AudioPage)
 
 	// misc
 	router.GET("/healthcheck", routes.HealthCheck)

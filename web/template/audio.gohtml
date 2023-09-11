@@ -1,0 +1,71 @@
+<html lang="en">
+<head>
+    {{- /*gotype: github.com/TUM-Dev/gocast/web.AudioPageData*/ -}}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
+    <link rel="manifest" href="/static/assets/manifest.json">
+
+    <title>{{.Branding.Title}} | Login</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+
+    <script src="/static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/global.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
+</head>
+<body class="h-screen flex flex-col items-stretch tum-live-bg">
+<header class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
+        <a href="/" class="mx-3" type="button" id="logo" title="Start">
+            <img src="/logo.svg" width="42" alt="TUM-Live Logo">
+        </a>
+    </div>
+</header>
+<main class="relative grow flex flex-col items-stretch">
+    <header class="flex flex-col items-center z-50 py-2">
+        <div style="background: url('https://tum.live/api/stream/29213/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;"
+             class="aspect-video tum-live-thumbnail shadow-lg w-96 dark:shadow-gray-900/75">
+        </div>
+    </header>
+    <article class="relative grow bg-gray-100">
+        <div class="absolute bg-gradient-to-b from-white to-gray-100 h-40 w-full -top-40"></div>
+
+        <section class="py-2 px-5">
+            <h1 id="lecture-title" class="text-xl font-semibold">Lecture: June 05. 2023</h1>
+            <a id="course-link" href="" class="text-sm py-1">Tensor Networks (IN2388)</a>
+        </section>
+        <section class="flex items-center justify-between px-5">
+            <div class = "flex space-x-5 text-3 text-lg">
+                <button type="button" class="">
+                    <i class="fa-solid fa-edit"></i>
+                </button>
+                <button type="button" class="">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                </button>
+                <button type="button" class="">
+                    <i class="fa-solid fa-link"></i>
+                </button>
+            </div>
+            <button type="button" class="tum-live-button-primary text-lg h-10 w-10 rounded-full">
+                <i class="fa-solid fa-play"></i>
+            </button>
+        </section>
+        <section class="py-5 px-5">
+            <p class = "text-sm text-5">
+                Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+            </p>
+        </section>
+    </article>
+</main>
+</body>
+</html>
