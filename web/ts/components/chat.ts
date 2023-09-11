@@ -232,7 +232,8 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
 
         handleApprove(msg: ChatMessage) {
             this.preprocessors.forEach((f) => f(msg, this.user));
-            this.messages.approve(msg);
+            if (msg.replyTo.Valid) this.messages.approveReply(msg);
+            else this.messages.approve(msg);
         },
 
         handleRetract(msg: ChatMessage) {
