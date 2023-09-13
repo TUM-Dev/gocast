@@ -29,9 +29,14 @@ jobs:
         with:
           images: ghcr.io/tum-dev/gocast/${{ env.containername }}
           tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
             type=sha
           flavor: |
             latest=true
+            prefix=
+            suffix=
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
