@@ -64,6 +64,27 @@ export async function put(url = "", body: object = {}) {
 }
 
 /**
+ * Wrapper for Javascript's fetch function for PATCH
+ * @param  {string} url URL to fetch
+ * @param  {object} body Data object to put
+ * @return {Promise<Response>}
+ */
+export async function patch(url = "", body = {}) {
+    return await fetch(url, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    }).then((res) => {
+        if (!res.ok) {
+            throw Error(res.statusText);
+        }
+        return res;
+    });
+}
+
+/**
  * Wrapper for Javascript's fetch function for DELETE
  * @param  {string} url URL to fetch
  * @return {Promise<Response>}

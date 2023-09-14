@@ -1,4 +1,4 @@
-import { del, get, post, put } from "../utilities/fetch-wrappers";
+import {del, get, patch, post, put} from "../utilities/fetch-wrappers";
 import { StatusCodes } from "http-status-codes";
 import { Delete, patchData, postData, postFormData, putData, uploadFile, UploadFileListener } from "../global";
 
@@ -166,13 +166,10 @@ export const AdminLectureList = {
      * @param request
      */
     updateMetadata: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
-        console.log({
-            request,
-        });
         const promises = [];
         if (request.name !== undefined) {
             promises.push(
-                postData(`/api/course/${courseId}/renameLecture/${lectureId}`, {
+                post(`/api/course/${courseId}/renameLecture/${lectureId}`, {
                     name: request.name,
                 }),
             );
@@ -180,7 +177,7 @@ export const AdminLectureList = {
 
         if (request.description !== undefined) {
             promises.push(
-                putData(`/api/course/${courseId}/updateDescription/${lectureId}`, {
+                put(`/api/course/${courseId}/updateDescription/${lectureId}`, {
                     name: request.description,
                 }),
             );
@@ -188,7 +185,7 @@ export const AdminLectureList = {
 
         if (request.lectureHallId !== undefined) {
             promises.push(
-                postData("/api/setLectureHall", {
+                post("/api/setLectureHall", {
                     streamIds: [lectureId],
                     lectureHall: request.lectureHallId,
                 }),
@@ -197,7 +194,7 @@ export const AdminLectureList = {
 
         if (request.isChatEnabled !== undefined) {
             promises.push(
-                patchData(`/api/stream/${lectureId}/chat/enabled`, {
+                patch(`/api/stream/${lectureId}/chat/enabled`, {
                     lectureId,
                     isChatEnabled: request.isChatEnabled,
                 }),
@@ -216,8 +213,8 @@ export const AdminLectureList = {
      * @param courseId
      * @param lectureId
      */
-    saveSeriesMetadata: async (courseId: number, lectureId: number) => {
-        return await postData(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
+    saveSeriesMetadata: async (courseId: number, lectureId: number): Promise<void>  => {
+        await post(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
     },
 
     /**
@@ -226,10 +223,7 @@ export const AdminLectureList = {
      * @param sections
      */
     addSections: async (lectureId: number, sections: VideoSection[]): Promise<void> => {
-        const res = await postData(`/api/stream/${lectureId}/sections`, sections);
-        if (res.status !== StatusCodes.OK) {
-            throw Error(res.body.toString());
-        }
+        await post(`/api/stream/${lectureId}/sections`, sections);
     },
 
     /**
@@ -255,10 +249,7 @@ export const AdminLectureList = {
      * @param sectionId
      */
     removeSection: async (lectureId: number, sectionId: number): Promise<void> => {
-        const res = await Delete(`/api/stream/${lectureId}/sections/${sectionId}`);
-        if (res.status !== StatusCodes.OK) {
-            throw Error(res.body.toString());
-        }
+        await del(`/api/stream/${lectureId}/sections/${sectionId}`);
     },
 
     /**
@@ -267,12 +258,9 @@ export const AdminLectureList = {
      * @param isPrivate
      */
     setPrivate: async (lectureId: number, isPrivate: boolean): Promise<void> => {
-        const res = await patchData(`/api/stream/${lectureId}/visibility`, {
+        await patch(`/api/stream/${lectureId}/visibility`, {
             private: isPrivate,
         });
-        if (res.status !== StatusCodes.OK) {
-            throw Error(res.body.toString());
-        }
     },
 
     /**
@@ -332,7 +320,7 @@ export const AdminLectureList = {
     },
 
     deleteAttachment: async (courseId: number, lectureId: number, attachmentId: number) => {
-        return Delete(`/api/stream/${lectureId}/files/${attachmentId}`);
+        return del(`/api/stream/${lectureId}/files/${attachmentId}`);
     },
 
     /**
@@ -351,7 +339,7 @@ export const AdminLectureList = {
      * @param lectureIds
      */
     delete: async function (courseId: number, lectureIds: number[]): Promise<Response> {
-        return await postData(`/api/course/${courseId}/deleteLectures`, {
+        return await post(`/api/course/${courseId}/deleteLectures`, {
             streamIDs: lectureIds,
         });
     },
