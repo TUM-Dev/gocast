@@ -1,3 +1,5 @@
+import { postFormData } from "../global";
+
 /**
  * Wrapper for Javascript's fetch function for GET
  * @param  {string} url URL to fetch
