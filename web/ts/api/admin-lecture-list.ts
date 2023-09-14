@@ -1,6 +1,5 @@
-import {del, get, patch, post, put} from "../utilities/fetch-wrappers";
+import {del, get, patch, post, postFormData, PostFormDataListener, put, uploadFile} from "../utilities/fetch-wrappers";
 import { StatusCodes } from "http-status-codes";
-import { Delete, patchData, postData, postFormData, putData, uploadFile, UploadFileListener } from "../global";
 
 export interface UpdateLectureMetaRequest {
     name?: string;
@@ -232,7 +231,7 @@ export const AdminLectureList = {
      * @param section
      */
     updateSection: async (lectureId: number, section: VideoSection): Promise<void> => {
-        const res = await putData(`/api/stream/${lectureId}/sections/${section.id}`, {
+        const res = await put(`/api/stream/${lectureId}/sections/${section.id}`, {
             Description: section.description,
             StartHours: section.startHours,
             StartMinutes: section.startMinutes,
@@ -276,7 +275,7 @@ export const AdminLectureList = {
         lectureId: number,
         videoType: string,
         file: File,
-        listener: UploadFileListener = {},
+        listener: PostFormDataListener = {},
     ) => {
         await uploadFile(
             `/api/course/${courseId}/uploadVODMedia?streamID=${lectureId}&videoType=${videoType}`,
@@ -296,7 +295,7 @@ export const AdminLectureList = {
         courseId: number,
         lectureId: number,
         file: File,
-        listener: UploadFileListener = {},
+        listener: PostFormDataListener = {},
     ) => {
         return await uploadFile(`/api/stream/${lectureId}/files?type=file`, file, listener);
     },
@@ -312,7 +311,7 @@ export const AdminLectureList = {
         courseId: number,
         lectureId: number,
         url: string,
-        listener: UploadFileListener = {},
+        listener: PostFormDataListener = {},
     ) => {
         const vodUploadFormData = new FormData();
         vodUploadFormData.append("file_url", url);
