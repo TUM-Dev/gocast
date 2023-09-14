@@ -231,10 +231,7 @@ export const AdminLectureList = {
      * @param sections
      */
     addSections: async (lectureId: number, sections: VideoSection[]): Promise<void> => {
-        const res = await postData(`/api/stream/${lectureId}/sections`, sections);
-        if (res.status !== StatusCodes.OK) {
-            throw Error(res.body.toString());
-        }
+        await post(`/api/stream/${lectureId}/sections`, sections);
     },
 
     /**
@@ -243,7 +240,7 @@ export const AdminLectureList = {
      * @param section
      */
     updateSection: async (lectureId: number, section: VideoSection): Promise<void> => {
-        const res = await putData(`/api/stream/${lectureId}/sections/${section.id}`, {
+        const res = await put(`/api/stream/${lectureId}/sections/${section.id}`, {
             Description: section.description,
             StartHours: section.startHours,
             StartMinutes: section.startMinutes,
@@ -260,10 +257,7 @@ export const AdminLectureList = {
      * @param sectionId
      */
     removeSection: async (lectureId: number, sectionId: number): Promise<void> => {
-        const res = await Delete(`/api/stream/${lectureId}/sections/${sectionId}`);
-        if (res.status !== StatusCodes.OK) {
-            throw Error(res.body.toString());
-        }
+        await del(`/api/stream/${lectureId}/sections/${sectionId}`);
     },
 
     /**
