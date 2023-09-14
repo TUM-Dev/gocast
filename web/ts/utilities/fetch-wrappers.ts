@@ -1,4 +1,4 @@
-import {postFormData} from "../global";
+import { postFormData } from "../global";
 
 /**
  * Wrapper for Javascript's fetch function for GET
@@ -44,7 +44,6 @@ export async function post(url: string, body: object = {}) {
     });
 }
 
-
 export interface PostFormDataListener {
     onProgress?: (progress: number) => void;
 }
@@ -56,7 +55,11 @@ export interface PostFormDataListener {
  * @param  {PostFormDataListener} listener attached progress listeners
  * @return {Promise<XMLHttpRequest>}
  */
-export function postFormData(url: string, body: FormData, listener: PostFormDataListener = {}): Promise<XMLHttpRequest> {
+export function postFormData(
+    url: string,
+    body: FormData,
+    listener: PostFormDataListener = {},
+): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
     return new Promise((resolve, reject) => {
         xhr.onloadend = () => {

@@ -8,9 +8,11 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    LectureVideoTypes, VideoSection, videoSectionSort,
+    LectureVideoTypes,
+    VideoSection,
+    videoSectionSort,
 } from "./api/admin-lecture-list";
-import {ChangeSet, comparatorPipeline, ignoreKeys, singleProperty} from "./change-set";
+import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 
 export enum UIEditMode {
@@ -116,11 +118,11 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         init() {
             const customComparator = comparatorPipeline([
                 ignoreKeys(["files"]),
-                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean|null => {
+                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
                     if (a.videoSections.length !== b.videoSections.length) {
                         return true;
                     }
-                    if (a.videoSections.some(({ id }) => !b.videoSections.some(({id: bId}) => id === bId))) {
+                    if (a.videoSections.some(({ id }) => !b.videoSections.some(({ id: bId }) => id === bId))) {
                         return true;
                     }
                 }),
@@ -204,16 +206,14 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         addSection(section: VideoSection) {
-            this.changeSet.patch("videoSections", [
-                ...this.lectureData.videoSections,
-                section,
-            ].sort(videoSectionSort));
+            this.changeSet.patch("videoSections", [...this.lectureData.videoSections, section].sort(videoSectionSort));
         },
 
         deleteSection(id: number) {
-            this.changeSet.patch("videoSections", this.lectureData.videoSections.filter(
-                (s) => s.id !== id,
-            ));
+            this.changeSet.patch(
+                "videoSections",
+                this.lectureData.videoSections.filter((s) => s.id !== id),
+            );
         },
 
         isValidVideoSection(section: VideoSection): boolean {

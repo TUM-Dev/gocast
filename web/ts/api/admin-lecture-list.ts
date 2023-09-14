@@ -1,4 +1,13 @@
-import {del, get, patch, post, postFormData, PostFormDataListener, put, uploadFile} from "../utilities/fetch-wrappers";
+import {
+    del,
+    get,
+    patch,
+    post,
+    postFormData,
+    PostFormDataListener,
+    put,
+    uploadFile,
+} from "../utilities/fetch-wrappers";
 import { StatusCodes } from "http-status-codes";
 
 export interface UpdateLectureMetaRequest {
@@ -83,11 +92,11 @@ export type VideoSection = {
     fileID?: number;
 };
 
-export function videoSectionTimestamp(a: VideoSection) : number {
+export function videoSectionTimestamp(a: VideoSection): number {
     return a.startHours * 3600 + a.startMinutes * 60 + a.startSeconds;
 }
 
-export function videoSectionSort(a: VideoSection, b: VideoSection) : number {
+export function videoSectionSort(a: VideoSection, b: VideoSection): number {
     return videoSectionTimestamp(a) - videoSectionTimestamp(b);
 }
 
@@ -212,7 +221,7 @@ export const AdminLectureList = {
      * @param courseId
      * @param lectureId
      */
-    saveSeriesMetadata: async (courseId: number, lectureId: number): Promise<void>  => {
+    saveSeriesMetadata: async (courseId: number, lectureId: number): Promise<void> => {
         await post(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
     },
 
