@@ -292,7 +292,16 @@ export const AdminLectureList = {
      */
     delete: async function (courseId: number, lectureIds: number[]): Promise<Response> {
         return await post(`/api/course/${courseId}/deleteLectures`, {
-            streamIDs: lectureIds,
+            streamIDs: lectureIds.map((id) => `${id}`),
         });
+    },
+
+    /**
+     * Delete lecture series of a lecture
+     * @param courseId
+     * @param lectureId
+     */
+    deleteSeries: async function (courseId: number, lectureId: number): Promise<Response> {
+        return await del(`/api/course/${courseId}/deleteLectureSeries/${lectureId}`);
     },
 };

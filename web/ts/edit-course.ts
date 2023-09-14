@@ -191,6 +191,14 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
         },
 
+        deleteLecture() {
+            DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
+        },
+
+        deleteLectureSeries() {
+            DataStore.adminLectureList.deleteSeries(this.lectureData.courseId, this.lectureData.lectureId);
+        },
+
         /**
          * Opens the series lecture editor UI
          */
