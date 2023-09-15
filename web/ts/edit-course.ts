@@ -13,6 +13,7 @@ import {
 } from "./api/admin-lecture-list";
 import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
+import {uploadFile} from "./utilities/fetch-wrappers";
 
 export enum UIEditMode {
     none,

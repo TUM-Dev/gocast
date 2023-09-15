@@ -1,7 +1,7 @@
 import { StreamableMapProvider } from "./provider";
 import { AdminLectureList, Lecture, LectureFile, UpdateLectureMetaRequest } from "../api/admin-lecture-list";
 import { FileType } from "../edit-course";
-import { UploadFileListener } from "../global";
+import {PostFormDataListener} from "../utilities/fetch-wrappers";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -174,7 +174,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         lectureId: number,
         videoType: string,
         file: File,
-        listener: UploadFileListener = {},
+        listener: PostFormDataListener = {},
     ) {
         await AdminLectureList.uploadVideo(courseId, lectureId, videoType, file, listener);
     }
