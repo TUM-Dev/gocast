@@ -2,7 +2,6 @@
 export * from "../watch-admin";
 export * from "../TUMLiveVjs";
 export * from "../watch";
-export * from "../video-sections";
 export * from "../splitview";
 export * from "../bookmarks";
 export * from "../subtitle-search";

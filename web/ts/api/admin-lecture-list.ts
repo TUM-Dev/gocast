@@ -88,8 +88,8 @@ export type VideoSection = {
     startMinutes: number;
     startSeconds: number;
 
-    streamID?: number;
-    fileID?: number;
+    //Pseudo Fields
+    key: string;
 };
 
 export type VideoSectionDelta = {
