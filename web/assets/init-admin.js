@@ -183,7 +183,6 @@ document.addEventListener("alpine:init", () => {
             const changeSet = evaluate(changeSetExpression);
 
             const onChangeSetUpdateHandler = (data) => {
-                console.log('onChangeSetUpdateHandler', el, data);
                 const value = fieldName != null ? data[fieldName] : data;
                 if (modifiers.includes("text")) {
                     el.innerText = `${value}`;
