@@ -8,7 +8,7 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    VideoSection, videoSectionFriendlyTimestamp,
+    VideoSection, videoSectionFriendlyTimestamp, videoSectionHasChanged, videoSectionListDelta,
     videoSectionSort, videoSectionTimestamp,
 } from "./api/admin-lecture-list";
 import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
@@ -130,12 +130,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                     }
 
                     // A section has edited and different information now
-                    return (a.videoSections.some((sectionA) => b.videoSections.some((sectionB) => {
-                        return sectionA.id === sectionB.id && (
-                            sectionA.description !== sectionB.description ||
-                            videoSectionTimestamp(sectionA) !== videoSectionTimestamp(sectionB)
-                        );
-                    })));
+                    return (a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB))));
                 }),
             ]);
 
@@ -299,7 +294,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled } = this.lectureData;
+            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } = this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
             try {
@@ -315,6 +310,22 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         saveSeries: this.uiEditMode === UIEditMode.series,
                     },
                 });
+
+                // Saving VideoSections
+                if (changedKeys.includes("videoSections")) {
+                    const oldVideoSections = this.changeSet.getValue("videoSections", { lastCommittedState: true });
+                    const delta = videoSectionListDelta(oldVideoSections, videoSections);
+
+                    if (delta.toAdd.length > 0) {
+                        await DataStore.adminLectureList.addSections(courseId, lectureId, delta.toAdd);
+                    }
+                    for (const section of delta.toUpdate) {
+                        await DataStore.adminLectureList.updateSection(courseId, lectureId, section);
+                    }
+                    for (const section of delta.toDelete) {
+                        await DataStore.adminLectureList.deleteSection(courseId, lectureId, section.id);
+                    }
+                }
 
                 // Uploading new videos
                 for (const videoFile of this.videoFiles) {

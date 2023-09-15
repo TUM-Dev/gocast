@@ -92,6 +92,50 @@ export type VideoSection = {
     fileID?: number;
 };
 
+export type VideoSectionDelta = {
+    toAdd: VideoSection[],
+    toUpdate: VideoSection[],
+    toDelete: VideoSection[],
+}
+
+// Checks if two video sections have the same id but different data
+export function videoSectionHasChanged(a: VideoSection, b: VideoSection) {
+    return a.id === b.id && (
+        a.description !== b.description ||
+        videoSectionTimestamp(a) !== videoSectionTimestamp(b)
+    );
+}
+
+export function videoSectionListDelta(oldSections: VideoSection[], newSections: VideoSection[]) : VideoSectionDelta {
+    const sectionsToAdd = [];
+    const sectionsToUpdate = [];
+    const sectionsToDelete = [];
+
+    for (const section of newSections) {
+        // New Section
+        if (section.id === undefined) {
+            sectionsToAdd.push(section);
+            continue;
+        }
+
+        // Updating Video Sections
+        const oldVideoSection = oldSections.find((oldSection: VideoSection) => oldSection.id === section.id);
+        if (videoSectionHasChanged(section, oldVideoSection)) { sectionsToUpdate.push(section); }
+    }
+    for (const section of oldSections) {
+        // Deleted Sections
+        if (!newSections.some(({id}) => section.id === id)) {
+            sectionsToDelete.push(section);
+        }
+    }
+
+    return {
+        toAdd: sectionsToAdd,
+        toUpdate: sectionsToUpdate,
+        toDelete: sectionsToDelete,
+    };
+}
+
 export function videoSectionFriendlyTimestamp(a: VideoSection): string {
     return `${a.startHours.toString().padStart(2, "0")}:${a.startMinutes.toString().padStart(2, "0")}:${a.startSeconds.toString().padStart(2, "0")}`;
 }
@@ -235,7 +279,10 @@ export const AdminLectureList = {
      * @param sections
      */
     addSections: async (lectureId: number, sections: VideoSection[]): Promise<void> => {
-        await post(`/api/stream/${lectureId}/sections`, sections);
+        await post(`/api/stream/${lectureId}/sections`, sections.map((s) => ({
+            ...s,
+            streamID: lectureId,
+        })));
     },
 
     /**
@@ -256,11 +303,11 @@ export const AdminLectureList = {
     },
 
     /**
-     * Remove a section from a lecture
+     * Delete a section from a lecture
      * @param lectureId
      * @param sectionId
      */
-    removeSection: async (lectureId: number, sectionId: number): Promise<void> => {
+    deleteSection: async (lectureId: number, sectionId: number): Promise<void> => {
         await del(`/api/stream/${lectureId}/sections/${sectionId}`);
     },
 

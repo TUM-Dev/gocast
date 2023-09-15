@@ -86,6 +86,18 @@ export class ChangeSet<T> {
     }
 
     /**
+     * Returns a key from the change-state or the last committed state if flag is set
+     * @param key key to return
+     * @param lastCommittedState if set to true, value of the last committed state is returned
+     */
+    getValue(key: string, { lastCommittedState = false }): T {
+        if (lastCommittedState) {
+            return this.state[key];
+        }
+        return this.changeState[key];
+    }
+
+    /**
      * Returns the current uncommitted change state.
      */
     get(): T {
