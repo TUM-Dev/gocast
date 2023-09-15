@@ -71,6 +71,17 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
+    async deleteSeries(courseId: number, lectureId: number) {
+        await AdminLectureList.deleteSeries(courseId, lectureId);
+
+        const lectures = await this.getData(courseId);
+        const seriesIdentifier = lectures.find((l) => l.lectureId === lectureId)?.seriesIdentifier ?? null;
+        const lectureIds = lectures.filter((l) => l.seriesIdentifier === seriesIdentifier).map((l) => l.lectureId);
+
+        this.data[courseId] = lectures.filter((s) => !lectureIds.includes(s.lectureId));
+        await this.triggerUpdate(courseId);
+    }
+
     async updateMeta(courseId: number, lectureId: number, props: UpdateMetaProps) {
         const updateSeries = props?.options?.saveSeries === true;
         const seriesIdentifier =

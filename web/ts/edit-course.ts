@@ -227,6 +227,14 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 section.startSeconds < 60
             );
         },
+        
+        deleteLecture() {
+            DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
+        },
+
+        deleteLectureSeries() {
+            DataStore.adminLectureList.deleteSeries(this.lectureData.courseId, this.lectureData.lectureId);
+        },
 
         /**
          * Opens the series lecture editor UI
@@ -884,10 +892,10 @@ export function createLectureForm(args: { s: [] }) {
                 postData("/api/course/" + this.courseID + "/createLecture", payload)
                     .then(async (res) => {
                         const { ids } = await res.json();
-                        /*const url = new URL(window.location.href);
+                        const url = new URL(window.location.href);
                         url.hash = `lectures:${ids.join(",")}`;
                         window.location.assign(url);
-                        window.location.reload();*/
+                        window.location.reload();
                     })
                     .catch((e) => {
                         console.log(e);
