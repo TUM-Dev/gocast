@@ -119,12 +119,23 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             const customComparator = comparatorPipeline([
                 ignoreKeys(["files"]),
                 singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
+                    // List length differs, something was removed or added
                     if (a.videoSections.length !== b.videoSections.length) {
                         return true;
                     }
-                    if (a.videoSections.some(({ id }) => !b.videoSections.some(({ id: bId }) => id === bId))) {
+
+                    // List length is the same but items do have no id, so they are new.
+                    if (a.videoSections.some(({ id }) => id === undefined) || b.videoSections.some(({ id }) => id === undefined)) {
                         return true;
                     }
+
+                    // A section has edited and different information now
+                    return (a.videoSections.some((sectionA) => b.videoSections.some((sectionB) => {
+                        return sectionA.id === sectionB.id && (
+                            sectionA.description !== sectionB.description ||
+                            videoSectionTimestamp(sectionA) !== videoSectionTimestamp(sectionB)
+                        );
+                    })));
                 }),
             ]);
 
@@ -218,6 +229,14 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
         addSection(section: VideoSection) {
             this.changeSet.patch("videoSections", [...this.lectureData.videoSections, section].sort(videoSectionSort));
+        },
+
+        updateSection(section: VideoSection) {
+            const sectionKey = this.sectionKey(section);
+            this.changeSet.patch("videoSections", [
+                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.sectionKey(s)),
+                section
+            ].sort(videoSectionSort));
         },
 
         deleteSection(id: number) {

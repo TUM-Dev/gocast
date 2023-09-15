@@ -75,7 +75,10 @@
             <div class="">
                 <div class="grid gap-2">
                     <template x-for="section in lectureData.videoSections" :key="sectionKey(section)">
-                        <div x-data="{ sectionEditChangeSet: new admin.ChangeSet(section), editMode: false }" class="w-full border dark:border-gray-600 rounded">
+                        <div x-data="{ sectionEditChangeSet: new admin.ChangeSet(section), editMode: false }" class="w-full border dark:border-gray-600 rounded"
+                             x-change-set-listen="sectionEditChangeSet"
+                             x-on-change-set-update.clean="updateSection(sectionEditChangeSet.get())"
+                        >
                             <template x-if="!editMode">
                                 <div class="p-1 flex items-center justify-start">
                                     <div class="text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"
