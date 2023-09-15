@@ -255,17 +255,16 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
         deleteSection(section) {
             const sectionKey = this.getSectionKey(section);
-            this.changeSet.patch(
-                "videoSections",
-                [...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s))],
-            );
+            this.changeSet.patch("videoSections", [
+                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
+            ]);
         },
 
         isValidVideoSection(section: VideoSection): boolean {
             const sectionKey = this.getSectionKey(section);
             const hasValidTime = !this.lectureData.videoSections.some(
-                (s) =>  videoSectionTimestamp(s) == videoSectionTimestamp(section) &&
-                    sectionKey != this.getSectionKey(s)
+                (s) =>
+                    videoSectionTimestamp(s) == videoSectionTimestamp(section) && sectionKey != this.getSectionKey(s),
             );
 
             return (
