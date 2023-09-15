@@ -15,6 +15,8 @@ document.addEventListener("alpine:init", () => {
         'color'
     ];
 
+    const nativeEventName = "csupdate";
+
     const convert = (modifiers, value) => {
         if (modifiers.includes("int")) {
             return parseInt(value);
@@ -79,7 +81,6 @@ document.addEventListener("alpine:init", () => {
     Alpine.directive("bind-change-set", (el, { expression, value, modifiers }, { evaluate, cleanup }) => {
         const changeSet = evaluate(expression);
         const fieldName = value || el.name;
-        const nativeEventName = "csupdate";
 
         if (el.type === "file") {
             const isSingle = modifiers.includes("single")
@@ -157,4 +158,75 @@ document.addEventListener("alpine:init", () => {
             })
         }
     });
+
+    /**
+     * Alpine.js directive for dynamically triggering a custom event and updating an element's inner text
+     * based on changes to a "change set" object's field.
+     *
+     * Syntax:
+     * <div x-change-set-listen.text="changeSetExpression.fieldName"></div>
+     *
+     * Parameters:
+     *  - changeSetExpression: The JavaScript expression evaluating to the change set object
+     *  - fieldName: The specific field within the change set to monitor for changes
+     *
+     * Modifiers:
+     *  - "text": When provided, the directive will also update the element's innerText.
+     *
+     * Custom Events:
+     *  - "csupdate": Custom event triggered when the change set is updated.
+     *    The detail property of the event object contains the new value of the specified field.
+     */
+    Alpine.directive("change-set-listen", (el, { expression, modifiers }, { evaluate, cleanup }) => {
+        const [changeSetExpression, fieldName = null] = expression.split(".");
+        const changeSet = evaluate(changeSetExpression);
+
+        const onChangeSetUpdateHandler = (data) => {
+            const value = fieldName != null ? data[fieldName] : data;
+            if (modifiers.includes("text")) {
+                el.innerText = `${value}`;
+            }
+            el.dispatchEvent(new CustomEvent(nativeEventName, { detail: value }));
+        };
+
+        onChangeSetUpdateHandler(changeSet.get());
+        changeSet.listen(onChangeSetUpdateHandler);
+
+        cleanup(() => {
+            changeSet.removeListener(onChangeSetUpdateHandler);
+        })
+    });
+
+    /**
+    * Alpine.js directive for executing custom logic in response to the "csupdate" event,
+    * which is usually triggered by changes in a "change set" object's field.
+    *
+    * Syntax:
+    * <div x-on-change-set-update="[expression]"></div>
+    *
+    * Parameters:
+    *  - expression: The JavaScript expression to be evaluated when the "csupdate" event is triggered.
+    *
+    * Modifiers:
+    *  - "init": When provided, the directive will also execute the expression during initialization.
+    *
+    * Example usage:
+    * <div x-change-set-listen="sectionEditChangeSet"
+    *      x-on-change-set-update.init="$el.innerText = friendlySectionTimestamp(sectionEditChangeSet.get())">
+    * </div>
+    */
+    Alpine.directive("on-change-set-update", (el, { expression, modifiers }, { evaluateLater, cleanup }) => {
+        const onUpdate = evaluateLater(expression);
+
+        const onChangeSetUpdateHandler = () => onUpdate();
+        el.addEventListener(nativeEventName, onChangeSetUpdateHandler);
+
+        if (modifiers.includes("init")) {
+            onChangeSetUpdateHandler();
+        }
+
+        cleanup(() => {
+            el.removeEventListener(nativeEventName, onChangeSetUpdateHandler);
+        })
+    })
 });
