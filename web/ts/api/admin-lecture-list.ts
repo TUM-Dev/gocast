@@ -278,11 +278,12 @@ export const AdminLectureList = {
      * @param lectureId
      * @param sections
      */
-    addSections: async (lectureId: number, sections: VideoSection[]): Promise<void> => {
-        await post(`/api/stream/${lectureId}/sections`, sections.map((s) => ({
+    addSections: async (lectureId: number, sections: VideoSection[]): Promise<VideoSection[]> => {
+        const result = await post(`/api/stream/${lectureId}/sections`, sections.map((s) => ({
             ...s,
             streamID: lectureId,
         })));
+        return result.json();
     },
 
     /**

@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/bot"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -496,6 +496,8 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 			log.WithError(err).Error("failed to generate video section images")
 		}
 	}()
+
+	c.JSON(http.StatusOK, sections)
 }
 
 type UpdateVideoSectionRequest struct {
