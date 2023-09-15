@@ -3,10 +3,12 @@ import {
     AdminLectureList,
     Lecture,
     LectureFile,
-    UpdateLectureMetaRequest, VideoSection, videoSectionSort,
+    UpdateLectureMetaRequest,
+    VideoSection,
+    videoSectionSort,
 } from "../api/admin-lecture-list";
 import { FileType } from "../edit-course";
-import {PostFormDataListener} from "../utilities/fetch-wrappers";
+import { PostFormDataListener } from "../utilities/fetch-wrappers";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -181,7 +183,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             if (s.lectureId === lectureId) {
                 return {
                     ...s,
-                    videoSections: [...s.videoSections, ...newSections]
+                    videoSections: [...s.videoSections, ...newSections],
                 };
             }
             return s;
@@ -196,10 +198,9 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             if (s.lectureId === lectureId) {
                 return {
                     ...s,
-                    videoSections: [
-                        ...s.videoSections.filter((a) => a.id !== videoSection.id),
-                        videoSection,
-                    ].sort(videoSectionSort)
+                    videoSections: [...s.videoSections.filter((a) => a.id !== videoSection.id), videoSection].sort(
+                        videoSectionSort,
+                    ),
                 };
             }
             return s;
@@ -214,9 +215,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             if (s.lectureId === lectureId) {
                 return {
                     ...s,
-                    videoSections: [
-                        ...s.videoSections.filter((a) => a.id !== videoSectionId),
-                    ].sort(videoSectionSort)
+                    videoSections: [...s.videoSections.filter((a) => a.id !== videoSectionId)].sort(videoSectionSort),
                 };
             }
             return s;

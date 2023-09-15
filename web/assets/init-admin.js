@@ -177,28 +177,32 @@ document.addEventListener("alpine:init", () => {
      *  - "csupdate": Custom event triggered when the change set is updated.
      *    The detail property of the event object contains the new value of the specified field.
      */
-    Alpine.directive("change-set-listen", (el, { expression, modifiers }, { evaluate, cleanup }) => {
-        const [changeSetExpression, fieldName = null] = expression.split(".");
-        const changeSet = evaluate(changeSetExpression);
+    Alpine.directive("change-set-listen", (el, { expression, modifiers }, { effect, evaluate, cleanup }) => {
+        effect(() => {
+            const [changeSetExpression, fieldName = null] = expression.split(".");
+            const changeSet = evaluate(changeSetExpression);
 
-        if (!changeSet) {
-            return;
-        }
+            const onChangeSetUpdateHandler = (data) => {
+                console.log('onChangeSetUpdateHandler', el, data);
+                const value = fieldName != null ? data[fieldName] : data;
+                if (modifiers.includes("text")) {
+                    el.innerText = `${value}`;
+                }
+                el.dispatchEvent(new CustomEvent(nativeEventName, { detail: { changeSet, value } }));
+            };
 
-        const onChangeSetUpdateHandler = (data) => {
-            const value = fieldName != null ? data[fieldName] : data;
-            if (modifiers.includes("text")) {
-                el.innerText = `${value}`;
+            if (!changeSet) {
+                return;
             }
-            el.dispatchEvent(new CustomEvent(nativeEventName, { detail: { changeSet, value } }));
-        };
 
-        onChangeSetUpdateHandler(changeSet.get());
-        changeSet.listen(onChangeSetUpdateHandler);
-
-        cleanup(() => {
             changeSet.removeListener(onChangeSetUpdateHandler);
-        })
+            onChangeSetUpdateHandler(changeSet.get());
+            changeSet.listen(onChangeSetUpdateHandler);
+
+            cleanup(() => {
+                changeSet.removeListener(onChangeSetUpdateHandler);
+            })
+        });
     });
 
     /**
@@ -225,7 +229,6 @@ document.addEventListener("alpine:init", () => {
         const onUpdate = evaluateLater(expression);
 
         const onChangeSetUpdateHandler = (e) => {
-            console.log(el, "trigger");
             const isDirty = e.detail.changeSet.isDirty();
 
             if (modifiers.includes("clean") && isDirty) {

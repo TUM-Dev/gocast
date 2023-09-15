@@ -8,12 +8,16 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    VideoSection, videoSectionFriendlyTimestamp, videoSectionHasChanged, videoSectionListDelta,
-    videoSectionSort, videoSectionTimestamp,
+    VideoSection,
+    videoSectionFriendlyTimestamp,
+    videoSectionHasChanged,
+    videoSectionListDelta,
+    videoSectionSort,
+    videoSectionTimestamp,
 } from "./api/admin-lecture-list";
 import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
-import {uploadFile} from "./utilities/fetch-wrappers";
+import { uploadFile } from "./utilities/fetch-wrappers";
 
 export enum UIEditMode {
     none,
@@ -125,12 +129,15 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                     }
 
                     // List length is the same but items do have no id, so they are new.
-                    if (a.videoSections.some(({ id }) => id === undefined) || b.videoSections.some(({ id }) => id === undefined)) {
+                    if (
+                        a.videoSections.some(({ id }) => id === undefined) ||
+                        b.videoSections.some(({ id }) => id === undefined)
+                    ) {
                         return true;
                     }
 
                     // A section has edited and different information now
-                    return (a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB))));
+                    return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
                 }),
             ]);
 
@@ -211,7 +218,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
         },
 
-        friendlySectionTimestamp(section: VideoSection): string{
+        friendlySectionTimestamp(section: VideoSection): string {
             return videoSectionFriendlyTimestamp(section);
         },
 
@@ -220,22 +227,30 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         genPseudoSectionKey(): string {
-            return `sts_${(new Date()).getTime()}`;
+            return `sts_${new Date().getTime()}`;
         },
 
         addSection(section: VideoSection) {
-            this.changeSet.patch("videoSections", [...this.lectureData.videoSections, {
-                ...section,
-                key: this.genPseudoSectionKey(),
-            }].sort(videoSectionSort));
+            this.changeSet.patch(
+                "videoSections",
+                [
+                    ...this.lectureData.videoSections,
+                    {
+                        ...section,
+                        key: this.genPseudoSectionKey(),
+                    },
+                ].sort(videoSectionSort),
+            );
         },
 
         updateSection(section: VideoSection) {
             const sectionKey = this.getSectionKey(section);
-            this.changeSet.patch("videoSections", [
-                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
-                section
-            ].sort(videoSectionSort));
+            this.changeSet.patch(
+                "videoSections",
+                [...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)), section].sort(
+                    videoSectionSort,
+                ),
+            );
         },
 
         deleteSection(section) {
@@ -255,9 +270,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 section.startMinutes < 60 &&
                 section.startSeconds !== null &&
                 section.startSeconds < 60 &&
-                !this.lectureData.videoSections.some(
-                    (s) => videoSectionTimestamp(s) == videoSectionTimestamp(section)
-                )
+                !this.lectureData.videoSections.some((s) => videoSectionTimestamp(s) == videoSectionTimestamp(section))
             );
         },
 
@@ -299,7 +312,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } = this.lectureData;
+            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } =
+                this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
             try {

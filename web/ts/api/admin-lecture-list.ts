@@ -93,27 +93,24 @@ export type VideoSection = {
 };
 
 export type VideoSectionDelta = {
-    toAdd: VideoSection[],
-    toUpdate: VideoSection[],
-    toDelete: VideoSection[],
-}
+    toAdd: VideoSection[];
+    toUpdate: VideoSection[];
+    toDelete: VideoSection[];
+};
 
 // Checks if two video sections have the same id but different data
 export function videoSectionHasChanged(a: VideoSection, b: VideoSection) {
-    return a.id === b.id && (
-        a.description !== b.description ||
-        videoSectionTimestamp(a) !== videoSectionTimestamp(b)
-    );
+    return a.id === b.id && (a.description !== b.description || videoSectionTimestamp(a) !== videoSectionTimestamp(b));
 }
 
 export function videoSectionGenKey(section: VideoSection): string {
     if (section.id != null) {
         return `sid_${section.id}`;
     }
-    return `sts_${(new Date()).getTime()}`;
+    return `sts_${new Date().getTime()}`;
 }
 
-export function videoSectionListDelta(oldSections: VideoSection[], newSections: VideoSection[]) : VideoSectionDelta {
+export function videoSectionListDelta(oldSections: VideoSection[], newSections: VideoSection[]): VideoSectionDelta {
     const sectionsToAdd = [];
     const sectionsToUpdate = [];
     const sectionsToDelete = [];
@@ -127,11 +124,13 @@ export function videoSectionListDelta(oldSections: VideoSection[], newSections: 
 
         // Updating Video Sections
         const oldVideoSection = oldSections.find((oldSection: VideoSection) => oldSection.id === section.id);
-        if (videoSectionHasChanged(section, oldVideoSection)) { sectionsToUpdate.push(section); }
+        if (videoSectionHasChanged(section, oldVideoSection)) {
+            sectionsToUpdate.push(section);
+        }
     }
     for (const section of oldSections) {
         // Deleted Sections
-        if (!newSections.some(({id}) => section.id === id)) {
+        if (!newSections.some(({ id }) => section.id === id)) {
             sectionsToDelete.push(section);
         }
     }
@@ -144,7 +143,9 @@ export function videoSectionListDelta(oldSections: VideoSection[], newSections: 
 }
 
 export function videoSectionFriendlyTimestamp(a: VideoSection): string {
-    return `${a.startHours.toString().padStart(2, "0")}:${a.startMinutes.toString().padStart(2, "0")}:${a.startSeconds.toString().padStart(2, "0")}`;
+    return `${a.startHours.toString().padStart(2, "0")}:${a.startMinutes.toString().padStart(2, "0")}:${a.startSeconds
+        .toString()
+        .padStart(2, "0")}`;
 }
 
 export function videoSectionTimestamp(a: VideoSection): number {
@@ -286,10 +287,13 @@ export const AdminLectureList = {
      * @param sections
      */
     addSections: async (lectureId: number, sections: VideoSection[]): Promise<VideoSection[]> => {
-        const result = await post(`/api/stream/${lectureId}/sections`, sections.map((s) => ({
-            ...s,
-            streamID: lectureId,
-        })));
+        const result = await post(
+            `/api/stream/${lectureId}/sections`,
+            sections.map((s) => ({
+                ...s,
+                streamID: lectureId,
+            })),
+        );
         return result.json();
     },
 
