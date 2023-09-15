@@ -89,7 +89,7 @@ export type VideoSection = {
     startSeconds: number;
 
     //Pseudo Fields
-    key: string;
+    key?: string;
 };
 
 export type VideoSectionDelta = {
@@ -104,6 +104,13 @@ export function videoSectionHasChanged(a: VideoSection, b: VideoSection) {
         a.description !== b.description ||
         videoSectionTimestamp(a) !== videoSectionTimestamp(b)
     );
+}
+
+export function videoSectionGenKey(section: VideoSection): string {
+    if (section.id != null) {
+        return `sid_${section.id}`;
+    }
+    return `sts_${(new Date()).getTime()}`;
 }
 
 export function videoSectionListDelta(oldSections: VideoSection[], newSections: VideoSection[]) : VideoSectionDelta {

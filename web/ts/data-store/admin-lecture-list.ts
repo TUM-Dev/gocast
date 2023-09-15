@@ -32,7 +32,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         return result.map((s) => {
             s.hasAttachments = (s.files || []).some((f) => f.fileType === FileType.attachment);
 
-            s.videoSections = s.videoSections ?? [];
+            s.videoSections = (s.videoSections ?? []).sort(videoSectionSort);
 
             s.startDate = new Date(s.start);
             s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);

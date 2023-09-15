@@ -215,29 +215,34 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             return videoSectionFriendlyTimestamp(section);
         },
 
-        sectionKey(section: VideoSection): string {
-            if (section.id != null) {
-                return `sid_${section.id}`;
-            }
-            return `sts_${videoSectionTimestamp(section)}`;
+        getSectionKey(section: VideoSection): string {
+            return section.id ? `sid_${section.id}` : section.key;
+        },
+
+        genPseudoSectionKey(): string {
+            return `sts_${(new Date()).getTime()}`;
         },
 
         addSection(section: VideoSection) {
-            this.changeSet.patch("videoSections", [...this.lectureData.videoSections, section].sort(videoSectionSort));
+            this.changeSet.patch("videoSections", [...this.lectureData.videoSections, {
+                ...section,
+                key: this.genPseudoSectionKey(),
+            }].sort(videoSectionSort));
         },
 
         updateSection(section: VideoSection) {
-            const sectionKey = this.sectionKey(section);
+            const sectionKey = this.getSectionKey(section);
             this.changeSet.patch("videoSections", [
-                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.sectionKey(s)),
+                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
                 section
             ].sort(videoSectionSort));
         },
 
-        deleteSection(id: number) {
+        deleteSection(section) {
+            const sectionKey = this.getSectionKey(section);
             this.changeSet.patch(
                 "videoSections",
-                this.lectureData.videoSections.filter((s) => s.id !== id),
+                this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
             );
         },
 

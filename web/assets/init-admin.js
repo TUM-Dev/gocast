@@ -181,6 +181,10 @@ document.addEventListener("alpine:init", () => {
         const [changeSetExpression, fieldName = null] = expression.split(".");
         const changeSet = evaluate(changeSetExpression);
 
+        if (!changeSet) {
+            return;
+        }
+
         const onChangeSetUpdateHandler = (data) => {
             const value = fieldName != null ? data[fieldName] : data;
             if (modifiers.includes("text")) {
@@ -217,10 +221,11 @@ document.addEventListener("alpine:init", () => {
     *      x-on-change-set-update.init="$el.innerText = friendlySectionTimestamp(sectionEditChangeSet.get())">
     * </div>
     */
-    Alpine.directive("on-change-set-update", (el, { expression, modifiers }, { evaluateLater, cleanup }) => {
+    Alpine.directive("on-change-set-update", (el, { expression, modifiers }, { evaluate, evaluateLater, cleanup }) => {
         const onUpdate = evaluateLater(expression);
 
         const onChangeSetUpdateHandler = (e) => {
+            console.log(el, "trigger");
             const isDirty = e.detail.changeSet.isDirty();
 
             if (modifiers.includes("clean") && isDirty) {
@@ -234,7 +239,7 @@ document.addEventListener("alpine:init", () => {
         el.addEventListener(nativeEventName, onChangeSetUpdateHandler);
 
         if (modifiers.includes("init")) {
-            onUpdate();
+            evaluate(expression);
         }
 
         cleanup(() => {
