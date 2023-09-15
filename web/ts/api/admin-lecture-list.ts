@@ -92,6 +92,10 @@ export type VideoSection = {
     fileID?: number;
 };
 
+export function videoSectionFriendlyTimestamp(a: VideoSection): string {
+    return `${a.startHours.toString().padStart(2, "0")}:${a.startMinutes.toString().padStart(2, "0")}:${a.startSeconds.toString().padStart(2, "0")}`;
+}
+
 export function videoSectionTimestamp(a: VideoSection): number {
     return a.startHours * 3600 + a.startMinutes * 60 + a.startSeconds;
 }

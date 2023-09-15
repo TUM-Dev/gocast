@@ -1,5 +1,11 @@
 import { StreamableMapProvider } from "./provider";
-import { AdminLectureList, Lecture, LectureFile, UpdateLectureMetaRequest } from "../api/admin-lecture-list";
+import {
+    AdminLectureList,
+    Lecture,
+    LectureFile,
+    UpdateLectureMetaRequest,
+    videoSectionFriendlyTimestamp
+} from "../api/admin-lecture-list";
 import { FileType } from "../edit-course";
 import {PostFormDataListener} from "../utilities/fetch-wrappers";
 

@@ -8,8 +8,8 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    VideoSection,
-    videoSectionSort,
+    VideoSection, videoSectionFriendlyTimestamp,
+    videoSectionSort, videoSectionTimestamp,
 } from "./api/admin-lecture-list";
 import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
@@ -205,6 +205,17 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
         },
 
+        friendlySectionTimestamp(section: VideoSection): string{
+            return videoSectionFriendlyTimestamp(section);
+        },
+
+        sectionKey(section: VideoSection): string {
+            if (section.id != null) {
+                return `sid_${section.id}`;
+            }
+            return `sts_${videoSectionTimestamp(section)}`;
+        },
+
         addSection(section: VideoSection) {
             this.changeSet.patch("videoSections", [...this.lectureData.videoSections, section].sort(videoSectionSort));
         },
@@ -224,7 +235,10 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 section.startMinutes !== null &&
                 section.startMinutes < 60 &&
                 section.startSeconds !== null &&
-                section.startSeconds < 60
+                section.startSeconds < 60 &&
+                !this.lectureData.videoSections.some(
+                    (s) => videoSectionTimestamp(s) == videoSectionTimestamp(section)
+                )
             );
         },
 

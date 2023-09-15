@@ -122,6 +122,7 @@ document.addEventListener("alpine:init", () => {
             })
         } else  if (el.tagName === "textarea" || textInputTypes.includes(el.type)) {
             const keyupHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
+            const changeHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
 
             const onChangeSetUpdateHandler = (data) => {
                 el.value = `${data[fieldName]}`;
@@ -129,12 +130,14 @@ document.addEventListener("alpine:init", () => {
             };
 
             changeSet.listen(onChangeSetUpdateHandler);
-            el.addEventListener('keyup', keyupHandler)
+            el.addEventListener('keyup', keyupHandler);
+            el.addEventListener('change', changeHandler);
             el.value = `${changeSet.get()[fieldName]}`;
 
             cleanup(() => {
                 changeSet.removeListener(onChangeSetUpdateHandler);
                 el.removeEventListener('keyup', keyupHandler)
+                el.removeEventListener('change', changeHandler)
             })
         } else {
             const changeHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
