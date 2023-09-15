@@ -231,6 +231,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         addSection(section: VideoSection) {
+            console.log("PATCH A");
             this.changeSet.patch(
                 "videoSections",
                 [
@@ -244,6 +245,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         updateSection(section: VideoSection) {
+            console.log("PATCH B");
             const sectionKey = this.getSectionKey(section);
             this.changeSet.patch(
                 "videoSections",
@@ -254,14 +256,21 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         deleteSection(section) {
+            console.log("PATCH C");
             const sectionKey = this.getSectionKey(section);
             this.changeSet.patch(
                 "videoSections",
-                this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
+                [...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s))],
             );
         },
 
         isValidVideoSection(section: VideoSection): boolean {
+            const sectionKey = this.getSectionKey(section);
+            const hasValidTime = !this.lectureData.videoSections.some(
+                (s) =>  videoSectionTimestamp(s) == videoSectionTimestamp(section) &&
+                    sectionKey != this.getSectionKey(s)
+            );
+
             return (
                 section.description !== "" &&
                 section.startHours !== null &&
@@ -270,7 +279,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 section.startMinutes < 60 &&
                 section.startSeconds !== null &&
                 section.startSeconds < 60 &&
-                !this.lectureData.videoSections.some((s) => videoSectionTimestamp(s) == videoSectionTimestamp(section))
+                hasValidTime
             );
         },
 
