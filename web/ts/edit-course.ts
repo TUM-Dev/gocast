@@ -231,7 +231,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         addSection(section: VideoSection) {
-            console.log("PATCH A");
             this.changeSet.patch(
                 "videoSections",
                 [
@@ -245,7 +244,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         updateSection(section: VideoSection) {
-            console.log("PATCH B");
             const sectionKey = this.getSectionKey(section);
             this.changeSet.patch(
                 "videoSections",
@@ -256,7 +254,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         deleteSection(section) {
-            console.log("PATCH C");
             const sectionKey = this.getSectionKey(section);
             this.changeSet.patch(
                 "videoSections",
