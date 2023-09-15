@@ -1,4 +1,4 @@
-import { Delete, patchData, postData, putData, sendFormData, showMessage, uploadFile } from "./global";
+import { patchData, postData, putData, sendFormData } from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
@@ -8,7 +8,6 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    LectureVideoTypes,
     VideoSection,
     videoSectionSort,
 } from "./api/admin-lecture-list";
@@ -227,7 +226,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 section.startSeconds < 60
             );
         },
-        
+
         deleteLecture() {
             DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
         },
