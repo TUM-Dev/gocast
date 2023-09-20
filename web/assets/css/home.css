@@ -95,6 +95,10 @@
     @apply bg-gray-800 text-white dark:bg-gray-600
 }
 
+.tum-live-button-muted {
+    @apply bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-700
+}
+
 .tum-live-icon-button {
     @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50 disabled:opacity-20;
 }
@@ -370,6 +374,14 @@ label:has(~ .tum-live-input) {
 
 .tum-live-upcoming .tum-live-upcoming-item {
     @apply text-sm rounded-lg bg-amber-500/25 border-l-4 px-3 py-2 border-amber-500
+}
+
+.tum-live-settings-grid{
+    @apply grid gap-y-5 content-start lg:w-3/6 md:w-4/5 w-full p-6 text-3;
+}
+
+.tum-live-settings-grid > section > h2{
+    @apply text-sm text-5 mb-1;
 }
 
 
