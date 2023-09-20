@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
@@ -61,6 +61,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.Use(tools.InitCourse(daoWrapper))
 			courses.Use(tools.AdminOfCourse)
 			courses.DELETE("/", routes.deleteCourse)
+			courses.GET("/lectures", routes.fetchLectures)
 			courses.POST("/createVOD", routes.createVOD)
 			courses.POST("/uploadVODMedia", routes.uploadVODMedia)
 			courses.POST("/copy", routes.copyCourse)
@@ -1036,6 +1037,17 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 	} else {
 		log.WithError(err).Error("couldn't marshal stream rename ws msg")
 	}
+}
+
+func (r coursesRoutes) fetchLectures(c *gin.Context) {
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
+	streams := tlctx.Course.AdminJson(lectureHalls)
+
+	c.JSON(http.StatusOK, gin.H{
+		"streams": streams,
+	})
 }
 
 func (r coursesRoutes) updateLectureSeries(c *gin.Context) {

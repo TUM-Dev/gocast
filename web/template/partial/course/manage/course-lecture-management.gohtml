@@ -59,9 +59,8 @@
         </div>
 
         {{- /* streams: */ -}}
-        <div x-data="{ lectures: [], marked: [] }"
-             x-on:newlectures.window="e => {lectures = e.detail.lectures; marked = e.detail.markedIds; }"
-             x-init="$nextTick(() => admin.LectureList.init({{toJson ($course.AdminJson $lectureHalls)}}))">
+        <div x-data="{ lectureList: new admin.LectureList({{$course.Model.ID}}), lectures: [], marked: [] }"
+             x-on:newlectures.window="e => {lectures = e.detail.lectures; marked = e.detail.markedIds; }">
             <ul class="flex" :class="sortAsc ? 'flex-col' : 'flex-col-reverse'">
                 <template x-for="lecture in lectures" :key="lecture.lectureId">
                     {{template "lecture-management-card" .}}
