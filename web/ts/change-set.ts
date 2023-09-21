@@ -3,6 +3,12 @@ export interface DirtyState {
     dirtyKeys: string[];
 }
 
+export interface ChangeSetOptions<T> {
+    comparator?: (key: string, a: T, b: T) => boolean,
+    updateTransformer?: ComputedProperties<T>,
+    onUpdate?: (changeState: T, dirtyState: DirtyState) => void,
+};
+
 /**
  * ## ChangeSet Class
  *
@@ -57,16 +63,19 @@ export class ChangeSet<T> {
     private changeState: T;
     private readonly comparator?: PropertyComparator<T>;
     private onUpdate: ((changeState: T, dirtyState: DirtyState) => void)[];
+    private readonly changeStateTransformer?: ((changeState: T) => T);
+    private readonly stateTransformer?: ((changeState: T) => T);
 
     constructor(
         state: T,
-        comparator?: (key: string, a: T, b: T) => boolean,
-        onUpdate?: (changeState: T, dirtyState: DirtyState) => void,
+        { comparator, updateTransformer, onUpdate }: ChangeSetOptions<T> = {}
     ) {
         this.state = state;
         this.onUpdate = onUpdate ? [onUpdate] : [];
+        this.changeStateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
+        this.stateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
         this.comparator = comparator;
-        this.reset();
+        this.init();
     }
 
     /**
@@ -90,7 +99,7 @@ export class ChangeSet<T> {
      * @param key key to return
      * @param lastCommittedState if set to true, value of the last committed state is returned
      */
-    getValue(key: string, { lastCommittedState = false }): T {
+    getValue(key: string, { lastCommittedState = false } = {}): T {
         if (lastCommittedState) {
             return this.state[key];
         }
@@ -110,7 +119,7 @@ export class ChangeSet<T> {
      */
     set(val: T) {
         this.changeState = { ...val };
-        this.dispatchUpdate();
+        this.dispatchUpdate(false);
     }
 
     /**
@@ -125,7 +134,7 @@ export class ChangeSet<T> {
         if (isCommitted) {
             this.state = { ...this.state, [key]: val };
         }
-        this.dispatchUpdate();
+        this.dispatchUpdate(isCommitted);
     }
 
     /**
@@ -141,8 +150,7 @@ export class ChangeSet<T> {
                 this.changeState[key] = this.state[key];
             }
         }
-
-        this.dispatchUpdate();
+        this.dispatchUpdate(true);
     }
 
     /**
@@ -154,7 +162,15 @@ export class ChangeSet<T> {
             this.changeState[key] = this.state[key];
         }
         this.state = { ...this.changeState };
-        this.dispatchUpdate();
+        this.dispatchUpdate(true);
+    }
+
+    /**
+     * Init new state
+     */
+    init(): void {
+        this.changeState = { ...this.state };
+        this.dispatchUpdate(true);
     }
 
     /**
@@ -162,7 +178,7 @@ export class ChangeSet<T> {
      */
     reset(): void {
         this.changeState = { ...this.state };
-        this.dispatchUpdate();
+        this.dispatchUpdate(false);
     }
 
     /**
@@ -209,8 +225,17 @@ export class ChangeSet<T> {
 
     /**
      * Executes all onUpdate listeners
+     * @param stateChanged if state changed, state computed values are recalculated
      */
-    dispatchUpdate() {
+    dispatchUpdate(stateChanged: boolean) {
+        if (stateChanged && this.stateTransformer) {
+            this.state = this.stateTransformer(this.state);
+        }
+
+        if (this.changeStateTransformer) {
+            this.changeState = this.changeStateTransformer(this.changeState);
+        }
+
         if (this.onUpdate.length > 0) {
             const dirtyKeys = this.changedKeys();
             for (const onUpdate of this.onUpdate) {
@@ -255,5 +280,36 @@ export function comparatorPipeline<T>(list: PropertyComparator<T>[]): PropertyCo
             }
         }
         return null;
+    };
+}
+
+export type ComputedPropertyTransformer<T> = ((state: T) => T);
+export type ComputedPropertySubTransformer<T> = ((state: T, oldState: T) => T);
+
+export class ComputedProperties<T> {
+    private readonly computed: ComputedPropertySubTransformer<T>[];
+
+    constructor(computed: ComputedPropertySubTransformer<T>[]) {
+        this.computed = computed;
+    }
+
+    create(): ComputedPropertyTransformer<T> {
+        let oldState: T|null = null;
+        return (state: T) => {
+            for (const transformer of this.computed) {
+                state = transformer(state, oldState);
+            }
+            oldState = {...state};
+            return state;
+        };
+    }
+}
+
+export function computedProperty<T, R>(key: string, updater: (changeState: T, old: T|null) => R, deps: string[] = []): ComputedPropertySubTransformer<T> {
+    return (state: T, oldState: T|null) => {
+        if (oldState == null || deps.length == 0 || deps.some((k) => oldState[k] !== state[k])) {
+            state[key] = updater(state, oldState);
+        }
+        return state;
     };
 }

@@ -172,6 +172,7 @@ document.addEventListener("alpine:init", () => {
      *
      * Modifiers:
      *  - "text": When provided, the directive will also update the element's innerText.
+     *  - "value": When provided, the directive will also update the element's value.
      *
      * Custom Events:
      *  - "csupdate": Custom event triggered when the change set is updated.
@@ -186,6 +187,9 @@ document.addEventListener("alpine:init", () => {
                 const value = fieldName != null ? data[fieldName] : data;
                 if (modifiers.includes("text")) {
                     el.innerText = `${value}`;
+                }
+                if (modifiers.includes("value")) {
+                    el.value = value;
                 }
                 el.dispatchEvent(new CustomEvent(nativeEventName, { detail: { changeSet, value } }));
             };

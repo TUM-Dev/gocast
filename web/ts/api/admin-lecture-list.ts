@@ -187,8 +187,9 @@ export interface Lecture {
     startDateFormatted: string;
     startTimeFormatted: string;
     endDate: Date;
-    endDateFormatted: string;
     endTimeFormatted: string;
+    duration: number;
+    durationFormatted: string;
 
     // Clientside pseudo fields
     newCombinedVideo: File | null;

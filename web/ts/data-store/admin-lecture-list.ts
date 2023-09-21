@@ -10,13 +10,13 @@ import {
 import { FileType } from "../edit-course";
 import { PostFormDataListener } from "../utilities/fetch-wrappers";
 
-const dateFormatOptions: Intl.DateTimeFormatOptions = {
+export const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
     year: "numeric",
     month: "short",
     day: "2-digit",
 };
-const timeFormatOptions: Intl.DateTimeFormatOptions = {
+export const timeFormatOptions: Intl.DateTimeFormatOptions = {
     hour: "2-digit",
     minute: "2-digit",
 };
@@ -35,14 +35,6 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
             s.hasAttachments = (s.files || []).some((f) => f.fileType === FileType.attachment);
 
             s.videoSections = (s.videoSections ?? []).sort(videoSectionSort);
-
-            s.startDate = new Date(s.start);
-            s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);
-            s.startTimeFormatted = s.startDate.toLocaleTimeString("en-US", timeFormatOptions);
-
-            s.endDate = new Date(s.end);
-            s.endDateFormatted = s.endDate.toLocaleDateString("en-US", dateFormatOptions);
-            s.endTimeFormatted = s.endDate.toLocaleTimeString("en-US", timeFormatOptions);
 
             s.newCombinedVideo = null;
             s.newPresentationVideo = null;

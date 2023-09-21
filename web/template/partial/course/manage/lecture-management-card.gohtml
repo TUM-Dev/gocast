@@ -255,6 +255,41 @@
                         </div>
                     </template>
                 </article>
+
+                <header class="border-b dark:border-gray-600 w-full">
+                    <h6 class="text-sm text-5 font-light">Date and Time</h6>
+                </header>
+                <article class="w-full mb-2 flex"
+                        x-data="{ startId: $id('date-input'), endId: $id('date-input') }"
+                >
+                    <label :for="startId" class="grow mr-2">
+                        <span class="text-sm text-5">Start</span>
+                        <input class="tl-input"
+                           name="newStartDate"
+                           :id="startId"
+                           x-change-set-listen="changeSet.startDate"
+                           x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().startDate, 'Y-m-d H:i'))"
+                           x-init="flatpickr($el, {enableTime: true, time_24hr: true, altInput: true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true, onChange: (date) => changeSet.patch('start', date[0].toString()) })"
+                       />
+                    </label>
+                    <template x-if="!lectureData.premiere && !lectureData.vodup">
+                        <label :for="endId">
+                            <span class="text-sm text-5">End</span>
+                            <span class="text-sm font-light opacity-75"
+                                  x-change-set-listen.text="changeSet.durationFormatted"
+                            >
+                            </span>
+                            <input class="tl-input"
+                               name="newEndTime"
+                               :id="endId"
+                               x-change-set-listen="changeSet.endDate"
+                               x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().endDate, 'H:i'))"
+                               x-init="flatpickr($el, {enableTime: true, noCalendar: true,  altInput: true, altFormat: 'H:i', time_24hr: true, allowInput: true, onChange: (date) => changeSet.patch('end', date.toString()) })"
+                            />
+                        </label>
+                    </template>
+                </article>
+
                 <header class="border-b dark:border-gray-600 w-full">
                     <h6 class="text-sm text-5 font-light">Title and Description</h6>
                 </header>
