@@ -7,11 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/mock_dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/mock_dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
 )
@@ -99,10 +99,10 @@ func TestActivePoll(t *testing.T) {
 		}
 
 		res := gin.H{
-			"active":      true,
-			"question":    testutils.PollStreamFPVLive.Question,
-			"pollOptions": pollOptions,
-			"submitted":   submitted,
+			"active":    true,
+			"question":  testutils.PollStreamFPVLive.Question,
+			"options":   pollOptions,
+			"submitted": submitted,
 		}
 
 		gomino.TestCases{

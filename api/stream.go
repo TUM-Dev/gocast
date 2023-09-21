@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,11 +14,11 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/bot"
-	"github.com/joschahenningsen/TUM-Live/voice-service/pb"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/bot"
+	"github.com/TUM-Dev/gocast/voice-service/pb"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -571,17 +571,6 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
-	if err != nil {
-		log.WithError(err).Error("can not find file")
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find file",
-			Err:           err,
-		})
-		return
-	}
-
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("can not delete video-section")
@@ -593,12 +582,23 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	go func() {
-		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
-		if err != nil {
-			log.WithError(err).Error("failed to generate video section images")
-		}
-	}()
+	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("can not get video section thumbnail file")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get video section thumbnail file",
+			Err:           err,
+		})
+		return
+	} else {
+		go func() {
+			err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
+			if err != nil {
+				log.WithError(err).Error("failed to generate video section images")
+			}
+		}()
+	}
 
 	c.Status(http.StatusAccepted)
 }

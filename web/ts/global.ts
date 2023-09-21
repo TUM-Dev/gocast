@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 export * from "./notifications";
 export * from "./user-settings";
 export * from "./start-page";
+export * from "./utilities/time";
 
 export async function getData(url = "") {
     return await fetch(url);
@@ -41,6 +42,39 @@ export async function patchData(url = "", data = {}) {
 export async function Delete(url = "") {
     return await fetch(url, {
         method: "DELETE",
+    });
+}
+
+export interface UploadFileListener {
+    onProgress?: (progress: number) => void;
+}
+
+export function uploadFile(url: string, file: File, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {
+    const vodUploadFormData = new FormData();
+    vodUploadFormData.append("file", file);
+    return postFormData(url, vodUploadFormData, listener);
+}
+
+export function postFormData(url: string, data: FormData, listener: UploadFileListener = {}): Promise<XMLHttpRequest> {
+    const xhr = new XMLHttpRequest();
+    return new Promise((resolve, reject) => {
+        xhr.onloadend = () => {
+            if (xhr.status === 200) {
+                resolve(xhr);
+            } else {
+                reject(xhr);
+            }
+        };
+        xhr.upload.onprogress = (e: ProgressEvent) => {
+            if (!e.lengthComputable) {
+                return;
+            }
+            if (listener.onProgress) {
+                listener.onProgress(Math.floor(100 * (e.loaded / e.total)));
+            }
+        };
+        xhr.open("POST", url);
+        xhr.send(data);
     });
 }
 
@@ -250,57 +284,6 @@ export function getQueryParam(name: string): string {
  */
 export function keepQuery(url: string): string {
     return window.location.search.length > 0 ? url + window.location.search : url;
-}
-
-/**
- * Time Utility Class
- * Conversion of seconds to (hours, minutes, seconds) and vice versa.
- */
-export class Time {
-    private readonly hours: number;
-    private readonly minutes: number;
-    private readonly seconds: number;
-
-    static FromSeconds(seconds: number): Time {
-        const date = new Date(seconds * 1000);
-        return new Time(date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
-    }
-
-    constructor(hours = 0, minutes = 0, seconds = 0) {
-        this.hours = hours;
-        this.minutes = minutes;
-        this.seconds = seconds;
-    }
-
-    public toString() {
-        let s = `${Time.padZero(this.minutes)}:${Time.padZero(this.seconds)}`;
-        if (this.hours > 0) {
-            s = `${Time.padZero(this.hours)}:` + s;
-        }
-        return s;
-    }
-
-    public toStringWithLeadingZeros() {
-        return `${Time.padZero(this.hours)}:${Time.padZero(this.minutes)}:${Time.padZero(this.seconds)}`;
-    }
-
-    public toSeconds(): number {
-        return this.hours * 60 * 60 + this.minutes * 60 + this.seconds;
-    }
-
-    public toObject() {
-        return { hours: this.hours, minutes: this.minutes, seconds: this.seconds };
-    }
-
-    private static padZero(i: string | number) {
-        if (typeof i === "string") {
-            i = parseInt(i);
-        }
-        if (i < 10) {
-            i = "0" + i;
-        }
-        return i;
-    }
 }
 
 /**

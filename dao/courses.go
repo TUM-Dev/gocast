@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"

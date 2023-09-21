@@ -4,11 +4,22 @@
     <meta charset="UTF-8">
     <title>{{.Branding.Title}}</title>
     <link rel="canonical" href="{{.IndexData.CanonicalURL.Info .Name}}" />
-    {{template "headImports" .VersionTag}}
+    <script src="static/assets/init.js"></script>
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
 </head>
-<body>
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-{{template "header" .TUMLiveContext}}
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IndexData*/ -}}
+<body class="h-screen flex flex-col items-stretch tum-live-bg">
+<header class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
+        <a href="/" class="mx-3" type="button" id="logo" title="Start">
+            <img src="/logo.svg" width="42" alt="TUM-Live Logo">
+        </a>
+    </div>
+</header>
 <div class="w-full md:w-1/2 2xl:max-w-screen-xl mx-auto p-6 text-3">
     <div class = "tum-live-markdown pb-10">
         {{.Text}}

@@ -1,5 +1,5 @@
 {{define "course_settings"}}
-    {{- /* gotype:github.com/joschahenningsen/TUM-Live/model.Course */ -}}
+    {{- /* gotype:github.com/TUM-Dev/gocast/model.Course */ -}}
     <div x-data="{
         showCourseSettingsModal:false, isChatEnabledForCourse: {{.ChatEnabled}}
     }">
@@ -23,7 +23,7 @@
                 </label>
                 <label class="block" for="enrolled">
                     <input class="w-auto" type="radio" id="enrolled" name="access" value="enrolled" {{- /*gotype:
-                    github.com/joschahenningsen/TUM-Live/model.Course*/ -}} {{if not (and .
+                    github.com/TUM-Dev/gocast/model.Course*/ -}} {{if not (and .
                     .TUMOnlineIdentifier)}}disabled{{end}} {{if .}} {{if eq .Visibility "enrolled"
                     }}checked{{end}}{{end}}>
                     <span>Enrolled: Only students enrolled in TUMOnline can see this course</span>

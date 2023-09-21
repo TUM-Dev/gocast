@@ -1,5 +1,4 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
-import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs, { VideoJsPlayer } from "video.js";
 import airplay from "@silvermine/videojs-airplay";
@@ -170,6 +169,7 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
     }) as any;
 
     const settings = new PlayerSettings(player, live, isEmbedded);
@@ -483,27 +483,6 @@ export const syncPlayers = function () {
     });
 };
 
-/**
- * Registers a time watcher that observes the time of the current player
- * @param callBack call back function responsible for handling player time updates
- * @return callBack function that got registered for listening to player time updates (used to deregister)
- */
-export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void): () => void {
-    const timeWatcherCallBack: () => void = () => {
-        callBack(players[0].currentTime());
-    };
-    players[0]?.on("timeupdate", timeWatcherCallBack);
-    return timeWatcherCallBack;
-};
-
-/**
- * Deregisters a time watching obeserver from the current player
- * @param callBackToDeregister regestered callBack function
- */
-export const deregisterTimeWatcher = function (callBackToDeregister: () => void) {
-    players[0]?.off("timeupdate", callBackToDeregister);
-};
-
 const Component = videojs.getComponent("Component");
 
 export class Titlebar extends Component {
@@ -695,21 +674,6 @@ export class SeekLogger {
     }
 }
 
-export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
-    for (let j = 0; j < players.length; j++) {
-        players[j].ready(() => {
-            let timer;
-            (function checkTimestamp() {
-                timer = setTimeout(() => {
-                    highlight(players[j], videoSection);
-                    checkTimestamp();
-                }, 500);
-            })();
-            players[j].on("seeked", () => highlight(players[j], videoSection));
-        });
-    }
-}
-
 export function switchView(baseUrl: string) {
     const isDVR = getQueryParam("dvr") === "";
 
@@ -721,18 +685,6 @@ export function switchView(baseUrl: string) {
         redirectUrl = url.toString();
     }
     window.location.assign(redirectUrl);
-}
-
-function highlight(player, videoSection) {
-    const currentTime = player.currentTime();
-    videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
-        const next = list[i + 1];
-        const sectionSeconds = new Time(section.startHours, section.startMinutes, section.startSeconds).toSeconds();
-        return next === undefined || next === null // if last element and no next exists
-            ? sectionSeconds <= currentTime
-            : sectionSeconds <= currentTime &&
-                  currentTime <= new Time(next.startHours, next.startMinutes, next.startSeconds).toSeconds() - 1;
-    });
 }
 
 function debounce(func, timeout) {

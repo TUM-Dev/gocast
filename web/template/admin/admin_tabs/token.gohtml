@@ -19,7 +19,7 @@
             </thead>
             <tbody class="text-3">
             {{range .}}
-                {{- /*gotype: github.com/joschahenningsen/TUM-Live/dao.AllTokensDto*/ -}}
+                {{- /*gotype: github.com/TUM-Dev/gocast/dao.AllTokensDto*/ -}}
                 <tr x-data="{id: {{.Token.Model.ID}}, show:true}" x-show="show">
                     <td class="p-4">{{if .UserMail}}{{.UserMail}}{{else}}{{.UserName}} {{.UserLrzID}}{{end}}</td>
                     <td>{{.Scope}}</td>

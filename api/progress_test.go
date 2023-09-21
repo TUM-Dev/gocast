@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/mock_dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/mock_dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
 	"net/http"
@@ -157,7 +157,7 @@ func TestUserProgress(t *testing.T) {
 							progressMock.
 								EXPECT().
 								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
-								Return(model.StreamProgress{}, errors.New(""))
+								Return([]model.StreamProgress{}, errors.New(""))
 							return progressMock
 						}(),
 					}
@@ -175,7 +175,7 @@ func TestUserProgress(t *testing.T) {
 							progressMock.
 								EXPECT().
 								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
-								Return(model.StreamProgress{}, gorm.ErrRecordNotFound)
+								Return([]model.StreamProgress{}, gorm.ErrRecordNotFound)
 							return progressMock
 						}(),
 					}
@@ -194,7 +194,7 @@ func TestUserProgress(t *testing.T) {
 							progressMock.
 								EXPECT().
 								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
-								Return(model.StreamProgress{StreamID: 16, Watched: true, Progress: 0.5}, nil).
+								Return([]model.StreamProgress{{StreamID: 16, Watched: true, Progress: 0.5}}, nil).
 								AnyTimes()
 							return progressMock
 						}(),
@@ -214,7 +214,7 @@ func TestUserProgress(t *testing.T) {
 							progressMock.
 								EXPECT().
 								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
-								Return(model.StreamProgress{StreamID: 16, Watched: true, Progress: 0.5}, nil)
+								Return([]model.StreamProgress{{StreamID: 16, Watched: true, Progress: 0.5}}, nil)
 							return progressMock
 						}(),
 					}

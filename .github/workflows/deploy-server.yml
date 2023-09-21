@@ -6,6 +6,9 @@ on:
     tags:
       - '*'
 
+permissions:
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,7 +19,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/joschahenningsen/tum-live/tum-live
+          images: ghcr.io/tum-dev/gocast/tum-live
           tags: |
             type=ref,event=branch
             type=ref,event=pr

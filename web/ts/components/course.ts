@@ -1,12 +1,13 @@
 import { Course, CoursesAPI, Stream } from "../api/courses";
 import { ProgressAPI } from "../api/progress";
 import { Paginator } from "../utilities/paginator";
-import { HasPinnedCourseDTO, UserAPI } from "../api/user";
+import { HasPinnedCourseDTO, UserAPI } from "../api/users";
 import { copyToClipboard } from "../utilities/input-interactions";
 import { AlpineComponent } from "./alpine-component";
 import { Tunnel } from "../utilities/tunnels";
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { getFromStorage, setInStorage } from "../utilities/storage";
+import { GroupedSmartArray, SmartArray } from "../utilities/smartarray";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -28,7 +29,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         course: new Course() as Course,
 
-        courseStreams: new Paginator<Stream>([], 8, (s: Stream) => s.FetchThumbnail()),
+        courseStreams: new GroupedSmartArray<Stream, number>(),
         plannedStreams: new Paginator<Stream>([], 3),
         upcomingStreams: new Paginator<Stream>([], 3),
 
@@ -62,11 +63,8 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.plannedStreams.set(this.course.Planned.reverse()).reset();
                     this.upcomingStreams.set(this.course.Upcoming).reset();
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
-                        this.courseStreams
-                            .set(this.course.Recordings)
-                            .forEach((s: Stream, i) => (s.Progress = progresses[i]))
-                            .reset()
-                            .preload(this.sortFn(this.streamSortMode));
+                        this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));
+                        this.courseStreams.set(this.course.Recordings, (s: Stream) => s.StartDate().getMonth());
                     });
                     console.log("🌑 init course", this.course);
                 });

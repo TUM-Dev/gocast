@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{{.IndexData.Branding.Title}} | Administration</title>
     {{template "headImports" .IndexData.VersionTag}}
+    <script src="/static/assets/init-admin.js"></script>
     <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
 </head>
 <body>
@@ -15,7 +16,7 @@
 {{$page := .Page}}
 {{$indexData := .IndexData}}
 {{template "header" .IndexData.TUMLiveContext}}
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
+{{- /*gotype: github.com/TUM-Dev/gocast/web.AdminPageData*/ -}}
 <div x-data="{hidden:true}" class="lg:hidden mx-6 mt-2">
     <button class="btn" @click="hidden=!hidden"
             x-text="hidden?'Open Menu':'Close Menu'">Open Menu

@@ -3,7 +3,7 @@ package dao
 import (
 	"errors"
 	"github.com/go-sql-driver/mysql"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 )
 
@@ -89,7 +89,7 @@ func (d chatDao) GetReactions(chatID uint) ([]model.ChatReaction, error) {
 func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
 	query := DB.
-		Preload("Replies").
+		Preload("Replies", "(visible = 1) OR (user_id = ?)", userID).
 		Preload("Reactions").
 		Preload("AddressedToUsers").
 		Where("(visible = 1) OR (user_id = ?)", userID).

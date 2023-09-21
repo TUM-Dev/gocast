@@ -2,8 +2,8 @@ package dao
 
 import (
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools/timing"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools/timing"
 	"gorm.io/gorm"
 )
 

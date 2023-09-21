@@ -3,10 +3,11 @@ package api
 // worker_grpc.go handles communication with workers via grpc
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"io"
 	"net"
 	"net/http"
@@ -19,11 +20,11 @@ import (
 
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/camera"
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/camera"
+	"github.com/TUM-Dev/gocast/worker/pb"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -387,7 +388,7 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	}
 
 	if request.Duration != 0 {
-		stream.Duration = request.Duration
+		stream.Duration = sql.NullInt32{Int32: int32(request.Duration)}
 	}
 	err = s.DaoWrapper.StreamsDao.SaveStream(&stream)
 	if err != nil {

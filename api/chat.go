@@ -12,10 +12,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/realtime"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/realtime"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -35,6 +35,12 @@ var allowedReactions = map[string]struct{}{
 	"heart":    {},
 	"eyes":     {},
 }
+
+const (
+	POLL_START_MSG         = "start_poll"
+	POLL_CLOSE_MSG         = "close_active_poll"
+	POLL_PARTICIPATION_MSG = "submit_poll_option_vote"
+)
 
 var routes chatRoutes
 
@@ -130,6 +136,7 @@ func (r chatRoutes) handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []b
 	voteCount, _ := r.ChatDao.GetPollOptionVoteCount(req.PollOptionId)
 
 	voteUpdateMap := gin.H{
+		"type":         POLL_PARTICIPATION_MSG,
 		"pollOptionId": req.PollOptionId,
 		"votes":        voteCount,
 	}
@@ -191,10 +198,11 @@ func (r chatRoutes) handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 	}
 
 	pollMap := gin.H{
-		"active":      true,
-		"question":    poll.Question,
-		"pollOptions": pollOptionsJson,
-		"submitted":   0,
+		"type":      POLL_START_MSG,
+		"active":    true,
+		"question":  poll.Question,
+		"options":   pollOptionsJson,
+		"submitted": 0,
 	}
 	if pollJson, err := json.Marshal(pollMap); err == nil {
 		broadcastStream(ctx.Stream.ID, pollJson)
@@ -222,8 +230,9 @@ func (r chatRoutes) handleCloseActivePoll(ctx tools.TUMLiveContext) {
 	}
 
 	statsMap := gin.H{
-		"question":          poll.Question,
-		"pollOptionResults": pollOptions,
+		"type":     POLL_CLOSE_MSG,
+		"question": poll.Question,
+		"options":  pollOptions,
 	}
 
 	if statsJson, err := json.Marshal(statsMap); err == nil {
@@ -397,10 +406,10 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *realtime.Context, msg []byte) {
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
-		log.WithError(err).Error("error unmarshaling chat message")
+		log.WithError(err).Error("error unmarshalling chat message")
 		return
 	}
-	if !ctx.Course.ChatEnabled {
+	if !ctx.Course.ChatEnabled && !ctx.Stream.ChatEnabled {
 		return
 	}
 	uname := ctx.User.GetPreferredName()
@@ -577,10 +586,10 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"active":      true,
-		"question":    poll.Question,
-		"pollOptions": pollOptions,
-		"submitted":   submitted,
+		"active":    true,
+		"question":  poll.Question,
+		"options":   pollOptions,
+		"submitted": submitted,
 	})
 }
 

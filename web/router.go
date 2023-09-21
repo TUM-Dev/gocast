@@ -12,8 +12,8 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -27,12 +27,12 @@ var staticFS embed.FS
 
 var templatePaths = []string{
 	"template/*.gohtml",
+	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
 	"template/admin/admin_tabs/*.gohtml",
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
-	"template/partial/stream/chat/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
 	"template/partial/course/manage/create-lecture-form-slides/*.gohtml",
 }
@@ -153,7 +153,7 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.Use(tools.InitStream(daoWrapper))
 	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
-	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopUpChat)
+	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopOutChat)
 
 	// misc
 	router.GET("/healthcheck", routes.HealthCheck)
@@ -240,7 +240,6 @@ type CacheMetrics struct {
 type ChatData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
 	IndexData       IndexData
-	IsPopUp         bool
 }
 
 type staticFile struct {

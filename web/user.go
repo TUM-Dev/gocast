@@ -2,11 +2,11 @@ package web
 
 import (
 	"context"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
@@ -23,7 +23,7 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 	d := userSettingsData{IndexData: NewIndexData()}
 	d.IndexData.TUMLiveContext = c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	err := templateExecutor.ExecuteTemplate(c.Writer, "user-settings.gohtml", d)
+	err := templateExecutor.ExecuteTemplate(c.Writer, "user-settings.gohtml", d.IndexData)
 	if err != nil {
 		log.Error(err)
 		c.AbortWithStatus(http.StatusInternalServerError)

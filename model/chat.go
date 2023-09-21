@@ -3,14 +3,15 @@ package model
 import (
 	"database/sql"
 	"errors"
-	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
-	"gorm.io/gorm"
 	"html"
-	"mvdan.cc/xurls/v2"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
+	"gorm.io/gorm"
+	"mvdan.cc/xurls/v2"
 )
 
 var (
@@ -36,7 +37,7 @@ var (
 )
 
 const (
-	maxMessageLength = 250
+	maxMessageLength = 1000
 	coolDown         = time.Minute * 2
 	coolDownMessages = 5 // 5 messages -> 5 messages per 2 minutes max
 )
@@ -88,15 +89,17 @@ func (c *Chat) BeforeCreate(tx *gorm.DB) (err error) {
 	if len(c.Message) == 0 {
 		return ErrMessageNoText
 	}
-	var recentMessages int64
-	err = tx.Model(&Chat{}).
-		Where("created_at > ? AND user_id = ?", time.Now().Add(-coolDown), c.UserID).
-		Count(&recentMessages).Error
-	if err != nil {
-		return err
-	}
-	if recentMessages >= coolDownMessages {
-		return ErrCooledDown
+	if !c.Admin {
+		var recentMessages int64
+		err = tx.Model(&Chat{}).
+			Where("created_at > ? AND user_id = ?", time.Now().Add(-coolDown), c.UserID).
+			Count(&recentMessages).Error
+		if err != nil {
+			return err
+		}
+		if recentMessages >= coolDownMessages {
+			return ErrCooledDown
+		}
 	}
 
 	// set chat color:

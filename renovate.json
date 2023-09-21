@@ -4,5 +4,5 @@
     "config:base",
     "group:allNonMajor"
   ],
-  "ignoreDeps": ["github.com/joschahenningsen/TUM-Live/worker"]
+  "ignoreDeps": ["github.com/TUM-Dev/gocast/worker"]
 }

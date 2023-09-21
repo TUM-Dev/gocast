@@ -1,0 +1,3 @@
+interface Identifiable {
+    ID: number;
+}
