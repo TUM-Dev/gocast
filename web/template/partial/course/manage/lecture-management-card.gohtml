@@ -182,7 +182,7 @@
                             x-on:click.outside="closeMoreDropdown($refs.button)"
                             :id="$id('more-dropdown-button')"
                             style="display: none;"
-                            class="absolute left-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-black rounded shadow-md overflow-hidden"
+                            class="absolute left-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-black rounded shadow-md overflow-hidden z-10"
                     >
                         <div>
                             <button @click="startSingleEdit(); closeMoreDropdown();"
