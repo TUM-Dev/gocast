@@ -1,6 +1,17 @@
 import { DataStore } from "./data-store/data-store";
 import { StreamPlaylistEntry } from "./data-store/stream-playlist";
 
+function onVisible(element, callback) {
+    new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+            if (entry.intersectionRatio > 0) {
+                callback(element);
+                observer.disconnect();
+            }
+        });
+    }).observe(element);
+}
+
 export class StreamPlaylist {
     private streamId: number;
     private elem: HTMLElement;
@@ -19,9 +30,16 @@ export class StreamPlaylist {
         const { prev, next } = this.findNextAndPrev();
         this.elem.dispatchEvent(new CustomEvent("update", { detail: { list: this.list, prev, next } }));
 
+        // if playlist is hidden and will be visible later
+        onVisible(this.elem, () => this.scrollSelectedIntoView());
+
         setTimeout(() => {
-            this.elem.querySelector(".--selected")?.scrollIntoView({ block: "center" });
+            this.scrollSelectedIntoView();
         }, 10);
+    }
+
+    public scrollSelectedIntoView() {
+        this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
     }
 
     private findNextAndPrev(): { next: StreamPlaylistEntry; prev: StreamPlaylistEntry } {
