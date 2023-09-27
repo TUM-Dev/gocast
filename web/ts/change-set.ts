@@ -74,15 +74,15 @@ export class ChangeSet<T> {
 
     constructor(
         state: T,
-        { comparator, updateTransformer, onUpdate, updateThrottle = 40 }: ChangeSetOptions<T> = {}
+        { comparator, updateTransformer, onUpdate, updateThrottle = 50 }: ChangeSetOptions<T> = {}
     ) {
         this.state = state;
         this.onUpdate = onUpdate ? [onUpdate] : [];
         this.changeStateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
         this.stateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
         this.comparator = comparator;
-        this.throttledDispatchUpdateNoStateChanged = throttle(() => this._dispatchUpdate(false), updateThrottle);
-        this.throttledDispatchUpdateStateChanged = throttle(() => this._dispatchUpdate(true), updateThrottle);
+        this.throttledDispatchUpdateNoStateChanged = throttle(() => this._dispatchUpdate(false), updateThrottle, true);
+        this.throttledDispatchUpdateStateChanged = throttle(() => this._dispatchUpdate(true), updateThrottle, true);
         this.init();
     }
 
