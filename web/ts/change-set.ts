@@ -89,7 +89,7 @@ export class ChangeSet<T> {
 
     constructor(
         state: T,
-        { comparator, updateTransformer, onUpdate, updateThrottle = 5, logLevel = LogLevel.none }: ChangeSetOptions<T> = {}
+        { comparator, updateTransformer, onUpdate, updateThrottle = 50, logLevel = LogLevel.none }: ChangeSetOptions<T> = {}
     ) {
         this.lastLogTimestamp = Date.now();
         this.logLevel = logLevel;

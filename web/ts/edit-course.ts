@@ -185,7 +185,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
             // This tracks changes that are not saved yet
             this.changeSet = new ChangeSet<Lecture>(lecture, {
-                logLevel: LogLevel.debug,
+                //logLevel: LogLevel.debug,
+                updateThrottle: 20,
                 comparator: customComparator,
                 updateTransformer: computedFields,
                 onUpdate: (data, dirtyState) => {
