@@ -289,6 +289,15 @@ export function singleProperty<T>(key: string, comparator: SinglePropertyCompara
     };
 }
 
+export function multiProperty<T>(keys: string[], comparator: PropertyComparator<T>): PropertyComparator<T> {
+    return (_key: string, a, b) => {
+        if (!keys.includes(_key)) {
+            return null;
+        }
+        return comparator(_key, a, b);
+    };
+}
+
 export function comparatorPipeline<T>(list: PropertyComparator<T>[]): PropertyComparator<T> {
     return (key: string, a, b) => {
         for (const comparator of list) {
@@ -304,7 +313,10 @@ export function comparatorPipeline<T>(list: PropertyComparator<T>[]): PropertyCo
 }
 
 export type ComputedPropertyTransformer<T> = ((state: T) => T);
-export type ComputedPropertySubTransformer<T> = ((state: T, oldState: T) => T);
+export type ComputedPropertySubTransformer<T> = {
+    transform: ((state: T, oldState: T) => T);
+    key: string;
+};
 
 export class ComputedProperties<T> {
     private readonly computed: ComputedPropertySubTransformer<T>[];
@@ -317,19 +329,29 @@ export class ComputedProperties<T> {
         let oldState: T|null = null;
         return (state: T) => {
             for (const transformer of this.computed) {
-                state = transformer(state, oldState);
+                state = transformer.transform(state, oldState);
             }
             oldState = {...state};
             return state;
         };
     }
+
+    /**
+     * This is syntactic sugar to quickly ignore the computed keys in a changeset
+     */
+    ignore(): PropertyComparator<T> {
+        return ignoreKeys(this.computed.map((transformer) => transformer.key));
+    }
 }
 
 export function computedProperty<T, R>(key: string, updater: (changeState: T, old: T|null) => R, deps: string[] = []): ComputedPropertySubTransformer<T> {
-    return (state: T, oldState: T|null) => {
-        if (oldState == null || deps.length == 0 || deps.some((k) => oldState[k] !== state[k])) {
-            state[key] = updater(state, oldState);
-        }
-        return state;
+    return {
+        transform: (state: T, oldState: T|null) => {
+            if (oldState == null || deps.length == 0 || deps.some((k) => oldState[k] !== state[k])) {
+                state[key] = updater(state, oldState);
+            }
+            return state;
+        },
+        key,
     };
 }

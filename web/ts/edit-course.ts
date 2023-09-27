@@ -20,7 +20,7 @@ import {
     comparatorPipeline,
     ComputedProperties,
     computedProperty,
-    ignoreKeys,
+    ignoreKeys, multiProperty,
     singleProperty
 } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
@@ -128,27 +128,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
-            const customComparator = comparatorPipeline([
-                ignoreKeys(["files"]),
-                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
-                    // List length differs, something was removed or added
-                    if (a.videoSections.length !== b.videoSections.length) {
-                        return true;
-                    }
-
-                    // List length is the same but items do have no id, so they are new.
-                    if (
-                        a.videoSections.some(({ id }) => id === undefined) ||
-                        b.videoSections.some(({ id }) => id === undefined)
-                    ) {
-                        return true;
-                    }
-
-                    // A section has edited and different information now
-                    return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
-                }),
-            ]);
-
             const computedFields = new ComputedProperties([
                 computedProperty<Lecture, Date>("startDate", (changeSet) => {
                     return new Date(changeSet.start);
@@ -177,6 +156,33 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 }, ["start", "end"]),
             ]);
 
+            const customComparator = comparatorPipeline([
+                computedFields.ignore(),
+                ignoreKeys(["files", "downloadableVods", "transcodingProgresses"]),
+                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
+                    // List length differs, something was removed or added
+                    if (a.videoSections.length !== b.videoSections.length) {
+                        return true;
+                    }
+
+                    // List length is the same but items do have no id, so they are new.
+                    if (
+                        a.videoSections.some(({ id }) => id === undefined) ||
+                        b.videoSections.some(({ id }) => id === undefined)
+                    ) {
+                        return true;
+                    }
+
+                    // A section has edited and different information now
+                    return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
+                }),
+                multiProperty(["start", "end"], (key: string, a: Lecture, b: Lecture): boolean | null => {
+                    const dateA = new Date(a[key]);
+                    const dateB = new Date(b[key]);
+                    return dateA.getTime() !== dateB.getTime();
+                }),
+            ]);
+
             // This tracks changes that are not saved yet
             this.changeSet = new ChangeSet<Lecture>(lecture, {
                 comparator: customComparator,
@@ -184,6 +190,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 onUpdate: (data, dirtyState) => {
                     this.lectureData = data;
                     this.isDirty = dirtyState.isDirty;
+                    console.log(dirtyState, data.start)
                 },
             });
 

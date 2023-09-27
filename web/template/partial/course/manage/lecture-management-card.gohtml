@@ -269,7 +269,7 @@
                            :id="startId"
                            x-change-set-listen="changeSet.startDate"
                            x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().startDate, 'Y-m-d H:i'))"
-                           x-init="flatpickr($el, {enableTime: true, time_24hr: true, altInput: true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true, onChange: (date) => changeSet.patch('start', date[0].toString()) })"
+                           x-init="flatpickr($el, {enableTime: true, time_24hr: true, altInput: true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true, onChange: (date) => changeSet.patch('start', flatpickr.formatDate(date[0], 'Z')) })"
                        />
                     </label>
                     <template x-if="!lectureData.premiere && !lectureData.vodup">
@@ -284,7 +284,7 @@
                                :id="endId"
                                x-change-set-listen="changeSet.endDate"
                                x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().endDate, 'H:i'))"
-                               x-init="flatpickr($el, {enableTime: true, noCalendar: true,  altInput: true, altFormat: 'H:i', time_24hr: true, allowInput: true, onChange: (date) => changeSet.patch('end', date.toString()) })"
+                               x-init="flatpickr($el, {enableTime: true, noCalendar: true, altInput: true, altFormat: 'H:i', time_24hr: true, allowInput: true, onChange: (date) => changeSet.patch('end', flatpickr.formatDate(date[0], 'Z')) })"
                             />
                         </label>
                     </template>
