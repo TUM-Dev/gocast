@@ -2,8 +2,9 @@ import { StreamableMapProvider } from "./provider";
 import {
     AdminLectureList,
     Lecture,
-    LectureFile, UpdateLectureDateTimeRequest,
+    LectureFile,
     UpdateLectureMetaRequest,
+    UpdateLectureStartEndRequest,
     VideoSection,
     videoSectionSort,
 } from "../api/admin-lecture-list";
@@ -113,15 +114,15 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async updateDateTime(courseId: number, lectureId: number, payload: UpdateLectureDateTimeRequest) {
-        await AdminLectureList.updateDateTime(courseId, lectureId, payload);
+    async updateStartEnd(courseId: number, lectureId: number, payload: UpdateLectureStartEndRequest) {
+        await AdminLectureList.updateStartEnd(courseId, lectureId, payload);
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
             if (s.lectureId === lectureId) {
                 return {
                     ...s,
-                    start: payload.startDate,
-                    end: payload.endTime,
+                    start: payload.start,
+                    end: payload.end,
                 };
             }
             return s;

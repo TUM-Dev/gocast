@@ -17,9 +17,9 @@ export interface UpdateLectureMetaRequest {
     isChatEnabled?: boolean;
 }
 
-export interface UpdateLectureDateTimeRequest {
-    startDate: Date;
-    endTime: Date;
+export interface UpdateLectureStartEndRequest {
+    start: Date;
+    end: Date;
 }
 
 export class LectureFile {
@@ -293,11 +293,8 @@ export const AdminLectureList = {
      * @param lectureId
      * @param request
      */
-    updateDateTime: async function (courseId: number, lectureId: number, request: UpdateLectureDateTimeRequest) {
-        await post(`/api/course/${courseId}/updateDateTime/${lectureId}`, {
-            startDate: request.startDate,
-            endTime: request.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        });
+    updateStartEnd: async function (courseId: number, lectureId: number, { start, end }: UpdateLectureStartEndRequest) {
+        await post(`/api/course/${courseId}/updateStartEnd/${lectureId}`, { start, end });
     },
 
     /**

@@ -433,7 +433,12 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
                 // Save new date and time
                 if (changedKeys.includes("start") || changedKeys.includes("end")) {
-                    await DataStore.adminLectureList.updateDateTime(courseId, lectureId, { startDate: new Date(start), endTime: new Date(end) });
+                    const startDate = new Date(start);
+                    const endDate = new Date(end)
+                    endDate.setFullYear(startDate.getFullYear());
+                    endDate.setMonth(startDate.getMonth());
+                    endDate.setDate(startDate.getDate());
+                    await DataStore.adminLectureList.updateStartEnd(courseId, lectureId, { start: startDate, end: endDate });
                 }
 
                 // Saving VideoSections

@@ -70,6 +70,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.POST("/deleteLectures", routes.deleteLectures)
 			courses.POST("/renameLecture/:streamID", routes.renameLecture)
 			courses.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
+			courses.POST("/updateStartEnd/:streamID", routes.updateStartEnd)
 			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
 			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 			courses.POST("/submitCut", routes.submitCut)
@@ -988,6 +989,43 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 		broadcastStream(sID, msg)
 	} else {
 		log.WithError(err).Error("couldn't marshal stream rename ws msg")
+	}
+}
+
+type changeDateTime struct {
+	Start time.Time `json:"start" binding:"required"`
+	End   time.Time `json:"end" binding:"required"`
+}
+
+func (r coursesRoutes) updateStartEnd(c *gin.Context) {
+	var req changeDateTime
+	if err := c.Bind(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
+		return
+	}
+
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+	stream.Start = req.Start
+	stream.End = req.End
+	if err = r.StreamsDao.UpdateStream(stream); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture Description",
+			Err:           err,
+		})
+		return
 	}
 }
 
