@@ -275,9 +275,9 @@
                     <template x-if="!lectureData.premiere && !lectureData.vodup">
                         <label :for="endId">
                             <span class="text-sm text-5">End</span>
-                            <span class="text-sm font-light opacity-75"
-                                  x-change-set-listen.text="changeSet.durationFormatted"
-                            >
+                            <span :class="lectureData.duration > 0 ? 'text-sm font-light bg-gray-500/20 px-1 rounded opacity-75' : 'text-sm font-light bg-red-500 px-1 rounded opacity-75'"
+                                  x-text="lectureData.durationFormatted">
+
                             </span>
                             <input class="tl-input"
                                name="newEndTime"
