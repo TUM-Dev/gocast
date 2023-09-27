@@ -437,7 +437,7 @@
                     </button>
                     <button
                             @click="saveEdit();"
-                            :disabled="!isDirty || isSaving"
+                            :disabled="!isDirty || isSaving || isInvalid"
                             class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
                             x-text="isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>

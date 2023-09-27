@@ -93,7 +93,7 @@ export class ChangeSet<T> {
             comparator,
             updateTransformer,
             onUpdate,
-            updateThrottle = 50,
+            updateThrottle = 0,
             logLevel = LogLevel.none,
         }: ChangeSetOptions<T> = {},
     ) {

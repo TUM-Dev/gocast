@@ -121,6 +121,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         uiEditMode: UIEditMode.none,
         isDirty: false,
         isSaving: false,
+        isInvalid: false,
 
         // Lecture Data
         changeSet: null as ChangeSet<Lecture> | null,
@@ -216,12 +217,12 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             // This tracks changes that are not saved yet
             this.changeSet = new ChangeSet<Lecture>(lecture, {
                 //logLevel: LogLevel.debug,
-                updateThrottle: 20,
                 comparator: customComparator,
                 updateTransformer: computedFields,
                 onUpdate: (data, dirtyState) => {
                     this.lectureData = data;
                     this.isDirty = dirtyState.isDirty;
+                    this.isInvalid = data.duration <= 0;
                 },
             });
 
@@ -429,6 +430,11 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         saveSeries: this.uiEditMode === UIEditMode.series,
                     },
                 });
+
+                // Save new date and time
+                if (changedKeys.includes("start") || changedKeys.includes("end")) {
+
+                }
 
                 // Saving VideoSections
                 if (changedKeys.includes("videoSections")) {
