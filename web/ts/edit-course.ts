@@ -17,8 +17,8 @@ import {
 } from "./api/admin-lecture-list";
 import {
     ChangeSet,
-    comparatorPipeline, ComputedProperties,
-    computedProperties,
+    comparatorPipeline,
+    ComputedProperties,
     computedProperty,
     ignoreKeys,
     singleProperty

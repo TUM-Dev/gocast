@@ -1,3 +1,5 @@
+import {throttle, ThrottleFunc} from "./throttle";
+
 export interface DirtyState {
     isDirty: boolean;
     dirtyKeys: string[];
@@ -7,6 +9,7 @@ export interface ChangeSetOptions<T> {
     comparator?: (key: string, a: T, b: T) => boolean,
     updateTransformer?: ComputedProperties<T>,
     onUpdate?: (changeState: T, dirtyState: DirtyState) => void,
+    updateThrottle?: number,
 };
 
 /**
@@ -66,15 +69,20 @@ export class ChangeSet<T> {
     private readonly changeStateTransformer?: ((changeState: T) => T);
     private readonly stateTransformer?: ((changeState: T) => T);
 
+    private readonly throttledDispatchUpdateNoStateChanged?: ThrottleFunc;
+    private readonly throttledDispatchUpdateStateChanged?: ThrottleFunc;
+
     constructor(
         state: T,
-        { comparator, updateTransformer, onUpdate }: ChangeSetOptions<T> = {}
+        { comparator, updateTransformer, onUpdate, updateThrottle = 40 }: ChangeSetOptions<T> = {}
     ) {
         this.state = state;
         this.onUpdate = onUpdate ? [onUpdate] : [];
         this.changeStateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
         this.stateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
         this.comparator = comparator;
+        this.throttledDispatchUpdateNoStateChanged = throttle(() => this._dispatchUpdate(false), updateThrottle);
+        this.throttledDispatchUpdateStateChanged = throttle(() => this._dispatchUpdate(true), updateThrottle);
         this.init();
     }
 
@@ -119,7 +127,7 @@ export class ChangeSet<T> {
      */
     set(val: T) {
         this.changeState = { ...val };
-        this.dispatchUpdate(false);
+        this.dispatchUpdateThrottled(false);
     }
 
     /**
@@ -134,7 +142,7 @@ export class ChangeSet<T> {
         if (isCommitted) {
             this.state = { ...this.state, [key]: val };
         }
-        this.dispatchUpdate(isCommitted);
+        this.dispatchUpdateThrottled(isCommitted);
     }
 
     /**
@@ -150,7 +158,7 @@ export class ChangeSet<T> {
                 this.changeState[key] = this.state[key];
             }
         }
-        this.dispatchUpdate(true);
+        this.dispatchUpdateThrottled(true);
     }
 
     /**
@@ -162,7 +170,7 @@ export class ChangeSet<T> {
             this.changeState[key] = this.state[key];
         }
         this.state = { ...this.changeState };
-        this.dispatchUpdate(true);
+        this.dispatchUpdateThrottled(true);
     }
 
     /**
@@ -170,7 +178,7 @@ export class ChangeSet<T> {
      */
     init(): void {
         this.changeState = { ...this.state };
-        this.dispatchUpdate(true);
+        this.dispatchUpdateThrottled(true);
     }
 
     /**
@@ -178,7 +186,7 @@ export class ChangeSet<T> {
      */
     reset(): void {
         this.changeState = { ...this.state };
-        this.dispatchUpdate(false);
+        this.dispatchUpdateThrottled(false);
     }
 
     /**
@@ -227,7 +235,7 @@ export class ChangeSet<T> {
      * Executes all onUpdate listeners
      * @param stateChanged if state changed, state computed values are recalculated
      */
-    dispatchUpdate(stateChanged: boolean) {
+    _dispatchUpdate(stateChanged: boolean) {
         if (stateChanged && this.stateTransformer) {
             this.state = this.stateTransformer(this.state);
         }
@@ -244,6 +252,18 @@ export class ChangeSet<T> {
                     isDirty: dirtyKeys.length > 0,
                 });
             }
+        }
+    }
+
+    /**
+     * Executes all onUpdate listeners
+     * @param stateChanged if state changed, state computed values are recalculated
+     */
+    dispatchUpdateThrottled(stateChanged: boolean) {
+        if (stateChanged && this.stateTransformer) {
+            return this.throttledDispatchUpdateStateChanged();
+        } else {
+            return this.throttledDispatchUpdateNoStateChanged();
         }
     }
 }
