@@ -1,4 +1,4 @@
-import {throttle, ThrottleFunc} from "./throttle";
+import { throttle, ThrottleFunc } from "./throttle";
 
 export enum LogLevel {
     none,
@@ -15,12 +15,12 @@ export interface DirtyState {
 }
 
 export interface ChangeSetOptions<T> {
-    comparator?: (key: string, a: T, b: T) => boolean,
-    updateTransformer?: ComputedProperties<T>,
-    onUpdate?: (changeState: T, dirtyState: DirtyState) => void,
-    updateThrottle?: number,
-    logLevel?: LogLevel,
-};
+    comparator?: (key: string, a: T, b: T) => boolean;
+    updateTransformer?: ComputedProperties<T>;
+    onUpdate?: (changeState: T, dirtyState: DirtyState) => void;
+    updateThrottle?: number;
+    logLevel?: LogLevel;
+}
 
 /**
  * ## ChangeSet Class
@@ -76,8 +76,8 @@ export class ChangeSet<T> {
     private changeState: T;
     private readonly comparator?: PropertyComparator<T>;
     private onUpdate: ((changeState: T, dirtyState: DirtyState) => void)[];
-    private readonly changeStateTransformer?: ((changeState: T) => T);
-    private readonly stateTransformer?: ((changeState: T) => T);
+    private readonly changeStateTransformer?: (changeState: T) => T;
+    private readonly stateTransformer?: (changeState: T) => T;
 
     private readonly throttledDispatchUpdateNoStateChanged?: ThrottleFunc;
     private readonly throttledDispatchUpdateStateChanged?: ThrottleFunc;
@@ -89,7 +89,13 @@ export class ChangeSet<T> {
 
     constructor(
         state: T,
-        { comparator, updateTransformer, onUpdate, updateThrottle = 50, logLevel = LogLevel.none }: ChangeSetOptions<T> = {}
+        {
+            comparator,
+            updateTransformer,
+            onUpdate,
+            updateThrottle = 50,
+            logLevel = LogLevel.none,
+        }: ChangeSetOptions<T> = {},
     ) {
         this.lastLogTimestamp = Date.now();
         this.logLevel = logLevel;
@@ -303,7 +309,14 @@ export class ChangeSet<T> {
                 payload = { ...(payload ?? {}), instance: this };
             }
 
-            console.log(`[CHANGESET | ${this.logId.toString().padStart(4, "0")} | ${logLevelNames[level].padEnd(5, " ")}] ${message}`, payload ?? "", `[${tsDelta}ms]`);
+            console.log(
+                `[CHANGESET | ${this.logId.toString().padStart(4, "0")} | ${logLevelNames[level].padEnd(
+                    5,
+                    " ",
+                )}] ${message}`,
+                payload ?? "",
+                `[${tsDelta}ms]`,
+            );
         }
     }
 
@@ -365,9 +378,9 @@ export function comparatorPipeline<T>(list: PropertyComparator<T>[]): PropertyCo
     };
 }
 
-export type ComputedPropertyTransformer<T> = ((state: T) => T);
+export type ComputedPropertyTransformer<T> = (state: T) => T;
 export type ComputedPropertySubTransformer<T> = {
-    transform: ((state: T, oldState: T) => T);
+    transform: (state: T, oldState: T) => T;
     key: string;
 };
 
@@ -379,12 +392,12 @@ export class ComputedProperties<T> {
     }
 
     create(): ComputedPropertyTransformer<T> {
-        let oldState: T|null = null;
+        let oldState: T | null = null;
         return (state: T) => {
             for (const transformer of this.computed) {
                 state = transformer.transform(state, oldState);
             }
-            oldState = {...state};
+            oldState = { ...state };
             return state;
         };
     }
@@ -397,9 +410,13 @@ export class ComputedProperties<T> {
     }
 }
 
-export function computedProperty<T, R>(key: string, updater: (changeState: T, old: T|null) => R, deps: string[] = []): ComputedPropertySubTransformer<T> {
+export function computedProperty<T, R>(
+    key: string,
+    updater: (changeState: T, old: T | null) => R,
+    deps: string[] = [],
+): ComputedPropertySubTransformer<T> {
     return {
-        transform: (state: T, oldState: T|null) => {
+        transform: (state: T, oldState: T | null) => {
             if (oldState == null || deps.length == 0 || deps.some((k) => oldState[k] !== state[k])) {
                 state[key] = updater(state, oldState);
             }

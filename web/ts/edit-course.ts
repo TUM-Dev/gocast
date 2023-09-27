@@ -20,12 +20,14 @@ import {
     comparatorPipeline,
     ComputedProperties,
     computedProperty,
-    ignoreKeys, LogLevel, multiProperty,
-    singleProperty
+    ignoreKeys,
+    LogLevel,
+    multiProperty,
+    singleProperty,
 } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 import { uploadFile } from "./utilities/fetch-wrappers";
-import {dateFormatOptions, timeFormatOptions} from "./data-store/admin-lecture-list";
+import { dateFormatOptions, timeFormatOptions } from "./data-store/admin-lecture-list";
 
 export enum UIEditMode {
     none,
@@ -129,31 +131,59 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          */
         init() {
             const computedFields = new ComputedProperties([
-                computedProperty<Lecture, Date>("startDate", (changeSet) => {
-                    return new Date(changeSet.start);
-                }, ["start"]),
-                computedProperty<Lecture, string>("startDateFormatted", (changeSet) => {
-                    return changeSet.startDate.toLocaleDateString("en-US", dateFormatOptions);
-                }, ["start"]),
-                computedProperty<Lecture, string>("startTimeFormatted", (changeSet) => {
-                    return changeSet.startDate.toLocaleDateString("en-US", timeFormatOptions);
-                }, ["start"]),
-                computedProperty<Lecture, Date>("endDate", (changeSet) => {
-                    return new Date(changeSet.end);
-                }, ["end"]),
-                computedProperty<Lecture, string>("endTimeFormatted", (changeSet) => {
-                    return changeSet.endDate.toLocaleTimeString("en-US", timeFormatOptions);
-                }, ["end"]),
-                computedProperty<Lecture, number>("duration", (changeSet) => {
-                    // To ignore day differences
-                    const normalizedEndDate = new Date(changeSet.startDate.getTime());
-                    normalizedEndDate.setHours(changeSet.endDate.getHours())
-                    normalizedEndDate.setMinutes(changeSet.endDate.getMinutes())
-                    return normalizedEndDate.getTime() - changeSet.startDate.getTime();
-                }, ["start", "end"]),
-                computedProperty<Lecture, string>("durationFormatted", (changeSet) => {
-                    return this.generateFormattedDuration(changeSet);
-                }, ["start", "end"]),
+                computedProperty<Lecture, Date>(
+                    "startDate",
+                    (changeSet) => {
+                        return new Date(changeSet.start);
+                    },
+                    ["start"],
+                ),
+                computedProperty<Lecture, string>(
+                    "startDateFormatted",
+                    (changeSet) => {
+                        return changeSet.startDate.toLocaleDateString("en-US", dateFormatOptions);
+                    },
+                    ["start"],
+                ),
+                computedProperty<Lecture, string>(
+                    "startTimeFormatted",
+                    (changeSet) => {
+                        return changeSet.startDate.toLocaleDateString("en-US", timeFormatOptions);
+                    },
+                    ["start"],
+                ),
+                computedProperty<Lecture, Date>(
+                    "endDate",
+                    (changeSet) => {
+                        return new Date(changeSet.end);
+                    },
+                    ["end"],
+                ),
+                computedProperty<Lecture, string>(
+                    "endTimeFormatted",
+                    (changeSet) => {
+                        return changeSet.endDate.toLocaleTimeString("en-US", timeFormatOptions);
+                    },
+                    ["end"],
+                ),
+                computedProperty<Lecture, number>(
+                    "duration",
+                    (changeSet) => {
+                        // To ignore day differences
+                        const normalizedEndDate = new Date(changeSet.startDate.getTime());
+                        normalizedEndDate.setHours(changeSet.endDate.getHours());
+                        normalizedEndDate.setMinutes(changeSet.endDate.getMinutes());
+                        return normalizedEndDate.getTime() - changeSet.startDate.getTime();
+                    },
+                    ["start", "end"],
+                ),
+                computedProperty<Lecture, string>(
+                    "durationFormatted",
+                    (changeSet) => {
+                        return this.generateFormattedDuration(changeSet);
+                    },
+                    ["start", "end"],
+                ),
             ]);
 
             const customComparator = comparatorPipeline([
@@ -270,7 +300,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             if (lecture.duration <= 0) {
                 return "invalid";
             }
-            const duration = lecture.duration / 1000 / 60
+            const duration = lecture.duration / 1000 / 60;
             const hours = Math.floor(duration / 60);
             const minutes = duration - hours * 60;
             let res = "";
