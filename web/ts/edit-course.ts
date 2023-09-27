@@ -413,7 +413,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } =
+            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections, start, end } =
                 this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
@@ -433,7 +433,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
                 // Save new date and time
                 if (changedKeys.includes("start") || changedKeys.includes("end")) {
-
+                    await DataStore.adminLectureList.updateDateTime(courseId, lectureId, { startDate: new Date(start), endTime: new Date(end) });
                 }
 
                 // Saving VideoSections

@@ -17,6 +17,11 @@ export interface UpdateLectureMetaRequest {
     isChatEnabled?: boolean;
 }
 
+export interface UpdateLectureDateTimeRequest {
+    startDate: Date;
+    endTime: Date;
+}
+
 export class LectureFile {
     readonly id: number;
     readonly fileType: number;
@@ -280,6 +285,19 @@ export const AdminLectureList = {
      */
     saveSeriesMetadata: async (courseId: number, lectureId: number): Promise<void> => {
         await post(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
+    },
+
+    /**
+     * Updates date time of a lecture.
+     * @param courseId
+     * @param lectureId
+     * @param request
+     */
+    updateDateTime: async function (courseId: number, lectureId: number, request: UpdateLectureDateTimeRequest) {
+        await post(`/api/course/${courseId}/updateDateTime/${lectureId}`, {
+            startDate: request.startDate,
+            endTime: request.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        });
     },
 
     /**

@@ -2,7 +2,7 @@ import { StreamableMapProvider } from "./provider";
 import {
     AdminLectureList,
     Lecture,
-    LectureFile,
+    LectureFile, UpdateLectureDateTimeRequest,
     UpdateLectureMetaRequest,
     VideoSection,
     videoSectionSort,
@@ -107,6 +107,22 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
                         s[requestKey] = val;
                     }
                 }
+            }
+            return s;
+        });
+        await this.triggerUpdate(courseId);
+    }
+
+    async updateDateTime(courseId: number, lectureId: number, payload: UpdateLectureDateTimeRequest) {
+        await AdminLectureList.updateDateTime(courseId, lectureId, payload);
+
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId === lectureId) {
+                return {
+                    ...s,
+                    start: payload.startDate,
+                    end: payload.endTime,
+                };
             }
             return s;
         });
