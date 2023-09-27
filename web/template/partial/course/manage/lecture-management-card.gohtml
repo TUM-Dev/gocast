@@ -284,7 +284,14 @@
                                :id="endId"
                                x-change-set-listen="changeSet.endDate"
                                x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().endDate, 'H:i'))"
-                               x-init="flatpickr($el, {enableTime: true, noCalendar: true, altInput: true, altFormat: 'H:i', time_24hr: true, allowInput: true, onChange: (date) => changeSet.patch('end', flatpickr.formatDate(date[0], 'Z')) })"
+                               x-init="flatpickr($el, {enableTime: true, noCalendar: true, altInput: true, altFormat: 'H:i', time_24hr: true, allowInput: true, onChange: (date) => {
+                                    const startDate = changeSet.get().startDate;
+                                    let val = date[0];
+                                    val.setDate(startDate.getDate());
+                                    val.setMonth(startDate.getMonth());
+                                    val.setYear(startDate.getFullYear());
+                                    changeSet.patch('end', flatpickr.formatDate(val, 'Z'))
+                               }})"
                             />
                         </label>
                     </template>

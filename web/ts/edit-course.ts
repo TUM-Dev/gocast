@@ -179,6 +179,10 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 multiProperty(["start", "end"], (key: string, a: Lecture, b: Lecture): boolean | null => {
                     const dateA = new Date(a[key]);
                     const dateB = new Date(b[key]);
+                    if (key == "end") {
+                        console.log(dateA);
+                        console.log(dateB);
+                    }
                     return dateA.getTime() !== dateB.getTime();
                 }),
             ]);
