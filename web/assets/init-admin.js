@@ -82,7 +82,7 @@ document.addEventListener("alpine:init", () => {
         const changeSet = evaluate(expression);
         const fieldName = value || el.name;
 
-        if (el.type === "file") {
+        if (el.type.toLowerCase() === "file") {
             const isSingle = modifiers.includes("single")
 
             const changeHandler = (e) => {
@@ -103,7 +103,7 @@ document.addEventListener("alpine:init", () => {
                 changeSet.removeListener(onChangeSetUpdateHandler);
                 el.removeEventListener('change', changeHandler)
             })
-        } else if (el.type === "checkbox") {
+        } else if (el.type.toLowerCase() === "checkbox") {
             const changeHandler = (e) => {
                 changeSet.patch(fieldName, e.target.checked);
             };
@@ -121,7 +121,7 @@ document.addEventListener("alpine:init", () => {
                 changeSet.removeListener(onChangeSetUpdateHandler);
                 el.removeEventListener('change', changeHandler)
             })
-        } else  if (el.tagName === "textarea" || textInputTypes.includes(el.type)) {
+        } else  if (el.tagName.toLowerCase() === "textarea" || textInputTypes.includes(el.type.toLowerCase())) {
             const keyupHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
             const changeHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
 
