@@ -1,5 +1,14 @@
 import {throttle, ThrottleFunc} from "./throttle";
 
+export enum LogLevel {
+    none,
+    warn,
+    info,
+    debug,
+}
+
+const logLevelNames: string[] = ["None", "Warn", "Info", "Debug"];
+
 export interface DirtyState {
     isDirty: boolean;
     dirtyKeys: string[];
@@ -10,6 +19,7 @@ export interface ChangeSetOptions<T> {
     updateTransformer?: ComputedProperties<T>,
     onUpdate?: (changeState: T, dirtyState: DirtyState) => void,
     updateThrottle?: number,
+    logLevel?: LogLevel,
 };
 
 /**
@@ -72,10 +82,18 @@ export class ChangeSet<T> {
     private readonly throttledDispatchUpdateNoStateChanged?: ThrottleFunc;
     private readonly throttledDispatchUpdateStateChanged?: ThrottleFunc;
 
+    private readonly logLevel: LogLevel;
+    private lastLogTimestamp: number;
+    private static logIdCounter: number = 0;
+    private readonly logId: number;
+
     constructor(
         state: T,
-        { comparator, updateTransformer, onUpdate, updateThrottle = 50 }: ChangeSetOptions<T> = {}
+        { comparator, updateTransformer, onUpdate, updateThrottle = 5, logLevel = LogLevel.none }: ChangeSetOptions<T> = {}
     ) {
+        this.lastLogTimestamp = Date.now();
+        this.logLevel = logLevel;
+        this.logId = ChangeSet.logIdCounter++;
         this.state = state;
         this.onUpdate = onUpdate ? [onUpdate] : [];
         this.changeStateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
@@ -91,6 +109,7 @@ export class ChangeSet<T> {
      * @param onUpdate
      */
     listen(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
+        this._log(LogLevel.debug, "Add Update Listener", { onUpdate });
         this.onUpdate.push(onUpdate);
     }
 
@@ -99,6 +118,7 @@ export class ChangeSet<T> {
      * @param onUpdate
      */
     removeListener(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
+        this._log(LogLevel.debug, "Remove Update Listener", { onUpdate });
         this.onUpdate = this.onUpdate.filter((o) => o !== onUpdate);
     }
 
@@ -126,6 +146,7 @@ export class ChangeSet<T> {
      * @param val
      */
     set(val: T) {
+        this._log(LogLevel.info, "Set ChangeState", { val });
         this.changeState = { ...val };
         this.dispatchUpdateThrottled(false);
     }
@@ -138,6 +159,7 @@ export class ChangeSet<T> {
      */
     /* eslint-disable @typescript-eslint/no-explicit-any */
     patch(key: string, val: any, { isCommitted = false }: { isCommitted?: boolean } = {}) {
+        this._log(LogLevel.info, "Patch State", { key, val, isCommitted });
         this.changeState = { ...this.changeState, [key]: val };
         if (isCommitted) {
             this.state = { ...this.state, [key]: val };
@@ -150,6 +172,7 @@ export class ChangeSet<T> {
      * @param state
      */
     updateState(state: T) {
+        this._log(LogLevel.info, "Update State", { state });
         const changedKeys = this.changedKeys();
         this.state = { ...state };
 
@@ -166,6 +189,7 @@ export class ChangeSet<T> {
      * @param discardKeys List of keys that should be discarded and not committed.
      */
     commit({ discardKeys = [] }: { discardKeys?: string[] } = {}): void {
+        this._log(LogLevel.info, "Perform Commit", { discardKeys });
         for (const key in discardKeys) {
             this.changeState[key] = this.state[key];
         }
@@ -177,6 +201,7 @@ export class ChangeSet<T> {
      * Init new state
      */
     init(): void {
+        this._log(LogLevel.info, "Perform Init");
         this.changeState = { ...this.state };
         this.dispatchUpdateThrottled(true);
     }
@@ -185,6 +210,7 @@ export class ChangeSet<T> {
      * Resets the change state to the state. Change state is the most current state afterwards.
      */
     reset(): void {
+        this._log(LogLevel.info, "Perform Reset");
         this.changeState = { ...this.state };
         this.dispatchUpdateThrottled(false);
     }
@@ -236,15 +262,20 @@ export class ChangeSet<T> {
      * @param stateChanged if state changed, state computed values are recalculated
      */
     _dispatchUpdate(stateChanged: boolean) {
+        this._log(LogLevel.info, "Dispatch Update", { stateChanged });
+
         if (stateChanged && this.stateTransformer) {
+            this._log(LogLevel.info, "Reevaluate Computed on State");
             this.state = this.stateTransformer(this.state);
         }
 
         if (this.changeStateTransformer) {
+            this._log(LogLevel.info, "Reevaluate Computed on ChangeState");
             this.changeState = this.changeStateTransformer(this.changeState);
         }
 
         if (this.onUpdate.length > 0) {
+            this._log(LogLevel.info, `Trigger ${this.onUpdate.length} onUpdate handler`);
             const dirtyKeys = this.changedKeys();
             for (const onUpdate of this.onUpdate) {
                 onUpdate(this.changeState, {
@@ -256,10 +287,32 @@ export class ChangeSet<T> {
     }
 
     /**
+     * Log Function that prints messages to console or discards them if the loglevel of changeSet is lower than the
+     * loglevel of the message
+     * @param level LogLevel of the message, if lower than changeSet's loglevel it will be discarded
+     * @param message The message to print to console
+     * @param payload Any payload object, "instance" is automatically attached if the changeSet loglevel is set to "debug"
+     */
+    _log(level: LogLevel, message: string, payload?: object) {
+        if (level <= this.logLevel) {
+            const ts = Date.now();
+            const tsDelta = ts - this.lastLogTimestamp;
+            this.lastLogTimestamp = ts;
+
+            if (this.logLevel === LogLevel.debug) {
+                payload = { ...(payload ?? {}), instance: this };
+            }
+
+            console.log(`[CHANGESET | ${this.logId.toString().padStart(4, "0")} | ${logLevelNames[level].padEnd(5, " ")}] ${message}`, payload ?? "", `[${tsDelta}ms]`);
+        }
+    }
+
+    /**
      * Executes all onUpdate listeners
      * @param stateChanged if state changed, state computed values are recalculated
      */
     dispatchUpdateThrottled(stateChanged: boolean) {
+        this._log(LogLevel.debug, "Throttled: Dispatch Update", { stateChanged });
         if (stateChanged && this.stateTransformer) {
             return this.throttledDispatchUpdateStateChanged();
         } else {

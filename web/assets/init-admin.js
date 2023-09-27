@@ -179,20 +179,22 @@ document.addEventListener("alpine:init", () => {
      *    The detail property of the event object contains the new value of the specified field.
      */
     Alpine.directive("change-set-listen", (el, { expression, modifiers }, { effect, evaluate, cleanup }) => {
-        effect(() => {
-            const [changeSetExpression, fieldName = null] = expression.split(".");
-            const changeSet = evaluate(changeSetExpression);
+        const [changeSetExpression, fieldName = null] = expression.split(".");
+        let changeSet = evaluate(changeSetExpression);
 
-            const onChangeSetUpdateHandler = (data) => {
-                const value = fieldName != null ? data[fieldName] : data;
-                if (modifiers.includes("text")) {
-                    el.innerText = `${value}`;
-                }
-                if (modifiers.includes("value")) {
-                    el.value = value;
-                }
-                el.dispatchEvent(new CustomEvent(nativeEventName, { detail: { changeSet, value } }));
-            };
+        const onChangeSetUpdateHandler = (data) => {
+            const value = fieldName != null ? data[fieldName] : data;
+            if (modifiers.includes("text")) {
+                el.innerText = `${value}`;
+            }
+            if (modifiers.includes("value")) {
+                el.value = value;
+            }
+            el.dispatchEvent(new CustomEvent(nativeEventName, { detail: { changeSet, value } }));
+        };
+
+        effect(() => {
+            changeSet = evaluate(changeSetExpression);
 
             if (!changeSet) {
                 return;
@@ -201,11 +203,11 @@ document.addEventListener("alpine:init", () => {
             changeSet.removeListener(onChangeSetUpdateHandler);
             onChangeSetUpdateHandler(changeSet.get());
             changeSet.listen(onChangeSetUpdateHandler);
-
-            cleanup(() => {
-                changeSet.removeListener(onChangeSetUpdateHandler);
-            })
         });
+
+        cleanup(() => {
+            changeSet.removeListener(onChangeSetUpdateHandler);
+        })
     });
 
     /**

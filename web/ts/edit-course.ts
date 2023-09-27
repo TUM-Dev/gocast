@@ -20,7 +20,7 @@ import {
     comparatorPipeline,
     ComputedProperties,
     computedProperty,
-    ignoreKeys, multiProperty,
+    ignoreKeys, LogLevel, multiProperty,
     singleProperty
 } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
@@ -179,22 +179,18 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 multiProperty(["start", "end"], (key: string, a: Lecture, b: Lecture): boolean | null => {
                     const dateA = new Date(a[key]);
                     const dateB = new Date(b[key]);
-                    if (key == "end") {
-                        console.log(dateA);
-                        console.log(dateB);
-                    }
                     return dateA.getTime() !== dateB.getTime();
                 }),
             ]);
 
             // This tracks changes that are not saved yet
             this.changeSet = new ChangeSet<Lecture>(lecture, {
+                logLevel: LogLevel.debug,
                 comparator: customComparator,
                 updateTransformer: computedFields,
                 onUpdate: (data, dirtyState) => {
                     this.lectureData = data;
                     this.isDirty = dirtyState.isDirty;
-                    console.log(dirtyState, data.start)
                 },
             });
 
