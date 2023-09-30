@@ -323,6 +323,18 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		}
 	}
 
+	var videoSections []gin.H
+	for _, section := range s.VideoSections {
+		videoSections = append(videoSections, gin.H{
+			"id":           section.ID,
+			"description":  section.Description,
+			"startHours":   section.StartHours,
+			"startMinutes": section.StartMinutes,
+			"startSeconds": section.StartSeconds,
+			"fileID":       section.FileID,
+		})
+	}
+
 	return gin.H{
 		"lectureId":             s.Model.ID,
 		"courseId":              s.CourseID,
@@ -346,6 +358,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"courseSlug":            course.Slug,
 		"private":               s.Private,
 		"downloadableVods":      s.GetVodFiles(),
+		"videoSections":         videoSections,
 	}
 }
 
