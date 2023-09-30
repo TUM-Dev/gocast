@@ -236,26 +236,26 @@ export const AdminLectureList = {
      * @param request
      */
     updateMetadata: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
-        const promises:  (() => Promise<Response>)[] = [];
+        const promises: (() => Promise<Response>)[] = [];
         if (request.name !== undefined) {
-            promises.push(
-                () => post(`/api/course/${courseId}/renameLecture/${lectureId}`, {
+            promises.push(() =>
+                post(`/api/course/${courseId}/renameLecture/${lectureId}`, {
                     name: request.name,
                 }),
             );
         }
 
         if (request.description !== undefined) {
-            promises.push(
-                () => put(`/api/course/${courseId}/updateDescription/${lectureId}`, {
+            promises.push(() =>
+                put(`/api/course/${courseId}/updateDescription/${lectureId}`, {
                     name: request.description,
                 }),
             );
         }
 
         if (request.lectureHallId !== undefined) {
-            promises.push(
-                () => post("/api/setLectureHall", {
+            promises.push(() =>
+                post("/api/setLectureHall", {
                     streamIds: [lectureId],
                     lectureHall: request.lectureHallId,
                 }),
@@ -263,8 +263,8 @@ export const AdminLectureList = {
         }
 
         if (request.isChatEnabled !== undefined) {
-            promises.push(
-                () => patch(`/api/stream/${lectureId}/chat/enabled`, {
+            promises.push(() =>
+                patch(`/api/stream/${lectureId}/chat/enabled`, {
                     lectureId,
                     isChatEnabled: request.isChatEnabled,
                 }),
