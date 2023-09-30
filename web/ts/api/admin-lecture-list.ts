@@ -236,10 +236,10 @@ export const AdminLectureList = {
      * @param request
      */
     updateMetadata: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
-        const promises = [];
+        const promises:  (() => Promise<Response>)[] = [];
         if (request.name !== undefined) {
             promises.push(
-                post(`/api/course/${courseId}/renameLecture/${lectureId}`, {
+                () => post(`/api/course/${courseId}/renameLecture/${lectureId}`, {
                     name: request.name,
                 }),
             );
@@ -247,7 +247,7 @@ export const AdminLectureList = {
 
         if (request.description !== undefined) {
             promises.push(
-                put(`/api/course/${courseId}/updateDescription/${lectureId}`, {
+                () => put(`/api/course/${courseId}/updateDescription/${lectureId}`, {
                     name: request.description,
                 }),
             );
@@ -255,7 +255,7 @@ export const AdminLectureList = {
 
         if (request.lectureHallId !== undefined) {
             promises.push(
-                post("/api/setLectureHall", {
+                () => post("/api/setLectureHall", {
                     streamIds: [lectureId],
                     lectureHall: request.lectureHallId,
                 }),
@@ -264,15 +264,22 @@ export const AdminLectureList = {
 
         if (request.isChatEnabled !== undefined) {
             promises.push(
-                patch(`/api/stream/${lectureId}/chat/enabled`, {
+                () => patch(`/api/stream/${lectureId}/chat/enabled`, {
                     lectureId,
                     isChatEnabled: request.isChatEnabled,
                 }),
             );
         }
 
-        const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
-        if (errors.length > 0) {
+        let errors = 0;
+        for (const promise of promises) {
+            const res = await promise();
+            if (res.status !== StatusCodes.OK) {
+                errors++;
+            }
+        }
+
+        if (errors > 0) {
             console.error(errors);
             throw Error("Failed to update all data.");
         }
