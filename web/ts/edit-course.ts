@@ -21,7 +21,6 @@ import {
     ComputedProperties,
     computedProperty,
     ignoreKeys,
-    LogLevel,
     multiProperty,
     singleProperty,
 } from "./change-set";
