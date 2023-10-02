@@ -38,6 +38,7 @@ var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 var initializers = []initializer{
 	tools.LoadConfig,
 	api.ServeWorkerGRPC,
+	api.StartGrpcRunnerServer,
 	tools.InitBranding,
 }
 
@@ -189,6 +190,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Runner{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
