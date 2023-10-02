@@ -1,9 +1,9 @@
 package bot
 
 import (
-	"github.com/getsentry/sentry-go"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/getsentry/sentry-go"
 	"github.com/microcosm-cc/bluemonday"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -101,13 +101,10 @@ func GenerateInfoText(botInfo AlertMessage) string {
 	infoText += "</table>📢 <b>Contact information</b>\n\n<table>"
 	// Has the person that reported the issue entered custom contact data?
 	if botInfo.Name != "" {
-		infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + "</td></tr>"
-	} else if botInfo.User.Name != "" {
-		if botInfo.User.LastName != nil {
-			infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + " " + *botInfo.User.LastName + "</td></tr>"
-		} else {
-			infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + "</td></tr>"
-		}
+		infoText += "<tr><th>Name</th><td>" + botInfo.User.DisplayName + "</td></tr>"
+	} else if botInfo.User.DisplayName != "" {
+		infoText += "<tr><th>Name</th><td>" + botInfo.User.DisplayName + "</td></tr>"
+
 	}
 	if botInfo.Email != "" {
 		infoText += "<tr><th>Email</th><td>" + botInfo.Email + "</td></tr>"

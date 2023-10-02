@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -155,10 +155,9 @@ func (r usersRoutes) SearchUserForCourse(c *gin.Context) {
 
 	for i, user := range users {
 		res[i] = userForLecturerDto{
-			ID:       user.ID,
-			Name:     user.GetPreferredName(),
-			LastName: user.LastName,
-			Login:    user.GetLoginString(),
+			ID:          user.ID,
+			DisplayName: user.GetPreferredName(),
+			Login:       user.GetLoginString(),
 		}
 	}
 	c.JSON(http.StatusOK, res)
@@ -188,10 +187,9 @@ func (r usersRoutes) SearchUser(c *gin.Context) {
 }
 
 type userForLecturerDto struct {
-	ID       uint    `json:"id,omitempty"`
-	Name     string  `json:"name,omitempty"`
-	LastName *string `json:"lastName,omitempty"`
-	Login    string  `json:"login,omitempty"`
+	ID          uint   `json:"id,omitempty"`
+	DisplayName string `json:"name,omitempty"`
+	Login       string `json:"login,omitempty"`
 }
 
 type userSearchDTO struct {
@@ -297,11 +295,11 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 	if foundUser, err := r.UsersDao.GetUserByEmail(context.Background(), email); err != nil {
 		// user not in database yet. Create them & send registration link
 		createdUser := model.User{
-			Name:     name,
-			Email:    sql.NullString{String: email, Valid: true},
-			Role:     model.GenericType,
-			Password: "",
-			Courses:  []model.Course{course},
+			DisplayName: name,
+			Email:       sql.NullString{String: email, Valid: true},
+			Role:        model.GenericType,
+			Password:    "",
+			Courses:     []model.Course{course},
 		}
 		if err = r.UsersDao.CreateUser(context.Background(), &createdUser); err != nil {
 			log.Printf("%v", err)
@@ -440,7 +438,7 @@ func (r usersRoutes) InitUser(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
+	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.DisplayName, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
 func (r usersRoutes) CreateUser(c *gin.Context) {
@@ -480,14 +478,14 @@ func (r usersRoutes) CreateUser(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
+	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.DisplayName, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
 func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
 	var u = model.User{
-		Name:  request.Name,
-		Email: sql.NullString{String: request.Email, Valid: true},
-		Role:  userType,
+		DisplayName: request.Name,
+		Email:       sql.NullString{String: request.Email, Valid: true},
+		Role:        userType,
 	}
 	if userType == 1 {
 		err = u.SetPassword(request.Password)
@@ -516,6 +514,7 @@ func (r usersRoutes) forgotPassword(email string) {
 		log.Println("couldn't create register link")
 		return
 	}
+	// todo: this should be a template file
 	body := fmt.Sprintf("Hello!\n"+
 		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
 		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
@@ -660,13 +659,12 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 	var resp personalData
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	resp.UserData = struct {
-		Name      string    `json:"name,omitempty"`
-		LastName  *string   `json:"last_name,omitempty"`
-		Email     string    `json:"email,omitempty"`
-		LrzID     string    `json:"lrz_id,omitempty"`
-		MatrNr    string    `json:"matr_nr,omitempty"`
-		CreatedAt time.Time `json:"created_at"`
-	}{Name: u.Name, LastName: u.LastName, Email: u.Email.String, LrzID: u.LrzID, MatrNr: u.MatriculationNumber, CreatedAt: u.CreatedAt}
+		DisplayName string    `json:"display_name,omitempty"`
+		Email       string    `json:"email,omitempty"`
+		LrzID       string    `json:"lrz_id,omitempty"`
+		MatrNr      string    `json:"matr_nr,omitempty"`
+		CreatedAt   time.Time `json:"created_at"`
+	}{DisplayName: u.DisplayName, Email: u.Email.String, LrzID: u.LrzID, MatrNr: u.MatriculationNumber, CreatedAt: u.CreatedAt}
 	for _, course := range u.Courses {
 		resp.Enrollments = append(resp.Enrollments, struct {
 			Year   int    `json:"year,omitempty"`
@@ -757,12 +755,11 @@ func (r usersRoutes) resetPassword(c *gin.Context) {
 
 type personalData struct {
 	UserData struct {
-		Name      string    `json:"name,omitempty"`
-		LastName  *string   `json:"last_name,omitempty"`
-		Email     string    `json:"email,omitempty"`
-		LrzID     string    `json:"lrz_id,omitempty"`
-		MatrNr    string    `json:"matr_nr,omitempty"`
-		CreatedAt time.Time `json:"created_at"`
+		DisplayName string    `json:"display_name,omitempty"`
+		Email       string    `json:"email,omitempty"`
+		LrzID       string    `json:"lrz_id,omitempty"`
+		MatrNr      string    `json:"matr_nr,omitempty"`
+		CreatedAt   time.Time `json:"created_at"`
 	} `json:"user_data"`
 	Enrollments []struct {
 		Year   int    `json:"year,omitempty"`

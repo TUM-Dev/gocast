@@ -78,7 +78,7 @@
                              class="tum-live-menu absolute top-full right-[50%] mt-2 h-fit overflow-hidden w-56">
                         <header>
                             <p class="font-semibold">Signed in as</p>
-                            <span>@{{$user.Name}}</span>
+                            <span>@{{$user.DisplayName}}</span>
                         </header>
                         <nav class="d-grid gap-3 font-light">
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
@@ -597,7 +597,7 @@
                     </template>
                 </article>
                 {{if $user}}
-                    {{if $user.Name}}
+                    {{if $user.GetPreferredName}}
                         <h1 id="greeting" class="md:text-2xl text-xl font-bold mb-4 px-3">
                             {{$user.GetPreferredGreeting}} {{$user.GetPreferredName}},
                             nice to see you! 👋

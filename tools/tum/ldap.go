@@ -4,23 +4,22 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/go-ldap/ldap/v3"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
+	"github.com/go-ldap/ldap/v3"
 	"time"
 )
 
 var ErrLdapBadAuth = errors.New("login failed")
 
 type LdapResp struct {
-	UserId    string
-	LrzIdent  string
-	FirstName string
-	LastName  *string
+	UserId      string
+	LrzIdent    string
+	DisplayName string
 }
 
-//LoginWithTumCredentials returns student id if login and password match, err otherwise
+// LoginWithTumCredentials returns student id if login and password match, err otherwise
 func LoginWithTumCredentials(username string, password string) (*LdapResp, error) {
 	// sanitize possibly malicious username
 	username = ldap.EscapeFilter(username)
@@ -73,24 +72,20 @@ func LoginWithTumCredentials(username string, password string) (*LdapResp, error
 	if len(res.Entries) != 1 {
 		return nil, errors.New("bad response from ldap server")
 	}
+
+	// todo: attribute names should be configurable
 	mNr := res.Entries[0].GetAttributeValue("imMatrikelNr")
 	mwnID := res.Entries[0].GetAttributeValue("imMWNID")
 	lrzID := res.Entries[0].GetAttributeValue("imLRZKennung")
-	name := res.Entries[0].GetAttributeValue("imVorname")
-	lastNameS := res.Entries[0].GetAttributeValue("sn")
-	var lastName *string
-	if lastNameS != "" {
-		lastName = &lastNameS
-	}
+	displayName := res.Entries[0].GetAttributeValue("imAnzeigename")
 	uid := mNr
 	if uid == "" {
 		uid = mwnID
 	}
 	return &LdapResp{
-		UserId:    uid,
-		LrzIdent:  lrzID,
-		FirstName: name,
-		LastName:  lastName,
+		UserId:      uid,
+		LrzIdent:    lrzID,
+		DisplayName: displayName,
 	}, nil
 
 }
@@ -129,12 +124,12 @@ func FindUserWithEmail(email string) (*model.User, error) {
 	mNr := sr.Entries[0].GetAttributeValue("imMatrikelNr")
 	mwnID := sr.Entries[0].GetAttributeValue("imMWNID")
 	lrzID := sr.Entries[0].GetAttributeValue("imLRZKennung")
-	name := sr.Entries[0].GetAttributeValue("imVorname")
+	displayName := sr.Entries[0].GetAttributeValue("imAnzeigename")
 	if mNr == "" {
 		mNr = mwnID
 	}
 	return &model.User{
-		Name:                name,
+		DisplayName:         displayName,
 		MatriculationNumber: mNr,
 		LrzID:               lrzID,
 		Email:               sql.NullString{String: email, Valid: true},

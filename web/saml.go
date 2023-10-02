@@ -9,12 +9,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/crewjam/saml"
-	"github.com/crewjam/saml/samlsp"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/crewjam/saml"
+	"github.com/crewjam/saml/samlsp"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -123,10 +123,6 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		firstName := extractSamlField(response, "givenName")
 		lastName := extractSamlField(response, "sn")
 		subjectID := extractSamlField(response, "samlSubjectID") // used to logout from the IDP
-		var lastNameUser *string
-		if lastName != "" {
-			lastNameUser = &lastName
-		}
 		if matrNr == "" {
 			matrNr = extractSamlField(response, "eduPersonPrincipalName") // MWN id if no matrNr
 			s := strings.Split(matrNr, "@")
@@ -142,8 +138,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			matrNr = s[0]
 		}
 		user := model.User{
-			Name:                firstName,
-			LastName:            lastNameUser,
+			//todo add display name
 			MatriculationNumber: matrNr,
 			LrzID:               lrzID,
 		}

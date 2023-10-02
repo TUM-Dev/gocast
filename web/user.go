@@ -105,8 +105,7 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
-			Name:                loginResp.FirstName,
-			LastName:            loginResp.LastName,
+			DisplayName:         loginResp.DisplayName,
 			MatriculationNumber: loginResp.UserId,
 			LrzID:               loginResp.LrzIdent,
 		}

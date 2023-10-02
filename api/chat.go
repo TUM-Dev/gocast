@@ -342,7 +342,7 @@ func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	err = r.ChatDao.ToggleReaction(ctx.User.ID, req.wsIdReq.Id, ctx.User.Name, req.Reaction)
+	err = r.ChatDao.ToggleReaction(ctx.User.ID, req.wsIdReq.Id, ctx.User.DisplayName, req.Reaction)
 	if err != nil {
 		log.WithError(err).Error("error reacting to message")
 		return

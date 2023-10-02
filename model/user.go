@@ -21,20 +21,16 @@ const (
 	LecturerType = 2
 	GenericType  = 3
 	StudentType  = 4
-
-	maxUsernameLength = 80
 )
 
 var (
-	ErrUsernameTooLong = errors.New("username is too long")
-	ErrUsernameNoText  = errors.New("username has no text")
+	ErrUsernameNoText = errors.New("username has no text")
 )
 
 type User struct {
 	gorm.Model
 
-	Name                string         `gorm:"type:varchar(80); not null" json:"name"`
-	LastName            *string        `json:"-"`
+	DisplayName         string         `gorm:"type:varchar(256); not null" json:"name"`
 	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	LrzID               string         `json:"-"`
@@ -65,13 +61,16 @@ type UserSetting struct {
 }
 
 // GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
-func (u User) GetPreferredName() string {
+func (u *User) GetPreferredName() string {
+	if u == nil {
+		return ""
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName {
 			return setting.Value
 		}
 	}
-	return u.Name
+	return u.DisplayName
 }
 
 type PlaybackSpeedSetting struct {
@@ -121,7 +120,10 @@ func (u *User) GetPlaybackSpeeds() (speeds PlaybackSpeedSettings) {
 }
 
 // GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
-func (u User) GetPreferredGreeting() string {
+func (u *User) GetPreferredGreeting() string {
+	if u == nil {
+		return "Moin"
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == Greeting {
 			return setting.Value
@@ -131,7 +133,10 @@ func (u User) GetPreferredGreeting() string {
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
-func (u User) PreferredNameChangeAllowed() bool {
+func (u *User) PreferredNameChangeAllowed() bool {
+	if u == nil {
+		return false
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName && time.Since(setting.UpdatedAt) < time.Hour*24*30*3 {
 			return false
@@ -322,11 +327,8 @@ func (u *User) GetLoginString() string {
 // - username is empty (after trimming)
 // - username is too long (>maxUsernameLength)
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
-	u.Name = strings.TrimSpace(u.Name)
-	if len(u.Name) > maxUsernameLength {
-		return ErrUsernameTooLong
-	}
-	if len(u.Name) == 0 {
+	u.DisplayName = strings.TrimSpace(u.DisplayName)
+	if len(u.DisplayName) == 0 {
 		return ErrUsernameNoText
 	}
 	return nil

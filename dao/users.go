@@ -160,7 +160,7 @@ func (d usersDao) UpsertUser(user *model.User) error {
 		//User found: update
 		user.Model = foundUser.Model
 		foundUser.LrzID = user.LrzID
-		foundUser.Name = user.Name
+		foundUser.DisplayName = user.DisplayName
 		if user.Role != 0 {
 			foundUser.Role = user.Role
 		}
@@ -175,7 +175,7 @@ func (d usersDao) UpsertUser(user *model.User) error {
 	err = DB.
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "matriculation_number"}},
-			DoUpdates: clause.Assignments(map[string]interface{}{"name": user.Name}),
+			DoUpdates: clause.Assignments(map[string]interface{}{"display_name": user.DisplayName}),
 		}).
 		Create(&user).Error
 	return err
