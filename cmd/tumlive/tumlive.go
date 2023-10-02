@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/dgraph-io/ristretto"
-	"github.com/getsentry/sentry-go"
-	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/web"
+	"github.com/dgraph-io/ristretto"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
@@ -32,6 +32,7 @@ type initializer func()
 var initializers = []initializer{
 	tools.LoadConfig,
 	api.ServeWorkerGRPC,
+	api.StartGrpcRunnerServer,
 	tools.InitBranding,
 }
 
@@ -168,6 +169,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Runner{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
