@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"os"
 	"time"
 
@@ -35,11 +36,9 @@ func SetConfig() {
 	if Token == "" {
 		log.Fatal("Environment variable Token is not set")
 	}
-	TempDir = "/recordings" // recordings will end up here before they are converted
-	StorageDir = os.Getenv("MassStorage")
-	if StorageDir == "" {
-		StorageDir = "/mass" // recordings will end up here after they are converted
-	}
+
+	TempDir, StorageDir, LogDir, PersistDir = pathprovider.ConfigureWorkerPaths()
+
 	LrzUser = os.Getenv("LrzUser")
 	LrzMail = os.Getenv("LrzMail")
 	LrzPhone = os.Getenv("LrzPhone")
@@ -48,11 +47,6 @@ func SetConfig() {
 	MainBase = os.Getenv("MainBase")             // eg. live.mm.rbg.tum.de
 	VodURLTemplate = os.Getenv("VodURLTemplate") // eg. https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
 
-	// logging
-	LogDir = os.Getenv("LogDir")
-	if LogDir == "" {
-		LogDir = "/var/log/stream"
-	}
 	switch os.Getenv("LogLevel") {
 	case "trace":
 		LogLevel = log.TraceLevel
@@ -73,10 +67,6 @@ func SetConfig() {
 	}
 	log.SetLevel(LogLevel)
 
-	PersistDir = os.Getenv("PersistDir")
-	if PersistDir == "" {
-		PersistDir = "."
-	}
 	err := os.MkdirAll(PersistDir, 0755)
 	if err != nil {
 		log.Error(err)
