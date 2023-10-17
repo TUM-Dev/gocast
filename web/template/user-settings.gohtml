@@ -17,6 +17,8 @@
     <script src="static/assets/init.js"></script>
     <script src="/static/assets/ts-dist/global.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
 
+    <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
     <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
     <style>[x-cloak] {
@@ -35,7 +37,12 @@
 <main id="content" class="flex justify-center grow h-full overflow-y-scroll">
     <article class="tum-live-settings-grid" x-data=" { err: '' } ">
         <header>
-            <h1 class="font-bold text-3">Settings</h1>
+            <div class="flex flex-row justify-between">
+                <h1 class="font-bold text-3">Settings</h1>
+                <div class="h-fit w-fit">
+                    {{template "close-button"}}
+                </div>
+            </div>
         </header>
         <div x-cloak x-show="err!==''" class="bg-danger/25 text-sm rounded-lg px-2 py-1 space-x-3 py-2">
             <i class="fa-solid fa-triangle-exclamation"></i>
