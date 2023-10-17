@@ -151,10 +151,11 @@
                 Semesters
             </header>
             <span class="tum-live-side-navigation-group-item mb-4 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
-                  x-text="semesters[selectedSemesterIndex]?.FriendlyString()"></span>
+                  x-text="semesters[selectedSemesterIndex]?.FriendlyString()" x-show="!navigation.getChild('allSemesters').value"></span>
             <template x-if="navigation.getChild('allSemesters').value">
-                <template x-for="s in semesters">
+                <template x-for="(s, i) in semesters">
                     <button type="button" @click="switchSemester(s.Year, s.TeachingTerm)"
+                            :class="{'border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50': i == selectedSemesterIndex, }"
                             class="tum-live-side-navigation-group-item hover"
                             x-text="s.FriendlyString()"></button>
                 </template>
