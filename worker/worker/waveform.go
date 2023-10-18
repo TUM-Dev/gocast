@@ -2,8 +2,9 @@ package worker
 
 import (
 	"fmt"
-	uuid "github.com/iris-contrib/go.uuid"
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"github.com/TUM-Dev/gocast/worker/pb"
+	uuid "github.com/iris-contrib/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -27,7 +28,7 @@ func GetWaveform(request *pb.WaveformRequest) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	tempFile := "/tmp/" + v4.String() + ".png"
+	tempFile := pathprovider.WaveformTemp(v4.String())
 	c := []string{"ffmpeg", "-i", request.File,
 		"-filter_complex", fmt.Sprintf("aformat=channel_layouts=mono,showwavespic=s=%dx%d:filter=average:colors=white|white:scale=lin", waveFormWitdth, waveFormHeight),
 		"-frames:v", "1",

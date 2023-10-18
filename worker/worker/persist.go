@@ -3,6 +3,7 @@ package worker
 import (
 	"encoding/gob"
 	"errors"
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"os"
 	"sync"
@@ -21,7 +22,7 @@ type Persistable struct { // Persistable is a struct for all persistable objects
 	mutex     *sync.Mutex
 }
 
-const persistFileName = "/persist.gob"
+const persistFileName = pathprovider.PersistFileName
 
 // writeOut writes out the persistable object to disk
 func (p *Persistable) writeOut() error {
