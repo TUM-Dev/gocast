@@ -39,7 +39,7 @@ export function addNotifyEventListeners() {
     });
 
     window.addEventListener("notify2", () => {
-        //Removes the eventListener so that after import since user won't change anything no longer
+        //Removes the eventListener after import has been done since user won't change anything no longer
         window.removeEventListener("beforeunload", onBeforeUnloadHandle);
 
         fetch(`/api/course-schedule/${d.year}/${d.semester}`, {
