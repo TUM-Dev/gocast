@@ -3,6 +3,7 @@ package vmstat
 import (
 	"context"
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"github.com/icza/gox/fmtx"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -29,7 +30,7 @@ var (
 )
 
 func New() *VmStat {
-	return &VmStat{diskPath: "/"}
+	return &VmStat{diskPath: pathprovider.Root()}
 }
 
 func NewWithPath(path string) *VmStat {
@@ -67,7 +68,7 @@ func (s *VmStat) getCpu() error {
 }
 
 func (s *VmStat) getDisk() error {
-	usage, err := disk.Usage("/")
+	usage, err := disk.Usage(pathprovider.Root())
 	if err != nil {
 		return err
 	}
