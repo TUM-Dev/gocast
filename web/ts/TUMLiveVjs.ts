@@ -65,7 +65,7 @@ class PlayerSettings {
             let iOSReady;
             const t: number | undefined = +getQueryParam("t");
             this.player.on("loadedmetadata", () => {
-                if (!isNaN(t) && t) {
+                if (!isNaN(t)) {
                     this.player.currentTime(t);
                     console.log(`⚫️ jump to: ${t}`);
                 }
@@ -73,7 +73,7 @@ class PlayerSettings {
             if (videojs.browser.IS_IOS) {
                 this.player.on("canplaythrough", () => {
                     // Can be executed multiple times during playback
-                    if (!iOSReady && t) {
+                    if (!iOSReady) {
                         this.player.currentTime(t);
                         iOSReady = true;
                     }
