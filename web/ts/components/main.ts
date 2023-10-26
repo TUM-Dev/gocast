@@ -36,8 +36,9 @@ export function mainContext(year: number, term: string) {
                     if (this.userCourses.length > 0) {
                         if (this.pinnedCourses.length > 0) {
                             //
-                            let pinnedOrUserCourses : Course[] = this.userCourses.concat(
-                                this.pinnedCourses.filter((c : Course) => this.userCourses.indexOf(c) < 0));
+                            const pinnedOrUserCourses : Course[] = this.userCourses.concat(
+                                this.pinnedCourses.filter((c : Course) => this.userCourses.indexOf(c) < 0)
+                                );
                             this.recently.set(this.getRecently(pinnedOrUserCourses));
                             this.loadProgresses(pinnedOrUserCourses.map((c) => c.LastRecording.ID));
                         } else {
