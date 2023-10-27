@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -26,6 +26,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/name", routes.updatePreferredName)
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
+	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
@@ -617,6 +618,42 @@ func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func (r usersRoutes) updateCustomSpeeds(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+
+	var req struct{ Value []float32 }
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+	settingsString := "[]"
+	if len(req.Value) != 0 {
+		settingBytes, _ := json.Marshal(req.Value)
+		settingsString = string(settingBytes)
+	}
+	err := r.DaoWrapper.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.UserDefinedSpeeds, Value: settingsString})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+
 }
 
 func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {

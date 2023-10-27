@@ -32,7 +32,7 @@
         </a>
     </div>
 </header>
-<main id="content" class="flex justify-center grow h-full overflow-y-scroll">
+<main id="content" class="flex justify-center grow h-full overflow-y-scroll" )>
     <article class="tum-live-settings-grid" x-data=" { err: '' } ">
         <header>
             <h1 class="font-bold text-3">Settings</h1>
@@ -68,7 +68,7 @@
                    @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r;})">
             <label for="greeting2">Servus</label>
         </section>
-        <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetPlaybackSpeeds}} , editmode: false}">
+        <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetPlaybackSpeeds}}}">
             <h2>Playback Speeds</h2>
             <div class="flex flex-row">
                 <template x-for="ps in playbackspeeds">
@@ -80,28 +80,34 @@
                         </label>
                     </span>
                 </template>
-                <button @click="editmode = !editmode" class="tum-live-input-submit tum-live-button-primary p-1 text-sm">
-                    Edit speeds
-                </button>
             </div>
-            <div x-show="editmode">
-                <table>
-                    <template x-for="ps in playbackspeeds" :key="ps.speed">
-                        <tr>
-                            <td >
-                                <span x-text="ps.speed"></span>
-                            </td>
+        </section>
+        <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetCustomSpeeds}}, newSpeed: ''}">
+            <h2>Custom Speeds</h2>
+            <div class="flex flex-row">
+                <template x-for="ps in playbackspeeds">
+                    <span class="mr-2">
+                        <button class="tum-live-input-submit tum-live-button-tertiary p-1 text-sm" style="min-width: 5ch"
+                                x-text="ps"
+                                @click="playbackspeeds.splice(playbackspeeds.indexOf(ps), 1); global.updatePreference(global.UserSetting.CustomSpeeds, playbackspeeds);"></button>
+                    </span>
+                </template>
+                <style>
+                    input[type='number'] {
+                        -moz-appearance:textfield;
+                        outline: 0;
+                        border-color: #1f2937;
+                        border-width: 0 0 2px;
+                    }
 
-                            <td class="pl-5">
-                                <button class="bg-red-500 dark:bg-red-600 text-white text-sm px-1 rounded-full" x-show="ps.speed!==1" @click="playbackspeeds = global.removePlaybackSpeed(playbackspeeds, ps.speed);">
-                                    Remove
-                                </button>
-                            </td>
-                        </tr>
-                    </template>
-                </table>
+                    input::-webkit-outer-spin-button,
+                    input::-webkit-inner-spin-button {
+                        -webkit-appearance: none;
+                    }
+                </style>
+                <input x-model="newSpeed" type="number" min="0.01" max="5" maxlength="4" style="width: 7ch;" class="bg-transparent" @change="newSpeed = global.sanitizeInputSpeed(newSpeed)" placeholder="1.00">
+                <button class="tum-live-input-submit tum-live-button-primary p-1 text-sm ml-2 pl-2 pr-2" @click="newSpeed = global.sanitizeInputSpeed(newSpeed); if(global.checkInputSpeed(newSpeed, playbackspeeds)) {playbackspeeds.push(newSpeed); playbackspeeds.sort(); global.updatePreference(global.UserSetting.CustomSpeeds, playbackspeeds); newSpeed='';}">Add</button>
             </div>
-            <!--<button @click="playbackspeeds.push({speed: 41.00, enabled: true});">Test</button>-->
         </section>
         <section>
             <h2>Privacy & Data Protection</h2>
