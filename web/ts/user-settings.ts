@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import Alpine from 'alpinejs';
 
 const settingsAPIBaseURL = "/api/users/settings";
 
@@ -6,6 +7,8 @@ export enum UserSetting {
     Name = "name",
     Greeting = "greeting",
     PlaybackSpeeds = "playbackSpeeds",
+    CustomSpeeds = "customSpeeds",
+
 }
 
 export function updatePreference(t: UserSetting, value: string | boolean | number[]): Promise<string> {
@@ -24,16 +27,17 @@ export function updatePreference(t: UserSetting, value: string | boolean | numbe
     });
 }
 
-export function removePlaybackSpeed(playbackSpeeds : [{speed: number, enabled: boolean}], toRemove: number) : [{speed: number, enabled: boolean}] {
-    let index = -1;
-    for(let i = 0; i < playbackSpeeds.length; i++) {
-        if(playbackSpeeds[i].speed == toRemove) {
-            index = i;
-            break;
-        }
+export function sanitizeInputSpeed(value: number) : number {
+    if (value > 5) {
+        return 5;
+    } else if (value <= 0) {
+        return 0.01;
     }
-    if(index >= 0 && index < playbackSpeeds.length) {
-        delete playbackSpeeds[index];
-    }
-    return playbackSpeeds;
+    return Math.round((value) * 100) / 100
+}
+
+export function checkInputSpeed(value: number, currentSpeeds: number[]) {
+    const defaultSpeeds = [.25, .5, .75, 1, 1.5, 1.5, 1.75, 2, 2.5, 3, 3.5];
+    return (!defaultSpeeds.includes(value)) && (!currentSpeeds.includes(value));
+
 }
