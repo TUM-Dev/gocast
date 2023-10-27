@@ -323,11 +323,12 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let iOSReady = false;
         let intervalMillis = 10000;
         let jumpTo: number;
+        let tParam = +getQueryParam("t");
 
         // Fetch the user's video progress from the database and set the time in the player
         players[j].on("loadedmetadata", () => {
             duration = players[j].duration();
-            jumpTo = +getQueryParam("t") || lastProgress * duration;
+            jumpTo = isNaN(tParam) ? (lastProgress * duration) : tParam;
             players[j].currentTime(jumpTo);
         });
 
