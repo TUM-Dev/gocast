@@ -23,3 +23,17 @@ export function updatePreference(t: UserSetting, value: string | boolean | numbe
         }
     });
 }
+
+export function removePlaybackSpeed(playbackSpeeds : [{speed: number, enabled: boolean}], toRemove: number) : [{speed: number, enabled: boolean}] {
+    let index = -1;
+    for(let i = 0; i < playbackSpeeds.length; i++) {
+        if(playbackSpeeds[i].speed == toRemove) {
+            index = i;
+            break;
+        }
+    }
+    if(index >= 0 && index < playbackSpeeds.length) {
+        delete playbackSpeeds[index];
+    }
+    return playbackSpeeds;
+}
