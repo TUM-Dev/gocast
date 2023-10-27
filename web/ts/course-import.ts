@@ -28,7 +28,6 @@ function onBeforeUnloadHandle(e) {
     e.returnValue = ""; //Chrome requires returnValue to be set
 }
 
-
 // lecture hall selected -> api call
 export function addNotifyEventListeners() {
     window.addEventListener("notify1", () => {
@@ -47,7 +46,6 @@ export function addNotifyEventListeners() {
     });
 
     window.addEventListener("notify2", () => {
-
         fetch(`/api/course-schedule/${d.year}/${d.semester}`, {
             method: "POST",
             body: JSON.stringify({ courses: d.courses, optIn: d.optInOut === "Opt In" }),
