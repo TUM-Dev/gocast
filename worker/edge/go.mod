@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/TUM-Dev/gocast v1.4.10 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

@@ -41,6 +41,7 @@ require (
 )
 
 require (
+	github.com/TUM-Dev/gocast v1.4.10 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/google/pprof v0.0.0-20230811205829-9131a7e9cc17 // indirect
 	github.com/google/uuid v1.3.0 // indirect

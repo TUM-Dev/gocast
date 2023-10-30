@@ -1,25 +1,30 @@
 package pathprovider
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-const PersistFileName = "/persist.gob"
-
-// root will return the root directory path for linux or windows
-func root() string {
+// Root will return the root directory path for linux or windows
+func Root() string {
 	return os.Getenv("SystemDrive") + string(os.PathSeparator)
 }
 
 var (
 	TUMLiveTemporary = filepath.Join(os.TempDir(), "TUM-Live")
-	// worker configuration default paths
-	defaultWorkerTempDir    = filepath.Join(root(), "recordings")
-	defaultWorkerStorageDir = filepath.Join(root(), "mass")
-	defaultWorkerLogDir     = filepath.Join(root(), "var", "log", "stream")
+	// worker configuration paths
+	defaultWorkerTempDir    = filepath.Join(Root(), "recordings")
+	defaultWorkerStorageDir = filepath.Join(Root(), "mass")
+	defaultWorkerLogDir     = filepath.Join(Root(), "var", "log", "stream")
 	defaultWorkerPersistDir = "."
+	PersistFileName         = filepath.Join(Root(), "persist.gob")
+
+	// edge paths
+	defaultEdgeVodPath = filepath.Join(Root(), "vod")
+	EdgeCacheDir       = filepath.Join(os.TempDir(), "edge")
 )
 
 // LiveThumbnail creates path to thumbnail from streamID
@@ -37,27 +42,68 @@ func WaveformTemp(uuid string) string {
 	return filepath.Join(os.TempDir(), fmt.Sprintf("%s.png", uuid))
 }
 
-// ConfigureWorkerPaths returns the TempDir, StorageDir, LogDir and PersistDir paths in that order,
-// first tries env variables then resorts to defaults
-func ConfigureWorkerPaths() (string, string, string, string) {
+// CachedFile returns path to cached file
+func CachedFile(filename string) string {
+	return filepath.Join(EdgeCacheDir, filename)
+}
+
+// ConfigureWorkerPaths writes the TempDir, StorageDir, LogDir and PersistDir paths into the passed pointers,
+// first tries env variables then resorts to hardcoded defaults
+func ConfigureWorkerPaths(tempDir *string, storageDir *string, logDir *string, persistDir *string) {
 	//recordings will end up here before they are converted
-	tempDir := defaultWorkerTempDir
+	*tempDir = defaultWorkerTempDir
 
 	// recordings will end up here after they are converted
-	storageDir := os.Getenv("MassStorage")
-	if storageDir == "" {
-		storageDir = defaultWorkerStorageDir
+	*storageDir = os.Getenv("MassStorage")
+	if *storageDir == "" {
+		*storageDir = defaultWorkerStorageDir
 	}
 
 	//logging
-	logDir := os.Getenv("LogDir")
-	if logDir == "" {
-		logDir = defaultWorkerLogDir
+	*logDir = os.Getenv("LogDir")
+	if *logDir == "" {
+		*logDir = defaultWorkerLogDir
 	}
-	persistDir := os.Getenv("PersistDir")
-	if persistDir == "" {
-		persistDir = defaultWorkerPersistDir
+	*persistDir = os.Getenv("PersistDir")
+	if *persistDir == "" {
+		*persistDir = defaultWorkerPersistDir
 	}
 
-	return tempDir, storageDir, logDir, persistDir
+}
+
+// VodPath returns path to vod directory,
+// first tries env variables then resorts to hardcoded defaults
+func VodPath() string {
+	vodPath := os.Getenv("VOD_DIR")
+	if vodPath == "" {
+		vodPath = defaultEdgeVodPath
+	}
+
+	return vodPath
+}
+
+// CertDetails returns writes path to certificate and full chain name into the passed pointers,
+// returns error for logging purposes
+func CertDetails(fullChainName *string, privateKeyName *string) error {
+	dirPath := os.Getenv("CERT_DIR")
+	dir, err := os.ReadDir(dirPath)
+
+	if err != nil {
+		return errors.New(fmt.Sprint("[HTTPS] Skipping, could not read cert directory: ", err))
+	}
+
+	for _, entry := range dir {
+		if strings.HasSuffix(entry.Name(), "privkey.pem") {
+			*privateKeyName = filepath.Join(dirPath, entry.Name())
+		}
+		if strings.HasSuffix(entry.Name(), "fullchain.pem") {
+			*fullChainName = filepath.Join(dirPath, entry.Name())
+		}
+	}
+
+	if *privateKeyName == "" || *fullChainName == "" {
+		return errors.New("[HTTPS] Skipping, could not find privkey.pem or fullchain.pem in cert directory")
+	}
+
+	return nil
 }

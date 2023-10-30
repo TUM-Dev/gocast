@@ -37,7 +37,7 @@ func SetConfig() {
 		log.Fatal("Environment variable Token is not set")
 	}
 
-	TempDir, StorageDir, LogDir, PersistDir = pathprovider.ConfigureWorkerPaths()
+	pathprovider.ConfigureWorkerPaths(&TempDir, &StorageDir, &LogDir, &PersistDir)
 
 	LrzUser = os.Getenv("LrzUser")
 	LrzMail = os.Getenv("LrzMail")

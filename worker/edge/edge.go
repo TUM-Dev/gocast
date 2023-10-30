@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
@@ -265,31 +266,11 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTLS(mux *http.ServeMux) {
-	if os.Getenv(CertDirEnv) == "" {
-		return
-	}
+	var fullChainName, privateKeyName string
 
-	dir, err := os.ReadDir(os.Getenv(CertDirEnv))
-	privkeyName := ""
-	fullchainName := ""
+	err := pathprovider.CertDetails(&fullChainName, &privateKeyName)
 	if err != nil {
-		log.Println("[HTTPS] Skipping, could not read cert directory: ", err)
-	} else {
-		for _, entry := range dir {
-			if strings.HasSuffix(entry.Name(), "privkey.pem") {
-				privkeyName = path.Join(os.Getenv(CertDirEnv), entry.Name())
-			}
-			if strings.HasSuffix(entry.Name(), "fullchain.pem") {
-				fullchainName = path.Join(os.Getenv(CertDirEnv), entry.Name())
-			}
-		}
-	}
-	if privkeyName != "" && fullchainName != "" {
-		go func() {
-			log.Fatal(http.ListenAndServeTLS(":8443", fullchainName, privkeyName, mux))
-		}()
-	} else {
-		log.Println("[HTTPS] Skipping, could not find privkey.pem or fullchain.pem in cert directory")
+		log.Println(err)
 	}
 }
 
