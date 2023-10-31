@@ -22,11 +22,9 @@ type Persistable struct { // Persistable is a struct for all persistable objects
 	mutex     *sync.Mutex
 }
 
-const persistFileName = pathprovider.PersistFileName
-
 // writeOut writes out the persistable object to disk
 func (p *Persistable) writeOut() error {
-	f, err := os.OpenFile(cfg.PersistDir+persistFileName, os.O_RDWR|os.O_CREATE, 0666)
+	f, err := os.OpenFile(cfg.PersistDir+pathprovider.PersistFileName, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
@@ -38,7 +36,7 @@ func (p *Persistable) writeOut() error {
 // NewPersistable reads in the persistable object from disk and returns it
 func NewPersistable() (*Persistable, error) {
 	p := &Persistable{mutex: &sync.Mutex{}}
-	f, err := os.Open(cfg.PersistDir + persistFileName)
+	f, err := os.Open(cfg.PersistDir + pathprovider.PersistFileName)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			// create if not existing
