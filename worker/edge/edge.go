@@ -45,10 +45,6 @@ var originProto = "http://"
 
 var VersionTag = "dev"
 
-const CertDirEnv = "CERT_DIR"
-
-var vodPath = "/vod"
-
 // CORS header
 var allowedOrigin = "*"
 
@@ -72,10 +68,6 @@ func main() {
 	originProtoEnv := os.Getenv("ORIGIN_PROTO")
 	if originProtoEnv != "" {
 		originProto = originProtoEnv
-	}
-	vodPathEnv := os.Getenv("VOD_DIR")
-	if vodPathEnv != "" {
-		vodPath = vodPathEnv
 	}
 	allowedOriginEnv := os.Getenv("ALLOWED_ORIGIN")
 	if allowedOriginEnv != "" {
@@ -111,7 +103,7 @@ func ServeEdge(port string) {
 	}()
 
 	mux := http.NewServeMux()
-	vodFileServer = http.FileServer(http.Dir(vodPath))
+	vodFileServer = http.FileServer(http.Dir(pathprovider.VodPath()))
 	mux.HandleFunc("/vod/", vodHandler)
 	mux.HandleFunc("/", edgeHandler)
 
@@ -227,7 +219,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 				r.URL.Path = upath
 			}
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
-			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
+			f, err := os.Open(path.Join(pathprovider.VodPath(), path.Clean(r.URL.Path)))
 
 			if err != nil {
 				err404Playlists.WithLabelValues(claims.StreamID, claims.Playlist).Inc()
@@ -314,13 +306,13 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		_, _ = writer.Write([]byte("502 - Bad Gateway"))
 		return
 	}
-	http.ServeFile(writer, request, cacheDir+"/"+urlParts[2])
+	http.ServeFile(writer, request, pathprovider.CachedFile(urlParts[2]))
 }
 
 // fetchFile fetches a file from the origin tumlive and persists it in the cache directory.
 // if the file is already in the cache, it is not fetched again.
 func fetchFile(host, file string) error {
-	diskDir := cacheDir + "/" + file
+	diskDir := pathprovider.CachedFile(file)
 	// check if file is already in cache
 	cacheLock.Lock()
 	_, ok := cachedFiles[diskDir]
@@ -376,9 +368,6 @@ func fetchFile(host, file string) error {
 	cacheLock.Unlock()
 	return nil
 }
-
-const cacheDir = "/tmp/edge"
-
 func cleanup() {
 	// find files older than one hour:
 	log.Println("Cleaning up cache")
@@ -408,11 +397,11 @@ func prepare() {
 	}
 	log.Println("FFmpeg version: ", string(output))
 	// Empty cache on startup:
-	err = os.RemoveAll(cacheDir)
+	err = os.RemoveAll(pathprovider.EdgeCacheDir)
 	if err != nil {
 		log.Printf("Could not empty cache directory: %v", err)
 	}
-	err = os.MkdirAll(cacheDir, os.ModePerm)
+	err = os.MkdirAll(pathprovider.EdgeCacheDir, os.ModePerm)
 	if err != nil {
 		log.Fatal("Could not create cache directory for edge requests: ", err)
 	}
