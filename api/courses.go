@@ -1234,8 +1234,13 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
-		streamKey := uuid.NewV4().String()
-		streamKey = strings.ReplaceAll(streamKey, "-", "")
+		// When defined use course wide stream key
+		var streamKey string
+		if tumLiveContext.Course.StreamKey == "" {
+			streamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+		} else {
+			streamKey = tumLiveContext.Course.StreamKey
+		}
 
 		lecture := model.Stream{
 			Name:          req.Title,
