@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"html/template"
@@ -98,12 +98,20 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			if err == nil {
 				eventID = uint(eventIDInt)
 			}
+
+			// When defined use course wide stream key
+			var streamKey string
+			if course.StreamKey == "" {
+				streamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15]
+			} else {
+				streamKey = course.StreamKey
+			}
 			streams = append(streams, model.Stream{
 				Start:            event.Start,
 				End:              event.End,
 				RoomName:         event.RoomName,
 				LectureHallID:    lectureHall.ID,
-				StreamKey:        strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				StreamKey:        streamKey,
 				TUMOnlineEventID: eventID,
 			})
 		}

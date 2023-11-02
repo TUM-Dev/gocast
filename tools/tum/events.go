@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/antchfx/xmlquery"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/antchfx/xmlquery"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -92,6 +92,13 @@ func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 			stream, err := daoWrapper.StreamsDao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
 			if err != nil { // Lecture does not exist yet
 				log.Info("Adding course")
+				// When defined use course wide stream key
+				var streamKey string
+				if course.StreamKey == "" {
+					streamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+				} else {
+					streamKey = course.StreamKey
+				}
 				course.Streams = append(course.Streams, model.Stream{
 					CourseID:         course.ID,
 					Start:            event.Start,
@@ -100,7 +107,7 @@ func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 					RoomCode:         event.RoomCode,
 					EventTypeName:    event.SingleEventTypeName,
 					TUMOnlineEventID: event.SingleEventID,
-					StreamKey:        strings.ReplaceAll(uuid.NewV4().String(), "-", ""),
+					StreamKey:        streamKey,
 					PlaylistUrl:      "",
 					LiveNow:          false,
 				})
