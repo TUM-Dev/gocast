@@ -1,3 +1,4 @@
+// Package pathprovider provides file paths in an OS-agnostic manner.
 package pathprovider
 
 import (
@@ -47,6 +48,17 @@ func CachedFile(filename string) string {
 	return filepath.Join(EdgeCacheDir, filename)
 }
 
+// VodPath returns path to vod directory,
+// first tries env variables then resorts to hardcoded defaults
+func VodPath() string {
+	vodPath := os.Getenv("VOD_DIR")
+	if vodPath == "" {
+		vodPath = defaultEdgeVodPath
+	}
+
+	return vodPath
+}
+
 // ConfigureWorkerPaths writes the TempDir, StorageDir, LogDir and PersistDir paths into the passed pointers,
 // first tries env variables then resorts to hardcoded defaults
 func ConfigureWorkerPaths(tempDir *string, storageDir *string, logDir *string, persistDir *string) {
@@ -69,17 +81,6 @@ func ConfigureWorkerPaths(tempDir *string, storageDir *string, logDir *string, p
 		*persistDir = defaultWorkerPersistDir
 	}
 
-}
-
-// VodPath returns path to vod directory,
-// first tries env variables then resorts to hardcoded defaults
-func VodPath() string {
-	vodPath := os.Getenv("VOD_DIR")
-	if vodPath == "" {
-		vodPath = defaultEdgeVodPath
-	}
-
-	return vodPath
 }
 
 // CertDetails returns writes path to certificate and full chain name into the passed pointers,
