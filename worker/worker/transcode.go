@@ -3,6 +3,7 @@ package worker
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
@@ -14,6 +15,58 @@ import (
 	"strings"
 	"time"
 )
+
+type InfoForAudioNormalization struct {
+	InputI            string `json:"input_i"`
+	InputTp           string `json:"input_tp"`
+	InputLra          string `json:"input_lra"`
+	InputThresh       string `json:"input_thresh"`
+	OutputI           string `json:"output_i"`
+	OutputTp          string `json:"output_tp"`
+	OutputLra         string `json:"output_lra"`
+	OutputThresh      string `json:"output_thresh"`
+	NormalizationType string `json:"normalization_type"`
+	TargetOffset      string `json:"target_offset"`
+}
+
+func getInfoForAudioNormalization(niceness int, mediaFilename string) (*InfoForAudioNormalization, error) {
+	c := []string{
+		"-n", fmt.Sprintf("%d", niceness),
+		"ffmpeg", "-nostats", "-y",
+		"-i", mediaFilename,
+		// The selection of loudnorm parameters follows the EBU R128 standard
+		"-af", "loudnorm=I=-23:TP=-2:LRA=7:print_format=json",
+		"-f", "null", "-"}
+	cmd := exec.Command("nice", c...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(string(output), "\n")
+	strOfJson := "{"
+	shouldAppendToStrOfJson := false
+	for _, str := range lines {
+		if shouldAppendToStrOfJson {
+			strOfJson += str
+		}
+		if str == "{" {
+			shouldAppendToStrOfJson = true
+		} else if str == "}" {
+			shouldAppendToStrOfJson = false
+		}
+	}
+	jsonData := []byte(strOfJson)
+
+	var info InfoForAudioNormalization
+
+	err = json.Unmarshal(jsonData, &info)
+	if err != nil {
+		return nil, err
+	}
+
+	return &info, nil
+}
 
 func buildCommand(niceness int, infile string, outfile string, tune string, crf int) *exec.Cmd {
 	c := []string{
