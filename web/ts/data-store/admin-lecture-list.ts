@@ -1,14 +1,7 @@
 import { StreamableMapProvider } from "./provider";
-import {
-    AdminLectureList,
-    Lecture,
-    LectureFile,
-    UpdateLectureMetaRequest,
-    VideoSection,
-    videoSectionSort,
-} from "../api/admin-lecture-list";
+import { AdminLectureList, Lecture, LectureFile, UpdateLectureMetaRequest } from "../api/admin-lecture-list";
 import { FileType } from "../edit-course";
-import { PostFormDataListener } from "../utilities/fetch-wrappers";
+import { UploadFileListener } from "../global";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -33,8 +26,6 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         const result = await AdminLectureList.get(courseId);
         return result.map((s) => {
             s.hasAttachments = (s.files || []).some((f) => f.fileType === FileType.attachment);
-
-            s.videoSections = (s.videoSections ?? []).sort(videoSectionSort);
 
             s.startDate = new Date(s.start);
             s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);
@@ -176,59 +167,12 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async addSections(courseId: number, lectureId: number, videoSections: VideoSection[]) {
-        const newSections = await AdminLectureList.addSections(lectureId, videoSections);
-
-        this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
-                return {
-                    ...s,
-                    videoSections: [...s.videoSections, ...newSections],
-                };
-            }
-            return s;
-        });
-        await this.triggerUpdate(courseId);
-    }
-
-    async updateSection(courseId: number, lectureId: number, videoSection: VideoSection) {
-        await AdminLectureList.updateSection(lectureId, videoSection);
-
-        this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
-                return {
-                    ...s,
-                    videoSections: [...s.videoSections.filter((a) => a.id !== videoSection.id), videoSection].sort(
-                        videoSectionSort,
-                    ),
-                };
-            }
-            return s;
-        });
-        await this.triggerUpdate(courseId);
-    }
-
-    async deleteSection(courseId: number, lectureId: number, videoSectionId: number) {
-        await AdminLectureList.deleteSection(lectureId, videoSectionId);
-
-        this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
-                return {
-                    ...s,
-                    videoSections: [...s.videoSections.filter((a) => a.id !== videoSectionId)].sort(videoSectionSort),
-                };
-            }
-            return s;
-        });
-        await this.triggerUpdate(courseId);
-    }
-
     async uploadVideo(
         courseId: number,
         lectureId: number,
         videoType: string,
         file: File,
-        listener: PostFormDataListener = {},
+        listener: UploadFileListener = {},
     ) {
         await AdminLectureList.uploadVideo(courseId, lectureId, videoType, file, listener);
     }

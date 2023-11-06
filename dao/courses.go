@@ -201,7 +201,6 @@ func (d coursesDao) GetCourseByToken(token string) (course model.Course, err err
 func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.TranscodingProgresses").
-		Preload("Streams.VideoSections").
 		Preload("Streams.Files").
 		Preload("Streams", func(db *gorm.DB) *gorm.DB {
 			return db.Order("streams.start desc")
@@ -219,7 +218,7 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 		return cachedCourses.(model.Course), nil
 	}
 	var course model.Course
-	err := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
+	err := DB.Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start desc")

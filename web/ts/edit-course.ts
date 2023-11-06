@@ -1,4 +1,4 @@
-import { patchData, postData, putData, sendFormData } from "./global";
+import { Delete, patchData, postData, putData, sendFormData, showMessage, uploadFile } from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
@@ -8,16 +8,10 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    VideoSection,
-    videoSectionFriendlyTimestamp,
-    videoSectionHasChanged,
-    videoSectionListDelta,
-    videoSectionSort,
-    videoSectionTimestamp,
+    LectureVideoTypes,
 } from "./api/admin-lecture-list";
-import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
+import { ChangeSet, ignoreKeys } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
-import { uploadFile } from "./utilities/fetch-wrappers";
 
 export enum UIEditMode {
     none,
@@ -120,29 +114,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
-            const customComparator = comparatorPipeline([
-                ignoreKeys(["files"]),
-                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
-                    // List length differs, something was removed or added
-                    if (a.videoSections.length !== b.videoSections.length) {
-                        return true;
-                    }
-
-                    // List length is the same but items do have no id, so they are new.
-                    if (
-                        a.videoSections.some(({ id }) => id === undefined) ||
-                        b.videoSections.some(({ id }) => id === undefined)
-                    ) {
-                        return true;
-                    }
-
-                    // A section has edited and different information now
-                    return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
-                }),
-            ]);
-
             // This tracks changes that are not saved yet
-            this.changeSet = new ChangeSet<Lecture>(lecture, customComparator, (data, dirtyState) => {
+            this.changeSet = new ChangeSet<Lecture>(lecture, ignoreKeys(["files"]), (data, dirtyState) => {
                 this.lectureData = data;
                 this.isDirty = dirtyState.isDirty;
             });
@@ -218,67 +191,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
         },
 
-        friendlySectionTimestamp(section: VideoSection): string {
-            return videoSectionFriendlyTimestamp(section);
-        },
-
-        getSectionKey(section: VideoSection): string {
-            return section.id ? `sid_${section.id}` : section.key;
-        },
-
-        genPseudoSectionKey(): string {
-            return `sts_${new Date().getTime()}`;
-        },
-
-        addSection(section: VideoSection) {
-            this.changeSet.patch(
-                "videoSections",
-                [
-                    ...this.lectureData.videoSections,
-                    {
-                        ...section,
-                        key: this.genPseudoSectionKey(),
-                    },
-                ].sort(videoSectionSort),
-            );
-        },
-
-        updateSection(section: VideoSection) {
-            const sectionKey = this.getSectionKey(section);
-            this.changeSet.patch(
-                "videoSections",
-                [...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)), section].sort(
-                    videoSectionSort,
-                ),
-            );
-        },
-
-        deleteSection(section) {
-            const sectionKey = this.getSectionKey(section);
-            this.changeSet.patch("videoSections", [
-                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
-            ]);
-        },
-
-        isValidVideoSection(section: VideoSection): boolean {
-            const sectionKey = this.getSectionKey(section);
-            const hasValidTime = !this.lectureData.videoSections.some(
-                (s) =>
-                    videoSectionTimestamp(s) == videoSectionTimestamp(section) && sectionKey != this.getSectionKey(s),
-            );
-
-            return (
-                section.description !== "" &&
-                section.startHours !== null &&
-                section.startHours < 32 &&
-                section.startMinutes !== null &&
-                section.startMinutes < 60 &&
-                section.startSeconds !== null &&
-                section.startSeconds < 60 &&
-                hasValidTime
-            );
-        },
-
         deleteLecture() {
             DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
         },
@@ -317,8 +229,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } =
-                this.lectureData;
+            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled } = this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
             try {
@@ -334,22 +245,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         saveSeries: this.uiEditMode === UIEditMode.series,
                     },
                 });
-
-                // Saving VideoSections
-                if (changedKeys.includes("videoSections")) {
-                    const oldVideoSections = this.changeSet.getValue("videoSections", { lastCommittedState: true });
-                    const delta = videoSectionListDelta(oldVideoSections, videoSections);
-
-                    if (delta.toAdd.length > 0) {
-                        await DataStore.adminLectureList.addSections(courseId, lectureId, delta.toAdd);
-                    }
-                    for (const section of delta.toUpdate) {
-                        await DataStore.adminLectureList.updateSection(courseId, lectureId, section);
-                    }
-                    for (const section of delta.toDelete) {
-                        await DataStore.adminLectureList.deleteSection(courseId, lectureId, section.id);
-                    }
-                }
 
                 // Uploading new videos
                 for (const videoFile of this.videoFiles) {

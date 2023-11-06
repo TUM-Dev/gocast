@@ -80,82 +80,6 @@ export const LectureVideoTypes = [
     LectureVideoTypeCam,
 ] as LectureVideoType[];
 
-export type VideoSection = {
-    id?: number;
-    description: string;
-
-    startHours: number;
-    startMinutes: number;
-    startSeconds: number;
-
-    //Pseudo Fields
-    key?: string;
-};
-
-export type VideoSectionDelta = {
-    toAdd: VideoSection[];
-    toUpdate: VideoSection[];
-    toDelete: VideoSection[];
-};
-
-// Checks if two video sections have the same id but different data
-export function videoSectionHasChanged(a: VideoSection, b: VideoSection) {
-    return a.id === b.id && (a.description !== b.description || videoSectionTimestamp(a) !== videoSectionTimestamp(b));
-}
-
-export function videoSectionGenKey(section: VideoSection): string {
-    if (section.id != null) {
-        return `sid_${section.id}`;
-    }
-    return `sts_${new Date().getTime()}`;
-}
-
-export function videoSectionListDelta(oldSections: VideoSection[], newSections: VideoSection[]): VideoSectionDelta {
-    const sectionsToAdd = [];
-    const sectionsToUpdate = [];
-    const sectionsToDelete = [];
-
-    for (const section of newSections) {
-        // New Section
-        if (section.id === undefined) {
-            sectionsToAdd.push(section);
-            continue;
-        }
-
-        // Updating Video Sections
-        const oldVideoSection = oldSections.find((oldSection: VideoSection) => oldSection.id === section.id);
-        if (videoSectionHasChanged(section, oldVideoSection)) {
-            sectionsToUpdate.push(section);
-        }
-    }
-    for (const section of oldSections) {
-        // Deleted Sections
-        if (!newSections.some(({ id }) => section.id === id)) {
-            sectionsToDelete.push(section);
-        }
-    }
-
-    return {
-        toAdd: sectionsToAdd,
-        toUpdate: sectionsToUpdate,
-        toDelete: sectionsToDelete,
-    };
-}
-
-export function videoSectionFriendlyTimestamp(a: VideoSection): string {
-    return `${a.startHours.toString().padStart(2, "0")}:${a.startMinutes.toString().padStart(2, "0")}:${a.startSeconds
-        .toString()
-        .padStart(2, "0")}`;
-}
-
-export function videoSectionTimestamp(a: VideoSection): number {
-    return a.startHours * 3600 + a.startMinutes * 60 + a.startSeconds;
-}
-
-export function videoSectionSort(a: VideoSection, b: VideoSection): number {
-    return videoSectionTimestamp(a) - videoSectionTimestamp(b);
-}
-
 export interface Lecture {
     color: string;
     courseId: number;
@@ -179,7 +103,6 @@ export interface Lecture {
     start: string;
     streamKey: string;
     transcodingProgresses: TranscodingProgress[];
-    videoSections: VideoSection[];
 
     // Clientside computed fields
     hasAttachments: boolean;
@@ -279,48 +202,6 @@ export const AdminLectureList = {
      */
     saveSeriesMetadata: async (courseId: number, lectureId: number): Promise<void> => {
         await post(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
-    },
-
-    /**
-     * Add sections to a lecture
-     * @param lectureId
-     * @param sections
-     */
-    addSections: async (lectureId: number, sections: VideoSection[]): Promise<VideoSection[]> => {
-        const result = await post(
-            `/api/stream/${lectureId}/sections`,
-            sections.map((s) => ({
-                ...s,
-                streamID: lectureId,
-            })),
-        );
-        return result.json();
-    },
-
-    /**
-     * Updates a section
-     * @param lectureId
-     * @param section
-     */
-    updateSection: async (lectureId: number, section: VideoSection): Promise<void> => {
-        const res = await put(`/api/stream/${lectureId}/sections/${section.id}`, {
-            Description: section.description,
-            StartHours: section.startHours,
-            StartMinutes: section.startMinutes,
-            StartSeconds: section.startSeconds,
-        });
-        if (res.status !== StatusCodes.OK) {
-            throw Error(res.body.toString());
-        }
-    },
-
-    /**
-     * Delete a section from a lecture
-     * @param lectureId
-     * @param sectionId
-     */
-    deleteSection: async (lectureId: number, sectionId: number): Promise<void> => {
-        await del(`/api/stream/${lectureId}/sections/${sectionId}`);
     },
 
     /**

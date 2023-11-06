@@ -5,7 +5,7 @@
     }">
         <form class="form-container-body" id="course-settings-form" method="post" @submit.prevent="
                 async () => {
-                    if((new admin.LectureList({{.ID}})).hasIndividualChatEnabledSettings()){
+                    if(admin.LectureList.hasIndividualChatEnabledSettings()){
                        showCourseSettingsModal = true;
                     }
                     else{

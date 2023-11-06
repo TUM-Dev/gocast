@@ -55,7 +55,7 @@ export interface DirtyState {
 export class ChangeSet<T> {
     private state: T;
     private changeState: T;
-    private readonly comparator?: PropertyComparator<T>;
+    private readonly comparator?: LectureComparator<T>;
     private onUpdate: ((changeState: T, dirtyState: DirtyState) => void)[];
 
     constructor(
@@ -83,18 +83,6 @@ export class ChangeSet<T> {
      */
     removeListener(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
         this.onUpdate = this.onUpdate.filter((o) => o !== onUpdate);
-    }
-
-    /**
-     * Returns a key from the change-state or the last committed state if flag is set
-     * @param key key to return
-     * @param lastCommittedState if set to true, value of the last committed state is returned
-     */
-    getValue(key: string, { lastCommittedState = false }): T {
-        if (lastCommittedState) {
-            return this.state[key];
-        }
-        return this.changeState[key];
     }
 
     /**
@@ -223,36 +211,12 @@ export class ChangeSet<T> {
     }
 }
 
-export type PropertyComparator<T> = (key: string, a: T, b: T) => boolean | null;
-export type SinglePropertyComparator<T> = (a: T, b: T) => boolean | null;
+export type LectureComparator<T> = (key: string, a: T, b: T) => boolean | null;
 
-export function ignoreKeys<T>(list: string[]): PropertyComparator<T> {
+export function ignoreKeys<T>(list: string[]): LectureComparator<T> {
     return (key: string, a, b) => {
         if (list.includes(key)) {
             return false;
-        }
-        return null;
-    };
-}
-
-export function singleProperty<T>(key: string, comparator: SinglePropertyComparator<T>): PropertyComparator<T> {
-    return (_key: string, a, b) => {
-        if (_key !== key) {
-            return null;
-        }
-        return comparator(a, b);
-    };
-}
-
-export function comparatorPipeline<T>(list: PropertyComparator<T>[]): PropertyComparator<T> {
-    return (key: string, a, b) => {
-        for (const comparator of list) {
-            const res = comparator(key, a, b);
-            if (res === true) {
-                return true;
-            } else if (res === false) {
-                return false;
-            }
         }
         return null;
     };

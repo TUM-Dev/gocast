@@ -13,4 +13,4 @@ export * from "../courseAdminManagement";
 export * from "../notification-management";
 export * from "../audits";
 export * from "../maintenance";
-export * from "../change-set";
+export { VideoSectionsAdminController, VideoSectionUpdater } from "../video-sections";

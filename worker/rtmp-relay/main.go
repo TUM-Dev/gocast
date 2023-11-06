@@ -20,7 +20,7 @@ type AuthReq struct {
 	Query    string      `json:"query"`
 }
 
-// this is an authentication app that replies with 200 if the publishing path is in the VALID_PATHS env var, >= 400 otherwise
+// this is an authentication app that replies with 200 if the publishing path is in the VALID_PATHS env var, >= 4ßß otherwise
 func main() {
 	validPaths := strings.Split(os.Getenv("VALID_PATHS"), ",")
 	fmt.Printf("Valid paths: %s\n", validPaths)
