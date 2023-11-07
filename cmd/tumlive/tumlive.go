@@ -2,19 +2,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/dgraph-io/ristretto"
-	"github.com/getsentry/sentry-go"
-	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/web"
+	"github.com/dgraph-io/ristretto"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/profile"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"net/http"
@@ -67,7 +66,7 @@ func GinServer() (err error) {
 	//err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Fatal("Error starting tumlive")
+		logger.Error("Error starting tumlive", "err", err)
 	}
 	return
 }
@@ -85,7 +84,7 @@ func main() {
 	}()
 
 	// log with time, fmt "23.09.2021 10:00:00"
-	log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
+	//log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 
 	web.VersionTag = VersionTag
 	osSignal = make(chan os.Signal, 1)
@@ -104,7 +103,7 @@ func main() {
 			Environment:      env,
 		})
 		if err != nil {
-			log.Fatalf("sentry.Init: %s", err)
+			logger.Error("sentry.Init", "err", err)
 		}
 		// Flush buffered events before the program terminates.
 		defer sentry.Flush(2 * time.Second)
@@ -124,13 +123,13 @@ func main() {
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
-		log.Fatalf("%v", err)
+		logger.Error("Error opening database", "err", err)
 	}
 	dao.DB = db
 
 	err = dao.Migrator.RunBefore(db)
 	if err != nil {
-		log.Error(err)
+		logger.Error("Error running before db", "err", err)
 		return
 	}
 
@@ -172,11 +171,11 @@ func main() {
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
-		log.WithError(err).Fatal("can't migrate database")
+		logger.Error("can't migrate database", "err", err)
 	}
 	err = dao.Migrator.RunAfter(db)
 	if err != nil {
-		log.Error(err)
+		logger.Error("Error running after db", "err", err)
 		return
 	}
 
@@ -191,7 +190,7 @@ func main() {
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
-		log.Fatalf("%v", err)
+		logger.Error("Error risretto.NewCache", "err", err)
 	}
 	dao.Cache = *cache
 
@@ -207,7 +206,7 @@ func main() {
 		if err != nil {
 			sentry.CaptureException(err)
 			sentry.Flush(time.Second * 5)
-			log.WithError(err).Fatal("can't launch gin server")
+			logger.Error("can't launch gin server", "err", err)
 		}
 	}()
 	keepAlive()
@@ -236,5 +235,5 @@ func initCron() {
 func keepAlive() {
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 	s := <-osSignal
-	log.Infof("Exiting on signal %s", s.String())
+	logger.Info("Exiting on signal" + s.String())
 }
