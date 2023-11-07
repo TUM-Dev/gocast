@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/antchfx/xmlquery"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/antchfx/xmlquery"
 )
 
 func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
@@ -34,7 +33,7 @@ func FetchCourses(daoWrapper dao.DaoWrapper) func() {
 		y, t := GetCurrentSemester()
 		courses, err := daoWrapper.CoursesDao.GetAllCoursesWithTUMIDFromSemester(context.Background(), y, t)
 		if err != nil {
-			log.WithError(err).Error("Could not get courses with TUM online identifier:", err)
+			logger.Error("Could not get courses with TUM online identifier:", "err", err)
 			return
 		}
 		FindStudentsForCourses(courses, daoWrapper.UsersDao)

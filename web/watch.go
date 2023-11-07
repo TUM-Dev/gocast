@@ -2,13 +2,12 @@ package web
 
 import (
 	"errors"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"html/template"
 	"net/http"
@@ -22,7 +21,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	var data WatchPageData
 	err := data.Prepare(c, r.LectureHallsDao)
 	if err != nil {
-		log.WithError(err).Error("Can't prepare data for watch page")
+		logger.Error("Can't prepare data for watch page", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
@@ -39,7 +38,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, false)
 	}
 	if err != nil {
-		log.WithError(err).Warn("Can't sign playlists")
+		logger.Warn("Can't sign playlists", "err", err)
 	}
 	data.IndexData.TUMLiveContext = tumLiveContext
 	data.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
@@ -88,7 +87,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				log.WithError(err).Warn("Couldn't fetch progress from the database.")
+				logger.Warn("Couldn't fetch progress from the database.", "err", err)
 			}
 		} else if len(progress) > 0 {
 			data.Progress = progress[0]
@@ -112,12 +111,12 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	if c.Query("video_only") == "1" {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
 		if err != nil {
-			log.Printf("couldn't render template: %v\n", err)
+			logger.Error("couldn't render template", "err", err)
 		}
 	} else {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", data)
 		if err != nil {
-			log.Printf("couldn't render template: %v\n", err)
+			logger.Error("couldn't render template", "err", err)
 		}
 	}
 }

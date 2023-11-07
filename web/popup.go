@@ -2,10 +2,9 @@ package web
 
 import (
 	"errors"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/TUM-Dev/gocast/tools"
-	"log"
 	"net/http"
 )
 
@@ -26,6 +25,6 @@ func (r mainRoutes) PopOutChat(c *gin.Context) {
 
 	err := templateExecutor.ExecuteTemplate(c.Writer, "popup-chat.gohtml", data)
 	if err != nil {
-		log.Printf("couldn't render template: %v\n", err)
+		logger.Error("couldn't render template popup-chat.gohtml", "err", err)
 	}
 }
