@@ -29,26 +29,32 @@ type InfoForAudioNormalization struct {
 	TargetOffset      string `json:"target_offset"`
 }
 
+const (
+	// The selection of loudnorm parameters follows the EBU R128 standard
+	loudnormConfig = "I=-23:TP=-2:LRA=7"
+)
+
 func getInfoForAudioNormalization(niceness int, mediaFilename string) (*InfoForAudioNormalization, error) {
 	c := []string{
 		"-n", fmt.Sprintf("%d", niceness),
 		"ffmpeg", "-nostats", "-y",
 		"-i", mediaFilename,
-		// The selection of loudnorm parameters follows the EBU R128 standard
-		"-af", "loudnorm=I=-23:TP=-2:LRA=7:print_format=json",
+		"-af", "loudnorm=" + loudnormConfig + ":print_format=json",
 		"-f", "null", "-"}
 	cmd := exec.Command("nice", c...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		log.WithFields(log.Fields{"input": mediaFilename, "command": cmd.String()}).
+			Warn("Failed to get information for audio normalization")
 		return nil, err
 	}
 
 	lines := strings.Split(string(output), "\n")
-	strOfJson := "{"
+	jsonStr := "{"
 	shouldAppendToStrOfJson := false
 	for _, str := range lines {
 		if shouldAppendToStrOfJson {
-			strOfJson += str
+			jsonStr += str
 		}
 		if str == "{" {
 			shouldAppendToStrOfJson = true
@@ -56,7 +62,7 @@ func getInfoForAudioNormalization(niceness int, mediaFilename string) (*InfoForA
 			shouldAppendToStrOfJson = false
 		}
 	}
-	jsonData := []byte(strOfJson)
+	jsonData := []byte(jsonStr)
 
 	var info InfoForAudioNormalization
 
@@ -68,7 +74,7 @@ func getInfoForAudioNormalization(niceness int, mediaFilename string) (*InfoForA
 	return &info, nil
 }
 
-func buildCommand(niceness int, infile string, outfile string, tune string, crf int) *exec.Cmd {
+func buildCommand(niceness int, infile string, outfile string, tune string, crf int, audioNormInfo *InfoForAudioNormalization) *exec.Cmd {
 	c := []string{
 		"-n", fmt.Sprintf("%d", niceness),
 		"ffmpeg", "-nostats", "-loglevel", "error", "-y",
@@ -77,6 +83,11 @@ func buildCommand(niceness int, infile string, outfile string, tune string, crf 
 		"-vsync", "2", "-c:v", "libx264", "-level", "4.0", "-movflags", "+faststart"}
 	if tune != "" {
 		c = append(c, "-tune", tune)
+	}
+	if audioNormInfo != nil {
+		c = append(c, "-af", fmt.Sprintf(
+			"loudnorm="+loudnormConfig+":measured_i=%s:measured_tp=%s:measured_lra=%s:measured_thresh=%s:offset=%s:linear=true",
+			audioNormInfo.InputI, audioNormInfo.InputTp, audioNormInfo.InputLra, audioNormInfo.InputThresh, audioNormInfo.TargetOffset))
 	}
 	c = append(c, "-c:a", "aac", "-b:a", "128k", "-crf", fmt.Sprintf("%d", crf), outfile)
 	return exec.Command("nice", c...)
@@ -117,17 +128,20 @@ func transcode(streamCtx *StreamContext) error {
 	}
 
 	out := streamCtx.getTranscodingFileName()
+
+	audioNormInfo, err := getInfoForAudioNormalization(10, in)
+
 	switch streamCtx.streamVersion {
 	case "CAM":
 		// compress camera image slightly more
-		cmd = buildCommand(10, in, out, "", 26)
+		cmd = buildCommand(10, in, out, "", 26, audioNormInfo)
 	case "PRES":
-		cmd = buildCommand(9, in, out, "stillimage", 20)
+		cmd = buildCommand(9, in, out, "stillimage", 20, audioNormInfo)
 	case "COMB":
-		cmd = buildCommand(8, in, out, "", 24)
+		cmd = buildCommand(8, in, out, "", 24, audioNormInfo)
 	default:
 		//unknown source, use higher compression and less priority
-		cmd = buildCommand(10, in, out, "", 26)
+		cmd = buildCommand(10, in, out, "", 26, audioNormInfo)
 	}
 	log.WithFields(log.Fields{"input": in, "output": out, "command": cmd.String()}).Info("Transcoding")
 	streamCtx.transcodingCmd = cmd
