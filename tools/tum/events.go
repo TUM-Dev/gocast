@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/antchfx/xmlquery"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/antchfx/xmlquery"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
@@ -32,12 +31,12 @@ func getEventsForCourse(courseID string, token string) (events map[time.Time]Eve
 		start, timeErr1 := time.ParseInLocation("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtstart']").InnerText(), tools.Loc)
 		end, timeErr2 := time.ParseInLocation("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtend']").InnerText(), tools.Loc)
 		if timeErr1 != nil || timeErr2 != nil {
-			log.WithFields(log.Fields{"timeErr1": timeErr1, "timeErr2": timeErr2}).Warn("getEventsForCourse: couldn't parse time")
+			logger.Warn("getEventsForCourse: couldn't parse time", "timeErr1", timeErr1, "timeErr2", timeErr2)
 			break
 		}
 		eventID64, err := strconv.Atoi(xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='singleEventID']").InnerText())
 		if err != nil {
-			log.WithField("TUMOnlineCourseID", courseID).WithError(err).Error("getEventsForCourse: EventID not an int")
+			logger.Error("getEventsForCourse: EventID not an int", "err", err, "TUMOnlineCourseID", courseID)
 			break
 		}
 		var eventTypeName, status, roomCode, roomName string
@@ -91,7 +90,7 @@ func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 		for _, event := range events {
 			stream, err := daoWrapper.StreamsDao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
 			if err != nil { // Lecture does not exist yet
-				log.Info("Adding course")
+				logger.Info("Adding course")
 				course.Streams = append(course.Streams, model.Stream{
 					CourseID:         course.ID,
 					Start:            event.Start,
@@ -114,7 +113,7 @@ func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 		}
 		err = daoWrapper.CoursesDao.UpdateCourse(context.Background(), course)
 		if err != nil {
-			log.WithError(err).WithField("CourseID", course.ID).Warn("Can't update course")
+			logger.Warn("Can't update course", "err", err, "CourseID", course.ID)
 		}
 	}
 }

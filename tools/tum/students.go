@@ -3,11 +3,10 @@ package tum
 import (
 	"errors"
 	"fmt"
-	"github.com/antchfx/xmlquery"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/antchfx/xmlquery"
 )
 
 func FindStudentsForCourses(courses []model.Course, usersDao dao.UsersDao) {
@@ -21,12 +20,12 @@ func FindStudentsForCourses(courses []model.Course, usersDao dao.UsersDao) {
 			}
 		}
 		if err != nil {
-			log.WithError(err).WithField("TUMOnlineIdentifier", courses[i].TUMOnlineIdentifier).Error("FindStudentsForCourses: Can't get Students for course with id")
+			logger.Error("FindStudentsForCourses: Can't get Students for course with id", "err", err, "TUMOnlineIdentifier", courses[i].TUMOnlineIdentifier)
 			continue
 		}
 		err = usersDao.AddUsersToCourseByTUMIDs(studentIDs, courses[i].ID)
 		if err != nil {
-			log.WithError(err).Error("FindStudentsForCourses: Can't add users to course")
+			logger.Error("FindStudentsForCourses: Can't add users to course", "err", err)
 		}
 	}
 }

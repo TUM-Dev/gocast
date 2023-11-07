@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"log"
 	"time"
@@ -148,7 +147,7 @@ func (c Course) CanUseSource(lectureHallID uint, sourceType string) bool {
 func (c *Course) SetSourcePreference(pref []SourcePreference) {
 	pBytes, err := json.Marshal(pref)
 	if err != nil {
-		logrus.WithError(err).Error("Could not marshal source preference")
+		logger.Error("Could not marshal source preference", "err", err)
 		return
 	}
 	c.SourcePreferences = string(pBytes)
