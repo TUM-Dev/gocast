@@ -230,7 +230,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 	}
 
 	if req.Format != "json" && req.Format != "csv" {
-		logger.Warn("exportStats failed, invalid format", "err", err, "courseId", cid)
+		logger.Warn("exportStats failed, invalid format", "courseId", cid)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "exportStats failed, invalid format",
