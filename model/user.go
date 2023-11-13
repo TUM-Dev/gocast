@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,6 +55,7 @@ const (
 	PreferredName UserSettingType = iota + 1
 	Greeting
 	CustomPlaybackSpeeds
+	SeekingTime
 )
 
 type UserSetting struct {
@@ -128,6 +130,28 @@ func (u User) GetPreferredGreeting() string {
 		}
 	}
 	return "Moin"
+}
+
+// GetSeekingTime returns the seeking time preference for the user.
+// If the user is nil, the default seeking time of 15 seconds is returned.
+func (u *User) GetSeekingTime() int {
+	// Check if the user is nil
+	if u == nil {
+		return 15
+	}
+	// Check if the setting type is SeekingTime
+	for _, setting := range u.Settings {
+		if setting.Type == SeekingTime {
+			// Attempt to convert the setting value from string to an integer
+			seekingTime, err := strconv.Atoi(setting.Value)
+			if err != nil {
+				break
+			}
+			return seekingTime
+		}
+	}
+	// If no seeking time setting is found, return the default seeking time
+	return 15
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true

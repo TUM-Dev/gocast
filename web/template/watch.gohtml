@@ -628,12 +628,12 @@
     {{if (eq .Version "SPLIT")}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
-    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
-    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     watch.syncPlayers();
@@ -641,10 +641,10 @@
     {{else}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     {{end}}

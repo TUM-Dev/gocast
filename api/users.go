@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -26,6 +26,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/name", routes.updatePreferredName)
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
+	router.POST("/api/users/settings/seekingTime", routes.updateSeekingTime)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
@@ -646,6 +647,45 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	}
 	settingBytes, _ := json.Marshal(req.Value)
 	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.CustomPlaybackSpeeds, Value: string(settingBytes)})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+func (r usersRoutes) updateSeekingTime(c *gin.Context) {
+	// Extract the user from the Gin context
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	// Check if the user is authenticated.
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+	// Decode the JSON request body into a userSettingsRequest struct.
+	var request userSettingsRequest
+	err := json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+	// Add the user's seeking time setting to the database.
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.SeekingTime,
+		Value:  request.Value,
+	})
+	// Handle errors that may occur during the database operation.
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
