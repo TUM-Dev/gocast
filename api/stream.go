@@ -62,6 +62,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
 			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
+			admins.POST("/regenerateKey", routes.regenerateKey)
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
@@ -855,6 +856,20 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 			CustomMessage: "can not update stream",
 			Err:           err,
 		})
+		return
+	}
+}
+
+// regenerateKey regenerates the key for a stream.
+func (r streamRoutes) regenerateKey(c *gin.Context) {
+	log.Println("regenerating key")
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	stream := *ctx.Stream
+
+	stream.StreamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+	err := r.DaoWrapper.StreamsDao.UpdateStream(stream)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
 		return
 	}
 }
