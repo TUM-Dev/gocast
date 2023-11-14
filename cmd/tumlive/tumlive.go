@@ -13,6 +13,7 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	slogGorm "github.com/orandin/slog-gorm"
 	"github.com/pkg/profile"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -42,13 +43,24 @@ func initAll(initializers []initializer) {
 
 // GinServer launches the gin server
 func GinServer() (err error) {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
 	gin.SetMode(gin.ReleaseMode)
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	if VersionTag != "development" {
 		tools.CookieSecure = true
 	}
+
+	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
+			param.TimeStamp.Format(time.DateTime),
+			param.StatusCode,
+			param.ClientIP,
+			param.Path,
+			param.Request.UserAgent(),
+		)
+	}))
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
@@ -109,6 +121,9 @@ func main() {
 		defer sentry.Flush(2 * time.Second)
 		defer sentry.Recover()
 	}
+
+	gormJSONLogger := slogGorm.New()
+
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
 		tools.Cfg.Db.User,
@@ -118,6 +133,7 @@ func main() {
 		tools.Cfg.Db.Database),
 	), &gorm.Config{
 		PrepareStmt: true,
+		Logger:      gormJSONLogger,
 	})
 
 	if err != nil {
