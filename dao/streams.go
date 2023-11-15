@@ -323,6 +323,7 @@ func (d streamsDao) UpdateStream(stream model.Stream) error {
 		"start":        stream.Start,
 		"end":          stream.End,
 		"chat_enabled": stream.ChatEnabled,
+		"stream_key":   stream.StreamKey,
 	}).Error
 	return err
 }
