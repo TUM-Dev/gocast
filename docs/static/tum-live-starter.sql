@@ -244,6 +244,7 @@ CREATE TABLE `courses` (
   `vod_chat_enabled` tinyint(1) DEFAULT NULL,
   `visibility` varchar(191) DEFAULT 'loggedin',
   `token` longtext DEFAULT NULL,
+  `streamKey` longtext,
   `user_created_by_token` tinyint(1) DEFAULT 0,
   `camera_preset_preferences` longtext DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -257,7 +258,7 @@ CREATE TABLE `courses` (
 
 LOCK TABLES `courses` WRITE;
 /*!40000 ALTER TABLE `courses` DISABLE KEYS */;
-INSERT INTO `courses` VALUES (1,'2022-04-18 13:40:05.843','2022-04-18 13:46:46.546',NULL,1,'Einführung Brauereiwesen','brauereiwesen',2022,'S','',1,1,1,0,1,0,0,'public','',0,''),(2,'2022-04-18 13:40:54.686','2022-04-18 13:40:54.698',NULL,1,'Spieleentwicklung für Dummies','games101',2022,'S','',1,1,1,0,1,0,0,'loggedin','',0,''),(3,'2022-04-18 13:41:55.741','2022-04-18 13:41:55.754',NULL,1,'Praktikum: Golang','godev',2021,'W','',1,1,1,0,1,0,0,'public','',0,'');
+INSERT INTO `courses` VALUES (1,'2022-04-18 13:40:05.843','2022-04-18 13:46:46.546',NULL,1,'Einführung Brauereiwesen','brauereiwesen',2022,'S','',1,1,1,0,1,0,0,'public','', 'ba09dd459e50476da90864fecfa7ae14',0,''),(2,'2022-04-18 13:40:54.686','2022-04-18 13:40:54.698',NULL,1,'Spieleentwicklung für Dummies','games101',2022,'S','',1,1,1,0,1,0,0,'loggedin','','6fe65fe1be4946b68983db45beb7d28f',0,''),(3,'2022-04-18 13:41:55.741','2022-04-18 13:41:55.754',NULL,1,'Praktikum: Golang','godev',2021,'W','',1,1,1,0,1,0,0,'public','','48011344a82249baad57f1a7b17f28ec',0,'');
 /*!40000 ALTER TABLE `courses` ENABLE KEYS */;
 UNLOCK TABLES;
 
