@@ -321,7 +321,9 @@ func (d streamsDao) UpdateStream(stream model.Stream) error {
 		"description":  stream.Description,
 		"start":        stream.Start,
 		"end":          stream.End,
-		"chat_enabled": stream.ChatEnabled}).Error
+		"chat_enabled": stream.ChatEnabled,
+		"stream_key":   stream.StreamKey,
+	}).Error
 	return err
 }
 

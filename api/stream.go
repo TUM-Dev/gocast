@@ -44,6 +44,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
 
 			streamById.GET("/playlist", routes.getStreamPlaylist)
+			streamById.POST("/regenerateKey", routes.regenerateKey)
 
 			thumbs := streamById.Group("/thumbs")
 			{
@@ -62,7 +63,6 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
 			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
-			admins.POST("/regenerateKey", routes.regenerateKey)
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
