@@ -59,7 +59,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		courses := api.Group("/course/:courseID")
 		{
 			courses.Use(tools.InitCourse(daoWrapper))
-			//courses.Use(tools.AdminOfCourse)
+			courses.Use(tools.AdminOfCourse)
 			courses.DELETE("/", routes.deleteCourse)
 			courses.GET("/lectures", routes.fetchLectures)
 			courses.POST("/createVOD", routes.createVOD)
@@ -73,7 +73,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
 			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 			courses.POST("/submitCut", routes.submitCut)
-			lecturers.POST("/regenerateCourseKey", routes.regenerateCourseKey)
+			courses.POST("/regenerateKey", routes.regenerateCourseKey)
 
 			courses.POST("/addUnit", routes.addUnit)
 			courses.POST("/deleteUnit/:unitID", routes.deleteUnit)
@@ -1493,7 +1493,6 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 
 // regenerateCourseKey updates the stream key of the course and updates the key of all the streams
 func (r coursesRoutes) regenerateCourseKey(c *gin.Context) {
-	log.Println("Here")
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	course := *ctx.Course
 
@@ -1506,14 +1505,11 @@ func (r coursesRoutes) regenerateCourseKey(c *gin.Context) {
 
 	for _, s := range course.Streams {
 		s.StreamKey = course.StreamKey
+
 		err := r.DaoWrapper.StreamsDao.UpdateStream(s)
-		// Attach error but continue on remaining streams
+		// Log error but continue on remaining streams
 		if err != nil {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "could not update stream key",
-				Err:           err,
-			})
+			log.Error("could not modify stream key ", err)
 		}
 	}
 }
