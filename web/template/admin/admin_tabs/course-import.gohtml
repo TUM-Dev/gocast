@@ -76,21 +76,40 @@
                         </label>
                         <table>
                             <tbody>
-                                <template x-for="contact in course.contacts">
-                                    <tr class="pl-3" :class="contact.main_contact?'text-green-400':'text-3'">
-                                        <td class="px-2">
-                                            <label>
-                                                <i class="fa fa-envelope" x-show="contact.main_contact"></i>
-                                                <input class="w-auto" type="checkbox" x-model="contact.main_contact">
-                                            </label>
-                                        </td>
-                                        <td class="px-2" x-text="contact.role + ':'"></td>
-                                        <td x-text="contact.first_name + ' ' + contact.last_name" class="px-2"></td>
-                                        <td class="px-2">
-                                            <a :href="'mailto:'+contact.email" x-text="contact.email"></a>
-                                        </td>
-                                    </tr>
-                                </template>
+                            <script>
+                                /*
+                                The data coming from TUMonline sometimes duplicates contacts of a course.
+                                The elements of course.contacts has 5 attributes:
+                                first_name, last_name, email, main_contact, and role.
+                                All cases considered, the most distinctive among them is e-mail.
+                                and that's why eliminating the duplicates are down accordingly.
+                                */
+                                function filterUniqueContacts(contacts) {
+                                    const uniqueEmails = new Set();
+                                    return contacts.filter(contact => {
+                                        if (!uniqueEmails.has(contact.email)) {
+                                            uniqueEmails.add(contact.email);
+                                            return true;
+                                        }
+                                        return false;
+                                    });
+                                }
+                            </script>
+                            <template x-for="contact in filterUniqueContacts(course.contacts)">
+                                <tr class="pl-3" :class="contact.main_contact ? 'text-green-400' : 'text-3'">
+                                    <td class="px-2">
+                                        <label>
+                                            <i class="fa fa-envelope" x-show="contact.main_contact"></i>
+                                            <input class="w-auto" type="checkbox" x-model="contact.main_contact">
+                                        </label>
+                                    </td>
+                                    <td class="px-2" x-text="contact.role + ':'"></td>
+                                    <td x-text="contact.first_name + ' ' + contact.last_name" class="px-2"></td>
+                                    <td class="px-2">
+                                        <a :href="'mailto:' + contact.email" x-text="contact.email"></a>
+                                    </td>
+                                </tr>
+                            </template>
                             </tbody>
                         </table>
                         <template x-for="event in course.events">
