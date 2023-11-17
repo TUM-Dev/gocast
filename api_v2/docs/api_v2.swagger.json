@@ -1,0 +1,220 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "gocast API",
+    "description": "The shiny new gocast API!",
+    "version": "2.0",
+    "contact": {
+      "name": "TUM-Developers - gocast",
+      "url": "https://github.com/TUM-Dev/gocast"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/TUM-Dev/gocast/blob/main/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "API"
+    }
+  ],
+  "host": "localhost:8081",
+  "basePath": "/api/v2",
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/auth/password": {
+      "post": {
+        "operationId": "API_passwordAuth",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufpasswordAuthResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufpasswordAuthRequest"
+            }
+          }
+        ],
+        "tags": [
+          "API"
+        ]
+      }
+    },
+    "/courses": {
+      "get": {
+        "summary": "Get all courses",
+        "description": "Returns all courses",
+        "operationId": "API_getCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufgetCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/users/number": {
+      "get": {
+        "summary": "Get the number of registered users",
+        "description": "Returns the number of registered users",
+        "operationId": "API_getNumberOfUsers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufNumberOfUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "protobufCourse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "teachingTerm": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufNumberOfUsersResponse": {
+      "type": "object",
+      "properties": {
+        "numberOfUsers": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "protobufgetCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufpasswordAuthRequest": {
+      "type": "object",
+      "properties": {
+        "userName": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufpasswordAuthResponse": {
+      "type": "object",
+      "properties": {
+        "authToken": {
+          "type": "string"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

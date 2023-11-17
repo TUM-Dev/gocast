@@ -2,21 +2,23 @@ package main
 
 import (
 	"fmt"
-	"github.com/dgraph-io/ristretto"
-	"github.com/getsentry/sentry-go"
-	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/api"
+	"github.com/TUM-Dev/gocast/api_v2"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/web"
+	"github.com/dgraph-io/ristretto"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -53,6 +55,18 @@ func GinServer() (err error) {
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
+	l, err := net.Listen("tcp", ":8081")
+	if err != nil {
+		log.WithError(err).Fatal("can't listen on port 8081")
+	}
+
+	api2Client := api_v2.New(dao.DB)
+	go func() {
+		if err := api2Client.Run(l); err != nil {
+			log.WithError(err).Fatal("can't launch grpc server")
+		}
+	}()
+
 	liveUpdates := router.Group("/api/pub-sub")
 	api.ConfigRealtimeRouter(liveUpdates)
 
@@ -61,9 +75,10 @@ func GinServer() (err error) {
 	api.ConfigChatRouter(chat)
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.Run(":8081")
+	err = router.RunListener(l)
 	//err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)

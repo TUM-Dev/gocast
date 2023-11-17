@@ -1,0 +1,107 @@
+syntax = "proto3";
+package protobuf;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "./api_v2/protobuf";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "gocast API";
+    version: "2.0";
+    description: "The shiny new gocast API!";
+    contact: {
+      name: "TUM-Developers - gocast";
+      url: "https://github.com/TUM-Dev/gocast";
+    };
+    license: {
+      name: "MIT";
+      url: "https://github.com/TUM-Dev/gocast/blob/main/LICENSE";
+    };
+  };
+  schemes: [
+    HTTP,
+    HTTPS
+  ];
+  base_path: "/api/v2";
+  host: "localhost:8081";
+  consumes: "application/json";
+  produces: "application/json";
+};
+
+service API {
+  rpc getCourses(getCoursesRequest) returns (getCoursesResponse) {
+    option (google.api.http) = {
+      get: "/courses"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get all courses"
+      description: "Returns all courses"
+      parameters: {
+        headers: {
+          name: "Authorization"
+          type: STRING
+          required: true
+        }
+      }
+    };
+  }
+
+  rpc passwordAuth(passwordAuthRequest) returns (passwordAuthResponse) {
+    option (google.api.http) = {
+      post: "/auth/password"
+      body: "*"
+      response_body: "*"
+    };
+  }
+
+  rpc getNumberOfUsers(NumberOfUsersRequest) returns (NumberOfUsersResponse) {
+    option (google.api.http) = {
+      get: "/users/number"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Users"
+      summary: "Get the number of registered users"
+      description: "Returns the number of registered users"
+      parameters: {
+        headers: {
+          name: "Authorization"
+          type: STRING
+          required: true
+        }
+      }
+    };
+  }
+}
+
+message getCoursesRequest { }
+
+message Course {
+  uint64 id = 1;
+  string name = 2;
+  string teachingTerm = 3;
+  uint32 year = 4;
+}
+
+message getCoursesResponse {
+  repeated Course courses = 1;
+}
+
+message passwordAuthRequest {
+  string userName = 1;
+  string password = 2;
+}
+
+message passwordAuthResponse {
+  string authToken = 1;
+}
+
+message NumberOfUsersRequest { }
+
+message NumberOfUsersResponse {
+  int32 numberOfUsers = 1;
+}
