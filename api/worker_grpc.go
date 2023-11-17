@@ -127,22 +127,20 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 	if request.StreamKey == "" {
 		return nil, errors.New("stream key empty")
 	}
-	stream, err := s.StreamsDao.GetStreamByKey(ctx, request.StreamKey)
+	stream, err := s.StreamsDao.GetStreamByKeyAndTime(ctx, request.StreamKey, time.Now())
 	if err != nil {
 		return nil, err
 	}
+	logger.Info("Got stream: %+v\n", stream)
 	course, err := s.DaoWrapper.CoursesDao.GetCourseById(ctx, stream.CourseID)
 	if err != nil {
 		return nil, err
 	}
-	if request.CourseSlug != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
-		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), request.CourseSlug)
+
+	if request.CourseSlug != fmt.Sprintf("%s", course.Slug) {
+		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s", course.Slug), request.CourseSlug)
 	}
-	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
-	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
-		logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)
-		return nil, errors.New("stream rejected")
-	}
+
 	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer()
 	if err != nil {
 		return nil, err
