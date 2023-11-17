@@ -78,11 +78,11 @@
                             <tbody>
                             <script>
                                 /*
-                                The data coming from TUMonline sometimes duplicates contacts of a course.
-                                The elements of course.contacts has 5 attributes:
-                                first_name, last_name, email, main_contact, and role.
+                                The data coming from TUMonline sometimes duplicates contacts of some courses.
+                                course.contacts has 5 attributes:
+                                first_name, last_name, email, main_contact, role.
                                 All cases considered, the most distinctive among them is e-mail.
-                                and that's why eliminating the duplicates are down accordingly.
+                                and that's why duplicates are eliminated accordingly.
                                 */
                                 function filterUniqueContacts(contacts) {
                                     const uniqueEmails = new Set();
