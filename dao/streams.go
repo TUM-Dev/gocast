@@ -19,7 +19,8 @@ type StreamsDao interface {
 
 	GetDueStreamsForWorkers() []model.Stream
 	GetDuePremieresForWorkers() []model.Stream
-	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
+	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) //deprecated
+	GetStreamByKeyAndTime(ctx context.Context, key string, time2 time.Time) (stream model.Stream, err error)
 	GetUnitByID(id string) (model.StreamUnit, error)
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
 	GetStreamsByIds(ids []uint) ([]model.Stream, error)
@@ -128,10 +129,30 @@ func (d streamsDao) GetDuePremieresForWorkers() []model.Stream {
 	return res
 }
 
+// Deprecated: Stream keys are generally no longer unique to
+// each stream. Use GetStreamByKeyAndTime instead
 func (d streamsDao) GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
 	var res model.Stream
 	err = DB.First(&res, "stream_key = ?", key).Error
 	return res, err
+}
+
+// GetStreamByKeyAndTime finds stream by key and time t.
+// t must be between stream start and end
+func (d streamsDao) GetStreamByKeyAndTime(ctx context.Context, key string, t time.Time) (stream model.Stream, err error) {
+	// first get all streams by key
+	var streams []model.Stream
+	result := DB.Where("stream_key = ?", key).Find(&streams)
+	if result.Error != nil {
+		return model.Stream{}, err
+	}
+	// find stream that is at the latest in 30 minutes
+	for _, s := range streams {
+		if t.Add(time.Minute*-30).After(s.Start) && t.Before(s.End) {
+			return s, err
+		}
+	}
+	return model.Stream{}, gorm.ErrRecordNotFound
 }
 
 func (d streamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
