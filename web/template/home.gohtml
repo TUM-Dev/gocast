@@ -223,16 +223,7 @@
                 </button>
             </template>
         </article>
-        <footer class="tum-live-footer w-full md:hidden">
-            <div class="grid divide-y dark:divide-gray-800">
-                <a href="/about">About</a>
-                <a href="/privacy">Data Privacy</a>
-                <a href="/imprint">Imprint</a>
-            </div>
-            <a href="https://github.com/TUM-Dev/gocast" class="block mt-2 text-center">
-                <i class="fa-brands fa-github"></i> GitHub
-            </a>
-        </footer>
+        {{template "mobile_footer" .VersionTag}}
     </section>
 
     <!-- views -->
@@ -783,15 +774,7 @@
         </template>
     </article>
 </main>
-<footer id="desktop-footer"
-        class="tum-live-footer justify-between space-x-3 items-center hidden md:flex">
-    <div class="flex space-x-3">
-        <a href="/about">About</a>
-        <a href="/privacy">Data Privacy</a>
-        <a href="/imprint">Imprint</a>
-    </div>
-    <a href="https://github.com/TUM-Dev/gocast"><i class="fa-brands fa-github"></i> gocast@{{.VersionTag}}</a>
-</footer>
+{{template "footer" .VersionTag}}
 </body>
 </html>
 

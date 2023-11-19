@@ -102,14 +102,7 @@
         </template>
     </section>
 </main>
-<footer id="desktop-footer"
-        class="tum-live-footer justify-between space-x-3 items-center hidden md:flex">
-    <div class="flex space-x-3">
-        <a href="/about">About</a>
-        <a href="/privacy">Data Privacy</a>
-        <a href="/imprint">Imprint</a>
-    </div>
-    <a href="/public/licenses.txt">We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource</a>
-</footer>
+{{template "footer" .VersionTag}}
+{{template "mobile_footer" .VersionTag}}
 </body>
 </html>
