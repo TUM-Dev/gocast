@@ -9,7 +9,7 @@
                  type="button"
                  @click="$store.theme.setMode(modeId); show=false;">
                 <div class="flex items-center" :class="mobile ? 'flex-row-reverse' : ''">
-                    <i class="fa-solid" :class="['fa-' + mode.faIconId, mobile ? 'ml-8' : 'mr-2']"></i>
+                    <i class="fa-solid w-4" :class="['fa-' + mode.faIconId, mobile ? 'ml-8' : 'mr-2']"></i>
                     <p x-text="mode.name" :class="mobile ? 'mr-2' : ''"></p>
                 </div>
             </button>
