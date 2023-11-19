@@ -43,6 +43,6 @@ jobs:
           context: .
           pull: true
           push: true
-          build-args: version=${{ github.sha }}
+          build-args: version=${{ github.ref_name }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
