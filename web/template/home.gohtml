@@ -84,7 +84,9 @@
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
                                    class="tum-live-menu-item">
-                                    <i class="fa-solid fa-hammer mr-4"></i>
+                                    <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                        <i class="fa-solid fa-hammer mr-3"></i>
+                                    </div>
                                     <p>Admin</p>
                                 </a>
                                 <div class="border-b dark:border-gray-800"></div>
@@ -93,7 +95,9 @@
                                 <button type="button"
                                         class="tum-live-menu-item"
                                         @click="userContext.getChild('themePicker').toggle()">
-                                    <i class="fa-regular fa-moon mr-4"></i>
+                                    <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                        <i class="fa-regular fa-moon mr-3"></i>
+                                    </div>
                                     <span>Theme</span>
                                     <i class="fa-solid ml-auto"
                                        :class="userContext.getChild('themePicker').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
@@ -112,26 +116,34 @@
                             </div>
                             <a href="/settings"
                                class="tum-live-menu-item">
-                                <i class="fa-solid fa-gear mr-4"></i>
+                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                    <i class="fa-solid fa-gear mr-3"></i>
+                                </div>
                                 <p>Settings</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="https://github.com/TUM-Dev/gocast"
                                target="_blank"
                                class="tum-live-menu-item">
-                                <i class="fa-regular fa-comment mr-4"></i>
+                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                    <i class="fa-regular fa-comment mr-3"></i>
+                                </div>
                                 <p>Send Feedback</p>
                             </a>
                             <a href="https://github.com/TUM-Dev/gocast/issues/new?assignees=&labels=&template=bug_report.md&title="
                                class="tum-live-menu-item"
                                target="_blank">
-                                <i class="fa-brands fa-github mr-4"></i>
+                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                    <i class="fa-brands fa-github mr-3"></i>
+                                </div>
                                 <p>Report problem</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="/logout"
                                class="tum-live-menu-item">
-                                <i class="fa-solid fa-sign-out mr-4"></i>
+                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                    <i class="fa-solid fa-sign-out mr-3"></i>
+                                </div>
                                 <p>Logout</p>
                             </a>
                         </nav>
