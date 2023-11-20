@@ -76,26 +76,7 @@
                         </label>
                         <table>
                             <tbody>
-                            <script>
-                                /*
-                                The data coming from TUMonline sometimes duplicates contacts of some courses.
-                                course.contacts has 5 attributes:
-                                first_name, last_name, email, main_contact, role.
-                                All cases considered, the most distinctive among them is e-mail.
-                                and that's why duplicates are eliminated accordingly.
-                                */
-                                function filterUniqueContacts(contacts) {
-                                    const uniqueEmails = new Set();
-                                    return contacts.filter(contact => {
-                                        if (!uniqueEmails.has(contact.email)) {
-                                            uniqueEmails.add(contact.email);
-                                            return true;
-                                        }
-                                        return false;
-                                    });
-                                }
-                            </script>
-                            <template x-for="contact in filterUniqueContacts(course.contacts)">
+                            <template x-for="contact in admin.filterUniqueContacts(course.contacts)">
                                 <tr class="pl-3" :class="contact.main_contact ? 'text-green-400' : 'text-3'">
                                     <td class="px-2">
                                         <label>
