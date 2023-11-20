@@ -146,13 +146,13 @@ func (d streamsDao) GetStreamByKeyAndTime(ctx context.Context, key string, t tim
 	if result.Error != nil {
 		return model.Stream{}, err
 	}
-	// find stream that is at the latest in 30 minutes
+	// find stream that encompasses the given time with 30 minutes of padding before and after
 	for _, s := range streams {
-		if t.Add(time.Minute*-30).After(s.Start) && t.Before(s.End) {
+		if t.After(stream.Start.Add(time.Minute*-30)) && t.Before(stream.End.Add(time.Minute*30)) {
 			return s, err
 		}
 	}
-	return model.Stream{}, gorm.ErrRecordNotFound
+	return model.Stream{}, fmt.Errorf("no stream at %s", t.String())
 }
 
 func (d streamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
