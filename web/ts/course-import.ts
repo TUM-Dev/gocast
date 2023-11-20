@@ -45,13 +45,12 @@ export function addNotifyEventListeners() {
     });
 }
 
-
 //The data coming from TUMonline sometimes duplicates contacts of some courses. course.contacts has 5 attributes:
 //first_name, last_name, email, main_contact, role.
 //All cases considered, the most distinctive among them is e-mail and duplicates are eliminated accordingly.
-export function filterUniqueContacts(contacts: any[]) {
+export function filterUniqueContacts(contacts) {
     const uniqueEmails = new Set();
-    return contacts.filter(contact => {
+    return contacts.filter((contact) => {
         if (!uniqueEmails.has(contact.email)) {
             uniqueEmails.add(contact.email);
             return true;
