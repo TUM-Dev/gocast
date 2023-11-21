@@ -100,19 +100,12 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 				eventID = uint(eventIDInt)
 			}
 
-			// When defined use course wide stream key
-			var streamKey string
-			if course.StreamKey == "" {
-				streamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15]
-			} else {
-				streamKey = course.StreamKey
-			}
 			streams = append(streams, model.Stream{
 				Start:            event.Start,
 				End:              event.End,
 				RoomName:         event.RoomName,
 				LectureHallID:    lectureHall.ID,
-				StreamKey:        streamKey,
+				StreamKey:        course.StreamKey,
 				TUMOnlineEventID: eventID,
 			})
 		}
