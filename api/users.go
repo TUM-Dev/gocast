@@ -6,17 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
-
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
 )
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -27,6 +26,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
 	router.POST("/api/users/settings/seekingTime", routes.updateSeekingTime)
 	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
+	router.POST("/api/users/settings/autoSkip", routes.updateAutoSkip)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
@@ -713,6 +713,40 @@ func (r usersRoutes) updateSeekingTime(c *gin.Context) {
 		Value:  request.Value,
 	})
 	// Handle errors that may occur during the database operation.
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+func (r usersRoutes) updateAutoSkip(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+	var request userSettingsRequest
+	err := json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body to request",
+			Err:           err,
+		})
+		return
+	}
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.AutoSkip,
+		Value:  request.Value,
+	})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

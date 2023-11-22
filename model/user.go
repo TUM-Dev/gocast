@@ -58,6 +58,7 @@ const (
 	CustomPlaybackSpeeds
 	SeekingTime
 	UserDefinedSpeeds
+	AutoSkip
 )
 
 type UserSetting struct {
