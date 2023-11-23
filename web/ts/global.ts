@@ -1,9 +1,11 @@
 import { StatusCodes } from "http-status-codes";
+import {defineElements} from "./custom-elements/elements";
 
 export * from "./notifications";
 export * from "./user-settings";
 export * from "./start-page";
 export * from "./utilities/time";
+export * from "./custom-elements/elements";
 
 export async function getData(url = "") {
     return await fetch(url);
@@ -304,6 +306,7 @@ export type Section = {
 
 window.onload = function () {
     initHiddenCourses();
+    defineElements();
 };
 
 export function cloneEvents(srcElem: HTMLElement, destElem: HTMLElement, events: string[]) {
