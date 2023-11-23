@@ -31,6 +31,22 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service API {
+   // BEGIN API/V2/USER
+   rpc getUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/user/me"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user"
+      description: "Returns the user assigned to the token"
+    };
+  }
+  // END API/V2/USER
+
+
+  // BEGIN API/V2/COURSES
   rpc getCourses(getCoursesRequest) returns (getCoursesResponse) {
     option (google.api.http) = {
       get: "/courses"
@@ -40,45 +56,75 @@ service API {
       tags: "Courses"
       summary: "Get all courses"
       description: "Returns all courses"
-      parameters: {
-        headers: {
-          name: "Authorization"
-          type: STRING
-          required: true
-        }
-      }
     };
   }
-
-  rpc passwordAuth(passwordAuthRequest) returns (passwordAuthResponse) {
-    option (google.api.http) = {
-      post: "/auth/password"
-      body: "*"
-      response_body: "*"
-    };
-  }
-
-  rpc getNumberOfUsers(NumberOfUsersRequest) returns (NumberOfUsersResponse) {
-    option (google.api.http) = {
-      get: "/users/number"
-      response_body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Users"
-      summary: "Get the number of registered users"
-      description: "Returns the number of registered users"
-      parameters: {
-        headers: {
-          name: "Authorization"
-          type: STRING
-          required: true
-        }
-      }
-    };
-  }
+  // END API/V2/COURSES
 }
 
-message getCoursesRequest { }
+///////////////////////////////
+//////// USER_MESSAGE /////////
+///////////////////////////////
+
+message User {
+  uint32 id = 1;
+  string name = 2;
+  string lastName = 3;
+  string email = 4;
+  string matriculationNumber = 5;
+  string lrzID = 6;
+  uint32 role = 7;
+  string password = 8;
+  repeated Course courses = 9;
+  repeated Course administeredCourses = 10;
+  repeated Course pinnedCourses = 11;
+  repeated UserSetting settings = 12;
+  repeated Bookmark bookmarks = 13;
+}
+
+message UserSetting {
+  uint32 id = 1;
+  uint32 userID = 2;
+  UserSettingType type = 3;
+  string value = 4;
+}
+
+enum UserSettingType {
+  PREFERRED_NAME = 0;
+  GREETING = 1;
+  CUSTOM_PLAYBACK_SPEEDS = 2;
+}
+
+///////////////////////////////
+//////// USER_REQUEST /////////
+///////////////////////////////
+
+message GetUserRequest {}
+
+///////////////////////////////
+//////// USER_RESPONSE ////////
+///////////////////////////////
+
+message GetUserResponse {
+  User user = 1;
+}
+
+///////////////////////////////
+////// BOOKMARK_MESSAGE ///////
+///////////////////////////////
+
+message Bookmark {
+  uint32 id = 1;
+  string description = 2;
+  uint32 hours = 3;
+  uint32 minutes = 4;
+  uint32 seconds = 5;
+  uint32 userID = 6;
+  uint32 streamID = 7;
+}
+
+///////////////////////////////
+/////// COURSE_MESSAGE ////////
+///////////////////////////////
 
 message Course {
   uint64 id = 1;
@@ -87,21 +133,16 @@ message Course {
   uint32 year = 4;
 }
 
+///////////////////////////////
+/////// COURSE_REQUEST ////////
+///////////////////////////////
+
+message getCoursesRequest { }
+
+///////////////////////////////
+/////// COURSE_RESPONSE ///////
+///////////////////////////////
+
 message getCoursesResponse {
   repeated Course courses = 1;
-}
-
-message passwordAuthRequest {
-  string userName = 1;
-  string password = 2;
-}
-
-message passwordAuthResponse {
-  string authToken = 1;
-}
-
-message NumberOfUsersRequest { }
-
-message NumberOfUsersResponse {
-  int32 numberOfUsers = 1;
 }

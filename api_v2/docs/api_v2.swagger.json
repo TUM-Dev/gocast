@@ -31,38 +31,6 @@
     "application/json"
   ],
   "paths": {
-    "/auth/password": {
-      "post": {
-        "operationId": "API_passwordAuth",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufpasswordAuthResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/protobufpasswordAuthRequest"
-            }
-          }
-        ],
-        "tags": [
-          "API"
-        ]
-      }
-    },
     "/courses": {
       "get": {
         "summary": "Get all courses",
@@ -82,29 +50,21 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "type": "string"
-          }
-        ],
         "tags": [
           "Courses"
         ]
       }
     },
-    "/users/number": {
+    "/user/me": {
       "get": {
-        "summary": "Get the number of registered users",
-        "description": "Returns the number of registered users",
-        "operationId": "API_getNumberOfUsers",
+        "summary": "Get the current user",
+        "description": "Returns the user assigned to the token",
+        "operationId": "API_getUser",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/protobufNumberOfUsersResponse"
+              "$ref": "#/definitions/protobufGetUserResponse"
             }
           },
           "default": {
@@ -114,16 +74,8 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "type": "string"
-          }
-        ],
         "tags": [
-          "Users"
+          "User"
         ]
       }
     }
@@ -137,6 +89,38 @@
         }
       },
       "additionalProperties": {}
+    },
+    "protobufBookmark": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": {
+          "type": "string"
+        },
+        "hours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "minutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
     },
     "protobufCourse": {
       "type": "object",
@@ -157,14 +141,107 @@
         }
       }
     },
-    "protobufNumberOfUsersResponse": {
+    "protobufGetUserResponse": {
       "type": "object",
       "properties": {
-        "numberOfUsers": {
-          "type": "integer",
-          "format": "int32"
+        "user": {
+          "$ref": "#/definitions/protobufUser"
         }
       }
+    },
+    "protobufUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "matriculationNumber": {
+          "type": "string"
+        },
+        "lrzID": {
+          "type": "string"
+        },
+        "role": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "password": {
+          "type": "string"
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "administeredCourses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "pinnedCourses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        },
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBookmark"
+          }
+        }
+      }
+    },
+    "protobufUserSetting": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "type": {
+          "$ref": "#/definitions/protobufUserSettingType"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufUserSettingType": {
+      "type": "string",
+      "enum": [
+        "PREFERRED_NAME",
+        "GREETING",
+        "CUSTOM_PLAYBACK_SPEEDS"
+      ],
+      "default": "PREFERRED_NAME"
     },
     "protobufgetCoursesResponse": {
       "type": "object",
@@ -175,25 +252,6 @@
             "type": "object",
             "$ref": "#/definitions/protobufCourse"
           }
-        }
-      }
-    },
-    "protobufpasswordAuthRequest": {
-      "type": "object",
-      "properties": {
-        "userName": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        }
-      }
-    },
-    "protobufpasswordAuthResponse": {
-      "type": "object",
-      "properties": {
-        "authToken": {
-          "type": "string"
         }
       }
     },

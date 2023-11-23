@@ -2,41 +2,42 @@ package api_v2
 
 import (
 	"context"
-	"errors"
 	"github.com/TUM-Dev/gocast/api_v2/e"
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
-	"github.com/TUM-Dev/gocast/model"
-	"gorm.io/gorm"
 	"net/http"
-	"strings"
 )
 
-// todo implement this functionality
-func (a *API) PasswordAuth(ctx context.Context, req *protobuf.PasswordAuthRequest) (*protobuf.PasswordAuthResponse, error) {
-	return &protobuf.PasswordAuthResponse{
-		AuthToken: "abc",
-	}, nil
-}
-
-// todo: this can be removed and serves only as an example
-func (a *API) GetNumberOfUsers(ctx context.Context, req *protobuf.NumberOfUsersRequest) (*protobuf.NumberOfUsersResponse, error) {
-	u, err := a.getUser(ctx)
+func (a *API) GetUser(ctx context.Context, req *protobuf.GetUserRequest) (*protobuf.GetUserResponse, error) {
+	a.log.Info("GetUser")
+	u, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
-	if !strings.Contains(u.Name, "admin") {
-		return nil, e.WithStatus(http.StatusForbidden, errors.New("only admins can access this endpoint"))
+
+	response := &protobuf.GetUserResponse{
+		User: &protobuf.User{
+			Id:                 uint32(u.ID),
+			Name:               u.Name,
+			Email:              u.Email.String,
+			MatriculationNumber: u.MatriculationNumber,
+			LrzID:              u.LrzID,
+			Role:               uint32(u.Role),
+			Settings:           []*protobuf.UserSetting{},
+		},
 	}
 
-	a.log.Info("GetNumberOfUsers")
-	var numberOfUsers int64
-	err = a.db.Model(&model.User{}).Count(&numberOfUsers).Error
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, e.WithStatus(http.StatusNotFound, err)
-	} else if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	if u.LastName != nil {
+		response.User.LastName = *u.LastName
 	}
-	return &protobuf.NumberOfUsersResponse{
-		NumberOfUsers: int32(numberOfUsers),
-	}, nil
+
+	for _, setting := range u.Settings {
+		response.User.Settings = append(response.User.Settings, &protobuf.UserSetting{
+			Id:       uint32(setting.ID),
+			UserID:   uint32(setting.UserID),
+			Type:     protobuf.UserSettingType(setting.Type),
+			Value:    setting.Value,
+		})
+	}
+
+	return response, nil
 }

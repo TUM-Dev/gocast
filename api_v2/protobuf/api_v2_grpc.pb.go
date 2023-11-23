@@ -19,18 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	API_GetCourses_FullMethodName       = "/protobuf.API/getCourses"
-	API_PasswordAuth_FullMethodName     = "/protobuf.API/passwordAuth"
-	API_GetNumberOfUsers_FullMethodName = "/protobuf.API/getNumberOfUsers"
+	API_GetUser_FullMethodName    = "/protobuf.API/getUser"
+	API_GetCourses_FullMethodName = "/protobuf.API/getCourses"
 )
 
 // APIClient is the client API for API service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type APIClient interface {
+	// BEGIN API/V2/USER
+	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
+	// BEGIN API/V2/COURSES
 	GetCourses(ctx context.Context, in *GetCoursesRequest, opts ...grpc.CallOption) (*GetCoursesResponse, error)
-	PasswordAuth(ctx context.Context, in *PasswordAuthRequest, opts ...grpc.CallOption) (*PasswordAuthResponse, error)
-	GetNumberOfUsers(ctx context.Context, in *NumberOfUsersRequest, opts ...grpc.CallOption) (*NumberOfUsersResponse, error)
 }
 
 type aPIClient struct {
@@ -39,6 +39,15 @@ type aPIClient struct {
 
 func NewAPIClient(cc grpc.ClientConnInterface) APIClient {
 	return &aPIClient{cc}
+}
+
+func (c *aPIClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error) {
+	out := new(GetUserResponse)
+	err := c.cc.Invoke(ctx, API_GetUser_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *aPIClient) GetCourses(ctx context.Context, in *GetCoursesRequest, opts ...grpc.CallOption) (*GetCoursesResponse, error) {
@@ -50,31 +59,14 @@ func (c *aPIClient) GetCourses(ctx context.Context, in *GetCoursesRequest, opts 
 	return out, nil
 }
 
-func (c *aPIClient) PasswordAuth(ctx context.Context, in *PasswordAuthRequest, opts ...grpc.CallOption) (*PasswordAuthResponse, error) {
-	out := new(PasswordAuthResponse)
-	err := c.cc.Invoke(ctx, API_PasswordAuth_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *aPIClient) GetNumberOfUsers(ctx context.Context, in *NumberOfUsersRequest, opts ...grpc.CallOption) (*NumberOfUsersResponse, error) {
-	out := new(NumberOfUsersResponse)
-	err := c.cc.Invoke(ctx, API_GetNumberOfUsers_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility
 type APIServer interface {
+	// BEGIN API/V2/USER
+	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
+	// BEGIN API/V2/COURSES
 	GetCourses(context.Context, *GetCoursesRequest) (*GetCoursesResponse, error)
-	PasswordAuth(context.Context, *PasswordAuthRequest) (*PasswordAuthResponse, error)
-	GetNumberOfUsers(context.Context, *NumberOfUsersRequest) (*NumberOfUsersResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -82,14 +74,11 @@ type APIServer interface {
 type UnimplementedAPIServer struct {
 }
 
+func (UnimplementedAPIServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
+}
 func (UnimplementedAPIServer) GetCourses(context.Context, *GetCoursesRequest) (*GetCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCourses not implemented")
-}
-func (UnimplementedAPIServer) PasswordAuth(context.Context, *PasswordAuthRequest) (*PasswordAuthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PasswordAuth not implemented")
-}
-func (UnimplementedAPIServer) GetNumberOfUsers(context.Context, *NumberOfUsersRequest) (*NumberOfUsersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetNumberOfUsers not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -102,6 +91,24 @@ type UnsafeAPIServer interface {
 
 func RegisterAPIServer(s grpc.ServiceRegistrar, srv APIServer) {
 	s.RegisterService(&API_ServiceDesc, srv)
+}
+
+func _API_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetUser(ctx, req.(*GetUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _API_GetCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -122,42 +129,6 @@ func _API_GetCourses_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_PasswordAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PasswordAuthRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(APIServer).PasswordAuth(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: API_PasswordAuth_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).PasswordAuth(ctx, req.(*PasswordAuthRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _API_GetNumberOfUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NumberOfUsersRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(APIServer).GetNumberOfUsers(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: API_GetNumberOfUsers_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).GetNumberOfUsers(ctx, req.(*NumberOfUsersRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -166,16 +137,12 @@ var API_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*APIServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "getUser",
+			Handler:    _API_GetUser_Handler,
+		},
+		{
 			MethodName: "getCourses",
 			Handler:    _API_GetCourses_Handler,
-		},
-		{
-			MethodName: "passwordAuth",
-			Handler:    _API_PasswordAuth_Handler,
-		},
-		{
-			MethodName: "getNumberOfUsers",
-			Handler:    _API_GetNumberOfUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -13,7 +13,7 @@ import (
 "strings"
 )
 
-func (a *API) getUser(ctx context.Context) (*model.User, error) {
+func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, errors.New("no metadata")
