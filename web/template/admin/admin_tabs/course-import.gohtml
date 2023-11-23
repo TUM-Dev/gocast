@@ -1,6 +1,7 @@
 {{define "course-import"}}
 <h1 class="text-2xl text-1 my-4">Course Import</h1>
 <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+<link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
 <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
 <section class="form-container" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
@@ -14,7 +15,10 @@
 
     <form x-show="step===0 || step===1" class="form-container-body grid grid-cols-2 gap-4">
         <label>
-            <h2>Year</h2>
+            <div class="flex flex-row">
+                <h2>Year</h2>
+                <help-icon class="transform -translate-x-0.5" text="Please select the current year. In case of WS select the first year"/>
+            </div>
             <select x-model="year" class="tl-select">
                 <option>2023</option>
                 <option>2024</option>
@@ -44,14 +48,20 @@
             <input x-show="department==='-- specify id --'" x-model="departmentID" type="text" class="tl-input">
         </label>
         <label>
-            <h2>Opt In / Opt Out</h2>
+            <div class="flex flex-row">
+                <h2>Opt In / Opt Out</h2>
+                <help-icon class="transform -translate-x-0.5" text="Opt In -> Lecturer has to opt in to use the system<br/>Opt Out -> Lecturer only has to opt out if he doesn't want to use livestreaming"/>
+            </div>
             <select x-model="optInOut" class="tl-select">
                 <option>Opt In</option>
                 <option>Opt Out</option>
             </select>
         </label>
         <label class="col-span-full" x-init="flatpickr($refs.range, {'mode': 'range'})">
-            <h2>Import events in this range</h2>
+            <div class="flex flex-row">
+                <h2>Import events in this range</h2>
+                <help-icon class="transform -translate-x-0.5" text="Please select a start date and and end date"/>
+            </div>
             <input class="tl-input" type="text" x-ref="range" x-model="range" placeholder="click me!">
         </label>
         <button class="btn primary col-span-full" @click="step++; $dispatch(`notify${step}`)" :disabled="loading"
