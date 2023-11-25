@@ -73,12 +73,11 @@ message User {
   string matriculationNumber = 5;
   string lrzID = 6;
   uint32 role = 7;
-  string password = 8;
-  repeated Course courses = 9;
-  repeated Course administeredCourses = 10;
-  repeated Course pinnedCourses = 11;
-  repeated UserSetting settings = 12;
-  repeated Bookmark bookmarks = 13;
+  repeated Course courses = 8;
+  repeated Course administeredCourses = 9;
+  repeated Course pinnedCourses = 10;
+  repeated UserSetting settings = 11;
+  repeated Bookmark bookmarks = 12;
 }
 
 message UserSetting {

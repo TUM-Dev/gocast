@@ -175,9 +175,6 @@
           "type": "integer",
           "format": "int64"
         },
-        "password": {
-          "type": "string"
-        },
         "courses": {
           "type": "array",
           "items": {

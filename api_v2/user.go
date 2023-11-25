@@ -18,6 +18,7 @@ func (a *API) GetUser(ctx context.Context, req *protobuf.GetUserRequest) (*proto
 		User: &protobuf.User{
 			Id:                 uint32(u.ID),
 			Name:               u.Name,
+			LastName:           *u.LastName,
 			Email:              u.Email.String,
 			MatriculationNumber: u.MatriculationNumber,
 			LrzID:              u.LrzID,
