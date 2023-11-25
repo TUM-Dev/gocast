@@ -1,4 +1,4 @@
-# User guide
+# Administration Guide for Lecturers
 
 ## Your TUM-Live Admin account
 
