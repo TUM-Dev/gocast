@@ -424,10 +424,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number): Prom
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
     return putData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -436,10 +433,7 @@ export function saveLectureName(e: Event, cID: number, lID: number): Promise<boo
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
     return postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -763,11 +757,7 @@ export function createLectureForm(args: { s: [] }) {
         },
         updateCreateType(newType: LectureCreateType) {
             this.createType = newType;
-            if (newType === LectureCreateType.livestream) {
-                this.formData.vodup = false;
-            } else {
-                this.formData.vodup = true;
-            }
+            this.formData.vodup = newType !== LectureCreateType.livestream;
         },
         updateLiveAdHoc(adHoc: boolean) {
             this.formData.adHoc = adHoc;
