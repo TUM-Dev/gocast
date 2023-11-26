@@ -822,6 +822,8 @@ export function createLectureForm(args: { s: [] }) {
 
         // This function sets flags depending on the current tab and current data
         onUpdate() {
+            this.error = false;
+
             if (this.currentTab === 0) {
                 this.canContinue = true;
                 this.canGoBack = false;
