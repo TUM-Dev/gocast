@@ -737,6 +737,7 @@ export function createLectureForm(args: { s: [] }) {
         error: false,
         courseID: -1,
         invalidReason: "",
+        cannotContinueReason: "",
         init() {
             this.onUpdate();
         },
@@ -816,6 +817,7 @@ export function createLectureForm(args: { s: [] }) {
 
             if (this.currentTab === 0) {
                 this.canContinue = true;
+                this.cannotContinueReason = "";
                 this.canGoBack = false;
                 this.onLastSlide = false;
                 return;
@@ -828,10 +830,21 @@ export function createLectureForm(args: { s: [] }) {
                     // => we are not on the last tab
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
                 } else {
                     this.onLastSlide = true;
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
+                    if (this.formData.end.length <= 0) {
+                        this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                    }
                 }
                 return;
             }
@@ -840,6 +853,14 @@ export function createLectureForm(args: { s: [] }) {
                 this.canContinue =
                     (this.getMediaFiles().length > 0 && this.formData.vodup) ||
                     (this.formData.adHoc && this.formData.end != "");
+                this.cannotContinueReason = "";
+                if (this.formData.vodup && this.getMediaFiles().length <= 0) {
+                    this.cannotContinueReason += "No media files!\n";
+                }
+                if (this.formData.adHoc && this.formData.end == "") {
+                    this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                }
+
                 this.canGoBack = true;
                 this.onLastSlide = true;
                 return;
