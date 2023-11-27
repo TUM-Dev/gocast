@@ -1,3 +1,4 @@
+// Package api_v2 provides API endpoints for the application.
 package api_v2
 
 import (
@@ -9,6 +10,8 @@ import (
 	"net/http"
 	)	
 
+// GetUser retrieves the current user based on the context.
+// It returns a GetUserResponse or an error if one occurs.
 func (a *API) GetUser(ctx context.Context, req *protobuf.GetUserRequest) (*protobuf.GetUserResponse, error) {
 	a.log.Info("GetUser")
 	u, err := a.getCurrent(ctx)
@@ -23,6 +26,9 @@ func (a *API) GetUser(ctx context.Context, req *protobuf.GetUserRequest) (*proto
 	return response, nil
 }
 
+// GetUserCourses retrieves the courses of a user based on the context and request.
+// It filters the courses by year, term, query, limit, and skip if they are specified in the request.
+// It returns a GetUserCoursesResponse or an error if one occurs.
 func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRequest) (*protobuf.GetUserCoursesResponse, error) {
     a.log.Info("GetUserCourses")
     u, err := a.getCurrent(ctx)
@@ -30,7 +36,7 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
         return nil, e.WithStatus(http.StatusUnauthorized, err)
     }
 
-    courses, err := s.RetrieveCourses(a.db, u.ID, req)
+    courses, err := s.FetchUserCourses(a.db, u.ID, req)
     if err != nil {
         return nil, e.WithStatus(http.StatusInternalServerError, err)
     }
@@ -46,6 +52,9 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
     }, nil
 }
 
+// GetUserPinned retrieves the pinned courses of a user based on the context and request.
+// It filters the courses by year, term, limit, and skip if they are specified in the request.
+// It returns a GetUserPinnedResponse or an error if one occurs.
 func (a *API) GetUserPinned(ctx context.Context, req *protobuf.GetUserPinnedRequest) (*protobuf.GetUserPinnedResponse, error) {
     a.log.Info("GetUserPinned")
     u, err := a.getCurrent(ctx)
@@ -53,7 +62,7 @@ func (a *API) GetUserPinned(ctx context.Context, req *protobuf.GetUserPinnedRequ
         return nil, e.WithStatus(http.StatusUnauthorized, err)
     }
 
-    courses, err := s.RetrievePinnedCourses(a.db, *u, req)
+    courses, err := s.FetchUserPinnedCourses(a.db, *u, req)
     if err != nil {
         return nil, e.WithStatus(http.StatusInternalServerError, err)
     }
@@ -69,6 +78,8 @@ func (a *API) GetUserPinned(ctx context.Context, req *protobuf.GetUserPinnedRequ
     }, nil
 }
 
+// GetUserAdminCourses retrieves the courses of a user in which he is an admin based on the context.
+// It returns a GetUserAdminResponse or an error if one occurs.
 func (a *API) GetUserAdminCourses(ctx context.Context, req *protobuf.GetUserAdminRequest) (*protobuf.GetUserAdminResponse, error) {
 	a.log.Info("GetUserAdminCourses")
 	u, err := a.getCurrent(ctx)
@@ -76,7 +87,7 @@ func (a *API) GetUserAdminCourses(ctx context.Context, req *protobuf.GetUserAdmi
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 	
-    courses, err := s.RetrieveUserAdminCourses(a.db, u.ID)
+    courses, err := s.FetchUserAdminCourses(a.db, u.ID)
 	if err != nil {
         return nil, e.WithStatus(http.StatusInternalServerError, err)
     }
@@ -92,6 +103,9 @@ func (a *API) GetUserAdminCourses(ctx context.Context, req *protobuf.GetUserAdmi
 	}, nil
 }
 
+// GetUserBookmarks retrieves the bookmarks of a user based on the context and request.
+// It filters the bookmarks by stream ID if it is specified in the request.
+// It returns a GetBookmarksResponse or an error if one occurs.
 func (a *API) GetUserBookmarks(ctx context.Context, req *protobuf.GetBookmarksRequest) (*protobuf.GetBookmarksResponse, error) {
 	a.log.Info("GetUserBookmarks")
 	u, err := a.getCurrent(ctx)
@@ -99,7 +113,7 @@ func (a *API) GetUserBookmarks(ctx context.Context, req *protobuf.GetBookmarksRe
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 	
-    bookmarks, err := s.RetrieveBookmarks(a.db, u.ID, req)
+    bookmarks, err := s.FetchUserBookmarks(a.db, u.ID, req)
 	if err != nil {
         return nil, e.WithStatus(http.StatusInternalServerError, err)
     }
@@ -115,6 +129,8 @@ func (a *API) GetUserBookmarks(ctx context.Context, req *protobuf.GetBookmarksRe
 	}, nil
 }
 
+// GetUserSettings retrieves the settings of a user based on the context.
+// It returns a GetUserSettingsResponse or an error if one occurs.
 func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettingsRequest) (*protobuf.GetUserSettingsResponse, error) {
 	a.log.Info("GetUserSettings")
 	u, err := a.getCurrent(ctx)
@@ -122,7 +138,7 @@ func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettings
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 	
-    settings, err := s.RetrieveUserSettings(a.db, u.ID)
+    settings, err := s.FetchUserSettings(a.db, u.ID)
 	if err != nil {
         return nil, e.WithStatus(http.StatusInternalServerError, err)
     }

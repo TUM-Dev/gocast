@@ -1,3 +1,4 @@
+// Package helpers provides helper functions for parsing models to protobuf representations.
 package helpers
 
 import (
@@ -7,7 +8,8 @@ import (
     "github.com/TUM-Dev/gocast/dao"
     )	
 
-    func ParseUserToProto(u *model.User) *protobuf.User {
+// ParseUserToProto converts a User model to its protobuf representation.
+func ParseUserToProto(u *model.User) *protobuf.User {
         user := &protobuf.User{
             Id:                 uint32(u.ID),
             Name:               u.Name,
@@ -29,7 +31,8 @@ import (
         return user
     }
     
-    func ParseUserSettingToProto(setting model.UserSetting) *protobuf.UserSetting {
+// ParseUserSettingToProto converts a UserSetting model to its protobuf representation.
+func ParseUserSettingToProto(setting model.UserSetting) *protobuf.UserSetting {
         return &protobuf.UserSetting{
                 Id:       uint32(setting.ID),
                 UserID:   uint32(setting.UserID),
@@ -38,17 +41,19 @@ import (
         }
     }
     
-    func ParseBookmarkToProto(bookmark model.Bookmark) *protobuf.Bookmark {
-        return &protobuf.Bookmark{
-                Description:	bookmark.Description,
-                Hours:			uint32(bookmark.Hours),
-                Minutes:     	uint32(bookmark.Minutes),
-                Seconds:    	uint32(bookmark.Seconds),
-                UserID:    		uint32(bookmark.UserID),
-                StreamID:   	uint32(bookmark.StreamID),
-        }
+// ParseBookmarkToProto converts a Bookmark model to its protobuf representation.
+func ParseBookmarkToProto(bookmark model.Bookmark) *protobuf.Bookmark {
+    return &protobuf.Bookmark{
+            Description:	bookmark.Description,
+            Hours:			uint32(bookmark.Hours),
+            Minutes:     	uint32(bookmark.Minutes),
+            Seconds:    	uint32(bookmark.Seconds),
+            UserID:    		uint32(bookmark.UserID),
+            StreamID:   	uint32(bookmark.StreamID),
     }
+}
     
+// ParseCourseToProto converts a Course model to its protobuf representation.
 func ParseCourseToProto(course model.Course) *protobuf.Course {
 	return &protobuf.Course{
 		Id:           uint32(course.ID),
@@ -70,6 +75,7 @@ func ParseCourseToProto(course model.Course) *protobuf.Course {
 	}
 }
 
+// ParseSemesterToProto converts a Semester model to its protobuf representation.
 func ParseSemesterToProto(semester dao.Semester) *protobuf.Semester {
 	return &protobuf.Semester{
 		Year:         uint32(semester.Year),
@@ -77,6 +83,8 @@ func ParseSemesterToProto(semester dao.Semester) *protobuf.Semester {
 	}
 }
 
+// ParseStreamToProto converts a Stream model to its protobuf representation.
+// It returns an error if the conversion of timestamps fails.
 func ParseStreamToProto(stream model.Stream) (*protobuf.Stream, error) {
     start, err := ptypes.TimestampProto(stream.Start)
     if err != nil {

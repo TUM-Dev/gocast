@@ -1,3 +1,4 @@
+// Package api_v2 provides API endpoints for the application.
 package api_v2
 
 import (
@@ -13,6 +14,8 @@ import (
 	"strings"
 )
 
+// getCurrent retrieves the current user based on the context.
+// It returns a User or an error if one occurs.
 func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -32,6 +35,8 @@ func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
 	return a.getUserFromClaims(claims)
 }
 
+// extractJWTFromMetadata extracts the JWT cookie from the metadata.
+// It returns a string or an error if one occurs.
 func (a *API) extractJWTFromMetadata(md metadata.MD) (string, error) {
 	cookies, ok := md["grpcgateway-cookie"]
 	if !ok || len(cookies) < 1 {
@@ -41,6 +46,8 @@ func (a *API) extractJWTFromMetadata(md metadata.MD) (string, error) {
 	return extractTokenFromCookie(cookies[0])
 }
 
+// extractTokenFromCookie extracts the actual JWT from the cookie header.
+// It returns a string or an error if one occurs.
 func extractTokenFromCookie(cookieHeader string) (string, error) {
 	cookies := strings.Split(cookieHeader, ";")
 	for _, cookie := range cookies {
@@ -53,6 +60,8 @@ func extractTokenFromCookie(cookieHeader string) (string, error) {
 	return "", errors.New("jwt cookie not found")
 }
 
+// parseJWT parses the JWT string.
+// It returns JWTClaims or an error if one occurs.
 func (a *API) parseJWT(jwtStr string) (*tools.JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(jwtStr, &tools.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return tools.Cfg.GetJWTKey().Public(), nil
@@ -76,6 +85,8 @@ func (a *API) parseJWT(jwtStr string) (*tools.JWTClaims, error) {
 	return claims, nil
 }
 
+// getUserFromClaims retrieves the user from the claims.
+// It returns a User or an error if one occurs.
 func (a *API) getUserFromClaims(claims *tools.JWTClaims) (*model.User, error) {
 	var u model.User
 	err := a.db.Where("id = ?", claims.UserID).First(&u).Error
