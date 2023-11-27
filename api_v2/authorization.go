@@ -1,16 +1,16 @@
 package api_v2
 
 import (
-"context"
-"errors"
-"github.com/TUM-Dev/gocast/api_v2/e"
-"github.com/TUM-Dev/gocast/model"
-"github.com/TUM-Dev/gocast/tools"
-"github.com/golang-jwt/jwt/v4"
-"google.golang.org/grpc/metadata"
-"gorm.io/gorm"
-"net/http"
-"strings"
+	"context"
+	"errors"
+	e "github.com/TUM-Dev/gocast/api_v2/errors"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/golang-jwt/jwt/v4"
+	"google.golang.org/grpc/metadata"
+	"gorm.io/gorm"
+	"net/http"
+	"strings"
 )
 
 func (a *API) getCurrent(ctx context.Context) (*model.User, error) {

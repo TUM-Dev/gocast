@@ -43,22 +43,67 @@ service API {
       description: "Returns the user assigned to the token"
     };
   }
-  // END API/V2/USER
 
-
-  // BEGIN API/V2/COURSES
-  rpc getCourses(getCoursesRequest) returns (getCoursesResponse) {
+  rpc getUserCourses(GetUserCoursesRequest) returns (GetUserCoursesResponse) {
     option (google.api.http) = {
-      get: "/courses"
+      get: "/user/courses"
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Courses"
-      summary: "Get all courses"
-      description: "Returns all courses"
+      tags: "User"
+      summary: "Get the current user's courses."
+      description: "Returns all courses of the current user live courses optionally filtered by year, term and paginated by limit and skip."
     };
   }
-  // END API/V2/COURSES
+ 
+  rpc getUserPinned(GetUserPinnedRequest) returns (GetUserPinnedResponse) {
+    option (google.api.http) = {
+      get: "/user/pinned"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user's pinned courses."
+      description: "Returns all courses pinned by the current user optionally filtered by year, term and paginated by limit and skip."
+    };
+  }
+
+  rpc getUserAdminCourses(GetUserAdminRequest) returns (GetUserAdminResponse) {
+    option (google.api.http) = {
+      get: "/user/administered-courses"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user's administered courses."
+      description: "Returns all courses that the current user is an admin of."
+    };
+  }
+
+  rpc getUserSettings(GetUserSettingsRequest) returns (GetUserSettingsResponse) {
+    option (google.api.http) = {
+      get: "/user/settings"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user's settings."
+      description: "Returns the settings of the current user."
+    };
+  }
+
+  rpc getUserBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
+    option (google.api.http) = {
+      get: "/user/bookmarks"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user's bookmarks."
+      description: "Returns the bookmarks created by the current user, optionally filtered by stream."
+    };
+  }
+  // END API/V2/USER
 }
 
 ///////////////////////////////
@@ -99,12 +144,47 @@ enum UserSettingType {
 
 message GetUserRequest {}
 
+message GetUserCoursesRequest {
+  int32 year = 1;
+  string term = 2;
+  string query = 3;
+  int32 limit = 4;
+  int32 skip = 5;
+}
+
+message GetUserPinnedRequest {
+  int32 year = 1;
+  string term = 2;
+  int32 limit = 3;
+  int32 skip = 4;
+}
+
+message GetUserAdminRequest {}
+
+message GetUserSettingsRequest {}
+
 ///////////////////////////////
 //////// USER_RESPONSE ////////
 ///////////////////////////////
 
 message GetUserResponse {
   User user = 1;
+}
+
+message GetUserCoursesResponse {
+  repeated Course courses = 1;
+}
+
+message GetUserPinnedResponse {
+  repeated Course courses = 1;
+}
+
+message GetUserAdminResponse {
+  repeated Course courses = 1;
+}
+
+message GetUserSettingsResponse {
+  repeated UserSetting userSettings = 1;
 }
 
 ///////////////////////////////
@@ -122,26 +202,74 @@ message Bookmark {
 }
 
 ///////////////////////////////
+////// BOOKMARK_REQUEST ///////
+///////////////////////////////
+
+message GetBookmarksRequest {
+  int32 streamID = 1;
+}
+
+///////////////////////////////
+////// BOOKMARK_RESPONSE //////
+///////////////////////////////
+
+message GetBookmarksResponse {
+  repeated Bookmark bookmarks = 1;
+}
+
+///////////////////////////////
 /////// COURSE_MESSAGE ////////
 ///////////////////////////////
 
 message Course {
-  uint64 id = 1;
+  uint32 id = 1;
   string name = 2;
+  string slug = 3;
+  Semester semester = 4;
+  string TUMOnlineIdentifier = 5;
+  bool VODEnabled = 6;
+  bool downloadsEnabled = 7;
+  bool chatEnabled = 8;
+  bool anonymousChatEnabled = 9;
+  bool moderatedChatEnabled = 10;
+  bool vodChatEnabled = 11;
+  repeated Stream streams = 12;
+  string cameraPresetPreferences = 13;
+  string sourcePreferences = 14;
+}
+
+message Semester { 
   string teachingTerm = 3;
   uint32 year = 4;
 }
 
 ///////////////////////////////
-/////// COURSE_REQUEST ////////
+/////// STREAM_MESSAGE ////////
 ///////////////////////////////
 
-message getCoursesRequest { }
-
-///////////////////////////////
-/////// COURSE_RESPONSE ///////
-///////////////////////////////
-
-message getCoursesResponse {
-  repeated Course courses = 1;
+message Stream {
+  uint64 id = 1;
+  string name = 2;
+  string description = 3;
+  uint32 courseID = 4;
+  google.protobuf.Timestamp start = 5;
+  google.protobuf.Timestamp end = 6;
+  bool chatEnabled = 7;
+  string roomName = 8;
+  string roomCode = 9;
+  string eventTypeName = 10;
+  uint32 TUMOnlineEventID = 11;
+  string seriesIdentifier = 12;
+  string playlistUrl = 13;
+  string playlistUrlPRES = 14;
+  string playlistUrlCAM = 15;
+  bool liveNow = 16;
+  google.protobuf.Timestamp liveNowTimestamp = 17;
+  bool recording = 18;
+  bool premiere = 19;
+  bool ended = 20;
+  uint32 vodViews = 21;
+  uint32 startOffset = 22;
+  uint32 endOffset = 23;
+  int32 duration = 28;
 }

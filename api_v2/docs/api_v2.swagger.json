@@ -31,16 +31,16 @@
     "application/json"
   ],
   "paths": {
-    "/courses": {
+    "/user/administered-courses": {
       "get": {
-        "summary": "Get all courses",
-        "description": "Returns all courses",
-        "operationId": "API_getCourses",
+        "summary": "Get the current user's administered courses.",
+        "description": "Returns all courses that the current user is an admin of.",
+        "operationId": "API_getUserAdminCourses",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/protobufgetCoursesResponse"
+              "$ref": "#/definitions/protobufGetUserAdminResponse"
             }
           },
           "default": {
@@ -51,7 +51,99 @@
           }
         },
         "tags": [
-          "Courses"
+          "User"
+        ]
+      }
+    },
+    "/user/bookmarks": {
+      "get": {
+        "summary": "Get the current user's bookmarks.",
+        "description": "Returns the bookmarks created by the current user, optionally filtered by stream.",
+        "operationId": "API_getUserBookmarks",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetBookmarksResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/courses": {
+      "get": {
+        "summary": "Get the current user's courses.",
+        "description": "Returns all courses of the current user live courses optionally filtered by year, term and paginated by limit and skip.",
+        "operationId": "API_getUserCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
         ]
       }
     },
@@ -65,6 +157,83 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/protobufGetUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/pinned": {
+      "get": {
+        "summary": "Get the current user's pinned courses.",
+        "description": "Returns all courses pinned by the current user optionally filtered by year, term and paginated by limit and skip.",
+        "operationId": "API_getUserPinned",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserPinnedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/settings": {
+      "get": {
+        "summary": "Get the current user's settings.",
+        "description": "Returns the settings of the current user.",
+        "operationId": "API_getUserSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserSettingsResponse"
             }
           },
           "default": {
@@ -126,12 +295,125 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "format": "uint64"
+          "type": "integer",
+          "format": "int64"
         },
         "name": {
           "type": "string"
         },
+        "slug": {
+          "type": "string"
+        },
+        "semester": {
+          "$ref": "#/definitions/protobufSemester"
+        },
+        "TUMOnlineIdentifier": {
+          "type": "string"
+        },
+        "VODEnabled": {
+          "type": "boolean"
+        },
+        "downloadsEnabled": {
+          "type": "boolean"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "anonymousChatEnabled": {
+          "type": "boolean"
+        },
+        "moderatedChatEnabled": {
+          "type": "boolean"
+        },
+        "vodChatEnabled": {
+          "type": "boolean"
+        },
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStream"
+          }
+        },
+        "cameraPresetPreferences": {
+          "type": "string"
+        },
+        "sourcePreferences": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufGetBookmarksResponse": {
+      "type": "object",
+      "properties": {
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBookmark"
+          }
+        }
+      }
+    },
+    "protobufGetUserAdminResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetUserCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetUserPinnedResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/protobufUser"
+        }
+      }
+    },
+    "protobufGetUserSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
+    "protobufSemester": {
+      "type": "object",
+      "properties": {
         "teachingTerm": {
           "type": "string"
         },
@@ -141,11 +423,90 @@
         }
       }
     },
-    "protobufGetUserResponse": {
+    "protobufStream": {
       "type": "object",
       "properties": {
-        "user": {
-          "$ref": "#/definitions/protobufUser"
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "courseID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "roomName": {
+          "type": "string"
+        },
+        "roomCode": {
+          "type": "string"
+        },
+        "eventTypeName": {
+          "type": "string"
+        },
+        "TUMOnlineEventID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seriesIdentifier": {
+          "type": "string"
+        },
+        "playlistUrl": {
+          "type": "string"
+        },
+        "playlistUrlPRES": {
+          "type": "string"
+        },
+        "playlistUrlCAM": {
+          "type": "string"
+        },
+        "liveNow": {
+          "type": "boolean"
+        },
+        "liveNowTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "recording": {
+          "type": "boolean"
+        },
+        "premiere": {
+          "type": "boolean"
+        },
+        "ended": {
+          "type": "boolean"
+        },
+        "vodViews": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "endOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "duration": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -239,18 +600,6 @@
         "CUSTOM_PLAYBACK_SPEEDS"
       ],
       "default": "PREFERRED_NAME"
-    },
-    "protobufgetCoursesResponse": {
-      "type": "object",
-      "properties": {
-        "courses": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/protobufCourse"
-          }
-        }
-      }
     },
     "rpcStatus": {
       "type": "object",

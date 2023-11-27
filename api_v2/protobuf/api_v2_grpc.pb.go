@@ -19,8 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	API_GetUser_FullMethodName    = "/protobuf.API/getUser"
-	API_GetCourses_FullMethodName = "/protobuf.API/getCourses"
+	API_GetUser_FullMethodName             = "/protobuf.API/getUser"
+	API_GetUserCourses_FullMethodName      = "/protobuf.API/getUserCourses"
+	API_GetUserPinned_FullMethodName       = "/protobuf.API/getUserPinned"
+	API_GetUserAdminCourses_FullMethodName = "/protobuf.API/getUserAdminCourses"
+	API_GetUserSettings_FullMethodName     = "/protobuf.API/getUserSettings"
+	API_GetUserBookmarks_FullMethodName    = "/protobuf.API/getUserBookmarks"
 )
 
 // APIClient is the client API for API service.
@@ -29,8 +33,11 @@ const (
 type APIClient interface {
 	// BEGIN API/V2/USER
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
-	// BEGIN API/V2/COURSES
-	GetCourses(ctx context.Context, in *GetCoursesRequest, opts ...grpc.CallOption) (*GetCoursesResponse, error)
+	GetUserCourses(ctx context.Context, in *GetUserCoursesRequest, opts ...grpc.CallOption) (*GetUserCoursesResponse, error)
+	GetUserPinned(ctx context.Context, in *GetUserPinnedRequest, opts ...grpc.CallOption) (*GetUserPinnedResponse, error)
+	GetUserAdminCourses(ctx context.Context, in *GetUserAdminRequest, opts ...grpc.CallOption) (*GetUserAdminResponse, error)
+	GetUserSettings(ctx context.Context, in *GetUserSettingsRequest, opts ...grpc.CallOption) (*GetUserSettingsResponse, error)
+	GetUserBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
 }
 
 type aPIClient struct {
@@ -50,9 +57,45 @@ func (c *aPIClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grp
 	return out, nil
 }
 
-func (c *aPIClient) GetCourses(ctx context.Context, in *GetCoursesRequest, opts ...grpc.CallOption) (*GetCoursesResponse, error) {
-	out := new(GetCoursesResponse)
-	err := c.cc.Invoke(ctx, API_GetCourses_FullMethodName, in, out, opts...)
+func (c *aPIClient) GetUserCourses(ctx context.Context, in *GetUserCoursesRequest, opts ...grpc.CallOption) (*GetUserCoursesResponse, error) {
+	out := new(GetUserCoursesResponse)
+	err := c.cc.Invoke(ctx, API_GetUserCourses_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetUserPinned(ctx context.Context, in *GetUserPinnedRequest, opts ...grpc.CallOption) (*GetUserPinnedResponse, error) {
+	out := new(GetUserPinnedResponse)
+	err := c.cc.Invoke(ctx, API_GetUserPinned_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetUserAdminCourses(ctx context.Context, in *GetUserAdminRequest, opts ...grpc.CallOption) (*GetUserAdminResponse, error) {
+	out := new(GetUserAdminResponse)
+	err := c.cc.Invoke(ctx, API_GetUserAdminCourses_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetUserSettings(ctx context.Context, in *GetUserSettingsRequest, opts ...grpc.CallOption) (*GetUserSettingsResponse, error) {
+	out := new(GetUserSettingsResponse)
+	err := c.cc.Invoke(ctx, API_GetUserSettings_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetUserBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error) {
+	out := new(GetBookmarksResponse)
+	err := c.cc.Invoke(ctx, API_GetUserBookmarks_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +108,11 @@ func (c *aPIClient) GetCourses(ctx context.Context, in *GetCoursesRequest, opts 
 type APIServer interface {
 	// BEGIN API/V2/USER
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
-	// BEGIN API/V2/COURSES
-	GetCourses(context.Context, *GetCoursesRequest) (*GetCoursesResponse, error)
+	GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error)
+	GetUserPinned(context.Context, *GetUserPinnedRequest) (*GetUserPinnedResponse, error)
+	GetUserAdminCourses(context.Context, *GetUserAdminRequest) (*GetUserAdminResponse, error)
+	GetUserSettings(context.Context, *GetUserSettingsRequest) (*GetUserSettingsResponse, error)
+	GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -77,8 +123,20 @@ type UnimplementedAPIServer struct {
 func (UnimplementedAPIServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
 }
-func (UnimplementedAPIServer) GetCourses(context.Context, *GetCoursesRequest) (*GetCoursesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCourses not implemented")
+func (UnimplementedAPIServer) GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserCourses not implemented")
+}
+func (UnimplementedAPIServer) GetUserPinned(context.Context, *GetUserPinnedRequest) (*GetUserPinnedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserPinned not implemented")
+}
+func (UnimplementedAPIServer) GetUserAdminCourses(context.Context, *GetUserAdminRequest) (*GetUserAdminResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserAdminCourses not implemented")
+}
+func (UnimplementedAPIServer) GetUserSettings(context.Context, *GetUserSettingsRequest) (*GetUserSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserSettings not implemented")
+}
+func (UnimplementedAPIServer) GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserBookmarks not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -111,20 +169,92 @@ func _API_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_GetCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCoursesRequest)
+func _API_GetUserCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserCoursesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).GetCourses(ctx, in)
+		return srv.(APIServer).GetUserCourses(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: API_GetCourses_FullMethodName,
+		FullMethod: API_GetUserCourses_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).GetCourses(ctx, req.(*GetCoursesRequest))
+		return srv.(APIServer).GetUserCourses(ctx, req.(*GetUserCoursesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetUserPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserPinnedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetUserPinned(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetUserPinned_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetUserPinned(ctx, req.(*GetUserPinnedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetUserAdminCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetUserAdminCourses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetUserAdminCourses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetUserAdminCourses(ctx, req.(*GetUserAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetUserSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetUserSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetUserSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetUserSettings(ctx, req.(*GetUserSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetUserBookmarks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBookmarksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetUserBookmarks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetUserBookmarks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetUserBookmarks(ctx, req.(*GetBookmarksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -141,8 +271,24 @@ var API_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _API_GetUser_Handler,
 		},
 		{
-			MethodName: "getCourses",
-			Handler:    _API_GetCourses_Handler,
+			MethodName: "getUserCourses",
+			Handler:    _API_GetUserCourses_Handler,
+		},
+		{
+			MethodName: "getUserPinned",
+			Handler:    _API_GetUserPinned_Handler,
+		},
+		{
+			MethodName: "getUserAdminCourses",
+			Handler:    _API_GetUserAdminCourses_Handler,
+		},
+		{
+			MethodName: "getUserSettings",
+			Handler:    _API_GetUserSettings_Handler,
+		},
+		{
+			MethodName: "getUserBookmarks",
+			Handler:    _API_GetUserBookmarks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
