@@ -9,8 +9,9 @@
                 <h2 class="mb-0">Find your course from TUMOnline</h2>
                 <form id="createCourseForm" aria-haspopup="listbox" class="grid gap-3 mt-3">
                     <div class="flex space-x-1">
-                        <input class="w-full box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white"
-                               type="search" autocomplete="off" placeholder="Search" x-model="searchQuery"
+                        <label for="search-course" class="hidden">Search Course</label>
+                        <input class="w-full box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 dark:bg-gray-600 dark:text-white"
+                               id="search-course" type="search" autocomplete="off" placeholder="Search" x-model="searchQuery"
                                @change="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
                                @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
                                @focus="isSearchResultVisible = true"
@@ -47,7 +48,8 @@
                                x-model="slug"
                                required
                                placeholder="eidi"
-                               :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"/>
+                               :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"
+                               @input="slug = slug.replace(/[^A-Za-z0-9\-_.+()~]/g, '')"/>
                     </div>
                     {{template "semester-selection"}}
                 </form>
