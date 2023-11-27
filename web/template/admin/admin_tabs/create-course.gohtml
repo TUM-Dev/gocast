@@ -2,7 +2,7 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
     <div class="text-1 container mx-auto"
-         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', searchResults: [] }"
+         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', searchResults: [] , isSearchResultVisible: false}"
         x-init="$watch('year',(value)=>{if(value<2000)return; yearW = (value%1000) + 1})">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
@@ -12,9 +12,11 @@
                         <input class="w-full box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white"
                                type="search" autocomplete="off" placeholder="Search" x-model="searchQuery"
                                @change="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
-                               @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"/>
+                               @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
+                               @focus="isSearchResultVisible = true"
+                               @blur="setTimeout(() => isSearchResultVisible = false, 100)"/>
                     </div>
-                    <div class="px-2" x-show="searchResults.length!==0">
+                    <div class="px-2" x-show="isSearchResultVisible && searchQuery !== '' && searchResults.length!==0">
                         <ul role="listbox">
                             <template x-for="searchResult in searchResults">
                                 <li role="option" aria-selected="false"
