@@ -1,0 +1,13 @@
+{{define "faq-line"}}
+    <div class="border border-white  w-full rounded" x-data="{shown: false}">
+        <div class="flex flex-row pl-1" @click="shown = !shown">
+            <h3>
+                <i class="fa-solid pr-2" :class="{'fa-chevron-right': !shown, 'fa-chevron-down': shown}"></i>
+                Testquestion
+            </h3>
+        </div>
+        <div class="pl-5" x-show="shown" x-transition>
+            <p >Testanswer</p>
+        </div>
+    </div>
+{{end}}

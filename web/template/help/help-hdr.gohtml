@@ -1,0 +1,18 @@
+{{define "help-hdr"}}
+    {{$user := .User}}
+    {{$userID := 0}}
+    {{if $user}}{{$userID = $user.ID}}{{end}}
+    <header x-data="{dark: false}"
+            class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+        <div class="flex items-center">
+            <button type="button" id="open-sidenav" title="Open Sidenav" @click="navigation.toggle()"
+                    class="tum-live-icon-button p-3 text-lg md:hidden">
+                <i class="fa-solid fa-bars" :class="{'rotate-90': navigation.value}"></i>
+            </button>
+            <button class="mx-3" type="button" id="logo" title="Start" @click="showMain()">
+                <img src="/logo.svg" width="64" alt="TUM-Live Logo">
+            </button>
+            <span class="text-gray-600 dark:text-gray-400 text-xl">Helppage</span>
+        </div>
+    </header>
+{{end}}

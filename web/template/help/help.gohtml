@@ -1,0 +1,50 @@
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IndexData*/ -}}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
+
+    <title>{{.Branding.Title}}</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+
+    <script src="static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/home.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+
+    <link rel="manifest" href="/static/assets/manifest.json">
+    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
+    <script defer type='text/javascript'>
+        const link = !!document.querySelector("link[rel='canonical']") ? document.querySelector("link[rel='canonical']") : document.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        link.setAttribute('href', location.href);
+        document.head.appendChild(link);
+    </script>
+</head>
+<body x-data="home.skeleton()"
+      @popstate.window="onPopState"
+      class="h-screen flex flex-col items-stretch tum-live-bg">
+{{template "help-hdr" .TUMLiveContext}}
+<main id="content" class="flex grow h-full w-full overflow-y-scroll">
+    <div class="dark:text-gray-400 text-gray-700 px-10 w-full">
+        <h1>FAQ</h1>
+        {{template "faq-line"}}
+    </div>
+</main>
+{{template "footer" .VersionTag}}
+</body>
+</html>

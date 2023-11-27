@@ -11,9 +11,9 @@ import (
 	"path"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -30,6 +30,7 @@ var templatePaths = []string{
 	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
 	"template/admin/admin_tabs/*.gohtml",
+	"template/help/*.gohtml",
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
@@ -163,6 +164,9 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/edit-course", routes.editCourseByTokenPage)
 	router.GET("/edit-course/opt-out", routes.optOutPage)
 
+	// help
+	router.GET("/help", routes.HelpPage)
+
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
 	loggedIn.GET("/settings", routes.settingsPage)
@@ -224,6 +228,13 @@ func (r mainRoutes) HealthCheck(context *gin.Context) {
 
 func (r mainRoutes) JWTPubKey(c *gin.Context) {
 	c.JSON(http.StatusOK, tools.Cfg.GetJWTKey().PublicKey)
+}
+
+// help
+func (r mainRoutes) HelpPage(context *gin.Context) {
+	if err := templateExecutor.ExecuteTemplate(context.Writer, "help.gohtml", nil); err != nil {
+		log.WithError(err).Errorf("Could not execute template: 'help.gohtml'")
+	}
 }
 
 type HealthCheckData struct {
