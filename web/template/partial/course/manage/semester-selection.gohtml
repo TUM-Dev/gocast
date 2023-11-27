@@ -9,7 +9,7 @@
     <label for="year" class="hidden">teachingTermYear</label>
 
     <div class="flex">
-        <input id="year" x-model="year" x-data="{initialYear: 2022}" name="year" class="w-32 tl-input border"
+        <input id="year" x-model="year" x-data="{initialYear: 2024}" name="year" class="w-32 tl-input border"
                :class="year === '' ? 'border-red-500 focus:border-red-500' : ''"
                :placeholder="year === '' ? initialYear : ''"
                type="number"
@@ -20,7 +20,7 @@
                 <label for="yearW" class="hidden">teachingTermYearW</label>
                 <input id="yearW" x-model="yearW" name="yearW" class="w-16 tl-input"
                        :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''"
-                       :placeholder="year === '' ? '23' : ''"
+                       :placeholder="year === '' ? '25' : ''"
                        type="text" readonly disabled>
             </div>
         </template>
