@@ -35,14 +35,14 @@
                     <h2>Manually enter Infos:</h2>
                     <div class="flex space-x-1">
                         <label for="name" class="hidden">Course Title</label>
-                        <input class="w-4/5 tl-input !ml-0" id="name" name="name" type="text"
+                        <input class="w-4/5 tl-input border !ml-0" id="name" name="name" type="text"
                                autocomplete="off"
                                placeholder="Einführung in die Informatik (IN0001)"
                                x-model="title"
                                required
                                :class="title === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                         <label for="slug" class="hidden">Slug</label>
-                        <input class="w-1/5 tl-input" id="slug" name="slug" type="text" x-ref="slug"
+                        <input class="w-1/5 tl-input border" id="slug" name="slug" type="text" x-ref="slug"
                                autocomplete="off"
                                x-model="slug"
                                required

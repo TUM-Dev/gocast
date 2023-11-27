@@ -7,15 +7,21 @@
         <option value="Sommersemester">Sommersemester</option>
     </select>
     <label for="year" class="hidden">teachingTermYear</label>
+
     <div class="flex">
-        <input id="year" x-model="year" name="year" class="w-32 tl-input"
-            :class="year === '' ? 'border-red-500 focus:border-red-500' : ''" placeholder="2022" type="number">
+        <input id="year" x-model="year" x-data="{initialYear: 2022}" name="year" class="w-32 tl-input border"
+               :class="year === '' ? 'border-red-500 focus:border-red-500' : ''"
+               :placeholder="year === '' ? initialYear : ''"
+               type="number"
+               @focus="if (year === '') year = initialYear">
         <template x-if="semester === 'Wintersemester'">
             <div class="flex">
                 <span class="mx-2 my-auto text-3">/</span>
                 <label for="yearW" class="hidden">teachingTermYearW</label>
                 <input id="yearW" x-model="yearW" name="yearW" class="w-16 tl-input"
-                    :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''" placeholder="23" type="text" readonly disabled>
+                       :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''"
+                       :placeholder="year === '' ? '23' : ''"
+                       type="text" readonly disabled>
             </div>
         </template>
     </div>
