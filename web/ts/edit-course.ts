@@ -1085,14 +1085,16 @@ export function deleteCourse(courseID: string) {
 }
 
 export function regenerateCourseKeys(courseID: string) {
-    const url = `/api/course/${courseID}/regenerateKey`;
-    fetch(url, { method: "POST" }).then((res) => {
-        if (!res.ok) {
-            alert("Couldn't regenerate keys.");
-        } else {
-            window.location.replace(`/admin/course/${courseID}`);
-        }
-    });
+    if (confirm("Do you really want to regenerate all stream keys? This will affect all users.")) {
+        const url = `/api/course/${courseID}/regenerateKey`;
+        fetch(url, { method: "POST" }).then((res) => {
+            if (!res.ok) {
+                alert("Couldn't regenerate keys.");
+            } else {
+                window.location.replace(`/admin/course/${courseID}`);
+            }
+        });
+    }
 }
 
 export function copyCourse(courseID: string, year: string, yearW: string, semester: string) {
