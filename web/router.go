@@ -232,7 +232,8 @@ func (r mainRoutes) JWTPubKey(c *gin.Context) {
 
 // help
 func (r mainRoutes) HelpPage(context *gin.Context) {
-	if err := templateExecutor.ExecuteTemplate(context.Writer, "help.gohtml", nil); err != nil {
+	helpData := NewHelpDataWithContext(context)
+	if err := templateExecutor.ExecuteTemplate(context.Writer, "help.gohtml", helpData); err != nil {
 		log.WithError(err).Errorf("Could not execute template: 'help.gohtml'")
 	}
 }

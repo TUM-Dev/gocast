@@ -1,13 +1,20 @@
 {{define "faq-line"}}
-    <div class="border border-white  w-full rounded" x-data="{shown: false}">
-        <div class="flex flex-row pl-1" @click="shown = !shown">
-            <h3>
-                <i class="fa-solid pr-2" :class="{'fa-chevron-right': !shown, 'fa-chevron-down': shown}"></i>
-                Testquestion
-            </h3>
+    <li class="relative border-b dark:border-gray-400 border-gray-700" x-data="{selected:null}">
+
+        <button type="button" class="w-full px-8 py-6 text-left"
+                @click="selected !== 1 ? selected = 1 : selected = null">
+            <div class="flex items-center justify-between">
+					<span>{{.Question}}</span>
+                <span class="ico-plus"></span>
+            </div>
+        </button>
+
+        <div class="relative overflow-hidden transition-all max-h-0 duration-700" style="" x-ref="container1"
+             x-bind:style="selected == 1 ? 'max-height: ' + $refs.container1.scrollHeight + 'px' : ''">
+            <div class="p-6">
+                <p>{{.Answer}}</p>
+            </div>
         </div>
-        <div class="pl-5" x-show="shown" x-transition>
-            <p >Testanswer</p>
-        </div>
-    </div>
+
+    </li>
 {{end}}

@@ -40,9 +40,20 @@
       class="h-screen flex flex-col items-stretch tum-live-bg">
 {{template "help-hdr" .TUMLiveContext}}
 <main id="content" class="flex grow h-full w-full overflow-y-scroll">
-    <div class="dark:text-gray-400 text-gray-700 px-10 w-full">
+    <style>
+        .max-h-0 {
+            max-height: 0;
+        }
+    </style>
+    <div class="dark:text-gray-400 text-gray-700 px-10 w-full" x-data="">
         <h1>FAQ</h1>
-        {{template "faq-line"}}
+        <div class="max-w-xl mx-auto border dark:border-gray-400 border-gray-700">
+            <ul class="shadow-box">
+                {{range $faq := .FAQs}}
+                    {{template "faq-line" $faq}}
+                {{end}}
+            </ul>
+        </div>
     </div>
 </main>
 {{template "footer" .VersionTag}}
