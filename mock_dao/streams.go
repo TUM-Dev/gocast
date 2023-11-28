@@ -273,6 +273,21 @@ func (mr *MockStreamsDaoMockRecorder) GetStreamByKey(ctx, key interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamByKey", reflect.TypeOf((*MockStreamsDao)(nil).GetStreamByKey), ctx, key)
 }
 
+// GetStreamByKeyAndTime mocks base method.
+func (m *MockStreamsDao) GetStreamByKeyAndTime(ctx context.Context, key string, time2 time.Time) (model.Stream, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStreamByKeyAndTime", ctx, key, time2)
+	ret0, _ := ret[0].(model.Stream)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStreamByKeyAndTime indicates an expected call of GetStreamByKeyAndTime.
+func (mr *MockStreamsDaoMockRecorder) GetStreamByKeyAndTime(ctx, key, time2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamByKeyAndTime", reflect.TypeOf((*MockStreamsDao)(nil).GetStreamByKeyAndTime), ctx, key, time2)
+}
+
 // GetStreamByTumOnlineID mocks base method.
 func (m *MockStreamsDao) GetStreamByTumOnlineID(ctx context.Context, id uint) (model.Stream, error) {
 	m.ctrl.T.Helper()
