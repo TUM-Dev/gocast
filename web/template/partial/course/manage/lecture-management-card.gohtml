@@ -387,15 +387,19 @@
                         after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600"></div>
                         <span class="ml-3 text-sm font-medium text-3">Chat Enabled</span>
                     </label>
-                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp; &nbsp;
                     <button @click="regenerateKey();"
-                            class="px-8 py-3 text-2 text-white rounded bg-green-500/70 hover:bg-green-500/90 dark:bg-green-500/10 disabled:opacity-20 dark:hover:bg-green-500/20 mr-4">
+                            class="px-6 py-3 text-1 text-white rounded bg-green-500/70 hover:bg-green-500/90 dark:bg-green-500/10 disabled:opacity-20 dark:hover:bg-green-500/20 mr-4">
                         Regenerate Key
+                    </button>
+                    <button @click="restoreKey();"
+                            class="px-6 py-3 text-1 text-white rounded bg-green-500/70 hover:bg-green-500/90 dark:bg-green-500/10 disabled:opacity-20 dark:hover:bg-green-500/20 mr-4">
+                        Restore Key
                     </button>
                 </section>
                 <div>
                     <button :disabled="isSaving" @click="discardEdit();"
-                            class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
+                            class="px-4 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
                         Discard Changes
                     </button>
                     <button

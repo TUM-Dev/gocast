@@ -325,6 +325,18 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
         },
 
+        restoreKey() {
+            const url = `/api/stream/${lecture.lectureId}/restoreKey`;
+            fetch(url, { method: "POST" }).then((res) => {
+                if (!res.ok) {
+                    alert("Couldn't restore key.");
+                } else {
+                    window.location.replace(`/admin/course/${lecture.courseId}`);
+                }
+            });
+
+        },
+
         /**
          * Save changes send them to backend and commit change set.
          */
