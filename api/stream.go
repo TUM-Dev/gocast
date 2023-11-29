@@ -45,6 +45,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 			streamById.GET("/playlist", routes.getStreamPlaylist)
 			streamById.POST("/regenerateKey", routes.regenerateKey)
+			streamById.POST("/restoreKey", routes.restoreKey)
 
 			thumbs := streamById.Group("/thumbs")
 			{
@@ -862,11 +863,24 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 
 // regenerateKey regenerates the key for a stream.
 func (r streamRoutes) regenerateKey(c *gin.Context) {
-	log.Println("regenerating key")
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream := *ctx.Stream
 
 	stream.StreamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+	err := r.DaoWrapper.StreamsDao.UpdateStream(stream)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
+		return
+	}
+}
+
+// restoreKey restores the key for a stream to the course key
+func (r streamRoutes) restoreKey(c *gin.Context) {
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	stream := *ctx.Stream
+	course := *ctx.Course
+
+	stream.StreamKey = course.StreamKey
 	err := r.DaoWrapper.StreamsDao.UpdateStream(stream)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
