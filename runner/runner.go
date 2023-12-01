@@ -2,9 +2,11 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"github.com/caarlos0/env"
 	"github.com/google/uuid"
 	"github.com/tum-dev/gocast/runner/actions"
+	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/logging"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
 	"github.com/tum-dev/gocast/runner/protobuf"
@@ -12,15 +14,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
-
-	"fmt"
 	"log/slog"
 	"net"
 	"os"
 	"time"
 )
 
-type config struct {
+type envConfig struct {
 	LogFmt       string `env:"LOG_FMT" envDefault:"txt"`
 	LogLevel     string `env:"LOG_LEVEL" envDefault:"debug"`
 	Port         int    `env:"PORT" envDefault:"0"`
@@ -32,8 +32,9 @@ type config struct {
 }
 
 type Runner struct {
-	cfg config
+	cfg envConfig
 	log *slog.Logger
+	cmd config.CmdList
 
 	JobCount chan int
 	draining bool
@@ -47,20 +48,25 @@ type Runner struct {
 
 func NewRunner(v string) *Runner {
 	log := logging.GetLogger(v)
-	var cfg config
+	var cfg envConfig
 	if err := env.Parse(&cfg); err != nil {
-		log.Error("error parsing config", "error", err)
+		log.Error("error parsing envConfig", "error", err)
 	}
-	log.Info("config loaded", "config", cfg)
+	log.Info("envConfig loaded", "envConfig", cfg)
+
+	cmd := config.NewCmd(log)
+	log.Info("loading cmd.yaml", "cmd", cmd)
 
 	return &Runner{
 		log:      log,
 		JobCount: make(chan int, 1),
 		draining: false,
 		cfg:      cfg,
+		cmd:      *cmd,
 		jobs:     make(map[string]*Job),
 		actions: actions.ActionProvider{
 			Log:        log,
+			Cmd:        *cmd,
 			SegmentDir: cfg.SegmentPath,
 			RecDir:     cfg.RecPath,
 			MassDir:    cfg.StoragePath,

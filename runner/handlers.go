@@ -23,6 +23,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 		r.actions.PrepareAction(),
 		r.actions.StreamAction(),
 		r.actions.TranscodeAction(),
+		r.actions.GenerateVideoThumbnail(),
 		r.actions.UploadAction(),
 	}
 	jobID := r.AddJob(ctx, a)
@@ -36,4 +37,13 @@ func (r *Runner) RequestStreamEnd(ctx context.Context, request *protobuf.StreamE
 		return &protobuf.StreamEndResponse{}, nil
 	}
 	return nil, errors.New("job not found")
+}
+
+func (r *Runner) GenerateLivePreview(ctx context.Context, request *protobuf.LivePreviewRequest) (*protobuf.LivePreviewResponse, error) {
+	if job, ok := r.jobs[request.GetRunnerID()]; ok {
+		job.Cancel(errors.New("canceled by user request"), actions.StreamAction)
+		return &protobuf.LivePreviewResponse{}, nil
+	}
+
+	return nil, errors.New("Live Preview not Generated")
 }

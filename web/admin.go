@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
@@ -41,6 +41,10 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	if err != nil {
 		sentry.CaptureException(err)
 	}
+	runners, err := r.RunnerDao.GetAll(context.Background())
+	if err != nil {
+		sentry.CaptureException(err)
+	}
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
@@ -56,6 +60,9 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	if c.Request.URL.Path == "/admin/workers" {
 		page = "workers"
+	}
+	if c.Request.URL.Path == "/admin/runners" {
+		page = "runners"
 	}
 	if c.Request.URL.Path == "/admin/create-course" {
 		page = "createCourse"
@@ -135,6 +142,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
+			Runners:             RunnersData{Runners: runners},
 		})
 	if err != nil {
 		log.Printf("%v", err)
@@ -144,6 +152,10 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
+}
+
+type RunnersData struct {
+	Runners []model.Runner
 }
 
 func (r mainRoutes) LectureCutPage(c *gin.Context) {
@@ -304,6 +316,7 @@ type AdminPageData struct {
 	Tokens              []dao.AllTokensDto
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
+	Runners             RunnersData
 }
 
 func (apd AdminPageData) UsersAsJson() string {

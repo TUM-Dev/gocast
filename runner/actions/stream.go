@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var edgeTemplate = "%s://%s/live/%s/%d-%s/playlist.m3u8" // e.g. "https://stream.domain.com/workerhostname123/1-COMB/playlist.m3u8"
+//var edgeTemplate = "%s://%s/live/%s/%d-%s/playlist.m3u8" // e.g. "https://stream.domain.com/workerhostname123/1-COMB/playlist.m3u8"
 
 // StreamAction streams a video. in is ignored. out is a []string containing the filenames of the recorded stream.
 // ctx must contain the following values:
@@ -49,36 +49,40 @@ func (a *ActionProvider) StreamAction() *Action {
 			if !ok {
 				return ctx, fmt.Errorf("%w: context doesn't contain end", ErrRequiredContextValNotFound)
 			}
-			log.Info("streaming", "source", source, "end", end)
+			log.Info("streaming", "source", source, "end", time.Now().Second()+end.Second())
+
+			endingTime := time.Now().Add(time.Second * time.Duration(end.Second()))
+			log.Info("streaming until", "end", endingTime)
 
 			streamAttempt := 0
-			for time.Now().Before(end) && ctx.Err() == nil {
+			for time.Now().Before(endingTime) && ctx.Err() == nil {
 				streamAttempt++
 				filename := filepath.Join(a.GetRecDir(courseID, streamID, version), fmt.Sprintf("%d.ts", streamAttempt))
 				files = append(files, filename)
-				livePlaylist := filepath.Join(a.GetLiveDir(courseID, streamID, version), "playlist.m3u8")
-
-				cmd := "-y -hide_banner -nostats"
-				if strings.HasPrefix(source, "rtsp") {
-					cmd += " -rtsp_transport tcp"
-				} else if strings.HasPrefix(source, "rtmp") {
-					cmd += " -rw_timeout 5000000" // timeout selfstream	s after 5 seconds of no data
-				} else {
-					cmd += " -re" // read input at native framerate, e.g. when streaming a file in realtime
+				livePlaylist := filepath.Join(a.GetLiveDir(courseID, streamID, version), endingTime.Format("15-04-05"), "playlist.m3u8")
+				err := os.Mkdir(a.GetLiveDir(courseID, streamID, version)+"/"+endingTime.Format("15-04-05"), 0700)
+				if err != nil {
+					log.Warn("streamAction: stream folder couldn't be created", err)
+					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
+					continue
 				}
 
-				cmd += fmt.Sprintf(" -t %.0f", time.Until(end).Seconds())
-				cmd += fmt.Sprintf(" -i %s", source)
-				cmd += " -c:v copy -c:a copy -f mpegts " + filename // write original stream to file for later processing
-				cmd += " -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k -f hls"
-				// todo optional stream target
-				cmd += " -hls_time 2 -hls_list_size 3600 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + filepath.Join(a.GetLiveDir(courseID, streamID, version), "/%05d.ts")
-				cmd += " " + livePlaylist
+				src := ""
+				if strings.HasPrefix(source, "rtsp") {
+					src += "-rtsp_transport tcp"
+				} else if strings.HasPrefix(source, "rtmp") {
+					src += "-rw_timeout 5000000" // timeout selfstream	s after 5 seconds of no data
+				} else {
+					src += "-re" // read input at native framerate, e.g. when streaming a file in realtime
+				}
+
+				//changing the end variable from a date to a duration and adding the duration to the current time
+				cmd := fmt.Sprintf(a.Cmd.Stream, src, time.Until(endingTime).Seconds(), source, filename, filepath.Join(a.GetLiveDir(courseID, streamID, version), endingTime.Format("15-04-05")), livePlaylist)
 
 				c := exec.CommandContext(ctx, "ffmpeg", strings.Split(cmd, " ")...)
 				c.Stderr = os.Stderr
 				log.Info("constructed stream command", "cmd", c.String())
-				err := c.Start()
+				err = c.Start()
 				if err != nil {
 					log.Warn("streamAction: ", err)
 					time.Sleep(5 * time.Second) // little backoff to prevent dossing source

@@ -11,9 +11,9 @@ import (
 	"path"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -125,6 +125,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/notifications", routes.AdminPage)
 	adminGroup.GET("/admin/audits", routes.AdminPage)
 	adminGroup.GET("/admin/maintenance", routes.AdminPage)
+	adminGroup.GET("/admin/runners", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))

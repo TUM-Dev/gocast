@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/tum-dev/gocast/runner"
-
 	"log/slog"
 	"os"
 	"os/signal"

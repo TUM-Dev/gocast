@@ -13,6 +13,9 @@ type RunnerDao interface {
 	// Get Runner by hostname
 	Get(context.Context, string) (model.Runner, error)
 
+	// Get all Runners in an array
+	GetAll(context.Context) ([]model.Runner, error)
+
 	// Create a new Runner for the database
 	Create(context.Context, *model.Runner) error
 
@@ -31,6 +34,11 @@ func NewRunnerDao() RunnerDao {
 // Get a Runner by id.
 func (d runnerDao) Get(c context.Context, hostname string) (res model.Runner, err error) {
 	return res, DB.WithContext(c).First(&res, "hostname = ?", hostname).Error
+}
+
+// Get all Runners in an array
+func (d runnerDao) GetAll(c context.Context) (res []model.Runner, err error) {
+	return res, d.db.WithContext(c).Model(&model.Runner{}).Find(&res).Error
 }
 
 // Create a Runner.

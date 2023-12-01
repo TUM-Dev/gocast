@@ -8,6 +8,44 @@ service ToRunner {
   // Requests a stream from a lecture hall
   rpc RequestStream (StreamRequest) returns (StreamResponse) {}
   rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+  rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse){}
+  rpc GenerateSectionImages (GenerateSectionImageRequest) returns (Status) {}
+  rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
+}
+
+message LivePreviewRequest{
+  string RunnerID = 1;
+  string HLSUrl = 2;
+}
+
+message LivePreviewResponse{
+  bytes LiveThumb = 1;
+}
+
+message DeleteSectionImageRequest {
+  string Path = 1;
+}
+
+message GenerateSectionImageResponse {
+  repeated string Paths = 1;
+}
+
+message Section {
+  uint32 Hours = 1;
+  uint32 Minutes = 2;
+  uint32 Seconds = 3;
+}
+
+message GenerateSectionImageRequest {
+  string PlaylistURL = 1;
+  string CourseName = 2;
+  uint32 CourseYear = 3;
+  string CourseTeachingTerm = 4;
+  repeated Section Sections = 5;
+}
+
+message Status{
+  bool ok = 1;
 }
 
 message StreamRequest {
@@ -36,6 +74,74 @@ service FromRunner {
   rpc Register (RegisterRequest) returns (RegisterResponse) {}
   rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse) {}
   rpc RequestSelfStream (SelfStreamRequest) returns (SelfStreamResponse) {}
+  rpc NotifyVoDUploadFinished (VoDUploadFinished) returns (Status) {}
+  rpc NotifySilenceResults (SilenceResults) returns (Status) {}
+  rpc NotifyStreamStarted (StreamStarted) returns (Status) {}
+  rpc NotifyStreamEnded (StreamEnded) returns (Status) {}
+  rpc NotifyThumbnailsFinished (ThumbnailsFinished) returns (Status) {}
+  rpc NotifyTranscodingFailure (TranscodingFailureNotification) returns (Status) {}
+  rpc GetStreamInfoForUpload (StreamInfoForUploadRequest) returns (StreamInfoForUploadResponse) {}
+}
+
+message StreamInfoForUploadRequest{
+  string RunnerID = 1;
+  uint32 UploadKey = 2;
+}
+
+message StreamInfoForUploadResponse{
+  string CourseSlug = 1;
+  string CourseTerm = 2;
+  uint32 CourseYear = 3;
+  google.protobuf.Timestamp StreamStart = 4;
+  google.protobuf.Timestamp StreamEnd = 5;
+  uint32 StreamID = 6;
+  string VideoType = 7;
+}
+
+message VoDUploadFinished{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  string HLSUrl = 3;
+  string SourceType = 4;
+  string ThumbnailUrl = 5;
+}
+
+message SilenceResults{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  repeated uint32 starts = 3 [packed = true];
+  repeated uint32 ends = 4 [packed = true];
+}
+
+message StreamStarted {
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  string HLSUrl = 3;
+  string SourceType = 4;
+}
+
+message StreamEnded{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+}
+
+message ThumbnailsFinished{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  string FilePath = 3;
+  uint32 Interval = 4;
+  string SourceType = 5;
+
+  string LargeThumbnailPath = 6;
+}
+
+message TranscodingFailureNotification{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  string Version = 3;
+  string FilePath = 4;
+  string Logs = 5;
+  int64 ExitCode = 6;
 }
 
 message RegisterRequest {
@@ -44,19 +150,23 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
+  string ID = 1;
 }
 
 message HeartbeatRequest {
-  uint64 ID = 1;
-  uint32 Workload = 2;
-  string Version = 3;
-  string CPU = 4;
-  string Memory = 5;
-  string Disk = 6;
-  string Uptime = 7;
+  string hostname = 1;
+  int32 port = 2;
+  uint32 Workload = 3;
+  string Version = 4;
+  string CPU = 5;
+  string Memory = 6;
+  string Disk = 7;
+  string Uptime = 8;
 }
 
-message HeartbeatResponse {}
+message HeartbeatResponse {
+  bool ok = 1;
+}
 
 message SelfStreamRequest {
   string streamKey = 1;

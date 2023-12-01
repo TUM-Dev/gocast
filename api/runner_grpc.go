@@ -27,6 +27,8 @@ func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.Regist
 		Hostname: request.Hostname,
 		Port:     int(request.Port),
 		LastSeen: sql.NullTime{Valid: true, Time: time.Now()},
+		Status:   "Alive",
+		Workload: 0,
 	}
 	err := g.RunnerDao.Create(ctx, &runner)
 	if err != nil {
@@ -36,8 +38,27 @@ func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.Regist
 }
 
 func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.HeartbeatRequest) (*protobuf.HeartbeatResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	runner := model.Runner{
+		Hostname: request.Hostname,
+		Port:     int(request.Port),
+		LastSeen: sql.NullTime{Valid: true, Time: time.Now()},
+		Status:   "Alive",
+		Workload: uint(request.Workload),
+		CPU:      request.CPU,
+		Memory:   request.Memory,
+		Disk:     request.Disk,
+		Uptime:   request.Uptime,
+		Version:  request.Version,
+	}
+
+	r, err := g.RunnerDao.Get(ctx, runner.Hostname)
+	if err != nil {
+		log.WithError(err).Error("Failed to get runner")
+		return &protobuf.HeartbeatResponse{Ok: false}, err
+	}
+
+	p, err := r.UpdateStats(dao.DB, ctx)
+	return &protobuf.HeartbeatResponse{Ok: p}, err
 }
 
 func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protobuf.SelfStreamRequest) (*protobuf.SelfStreamResponse, error) {
