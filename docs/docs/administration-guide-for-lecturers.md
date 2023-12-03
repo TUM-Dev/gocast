@@ -1,21 +1,46 @@
 # Administration Guide for Lecturers
 
-## Your TUM-Live Admin account
+## Get Your TUM-Live Admin account
 
 In order to manage your own lectures using TUM-Live you need an account with 
-administrative access. Please get in touch with us at live@rbg.tum.de to get one.
-You'll receive an email with instructions to set a password.
-This account will be shared with **all** users who need to edit the course, therefore
+administrative access. Please get in touch with us at [live@rbg.tum.de](mailto:live@rbg.tum.de?subject=Requesting%20an%20Admin%20Account) to get one.
+You'll then receive an email with instructions to set a password.
+This account can be shared with **all** users who need to edit the course, therefore
 we currently recommend requesting a new user on a per-course basis.
 
-If you already have an account you create your course. 
+After you obtain the administrator account and set the password,
+you can choose "use an internal account" on the login page, and then enter the username and password to log in.
+![img_7.png](img_7.png)![img_8.png](img_8.png)
 
 ## Create a course
-
-Once you are logged in with your account, you can navigate to the Admin Panel.
+Once you are logged in with your admin account, you can navigate to the Admin Panel.
+![img_9.png](img_9.png)
 On the left-hand side there is a button to create a new course:
+![img_10.png](img_10.png)
 
-![new-course](new-course.png)
+![img_11.png](img_11.png)
+
+Alternatively, you can [duplicate an existing course](...) of yours, typically from a previous semester.
+
+## Manage lectures
+
+Under one course, multiple lectures can be created.
+Depending on the type and settings, each lecture can either be
+[live-streamed at the scheduled time and available for playback later](...),
+[only live-streamed at the scheduled time without playback availability](...),
+or [have uploaded videos available for viewing without a live broadcast](...).
+
+Regarding live-streaming, you can choose to stream from [the supported lecture halls](...) or opt for [self-streaming](...).
+
+You will now be able to navigate to your course:
+
+![course navigation](course-nav.png)
+
+If your TUMonline ID was set, your lectures have been loaded automatically. Otherwise, you can always add lectures on the button of the page.
+Please add a descriptive Title for your lectures. This is optional but helps your students a lot.
+You can also add a description to each stream. You may use markdown to include links (e.g. to tweedback):
+
+![lecture edit](lecture-edit.png)
 
 ### Course Parameters
 
@@ -38,16 +63,3 @@ This will open a new page where you can set a few parameters of the course:
   - **Enable VoD**: All streamed lectures will be made public after the stream if this is enabled.
   - **Enable Downloads**: Students will be able to download the lectures. This is highly recommended as it allows students with bad internet connection to participate in the lectures.
   - **Enable Live Chat**: The viewers of this course are able to comment on streams using the live chat. Regardless of the visibility, chat users need to be logged in. You can block people from using the chat if they misbehave.
-  
-## Manage lectures
-
-You will now be able to navigate to your course:
-
-![course navigation](course-nav.png)
-
-If your TUMonline ID was set, your lectures have been loaded automatically. Otherwise, you can always add lectures on the button of the page.
-Please add a descriptive Title for your lectures. This is optional but helps your students a lot.
-You can also add a description to each stream. You may use markdown to include links (e.g. to tweedback):
-
-![lecture edit](lecture-edit.png)
-
