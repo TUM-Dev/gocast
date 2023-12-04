@@ -422,7 +422,7 @@
         {{if .IndexData.TUMLiveContext.User}}
             <div id="streams-box" x-cloak="" x-show="sidebar === watch.SidebarState.Streams"
                  :class="sidebar === watch.SidebarState.Streams ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="order-4 z-20 basis-full px-5 md:px-2 lg:order-none lg:h-16/6 h-96">
+                 class="order-4 z-20 basis-full px-5 md:px-2 lg:order-none lg:h-16/6 h-16/9">
                 {{template "playlist" $stream.ID}}
             </div>
         {{end}}
