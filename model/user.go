@@ -198,6 +198,24 @@ func (u User) PreferredNameChangeAllowed() bool {
 	return true
 }
 
+type AutoSkipSetting struct {
+	Enabled bool `json:"enabled"`
+}
+
+func (u User) GetAutoSkipEnabled() bool {
+	for _, setting := range u.Settings {
+		if setting.Type == AutoSkip {
+			var a AutoSkipSetting
+			err := json.Unmarshal([]byte(setting.Value), &a)
+			if err != nil {
+				break
+			}
+			return a.Enabled
+		}
+	}
+	return false
+}
+
 type argonParams struct {
 	memory      uint32
 	iterations  uint32

@@ -732,9 +732,8 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 		})
 		return
 	}
-	var request userSettingsRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&request)
-	if err != nil {
+	var req model.AutoSkipSetting
+	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body to request",
@@ -742,11 +741,9 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 		})
 		return
 	}
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
-		UserID: u.ID,
-		Type:   model.AutoSkip,
-		Value:  request.Value,
-	})
+
+	settingBytes, _ := json.Marshal(req)
+	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.AutoSkip, Value: string(settingBytes)})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
