@@ -31,6 +31,83 @@
     "application/json"
   ],
   "paths": {
+    "/courses/public": {
+      "get": {
+        "summary": "Get all public courses",
+        "description": "Returns all public courses.",
+        "operationId": "API_getPublicCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetPublicCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/semesters": {
+      "get": {
+        "summary": "Get all semesters",
+        "description": "Returns all semesters",
+        "operationId": "API_getSemesters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetSemestersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Semester"
+        ]
+      }
+    },
     "/user/administered-courses": {
       "get": {
         "summary": "Get the current user's administered courses.",
@@ -262,12 +339,6 @@
           },
           {
             "name": "term",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query",
             "in": "query",
             "required": false,
             "type": "string"
@@ -587,6 +658,33 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufFeatureNotification"
+          }
+        }
+      }
+    },
+    "protobufGetPublicCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetSemestersResponse": {
+      "type": "object",
+      "properties": {
+        "current": {
+          "$ref": "#/definitions/protobufSemester"
+        },
+        "semesters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufSemester"
           }
         }
       }

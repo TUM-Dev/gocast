@@ -30,6 +30,8 @@ const (
 	API_DeleteUserBookmark_FullMethodName      = "/protobuf.API/deleteUserBookmark"
 	API_GetBannerAlerts_FullMethodName         = "/protobuf.API/getBannerAlerts"
 	API_GetFeatureNotifications_FullMethodName = "/protobuf.API/getFeatureNotifications"
+	API_GetPublicCourses_FullMethodName        = "/protobuf.API/getPublicCourses"
+	API_GetSemesters_FullMethodName            = "/protobuf.API/getSemesters"
 )
 
 // APIClient is the client API for API service.
@@ -48,6 +50,9 @@ type APIClient interface {
 	DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error)
 	GetBannerAlerts(ctx context.Context, in *GetBannerAlertsRequest, opts ...grpc.CallOption) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(ctx context.Context, in *GetFeatureNotificationsRequest, opts ...grpc.CallOption) (*GetFeatureNotificationsResponse, error)
+	// BEGIN API/V2/COURSES
+	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
+	GetSemesters(ctx context.Context, in *GetSemestersRequest, opts ...grpc.CallOption) (*GetSemestersResponse, error)
 }
 
 type aPIClient struct {
@@ -157,6 +162,24 @@ func (c *aPIClient) GetFeatureNotifications(ctx context.Context, in *GetFeatureN
 	return out, nil
 }
 
+func (c *aPIClient) GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error) {
+	out := new(GetPublicCoursesResponse)
+	err := c.cc.Invoke(ctx, API_GetPublicCourses_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetSemesters(ctx context.Context, in *GetSemestersRequest, opts ...grpc.CallOption) (*GetSemestersResponse, error) {
+	out := new(GetSemestersResponse)
+	err := c.cc.Invoke(ctx, API_GetSemesters_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility
@@ -173,6 +196,9 @@ type APIServer interface {
 	DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error)
 	GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error)
+	// BEGIN API/V2/COURSES
+	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
+	GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -212,6 +238,12 @@ func (UnimplementedAPIServer) GetBannerAlerts(context.Context, *GetBannerAlertsR
 }
 func (UnimplementedAPIServer) GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureNotifications not implemented")
+}
+func (UnimplementedAPIServer) GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublicCourses not implemented")
+}
+func (UnimplementedAPIServer) GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSemesters not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -424,6 +456,42 @@ func _API_GetFeatureNotifications_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetPublicCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublicCoursesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetPublicCourses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetPublicCourses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetPublicCourses(ctx, req.(*GetPublicCoursesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetSemesters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSemestersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetSemesters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetSemesters_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetSemesters(ctx, req.(*GetSemestersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -474,6 +542,14 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getFeatureNotifications",
 			Handler:    _API_GetFeatureNotifications_Handler,
+		},
+		{
+			MethodName: "getPublicCourses",
+			Handler:    _API_GetPublicCourses_Handler,
+		},
+		{
+			MethodName: "getSemesters",
+			Handler:    _API_GetSemesters_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

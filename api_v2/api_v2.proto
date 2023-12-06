@@ -92,9 +92,6 @@ service API {
     };
   }
 
-
-
-
   rpc getUserBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
     option (google.api.http) = {
       get: "/user/bookmarks"
@@ -145,7 +142,6 @@ service API {
     };
   }
 
-
   rpc getBannerAlerts(GetBannerAlertsRequest) returns (GetBannerAlertsResponse) {
     option (google.api.http) = {
       get: "/user/banner-alerts"
@@ -169,12 +165,33 @@ service API {
       description: "Returns all feature notifications."
     };
   }
-
-
-
-
   // END API/V2/USER
 
+  // BEGIN API/V2/COURSES
+  rpc getPublicCourses(GetPublicCoursesRequest) returns (GetPublicCoursesResponse) {
+    option (google.api.http) = {
+      get: "/courses/public"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get all public courses"
+      description: "Returns all public courses."
+    };
+  }
+
+  rpc getSemesters(GetSemestersRequest) returns (GetSemestersResponse) {
+    option (google.api.http) = {
+      get: "/courses/semesters"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Semester"
+      summary: "Get all semesters"
+      description: "Returns all semesters"
+    };
+  }
+  // END API/V2/COURSES
 }
 
 ///////////////////////////////
@@ -218,9 +235,8 @@ message GetUserRequest {}
 message GetUserCoursesRequest {
   int32 year = 1;
   string term = 2;
-  string query = 3;
-  int32 limit = 4;
-  int32 skip = 5;
+  int32 limit = 3;
+  int32 skip = 4;
 }
 
 message GetUserPinnedRequest {
@@ -383,8 +399,34 @@ message Course {
 }
 
 message Semester { 
-  string teachingTerm = 3;
-  uint32 year = 4;
+  string teachingTerm = 1;
+  uint32 year = 2;
+}
+
+///////////////////////////////
+/////// COURSE_REQUEST ////////
+///////////////////////////////
+
+message GetPublicCoursesRequest {
+  int32 year = 1;
+  string term = 2;
+  int32 limit = 3;
+  int32 skip = 4;
+}
+
+message GetSemestersRequest {}
+
+///////////////////////////////
+/////// COURSE_RESPONSE ///////
+///////////////////////////////
+
+message GetPublicCoursesResponse {
+  repeated Course courses = 1;
+}
+
+message GetSemestersResponse { 
+  Semester current = 1;
+  repeated Semester semesters = 2;
 }
 
 ///////////////////////////////
