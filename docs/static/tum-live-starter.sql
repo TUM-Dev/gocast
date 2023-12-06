@@ -863,6 +863,7 @@ CREATE TABLE `users` (
   `updated_at` datetime(3) DEFAULT NULL,
   `deleted_at` datetime(3) DEFAULT NULL,
   `name` varchar(80) NOT NULL,
+  `last_name` varchar(80) DEFAULT NULL,
   `email` varchar(256) DEFAULT NULL,
   `matriculation_number` varchar(256) DEFAULT NULL,
   `lrz_id` longtext DEFAULT NULL,
@@ -881,7 +882,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Anja Admin','admin',NULL,NULL,1,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(2,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Peter Prof','prof1',NULL,NULL,2,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(3,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Pauline Prof','prof2',NULL,NULL,2,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(4,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Stephanie Studi','studi1',NULL,NULL,4,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(5,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Sven Studi','studi2',NULL,NULL,4,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(6,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Sandra Studi','studi3',NULL,NULL,4,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw');
+INSERT INTO `users` VALUES (1,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Anja Admin','admin','admin',NULL,NULL,1,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(2,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Peter Prof','prof1','prof1',NULL,NULL,2,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(3,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Pauline Prof','prof2','prof2',NULL,NULL,2,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(4,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Stephanie Studi','studi1','studi1',NULL,NULL,4,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(5,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Sven Studi','studi2','studi2',NULL,NULL,4,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw'),(6,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000',NULL,'Sandra Studi','studi3','studi3',NULL,NULL,4,'$argon2id$v=19$m=65536,t=3,p=2$r/ST3fAucfj+DfrH9Rc8Eg$xqL7eHttIkhpXUq8VxqyMc6/H9HnorNYFNqWyXdj2iw');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
