@@ -14,6 +14,27 @@ import (
 	"strings"
 )
 
+// getCurrentID retrieves the current user's ID from the JWT claims.
+// It returns an uint or an error if one occurs.
+func (a *API) getCurrentID(ctx context.Context) (uint, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return 0, errors.New("no metadata")
+	}
+
+	jwtStr, err := a.extractJWTFromMetadata(md)
+	if err != nil {
+		return 0, err
+	}
+
+	claims, err := a.parseJWT(jwtStr)
+	if err != nil {
+		return 0, err
+	}
+
+	return claims.UserID, nil
+}
+
 // getCurrent retrieves the current user based on the context.
 // It returns a User or an error if one occurs.
 func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
