@@ -5,7 +5,11 @@ import { SocketConnections } from "../api/chat-ws";
 export function popupContext(streamId: number): AlpineComponent {
     return {
         init() {
+            // subscription?
             SocketConnections.ws = new RealtimeFacade("chat/" + streamId);
+            // ws needs to subscribe, so that pop-out chat can work
+            const handler = (data) => {};
+            SocketConnections.ws.subscribe(handler);
         },
     } as AlpineComponent;
 }
