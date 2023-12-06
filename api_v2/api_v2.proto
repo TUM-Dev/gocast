@@ -92,6 +92,9 @@ service API {
     };
   }
 
+
+
+
   rpc getUserBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
     option (google.api.http) = {
       get: "/user/bookmarks"
@@ -103,7 +106,75 @@ service API {
       description: "Returns the bookmarks created by the current user, optionally filtered by stream."
     };
   }
+
+  rpc putUserBookmark(PutBookmarkRequest) returns (PutBookmarkResponse) {
+    option (google.api.http) = {
+      put: "/user/bookmarks"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Create a new bookmark."
+      description: "Creates a new bookmark for the current user."
+    };
+  }
+
+  rpc patchUserBookmark(PatchBookmarkRequest) returns (PatchBookmarkResponse) {
+    option (google.api.http) = {
+      patch: "/user/bookmarks/{bookmarkID}"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Update a bookmark."
+      description: "Updates a bookmark of the current user."
+    };
+  }
+
+  rpc deleteUserBookmark(DeleteBookmarkRequest) returns (DeleteBookmarkResponse) {
+    option (google.api.http) = {
+      delete: "/user/bookmarks/{bookmarkID}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Delete a bookmark."
+      description: "Deletes a bookmark of the current user."
+    };
+  }
+
+
+  rpc getBannerAlerts(GetBannerAlertsRequest) returns (GetBannerAlertsResponse) {
+    option (google.api.http) = {
+      get: "/user/banner-alerts"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get all banner alerts."
+      description: "Returns all banner alerts."
+    };
+  }
+
+  rpc getFeatureNotifications(GetFeatureNotificationsRequest) returns (GetFeatureNotificationsResponse) {
+    option (google.api.http) = {
+      get: "/user/feature-notifications"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get all feature notifications."
+      description: "Returns all feature notifications."
+    };
+  }
+
+
+
+
   // END API/V2/USER
+
 }
 
 ///////////////////////////////
@@ -161,6 +232,7 @@ message GetUserPinnedRequest {
 
 message GetUserAdminRequest {}
 
+
 message GetUserSettingsRequest {}
 
 ///////////////////////////////
@@ -187,6 +259,8 @@ message GetUserSettingsResponse {
   repeated UserSetting userSettings = 1;
 }
 
+
+
 ///////////////////////////////
 ////// BOOKMARK_MESSAGE ///////
 ///////////////////////////////
@@ -209,6 +283,26 @@ message GetBookmarksRequest {
   int32 streamID = 1;
 }
 
+message PutBookmarkRequest {
+  string description = 1;
+  uint32 hours = 2;
+  uint32 minutes = 3;
+  uint32 seconds = 4;
+  uint32 streamID = 5;
+}
+
+message PatchBookmarkRequest {
+  string description = 1;
+  uint32 hours = 2;
+  uint32 minutes = 3;
+  uint32 seconds = 4;
+  uint32 bookmarkID = 5;
+}
+
+message DeleteBookmarkRequest {
+  uint32 bookmarkID = 1;
+}
+
 ///////////////////////////////
 ////// BOOKMARK_RESPONSE //////
 ///////////////////////////////
@@ -217,9 +311,59 @@ message GetBookmarksResponse {
   repeated Bookmark bookmarks = 1;
 }
 
+message PutBookmarkResponse {
+  Bookmark bookmark = 1;
+}
+
+message PatchBookmarkResponse {
+  Bookmark bookmark = 1;
+}
+
+message DeleteBookmarkResponse {}
+
+
+///////////////////////////////
+//// NOTIFICATION_MESSAGE /////
+///////////////////////////////
+
+message BannerAlert {
+  uint32 id = 1;
+  string startsAt = 2;
+  string expiresAt = 3;
+  string text = 4;
+  bool warn = 5;
+}
+
+message FeatureNotification {
+  uint32 id = 1;
+  string Title = 2;
+  string Body = 3;
+  uint32 Target = 4;
+}
+
+///////////////////////////////
+//// NOTIFICATION_REQUEST /////
+///////////////////////////////
+
+message GetBannerAlertsRequest {}
+message GetFeatureNotificationsRequest {}
+
+///////////////////////////////
+//// NOTIFICATION_RESPONSE ////
+///////////////////////////////
+
+message GetBannerAlertsResponse {
+  repeated BannerAlert bannerAlerts = 1;
+}
+
+message GetFeatureNotificationsResponse {
+  repeated FeatureNotification featureNotifications = 1;
+}
+
 ///////////////////////////////
 /////// COURSE_MESSAGE ////////
 ///////////////////////////////
+
 
 message Course {
   uint32 id = 1;

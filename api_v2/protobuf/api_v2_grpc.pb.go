@@ -19,12 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	API_GetUser_FullMethodName             = "/protobuf.API/getUser"
-	API_GetUserCourses_FullMethodName      = "/protobuf.API/getUserCourses"
-	API_GetUserPinned_FullMethodName       = "/protobuf.API/getUserPinned"
-	API_GetUserAdminCourses_FullMethodName = "/protobuf.API/getUserAdminCourses"
-	API_GetUserSettings_FullMethodName     = "/protobuf.API/getUserSettings"
-	API_GetUserBookmarks_FullMethodName    = "/protobuf.API/getUserBookmarks"
+	API_GetUser_FullMethodName                 = "/protobuf.API/getUser"
+	API_GetUserCourses_FullMethodName          = "/protobuf.API/getUserCourses"
+	API_GetUserPinned_FullMethodName           = "/protobuf.API/getUserPinned"
+	API_GetUserAdminCourses_FullMethodName     = "/protobuf.API/getUserAdminCourses"
+	API_GetUserSettings_FullMethodName         = "/protobuf.API/getUserSettings"
+	API_GetUserBookmarks_FullMethodName        = "/protobuf.API/getUserBookmarks"
+	API_PutUserBookmark_FullMethodName         = "/protobuf.API/putUserBookmark"
+	API_PatchUserBookmark_FullMethodName       = "/protobuf.API/patchUserBookmark"
+	API_DeleteUserBookmark_FullMethodName      = "/protobuf.API/deleteUserBookmark"
+	API_GetBannerAlerts_FullMethodName         = "/protobuf.API/getBannerAlerts"
+	API_GetFeatureNotifications_FullMethodName = "/protobuf.API/getFeatureNotifications"
 )
 
 // APIClient is the client API for API service.
@@ -38,6 +43,11 @@ type APIClient interface {
 	GetUserAdminCourses(ctx context.Context, in *GetUserAdminRequest, opts ...grpc.CallOption) (*GetUserAdminResponse, error)
 	GetUserSettings(ctx context.Context, in *GetUserSettingsRequest, opts ...grpc.CallOption) (*GetUserSettingsResponse, error)
 	GetUserBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
+	PutUserBookmark(ctx context.Context, in *PutBookmarkRequest, opts ...grpc.CallOption) (*PutBookmarkResponse, error)
+	PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequest, opts ...grpc.CallOption) (*PatchBookmarkResponse, error)
+	DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error)
+	GetBannerAlerts(ctx context.Context, in *GetBannerAlertsRequest, opts ...grpc.CallOption) (*GetBannerAlertsResponse, error)
+	GetFeatureNotifications(ctx context.Context, in *GetFeatureNotificationsRequest, opts ...grpc.CallOption) (*GetFeatureNotificationsResponse, error)
 }
 
 type aPIClient struct {
@@ -102,6 +112,51 @@ func (c *aPIClient) GetUserBookmarks(ctx context.Context, in *GetBookmarksReques
 	return out, nil
 }
 
+func (c *aPIClient) PutUserBookmark(ctx context.Context, in *PutBookmarkRequest, opts ...grpc.CallOption) (*PutBookmarkResponse, error) {
+	out := new(PutBookmarkResponse)
+	err := c.cc.Invoke(ctx, API_PutUserBookmark_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequest, opts ...grpc.CallOption) (*PatchBookmarkResponse, error) {
+	out := new(PatchBookmarkResponse)
+	err := c.cc.Invoke(ctx, API_PatchUserBookmark_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error) {
+	out := new(DeleteBookmarkResponse)
+	err := c.cc.Invoke(ctx, API_DeleteUserBookmark_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetBannerAlerts(ctx context.Context, in *GetBannerAlertsRequest, opts ...grpc.CallOption) (*GetBannerAlertsResponse, error) {
+	out := new(GetBannerAlertsResponse)
+	err := c.cc.Invoke(ctx, API_GetBannerAlerts_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetFeatureNotifications(ctx context.Context, in *GetFeatureNotificationsRequest, opts ...grpc.CallOption) (*GetFeatureNotificationsResponse, error) {
+	out := new(GetFeatureNotificationsResponse)
+	err := c.cc.Invoke(ctx, API_GetFeatureNotifications_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility
@@ -113,6 +168,11 @@ type APIServer interface {
 	GetUserAdminCourses(context.Context, *GetUserAdminRequest) (*GetUserAdminResponse, error)
 	GetUserSettings(context.Context, *GetUserSettingsRequest) (*GetUserSettingsResponse, error)
 	GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
+	PutUserBookmark(context.Context, *PutBookmarkRequest) (*PutBookmarkResponse, error)
+	PatchUserBookmark(context.Context, *PatchBookmarkRequest) (*PatchBookmarkResponse, error)
+	DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error)
+	GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error)
+	GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -137,6 +197,21 @@ func (UnimplementedAPIServer) GetUserSettings(context.Context, *GetUserSettingsR
 }
 func (UnimplementedAPIServer) GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserBookmarks not implemented")
+}
+func (UnimplementedAPIServer) PutUserBookmark(context.Context, *PutBookmarkRequest) (*PutBookmarkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PutUserBookmark not implemented")
+}
+func (UnimplementedAPIServer) PatchUserBookmark(context.Context, *PatchBookmarkRequest) (*PatchBookmarkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PatchUserBookmark not implemented")
+}
+func (UnimplementedAPIServer) DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserBookmark not implemented")
+}
+func (UnimplementedAPIServer) GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBannerAlerts not implemented")
+}
+func (UnimplementedAPIServer) GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureNotifications not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -259,6 +334,96 @@ func _API_GetUserBookmarks_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_PutUserBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PutBookmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PutUserBookmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PutUserBookmark_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PutUserBookmark(ctx, req.(*PutBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_PatchUserBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PatchBookmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PatchUserBookmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PatchUserBookmark_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PatchUserBookmark(ctx, req.(*PatchBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_DeleteUserBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBookmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).DeleteUserBookmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_DeleteUserBookmark_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).DeleteUserBookmark(ctx, req.(*DeleteBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetBannerAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBannerAlertsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetBannerAlerts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetBannerAlerts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetBannerAlerts(ctx, req.(*GetBannerAlertsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetFeatureNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeatureNotificationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetFeatureNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetFeatureNotifications_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetFeatureNotifications(ctx, req.(*GetFeatureNotificationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -289,6 +454,26 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getUserBookmarks",
 			Handler:    _API_GetUserBookmarks_Handler,
+		},
+		{
+			MethodName: "putUserBookmark",
+			Handler:    _API_PutUserBookmark_Handler,
+		},
+		{
+			MethodName: "patchUserBookmark",
+			Handler:    _API_PatchUserBookmark_Handler,
+		},
+		{
+			MethodName: "deleteUserBookmark",
+			Handler:    _API_DeleteUserBookmark_Handler,
+		},
+		{
+			MethodName: "getBannerAlerts",
+			Handler:    _API_GetBannerAlerts_Handler,
+		},
+		{
+			MethodName: "getFeatureNotifications",
+			Handler:    _API_GetFeatureNotifications_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
