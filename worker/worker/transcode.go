@@ -26,6 +26,7 @@ func buildCommand(niceness int, infile string, outfile string, tune string, crf 
 		c = append(c, "-tune", tune)
 	}
 	c = append(c, "-c:a", "aac", "-b:a", "128k", "-crf", fmt.Sprintf("%d", crf), outfile)
+	c = append(c, "-probesize 100M -analyzeduration 250M")
 	return exec.Command("nice", c...)
 }
 
@@ -204,6 +205,8 @@ func transcodeAudio(ctx *StreamContext) error {
 	cmd := exec.Command("ffmpeg",
 		"-y",
 		"-v", "quiet",
+		"-probesize", "100M",
+		"-analyzeduration", "250M",
 		"-i", input,
 		"-c:a", "aac",
 		"-vn", output)
