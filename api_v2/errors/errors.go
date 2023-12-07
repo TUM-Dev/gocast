@@ -1,4 +1,5 @@
-package e
+// Package errors provides helper functions for handling errors with specific HTTP status codes.
+package errors
 
 import (
 	"google.golang.org/grpc/codes"
@@ -7,6 +8,10 @@ import (
 	"net/http"
 )
 
+// WithStatus creates a new error with a specific HTTP status code and a given error message.
+// It maps the HTTP status code to a corresponding gRPC status code.
+// If the HTTP status code is not recognized, it logs a warning and uses gRPC's Unknown code.
+// It returns a gRPC error with the mapped gRPC status code and the original error message.
 func WithStatus(httpStatus int, err error) error {
 	var code codes.Code
 	switch httpStatus {
