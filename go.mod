@@ -2,8 +2,6 @@ module github.com/TUM-Dev/gocast
 
 go 1.21.0
 
-toolchain go1.21.3
-
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
@@ -52,6 +50,7 @@ require (
 	github.com/asticode/go-astisub v0.26.0
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.25.0
+	github.com/orandin/slog-gorm v1.0.1
 )
 
 require (
@@ -68,7 +67,6 @@ require (
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/orandin/slog-gorm v1.0.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.48.0 // indirect
