@@ -56,7 +56,7 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 		log.WithError(err).Error("Failed to get runner")
 		return &protobuf.HeartbeatResponse{Ok: false}, err
 	}
-
+	ctx = context.WithValue(ctx, "runner", runner)
 	p, err := r.UpdateStats(dao.DB, ctx)
 	return &protobuf.HeartbeatResponse{Ok: p}, err
 }

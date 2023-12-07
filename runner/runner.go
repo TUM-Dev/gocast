@@ -158,6 +158,20 @@ func (r *Runner) dialIn() (protobuf.FromRunnerClient, error) {
 	return protobuf.NewFromRunnerClient(conn), nil
 }
 
+// Todo: implement heartbeat here so you can reach server and make actions from runner more easier to reach
+func (r *Runner) ReadDiagnostics(retries int) (protobuf.HeartbeatRequest, error) {
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", registerRetries-retries)
+		time.Sleep(time.Second * time.Duration(registerRetries-retries))
+		return r.ReadDiagnostics(retries - 1)
+	}
+	if con == nil {
+
+	}
+	return protobuf.HeartbeatRequest{}, nil
+}
+
 type Job struct {
 	ID      string
 	Actions []*actions.Action

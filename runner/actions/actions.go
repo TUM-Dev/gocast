@@ -42,6 +42,7 @@ const (
 	TranscodeAction            = "transcode"
 	UploadAction               = "upload"
 	ThumbnailAction            = "thumbnail"
+	HeartBeatAction            = "heartbeat"
 )
 
 type Action struct {
