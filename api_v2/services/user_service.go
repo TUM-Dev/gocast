@@ -4,7 +4,6 @@ package services
 import (
 	"errors"
 	"net/http"
-
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
 	"github.com/TUM-Dev/gocast/model"
@@ -203,6 +202,84 @@ func FetchBannerAlerts(db *gorm.DB) (alerts []model.ServerNotification, err erro
 	return alerts, err
 }
 
+func FetchUserNotifications(db *gorm.DB, u *model.User) (notifications []model.Notification, err error) {
+	targetFilter := getTargetFilter(*u)
+
+	err = db.Where(targetFilter).Find(&notifications).Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	return notifications, nil
+}
+
+func DeleteUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
+	// Check if user has course pinned
+	if pinned, err:= checkPinnedByID(db, u.ID, courseID); err != nil {
+		return err
+	} else if !pinned {
+		return e.WithStatus(http.StatusNotFound, errors.New("course not pinned"))
+	}
+
+	// Check if course exists otherwise cannot delete
+	course, err := FindCourseById(db, courseID)
+	if err != nil {
+		return err
+	}
+
+	// Pin course
+	if pinCourse(db, false, u, course); err != nil {
+		return e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	return nil
+}
+
+func PostUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
+	// Check if user has course already pinned
+	if pinned, err:= checkPinnedByID(db, u.ID, courseID); err != nil {
+		return err
+	} else if pinned {
+		return e.WithStatus(http.StatusConflict, errors.New("course already pinned"))
+	}
+
+	// Check if course exists otherwise cannot pin
+	course, err := FindCourseById(db, courseID)
+	if err != nil {
+		return err
+	}
+
+	// Pin course
+	if pinCourse(db, true, u, course); err != nil {
+		return e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	return nil
+}
+
+// PRIVATE HELPER METHODS
+
+// FindPinnedByID fetches a pinned course entry from the database based on the provided userID and courseID	.
+func checkPinnedByID(db *gorm.DB, userID uint, courseID uint) (bool, error) {
+    var result struct{}
+    if err := db.Table("pinned_courses").Where("user_id = ? AND course_id = ?", userID, courseID).Take(&result).Error; err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return false, nil
+        }
+        return false, e.WithStatus(http.StatusInternalServerError, err)
+    }
+    return true, nil
+}
+
+func pinCourse(db* gorm.DB, pin bool, u *model.User, course *model.Course) (error) {
+	if pin {
+		return db.Model(u).Association("PinnedCourses").Append(course)
+	} else {
+		return db.Model(u).Association("PinnedCourses").Delete(course)
+	}
+}
+
 // const (
 // 	TargetAll      = iota + 1 //TargetAll Is any user, regardless if logged in or not
 // 	TargetUser                //TargetUser Are all users that are logged in
@@ -231,16 +308,4 @@ func getTargetFilter(user model.User) (targetFilter string) {
 		targetFilter = "target = 1"
 	}
 	return targetFilter
-}
-
-func FetchUserNotifications(db *gorm.DB, u *model.User) (notifications []model.Notification, err error) {
-	targetFilter := getTargetFilter(*u)
-
-	err = db.Where(targetFilter).Find(&notifications).Error
-
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	return notifications, nil
 }

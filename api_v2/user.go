@@ -3,6 +3,7 @@ package api_v2
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	h "github.com/TUM-Dev/gocast/api_v2/helpers"
@@ -247,4 +248,44 @@ func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettings
 	return &protobuf.GetUserSettingsResponse{
 		UserSettings: resp,
 	}, nil
+}
+
+func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedRequest) (*protobuf.PostPinnedResponse, error) {
+	a.log.Info("PostUserPinned")
+	
+	if req.CourseID == 0 {
+        return nil, e.WithStatus(http.StatusBadRequest, errors.New("course id must not be empty"))
+    }
+
+	u, err := a.getCurrent(ctx)
+	if err != nil {
+		return nil, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+	err = s.PostUserPinned(a.db, u, uint(req.CourseID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &protobuf.PostPinnedResponse{}, nil
+}
+
+func (a *API) DeleteUserPinned(ctx context.Context, req *protobuf.DeletePinnedRequest) (*protobuf.DeletePinnedResponse, error) {
+	a.log.Info("DeleteUserPinned")
+
+	if req.CourseID == 0 {
+        return nil, e.WithStatus(http.StatusBadRequest, errors.New("course id must not be empty"))
+    }
+
+	u, err := a.getCurrent(ctx)
+	if err != nil {
+		return nil, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+	err = s.DeleteUserPinned(a.db, u, uint(req.CourseID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &protobuf.DeletePinnedResponse{}, nil
 }
