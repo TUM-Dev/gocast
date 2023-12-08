@@ -25,13 +25,19 @@ const (
 	API_GetUserAdminCourses_FullMethodName     = "/protobuf.API/getUserAdminCourses"
 	API_GetUserSettings_FullMethodName         = "/protobuf.API/getUserSettings"
 	API_GetUserBookmarks_FullMethodName        = "/protobuf.API/getUserBookmarks"
+	API_PostUserPinned_FullMethodName          = "/protobuf.API/postUserPinned"
 	API_PutUserBookmark_FullMethodName         = "/protobuf.API/putUserBookmark"
 	API_PatchUserBookmark_FullMethodName       = "/protobuf.API/patchUserBookmark"
 	API_DeleteUserBookmark_FullMethodName      = "/protobuf.API/deleteUserBookmark"
+	API_DeleteUserPinned_FullMethodName        = "/protobuf.API/deleteUserPinned"
 	API_GetBannerAlerts_FullMethodName         = "/protobuf.API/getBannerAlerts"
 	API_GetFeatureNotifications_FullMethodName = "/protobuf.API/getFeatureNotifications"
 	API_GetPublicCourses_FullMethodName        = "/protobuf.API/getPublicCourses"
 	API_GetSemesters_FullMethodName            = "/protobuf.API/getSemesters"
+	API_GetStream_FullMethodName               = "/protobuf.API/GetStream"
+	API_GetNowLive_FullMethodName              = "/protobuf.API/GetNowLive"
+	API_GetThumbsVOD_FullMethodName            = "/protobuf.API/getThumbsVOD"
+	API_GetThumbsLive_FullMethodName           = "/protobuf.API/getThumbsLive"
 )
 
 // APIClient is the client API for API service.
@@ -45,14 +51,21 @@ type APIClient interface {
 	GetUserAdminCourses(ctx context.Context, in *GetUserAdminRequest, opts ...grpc.CallOption) (*GetUserAdminResponse, error)
 	GetUserSettings(ctx context.Context, in *GetUserSettingsRequest, opts ...grpc.CallOption) (*GetUserSettingsResponse, error)
 	GetUserBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
+	PostUserPinned(ctx context.Context, in *PostPinnedRequest, opts ...grpc.CallOption) (*PostPinnedResponse, error)
 	PutUserBookmark(ctx context.Context, in *PutBookmarkRequest, opts ...grpc.CallOption) (*PutBookmarkResponse, error)
 	PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequest, opts ...grpc.CallOption) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error)
+	DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error)
 	GetBannerAlerts(ctx context.Context, in *GetBannerAlertsRequest, opts ...grpc.CallOption) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(ctx context.Context, in *GetFeatureNotificationsRequest, opts ...grpc.CallOption) (*GetFeatureNotificationsResponse, error)
 	// BEGIN API/V2/COURSES
 	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
 	GetSemesters(ctx context.Context, in *GetSemestersRequest, opts ...grpc.CallOption) (*GetSemestersResponse, error)
+	// START API/V2/STREAMS
+	GetStream(ctx context.Context, in *GetStreamRequest, opts ...grpc.CallOption) (*GetStreamResponse, error)
+	GetNowLive(ctx context.Context, in *GetNowLiveRequest, opts ...grpc.CallOption) (*GetNowLiveResponse, error)
+	GetThumbsVOD(ctx context.Context, in *GetThumbsVODRequest, opts ...grpc.CallOption) (*GetThumbsVODResponse, error)
+	GetThumbsLive(ctx context.Context, in *GetThumbsLiveRequest, opts ...grpc.CallOption) (*GetThumbsLiveResponse, error)
 }
 
 type aPIClient struct {
@@ -117,6 +130,15 @@ func (c *aPIClient) GetUserBookmarks(ctx context.Context, in *GetBookmarksReques
 	return out, nil
 }
 
+func (c *aPIClient) PostUserPinned(ctx context.Context, in *PostPinnedRequest, opts ...grpc.CallOption) (*PostPinnedResponse, error) {
+	out := new(PostPinnedResponse)
+	err := c.cc.Invoke(ctx, API_PostUserPinned_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aPIClient) PutUserBookmark(ctx context.Context, in *PutBookmarkRequest, opts ...grpc.CallOption) (*PutBookmarkResponse, error) {
 	out := new(PutBookmarkResponse)
 	err := c.cc.Invoke(ctx, API_PutUserBookmark_FullMethodName, in, out, opts...)
@@ -138,6 +160,15 @@ func (c *aPIClient) PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequ
 func (c *aPIClient) DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error) {
 	out := new(DeleteBookmarkResponse)
 	err := c.cc.Invoke(ctx, API_DeleteUserBookmark_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error) {
+	out := new(DeletePinnedResponse)
+	err := c.cc.Invoke(ctx, API_DeleteUserPinned_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +211,42 @@ func (c *aPIClient) GetSemesters(ctx context.Context, in *GetSemestersRequest, o
 	return out, nil
 }
 
+func (c *aPIClient) GetStream(ctx context.Context, in *GetStreamRequest, opts ...grpc.CallOption) (*GetStreamResponse, error) {
+	out := new(GetStreamResponse)
+	err := c.cc.Invoke(ctx, API_GetStream_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetNowLive(ctx context.Context, in *GetNowLiveRequest, opts ...grpc.CallOption) (*GetNowLiveResponse, error) {
+	out := new(GetNowLiveResponse)
+	err := c.cc.Invoke(ctx, API_GetNowLive_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetThumbsVOD(ctx context.Context, in *GetThumbsVODRequest, opts ...grpc.CallOption) (*GetThumbsVODResponse, error) {
+	out := new(GetThumbsVODResponse)
+	err := c.cc.Invoke(ctx, API_GetThumbsVOD_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetThumbsLive(ctx context.Context, in *GetThumbsLiveRequest, opts ...grpc.CallOption) (*GetThumbsLiveResponse, error) {
+	out := new(GetThumbsLiveResponse)
+	err := c.cc.Invoke(ctx, API_GetThumbsLive_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility
@@ -191,14 +258,21 @@ type APIServer interface {
 	GetUserAdminCourses(context.Context, *GetUserAdminRequest) (*GetUserAdminResponse, error)
 	GetUserSettings(context.Context, *GetUserSettingsRequest) (*GetUserSettingsResponse, error)
 	GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
+	PostUserPinned(context.Context, *PostPinnedRequest) (*PostPinnedResponse, error)
 	PutUserBookmark(context.Context, *PutBookmarkRequest) (*PutBookmarkResponse, error)
 	PatchUserBookmark(context.Context, *PatchBookmarkRequest) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error)
+	DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error)
 	GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error)
 	// BEGIN API/V2/COURSES
 	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
 	GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error)
+	// START API/V2/STREAMS
+	GetStream(context.Context, *GetStreamRequest) (*GetStreamResponse, error)
+	GetNowLive(context.Context, *GetNowLiveRequest) (*GetNowLiveResponse, error)
+	GetThumbsVOD(context.Context, *GetThumbsVODRequest) (*GetThumbsVODResponse, error)
+	GetThumbsLive(context.Context, *GetThumbsLiveRequest) (*GetThumbsLiveResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -224,6 +298,9 @@ func (UnimplementedAPIServer) GetUserSettings(context.Context, *GetUserSettingsR
 func (UnimplementedAPIServer) GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserBookmarks not implemented")
 }
+func (UnimplementedAPIServer) PostUserPinned(context.Context, *PostPinnedRequest) (*PostPinnedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostUserPinned not implemented")
+}
 func (UnimplementedAPIServer) PutUserBookmark(context.Context, *PutBookmarkRequest) (*PutBookmarkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutUserBookmark not implemented")
 }
@@ -232,6 +309,9 @@ func (UnimplementedAPIServer) PatchUserBookmark(context.Context, *PatchBookmarkR
 }
 func (UnimplementedAPIServer) DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserBookmark not implemented")
+}
+func (UnimplementedAPIServer) DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserPinned not implemented")
 }
 func (UnimplementedAPIServer) GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBannerAlerts not implemented")
@@ -244,6 +324,18 @@ func (UnimplementedAPIServer) GetPublicCourses(context.Context, *GetPublicCourse
 }
 func (UnimplementedAPIServer) GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSemesters not implemented")
+}
+func (UnimplementedAPIServer) GetStream(context.Context, *GetStreamRequest) (*GetStreamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStream not implemented")
+}
+func (UnimplementedAPIServer) GetNowLive(context.Context, *GetNowLiveRequest) (*GetNowLiveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNowLive not implemented")
+}
+func (UnimplementedAPIServer) GetThumbsVOD(context.Context, *GetThumbsVODRequest) (*GetThumbsVODResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetThumbsVOD not implemented")
+}
+func (UnimplementedAPIServer) GetThumbsLive(context.Context, *GetThumbsLiveRequest) (*GetThumbsLiveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetThumbsLive not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -366,6 +458,24 @@ func _API_GetUserBookmarks_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_PostUserPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostPinnedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PostUserPinned(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PostUserPinned_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PostUserPinned(ctx, req.(*PostPinnedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _API_PutUserBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PutBookmarkRequest)
 	if err := dec(in); err != nil {
@@ -416,6 +526,24 @@ func _API_DeleteUserBookmark_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(APIServer).DeleteUserBookmark(ctx, req.(*DeleteBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_DeleteUserPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePinnedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).DeleteUserPinned(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_DeleteUserPinned_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).DeleteUserPinned(ctx, req.(*DeletePinnedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -492,6 +620,78 @@ func _API_GetSemesters_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStreamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetStream(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetStream_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetStream(ctx, req.(*GetStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetNowLive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNowLiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetNowLive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetNowLive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetNowLive(ctx, req.(*GetNowLiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetThumbsVOD_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetThumbsVODRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetThumbsVOD(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetThumbsVOD_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetThumbsVOD(ctx, req.(*GetThumbsVODRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetThumbsLive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetThumbsLiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetThumbsLive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetThumbsLive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetThumbsLive(ctx, req.(*GetThumbsLiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -524,6 +724,10 @@ var API_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _API_GetUserBookmarks_Handler,
 		},
 		{
+			MethodName: "postUserPinned",
+			Handler:    _API_PostUserPinned_Handler,
+		},
+		{
 			MethodName: "putUserBookmark",
 			Handler:    _API_PutUserBookmark_Handler,
 		},
@@ -534,6 +738,10 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteUserBookmark",
 			Handler:    _API_DeleteUserBookmark_Handler,
+		},
+		{
+			MethodName: "deleteUserPinned",
+			Handler:    _API_DeleteUserPinned_Handler,
 		},
 		{
 			MethodName: "getBannerAlerts",
@@ -550,6 +758,22 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getSemesters",
 			Handler:    _API_GetSemesters_Handler,
+		},
+		{
+			MethodName: "GetStream",
+			Handler:    _API_GetStream_Handler,
+		},
+		{
+			MethodName: "GetNowLive",
+			Handler:    _API_GetNowLive_Handler,
+		},
+		{
+			MethodName: "getThumbsVOD",
+			Handler:    _API_GetThumbsVOD_Handler,
+		},
+		{
+			MethodName: "getThumbsLive",
+			Handler:    _API_GetThumbsLive_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -104,6 +104,19 @@ service API {
     };
   }
 
+  rpc postUserPinned(PostPinnedRequest) returns (PostPinnedResponse) {
+    option (google.api.http) = {
+      post: "/user/pinned"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Add a course to the user's pinned courses."
+      description: "Adds a new course to the current user's pinned courses."
+    };
+  }
+
   rpc putUserBookmark(PutBookmarkRequest) returns (PutBookmarkResponse) {
     option (google.api.http) = {
       put: "/user/bookmarks"
@@ -139,6 +152,18 @@ service API {
       tags: "User"
       summary: "Delete a bookmark."
       description: "Deletes a bookmark of the current user."
+    };
+  }
+
+  rpc deleteUserPinned(DeletePinnedRequest) returns (DeletePinnedResponse) {
+    option (google.api.http) = {
+      delete: "/user/pinned/{courseID}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Delete a user's pinned course."
+      description: "Removes a course from the current user's pinned courses."
     };
   }
 
@@ -192,6 +217,57 @@ service API {
     };
   }
   // END API/V2/COURSES
+
+  // START API/V2/STREAMS
+  rpc GetStream(GetStreamRequest) returns (GetStreamResponse) {
+    option (google.api.http) = {
+      get: "/streams/w/vod/streamID"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Stream"
+      summary: "Get stream for VOD"
+      description: "Returns stream for VOD."
+    };
+  }
+  
+  rpc GetNowLive(GetNowLiveRequest) returns (GetNowLiveResponse) {
+    option (google.api.http) = {
+      get: "/streams/w/live/streamID"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Stream"
+      summary: "Get stream for livestream"
+      description: "Returns stream for livestream."
+    };
+  }
+
+  rpc getThumbsVOD(GetThumbsVODRequest) returns (GetThumbsVODResponse) {
+    option (google.api.http) = {
+      get: "/streams/thumbs/vod/{streamID}/thumbs"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Stream"
+      summary: "Get thumbnail of VOD"
+      description: "Returns path of thumbnail for a VOD."
+    };
+  }
+
+  rpc getThumbsLive(GetThumbsLiveRequest) returns (GetThumbsLiveResponse) {
+    option (google.api.http) = {
+      get: "/streams/thumbs/live/{streamID}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Stream"
+      summary: "Get thumbnail of livestream"
+      description: "Returns path of thumbnail for a livestream."
+    };
+  }
+
+  // END API/V2/STREAMS
 }
 
 ///////////////////////////////
@@ -380,7 +456,6 @@ message GetFeatureNotificationsResponse {
 /////// COURSE_MESSAGE ////////
 ///////////////////////////////
 
-
 message Course {
   uint32 id = 1;
   string name = 2;
@@ -416,6 +491,14 @@ message GetPublicCoursesRequest {
 
 message GetSemestersRequest {}
 
+message PostPinnedRequest {
+  int32 courseID = 1;
+}
+
+message DeletePinnedRequest {
+  int32 courseID = 1;
+}
+
 ///////////////////////////////
 /////// COURSE_RESPONSE ///////
 ///////////////////////////////
@@ -428,6 +511,10 @@ message GetSemestersResponse {
   Semester current = 1;
   repeated Semester semesters = 2;
 }
+
+message PostPinnedResponse {}
+
+message DeletePinnedResponse {}
 
 ///////////////////////////////
 /////// STREAM_MESSAGE ////////
@@ -458,4 +545,42 @@ message Stream {
   uint32 startOffset = 22;
   uint32 endOffset = 23;
   int32 duration = 28;
+}
+
+///////////////////////////////
+/////// STREAM_REQUESTS ///////
+///////////////////////////////
+
+message GetStreamRequest {
+  uint64 streamID = 1;
+}
+
+message GetNowLiveRequest {}
+
+message GetThumbsLiveRequest {
+  uint64 streamID = 1;
+}
+
+message GetThumbsVODRequest {
+  uint64 streamID = 1;
+}
+
+///////////////////////////////
+////// STREAM_RESPONSES ///////
+///////////////////////////////
+
+message GetStreamResponse {
+  Stream stream = 1;
+}
+
+message GetNowLiveResponse {
+  repeated Stream stream = 1;
+}
+
+message GetThumbsVODResponse {
+  string path = 1;
+}
+
+message GetThumbsLiveResponse {
+  string path = 1;
 }

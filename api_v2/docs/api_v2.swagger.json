@@ -108,6 +108,129 @@
         ]
       }
     },
+    "/streams/thumbs/live/{streamID}": {
+      "get": {
+        "summary": "Get thumbnail of livestream",
+        "description": "Returns path of thumbnail for a livestream.",
+        "operationId": "API_getThumbsLive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetThumbsLiveResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Stream"
+        ]
+      }
+    },
+    "/streams/thumbs/vod/{streamID}/thumbs": {
+      "get": {
+        "summary": "Get thumbnail of VOD",
+        "description": "Returns path of thumbnail for a VOD.",
+        "operationId": "API_getThumbsVOD",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetThumbsVODResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Stream"
+        ]
+      }
+    },
+    "/streams/w/live/streamID": {
+      "get": {
+        "summary": "Get stream for livestream",
+        "description": "Returns stream for livestream.",
+        "operationId": "API_GetNowLive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetNowLiveResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Stream"
+        ]
+      }
+    },
+    "/streams/w/vod/streamID": {
+      "get": {
+        "summary": "Get stream for VOD",
+        "description": "Returns stream for VOD.",
+        "operationId": "API_GetStream",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetStreamResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Stream"
+        ]
+      }
+    },
     "/user/administered-courses": {
       "get": {
         "summary": "Get the current user's administered courses.",
@@ -462,6 +585,71 @@
         "tags": [
           "User"
         ]
+      },
+      "post": {
+        "summary": "Add a course to the user's pinned courses.",
+        "description": "Adds a new course to the current user's pinned courses.",
+        "operationId": "API_postUserPinned",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPostPinnedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufPostPinnedRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/pinned/{courseID}": {
+      "delete": {
+        "summary": "Delete a user's pinned course.",
+        "description": "Removes a course from the current user's pinned courses.",
+        "operationId": "API_deleteUserPinned",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeletePinnedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseID",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
       }
     },
     "/user/settings": {
@@ -607,6 +795,9 @@
     "protobufDeleteBookmarkResponse": {
       "type": "object"
     },
+    "protobufDeletePinnedResponse": {
+      "type": "object"
+    },
     "protobufFeatureNotification": {
       "type": "object",
       "properties": {
@@ -662,6 +853,18 @@
         }
       }
     },
+    "protobufGetNowLiveResponse": {
+      "type": "object",
+      "properties": {
+        "stream": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStream"
+          }
+        }
+      }
+    },
     "protobufGetPublicCoursesResponse": {
       "type": "object",
       "properties": {
@@ -686,6 +889,30 @@
             "type": "object",
             "$ref": "#/definitions/protobufSemester"
           }
+        }
+      }
+    },
+    "protobufGetStreamResponse": {
+      "type": "object",
+      "properties": {
+        "stream": {
+          "$ref": "#/definitions/protobufStream"
+        }
+      }
+    },
+    "protobufGetThumbsLiveResponse": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufGetThumbsVODResponse": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
         }
       }
     },
@@ -752,6 +979,18 @@
           "$ref": "#/definitions/protobufBookmark"
         }
       }
+    },
+    "protobufPostPinnedRequest": {
+      "type": "object",
+      "properties": {
+        "courseID": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "protobufPostPinnedResponse": {
+      "type": "object"
     },
     "protobufPutBookmarkRequest": {
       "type": "object",
