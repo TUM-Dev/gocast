@@ -216,6 +216,19 @@ service API {
       description: "Returns all semesters"
     };
   }
+
+  rpc getCourseStreams(GetCourseStreamsRequest) returns (GetCourseStreamsResponse) {
+    option (google.api.http) = {
+      get: "/courses/{courseID}/streams"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get all streams"
+      description: "Returns all streams for a given course."
+    };
+  }
+
   // END API/V2/COURSES
 
   // START API/V2/STREAMS
@@ -324,8 +337,15 @@ message GetUserPinnedRequest {
 
 message GetUserAdminRequest {}
 
-
 message GetUserSettingsRequest {}
+
+message PostPinnedRequest {
+  int32 courseID = 1;
+}
+
+message DeletePinnedRequest {
+  int32 courseID = 1;
+}
 
 ///////////////////////////////
 //////// USER_RESPONSE ////////
@@ -351,7 +371,9 @@ message GetUserSettingsResponse {
   repeated UserSetting userSettings = 1;
 }
 
+message PostPinnedResponse {}
 
+message DeletePinnedResponse {}
 
 ///////////////////////////////
 ////// BOOKMARK_MESSAGE ///////
@@ -438,6 +460,7 @@ message FeatureNotification {
 ///////////////////////////////
 
 message GetBannerAlertsRequest {}
+
 message GetFeatureNotificationsRequest {}
 
 ///////////////////////////////
@@ -491,14 +514,9 @@ message GetPublicCoursesRequest {
 
 message GetSemestersRequest {}
 
-message PostPinnedRequest {
+message GetCourseStreamsRequest {
   int32 courseID = 1;
 }
-
-message DeletePinnedRequest {
-  int32 courseID = 1;
-}
-
 ///////////////////////////////
 /////// COURSE_RESPONSE ///////
 ///////////////////////////////
@@ -512,10 +530,9 @@ message GetSemestersResponse {
   repeated Semester semesters = 2;
 }
 
-message PostPinnedResponse {}
-
-message DeletePinnedResponse {}
-
+message GetCourseStreamsResponse {
+  repeated Stream streams = 1;
+}
 ///////////////////////////////
 /////// STREAM_MESSAGE ////////
 ///////////////////////////////

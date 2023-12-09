@@ -108,6 +108,39 @@
         ]
       }
     },
+    "/courses/{courseID}/streams": {
+      "get": {
+        "summary": "Get all streams",
+        "description": "Returns all streams for a given course.",
+        "operationId": "API_getCourseStreams",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetCourseStreamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseID",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/streams/thumbs/live/{streamID}": {
       "get": {
         "summary": "Get thumbnail of livestream",
@@ -837,6 +870,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufBookmark"
+          }
+        }
+      }
+    },
+    "protobufGetCourseStreamsResponse": {
+      "type": "object",
+      "properties": {
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStream"
           }
         }
       }

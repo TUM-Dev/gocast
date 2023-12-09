@@ -15,7 +15,7 @@ import (
 // FindCourseById fetches a course from the database based on the provided id.
 func FindCourseById(db *gorm.DB, id uint) (*model.Course, error) {
     course := &model.Course{}
-    if err := db.Where("id = ?", id).First(course).Error; err != nil {
+    if err := db.Where("id = ?", id).First(course).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound){
         return nil, err
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("course not found"))

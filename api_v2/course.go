@@ -58,3 +58,37 @@ func (a *API) GetSemesters(context.Context, *protobuf.GetSemestersRequest) (*pro
         Semesters: resp,
     }, nil
 }
+
+func (a *API) GetCourseStreams(ctx context.Context, req *protobuf.GetCourseStreamsRequest) (*protobuf.GetCourseStreamsResponse, error) {
+    a.log.Info("GetCourseStreams")
+
+    if req.CourseID == 0 {
+        return nil, e.WithStatus(http.StatusBadRequest, errors.New("course id must not be empty"))
+    }
+
+	uID, err := a.getCurrentID(ctx)
+	if err != nil && err.Error() != "missing cookie header" {
+		return nil, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+	streams, err := s.GetStreamsByCourseID(a.db, uint(req.CourseID))
+    if err != nil {
+        return nil, err
+    }
+
+    isAllowed, err := h.CheckEnrolledOrPublic(a.db, &uID, uint(req.CourseID))
+    if err != nil || !isAllowed {
+        return nil, err
+    }
+
+    resp := make([]*protobuf.Stream, len(streams))
+    for i, stream := range streams {
+        s, err := h.ParseStreamToProto(*stream)
+        if err != nil {
+            return nil, err
+        } 
+        resp[i] = s
+    }
+
+    return &protobuf.GetCourseStreamsResponse{Streams: resp}, nil
+}

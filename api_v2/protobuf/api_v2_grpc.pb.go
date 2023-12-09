@@ -34,6 +34,7 @@ const (
 	API_GetFeatureNotifications_FullMethodName = "/protobuf.API/getFeatureNotifications"
 	API_GetPublicCourses_FullMethodName        = "/protobuf.API/getPublicCourses"
 	API_GetSemesters_FullMethodName            = "/protobuf.API/getSemesters"
+	API_GetCourseStreams_FullMethodName        = "/protobuf.API/getCourseStreams"
 	API_GetStream_FullMethodName               = "/protobuf.API/GetStream"
 	API_GetNowLive_FullMethodName              = "/protobuf.API/GetNowLive"
 	API_GetThumbsVOD_FullMethodName            = "/protobuf.API/getThumbsVOD"
@@ -61,6 +62,7 @@ type APIClient interface {
 	// BEGIN API/V2/COURSES
 	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
 	GetSemesters(ctx context.Context, in *GetSemestersRequest, opts ...grpc.CallOption) (*GetSemestersResponse, error)
+	GetCourseStreams(ctx context.Context, in *GetCourseStreamsRequest, opts ...grpc.CallOption) (*GetCourseStreamsResponse, error)
 	// START API/V2/STREAMS
 	GetStream(ctx context.Context, in *GetStreamRequest, opts ...grpc.CallOption) (*GetStreamResponse, error)
 	GetNowLive(ctx context.Context, in *GetNowLiveRequest, opts ...grpc.CallOption) (*GetNowLiveResponse, error)
@@ -211,6 +213,15 @@ func (c *aPIClient) GetSemesters(ctx context.Context, in *GetSemestersRequest, o
 	return out, nil
 }
 
+func (c *aPIClient) GetCourseStreams(ctx context.Context, in *GetCourseStreamsRequest, opts ...grpc.CallOption) (*GetCourseStreamsResponse, error) {
+	out := new(GetCourseStreamsResponse)
+	err := c.cc.Invoke(ctx, API_GetCourseStreams_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aPIClient) GetStream(ctx context.Context, in *GetStreamRequest, opts ...grpc.CallOption) (*GetStreamResponse, error) {
 	out := new(GetStreamResponse)
 	err := c.cc.Invoke(ctx, API_GetStream_FullMethodName, in, out, opts...)
@@ -268,6 +279,7 @@ type APIServer interface {
 	// BEGIN API/V2/COURSES
 	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
 	GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error)
+	GetCourseStreams(context.Context, *GetCourseStreamsRequest) (*GetCourseStreamsResponse, error)
 	// START API/V2/STREAMS
 	GetStream(context.Context, *GetStreamRequest) (*GetStreamResponse, error)
 	GetNowLive(context.Context, *GetNowLiveRequest) (*GetNowLiveResponse, error)
@@ -324,6 +336,9 @@ func (UnimplementedAPIServer) GetPublicCourses(context.Context, *GetPublicCourse
 }
 func (UnimplementedAPIServer) GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSemesters not implemented")
+}
+func (UnimplementedAPIServer) GetCourseStreams(context.Context, *GetCourseStreamsRequest) (*GetCourseStreamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCourseStreams not implemented")
 }
 func (UnimplementedAPIServer) GetStream(context.Context, *GetStreamRequest) (*GetStreamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStream not implemented")
@@ -620,6 +635,24 @@ func _API_GetSemesters_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetCourseStreams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCourseStreamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetCourseStreams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetCourseStreams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetCourseStreams(ctx, req.(*GetCourseStreamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _API_GetStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetStreamRequest)
 	if err := dec(in); err != nil {
@@ -758,6 +791,10 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getSemesters",
 			Handler:    _API_GetSemesters_Handler,
+		},
+		{
+			MethodName: "getCourseStreams",
+			Handler:    _API_GetCourseStreams_Handler,
 		},
 		{
 			MethodName: "GetStream",
