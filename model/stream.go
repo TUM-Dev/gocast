@@ -410,3 +410,11 @@ func (s Stream) ToDTO() StreamDTO {
 		Duration:    duration,
 	}
 }
+
+// FirstSilenceAsProgress returns the end of the first silence as a float between 0 and 1
+func (s Stream) FirstSilenceAsProgress() float64 {
+	duration := s.End.Sub(s.Start).Seconds()
+	p := float64(s.Silences[0].End) / duration
+
+	return p
+}
