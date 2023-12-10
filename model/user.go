@@ -198,11 +198,13 @@ func (u User) PreferredNameChangeAllowed() bool {
 	return true
 }
 
+// AutoSkipSetting wraps whether auto skip is enabled in JSON
 type AutoSkipSetting struct {
 	Enabled bool `json:"enabled"`
 }
 
-func (u User) GetAutoSkipEnabled() bool {
+// GetAutoSkipEnabled returns whether the user has enabled auto skip
+func (u User) GetAutoSkipEnabled() AutoSkipSetting {
 	for _, setting := range u.Settings {
 		if setting.Type == AutoSkip {
 			var a AutoSkipSetting
@@ -210,10 +212,10 @@ func (u User) GetAutoSkipEnabled() bool {
 			if err != nil {
 				break
 			}
-			return a.Enabled
+			return a
 		}
 	}
-	return false
+	return AutoSkipSetting{Enabled: false}
 }
 
 type argonParams struct {

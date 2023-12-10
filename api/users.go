@@ -732,7 +732,7 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 		})
 		return
 	}
-	var req model.AutoSkipSetting
+	var req struct{ Value model.AutoSkipSetting }
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -742,7 +742,7 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 		return
 	}
 
-	settingBytes, _ := json.Marshal(req)
+	settingBytes, _ := json.Marshal(req.Value)
 	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.AutoSkip, Value: string(settingBytes)})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
