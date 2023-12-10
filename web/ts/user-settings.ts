@@ -9,6 +9,7 @@ export enum UserSetting {
     PlaybackSpeeds = "playbackSpeeds",
     SeekingTime = "seekingTime",
     CustomSpeeds = "customSpeeds",
+    AutoSkip = "autoSkip",
 }
 
 export function updatePreference(t: UserSetting, value: string | boolean | number[]): Promise<string> {
