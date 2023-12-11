@@ -6,6 +6,8 @@ import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
+import { DataStore } from "./data-store/data-store";
+import { StreamPlaylistEntry } from "./data-store/stream-playlist";
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
@@ -96,6 +98,10 @@ class PlayerSettings {
 
     addOverlayIcon(options: object = {}) {
         this.player.addChild("OverlayIcon", options);
+    }
+
+    addNextInPlaylist(streamID: number) {
+      this.player.getChild('controlBar').addChild("NextInPlaylistButton", streamID)
     }
 
     addTimeToolTipClass(spriteID?: number) {
@@ -222,11 +228,48 @@ export const initPlayer = function (
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
         settings.addOverlayIcon();
+        settings.addNextInPlaylist(streamID);
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
     players.push(player);
 };
+
+/**
+ * Button for skipping to the next video in current playlist if available.
+ */
+
+class NextInPlaylistButton extends Button {
+  private streamID: number;
+  private next: StreamPlaylistEntry;
+
+  constructor(player, streamID) {
+      super(player);
+      (super.el().firstChild as HTMLElement).classList.add("icon-forward");
+      super.controlText("Next Video");
+      this.streamID = streamID;
+      DataStore.streamPlaylist.subscribe(streamID, this.handlePlaylistUpdate)
+  }
+
+  handlePlaylistUpdate(data) {
+      const upcomingStreams = data.filter((item) => !item.liveNow && new Date(item.start).getTime() < new Date().getTime());
+      const currentStream = upcomingStreams.find((e) => e.streamId == this.streamID);
+      this.next = upcomingStreams[upcomingStreams.indexOf(currentStream) + 1] || null;
+  }
+
+  handleClick(event) {
+      if (this.next == null) {
+          console.log("Could not skip to next video. No information for next video found.");
+          return;
+      }
+
+      const url = new URL(
+          window.location.origin + `/w/${this.next.courseSlug}/${this.next.streamId}`
+      );
+      window.location.assign(url);
+  }
+}
+videojs.registerComponent('NextInPlaylistButton', NextInPlaylistButton);
 
 let skipTo = 0;
 
