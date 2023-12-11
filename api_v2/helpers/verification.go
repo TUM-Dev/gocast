@@ -9,36 +9,44 @@ import (
 	s "github.com/TUM-Dev/gocast/api_v2/services"
 )
 // Veriification to check if user is authorized to access course/stream
-func CheckEnrolledOrPublic(db *gorm.DB, userID *uint, courseID uint) (bool, error) {
-    isPublic, err := checkPublic(db, courseID)
-    if err != nil || isPublic {
-        return isPublic, err
+func CheckAuthorized(db *gorm.DB, userID uint, courseID uint) (error) {
+    course, err := s.FindCourseById(db, courseID)
+    if err != nil {
+        return err
     }
 
-	if userID == nil {
-		return false, e.WithStatus(http.StatusForbidden, errors.New("course is not public"))
+    switch course.Visibility {
+    case "public":
+        return nil
+    case "private":
+        return e.WithStatus(http.StatusForbidden, errors.New("course is private"))
+    case "hidden":
+        return e.WithStatus(http.StatusForbidden, errors.New("course is hidden"))
+    case "loggedin":
+        if userID == 0 {
+			return e.WithStatus(http.StatusForbidden, errors.New("course is only accessible by logged in users"))
+		} else {
+			return nil
+		}
+    case "enrolled":
+        return checkUserEnrolled(db, userID, courseID)
+    default:
+        return e.WithStatus(http.StatusForbidden, errors.New("course is not accessible"))
+    }
+}
+
+func checkUserEnrolled(db *gorm.DB, userID uint, courseID uint) (error) {
+    if userID == 0 {
+        return e.WithStatus(http.StatusForbidden, errors.New("course can only be accessed by enrolled users"))
     }
 
     var count int64
-    if err := db.Table("course_users").Where("user_id = ? AND course_id = ?", *userID, courseID).Count(&count).Error; err != nil {
-        return false, e.WithStatus(http.StatusInternalServerError, err)
+    if err := db.Table("course_users").Where("user_id = ? AND course_id = ?", userID, courseID).Count(&count).Error; err != nil {
+        return e.WithStatus(http.StatusInternalServerError, err)
     }
 
     if count == 0 {
-        return false, e.WithStatus(http.StatusForbidden, errors.New("user is not enrolled in this course and the course is not public"))
+        return e.WithStatus(http.StatusForbidden, errors.New("user is not enrolled in this course and the course can only be accessed by enrolled users"))
     }
-
-    return true, nil
-}
-
-func checkPublic(db *gorm.DB, id uint) (bool, error) {
-	if course, err := s.FindCourseById(db, id); err != nil {
-		return false, err
-	} else {
-		if course.Visibility == "private" {
-			return false, e.WithStatus(http.StatusForbidden, errors.New("course is private"))
-			} else {
-			return course.Visibility == "public", nil
-		}
-	}
+    return nil
 }

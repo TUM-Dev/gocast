@@ -262,6 +262,10 @@ func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedReques
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if err := h.CheckAuthorized(a.db, uint(u.ID), uint(req.CourseID)); err != nil {
+        return nil, err
+    }
+
 	err = s.PostUserPinned(a.db, u, uint(req.CourseID))
 	if err != nil {
 		return nil, err

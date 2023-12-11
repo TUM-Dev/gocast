@@ -39,8 +39,7 @@ func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*p
         return nil, err
     }
 
-    isAllowed, err := h.CheckEnrolledOrPublic(a.db, &uID, stream.CourseID)
-    if err != nil || !isAllowed {
+    if err := h.CheckAuthorized(a.db, uID, stream.CourseID); err != nil {
         return nil, err
     }
 
@@ -95,8 +94,7 @@ func (a *API) GetThumbsVOD(ctx context.Context, req *protobuf.GetThumbsVODReques
         return nil, err
     }
 
-    isAllowed, err := h.CheckEnrolledOrPublic(a.db, &uID, stream.CourseID)
-    if err != nil || !isAllowed {
+    if err := h.CheckAuthorized(a.db, uID, stream.CourseID); err != nil {
         return nil, err
     }
 
@@ -125,8 +123,7 @@ func (a *API) GetThumbsLive(ctx context.Context, req *protobuf.GetThumbsLiveRequ
         return nil, err
     }
 
-    isAllowed, err := h.CheckEnrolledOrPublic(a.db, &uID, stream.CourseID)
-    if err != nil || !isAllowed {
+    if err := h.CheckAuthorized(a.db, uID, stream.CourseID); err != nil {
         return nil, err
     }
 

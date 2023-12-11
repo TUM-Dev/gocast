@@ -68,16 +68,15 @@ func (a *API) GetCourseStreams(ctx context.Context, req *protobuf.GetCourseStrea
 
 	uID, err := a.getCurrentID(ctx)
 	if err != nil && err.Error() != "missing cookie header" {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
-	}
-
-	streams, err := s.GetStreamsByCourseID(a.db, uint(req.CourseID))
-    if err != nil {
+            return nil, e.WithStatus(http.StatusUnauthorized, err)
+    }
+    
+    if err := h.CheckAuthorized(a.db, uID, uint(req.CourseID)); err != nil {
         return nil, err
     }
 
-    isAllowed, err := h.CheckEnrolledOrPublic(a.db, &uID, uint(req.CourseID))
-    if err != nil || !isAllowed {
+    streams, err := s.GetStreamsByCourseID(a.db, uint(req.CourseID))
+    if err != nil {
         return nil, err
     }
 

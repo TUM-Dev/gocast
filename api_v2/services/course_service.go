@@ -16,7 +16,7 @@ import (
 func FindCourseById(db *gorm.DB, id uint) (*model.Course, error) {
     course := &model.Course{}
     if err := db.Where("id = ?", id).First(course).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound){
-        return nil, err
+        return nil, e.WithStatus(http.StatusInternalServerError, err)
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("course not found"))
 	}
