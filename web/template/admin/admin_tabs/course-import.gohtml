@@ -12,7 +12,7 @@
 
     <h2 class="form-container-title">Semester</h2>
 
-    <form x-show="step===0 || step===1" class="form-container-body grid grid-cols-2 gap-4">
+    <div x-show="step===0 || step===1" class="form-container-body grid grid-cols-2 gap-4">
         <label>
             <h2>Year</h2>
             <select x-model="year" class="tl-select">
@@ -57,7 +57,7 @@
         <button class="btn primary col-span-full" @click="step++; $dispatch(`notify${step}`)" :disabled="loading"
             x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')">
         </button>
-    </form>
+    </div>
 
     <div x-show="!loading && step===1">
         <div>
