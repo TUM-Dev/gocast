@@ -322,7 +322,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                     window.location.replace(`/admin/course/${lecture.courseId}`);
                 }
             });
-
         },
 
         restoreKey() {
@@ -334,7 +333,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                     window.location.replace(`/admin/course/${lecture.courseId}`);
                 }
             });
-
         },
 
         /**
