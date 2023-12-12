@@ -95,7 +95,10 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		}
 
 		// Check if user wants to skip first silence
-		if tumLiveContext.User.GetAutoSkipEnabled().Enabled {
+		autoSkip, err := tumLiveContext.User.GetAutoSkipEnabled()
+		if err != nil {
+			log.Printf("Couldn't decode user setting: %v\n", err)
+		} else if autoSkip.Enabled {
 			data.Progress.Progress = math.Max(data.Progress.Progress, tumLiveContext.Stream.FirstSilenceAsProgress())
 		}
 	}

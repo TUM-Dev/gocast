@@ -204,18 +204,18 @@ type AutoSkipSetting struct {
 }
 
 // GetAutoSkipEnabled returns whether the user has enabled auto skip
-func (u User) GetAutoSkipEnabled() AutoSkipSetting {
+func (u User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
 	for _, setting := range u.Settings {
 		if setting.Type == AutoSkip {
 			var a AutoSkipSetting
 			err := json.Unmarshal([]byte(setting.Value), &a)
 			if err != nil {
-				break
+				return AutoSkipSetting{Enabled: false}, err
 			}
-			return a
+			return a, nil
 		}
 	}
-	return AutoSkipSetting{Enabled: false}
+	return AutoSkipSetting{Enabled: false}, nil
 }
 
 type argonParams struct {
