@@ -283,7 +283,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             if (confirm("Do you really want to delete this lecture? This includes any recordings.")) {
                 DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
             }
-
         },
 
         deleteLectureSeries() {
