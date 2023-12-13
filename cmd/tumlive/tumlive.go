@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/profile"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -28,6 +29,10 @@ import (
 var VersionTag = "development"
 
 type initializer func()
+
+var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	Level: slog.LevelDebug,
+})).With("service", "main")
 
 var initializers = []initializer{
 	tools.LoadConfig,
