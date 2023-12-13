@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import {defineElements} from "./custom-elements/elements";
+import { defineElements } from "./custom-elements/elements";
 
 export * from "./notifications";
 export * from "./user-settings";
