@@ -90,7 +90,7 @@
             </div>
         </section>
         <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetCustomSpeeds}}, newSpeed: ''}">
-            <h2>Custom Speeds</h2>
+            <h2>Custom Speeds (up to 3)</h2>
             <div class="flex flex-row">
                 <template x-for="ps in playbackspeeds">
                     <span class="mr-2">
@@ -112,8 +112,10 @@
                         -webkit-appearance: none;
                     }
                 </style>
-                <input x-model="newSpeed" type="number" min="0.01" max="5" maxlength="4" style="width: 7ch;" class="bg-transparent" @change="newSpeed = global.sanitizeInputSpeed(newSpeed)" placeholder="1.00">
-                <button class="tum-live-input-submit tum-live-button-primary p-1 text-sm ml-2 pl-2 pr-2" @click="newSpeed = global.sanitizeInputSpeed(newSpeed); if(global.checkInputSpeed(newSpeed, playbackspeeds)) {playbackspeeds.push(newSpeed); playbackspeeds.sort(); global.updatePreference(global.UserSetting.CustomSpeeds, playbackspeeds); newSpeed='';}">Add</button>
+                <div x-show="playbackspeeds.length < 3">
+                    <input x-model="newSpeed" type="number" min="0.01" max="5" maxlength="4" style="width: 7ch;" class="bg-transparent" @change="newSpeed = global.sanitizeInputSpeed(newSpeed)" placeholder="1.00">
+                    <button class="tum-live-input-submit tum-live-button-primary p-1 text-sm ml-2 pl-2 pr-2" @click="newSpeed = global.sanitizeInputSpeed(newSpeed); if(global.checkInputSpeed(newSpeed, playbackspeeds)) {playbackspeeds.push(newSpeed); playbackspeeds.sort(); global.updatePreference(global.UserSetting.CustomSpeeds, playbackspeeds); newSpeed='';}">Add</button>
+                </div>
             </div>
         </section>
         <section>
