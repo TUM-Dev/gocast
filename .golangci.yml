@@ -25,7 +25,7 @@ linters:
   fast: false
 
 run:
-  go: '1.21'
+  go: '1.21.5'
   timeout: 10m
   skip-dirs:
     - node_modules
@@ -67,7 +67,7 @@ linters-settings:
       - name: modifies-value-receiver
   gofumpt:
     extra-rules: false
-    lang-version: "1.21"
+    lang-version: "1.21.5"
 
 issues:
   max-issues-per-linter: 0
