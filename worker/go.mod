@@ -1,6 +1,6 @@
 module github.com/TUM-Dev/gocast/worker
 
-go 1.21
+go 1.21.5
 
 // Direct dependencies
 require (
