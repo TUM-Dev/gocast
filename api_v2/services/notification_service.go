@@ -82,3 +82,19 @@ func PostDeviceToken(db *gorm.DB, userID uint, deviceToken string) (err error) {
 
 	return nil
 }
+
+func DeleteDeviceToken(db *gorm.DB, userID uint, deviceToken string) (err error) {
+	device := model.Device{}
+
+	if err = db.Where("user_id = ? AND device_token = ?", userID, deviceToken).First(&device).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return e.WithStatus(http.StatusInternalServerError, err)
+	} else if errors.Is(err, gorm.ErrRecordNotFound) {
+		return e.WithStatus(http.StatusNotFound, errors.New("device not found"))
+	}
+
+	if err = db.Delete(&device).Error; err != nil {
+		return e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	return nil
+}

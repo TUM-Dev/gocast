@@ -71,3 +71,22 @@ func (a *API) PostDeviceToken(ctx context.Context, req *protobuf.PostDeviceToken
 
 	return &protobuf.PostDeviceTokenResponse{}, nil
 }
+
+func (a *API) DeleteDeviceToken(ctx context.Context, req *protobuf.DeleteDeviceTokenRequest) (*protobuf.DeleteDeviceTokenResponse, error) {
+	a.log.Info("DeleteDeviceToken")
+	
+	if req.DeviceToken == "" {
+        return nil, e.WithStatus(http.StatusBadRequest, errors.New("device_token must not be empty"))
+    }
+	
+	uID, err := a.getCurrentID(ctx)
+	if err != nil {
+		return nil, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+	if err = s.DeleteDeviceToken(a.db, uID, req.DeviceToken); err != nil {
+        return nil, err
+	}
+
+	return &protobuf.DeleteDeviceTokenResponse{}, nil
+}
