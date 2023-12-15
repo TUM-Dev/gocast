@@ -19,7 +19,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"fmt"
 	"github.com/NaySoftware/go-fcm"
 )
 
@@ -97,7 +96,7 @@ func (a *API) handleDocs(c *gin.Context) {
 // Temporary method to trigger push notifications for given courseID, for actual implementation see ./api/courses.bo and ./dao/courses.go
 func (a *API) sendTestNotification() {
 	streamID := 2
-	a.log.Info("Start finding device tokens for stream", "streamID", fmt.Sprint(streamID))
+	a.log.Info("Start finding device tokens for stream ?", streamID)
 	var deviceTokens []string
     query := `
         SELECT devices.device_token
@@ -106,8 +105,8 @@ func (a *API) sendTestNotification() {
         JOIN streams ON course_users.course_id = streams.course_id
         WHERE streams.id = ?
 	`
-	err := a.db.Raw(query, fmt.Sprint(streamID)).Scan(&deviceTokens).Error
-	if err != nil {
+    err := a.db.Raw(query, string(streamID)).Scan(&deviceTokens).Error
+    if err != nil {
 		a.log.Error("Error finding device tokens")
         return
     }
@@ -134,4 +133,5 @@ func (a *API) sendTestNotification() {
 		return
 	}
 
-	a.log.Info("Sent push notifications to devices", "status", fmt.Sprint(status))
+	a.log.Info("Sent push notifications to devices: ", status)	
+}
