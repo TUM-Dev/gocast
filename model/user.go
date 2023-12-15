@@ -331,3 +331,10 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	return nil
 }
+
+// Device represents all device tokens for a given user that is subscribed to push notifications
+type Device struct {
+	gorm.Model
+	DeviceToken string `gorm:"type:varchar(256); not null"`
+    UserID uint `gorm:"not null"`
+}
