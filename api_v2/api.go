@@ -112,6 +112,7 @@ func (a *API) sendTestNotification() {
     }
 
 	a.log.Info("Start sending push notifications")
+	// THIS IS ONLY A PLACEHOLDER - INSERT YOUR OWN SERVER KEY BEFORE STARTING THE API LOCALLY
 	serverKey := "AAAA_8kwlHY:APA91bGiTBx4IhYg5xvHAHD7r4cI44IgUpkeNOMkftcnjyL_ayaqAedKOwzKhD53mT9GfFhX8XTNwRXIktNMrIgzLXAZnWBrOiHbCLE1rqr90SZ-STa3O3gzjJFNwlAfEgIyF7ln9_ku"
 
    
