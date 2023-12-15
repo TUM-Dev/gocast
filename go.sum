@@ -47,6 +47,8 @@ github.com/Masterminds/semver/v3 v3.2.1 h1:RN9w6+7QoMeJVGyfmbcgs28Br8cvmnucEXnY0
 github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
 github.com/Masterminds/sprig/v3 v3.2.3 h1:eL2fZNezLomi0uOLqjQoN6BfsDD+fyLtgbJMAj9n6YA=
 github.com/Masterminds/sprig/v3 v3.2.3/go.mod h1:rXcFaZ2zZbLRJv/xSysmlgIM1u11eBaRMhvYXJNkGuM=
+github.com/NaySoftware/go-fcm v0.0.0-20190516140123-808e978ddcd2 h1:0hjpEzUWez7uca/CUBhfidfotTCCI5fsj6Nb+TW5DLg=
+github.com/NaySoftware/go-fcm v0.0.0-20190516140123-808e978ddcd2/go.mod h1:3qVrdgWvoMZMoRG+/nusrCNrcP4RYU4MWGv467XjqLI=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4 h1:t2Po3FzeYWa8fO2GdacQtiLDUvGYlJ+ukGqe7gp6/ro=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
 github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b h1:87IltMZV7hN5jGCHbqDIEf0p8+X0f4Ep40PRmz1Mexg=

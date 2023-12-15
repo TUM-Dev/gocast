@@ -19,6 +19,8 @@ import (
 	"os"
 	"strings"
 	"time"
+	"fmt"
+	"github.com/NaySoftware/go-fcm"
 )
 
 // API is the grpc server for the v2 api
@@ -55,6 +57,9 @@ func (a *API) Run(net.Listener) error {
 
 	protobuf.RegisterAPIServer(grpcServer, a)
 	reflection.Register(grpcServer)
+	// TODO: Check with @Joscha
+	// Send notification for testing purposes to simulate stream upload
+	a.sendTestNotification()
 	return grpcServer.Serve(lis)
 }
 
@@ -88,3 +93,45 @@ func (a *API) handleDocs(c *gin.Context) {
 	fileServer := http.FileServer(httpFs)
 	http.StripPrefix("/api/v2", fileServer).ServeHTTP(c.Writer, c.Request)
 }
+
+// Temporary method to trigger push notifications for given courseID, for actual implementation see ./api/courses.bo and ./dao/courses.go
+func (a *API) sendTestNotification() {
+	streamID := 2
+	a.log.Info("Start finding device tokens for stream", "streamID", fmt.Sprint(streamID))
+	var deviceTokens []string
+    query := `
+        SELECT devices.device_token
+        FROM devices
+        JOIN course_users ON devices.user_id = course_users.user_id
+        JOIN streams ON course_users.course_id = streams.course_id
+        WHERE streams.id = ?
+	`
+	err := a.db.Raw(query, fmt.Sprint(streamID)).Scan(&deviceTokens).Error
+	if err != nil {
+		a.log.Error("Error finding device tokens")
+        return
+    }
+
+	a.log.Info("Start sending push notifications")
+	serverKey := "AAAA_8kwlHY:APA91bGiTBx4IhYg5xvHAHD7r4cI44IgUpkeNOMkftcnjyL_ayaqAedKOwzKhD53mT9GfFhX8XTNwRXIktNMrIgzLXAZnWBrOiHbCLE1rqr90SZ-STa3O3gzjJFNwlAfEgIyF7ln9_ku"
+
+   
+	data := map[string]string{
+		"sum": "New VOD available!",
+		"msg": "Stream name (Stream title)",
+	}
+ 
+	if err != nil {
+		a.log.Error("Could not find subscribed users")
+		return
+	}
+
+	fcm_c := fcm.NewFcmClient(serverKey)
+	fcm_c.NewFcmRegIdsMsg(deviceTokens, data)
+	status, err := fcm_c.Send()
+	if err != nil {
+		a.log.Error("Error sending push notifications")
+		return
+	}
+
+	a.log.Info("Sent push notifications to devices", "status", fmt.Sprint(status))

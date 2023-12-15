@@ -43,6 +43,9 @@ type CoursesDao interface {
 
 	RemoveAdminFromCourse(userID uint, courseID uint) error
 	DeleteCourse(course model.Course)
+
+// TODO: Check with @joscha
+//	GetSubscribedDevices(streamID uint) ([]string, error)
 }
 
 type coursesDao struct {
@@ -317,6 +320,28 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 		log.WithError(err).Error("Can't delete course")
 	}
 }
+
+/* TODO: Check with @joscha
+// Returns all device tokens of users subscribed/enrolled to a stream's course
+func (d coursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
+    var deviceTokens []string
+
+    query := `
+        SELECT device.DeviceToken
+        FROM device
+        JOIN course_users ON device.userID = course_users.userID
+        JOIN streams ON course_users.courseID = streams.courseID
+        WHERE streams.streamID = ?
+    `
+
+    err := DB.Raw(query, string(streamID)).Scan(&deviceTokens).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return deviceTokens, nil
+}
+*/
 
 type Semester struct {
 	TeachingTerm string
