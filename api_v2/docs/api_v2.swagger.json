@@ -823,11 +823,13 @@
         "sourcePreferences": {
           "type": "string"
         },
-        "lastRecording": {
-          "$ref": "#/definitions/protobufStream"
+        "lastRecordingID": {
+          "type": "integer",
+          "format": "int64"
         },
-        "nextLecture": {
-          "$ref": "#/definitions/protobufStream"
+        "nextLectureID": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

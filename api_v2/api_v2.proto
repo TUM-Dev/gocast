@@ -495,8 +495,8 @@ message Course {
   repeated Stream streams = 12;
   string cameraPresetPreferences = 13;
   string sourcePreferences = 14;
-  Stream lastRecording = 15;
-  Stream nextLecture = 16;
+  uint32 lastRecordingID = 15;
+  uint32 nextLectureID = 16;
 }
 
 message Semester { 
