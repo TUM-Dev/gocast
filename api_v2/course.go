@@ -17,15 +17,21 @@ import (
 // It returns a GetPublicCoursesResponse or an error if one occurs.
 func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCoursesRequest) (*protobuf.GetPublicCoursesResponse, error) {
 	a.log.Info("GetPublicCourses")
-	courses, err := s.FetchCourses(a.db, req)
+
+    uID, err := a.getCurrentID(ctx)
+	if err != nil && err.Error() != "missing cookie header" {
+		return nil, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+    courses, err := s.FetchCourses(a.db, req, &uID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
 	resp := make([]*protobuf.Course, len(courses))
 
-    for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+    for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
     }
 
 	return &protobuf.GetPublicCoursesResponse{
@@ -71,7 +77,8 @@ func (a *API) GetCourseStreams(ctx context.Context, req *protobuf.GetCourseStrea
             return nil, e.WithStatus(http.StatusUnauthorized, err)
     }
     
-    if err := h.CheckAuthorized(a.db, uID, uint(req.CourseID)); err != nil {
+    c, err := h.CheckAuthorized(a.db, uID, uint(req.CourseID))
+    if err != nil {
         return nil, err
     }
 
@@ -82,7 +89,11 @@ func (a *API) GetCourseStreams(ctx context.Context, req *protobuf.GetCourseStrea
 
     resp := make([]*protobuf.Stream, len(streams))
     for i, stream := range streams {
-        s, err := h.ParseStreamToProto(*stream)
+        if err := h.SignStream(stream, c, uID); err != nil {
+            return nil, err
+        }
+
+        s, err := h.ParseStreamToProto(stream)
         if err != nil {
             return nil, err
         } 

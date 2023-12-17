@@ -42,37 +42,42 @@ func ParseUserSettingToProto(setting model.UserSetting) *protobuf.UserSetting {
 }
 
 // ParseBookmarkToProto converts a Bookmark model to its protobuf representation.
-func ParseBookmarkToProto(bookmark model.Bookmark) *protobuf.Bookmark {
+func ParseBookmarkToProto(b model.Bookmark) *protobuf.Bookmark {
 	return &protobuf.Bookmark{
-		Id:          uint32(bookmark.ID),
-		Description: bookmark.Description,
-		Hours:       uint32(bookmark.Hours),
-		Minutes:     uint32(bookmark.Minutes),
-		Seconds:     uint32(bookmark.Seconds),
-		UserID:      uint32(bookmark.UserID),
-		StreamID:    uint32(bookmark.StreamID),
+		Id:          uint32(b.ID),
+		Description: b.Description,
+		Hours:       uint32(b.Hours),
+		Minutes:     uint32(b.Minutes),
+		Seconds:     uint32(b.Seconds),
+		UserID:      uint32(b.UserID),
+		StreamID:    uint32(b.StreamID),
 	}
 }
 
 // ParseCourseToProto converts a Course model to its protobuf representation.
-func ParseCourseToProto(course model.Course) *protobuf.Course {
+func ParseCourseToProto(c model.Course) *protobuf.Course {
+	lastRecordingID := c.GetLastRecording().ID
+	nextLectureID := c.GetNextLecture().ID
+
 	return &protobuf.Course{
-		Id:   uint32(course.ID),
-		Name: course.Name,
-		Slug: course.Slug,
+		Id:   uint32(c.ID),
+		Name: c.Name,
+		Slug: c.Slug,
 		Semester: &protobuf.Semester{
-			Year:         uint32(course.Year),
-			TeachingTerm: course.TeachingTerm,
+			Year:         uint32(c.Year),
+			TeachingTerm: c.TeachingTerm,
 		},
-		TUMOnlineIdentifier:     course.TUMOnlineIdentifier,
-		VODEnabled:              course.VODEnabled,
-		DownloadsEnabled:        course.DownloadsEnabled,
-		ChatEnabled:             course.ChatEnabled,
-		AnonymousChatEnabled:    course.AnonymousChatEnabled,
-		ModeratedChatEnabled:    course.ModeratedChatEnabled,
-		VodChatEnabled:          course.VodChatEnabled,
-		CameraPresetPreferences: course.CameraPresetPreferences,
-		SourcePreferences:       course.SourcePreferences,
+		TUMOnlineIdentifier:     c.TUMOnlineIdentifier,
+		VODEnabled:              c.VODEnabled,
+		DownloadsEnabled:        c.DownloadsEnabled,
+		ChatEnabled:             c.ChatEnabled,
+		AnonymousChatEnabled:    c.AnonymousChatEnabled,
+		ModeratedChatEnabled:    c.ModeratedChatEnabled,
+		VodChatEnabled:          c.VodChatEnabled,
+		CameraPresetPreferences: c.CameraPresetPreferences,
+		SourcePreferences:       c.SourcePreferences,
+		LastRecordingID:         uint32(lastRecordingID),
+		NextLectureID:           uint32(nextLectureID),
 	}
 }
 
@@ -105,7 +110,7 @@ func ParseSemesterToProto(semester dao.Semester) *protobuf.Semester {
 
 // ParseStreamToProto converts a Stream model to its protobuf representation.
 // It returns an error if the conversion of timestamps fails.
-func ParseStreamToProto(stream model.Stream) (*protobuf.Stream, error) {
+func ParseStreamToProto(stream *model.Stream) (*protobuf.Stream, error) {
 	start, err := ptypes.TimestampProto(stream.Start)
 	if err != nil {
 		return nil, err

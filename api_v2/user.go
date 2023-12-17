@@ -44,8 +44,8 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 
 	resp := make([]*protobuf.Course, len(courses))
 
-	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+	for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
 	}
 
 	return &protobuf.GetUserCoursesResponse{
@@ -70,8 +70,8 @@ func (a *API) GetUserPinned(ctx context.Context, req *protobuf.GetUserPinnedRequ
 
 	resp := make([]*protobuf.Course, len(courses))
 
-	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+	for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
 	}
 
 	return &protobuf.GetUserPinnedResponse{
@@ -95,8 +95,8 @@ func (a *API) GetUserAdminCourses(ctx context.Context, req *protobuf.GetUserAdmi
 
 	resp := make([]*protobuf.Course, len(courses))
 
-	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+	for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
 	}
 
 	return &protobuf.GetUserAdminResponse{
@@ -219,11 +219,12 @@ func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedReques
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	if err := h.CheckAuthorized(a.db, uint(u.ID), uint(req.CourseID)); err != nil {
+	c, err := h.CheckAuthorized(a.db, uint(u.ID), uint(req.CourseID))
+	if err != nil {
         return nil, err
     }
 
-	err = s.PostUserPinned(a.db, u, uint(req.CourseID))
+	err = s.PostUserPinned(a.db, u, c)
 	if err != nil {
 		return nil, err
 	}

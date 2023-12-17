@@ -22,33 +22,47 @@ import (
 // 4. Return the protobuf representation
 
 
-func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*protobuf.GetStreamResponse, error) {
-    a.log.Info("GetStream")
-
-    if req.StreamID == 0 {
+func (a *API) handleStreamRequest(ctx context.Context, sID uint64) (*model.Stream, error) {
+    if sID == 0 {
         return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
     }
 
-	uID, err := a.getCurrentID(ctx)
+    uID, err := a.getCurrentID(ctx)
 	if err != nil && err.Error() != "missing cookie header" {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
+	s, err := s.GetStreamByID(a.db, uint(sID))
     if err != nil {
         return nil, err
     }
 
-    if err := h.CheckAuthorized(a.db, uID, stream.CourseID); err != nil {
-        return nil, err
-    }
-
-    s, err := h.ParseStreamToProto(*stream)
+    c, err := h.CheckAuthorized(a.db, uID, s.CourseID)
     if err != nil {
         return nil, err
     }
 
-    return &protobuf.GetStreamResponse{Stream: s}, nil
+    if err = h.SignStream(s, c, uID); err != nil {
+        return nil, err
+    }
+
+    return s, nil
+}
+
+func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*protobuf.GetStreamResponse, error) {
+    a.log.Info("GetStream")
+
+    s, err := a.handleStreamRequest(ctx, req.StreamID)
+    if err != nil {
+        return nil, err
+    }
+
+    stream, err := h.ParseStreamToProto(s)
+    if err != nil {
+        return nil, err
+    }
+
+    return &protobuf.GetStreamResponse{Stream: stream}, nil
 }
 
 func (a *API) GetNowLive(ctx context.Context, req *protobuf.GetNowLiveRequest) (*protobuf.GetNowLiveResponse, error) {
@@ -59,7 +73,6 @@ func (a *API) GetNowLive(ctx context.Context, req *protobuf.GetNowLiveRequest) (
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	
     streams, err := s.GetEnrolledOrPublicLiveStreams(a.db, &uID)
     if err != nil {
         return nil, err
@@ -67,11 +80,22 @@ func (a *API) GetNowLive(ctx context.Context, req *protobuf.GetNowLiveRequest) (
 
     resp := make([]*protobuf.Stream, len(streams))
     for i, stream := range streams {
-        s, err := h.ParseStreamToProto(*stream)
+
+        c, err := s.GetCourseById(a.db, stream.CourseID)
+        if err != nil {
+            return nil, err
+        }
+                
+        if err := h.SignStream(stream, c, uID); err != nil {
+            return nil, err
+        }
+
+        s, err := h.ParseStreamToProto(stream)
         if err != nil {
             return nil, err
         } 
         resp[i] = s
+
     }
 
     return &protobuf.GetNowLiveResponse{Stream: resp}, nil
@@ -80,25 +104,12 @@ func (a *API) GetNowLive(ctx context.Context, req *protobuf.GetNowLiveRequest) (
 func (a *API) GetThumbsVOD(ctx context.Context, req *protobuf.GetThumbsVODRequest) (*protobuf.GetThumbsVODResponse, error) {
     a.log.Info("GetThumbsVOD")
     
-    if req.StreamID == 0 {
-        return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
-    }
-
-	uID, err := a.getCurrentID(ctx)
-	if err != nil && err.Error() != "missing cookie header" {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
-	}
-	
-	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
+    s, err := a.handleStreamRequest(ctx, req.StreamID)
     if err != nil {
         return nil, err
     }
 
-    if err := h.CheckAuthorized(a.db, uID, stream.CourseID); err != nil {
-        return nil, err
-    }
-
-    path, err := model.Stream.GetLGThumbnail(*stream)
+    path, err := model.Stream.GetLGThumbnail(*s)
     if err != nil {
         path = "/thumb-fallback.png"
     }
@@ -109,25 +120,12 @@ func (a *API) GetThumbsVOD(ctx context.Context, req *protobuf.GetThumbsVODReques
 func (a *API) GetThumbsLive(ctx context.Context, req *protobuf.GetThumbsLiveRequest) (*protobuf.GetThumbsLiveResponse, error) {
     a.log.Info("GetThumbsLive")
     
-    if req.StreamID == 0 {
-        return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
-    }
-
-	uID, err := a.getCurrentID(ctx)
-	if err != nil && err.Error() != "missing cookie header" {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
-	}
-	
-	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
+    s, err := a.handleStreamRequest(ctx, req.StreamID)
     if err != nil {
         return nil, err
     }
 
-    if err := h.CheckAuthorized(a.db, uID, stream.CourseID); err != nil {
-        return nil, err
-    }
-
-    path := pathprovider.LiveThumbnail(string(req.StreamID))
+    path := pathprovider.LiveThumbnail(string(s.ID))
     if path == "" {
         path = "/thumb-fallback.png"
     }

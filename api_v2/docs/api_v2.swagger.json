@@ -884,6 +884,14 @@
         },
         "sourcePreferences": {
           "type": "string"
+        },
+        "lastRecordingID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nextLectureID": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -895,6 +903,17 @@
     },
     "protobufDeletePinnedResponse": {
       "type": "object"
+    },
+    "protobufDownload": {
+      "type": "object",
+      "properties": {
+        "friendlyName": {
+          "type": "string"
+        },
+        "downloadURL": {
+          "type": "string"
+        }
+      }
     },
     "protobufFeatureNotification": {
       "type": "object",
@@ -1233,6 +1252,22 @@
         "duration": {
           "type": "integer",
           "format": "int32"
+        },
+        "downloads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufDownload"
+          }
+        },
+        "isPlanned": {
+          "type": "boolean"
+        },
+        "isComingUp": {
+          "type": "boolean"
+        },
+        "HLSUrl": {
+          "type": "string"
         }
       }
     },

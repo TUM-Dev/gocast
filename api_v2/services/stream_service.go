@@ -11,15 +11,15 @@ import (
 
 // GetStreamByID retrieves a stream by its id.
 func GetStreamByID(db *gorm.DB, streamID uint) (*model.Stream, error) {
-    stream := &model.Stream{}
-    err := db.Where("streams.id = ?", streamID).First(stream).Error
+    s := &model.Stream{}
+    err := db.Where("streams.id = ?", streamID).First(s).Error
     if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
         return nil, err
     } else if errors.Is(err, gorm.ErrRecordNotFound) {
         return nil, e.WithStatus(http.StatusNotFound, errors.New("stream not found"))
 	}
 
-    return stream, nil
+    return s, nil
 }
 
 // GetStreamsByCourseID retrieves all streams of a course by its id.
@@ -32,17 +32,29 @@ func GetStreamsByCourseID(db *gorm.DB, courseID uint) ([]*model.Stream, error) {
     return streams, nil
 }
 
-func GetEnrolledOrPublicLiveStreams(db *gorm.DB, userID *uint) ([]*model.Stream, error) {
+func GetEnrolledOrPublicLiveStreams(db *gorm.DB, uID *uint) ([]*model.Stream, error) {
     var streams []*model.Stream
-    err := db.Table("streams").
+    if *uID == 0 {
+        err := db.Table("streams").
         Joins("join courses on streams.course_id = courses.id").
         Joins("left join course_users on courses.id = course_users.course_id").
-        Where("(course_users.user_id = ? OR courses.visibility = \"public\") AND streams.live_now = true", *userID).
+        Where("(course_users.user_id = ? OR courses.visibility = \"public\") AND streams.live_now = 1", *uID).
         Find(&streams).Error
-
-    if err != nil {
-        return nil, err
+        if err != nil {
+            return nil, err
+        }
+    } else {
+        err := db.Table("streams").
+        Select("DISTINCT streams.*").
+        Joins("join courses on streams.course_id = courses.id").
+        Joins("left join course_users on courses.id = course_users.course_id").
+        Where("(course_users.user_id = ? OR courses.visibility = \"public\" OR courses.visibility = \"loggedin\") AND streams.live_now = 1", *uID).
+        Find(&streams).Error
+        if err != nil {
+            return nil, err
+        }
     }
 
+    
     return streams, nil
 }

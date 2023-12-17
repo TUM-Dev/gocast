@@ -7,46 +7,47 @@ import (
 	"net/http"
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	s "github.com/TUM-Dev/gocast/api_v2/services"
+    "github.com/TUM-Dev/gocast/model"
 )
-// Veriification to check if user is authorized to access course/stream
-func CheckAuthorized(db *gorm.DB, userID uint, courseID uint) (error) {
-    course, err := s.FindCourseById(db, courseID)
+// Verification to check if user is authorized to access course/stream
+func CheckAuthorized(db *gorm.DB, uID uint, courseID uint) (*model.Course, error) {
+    c, err := s.GetCourseById(db, courseID)
     if err != nil {
-        return err
+        return nil, err
     }
 
-    switch course.Visibility {
+    switch c.Visibility {
     case "public":
-        return nil
+        return c, nil
     case "private":
-        return e.WithStatus(http.StatusForbidden, errors.New("course is private"))
+        return nil, e.WithStatus(http.StatusForbidden, errors.New("course is private"))
     case "hidden":
-        return e.WithStatus(http.StatusForbidden, errors.New("course is hidden"))
+        return nil, e.WithStatus(http.StatusForbidden, errors.New("course is hidden"))
     case "loggedin":
-        if userID == 0 {
-			return e.WithStatus(http.StatusForbidden, errors.New("course is only accessible by logged in users"))
+        if uID == 0 {
+			return nil, e.WithStatus(http.StatusForbidden, errors.New("course is only accessible by logged in users"))
 		} else {
-			return nil
+			return c, nil
 		}
     case "enrolled":
-        return checkUserEnrolled(db, userID, courseID)
+        return checkUserEnrolled(db, uID, c)
     default:
-        return e.WithStatus(http.StatusForbidden, errors.New("course is not accessible"))
+        return nil, e.WithStatus(http.StatusForbidden, errors.New("course is not accessible"))
     }
 }
 
-func checkUserEnrolled(db *gorm.DB, userID uint, courseID uint) (error) {
-    if userID == 0 {
-        return e.WithStatus(http.StatusForbidden, errors.New("course can only be accessed by enrolled users"))
+func checkUserEnrolled(db *gorm.DB, uID uint, c *model.Course) (*model.Course, error) {
+    if uID == 0 {
+        return nil, e.WithStatus(http.StatusForbidden, errors.New("course can only be accessed by enrolled users"))
     }
 
     var count int64
-    if err := db.Table("course_users").Where("user_id = ? AND course_id = ?", userID, courseID).Count(&count).Error; err != nil {
-        return e.WithStatus(http.StatusInternalServerError, err)
+    if err := db.Table("course_users").Where("user_id = ? AND course_id = ?", uID, c.ID).Count(&count).Error; err != nil {
+        return nil, e.WithStatus(http.StatusInternalServerError, err)
     }
 
     if count == 0 {
-        return e.WithStatus(http.StatusForbidden, errors.New("user is not enrolled in this course and the course can only be accessed by enrolled users"))
+        return nil, e.WithStatus(http.StatusForbidden, errors.New("user is not enrolled in this course and the course can only be accessed by enrolled users"))
     }
-    return nil
+    return c, nil
 }
