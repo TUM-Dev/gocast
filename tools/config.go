@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"os"
 	"time"
+	"github.com/NaySoftware/go-fcm"
 )
 
 var Cfg Config
@@ -168,6 +169,7 @@ type Config struct {
 	} `yaml:"meili"`
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
+	FCMServerKey   string `yaml:"fcmServerKey"`
 }
 
 type MailConfig struct {
@@ -189,6 +191,17 @@ func (c Config) GetMeiliClient() (*meilisearch.Client, error) {
 		return nil, ErrMeiliNotConfigured
 	}
 	return meilisearch.NewClient(meilisearch.ClientConfig{Host: c.Meili.Host, APIKey: c.Meili.ApiKey}), nil
+}
+
+
+// FCM used for push notifications to mobile devices 
+var ErrFCMNotConfigured = errors.New("Firebase Cloud Messaging is not configured")
+
+func (c Config) GetFCMClient() (*fcm.FcmClient, error) {
+	if c.FCMServerKey == "" {
+		return nil, ErrFCMNotConfigured
+	}
+	return fcm.NewFcmClient(c.FCMServerKey), nil
 }
 
 var jwtKey *rsa.PrivateKey
