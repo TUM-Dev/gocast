@@ -166,7 +166,9 @@ service API {
       description: "Removes a course from the current user's pinned courses."
     };
   }
+  // END API/V2/USER
 
+  // BEGIN API/V2/NOTIFICATIONS
   rpc getBannerAlerts(GetBannerAlertsRequest) returns (GetBannerAlertsResponse) {
     option (google.api.http) = {
       get: "/user/banner-alerts"
@@ -190,7 +192,7 @@ service API {
       description: "Returns all feature notifications."
     };
   }
-  // END API/V2/USER
+  // END API/V2/NOTIFICATIONS
 
   // BEGIN API/V2/COURSES
   rpc getPublicCourses(GetPublicCoursesRequest) returns (GetPublicCoursesResponse) {
@@ -279,10 +281,9 @@ service API {
       description: "Returns path of thumbnail for a livestream."
     };
   }
-
+  
   // END API/V2/STREAMS
 }
-
 ///////////////////////////////
 //////// USER_MESSAGE /////////
 ///////////////////////////////
@@ -330,7 +331,7 @@ message GetUserCoursesRequest {
 
 message GetUserPinnedRequest {
   int32 year = 1;
-  string term = 2;
+  string term = 2; 
   int32 limit = 3;
   int32 skip = 4;
 }
@@ -494,6 +495,8 @@ message Course {
   repeated Stream streams = 12;
   string cameraPresetPreferences = 13;
   string sourcePreferences = 14;
+  Stream lastRecording = 15;
+  Stream nextLecture = 16;
 }
 
 message Semester { 
@@ -533,6 +536,7 @@ message GetSemestersResponse {
 message GetCourseStreamsResponse {
   repeated Stream streams = 1;
 }
+
 ///////////////////////////////
 /////// STREAM_MESSAGE ////////
 ///////////////////////////////
@@ -562,6 +566,10 @@ message Stream {
   uint32 startOffset = 22;
   uint32 endOffset = 23;
   int32 duration = 28;
+  repeated Download downloads = 29;
+  bool isPlanned = 30;
+  bool isComingUp = 31;
+  string HLSUrl = 32;
 }
 
 ///////////////////////////////
@@ -600,4 +608,13 @@ message GetThumbsVODResponse {
 
 message GetThumbsLiveResponse {
   string path = 1;
+}
+
+///////////////////////////////
+////// DOWNLOAD_MESSAGE ///////
+///////////////////////////////
+
+message Download {
+  string friendlyName = 1;
+  string downloadURL = 2;
 }

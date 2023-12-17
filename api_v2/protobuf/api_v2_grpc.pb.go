@@ -57,6 +57,7 @@ type APIClient interface {
 	PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequest, opts ...grpc.CallOption) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error)
 	DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error)
+	// BEGIN API/V2/NOTIFICATIONS
 	GetBannerAlerts(ctx context.Context, in *GetBannerAlertsRequest, opts ...grpc.CallOption) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(ctx context.Context, in *GetFeatureNotificationsRequest, opts ...grpc.CallOption) (*GetFeatureNotificationsResponse, error)
 	// BEGIN API/V2/COURSES
@@ -274,6 +275,7 @@ type APIServer interface {
 	PatchUserBookmark(context.Context, *PatchBookmarkRequest) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error)
 	DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error)
+	// BEGIN API/V2/NOTIFICATIONS
 	GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error)
 	// BEGIN API/V2/COURSES

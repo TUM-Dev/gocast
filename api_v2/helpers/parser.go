@@ -105,7 +105,7 @@ func ParseSemesterToProto(semester dao.Semester) *protobuf.Semester {
 
 // ParseStreamToProto converts a Stream model to its protobuf representation.
 // It returns an error if the conversion of timestamps fails.
-func ParseStreamToProto(stream model.Stream) (*protobuf.Stream, error) {
+func ParseStreamToProto(stream *model.Stream) (*protobuf.Stream, error) {
 	start, err := ptypes.TimestampProto(stream.Start)
 	if err != nil {
 		return nil, err

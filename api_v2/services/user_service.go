@@ -13,11 +13,11 @@ import (
 // FetchUserCourses fetches the courses for a user from the database.
 // It filters the courses by year, term, query, limit, and skip if they are specified in the request.
 // It returns a slice of Course models or an error if one occurs.
-func FetchUserCourses(db *gorm.DB, userID uint, req *protobuf.GetUserCoursesRequest) (courses []model.Course, err error) {
+func FetchUserCourses(db *gorm.DB, uID uint, req *protobuf.GetUserCoursesRequest) (courses []model.Course, err error) {
 	query := db.Unscoped().Table("course_users").
         Joins("join courses on course_users.course_id = courses.id").
         Select("courses.*").
-        Where("course_users.user_id = ?", userID)
+        Where("course_users.user_id = ?", uID)
 
 	if req.Year != 0 {
 		query = query.Where("courses.year = ?", req.Year)
@@ -43,11 +43,11 @@ func FetchUserCourses(db *gorm.DB, userID uint, req *protobuf.GetUserCoursesRequ
 // FetchUserPinnedCourses fetches the pinned courses for a user from the database.
 // It filters the courses by year, term, limit, and skip if they are specified in the request.
 // It returns a slice of Course models or an error if one occurs.
-func FetchUserPinnedCourses(db *gorm.DB, userID uint, req *protobuf.GetUserPinnedRequest) (courses []model.Course,err error) {
+func FetchUserPinnedCourses(db *gorm.DB, uID uint, req *protobuf.GetUserPinnedRequest) (courses []model.Course,err error) {
 	query := db.Unscoped().Table("pinned_courses").
 		Joins("join courses on pinned_courses.course_id = courses.id").
 		Select("courses.*").
-		Where("pinned_courses.user_id = ?", userID)
+		Where("pinned_courses.user_id = ?", uID)
 
 	if req.Year != 0 {
 		query = query.Where("courses.year = ?", req.Year)
@@ -72,11 +72,11 @@ func FetchUserPinnedCourses(db *gorm.DB, userID uint, req *protobuf.GetUserPinne
 
 // FetchUserAdminCourses fetches the courses where a user is an admin from the database.
 // It returns a slice of Course models or an error if one occurs.
-func FetchUserAdminCourses(db *gorm.DB, userID uint) (courses []model.Course, err error) {
+func FetchUserAdminCourses(db *gorm.DB, uID uint) (courses []model.Course, err error) {
 	err = db.Unscoped().Table("course_admins").
 		Joins("JOIN courses ON course_admins.course_id = courses.id").
 		Select("courses.*").
-		Where("course_admins.user_id = ?", userID).
+		Where("course_admins.user_id = ?", uID).
 		Find(&courses).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -88,8 +88,8 @@ func FetchUserAdminCourses(db *gorm.DB, userID uint) (courses []model.Course, er
 // FetchUserBookmarks fetches the bookmarks for a user from the database.
 // It filters the bookmarks by stream ID if it is specified in the request.
 // It returns a slice of Bookmark models or an error if one occurs.
-func FetchUserBookmarks(db *gorm.DB, userID uint, req *protobuf.GetBookmarksRequest) (bookmarks []model.Bookmark, err error) {
-	query := db.Where("user_id = ?", userID)
+func FetchUserBookmarks(db *gorm.DB, uID uint, req *protobuf.GetBookmarksRequest) (bookmarks []model.Bookmark, err error) {
+	query := db.Where("user_id = ?", uID)
 
 	if req.StreamID != 0 {
 		query = query.Where("stream_id = ?", req.StreamID)
@@ -105,8 +105,8 @@ func FetchUserBookmarks(db *gorm.DB, userID uint, req *protobuf.GetBookmarksRequ
 
 // FetchUserSettings fetches the settings for a user from the database.
 // It returns a slice of UserSetting models or an error if one occurs.
-func FetchUserSettings(db *gorm.DB, userID uint) (settings []model.UserSetting, err error) {
-	err = db.Where("user_id = ?", userID).
+func FetchUserSettings(db *gorm.DB, uID uint) (settings []model.UserSetting, err error) {
+	err = db.Where("user_id = ?", uID).
 		Find(&settings).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -115,12 +115,12 @@ func FetchUserSettings(db *gorm.DB, userID uint) (settings []model.UserSetting, 
 	return settings, err
 }
 
-func PutUserBookmark(db *gorm.DB, userID uint, req *protobuf.PutBookmarkRequest) (bookmark *model.Bookmark, err error) {
+func PutUserBookmark(db *gorm.DB, uID uint, req *protobuf.PutBookmarkRequest) (bookmark *model.Bookmark, err error) {
 	// check if bookmark already exists and if stream exists
 
 	// first check if stream exists
-	var stream model.Stream
-	if err = db.Where("id = ?", req.StreamID).First(&stream).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	var s model.Stream
+	if err = db.Where("id = ?", req.StreamID).First(&s).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("stream not found"))
@@ -131,7 +131,7 @@ func PutUserBookmark(db *gorm.DB, userID uint, req *protobuf.PutBookmarkRequest)
 		Hours:       uint(req.Hours),
 		Minutes:     uint(req.Minutes),
 		Seconds:     uint(req.Seconds),
-		UserID:      userID,
+		UserID:      uID,
 		StreamID:    uint(req.StreamID),
 	}
 
@@ -142,7 +142,7 @@ func PutUserBookmark(db *gorm.DB, userID uint, req *protobuf.PutBookmarkRequest)
 	return bookmark, nil
 }
 
-func PatchUserBookmark(db *gorm.DB, userID uint, req *protobuf.PatchBookmarkRequest) (bookmark *model.Bookmark, err error) {
+func PatchUserBookmark(db *gorm.DB, uID uint, req *protobuf.PatchBookmarkRequest) (bookmark *model.Bookmark, err error) {
 
 	//	check if bookmark exists otherwise cannot patch
 	if err = db.Where("id = ?", req.BookmarkID).First(&bookmark).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -152,7 +152,7 @@ func PatchUserBookmark(db *gorm.DB, userID uint, req *protobuf.PatchBookmarkRequ
 	}
 
 	// check user allowed to patch bookmark
-	if bookmark.UserID != userID {
+	if bookmark.UserID != uID {
 		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("user not allowed to patch bookmark"))
 	}
 
@@ -169,7 +169,7 @@ func PatchUserBookmark(db *gorm.DB, userID uint, req *protobuf.PatchBookmarkRequ
 	return bookmark, nil
 }
 
-func DeleteUserBookmark(db *gorm.DB, userID uint, req *protobuf.DeleteBookmarkRequest) (err error) {
+func DeleteUserBookmark(db *gorm.DB, uID uint, req *protobuf.DeleteBookmarkRequest) (err error) {
 
 	//	check if bookmark exists otherwise cannot delete
 	var bookmark model.Bookmark
@@ -180,7 +180,7 @@ func DeleteUserBookmark(db *gorm.DB, userID uint, req *protobuf.DeleteBookmarkRe
 	}
 
 	// check user allowed to delete bookmark
-	if bookmark.UserID != userID {
+	if bookmark.UserID != uID {
 		return e.WithStatus(http.StatusUnauthorized, errors.New("user not allowed to delete bookmark"))
 	}
 
@@ -223,7 +223,7 @@ func DeleteUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 	}
 
 	// Check if course exists otherwise cannot delete
-	course, err := FindCourseById(db, courseID)
+	course, err := GetCourseById(db, courseID)
 	if err != nil {
 		return err
 	}
@@ -236,22 +236,16 @@ func DeleteUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 	return nil
 }
 
-func PostUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
+func PostUserPinned(db *gorm.DB, u *model.User, c *model.Course) (err error) {
 	// Check if user has course already pinned
-	if pinned, err:= checkPinnedByID(db, u.ID, courseID); err != nil {
+	if pinned, err:= checkPinnedByID(db, u.ID, c.ID); err != nil {
 		return err
 	} else if pinned {
 		return e.WithStatus(http.StatusConflict, errors.New("course already pinned"))
 	}
 
-	// Check if course exists otherwise cannot pin
-	course, err := FindCourseById(db, courseID)
-	if err != nil {
-		return err
-	}
-
 	// Pin course
-	if pinCourse(db, true, u, course); err != nil {
+	if pinCourse(db, true, u, c); err != nil {
 		return e.WithStatus(http.StatusInternalServerError, err)
 	}
 
@@ -261,9 +255,9 @@ func PostUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 // PRIVATE HELPER METHODS
 
 // FindPinnedByID fetches a pinned course entry from the database based on the provided userID and courseID	.
-func checkPinnedByID(db *gorm.DB, userID uint, courseID uint) (bool, error) {
+func checkPinnedByID(db *gorm.DB, uID uint, courseID uint) (bool, error) {
     var result struct{}
-    if err := db.Table("pinned_courses").Where("user_id = ? AND course_id = ?", userID, courseID).Take(&result).Error; err != nil {
+    if err := db.Table("pinned_courses").Where("user_id = ? AND course_id = ?", uID, courseID).Take(&result).Error; err != nil {
         if errors.Is(err, gorm.ErrRecordNotFound) {
             return false, nil
         }
@@ -272,11 +266,11 @@ func checkPinnedByID(db *gorm.DB, userID uint, courseID uint) (bool, error) {
     return true, nil
 }
 
-func pinCourse(db* gorm.DB, pin bool, u *model.User, course *model.Course) (error) {
+func pinCourse(db* gorm.DB, pin bool, u *model.User, c *model.Course) (error) {
 	if pin {
-		return db.Model(u).Association("PinnedCourses").Append(course)
+		return db.Model(u).Association("PinnedCourses").Append(c)
 	} else {
-		return db.Model(u).Association("PinnedCourses").Delete(course)
+		return db.Model(u).Association("PinnedCourses").Delete(c)
 	}
 }
 

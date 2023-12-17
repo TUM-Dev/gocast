@@ -13,7 +13,7 @@ import (
 )
 
 // GetCourseById fetches a course from the database based on the provided id.
-func FindCourseById(db *gorm.DB, id uint) (*model.Course, error) {
+func GetCourseById(db *gorm.DB, id uint) (*model.Course, error) {
     c := &model.Course{}
     if err := db.Where("id = ?", id).First(c).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound){
         return nil, e.WithStatus(http.StatusInternalServerError, err)
