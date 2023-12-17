@@ -183,6 +183,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Device{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
