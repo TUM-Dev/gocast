@@ -44,8 +44,8 @@ type CoursesDao interface {
 	RemoveAdminFromCourse(userID uint, courseID uint) error
 	DeleteCourse(course model.Course)
 
-// TODO: Check with @joscha
-//	GetSubscribedDevices(streamID uint) ([]string, error)
+	// TODO: Check with @joscha
+	GetSubscribedDevices(streamID uint) ([]string, error)
 }
 
 type coursesDao struct {
@@ -321,27 +321,35 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	}
 }
 
-/* TODO: Check with @joscha
+// TODO: Check with @joscha
 // Returns all device tokens of users subscribed/enrolled to a stream's course
 func (d coursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
-    var deviceTokens []string
+	log.Info("Start finding device tokens for stream", streamID)
+	var deviceTokens []string
+/*    query := `
+        SELECT distinct devices.device_token
+        FROM devices
+        JOIN course_users ON devices.user_id = course_users.user_id
+        JOIN streams ON course_users.course_id = streams.course_id
+        WHERE streams.id = ?
+	`
+    err := DB.Raw(query, streamID).Scan(&deviceTokens).Error
+*/
+	err := DB.Table("devices").
+	Select("devices.device_token").
+	Distinct().
+	Joins("JOIN course_users ON devices.user_id = course_users.user_id").
+	Joins("JOIN streams ON course_users.course_id = streams.course_id").
+	Where("streams.id = ?", streamID).
+	Pluck("device_token", &deviceTokens).Error
 
-    query := `
-        SELECT device.DeviceToken
-        FROM device
-        JOIN course_users ON device.userID = course_users.userID
-        JOIN streams ON course_users.courseID = streams.courseID
-        WHERE streams.streamID = ?
-    `
-
-    err := DB.Raw(query, string(streamID)).Scan(&deviceTokens).Error
     if err != nil {
+		log.WithError(err).Error("Can't find device tokens")
         return nil, err
     }
 
     return deviceTokens, nil
 }
-*/
 
 type Semester struct {
 	TeachingTerm string

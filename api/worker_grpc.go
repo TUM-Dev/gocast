@@ -35,15 +35,21 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+	"github.com/NaySoftware/go-fcm"
 )
 
 var mutex = sync.Mutex{}
 
 var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configurable
 
+const (
+	serverKey = "AAAA_8kwlHY:APA91bHBR6oHyaAz5k6y8H7I5n78IXARn5-F4-AE21yh_-JhK1XUYrW7nfjpMDf_LMSm1bx-RutxatgG4E_eOINNm4nA1MxN8moDdGBvFrWeZu_rob4HlFq_lhvIjMQ6j-7sy1ZBkIY8"
+)
+
 type server struct {
 	pb.UnimplementedFromWorkerServer
 	dao.DaoWrapper
+    *fcm.FcmClient
 }
 
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
@@ -430,6 +436,30 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
+
+	// TODO: Check with @Joscha
+	// Send notifications to users enrolled in stream's course and subscribed to push notifications
+	deviceTokens, err := s.CoursesDao.GetSubscribedDevices(stream.ID)
+	if err != nil {
+		log.Error("Get subscribed devices:", err)
+	} else {
+		log.Info(fmt.Sprintf("Start sending push notifications to devices: %d", len(deviceTokens)))
+		
+		data := map[string]string{
+			"sum": fmt.Sprintf("%s: New VOD available!", course.Slug),
+			"msg": fmt.Sprintf("%s %s", stream.Name, stream.Description),		
+		}
+		
+		s.FcmClient.NewFcmRegIdsMsg(deviceTokens, data)
+		status, err := s.FcmClient.Send()
+		if err != nil {
+			log.Error("Error sending push notifications")
+			return nil, nil
+		}
+	
+		log.Info("Sent push notifications to devices: ", status)	
+	}
+
 	return &pb.Status{Ok: true}, nil
 }
 
@@ -1091,7 +1121,7 @@ func getWorkerWithLeastWorkload(workers []model.Worker) int {
 }
 
 // ServeWorkerGRPC initializes a gRPC server on port 50052
-func ServeWorkerGRPC() {
+func ServeWorkerGRPC() {	
 	log.Info("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
@@ -1105,7 +1135,7 @@ func ServeWorkerGRPC() {
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper()})
+	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper(), FcmClient: fcm.NewFcmClient(serverKey)})
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {
