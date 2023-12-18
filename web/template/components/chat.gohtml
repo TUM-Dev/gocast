@@ -6,7 +6,7 @@
     {{$userId := 0}}
     {{$isAdmin := .IsAdminOfCourse}}
     {{if .IndexData.TUMLiveContext.User}}
-        {{$userName = .IndexData.TUMLiveContext.User.Name}}
+        {{$userName = .IndexData.TUMLiveContext.User.GetPreferredName}}
         {{$userId = .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <article

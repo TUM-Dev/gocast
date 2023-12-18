@@ -1,8 +1,8 @@
 package dao
 
 import (
-	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/TUM-Dev/gocast/dao/migrations"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
 )
 
@@ -38,6 +38,7 @@ func newMigrator() *migrator {
 			migrations.Migrate202212010(),
 			migrations.Migrate202212020(),
 			migrations.Migrate202301006(),
+			migrations.Migrate202310010(),
 		},
 	}
 }

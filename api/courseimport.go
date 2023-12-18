@@ -118,7 +118,6 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			if !contact.MainContact {
 				continue
 			}
-			name := contact.FirstName + " " + contact.LastName
 			mail := contact.Email
 			user, err := tum.FindUserWithEmail(mail)
 			if err != nil || user == nil {
@@ -126,7 +125,6 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 				continue
 			}
 			time.Sleep(time.Millisecond * 200) // wait a bit, otherwise ldap locks us out
-			user.Name = name
 			user.Role = model.LecturerType
 			err = r.UsersDao.UpsertUser(user)
 			if err != nil {
@@ -140,7 +138,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 				log.WithError(err).Error("can't add admin to course")
 			}
 			err := r.notifyCourseCreated(MailTmpl{
-				Name:   user.Name,
+				Name:   user.DisplayName,
 				Course: course,
 				Users:  users,
 				OptIn:  req.OptIn,

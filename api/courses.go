@@ -667,9 +667,9 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, userForLecturerDto{
-		ID:    user.ID,
-		Name:  user.Name,
-		Login: user.GetLoginString(),
+		ID:          user.ID,
+		DisplayName: user.DisplayName,
+		Login:       user.GetLoginString(),
 	})
 }
 
@@ -727,9 +727,9 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, userForLecturerDto{
-		ID:    user.ID,
-		Name:  user.Name,
-		Login: user.GetLoginString(),
+		ID:          user.ID,
+		DisplayName: user.DisplayName,
+		Login:       user.GetLoginString(),
 	})
 }
 
@@ -744,9 +744,9 @@ func (r coursesRoutes) getAdmins(c *gin.Context) {
 	res := make([]userForLecturerDto, len(admins))
 	for i, admin := range admins {
 		res[i] = userForLecturerDto{
-			ID:    admin.ID,
-			Name:  admin.Name,
-			Login: admin.GetLoginString(),
+			ID:          admin.ID,
+			DisplayName: admin.DisplayName,
+			Login:       admin.GetLoginString(),
 		}
 	}
 	c.JSON(http.StatusOK, res)

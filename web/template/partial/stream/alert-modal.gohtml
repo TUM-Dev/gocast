@@ -64,7 +64,7 @@
                         <label class = "block text-sm text-5" for="fname">Name</label>
                         <input class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
                                 name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
-                               value="{{if .IndexData.TUMLiveContext.User}}{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}{{end}}">
+                               value="{{if .IndexData.TUMLiveContext.User}}{{ .IndexData.TUMLiveContext.User.GetPreferredName -}}{{end}}">
                     </div>
                     <div class="mt-3">
                         <label class = "block text-sm text-5" for="mail">Mail</label>
