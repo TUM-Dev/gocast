@@ -1,6 +1,7 @@
 {{- /*gotype: github.com/TUM-Dev/gocast/web.ChatData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 {{$stream := .IndexData.TUMLiveContext.Stream}}
+{{- $closeChatFunction := `closeChatOnEscapePressed();` -}}
 <!DOCTYPE html>
 <html lang="en" class="h-full dark">
 <head>
@@ -19,4 +20,7 @@
 </head>
 <body class="bg-white dark:bg-secondary h-screen" x-data="interaction.popupContext({{$stream.ID}})">
     {{template "chat-component" .}}
+    <script>
+        interaction.closeChatOnEscapePressed();
+    </script>
 </body>
