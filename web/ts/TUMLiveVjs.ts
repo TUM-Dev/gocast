@@ -1,7 +1,7 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
-import videojs, { VideoJsPlayer } from "video.js";
+import videojs, { Component } from "video.js";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
@@ -9,7 +9,6 @@ import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
-require("videojs-seek-buttons");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
@@ -168,6 +167,36 @@ let skipTo = 0;
 /**
  * Button to add a class to passed player that will toggle skip silence button.
  */
+
+class SkipSilenceToggle extends videojs.getComponent('Button') {
+    constructor(player, options) {
+        super(player, options);
+        this.controlText("Skip pause");
+        this.addClass("icon-forward"); // Adding class to the button element
+    }
+
+    registerComponent() {
+
+    }
+
+    getComponent() {
+
+    }
+
+    handleClick() {
+        const players = videojs.getPlayers();
+        for (const playerId in players) {
+            if (players.hasOwnProperty(playerId)) {
+                players[playerId].currentTime(skipTo);
+            }
+        }
+    }
+
+    buildCSSClass() {
+        return `vjs-skip-silence-control ${super.buildCSSClass()}`;
+    }
+}
+/*
 export const SkipSilenceToggle = videojs.extend(Button, {
     constructor: function (...args) {
         Button.apply(this, args);
@@ -183,7 +212,7 @@ export const SkipSilenceToggle = videojs.extend(Button, {
         return `vjs-skip-silence-control`;
     },
 });
-
+*/
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
 export const skipSilence = function (options) {
