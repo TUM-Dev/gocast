@@ -7,7 +7,6 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model/search"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -17,7 +16,7 @@ func PrefetchCourses(dao dao.DaoWrapper) func() {
 	return func() {
 		client, err := tools.Cfg.GetMeiliClient()
 		if err != nil {
-			log.Info("Skipping course prefetching, reason: ", err)
+			logger.Info("Skipping course prefetching, reason: ", "err", err)
 			return
 		}
 
@@ -28,16 +27,16 @@ func PrefetchCourses(dao dao.DaoWrapper) func() {
 		for _, org := range *tools.Cfg.Campus.RelevantOrgs {
 			r, err := getCoursesForOrg(org)
 			if err != nil {
-				log.Error(err)
+				logger.Error("Error getting courses for organisation "+org, "err", err)
 			} else {
 				res = append(res, r...)
 			}
 		}
 		index := client.Index("PREFETCHED_COURSES")
 		_, err = index.AddDocuments(&res, "courseID")
-		log.Info(len(res))
+		logger.Info(string(rune(len(res))))
 		if err != nil {
-			log.WithError(err).Error("issue adding documents to meili")
+			logger.Error("issue adding documents to meili", "err", err)
 		}
 	}
 }

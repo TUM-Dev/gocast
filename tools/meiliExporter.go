@@ -3,10 +3,9 @@ package tools
 import (
 	"errors"
 	"fmt"
-	"github.com/asticode/go-astisub"
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/asticode/go-astisub"
 	"github.com/meilisearch/meilisearch-go"
-	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -39,7 +38,7 @@ func NewMeiliExporter(d dao.DaoWrapper) *MeiliExporter {
 	if err != nil && errors.Is(err, ErrMeiliNotConfigured) {
 		return nil
 	} else if err != nil {
-		log.WithError(err).Error("could not get meili client")
+		logger.Error("could not get meili client", "err", err)
 		return nil
 	}
 
@@ -53,7 +52,7 @@ func (m *MeiliExporter) Export() {
 	index := m.c.Index("STREAMS")
 	_, err := m.c.Index("SUBTITLES").DeleteAllDocuments()
 	if err != nil {
-		log.WithError(err).Warn("could not delete all old subtitles")
+		logger.Warn("could not delete all old subtitles", "err", err)
 	}
 
 	m.d.StreamsDao.ExecAllStreamsWithCoursesAndSubtitles(func(streams []dao.StreamWithCourseAndSubtitles) {
@@ -75,7 +74,7 @@ func (m *MeiliExporter) Export() {
 
 				vtt, err := astisub.ReadFromWebVTT(strings.NewReader(stream.Subtitles))
 				if err != nil {
-					log.WithError(err).Warn("could not parse subtitles")
+					logger.Warn("could not parse subtitles", "err", err)
 					continue
 				}
 				for i, _ := range vtt.Items {
@@ -96,14 +95,14 @@ func (m *MeiliExporter) Export() {
 				if len(meiliSubtitles) > 0 {
 					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, "ID")
 					if err != nil {
-						log.WithError(err).Error("issue adding subtitles to meili")
+						logger.Error("issue adding subtitles to meili", "err", err)
 					}
 				}
 			}
 		}
 		_, err := index.AddDocuments(&meilistreams, "ID")
 		if err != nil {
-			log.WithError(err).Error("issue adding documents to meili")
+			logger.Error("issue adding documents to meili", "err", err)
 		}
 
 	})
@@ -120,7 +119,7 @@ func (m *MeiliExporter) SetIndexSettings() {
 	}
 	_, err := index.UpdateSynonyms(&synonyms)
 	if err != nil {
-		log.WithError(err).Error("could not set synonyms for meili index STREAMS")
+		logger.Error("could not set synonyms for meili index STREAMS", "err", err)
 	}
 
 	_, err = m.c.Index("SUBTITLES").UpdateSettings(&meilisearch.Settings{
@@ -129,6 +128,6 @@ func (m *MeiliExporter) SetIndexSettings() {
 		SortableAttributes:   []string{"timestamp"},
 	})
 	if err != nil {
-		log.WithError(err).Warn("could not set settings for meili index SUBTITLES")
+		logger.Warn("could not set settings for meili index SUBTITLES", "err", err)
 	}
 }

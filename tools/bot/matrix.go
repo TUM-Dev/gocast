@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
 	"io"
 	"math/rand"
 	"net/http"
@@ -74,14 +73,14 @@ func (m *Matrix) getClientUrl() string {
 func (m *Matrix) SendBotMessage(message Message) error {
 	err := m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.LogRoomID, message)
 	if err != nil {
-		log.WithError(err).Error("Failed to send message to matrix log room")
+		logger.Error("Failed to send message to matrix log room", "err", err)
 		sentry.CaptureException(err)
 		return err
 	}
 	if message.Prio {
 		err = m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.AlertRoomID, message)
 		if err != nil {
-			log.WithError(err).Error("Failed to send message to matrix alert room")
+			logger.Error("Failed to send message to matrix alert room", "err", err)
 			sentry.CaptureException(err)
 		}
 	}
