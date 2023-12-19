@@ -73,7 +73,7 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   new: true
-  new-from-rev: bd63a53f
+  new-from-rev: dev
   fix: false 
   exclude-rules:
     # Exclude some linters from running on tests files.
