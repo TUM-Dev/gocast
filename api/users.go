@@ -652,7 +652,6 @@ func (r usersRoutes) updateCustomSpeeds(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
