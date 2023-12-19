@@ -15,8 +15,8 @@ export function popupContext(streamId: number): AlpineComponent {
 }
 
 export function closeChatOnEscapePressed() {
-    document.addEventListener('keyup', function(event) {
-        if (event.key === 'Escape') {
+    document.addEventListener("keyup", function(event) {
+        if (event.key === "Escape") {
             window.close();
         }
     });
