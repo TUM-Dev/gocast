@@ -185,6 +185,11 @@ label:has(~ .tl-input), label:has(~.tl-textarea) {
     background-color: #3070b3 !important;
 }
 
+/* Ensure that the mouse pointing time is displayed above the playback progress */
+.video-js .vjs-mouse-display {
+    z-index: 2 !important;
+}
+
 .video-js .vjs-big-play-button {
     @apply absolute top-0 left-0 bottom-0 right-0 m-auto;
 }

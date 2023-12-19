@@ -3,7 +3,6 @@ package tools
 import (
 	"fmt"
 	"github.com/meilisearch/meilisearch-go"
-	log "github.com/sirupsen/logrus"
 )
 
 func SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
@@ -16,7 +15,7 @@ func SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
 		Limit:  10,
 	})
 	if err != nil {
-		log.WithError(err).Error("could not search meili")
+		logger.Error("could not search meili", "err", err)
 		return nil
 	}
 	return response

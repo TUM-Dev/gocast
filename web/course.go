@@ -8,8 +8,6 @@ import (
 
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
@@ -52,7 +50,7 @@ func (r mainRoutes) editCourseByTokenPage(c *gin.Context) {
 
 	err = templateExecutor.ExecuteTemplate(c.Writer, "edit-course-by-token.gohtml", d)
 	if err != nil {
-		log.Println(err)
+		logger.Error("Error executing template edit-course-by-token.gohtml", "err", err)
 	}
 }
 
@@ -90,7 +88,7 @@ func (r mainRoutes) optOutPage(c *gin.Context) {
 	}
 	err = templateExecutor.ExecuteTemplate(c.Writer, "opt-out.gohtml", d)
 	if err != nil {
-		log.WithError(err).Error("can't render template")
+		logger.Error("can't render template", "err", err)
 	}
 }
 
@@ -119,7 +117,7 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 		return
 	} else {
 		sentry.CaptureException(err)
-		log.Printf("%v", err)
+		logger.Error("Error getting current or next lecture for course", "err", err)
 	}
 	description := ""
 	if indexData.TUMLiveContext.Stream != nil {
@@ -133,7 +131,7 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 		IsHighlightPage: true,
 	}
 	if err = templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", d2); err != nil {
-		log.Printf("%v", err)
+		logger.Error("Error executing template watch.gohtml", "err", err)
 		return
 	}
 }
@@ -164,7 +162,7 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Error("loading streamsWithWatchState and progresses for a given course and user failed")
+		logger.Error("loading streamsWithWatchState and progresses for a given course and user failed", "err", err)
 	}
 
 	tumLiveContext.Course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
@@ -172,7 +170,7 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	for i := range tumLiveContext.Course.Streams {
 		err = tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, false)
 		if err != nil {
-			log.WithError(err).Warn("Can't sign playlists")
+			logger.Warn("Can't sign playlists", "err", err)
 		}
 	}
 
@@ -197,7 +195,7 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	encoded, err := json.Marshal(clientWatchState)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Error("marshalling watched infos for client failed")
+		logger.Error("marshalling watched infos for client failed", "err", err)
 	}
 	err = templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
 		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, WatchedData: string(encoded)})

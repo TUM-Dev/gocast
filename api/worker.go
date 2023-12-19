@@ -1,10 +1,9 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
@@ -25,7 +24,7 @@ func (r workerRoutes) deleteWorker(c *gin.Context) {
 	id := c.Param("id")
 	err := r.dao.DeleteWorker(id)
 	if err != nil {
-		log.WithError(err).Error("can not delete worker")
+		logger.Error("can not delete worker", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not delete worker",

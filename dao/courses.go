@@ -10,7 +10,6 @@ import (
 
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -308,33 +307,24 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	for _, stream := range course.Streams {
 		err := DB.Delete(&stream).Error
 		if err != nil {
-			log.WithError(err).Error("Can't delete stream")
+			logger.Error("Can't delete stream", "err", err)
 		}
 	}
 	err := DB.Model(&course).Updates(map[string]interface{}{"vod_enabled": false}).Error
 	if err != nil {
-		log.WithError(err).Error("Can't update course settings when deleting")
+		logger.Error("Can't update course settings when deleting", "err", err)
 	}
 	err = DB.Delete(&course, course.ID).Error
 	if err != nil {
-		log.WithError(err).Error("Can't delete course")
+		logger.Error("Can't delete course", "err", err)
 	}
 }
 
 // TODO: Check with @joscha
 // Returns all device tokens of users subscribed/enrolled to a stream's course
 func (d coursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
-	log.Info("Start finding device tokens for stream", streamID)
+	logger.Info("Start finding device tokens for stream", streamID)
 	var deviceTokens []string
-/*    query := `
-        SELECT distinct devices.device_token
-        FROM devices
-        JOIN course_users ON devices.user_id = course_users.user_id
-        JOIN streams ON course_users.course_id = streams.course_id
-        WHERE streams.id = ?
-	`
-    err := DB.Raw(query, streamID).Scan(&deviceTokens).Error
-*/
 	err := DB.Table("devices").
 	Select("devices.device_token").
 	Distinct().
@@ -344,7 +334,7 @@ func (d coursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
 	Pluck("device_token", &deviceTokens).Error
 
     if err != nil {
-		log.WithError(err).Error("Can't find device tokens")
+		logger.Error("Can't find device tokens", "err", err)
         return nil, err
     }
 
