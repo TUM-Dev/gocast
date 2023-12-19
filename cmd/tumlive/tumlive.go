@@ -2,6 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -17,13 +25,6 @@ import (
 	"github.com/pkg/profile"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log/slog"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 var VersionTag = "development"
@@ -101,7 +102,7 @@ func main() {
 	}()
 
 	// log with time, fmt "23.09.2021 10:00:00"
-	//log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
+	// log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 
 	web.VersionTag = VersionTag
 	osSignal = make(chan os.Signal, 1)
