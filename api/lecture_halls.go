@@ -43,9 +43,6 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 type lectureHallRoutes struct {
 	dao.DaoWrapper
 	presetUtility tools.PresetUtility
-
-
-
 }
 
 type updateLectureHallReq struct {
