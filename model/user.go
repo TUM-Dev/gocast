@@ -367,3 +367,11 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	return nil
 }
+
+// Device represents all device tokens for a given user that is subscribed to push notifications
+type Device struct {
+	gorm.Model
+	UserID  uint         // used by gorm
+	User    User		`gorm:"foreignKey:user_id;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // creator of the token
+	DeviceToken string	`gorm:"type:varchar(256); not null"`
+}

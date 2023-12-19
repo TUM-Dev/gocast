@@ -171,11 +171,11 @@ service API {
   // BEGIN API/V2/NOTIFICATIONS
   rpc getBannerAlerts(GetBannerAlertsRequest) returns (GetBannerAlertsResponse) {
     option (google.api.http) = {
-      get: "/user/banner-alerts"
+      get: "/notifications/banner-alerts"
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
+      tags: "Notifications"
       summary: "Get all banner alerts."
       description: "Returns all banner alerts."
     };
@@ -183,13 +183,37 @@ service API {
 
   rpc getFeatureNotifications(GetFeatureNotificationsRequest) returns (GetFeatureNotificationsResponse) {
     option (google.api.http) = {
-      get: "/user/feature-notifications"
+      get: "/notifications/feature-notifications"
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
+      tags: "Notifications"
       summary: "Get all feature notifications."
       description: "Returns all feature notifications."
+    };
+  }
+
+  rpc postDeviceToken(PostDeviceTokenRequest) returns (PostDeviceTokenResponse) {
+    option (google.api.http) = {
+      post: "/notifications/device/{deviceToken}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Post a user's device token."
+      description: "Add a device entry from the current user's device token list."
+    };
+  }
+
+  rpc deleteDeviceToken(DeleteDeviceTokenRequest) returns (DeleteDeviceTokenResponse) {
+    option (google.api.http) = {
+      delete: "/notifications/device/{deviceToken}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Delete a user's device token."
+      description: "Removes a device entry from the current user's device token list."
     };
   }
   // END API/V2/NOTIFICATIONS
@@ -456,6 +480,14 @@ message FeatureNotification {
   uint32 Target = 4;
 }
 
+message PostDeviceTokenRequest {
+  string deviceToken = 1;
+}
+
+message DeleteDeviceTokenRequest {
+  string deviceToken = 1;
+}
+
 ///////////////////////////////
 //// NOTIFICATION_REQUEST /////
 ///////////////////////////////
@@ -463,6 +495,10 @@ message FeatureNotification {
 message GetBannerAlertsRequest {}
 
 message GetFeatureNotificationsRequest {}
+
+message PostDeviceTokenResponse {}
+
+message DeleteDeviceTokenResponse {}
 
 ///////////////////////////////
 //// NOTIFICATION_RESPONSE ////

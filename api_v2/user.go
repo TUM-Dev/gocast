@@ -182,49 +182,6 @@ func (a *API) DeleteUserBookmark(ctx context.Context, req *protobuf.DeleteBookma
 	return &protobuf.DeleteBookmarkResponse{}, nil
 }
 
-func (a *API) GetBannerAlerts(ctx context.Context, req *protobuf.GetBannerAlertsRequest) (*protobuf.GetBannerAlertsResponse, error) {
-	a.log.Info("GetBannerAlerts")
-	alerts, err := s.FetchBannerAlerts(a.db)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := make([]*protobuf.BannerAlert, len(alerts))
-	for i, alert := range alerts {
-		resp[i] = h.ParseBannerAlertToProto(alert)
-	}
-
-	return &protobuf.GetBannerAlertsResponse{
-		BannerAlerts: resp,
-	}, nil
-
-}
-
-func (a *API) GetFeatureNotifications(ctx context.Context, req *protobuf.GetFeatureNotificationsRequest) (*protobuf.GetFeatureNotificationsResponse, error) {
-	a.log.Info("GetUserNotifications")
-	u, err := a.getCurrent(ctx)
-
-	if err != nil {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
-	}
-
-	notifications, err := s.FetchUserNotifications(a.db, u)
-
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-
-	resp := make([]*protobuf.FeatureNotification, len(notifications))
-
-	for i, notification := range notifications {
-		resp[i] = h.ParseFeatureNotificationToProto(notification)
-	}
-
-	return &protobuf.GetFeatureNotificationsResponse{
-		FeatureNotifications: resp,
-	}, nil
-}
-
 // GetUserSettings retrieves the settings of a user based on the context.
 // It returns a GetUserSettingsResponse or an error if one occurs.
 func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettingsRequest) (*protobuf.GetUserSettingsResponse, error) {

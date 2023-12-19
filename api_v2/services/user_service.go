@@ -192,28 +192,6 @@ func DeleteUserBookmark(db *gorm.DB, uID uint, req *protobuf.DeleteBookmarkReque
 	return nil
 }
 
-func FetchBannerAlerts(db *gorm.DB) (alerts []model.ServerNotification, err error) {
-	err = db.Where("start < now() AND expires > now()").Find(&alerts).Error
-
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	return alerts, err
-}
-
-func FetchUserNotifications(db *gorm.DB, u *model.User) (notifications []model.Notification, err error) {
-	targetFilter := getTargetFilter(*u)
-
-	err = db.Where(targetFilter).Find(&notifications).Error
-
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	return notifications, nil
-}
-
 func DeleteUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 	// Check if user has course pinned
 	if pinned, err:= checkPinnedByID(db, u.ID, courseID); err != nil {
@@ -272,34 +250,4 @@ func pinCourse(db* gorm.DB, pin bool, u *model.User, c *model.Course) (error) {
 	} else {
 		return db.Model(u).Association("PinnedCourses").Delete(c)
 	}
-}
-
-// const (
-// 	TargetAll      = iota + 1 //TargetAll Is any user, regardless if logged in or not
-// 	TargetUser                //TargetUser Are all users that are logged in
-// 	TargetStudent             //TargetStudent Are all users that are logged in and are students
-// 	TargetLecturer            //TargetLecturer Are all users that are logged in and are lecturers
-// 	TargetAdmin               //TargetAdmin Are all users that are logged in and are admins
-
-// )
-
-// 1 = admin
-// 2 = Lecturer
-// 3 = geneeric
-// 4 = student
-
-func getTargetFilter(user model.User) (targetFilter string) {
-	switch user.Role {
-	case 1:
-		targetFilter = "target = 1"
-	case 2:
-		targetFilter = "target = 2"
-	case 3:
-		targetFilter = "target = 3"
-	case 4:
-		targetFilter = "target = 4"
-	default:
-		targetFilter = "target = 1"
-	}
-	return targetFilter
 }

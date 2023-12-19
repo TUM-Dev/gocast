@@ -54,6 +54,7 @@ require (
 )
 
 require (
+	github.com/NaySoftware/go-fcm v0.0.0-20190516140123-808e978ddcd2 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/antihax/optional v1.0.0 // indirect
 	github.com/asticode/go-astikit v0.40.0 // indirect

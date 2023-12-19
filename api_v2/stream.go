@@ -10,6 +10,7 @@ import (
     "github.com/TUM-Dev/gocast/api_v2/protobuf"
     "github.com/TUM-Dev/gocast/model"
     "net/http"
+    "fmt"
     "github.com/TUM-Dev/gocast/tools/pathprovider"
 )
 
@@ -125,7 +126,7 @@ func (a *API) GetThumbsLive(ctx context.Context, req *protobuf.GetThumbsLiveRequ
         return nil, err
     }
 
-    path := pathprovider.LiveThumbnail(string(s.ID))
+    path := pathprovider.LiveThumbnail(fmt.Sprintf("%d", s.ID))
     if path == "" {
         path = "/thumb-fallback.png"
     }
