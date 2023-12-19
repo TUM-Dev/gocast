@@ -58,13 +58,16 @@ func GinServer() (err error) {
 	}
 
 	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
-			param.TimeStamp.Format(time.DateTime),
-			param.StatusCode,
-			param.ClientIP,
-			param.Path,
-			param.Request.UserAgent(),
-		)
+		if param.StatusCode > 400 {
+			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
+				param.TimeStamp.Format(time.DateTime),
+				param.StatusCode,
+				param.ClientIP,
+				param.Path,
+				param.Request.UserAgent(),
+			)
+		}
+		return ""
 	}))
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
