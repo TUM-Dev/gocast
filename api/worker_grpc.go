@@ -432,7 +432,6 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, err
 	}
 
-	// TODO: Check with @Joscha
 	// Send notifications to users enrolled in stream's course and subscribed to push notifications
 	if s.FcmClient != nil {
 		deviceTokens, err := s.CoursesDao.GetSubscribedDevices(stream.ID)

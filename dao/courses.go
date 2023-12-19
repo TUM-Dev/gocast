@@ -43,7 +43,6 @@ type CoursesDao interface {
 	RemoveAdminFromCourse(userID uint, courseID uint) error
 	DeleteCourse(course model.Course)
 
-	// TODO: Check with @joscha
 	GetSubscribedDevices(streamID uint) ([]string, error)
 }
 
@@ -320,7 +319,6 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	}
 }
 
-// TODO: Check with @joscha
 // Returns all device tokens of users subscribed/enrolled to a stream's course
 func (d coursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
 	logger.Info("Start finding device tokens for stream", streamID)
