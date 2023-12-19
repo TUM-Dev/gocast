@@ -61,14 +61,14 @@ func getTargetFilter(user model.User) (targetFilter string) {
 	return targetFilter
 }
 
-func PostDeviceToken(db *gorm.DB, userID uint, deviceToken string) (err error) {
+func PostDeviceToken(db *gorm.DB, u model.User, deviceToken string) (err error) {
 	device := model.Device{
-		UserID:      userID,
+		User:      u,
 		DeviceToken: deviceToken,
 	}
 
 	var count int64
-    if err := db.Table("devices").Where("user_id = ? AND device_token = ?", userID, deviceToken).Count(&count).Error; err != nil {
+    if err := db.Table("devices").Where("user_id = ? AND device_token = ?", u.ID, deviceToken).Count(&count).Error; err != nil {
         return e.WithStatus(http.StatusInternalServerError, err)
     }
 	print("Count = ?", count)

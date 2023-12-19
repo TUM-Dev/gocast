@@ -60,12 +60,12 @@ func (a *API) PostDeviceToken(ctx context.Context, req *protobuf.PostDeviceToken
         return nil, e.WithStatus(http.StatusBadRequest, errors.New("device_token must not be empty"))
     }
 	
-	uID, err := a.getCurrentID(ctx)
+	u, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	if err = s.PostDeviceToken(a.db, uID, req.DeviceToken); err != nil {
+	if err = s.PostDeviceToken(a.db, *u, req.DeviceToken); err != nil {
         return nil, err
 	}
 
