@@ -9,13 +9,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/crewjam/saml"
-	"github.com/crewjam/saml/samlsp"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/crewjam/saml"
+	"github.com/crewjam/saml/samlsp"
+	"github.com/gin-gonic/gin"
 )
 
 func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -27,27 +26,27 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	// create saml.ServiceProvider
 	keyPair, err := tls.LoadX509KeyPair(tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
-		log.WithError(err).Fatal("Could not load SAML keypair")
+		logger.Error("Could not load SAML keypair", "err", err)
 	}
 	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
 	if err != nil {
-		log.WithError(err).Fatal("Could not parse SAML keypair")
+		logger.Error("Could not parse SAML keypair", "err", err)
 	}
 	idpMetadataURL, err := url.Parse(tools.Cfg.Saml.IdpMetadataURL)
 	if err != nil {
-		log.WithError(err).Fatal("Could not parse Identity Provider metadata URL")
+		logger.Error("Could not parse Identity Provider metadata URL", "err", err)
 	}
 	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
 		*idpMetadataURL)
 	if err != nil {
-		log.WithError(err).Error("Could not load Identity Provider metadata")
+		logger.Error("Could not load Identity Provider metadata", "err", err)
 	}
 
 	var samlSPs []*samlsp.Middleware
 	for _, l := range tools.Cfg.Saml.RootURLs {
 		u, err := url.Parse(l)
 		if err != nil {
-			log.WithError(err).Error("Could not parse Root URL")
+			logger.Error("Could not parse Root URL", "err", err)
 			continue
 		}
 		samlSP, err := samlsp.New(samlsp.Options{
@@ -59,7 +58,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			AllowIDPInitiated: true,
 		})
 		if err != nil {
-			log.WithError(err).Fatal("Could not create SAML Service Provider")
+			logger.Error("Could not create SAML Service Provider", "err", err)
 		}
 		samlSP.ServiceProvider.AcsURL = *u
 		samlSPs = append(samlSPs, samlSP)
@@ -101,7 +100,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			if err != nil {
 				return
 			}
-			log.Info("Logout request: ", request)
+			logger.Info("Logout request: " + request.String())
 			c.Redirect(http.StatusFound, request.String())
 		}
 	})
@@ -131,12 +130,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			matrNr = extractSamlField(response, "eduPersonPrincipalName") // MWN id if no matrNr
 			s := strings.Split(matrNr, "@")
 			if len(s) == 0 || s[0] == "" {
-				log.WithFields(log.Fields{
-					"LRZ-ID":    lrzID,
-					"firstName": firstName,
-					"lastName":  lastName,
-					"mwnID":     matrNr,
-				}).Error("Can't extract mwn id")
+				logger.Error("Can't extract mwn id", "LRZ-ID", lrzID, "firstName", firstName, "lastName", lastName, "mwnID", matrNr)
 				c.AbortWithStatus(http.StatusInternalServerError)
 			}
 			matrNr = s[0]
@@ -149,7 +143,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		}
 		err = daoWrapper.UsersDao.UpsertUser(&user)
 		if err != nil {
-			log.WithError(err).Error("Could not upsert user")
+			logger.Error("Could not upsert user", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 		HandleValidLogin(c, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})

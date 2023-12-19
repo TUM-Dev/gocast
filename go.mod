@@ -1,6 +1,6 @@
 module github.com/TUM-Dev/gocast
 
-go 1.18
+go 1.21
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
@@ -30,7 +30,7 @@ require (
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.1-0.20231027082548-f4a6c1f6e5c1
 	gorm.io/driver/mysql v1.5.1
-	gorm.io/gorm v1.25.3
+	gorm.io/gorm v1.25.5
 	mvdan.cc/xurls/v2 v2.5.0
 )
 
@@ -50,6 +50,7 @@ require (
 	github.com/asticode/go-astisub v0.26.0
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.25.0
+	github.com/orandin/slog-gorm v1.0.1
 )
 
 require (

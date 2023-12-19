@@ -2,12 +2,11 @@ package api
 
 import (
 	"database/sql"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -28,7 +27,7 @@ func (r tokenRoutes) deleteToken(c *gin.Context) {
 	id := c.Param("id")
 	err := r.TokenDao.DeleteToken(id)
 	if err != nil {
-		log.WithError(err).Error("can not delete token")
+		logger.Error("can not delete token", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not delete token",
@@ -78,7 +77,7 @@ func (r tokenRoutes) createToken(c *gin.Context) {
 	}
 	err = r.TokenDao.AddToken(token)
 	if err != nil {
-		log.WithError(err).Error("can not create token")
+		logger.Error("can not create token", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not create token",

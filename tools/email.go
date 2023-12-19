@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/TUM-Dev/gocast/dao"
-	"log"
 	"net/smtp"
 	"os/exec"
 	"strings"
@@ -33,7 +32,7 @@ func (m *Mailer) Run() {
 		lastRun = time.Now()
 		emails, err := m.Dao.EmailDao.GetDue(context.Background(), m.MaxMailsPerMinute)
 		if err != nil {
-			log.Printf("error getting due emails: %v", err)
+			logger.Error("error getting due emails", "err", err)
 			continue
 		}
 		for _, email := range emails {
@@ -47,7 +46,7 @@ func (m *Mailer) Run() {
 			}
 			err = m.Dao.EmailDao.Save(context.Background(), &email)
 			if err != nil {
-				log.Printf("error saving email: %v", err)
+				logger.Error("error saving email", "err", err)
 			}
 
 			sleepDur := time.Duration(1000 * (60 / m.MaxMailsPerMinute))
@@ -57,7 +56,7 @@ func (m *Mailer) Run() {
 }
 
 func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
-	log.Printf("sending mail to %v, subject: %s body:\n%s", to, subject, body)
+	logger.Info("sending mail", "to", to, "subject", subject, "body", body)
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
 	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert, "-inkey", Cfg.Mail.SMIMEKey)

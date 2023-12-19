@@ -1,11 +1,10 @@
 package bot
 
 import (
-	"github.com/getsentry/sentry-go"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/getsentry/sentry-go"
 	"github.com/microcosm-cc/bluemonday"
-	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -147,7 +146,7 @@ func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
 	liveViewers, err := statsDao.GetStreamNumLiveViews(streamID)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Error("Failed to get current live viewers")
+		logger.Error("Failed to get current live viewers", "err", err)
 		return false
 	}
 

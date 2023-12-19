@@ -20,7 +20,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -209,7 +208,7 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 	var res []liveStreamDto
 	streams, err := r.StreamsDao.GetCurrentLive(c)
 	if err != nil {
-		log.Error(err)
+		logger.Error("Error getting current live", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get current live streams",
@@ -220,13 +219,13 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 	for _, s := range streams {
 		course, err := r.CoursesDao.GetCourseById(c, s.CourseID)
 		if err != nil {
-			log.Error(err)
+			logger.Error("Error fetching course", "err", err)
 		}
 		lectureHall := "Selfstream"
 		if s.LectureHallID != 0 {
 			l, err := r.LectureHallsDao.GetLectureHallByID(s.LectureHallID)
 			if err != nil {
-				log.Error(err)
+				logger.Error("Error fetching lecture hall", "err", err)
 			} else {
 				lectureHall = l.Name
 			}
@@ -247,7 +246,7 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 func (r streamRoutes) endStream(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	discardVoD := c.Request.URL.Query().Get("discard") == "true"
-	log.Info(discardVoD)
+	logger.Info("End stream: " + strconv.FormatBool(discardVoD))
 	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
 }
 
@@ -388,7 +387,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	sections, err := r.VideoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
 	if err != nil {
-		log.WithError(err).Error("Can't get video sections")
+		logger.Error("Can't get video sections", "err", err)
 	}
 
 	c.JSON(http.StatusOK, sections)
@@ -406,17 +405,17 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 			// The thumbnails are generated automatically by the worker which then notifies the backend.
 			err := RegenerateThumbs(r.DaoWrapper, file, stream, course)
 			if err != nil {
-				log.WithError(err).Errorf("Can't regenerate thumbnail for stream %d with file %s", stream.ID, file.Path)
+				logger.Error(fmt.Sprintf("Can't regenerate thumbnail for stream %d with file %s", stream.ID, file.Path))
 				continue
 			}
 			sections, err := r.DaoWrapper.VideoSectionDao.GetByStreamId(stream.ID)
 			if err != nil {
-				log.WithError(err).Errorf("Can't get video sections for stream %d", stream.ID)
+				logger.Error(fmt.Sprintf("Can't get video sections for stream %d", stream.ID))
 				continue
 			}
 			err = tools.SetSignedPlaylists(stream, nil, false)
 			if err != nil {
-				log.WithError(err).Errorf("Can't set signed playlists for stream %d", stream.ID)
+				logger.Error(fmt.Sprintf("Can't set signed playlists for stream %d", stream.ID))
 				continue
 			}
 			// Completely redo the video section image generation. This also updates the database, if the naming scheme has changed.
@@ -430,7 +429,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 				}
 				err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
 				if err != nil {
-					log.WithError(err).Error("failed to generate video section images")
+					logger.Error("failed to generate video section images", "err", err)
 				}
 			}()
 		}
@@ -442,7 +441,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 	stream := context.Stream
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
-		log.WithError(err).Error("failed to bind video section JSON")
+		logger.Error("failed to bind video section JSON", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -453,7 +452,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 
 	err := r.VideoSectionDao.Create(sections)
 	if err != nil {
-		log.WithError(err).Error("failed to create video sections")
+		logger.Error("failed to create video sections", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "failed to create video sections",
@@ -464,7 +463,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 
 	sections, err = r.VideoSectionDao.GetByStreamId(context.Stream.ID)
 	if err != nil {
-		log.WithError(err).Error("failed to get video sections")
+		logger.Error("failed to get video sections", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "failed to get video sections",
@@ -475,7 +474,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 
 	err = tools.SetSignedPlaylists(stream, nil, false)
 	if err != nil {
-		log.WithError(err).Error("failed to set signed playlists")
+		logger.Error("failed to set signed playlists", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "failed to set signed playlists",
@@ -493,7 +492,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		}
 		err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
 		if err != nil {
-			log.WithError(err).Error("failed to generate video section images")
+			logger.Error("failed to generate video section images", "err", err)
 		}
 	}()
 
@@ -511,7 +510,7 @@ func (r streamRoutes) updateVideoSection(c *gin.Context) {
 	idAsString := c.Param("id")
 	id, err := strconv.Atoi(idAsString)
 	if err != nil {
-		log.WithError(err).Error("can not parse video-section id in request url")
+		logger.Error("can not parse video-section id in request url", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not parse video-section id in request url",
@@ -523,7 +522,7 @@ func (r streamRoutes) updateVideoSection(c *gin.Context) {
 	var update UpdateVideoSectionRequest
 	err = c.BindJSON(&update)
 	if err != nil {
-		log.WithError(err).Error("failed to bind video section JSON")
+		logger.Error("failed to bind video section JSON", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -539,7 +538,7 @@ func (r streamRoutes) updateVideoSection(c *gin.Context) {
 		StartMinutes: update.StartMinutes,
 		StartSeconds: update.StartSeconds})
 	if err != nil {
-		log.WithError(err).Error("failed to update video section")
+		logger.Error("failed to update video section", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not update video section",
@@ -553,7 +552,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	idAsString := c.Param("id")
 	id, err := strconv.Atoi(idAsString)
 	if err != nil {
-		log.WithError(err).Error("can not parse video-section id in request url")
+		logger.Error("can not parse video-section id in request url", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not parse video-section id in request url",
@@ -564,7 +563,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 
 	old, err := r.VideoSectionDao.Get(uint(id))
 	if err != nil {
-		log.WithError(err).Error("invalid video-section id")
+		logger.Error("invalid video-section id", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "invalid video-section id",
@@ -575,7 +574,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
-		log.WithError(err).Error("can not delete video-section")
+		logger.Error("can not delete video-section", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not delete video-section",
@@ -586,7 +585,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 
 	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("can not get video section thumbnail file")
+		logger.Error("can not get video section thumbnail file", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get video section thumbnail file",
@@ -597,7 +596,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		go func() {
 			err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
 			if err != nil {
-				log.WithError(err).Error("failed to generate video section images")
+				logger.Error("failed to generate video section images", "err", err)
 			}
 		}()
 	}
@@ -654,7 +653,7 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 		}
 
 		if err = c.SaveUploadedFile(file, path); err != nil {
-			log.WithError(err).Error("could not save file with path: " + path)
+			logger.Error("could not save file with path: "+path, "err", err)
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusInternalServerError,
 				CustomMessage: "could not save file with path: " + path,
@@ -706,7 +705,7 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 	if !toDelete.IsURL() {
 		err = os.Remove(toDelete.Path)
 		if err != nil {
-			log.WithError(err).Error("can not delete file with path: " + toDelete.Path)
+			logger.Error("can not delete file with path: "+toDelete.Path, "err", err)
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusInternalServerError,
 				CustomMessage: "can not delete file with path: " + toDelete.Path,
@@ -717,7 +716,7 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 	}
 	err = r.FileDao.DeleteFile(toDelete.ID)
 	if err != nil {
-		log.WithError(err).Error("can not delete file from database")
+		logger.Error("can not delete file from database", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not delete file from database",
@@ -825,7 +824,7 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 		Type:    model.AuditStreamEdit,
 	})
 	if err != nil {
-		log.Error("Create Audit:", err)
+		logger.Error("Create Audit", "err", err)
 	}
 
 	err = r.DaoWrapper.StreamsDao.ToggleVisibility(ctx.Stream.ID, req.Private)
