@@ -157,7 +157,7 @@ func (a *API) PutProgress(ctx context.Context, req *protobuf.PutProgressRequest)
 
 	uID, err := a.getCurrentID(ctx)
 
-	if err != nil && err.Error() != "missing cookie header" {
+	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
@@ -174,7 +174,7 @@ func (a *API) MarkAsWatched(ctx context.Context, req *protobuf.MarkAsWatchedRequ
 	a.log.Info("MarkAsWatched")
 
 	uID, err := a.getCurrentID(ctx)
-	if err != nil && err.Error() != "missing cookie header" {
+	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
