@@ -41,12 +41,12 @@ export class AdminUserList {
                     if (!response.ok) {
                         throw new Error(response.statusText);
                     }
-                    return response.json()
+                    return response.json();
                 })
                 .then((r) => {
-                    console.log(r)
-                    if(this.roles != -1) {
-                        this.currentPage = r.filter((obj : any) => {
+                    console.log(r);
+                    if (this.roles != -1) {
+                        this.currentPage = r.filter((obj) => {
                             return obj.role == this.roles;
                         }); // show all results on page one.
                     } else {
