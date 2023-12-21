@@ -116,11 +116,8 @@ func FetchUserSettings(db *gorm.DB, uID uint) (settings []model.UserSetting, err
 	return settings, err
 }
 
-func PatchUserSettings(db *gorm.DB, userID uint, req *protobuf.PatchUserSettingsRequest) (settings []model.UserSetting, err error) {
-	var user model.User
-	if err = db.Where("id = ?", userID).First(&user).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
+func PatchUserSettings(db *gorm.DB, user *model.User, req *protobuf.PatchUserSettingsRequest) (settings []model.UserSetting, err error) {
+	userID := user.ID
 
 	for _, setting := range req.UserSettings {
 		var userSetting model.UserSetting

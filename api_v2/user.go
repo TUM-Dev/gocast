@@ -211,12 +211,13 @@ func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettings
 func (a *API) PatchUserSettings(ctx context.Context, req *protobuf.PatchUserSettingsRequest) (*protobuf.PatchUserSettingsResponse, error) {
 	a.log.Info("PatchUserSettings")
 
-	uID, err := a.getCurrentID(ctx)
+	u, err := a.getCurrentID(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	settings, err := s.PatchUserSettings(a.db, uID, req)
+	settings, err := s.PatchUserSettings(a.db, u, req)
+
 	if err != nil {
 		return nil, err
 	}
@@ -247,8 +248,8 @@ func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedReques
 
 	c, err := h.CheckAuthorized(a.db, uint(u.ID), uint(req.CourseID))
 	if err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	err = s.PostUserPinned(a.db, u, c)
 	if err != nil {
