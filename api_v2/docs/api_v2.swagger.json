@@ -707,6 +707,38 @@
         "tags": [
           "User"
         ]
+      },
+      "patch": {
+        "summary": "Update the current user's settings.",
+        "description": "Updates the settings of the current user.",
+        "operationId": "API_patchUserSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPatchUserSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufPatchUserSettingsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
       }
     }
   },
@@ -1025,6 +1057,30 @@
         }
       }
     },
+    "protobufPatchUserSettingsRequest": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
+    "protobufPatchUserSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
     "protobufPostPinnedRequest": {
       "type": "object",
       "properties": {
@@ -1234,14 +1290,6 @@
     "protobufUserSetting": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "userID": {
-          "type": "integer",
-          "format": "int64"
-        },
         "type": {
           "$ref": "#/definitions/protobufUserSettingType"
         },

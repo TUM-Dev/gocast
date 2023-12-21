@@ -24,6 +24,7 @@ const (
 	API_GetUserPinned_FullMethodName           = "/protobuf.API/getUserPinned"
 	API_GetUserAdminCourses_FullMethodName     = "/protobuf.API/getUserAdminCourses"
 	API_GetUserSettings_FullMethodName         = "/protobuf.API/getUserSettings"
+	API_PatchUserSettings_FullMethodName       = "/protobuf.API/patchUserSettings"
 	API_GetUserBookmarks_FullMethodName        = "/protobuf.API/getUserBookmarks"
 	API_PostUserPinned_FullMethodName          = "/protobuf.API/postUserPinned"
 	API_PutUserBookmark_FullMethodName         = "/protobuf.API/putUserBookmark"
@@ -51,6 +52,7 @@ type APIClient interface {
 	GetUserPinned(ctx context.Context, in *GetUserPinnedRequest, opts ...grpc.CallOption) (*GetUserPinnedResponse, error)
 	GetUserAdminCourses(ctx context.Context, in *GetUserAdminRequest, opts ...grpc.CallOption) (*GetUserAdminResponse, error)
 	GetUserSettings(ctx context.Context, in *GetUserSettingsRequest, opts ...grpc.CallOption) (*GetUserSettingsResponse, error)
+	PatchUserSettings(ctx context.Context, in *PatchUserSettingsRequest, opts ...grpc.CallOption) (*PatchUserSettingsResponse, error)
 	GetUserBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
 	PostUserPinned(ctx context.Context, in *PostPinnedRequest, opts ...grpc.CallOption) (*PostPinnedResponse, error)
 	PutUserBookmark(ctx context.Context, in *PutBookmarkRequest, opts ...grpc.CallOption) (*PutBookmarkResponse, error)
@@ -117,6 +119,15 @@ func (c *aPIClient) GetUserAdminCourses(ctx context.Context, in *GetUserAdminReq
 func (c *aPIClient) GetUserSettings(ctx context.Context, in *GetUserSettingsRequest, opts ...grpc.CallOption) (*GetUserSettingsResponse, error) {
 	out := new(GetUserSettingsResponse)
 	err := c.cc.Invoke(ctx, API_GetUserSettings_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) PatchUserSettings(ctx context.Context, in *PatchUserSettingsRequest, opts ...grpc.CallOption) (*PatchUserSettingsResponse, error) {
+	out := new(PatchUserSettingsResponse)
+	err := c.cc.Invoke(ctx, API_PatchUserSettings_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -268,6 +279,7 @@ type APIServer interface {
 	GetUserPinned(context.Context, *GetUserPinnedRequest) (*GetUserPinnedResponse, error)
 	GetUserAdminCourses(context.Context, *GetUserAdminRequest) (*GetUserAdminResponse, error)
 	GetUserSettings(context.Context, *GetUserSettingsRequest) (*GetUserSettingsResponse, error)
+	PatchUserSettings(context.Context, *PatchUserSettingsRequest) (*PatchUserSettingsResponse, error)
 	GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
 	PostUserPinned(context.Context, *PostPinnedRequest) (*PostPinnedResponse, error)
 	PutUserBookmark(context.Context, *PutBookmarkRequest) (*PutBookmarkResponse, error)
@@ -306,6 +318,9 @@ func (UnimplementedAPIServer) GetUserAdminCourses(context.Context, *GetUserAdmin
 }
 func (UnimplementedAPIServer) GetUserSettings(context.Context, *GetUserSettingsRequest) (*GetUserSettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserSettings not implemented")
+}
+func (UnimplementedAPIServer) PatchUserSettings(context.Context, *PatchUserSettingsRequest) (*PatchUserSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PatchUserSettings not implemented")
 }
 func (UnimplementedAPIServer) GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserBookmarks not implemented")
@@ -451,6 +466,24 @@ func _API_GetUserSettings_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(APIServer).GetUserSettings(ctx, req.(*GetUserSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_PatchUserSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PatchUserSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PatchUserSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PatchUserSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PatchUserSettings(ctx, req.(*PatchUserSettingsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -751,6 +784,10 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getUserSettings",
 			Handler:    _API_GetUserSettings_Handler,
+		},
+		{
+			MethodName: "patchUserSettings",
+			Handler:    _API_PatchUserSettings_Handler,
 		},
 		{
 			MethodName: "getUserBookmarks",

@@ -4,6 +4,7 @@ package services
 import (
 	"errors"
 	"net/http"
+
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
 	"github.com/TUM-Dev/gocast/model"
@@ -15,9 +16,9 @@ import (
 // It returns a slice of Course models or an error if one occurs.
 func FetchUserCourses(db *gorm.DB, userID uint, req *protobuf.GetUserCoursesRequest) (courses []model.Course, err error) {
 	query := db.Unscoped().Table("course_users").
-        Joins("join courses on course_users.course_id = courses.id").
-        Select("courses.*").
-        Where("course_users.user_id = ?", userID)
+		Joins("join courses on course_users.course_id = courses.id").
+		Select("courses.*").
+		Where("course_users.user_id = ?", userID)
 
 	if req.Year != 0 {
 		query = query.Where("courses.year = ?", req.Year)
@@ -43,7 +44,7 @@ func FetchUserCourses(db *gorm.DB, userID uint, req *protobuf.GetUserCoursesRequ
 // FetchUserPinnedCourses fetches the pinned courses for a user from the database.
 // It filters the courses by year, term, limit, and skip if they are specified in the request.
 // It returns a slice of Course models or an error if one occurs.
-func FetchUserPinnedCourses(db *gorm.DB, userID uint, req *protobuf.GetUserPinnedRequest) (courses []model.Course,err error) {
+func FetchUserPinnedCourses(db *gorm.DB, userID uint, req *protobuf.GetUserPinnedRequest) (courses []model.Course, err error) {
 	query := db.Unscoped().Table("pinned_courses").
 		Joins("join courses on pinned_courses.course_id = courses.id").
 		Select("courses.*").
@@ -81,7 +82,7 @@ func FetchUserAdminCourses(db *gorm.DB, userID uint) (courses []model.Course, er
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
-	
+
 	return courses, err
 }
 
@@ -113,6 +114,39 @@ func FetchUserSettings(db *gorm.DB, userID uint) (settings []model.UserSetting, 
 	}
 
 	return settings, err
+}
+
+func PatchUserSettings(db *gorm.DB, userID uint, req *protobuf.PatchUserSettingsRequest) (settings []model.UserSetting, err error) {
+	var user model.User
+	if err = db.Where("id = ?", userID).First(&user).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	for _, setting := range req.UserSettings {
+		var userSetting model.UserSetting
+		if err = db.Where("user_id = ? AND type = ?", userID, setting.Type).First(&userSetting).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			userSetting = model.UserSetting{
+				UserID: userID,
+				Type:   model.UserSettingType(setting.Type),
+				Value:  setting.Value,
+			}
+			if err = db.Create(&userSetting).Error; err != nil {
+				return nil, e.WithStatus(http.StatusInternalServerError, err)
+			}
+		} else {
+			userSetting.Value = setting.Value
+
+			if err = db.Save(&userSetting).Error; err != nil {
+				return nil, e.WithStatus(http.StatusInternalServerError, err)
+			}
+		}
+
+		settings = append(settings, userSetting)
+	}
+
+	return settings, nil
 }
 
 func PutUserBookmark(db *gorm.DB, userID uint, req *protobuf.PutBookmarkRequest) (bookmark *model.Bookmark, err error) {
@@ -164,7 +198,7 @@ func PatchUserBookmark(db *gorm.DB, userID uint, req *protobuf.PatchBookmarkRequ
 
 	if err = db.Save(&bookmark).Error; err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	} 
+	}
 
 	return bookmark, nil
 }
@@ -216,7 +250,7 @@ func FetchUserNotifications(db *gorm.DB, u *model.User) (notifications []model.N
 
 func DeleteUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 	// Check if user has course pinned
-	if pinned, err:= checkPinnedByID(db, u.ID, courseID); err != nil {
+	if pinned, err := checkPinnedByID(db, u.ID, courseID); err != nil {
 		return err
 	} else if !pinned {
 		return e.WithStatus(http.StatusNotFound, errors.New("course not pinned"))
@@ -238,7 +272,7 @@ func DeleteUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 
 func PostUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 	// Check if user has course already pinned
-	if pinned, err:= checkPinnedByID(db, u.ID, courseID); err != nil {
+	if pinned, err := checkPinnedByID(db, u.ID, courseID); err != nil {
 		return err
 	} else if pinned {
 		return e.WithStatus(http.StatusConflict, errors.New("course already pinned"))
@@ -262,17 +296,17 @@ func PostUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 
 // FindPinnedByID fetches a pinned course entry from the database based on the provided userID and courseID	.
 func checkPinnedByID(db *gorm.DB, userID uint, courseID uint) (bool, error) {
-    var result struct{}
-    if err := db.Table("pinned_courses").Where("user_id = ? AND course_id = ?", userID, courseID).Take(&result).Error; err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            return false, nil
-        }
-        return false, e.WithStatus(http.StatusInternalServerError, err)
-    }
-    return true, nil
+	var result struct{}
+	if err := db.Table("pinned_courses").Where("user_id = ? AND course_id = ?", userID, courseID).Take(&result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	return true, nil
 }
 
-func pinCourse(db* gorm.DB, pin bool, u *model.User, course *model.Course) (error) {
+func pinCourse(db *gorm.DB, pin bool, u *model.User, course *model.Course) error {
 	if pin {
 		return db.Model(u).Association("PinnedCourses").Append(course)
 	} else {
