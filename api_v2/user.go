@@ -45,8 +45,8 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 
 	resp := make([]*protobuf.Course, len(courses))
 
-	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+	for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
 	}
 
 	return &protobuf.GetUserCoursesResponse{
@@ -71,8 +71,8 @@ func (a *API) GetUserPinned(ctx context.Context, req *protobuf.GetUserPinnedRequ
 
 	resp := make([]*protobuf.Course, len(courses))
 
-	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+	for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
 	}
 
 	return &protobuf.GetUserPinnedResponse{
@@ -96,8 +96,8 @@ func (a *API) GetUserAdminCourses(ctx context.Context, req *protobuf.GetUserAdmi
 
 	resp := make([]*protobuf.Course, len(courses))
 
-	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+	for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
 	}
 
 	return &protobuf.GetUserAdminResponse{
@@ -183,49 +183,6 @@ func (a *API) DeleteUserBookmark(ctx context.Context, req *protobuf.DeleteBookma
 	return &protobuf.DeleteBookmarkResponse{}, nil
 }
 
-func (a *API) GetBannerAlerts(ctx context.Context, req *protobuf.GetBannerAlertsRequest) (*protobuf.GetBannerAlertsResponse, error) {
-	a.log.Info("GetBannerAlerts")
-	alerts, err := s.FetchBannerAlerts(a.db)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := make([]*protobuf.BannerAlert, len(alerts))
-	for i, alert := range alerts {
-		resp[i] = h.ParseBannerAlertToProto(alert)
-	}
-
-	return &protobuf.GetBannerAlertsResponse{
-		BannerAlerts: resp,
-	}, nil
-
-}
-
-func (a *API) GetFeatureNotifications(ctx context.Context, req *protobuf.GetFeatureNotificationsRequest) (*protobuf.GetFeatureNotificationsResponse, error) {
-	a.log.Info("GetUserNotifications")
-	u, err := a.getCurrent(ctx)
-
-	if err != nil {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
-	}
-
-	notifications, err := s.FetchUserNotifications(a.db, u)
-
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-
-	resp := make([]*protobuf.FeatureNotification, len(notifications))
-
-	for i, notification := range notifications {
-		resp[i] = h.ParseFeatureNotificationToProto(notification)
-	}
-
-	return &protobuf.GetFeatureNotificationsResponse{
-		FeatureNotifications: resp,
-	}, nil
-}
-
 // GetUserSettings retrieves the settings of a user based on the context.
 // It returns a GetUserSettingsResponse or an error if one occurs.
 func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettingsRequest) (*protobuf.GetUserSettingsResponse, error) {
@@ -288,7 +245,12 @@ func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedReques
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	err = s.PostUserPinned(a.db, u, uint(req.CourseID))
+	c, err := h.CheckAuthorized(a.db, uint(u.ID), uint(req.CourseID))
+	if err != nil {
+        return nil, err
+    }
+
+	err = s.PostUserPinned(a.db, u, c)
 	if err != nil {
 		return nil, err
 	}

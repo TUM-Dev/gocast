@@ -17,15 +17,21 @@ import (
 // It returns a GetPublicCoursesResponse or an error if one occurs.
 func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCoursesRequest) (*protobuf.GetPublicCoursesResponse, error) {
 	a.log.Info("GetPublicCourses")
-	courses, err := s.FetchCourses(a.db, req)
+
+    uID, err := a.getCurrentID(ctx)
+	if err != nil && err.Error() != "missing cookie header" {
+		return nil, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+    courses, err := s.FetchCourses(a.db, req, &uID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
 	resp := make([]*protobuf.Course, len(courses))
 
-    for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course)
+    for i, c := range courses {
+		resp[i] = h.ParseCourseToProto(c)
     }
 
 	return &protobuf.GetPublicCoursesResponse{
@@ -68,22 +74,26 @@ func (a *API) GetCourseStreams(ctx context.Context, req *protobuf.GetCourseStrea
 
 	uID, err := a.getCurrentID(ctx)
 	if err != nil && err.Error() != "missing cookie header" {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
-	}
-
-	streams, err := s.GetStreamsByCourseID(a.db, uint(req.CourseID))
+            return nil, e.WithStatus(http.StatusUnauthorized, err)
+    }
+    
+    c, err := h.CheckAuthorized(a.db, uID, uint(req.CourseID))
     if err != nil {
         return nil, err
     }
 
-    isAllowed, err := h.CheckEnrolledOrPublic(a.db, &uID, uint(req.CourseID))
-    if err != nil || !isAllowed {
+    streams, err := s.GetStreamsByCourseID(a.db, uint(req.CourseID))
+    if err != nil {
         return nil, err
     }
 
     resp := make([]*protobuf.Stream, len(streams))
     for i, stream := range streams {
-        s, err := h.ParseStreamToProto(*stream)
+        if err := h.SignStream(stream, c, uID); err != nil {
+            return nil, err
+        }
+
+        s, err := h.ParseStreamToProto(stream)
         if err != nil {
             return nil, err
         } 

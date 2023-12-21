@@ -33,6 +33,8 @@ const (
 	API_DeleteUserPinned_FullMethodName        = "/protobuf.API/deleteUserPinned"
 	API_GetBannerAlerts_FullMethodName         = "/protobuf.API/getBannerAlerts"
 	API_GetFeatureNotifications_FullMethodName = "/protobuf.API/getFeatureNotifications"
+	API_PostDeviceToken_FullMethodName         = "/protobuf.API/postDeviceToken"
+	API_DeleteDeviceToken_FullMethodName       = "/protobuf.API/deleteDeviceToken"
 	API_GetPublicCourses_FullMethodName        = "/protobuf.API/getPublicCourses"
 	API_GetSemesters_FullMethodName            = "/protobuf.API/getSemesters"
 	API_GetCourseStreams_FullMethodName        = "/protobuf.API/getCourseStreams"
@@ -59,8 +61,11 @@ type APIClient interface {
 	PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequest, opts ...grpc.CallOption) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error)
 	DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error)
+	// BEGIN API/V2/NOTIFICATIONS
 	GetBannerAlerts(ctx context.Context, in *GetBannerAlertsRequest, opts ...grpc.CallOption) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(ctx context.Context, in *GetFeatureNotificationsRequest, opts ...grpc.CallOption) (*GetFeatureNotificationsResponse, error)
+	PostDeviceToken(ctx context.Context, in *PostDeviceTokenRequest, opts ...grpc.CallOption) (*PostDeviceTokenResponse, error)
+	DeleteDeviceToken(ctx context.Context, in *DeleteDeviceTokenRequest, opts ...grpc.CallOption) (*DeleteDeviceTokenResponse, error)
 	// BEGIN API/V2/COURSES
 	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
 	GetSemesters(ctx context.Context, in *GetSemestersRequest, opts ...grpc.CallOption) (*GetSemestersResponse, error)
@@ -206,6 +211,24 @@ func (c *aPIClient) GetFeatureNotifications(ctx context.Context, in *GetFeatureN
 	return out, nil
 }
 
+func (c *aPIClient) PostDeviceToken(ctx context.Context, in *PostDeviceTokenRequest, opts ...grpc.CallOption) (*PostDeviceTokenResponse, error) {
+	out := new(PostDeviceTokenResponse)
+	err := c.cc.Invoke(ctx, API_PostDeviceToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) DeleteDeviceToken(ctx context.Context, in *DeleteDeviceTokenRequest, opts ...grpc.CallOption) (*DeleteDeviceTokenResponse, error) {
+	out := new(DeleteDeviceTokenResponse)
+	err := c.cc.Invoke(ctx, API_DeleteDeviceToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aPIClient) GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error) {
 	out := new(GetPublicCoursesResponse)
 	err := c.cc.Invoke(ctx, API_GetPublicCourses_FullMethodName, in, out, opts...)
@@ -286,8 +309,11 @@ type APIServer interface {
 	PatchUserBookmark(context.Context, *PatchBookmarkRequest) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error)
 	DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error)
+	// BEGIN API/V2/NOTIFICATIONS
 	GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error)
+	PostDeviceToken(context.Context, *PostDeviceTokenRequest) (*PostDeviceTokenResponse, error)
+	DeleteDeviceToken(context.Context, *DeleteDeviceTokenRequest) (*DeleteDeviceTokenResponse, error)
 	// BEGIN API/V2/COURSES
 	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
 	GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error)
@@ -345,6 +371,12 @@ func (UnimplementedAPIServer) GetBannerAlerts(context.Context, *GetBannerAlertsR
 }
 func (UnimplementedAPIServer) GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureNotifications not implemented")
+}
+func (UnimplementedAPIServer) PostDeviceToken(context.Context, *PostDeviceTokenRequest) (*PostDeviceTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostDeviceToken not implemented")
+}
+func (UnimplementedAPIServer) DeleteDeviceToken(context.Context, *DeleteDeviceTokenRequest) (*DeleteDeviceTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDeviceToken not implemented")
 }
 func (UnimplementedAPIServer) GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPublicCourses not implemented")
@@ -632,6 +664,42 @@ func _API_GetFeatureNotifications_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_PostDeviceToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostDeviceTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PostDeviceToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PostDeviceToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PostDeviceToken(ctx, req.(*PostDeviceTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_DeleteDeviceToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDeviceTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).DeleteDeviceToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_DeleteDeviceToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).DeleteDeviceToken(ctx, req.(*DeleteDeviceTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _API_GetPublicCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPublicCoursesRequest)
 	if err := dec(in); err != nil {
@@ -820,6 +888,14 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getFeatureNotifications",
 			Handler:    _API_GetFeatureNotifications_Handler,
+		},
+		{
+			MethodName: "postDeviceToken",
+			Handler:    _API_PostDeviceToken_Handler,
+		},
+		{
+			MethodName: "deleteDeviceToken",
+			Handler:    _API_DeleteDeviceToken_Handler,
 		},
 		{
 			MethodName: "getPublicCourses",

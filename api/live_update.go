@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	log "github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	"sync"
 )
 
@@ -85,13 +84,13 @@ func liveUpdateOnSubscribe(psc *realtime.Context) {
 	if tumLiveContext.User != nil {
 		userId = tumLiveContext.User.ID
 		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicAndLoggedInCourses(year, term); err != nil {
-			log.WithError(err).Error("could not fetch public and logged in courses")
+			logger.Error("could not fetch public and logged in courses", "err", err)
 			return
 		}
 		userCourses = commons.Unique(userCourses, func(c model.Course) uint { return c.ID })
 	} else {
 		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicCourses(year, term); err != nil {
-			log.WithError(err).Error("could not fetch public courses")
+			logger.Error("could not fetch public courses", "err", err)
 			return
 		}
 	}

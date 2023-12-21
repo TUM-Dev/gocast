@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -54,6 +55,7 @@ const (
 	PreferredName UserSettingType = iota + 1
 	Greeting
 	CustomPlaybackSpeeds
+	UserDefinedSpeeds
 )
 
 type UserSetting struct {
@@ -79,6 +81,8 @@ type PlaybackSpeedSetting struct {
 	Enabled bool    `json:"enabled"`
 }
 
+type CustomSpeeds []float32
+
 type PlaybackSpeedSettings []PlaybackSpeedSetting
 
 func (s PlaybackSpeedSettings) GetEnabled() (res []float32) {
@@ -87,6 +91,22 @@ func (s PlaybackSpeedSettings) GetEnabled() (res []float32) {
 			res = append(res, setting.Speed)
 		}
 	}
+	return res
+}
+
+func (u *User) GetEnabledPlaybackSpeeds() (res []float32) {
+	if u == nil {
+		return []float32{1}
+	}
+	for _, setting := range u.GetPlaybackSpeeds().GetEnabled() {
+		res = append(res, setting)
+	}
+	for _, setting := range u.GetCustomSpeeds() {
+		res = append(res, setting)
+	}
+	sort.SliceStable(res, func(i, j int) bool {
+		return res[i] < res[j]
+	})
 	return res
 }
 
@@ -118,6 +138,22 @@ func (u *User) GetPlaybackSpeeds() (speeds PlaybackSpeedSettings) {
 		}
 	}
 	return defaultPlaybackSpeeds
+}
+
+func (u *User) GetCustomSpeeds() (speeds CustomSpeeds) {
+	if u == nil {
+		return []float32{}
+	}
+	for _, setting := range u.Settings {
+		if setting.Type == UserDefinedSpeeds {
+			err := json.Unmarshal([]byte(setting.Value), &speeds)
+			if err != nil {
+				break
+			}
+			return speeds
+		}
+	}
+	return []float32{}
 }
 
 // GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
@@ -330,4 +366,12 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 		return ErrUsernameNoText
 	}
 	return nil
+}
+
+// Device represents all device tokens for a given user that is subscribed to push notifications
+type Device struct {
+	gorm.Model
+	UserID  uint         // used by gorm
+	User    User		`gorm:"foreignKey:user_id;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // creator of the token
+	DeviceToken string	`gorm:"type:varchar(256); not null"`
 }

@@ -14,11 +14,12 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	slogGorm "github.com/orandin/slog-gorm"
 	"github.com/pkg/profile"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"net"
+	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -30,6 +31,10 @@ import (
 var VersionTag = "development"
 
 type initializer func()
+
+var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	Level: slog.LevelDebug,
+})).With("service", "main")
 
 var initializers = []initializer{
 	tools.LoadConfig,
@@ -45,7 +50,8 @@ func initAll(initializers []initializer) {
 
 // GinServer launches the gin server
 func GinServer() (err error) {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
 	gin.SetMode(gin.ReleaseMode)
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
@@ -53,17 +59,27 @@ func GinServer() (err error) {
 		tools.CookieSecure = true
 	}
 
+	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
+			param.TimeStamp.Format(time.DateTime),
+			param.StatusCode,
+			param.ClientIP,
+			param.Path,
+			param.Request.UserAgent(),
+		)
+	}))
+
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
 	l, err := net.Listen("tcp", ":8081")
 	if err != nil {
-		log.WithError(err).Fatal("can't listen on port 8081")
+		logger.Error("can't listen on port 8081", "err", err)
 	}
 
 	api2Client := api_v2.New(dao.DB)
 	go func() {
 		if err := api2Client.Run(l); err != nil {
-			log.WithError(err).Fatal("can't launch grpc server")
+			logger.Error("can't launch grpc server", "err", err)
 		}
 	}()
 
@@ -82,7 +98,7 @@ func GinServer() (err error) {
 	//err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Fatal("Error starting tumlive")
+		logger.Error("Error starting tumlive", "err", err)
 	}
 	return
 }
@@ -100,7 +116,7 @@ func main() {
 	}()
 
 	// log with time, fmt "23.09.2021 10:00:00"
-	log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
+	//log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 
 	web.VersionTag = VersionTag
 	osSignal = make(chan os.Signal, 1)
@@ -119,12 +135,15 @@ func main() {
 			Environment:      env,
 		})
 		if err != nil {
-			log.Fatalf("sentry.Init: %s", err)
+			logger.Error("sentry.Init", "err", err)
 		}
 		// Flush buffered events before the program terminates.
 		defer sentry.Flush(2 * time.Second)
 		defer sentry.Recover()
 	}
+
+	gormJSONLogger := slogGorm.New()
+
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
 		tools.Cfg.Db.User,
@@ -134,18 +153,19 @@ func main() {
 		tools.Cfg.Db.Database),
 	), &gorm.Config{
 		PrepareStmt: true,
+		Logger:      gormJSONLogger,
 	})
 
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
-		log.Fatalf("%v", err)
+		logger.Error("Error opening database", "err", err)
 	}
 	dao.DB = db
 
 	err = dao.Migrator.RunBefore(db)
 	if err != nil {
-		log.Error(err)
+		logger.Error("Error running before db", "err", err)
 		return
 	}
 
@@ -183,15 +203,16 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Device{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
-		log.WithError(err).Fatal("can't migrate database")
+		logger.Error("can't migrate database", "err", err)
 	}
 	err = dao.Migrator.RunAfter(db)
 	if err != nil {
-		log.Error(err)
+		logger.Error("Error running after db", "err", err)
 		return
 	}
 
@@ -206,7 +227,7 @@ func main() {
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
-		log.Fatalf("%v", err)
+		logger.Error("Error risretto.NewCache", "err", err)
 	}
 	dao.Cache = *cache
 
@@ -222,7 +243,7 @@ func main() {
 		if err != nil {
 			sentry.CaptureException(err)
 			sentry.Flush(time.Second * 5)
-			log.WithError(err).Fatal("can't launch gin server")
+			logger.Error("can't launch gin server", "err", err)
 		}
 	}()
 	keepAlive()
@@ -251,5 +272,5 @@ func initCron() {
 func keepAlive() {
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 	s := <-osSignal
-	log.Infof("Exiting on signal %s", s.String())
+	logger.Info("Exiting on signal" + s.String())
 }
