@@ -41,6 +41,9 @@ const (
 	API_GetNowLive_FullMethodName              = "/protobuf.API/GetNowLive"
 	API_GetThumbsVOD_FullMethodName            = "/protobuf.API/getThumbsVOD"
 	API_GetThumbsLive_FullMethodName           = "/protobuf.API/getThumbsLive"
+	API_GetProgress_FullMethodName             = "/protobuf.API/getProgress"
+	API_PutProgress_FullMethodName             = "/protobuf.API/putProgress"
+	API_MarkAsWatched_FullMethodName           = "/protobuf.API/markAsWatched"
 )
 
 // APIClient is the client API for API service.
@@ -73,6 +76,9 @@ type APIClient interface {
 	GetNowLive(ctx context.Context, in *GetNowLiveRequest, opts ...grpc.CallOption) (*GetNowLiveResponse, error)
 	GetThumbsVOD(ctx context.Context, in *GetThumbsVODRequest, opts ...grpc.CallOption) (*GetThumbsVODResponse, error)
 	GetThumbsLive(ctx context.Context, in *GetThumbsLiveRequest, opts ...grpc.CallOption) (*GetThumbsLiveResponse, error)
+	GetProgress(ctx context.Context, in *GetProgressRequest, opts ...grpc.CallOption) (*GetProgressResponse, error)
+	PutProgress(ctx context.Context, in *PutProgressRequest, opts ...grpc.CallOption) (*PutProgressResponse, error)
+	MarkAsWatched(ctx context.Context, in *MarkAsWatchedRequest, opts ...grpc.CallOption) (*MarkAsWatchedResponse, error)
 }
 
 type aPIClient struct {
@@ -281,6 +287,33 @@ func (c *aPIClient) GetThumbsLive(ctx context.Context, in *GetThumbsLiveRequest,
 	return out, nil
 }
 
+func (c *aPIClient) GetProgress(ctx context.Context, in *GetProgressRequest, opts ...grpc.CallOption) (*GetProgressResponse, error) {
+	out := new(GetProgressResponse)
+	err := c.cc.Invoke(ctx, API_GetProgress_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) PutProgress(ctx context.Context, in *PutProgressRequest, opts ...grpc.CallOption) (*PutProgressResponse, error) {
+	out := new(PutProgressResponse)
+	err := c.cc.Invoke(ctx, API_PutProgress_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) MarkAsWatched(ctx context.Context, in *MarkAsWatchedRequest, opts ...grpc.CallOption) (*MarkAsWatchedResponse, error) {
+	out := new(MarkAsWatchedResponse)
+	err := c.cc.Invoke(ctx, API_MarkAsWatched_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility
@@ -311,6 +344,9 @@ type APIServer interface {
 	GetNowLive(context.Context, *GetNowLiveRequest) (*GetNowLiveResponse, error)
 	GetThumbsVOD(context.Context, *GetThumbsVODRequest) (*GetThumbsVODResponse, error)
 	GetThumbsLive(context.Context, *GetThumbsLiveRequest) (*GetThumbsLiveResponse, error)
+	GetProgress(context.Context, *GetProgressRequest) (*GetProgressResponse, error)
+	PutProgress(context.Context, *PutProgressRequest) (*PutProgressResponse, error)
+	MarkAsWatched(context.Context, *MarkAsWatchedRequest) (*MarkAsWatchedResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -383,6 +419,15 @@ func (UnimplementedAPIServer) GetThumbsVOD(context.Context, *GetThumbsVODRequest
 }
 func (UnimplementedAPIServer) GetThumbsLive(context.Context, *GetThumbsLiveRequest) (*GetThumbsLiveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetThumbsLive not implemented")
+}
+func (UnimplementedAPIServer) GetProgress(context.Context, *GetProgressRequest) (*GetProgressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProgress not implemented")
+}
+func (UnimplementedAPIServer) PutProgress(context.Context, *PutProgressRequest) (*PutProgressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PutProgress not implemented")
+}
+func (UnimplementedAPIServer) MarkAsWatched(context.Context, *MarkAsWatchedRequest) (*MarkAsWatchedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkAsWatched not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -793,6 +838,60 @@ func _API_GetThumbsLive_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetProgress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetProgress(ctx, req.(*GetProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_PutProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PutProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PutProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PutProgress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PutProgress(ctx, req.(*PutProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_MarkAsWatched_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkAsWatchedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).MarkAsWatched(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_MarkAsWatched_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).MarkAsWatched(ctx, req.(*MarkAsWatchedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -887,6 +986,18 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getThumbsLive",
 			Handler:    _API_GetThumbsLive_Handler,
+		},
+		{
+			MethodName: "getProgress",
+			Handler:    _API_GetProgress_Handler,
+		},
+		{
+			MethodName: "putProgress",
+			Handler:    _API_PutProgress_Handler,
+		},
+		{
+			MethodName: "markAsWatched",
+			Handler:    _API_MarkAsWatched_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
