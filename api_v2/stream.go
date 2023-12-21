@@ -137,7 +137,7 @@ func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest)
 	a.log.Info("GetStreamProgress")
 
 	uID, err := a.getCurrentID(ctx)
-	if err != nil && err.Error() != "missing cookie header" {
+	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
