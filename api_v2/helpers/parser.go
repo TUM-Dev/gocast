@@ -158,3 +158,15 @@ func ParseStreamToProto(stream *model.Stream) (*protobuf.Stream, error) {
 
 	return s, err
 }
+
+// Parse Progress To Proto
+func ParseProgressToProto(progress *model.StreamProgress) *protobuf.Progress {
+
+	return &protobuf.Progress{
+		Progress: float32(progress.Progress),
+		Watched:  progress.Watched,
+		StreamID: uint32(progress.StreamID),
+		UserID:   uint32(progress.UserID),
+	}
+
+}
