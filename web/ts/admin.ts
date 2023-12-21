@@ -15,34 +15,43 @@ export class AdminUserList {
     showSearchResults: boolean;
     searchLoading: boolean;
     searchInput: string;
+    roles: number;
 
     constructor(usersAsJson: object[]) {
         this.list = usersAsJson;
         this.rowsPerPage = 10;
         this.showSearchResults = false;
         this.currentIndex = 0;
+        this.searchInput = "";
+        this.roles = -1;
         this.numberOfPages = Math.ceil(this.list.length / this.rowsPerPage);
         this.updateVisibleRows();
     }
 
     async search() {
-        if (this.searchInput.length < 3) {
+        if (this.searchInput.length < 3 && this.roles == -1) {
             this.showSearchResults = false;
             this.updateVisibleRows();
             return;
-        }
-        if (this.searchInput.length > 2) {
+        } else {
             this.searchLoading = true;
-            fetch("/api/searchUser?q=" + this.searchInput)
+            fetch("/api/searchUser?q=" + this.searchInput + "&r=" + this.roles)
                 .then((response) => {
                     this.searchLoading = false;
                     if (!response.ok) {
                         throw new Error(response.statusText);
                     }
-                    return response.json();
+                    return response.json()
                 })
                 .then((r) => {
-                    this.currentPage = r; // show all results on page one.
+                    console.log(r)
+                    if(this.roles != -1) {
+                        this.currentPage = r.filter((obj : any) => {
+                            return obj.role == this.roles;
+                        }); // show all results on page one.
+                    } else {
+                        this.currentPage = r;
+                    }
                     this.showSearchResults = true;
                 })
                 .catch((err) => {
