@@ -318,6 +318,44 @@ service API {
       description: "Returns path of thumbnail for a livestream."
     };
   }
+
+  rpc getProgress(GetProgressRequest) returns (GetProgressResponse) {
+    option (google.api.http) = {
+      get: "/streams/progress/{streamID}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Stream"
+      summary: "Get progress of stream"
+      description: "Returns progress of stream."
+    };
+  }
+
+  rpc putProgress(PutProgressRequest) returns (PutProgressResponse) {
+    option (google.api.http) = {
+      put: "/streams/progress/{streamID}"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Stream"
+      summary: "Update progress of stream"
+      description: "Updates progress of stream."
+    };
+  }
+
+  rpc markAsWatched(MarkAsWatchedRequest) returns (MarkAsWatchedResponse) {
+    option (google.api.http) = {
+      put: "/streams/progress/{streamID}/watched"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Stream"
+      summary: "Mark stream as watched"
+      description: "Marks stream as watched."
+    };
+  }
   
   // END API/V2/STREAMS
 }
@@ -673,3 +711,49 @@ message Download {
   string friendlyName = 1;
   string downloadURL = 2;
 }
+
+
+///////////////////////////////
+////// PROGRESS_MESSAGE ///////
+///////////////////////////////
+
+message Progress {
+  float progress = 1;
+  bool  watched = 2;
+  uint32 userID = 3;
+  uint32 streamID = 4;
+}
+
+///////////////////////////////
+////// PROGRESS_REQUEST ///////
+///////////////////////////////
+
+message GetProgressRequest {
+  uint64 streamID = 1;
+}
+
+message PutProgressRequest {
+  float progress = 1;
+  uint64 streamID = 3;
+}
+
+message MarkAsWatchedRequest {
+  uint64 streamID = 1;
+}
+
+///////////////////////////////
+////// PROGRESS_RESPONSE //////
+///////////////////////////////
+
+message GetProgressResponse {
+  Progress progress = 1;
+}
+
+message PutProgressResponse {
+  Progress progress = 1;
+}
+
+message MarkAsWatchedResponse {
+  Progress progress = 1;
+}
+

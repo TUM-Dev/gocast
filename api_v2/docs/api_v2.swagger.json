@@ -251,6 +251,125 @@
         ]
       }
     },
+    "/streams/progress/{streamID}": {
+      "get": {
+        "summary": "Get progress of stream",
+        "description": "Returns progress of stream.",
+        "operationId": "API_getProgress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetProgressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Stream"
+        ]
+      },
+      "put": {
+        "summary": "Update progress of stream",
+        "description": "Updates progress of stream.",
+        "operationId": "API_putProgress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPutProgressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "progress": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Stream"
+        ]
+      }
+    },
+    "/streams/progress/{streamID}/watched": {
+      "put": {
+        "summary": "Mark stream as watched",
+        "description": "Marks stream as watched.",
+        "operationId": "API_markAsWatched",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufMarkAsWatchedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "Stream"
+        ]
+      }
+    },
     "/streams/thumbs/live/{streamID}": {
       "get": {
         "summary": "Get thumbnail of livestream",
@@ -1026,6 +1145,14 @@
         }
       }
     },
+    "protobufGetProgressResponse": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "$ref": "#/definitions/protobufProgress"
+        }
+      }
+    },
     "protobufGetPublicCoursesResponse": {
       "type": "object",
       "properties": {
@@ -1133,6 +1260,14 @@
         }
       }
     },
+    "protobufMarkAsWatchedResponse": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "$ref": "#/definitions/protobufProgress"
+        }
+      }
+    },
     "protobufPatchBookmarkResponse": {
       "type": "object",
       "properties": {
@@ -1180,6 +1315,26 @@
     "protobufPostPinnedResponse": {
       "type": "object"
     },
+    "protobufProgress": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "type": "number",
+          "format": "float"
+        },
+        "watched": {
+          "type": "boolean"
+        },
+        "userID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "protobufPutBookmarkRequest": {
       "type": "object",
       "properties": {
@@ -1209,6 +1364,14 @@
       "properties": {
         "bookmark": {
           "$ref": "#/definitions/protobufBookmark"
+        }
+      }
+    },
+    "protobufPutProgressResponse": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "$ref": "#/definitions/protobufProgress"
         }
       }
     },
