@@ -37,7 +37,7 @@ func WithStatus(httpStatus int, err error) error {
 	case http.StatusInternalServerError:
 		code = codes.Unknown // default to 500
 	default:
-		slog.Warn("Unknown HTTP status code: ", fmt.Sprintf("%d", httpStatus))
+		slog.Warn("Unknown HTTP status code: ", "httpStatus", fmt.Sprintf("%d", httpStatus))
 		code = codes.Unknown
 	}
 	return status.Error(code, err.Error())

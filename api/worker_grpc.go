@@ -452,7 +452,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 				return nil, nil
 			}
 
-			logger.Info("Sent push notifications to devices: ", status)	
+			logger.Info("Sent push notifications to devices: ", "status", fmt.Sprintf("%v", status))	
 		}
 	}
 	return &pb.Status{Ok: true}, nil
