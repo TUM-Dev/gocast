@@ -5,20 +5,21 @@ package api_v2
 import (
 	"context"
 	"embed"
-	_ "embed"
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"
-	"github.com/gin-gonic/gin"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/reflection"
-	"gorm.io/gorm"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/TUM-Dev/gocast/api_v2/protobuf"
+	"github.com/gin-gonic/gin"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/reflection"
+	"gorm.io/gorm"
 )
 
 // API is the grpc server for the v2 api
@@ -62,7 +63,8 @@ func (a *API) Run(net.Listener) error {
 func (a *API) Proxy() func(c *gin.Context) {
 	// setup muxing
 	mux := runtime.NewServeMux()
-	opts := []grpc.DialOption{grpc.WithInsecure()}
+	// DEPRECATED: opts := []grpc.DialOption{grpc.WithInsecure()}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	err := protobuf.RegisterAPIHandlerFromEndpoint(context.Background(), mux, ":12544", opts)
 	if err != nil {
 		a.log.With("err", err).Error("can't register grpc handler")

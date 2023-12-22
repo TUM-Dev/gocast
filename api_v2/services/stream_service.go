@@ -88,14 +88,15 @@ func SetProgress(db *gorm.DB, streamID uint, userID uint, progress float64) (*mo
 
 	result := db.Where("stream_id = ? AND user_id = ?", streamID, userID).First(p)
 
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	switch {
+	case errors.Is(result.Error, gorm.ErrRecordNotFound):
 		p.StreamID = streamID
 		p.UserID = userID
 		p.Progress = progress
 		p.Watched = progress == 1
-	} else if result.Error != nil {
+	case result.Error != nil:
 		return nil, e.WithStatus(http.StatusInternalServerError, result.Error)
-	} else {
+	default:
 		p.Progress = progress
 		p.Watched = progress == 1
 	}
@@ -108,9 +109,7 @@ func SetProgress(db *gorm.DB, streamID uint, userID uint, progress float64) (*mo
 }
 
 func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgress, error) {
-
 	_, err := GetStreamByID(db, streamID)
-
 	if err != nil {
 		return nil, err
 	}
@@ -119,14 +118,15 @@ func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgre
 
 	result := db.Where("stream_id = ? AND user_id = ?", streamID, userID).First(p)
 
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	switch {
+	case errors.Is(result.Error, gorm.ErrRecordNotFound):
 		p.StreamID = streamID
 		p.UserID = userID
 		p.Progress = 1
 		p.Watched = true
-	} else if result.Error != nil {
+	case result.Error != nil:
 		return nil, e.WithStatus(http.StatusInternalServerError, result.Error)
-	} else {
+	default:
 		p.Progress = 1
 		p.Watched = true
 	}

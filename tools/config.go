@@ -7,16 +7,19 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
+	"github.com/NaySoftware/go-fcm"
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
-	"os"
-	"time"
-	"github.com/NaySoftware/go-fcm"
 )
 
-var Cfg Config
-var Loc *time.Location
+var (
+	Cfg Config
+	Loc *time.Location
+)
 
 func LoadConfig() {
 	initCache()
@@ -192,8 +195,6 @@ func (c Config) GetMeiliClient() (*meilisearch.Client, error) {
 	return meilisearch.NewClient(meilisearch.ClientConfig{Host: c.Meili.Host, APIKey: c.Meili.ApiKey}), nil
 }
 
-
-// FCM used for push notifications to mobile devices 
 var ErrFCMNotConfigured = errors.New("Firebase Cloud Messaging is not configured")
 
 func (c Config) GetFCMClient() (*fcm.FcmClient, error) {

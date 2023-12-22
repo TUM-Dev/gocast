@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"io"
 	"net"
 	"net/http"
@@ -18,6 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
+
+	"github.com/NaySoftware/go-fcm"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -34,7 +36,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
-	"github.com/NaySoftware/go-fcm"
 )
 
 var mutex = sync.Mutex{}
@@ -44,7 +45,7 @@ var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configura
 type server struct {
 	pb.UnimplementedFromWorkerServer
 	dao.DaoWrapper
-    *fcm.FcmClient
+	*fcm.FcmClient
 }
 
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
@@ -117,7 +118,6 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
-
 }
 
 // SendSelfStreamRequest handles the request from a worker when a stream starts publishing via obs, etc.
@@ -439,12 +439,12 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 			logger.Error("Get subscribed devices:", "err", err)
 		} else {
 			logger.Info(fmt.Sprintf("Start sending push notifications to devices: %d", len(deviceTokens)))
-			
+
 			data := map[string]string{
 				"sum": fmt.Sprintf("%s: New VOD available!", course.Slug),
-				"msg": fmt.Sprintf("%s %s", stream.Name, stream.Description),		
+				"msg": fmt.Sprintf("%s %s", stream.Name, stream.Description),
 			}
-			
+
 			s.FcmClient.NewFcmRegIdsMsg(deviceTokens, data)
 			status, err := s.FcmClient.Send()
 			if err != nil {
@@ -452,7 +452,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 				return nil, nil
 			}
 
-			logger.Info("Sent push notifications to devices: ", "status", fmt.Sprintf("%v", status))	
+			logger.Info("Sent push notifications to devices: ", "status", fmt.Sprintf("%v", status))
 		}
 	}
 	return &pb.Status{Ok: true}, nil
@@ -705,7 +705,7 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 		return
 	}
 	var slot model.StreamName
-	if sourceType == "COMB" { //try to find a transcoding slot for comb view:
+	if sourceType == "COMB" { // try to find a transcoding slot for comb view:
 		slot, err = daoWrapper.IngestServerDao.GetTranscodedStreamSlot(server.ID)
 	}
 	if sourceType != "COMB" || err != nil {
@@ -908,7 +908,7 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		return err
 	}
 
-	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0750); err != nil {
+	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0o750); err != nil {
 		return err
 	}
 
@@ -1130,7 +1130,7 @@ func ServeWorkerGRPC() {
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	
+
 	// Check if FCM is configured (/FCMServerKey is set)
 	fcmClient, err := tools.Cfg.GetFCMClient()
 	if err != nil {

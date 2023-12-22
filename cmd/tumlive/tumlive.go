@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -96,7 +96,7 @@ func GinServer() (err error) {
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
 	err = router.RunListener(l)
-	//err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
+	// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)
 		logger.Error("Error starting tumlive", "err", err)
@@ -104,9 +104,7 @@ func GinServer() (err error) {
 	return
 }
 
-var (
-	osSignal chan os.Signal
-)
+var osSignal chan os.Signal
 
 func main() {
 	initAll(initializers)
@@ -156,7 +154,6 @@ func main() {
 		PrepareStmt: true,
 		Logger:      gormJSONLogger,
 	})
-
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
@@ -253,13 +250,13 @@ func main() {
 func initCron() {
 	daoWrapper := dao.NewDaoWrapper()
 	tools.InitCronService()
-	//Fetch students every 12 hours
+	// Fetch students every 12 hours
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
-	//Collect livestream stats (viewers) every minute
+	// Collect livestream stats (viewers) every minute
 	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")
-	//Flush stale sentry exceptions and transactions every 5 minutes
+	// Flush stale sentry exceptions and transactions every 5 minutes
 	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
-	//Look for due streams and notify workers about them
+	// Look for due streams and notify workers about them
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	// update courses available
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")

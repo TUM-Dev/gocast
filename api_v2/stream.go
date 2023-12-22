@@ -142,7 +142,6 @@ func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest)
 	}
 
 	p, err := s.GetProgress(a.db, uint(req.StreamID), uID)
-
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +155,6 @@ func (a *API) PutProgress(ctx context.Context, req *protobuf.PutProgressRequest)
 	a.log.Info("SetStreamProgress")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}

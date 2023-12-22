@@ -11,26 +11,24 @@ import (
 	"gorm.io/gorm"
 )
 
-// FetchUserCourses fetches the courses for a user from the database.
-// It filters the courses by year, term, query, limit, and skip if they are specified in the request.
-// It returns a slice of Course models or an error if one occurs.
-func FetchUserCourses(db *gorm.DB, uID uint, req *protobuf.GetUserCoursesRequest) (courses []model.Course, err error) {
-	query := db.Unscoped().Table("course_users").
-		Joins("join courses on course_users.course_id = courses.id").
+// Helper method to fetch courses for a given table (e.g. course_users or pinned_courses)
+func fetchCourses(db *gorm.DB, uID uint, year uint, term string, limit int, skip int, tableName string) (courses []model.Course, err error) {
+	query := db.Unscoped().Table(tableName).
+		Joins("join courses on "+tableName+".course_id = courses.id").
 		Select("courses.*").
-		Where("course_users.user_id = ?", uID)
+		Where(tableName+".user_id = ?", uID)
 
-	if req.Year != 0 {
-		query = query.Where("courses.year = ?", req.Year)
+	if year != 0 {
+		query = query.Where("courses.year = ?", year)
 	}
-	if req.Term != "" {
-		query = query.Where("courses.teaching_term = ?", req.Term)
+	if term != "" {
+		query = query.Where("courses.teaching_term = ?", term)
 	}
-	if req.Limit > 0 {
-		query = query.Limit(int(req.Limit))
+	if limit > 0 {
+		query = query.Limit(limit)
 	}
-	if req.Skip >= 0 {
-		query = query.Offset(int(req.Skip))
+	if skip >= 0 {
+		query = query.Offset(skip)
 	}
 
 	err = query.Find(&courses).Error
@@ -41,34 +39,18 @@ func FetchUserCourses(db *gorm.DB, uID uint, req *protobuf.GetUserCoursesRequest
 	return courses, nil
 }
 
+// FetchUserCourses fetches the courses for a user from the database.
+// It filters the courses by year, term, query, limit, and skip if they are specified in the request.
+// It returns a slice of Course models or an error if one occurs.
+func FetchUserCourses(db *gorm.DB, uID uint, req *protobuf.GetUserCoursesRequest) (courses []model.Course, err error) {
+	return fetchCourses(db, uID, uint(req.Year), req.Term, int(req.Limit), int(req.Skip), "course_users")
+}
+
 // FetchUserPinnedCourses fetches the pinned courses for a user from the database.
 // It filters the courses by year, term, limit, and skip if they are specified in the request.
 // It returns a slice of Course models or an error if one occurs.
 func FetchUserPinnedCourses(db *gorm.DB, uID uint, req *protobuf.GetUserPinnedRequest) (courses []model.Course, err error) {
-	query := db.Unscoped().Table("pinned_courses").
-		Joins("join courses on pinned_courses.course_id = courses.id").
-		Select("courses.*").
-		Where("pinned_courses.user_id = ?", uID)
-
-	if req.Year != 0 {
-		query = query.Where("courses.year = ?", req.Year)
-	}
-	if req.Term != "" {
-		query = query.Where("courses.teaching_term = ?", req.Term)
-	}
-	if req.Limit > 0 {
-		query = query.Limit(int(req.Limit))
-	}
-	if req.Skip >= 0 {
-		query = query.Offset(int(req.Skip))
-	}
-
-	err = query.Find(&courses).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	return courses, nil
+	return fetchCourses(db, uID, uint(req.Year), req.Term, int(req.Limit), int(req.Skip), "pinned_courses")
 }
 
 // FetchUserAdminCourses fetches the courses where a user is an admin from the database.
@@ -174,7 +156,6 @@ func PutUserBookmark(db *gorm.DB, uID uint, req *protobuf.PutBookmarkRequest) (b
 }
 
 func PatchUserBookmark(db *gorm.DB, uID uint, req *protobuf.PatchBookmarkRequest) (bookmark *model.Bookmark, err error) {
-
 	//	check if bookmark exists otherwise cannot patch
 	if err = db.Where("id = ?", req.BookmarkID).First(&bookmark).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
@@ -201,7 +182,6 @@ func PatchUserBookmark(db *gorm.DB, uID uint, req *protobuf.PatchBookmarkRequest
 }
 
 func DeleteUserBookmark(db *gorm.DB, uID uint, req *protobuf.DeleteBookmarkRequest) (err error) {
-
 	//	check if bookmark exists otherwise cannot delete
 	var bookmark model.Bookmark
 	if err = db.Where("id = ?", req.BookmarkID).First(&bookmark).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -238,7 +218,7 @@ func DeleteUserPinned(db *gorm.DB, u *model.User, courseID uint) (err error) {
 	}
 
 	// Pin course
-	if pinCourse(db, false, u, course); err != nil {
+	if err = pinCourse(db, false, u, course); err != nil {
 		return e.WithStatus(http.StatusInternalServerError, err)
 	}
 
@@ -254,7 +234,7 @@ func PostUserPinned(db *gorm.DB, u *model.User, c *model.Course) (err error) {
 	}
 
 	// Pin course
-	if pinCourse(db, true, u, c); err != nil {
+	if err = pinCourse(db, true, u, c); err != nil {
 		return e.WithStatus(http.StatusInternalServerError, err)
 	}
 
@@ -278,21 +258,6 @@ func checkPinnedByID(db *gorm.DB, uID uint, courseID uint) (bool, error) {
 func pinCourse(db *gorm.DB, pin bool, u *model.User, c *model.Course) error {
 	if pin {
 		return db.Model(u).Association("PinnedCourses").Append(c)
-	} else {
-		return db.Model(u).Association("PinnedCourses").Delete(c)
 	}
+	return db.Model(u).Association("PinnedCourses").Delete(c)
 }
-
-// const (
-// 	TargetAll      = iota + 1 //TargetAll Is any user, regardless if logged in or not
-// 	TargetUser                //TargetUser Are all users that are logged in
-// 	TargetStudent             //TargetStudent Are all users that are logged in and are students
-// 	TargetLecturer            //TargetLecturer Are all users that are logged in and are lecturers
-// 	TargetAdmin               //TargetAdmin Are all users that are logged in and are admins
-
-// )
-
-// 1 = admin
-// 2 = Lecturer
-// 3 = geneeric
-// 4 = student

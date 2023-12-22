@@ -3,24 +3,25 @@ package services
 
 import (
 	"errors"
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/dao"
 	"net/http"
-	e "github.com/TUM-Dev/gocast/api_v2/errors"
-	"gorm.io/gorm"
 	"time"
+
+	e "github.com/TUM-Dev/gocast/api_v2/errors"
+	"github.com/TUM-Dev/gocast/api_v2/protobuf"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"gorm.io/gorm"
 )
 
 // GetCourseById fetches a course from the database based on the provided id.
 func GetCourseById(db *gorm.DB, id uint) (*model.Course, error) {
-    c := &model.Course{}
-    if err := db.Where("id = ?", id).First(c).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound){
-        return nil, e.WithStatus(http.StatusInternalServerError, err)
+	c := &model.Course{}
+	if err := db.Where("id = ?", id).First(c).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("course not found"))
 	}
-	
+
 	return c, nil
 }
 
@@ -58,10 +59,10 @@ func FetchCourses(db *gorm.DB, req *protobuf.GetPublicCoursesRequest, uID *uint)
 // FetchSemesters fetches all unique semesters from the database.
 // It returns a slice of Semester models or an error if one occurs.
 func FetchSemesters(db *gorm.DB) ([]dao.Semester, error) {
-    var semesters []dao.Semester
-    err := db.Raw("SELECT year, teaching_term from courses " +
-        "group by year, teaching_term " +
-        "order by year desc, teaching_term desc").Scan(&semesters).Error
+	var semesters []dao.Semester
+	err := db.Raw("SELECT year, teaching_term from courses " +
+		"group by year, teaching_term " +
+		"order by year desc, teaching_term desc").Scan(&semesters).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
@@ -71,21 +72,21 @@ func FetchSemesters(db *gorm.DB) ([]dao.Semester, error) {
 // FetchCurrentSemester determines the current semester based on the current date.
 // It returns the current Semester model or an error if one occurs.
 func FetchCurrentSemester(db *gorm.DB) (dao.Semester, error) {
-    var curTerm string
-    var curYear int
-    if time.Now().Month() >= 4 && time.Now().Month() < 10 {
-        curTerm = "S"
-        curYear = time.Now().Year()
-    } else {
-        curTerm = "W"
-        if time.Now().Month() >= 10 {
-            curYear = time.Now().Year()
-        } else {
-            curYear = time.Now().Year() - 1
-        }
-    }
+	var curTerm string
+	var curYear int
+	if time.Now().Month() >= 4 && time.Now().Month() < 10 {
+		curTerm = "S"
+		curYear = time.Now().Year()
+	} else {
+		curTerm = "W"
+		if time.Now().Month() >= 10 {
+			curYear = time.Now().Year()
+		} else {
+			curYear = time.Now().Year() - 1
+		}
+	}
 	return dao.Semester{
-		Year: curYear,
+		Year:         curYear,
 		TeachingTerm: curTerm,
 	}, nil
 }

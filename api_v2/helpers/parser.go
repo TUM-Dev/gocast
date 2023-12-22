@@ -2,10 +2,12 @@
 package helpers
 
 import (
+	"time"
+
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // ParseUserToProto converts a User model to its protobuf representation.
@@ -109,28 +111,15 @@ func ParseSemesterToProto(semester dao.Semester) *protobuf.Semester {
 // ParseStreamToProto converts a Stream model to its protobuf representation.
 // It returns an error if the conversion of timestamps fails.
 func ParseStreamToProto(stream *model.Stream) (*protobuf.Stream, error) {
-	start, err := ptypes.TimestampProto(stream.Start)
-	if err != nil {
-		return nil, err
-	}
+	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
-	end, err := ptypes.TimestampProto(stream.End)
-	if err != nil {
-		return nil, err
-	}
-
-	liveNowTimestamp, err := ptypes.TimestampProto(stream.LiveNowTimestamp)
-	if err != nil {
-		return nil, err
-	}
-
-	s, err := &protobuf.Stream{
+	s := &protobuf.Stream{
 		Id:               uint64(stream.ID),
 		Name:             stream.Name,
 		Description:      stream.Description,
 		CourseID:         uint32(stream.CourseID),
-		Start:            start,
-		End:              end,
+		Start:            timestamppb.New(stream.Start),
+		End:              timestamppb.New(stream.End),
 		ChatEnabled:      stream.ChatEnabled,
 		RoomName:         stream.RoomName,
 		RoomCode:         stream.RoomCode,
@@ -140,31 +129,29 @@ func ParseStreamToProto(stream *model.Stream) (*protobuf.Stream, error) {
 		PlaylistUrl:      stream.PlaylistUrl,
 		PlaylistUrlPRES:  stream.PlaylistUrlPRES,
 		PlaylistUrlCAM:   stream.PlaylistUrlCAM,
-		LiveNow:          stream.LiveNow,
-		LiveNowTimestamp: liveNowTimestamp,
+		LiveNow:          liveNow,
+		LiveNowTimestamp: timestamppb.New(stream.LiveNowTimestamp),
 		Recording:        stream.Recording,
 		Premiere:         stream.Premiere,
 		Ended:            stream.Ended,
 		VodViews:         uint32(stream.VodViews),
 		StartOffset:      uint32(stream.StartOffset),
 		EndOffset:        uint32(stream.EndOffset),
-	}, nil
-
-	if stream.Duration.Valid {
-		s.Duration = int32(stream.Duration.Int32)
 	}
 
-	return s, err
+	if stream.Duration.Valid {
+		s.Duration = stream.Duration.Int32
+	}
+
+	return s, nil
 }
 
 // Parse Progress To Proto
 func ParseProgressToProto(progress *model.StreamProgress) *protobuf.Progress {
-
 	return &protobuf.Progress{
 		Progress: float32(progress.Progress),
 		Watched:  progress.Watched,
 		StreamID: uint32(progress.StreamID),
 		UserID:   uint32(progress.UserID),
 	}
-
 }

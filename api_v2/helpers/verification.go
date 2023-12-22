@@ -2,52 +2,54 @@
 package helpers
 
 import (
-	"gorm.io/gorm"
-    "errors"
+	"errors"
 	"net/http"
+
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	s "github.com/TUM-Dev/gocast/api_v2/services"
-    "github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/model"
+	"gorm.io/gorm"
 )
+
 // Verification to check if user is authorized to access course/stream
 func CheckAuthorized(db *gorm.DB, uID uint, courseID uint) (*model.Course, error) {
-    c, err := s.GetCourseById(db, courseID)
-    if err != nil {
-        return nil, err
-    }
+	c, err := s.GetCourseById(db, courseID)
+	if err != nil {
+		return nil, err
+	}
 
-    switch c.Visibility {
-    case "public":
-        return c, nil
-    case "private":
-        return nil, e.WithStatus(http.StatusForbidden, errors.New("course is private"))
-    case "hidden":
-        return nil, e.WithStatus(http.StatusForbidden, errors.New("course is hidden"))
-    case "loggedin":
-        if uID == 0 {
+	switch c.Visibility {
+	case "public":
+		return c, nil
+	case "private":
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("course is private"))
+	case "hidden":
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("course is hidden"))
+	case "loggedin":
+		if uID == 0 {
 			return nil, e.WithStatus(http.StatusForbidden, errors.New("course is only accessible by logged in users"))
 		} else {
 			return c, nil
 		}
-    case "enrolled":
-        return checkUserEnrolled(db, uID, c)
-    default:
-        return nil, e.WithStatus(http.StatusForbidden, errors.New("course is not accessible"))
-    }
+	case "enrolled":
+		return checkUserEnrolled(db, uID, c)
+	default:
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("course is not accessible"))
+	}
 }
 
 func checkUserEnrolled(db *gorm.DB, uID uint, c *model.Course) (*model.Course, error) {
-    if uID == 0 {
-        return nil, e.WithStatus(http.StatusForbidden, errors.New("course can only be accessed by enrolled users"))
-    }
+	if uID == 0 {
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("course can only be accessed by enrolled users"))
+	}
 
-    var count int64
-    if err := db.Table("course_users").Where("user_id = ? AND course_id = ?", uID, c.ID).Count(&count).Error; err != nil {
-        return nil, e.WithStatus(http.StatusInternalServerError, err)
-    }
+	var count int64
+	if err := db.Table("course_users").Where("user_id = ? AND course_id = ?", uID, c.ID).Count(&count).Error; err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
 
-    if count == 0 {
-        return nil, e.WithStatus(http.StatusForbidden, errors.New("user is not enrolled in this course and the course can only be accessed by enrolled users"))
-    }
-    return c, nil
+	if count == 0 {
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("user is not enrolled in this course and the course can only be accessed by enrolled users"))
+	}
+	return c, nil
 }

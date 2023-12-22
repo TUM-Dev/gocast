@@ -4,6 +4,7 @@ package services
 import (
 	"errors"
 	"net/http"
+
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
@@ -63,18 +64,18 @@ func getTargetFilter(user model.User) (targetFilter string) {
 
 func PostDeviceToken(db *gorm.DB, u model.User, deviceToken string) (err error) {
 	device := model.Device{
-		User:      u,
+		User:        u,
 		DeviceToken: deviceToken,
 	}
 
 	var count int64
-    if err := db.Table("devices").Where("user_id = ? AND device_token = ?", u.ID, deviceToken).Count(&count).Error; err != nil {
-        return e.WithStatus(http.StatusInternalServerError, err)
-    }
+	if err := db.Table("devices").Where("user_id = ? AND device_token = ?", u.ID, deviceToken).Count(&count).Error; err != nil {
+		return e.WithStatus(http.StatusInternalServerError, err)
+	}
 	print("Count = ?", count)
-    if count != 0 {
+	if count != 0 {
 		return e.WithStatus(http.StatusConflict, errors.New("device is already registered"))
-    }
+	}
 
 	if err = db.Create(&device).Error; err != nil {
 		return e.WithStatus(http.StatusInternalServerError, err)

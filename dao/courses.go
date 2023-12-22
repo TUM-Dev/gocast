@@ -324,19 +324,18 @@ func (d coursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
 	logger.Info("Start finding device tokens for stream", "streamID", fmt.Sprintf("%d", streamID))
 	var deviceTokens []string
 	err := DB.Table("devices").
-	Select("devices.device_token").
-	Distinct().
-	Joins("JOIN course_users ON devices.user_id = course_users.user_id").
-	Joins("JOIN streams ON course_users.course_id = streams.course_id").
-	Where("streams.id = ?", streamID).
-	Pluck("device_token", &deviceTokens).Error
-
-    if err != nil {
+		Select("devices.device_token").
+		Distinct().
+		Joins("JOIN course_users ON devices.user_id = course_users.user_id").
+		Joins("JOIN streams ON course_users.course_id = streams.course_id").
+		Where("streams.id = ?", streamID).
+		Pluck("device_token", &deviceTokens).Error
+	if err != nil {
 		logger.Error("Can't find device tokens", "err", err)
-        return nil, err
-    }
+		return nil, err
+	}
 
-    return deviceTokens, nil
+	return deviceTokens, nil
 }
 
 type Semester struct {

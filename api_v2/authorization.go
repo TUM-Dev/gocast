@@ -4,14 +4,15 @@ package api_v2
 import (
 	"context"
 	"errors"
+	"net/http"
+	"strings"
+
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/golang-jwt/jwt/v4"
 	"google.golang.org/grpc/metadata"
 	"gorm.io/gorm"
-	"net/http"
-	"strings"
 )
 
 // getCurrentID retrieves the current user's ID from the JWT claims.
@@ -87,7 +88,6 @@ func (a *API) parseJWT(jwtStr string) (*tools.JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(jwtStr, &tools.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return tools.Cfg.GetJWTKey().Public(), nil
 	})
-
 	if err != nil {
 		a.log.Info("JWT parsing error: ", err)
 		return nil, err
@@ -114,6 +114,6 @@ func (a *API) getUserFromClaims(claims *tools.JWTClaims) (*model.User, error) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	
+
 	return &u, nil
 }

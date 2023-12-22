@@ -2,11 +2,12 @@
 package errors
 
 import (
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"fmt"
 	"log/slog"
 	"net/http"
-	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // WithStatus creates a new error with a specific HTTP status code and a given error message.

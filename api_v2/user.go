@@ -116,7 +116,6 @@ func (a *API) GetUserBookmarks(ctx context.Context, req *protobuf.GetBookmarksRe
 	}
 
 	bookmarks, err := s.FetchUserBookmarks(a.db, uID, req)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -148,7 +147,6 @@ func (a *API) PutUserBookmark(ctx context.Context, req *protobuf.PutBookmarkRequ
 	return &protobuf.PutBookmarkResponse{
 		Bookmark: h.ParseBookmarkToProto(*bookmark),
 	}, nil
-
 }
 
 func (a *API) PatchUserBookmark(ctx context.Context, req *protobuf.PatchBookmarkRequest) (*protobuf.PatchBookmarkResponse, error) {
@@ -217,7 +215,6 @@ func (a *API) PatchUserSettings(ctx context.Context, req *protobuf.PatchUserSett
 	}
 
 	settings, err := s.PatchUserSettings(a.db, u, req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +228,6 @@ func (a *API) PatchUserSettings(ctx context.Context, req *protobuf.PatchUserSett
 	return &protobuf.PatchUserSettingsResponse{
 		UserSettings: resp,
 	}, nil
-
 }
 
 func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedRequest) (*protobuf.PostPinnedResponse, error) {
@@ -246,7 +242,7 @@ func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedReques
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	c, err := h.CheckAuthorized(a.db, uint(u.ID), uint(req.CourseID))
+	c, err := h.CheckAuthorized(a.db, u.ID, uint(req.CourseID))
 	if err != nil {
 		return nil, err
 	}
