@@ -92,6 +92,19 @@ service API {
     };
   }
 
+  rpc patchUserSettings(PatchUserSettingsRequest) returns (PatchUserSettingsResponse) {
+    option (google.api.http) = {
+      patch: "/user/settings"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Update the current user's settings."
+      description: "Updates the settings of the current user."
+    };
+  }
+
   rpc getUserBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
     option (google.api.http) = {
       get: "/user/bookmarks"
@@ -366,8 +379,6 @@ message User {
 }
 
 message UserSetting {
-  uint32 id = 1;
-  uint32 userID = 2;
   UserSettingType type = 3;
   string value = 4;
 }
@@ -401,6 +412,14 @@ message GetUserPinnedRequest {
 message GetUserAdminRequest {}
 
 message GetUserSettingsRequest {}
+
+message PatchUserSettingsRequest {
+  repeated UserSetting userSettings = 1;
+}
+
+message PatchUserSettingsResponse {
+  repeated UserSetting userSettings = 1;
+}
 
 message PostPinnedRequest {
   int32 courseID = 1;

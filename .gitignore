@@ -18,7 +18,10 @@ bin
 
 # Dependency directories (remove the comment below to include it)
 vendor/
+<<<<<<< HEAD
+=======
 tumlive
+>>>>>>> IPraktikum-dev
 
 # ---> JetBrains
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
@@ -112,4 +115,8 @@ tumlive.service
 
 # osx
 .DS_Store
+<<<<<<< HEAD
+tumlive
+=======
 .gitignore
+>>>>>>> IPraktikum-dev

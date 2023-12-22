@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	h "github.com/TUM-Dev/gocast/api_v2/helpers"
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
@@ -63,7 +64,7 @@ func (a *API) GetUserPinned(ctx context.Context, req *protobuf.GetUserPinnedRequ
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-    courses, err := s.FetchUserPinnedCourses(a.db, uID, req)
+	courses, err := s.FetchUserPinnedCourses(a.db, uID, req)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -138,7 +139,7 @@ func (a *API) PutUserBookmark(ctx context.Context, req *protobuf.PutBookmarkRequ
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
-	
+
 	bookmark, err := s.PutUserBookmark(a.db, uID, req)
 	if err != nil {
 		return nil, err
@@ -207,12 +208,38 @@ func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettings
 	}, nil
 }
 
+func (a *API) PatchUserSettings(ctx context.Context, req *protobuf.PatchUserSettingsRequest) (*protobuf.PatchUserSettingsResponse, error) {
+	a.log.Info("PatchUserSettings")
+
+	u, err := a.getCurrentID(ctx)
+	if err != nil {
+		return nil, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+	settings, err := s.PatchUserSettings(a.db, u, req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]*protobuf.UserSetting, len(settings))
+
+	for i, setting := range settings {
+		resp[i] = h.ParseUserSettingToProto(setting)
+	}
+
+	return &protobuf.PatchUserSettingsResponse{
+		UserSettings: resp,
+	}, nil
+
+}
+
 func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedRequest) (*protobuf.PostPinnedResponse, error) {
 	a.log.Info("PostUserPinned")
-	
+
 	if req.CourseID == 0 {
-        return nil, e.WithStatus(http.StatusBadRequest, errors.New("course id must not be empty"))
-    }
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("course id must not be empty"))
+	}
 
 	u, err := a.getCurrent(ctx)
 	if err != nil {
@@ -221,8 +248,8 @@ func (a *API) PostUserPinned(ctx context.Context, req *protobuf.PostPinnedReques
 
 	c, err := h.CheckAuthorized(a.db, uint(u.ID), uint(req.CourseID))
 	if err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	err = s.PostUserPinned(a.db, u, c)
 	if err != nil {
@@ -236,8 +263,8 @@ func (a *API) DeleteUserPinned(ctx context.Context, req *protobuf.DeletePinnedRe
 	a.log.Info("DeleteUserPinned")
 
 	if req.CourseID == 0 {
-        return nil, e.WithStatus(http.StatusBadRequest, errors.New("course id must not be empty"))
-    }
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("course id must not be empty"))
+	}
 
 	u, err := a.getCurrent(ctx)
 	if err != nil {
