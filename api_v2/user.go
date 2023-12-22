@@ -211,7 +211,7 @@ func (a *API) GetUserSettings(ctx context.Context, req *protobuf.GetUserSettings
 func (a *API) PatchUserSettings(ctx context.Context, req *protobuf.PatchUserSettingsRequest) (*protobuf.PatchUserSettingsResponse, error) {
 	a.log.Info("PatchUserSettings")
 
-	u, err := a.getCurrentID(ctx)
+	u, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}

@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"time"
 )
 
 func configServerNotificationsRoutes(engine *gin.Engine, daoWrapper dao.DaoWrapper) {
