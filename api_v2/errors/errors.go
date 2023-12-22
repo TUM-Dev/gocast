@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/status"
 	"log/slog"
 	"net/http"
+	"fmt"
 )
 
 // WithStatus creates a new error with a specific HTTP status code and a given error message.
@@ -36,7 +37,7 @@ func WithStatus(httpStatus int, err error) error {
 	case http.StatusInternalServerError:
 		code = codes.Unknown // default to 500
 	default:
-		slog.Warn("Unknown HTTP status code: ", httpStatus)
+		slog.Warn("Unknown HTTP status code: ", fmt.Sprintf("%d", httpStatus))
 		code = codes.Unknown
 	}
 	return status.Error(code, err.Error())
