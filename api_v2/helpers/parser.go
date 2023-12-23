@@ -92,9 +92,14 @@ func ParseBannerAlertToProto(bannerAlert model.ServerNotification) *protobuf.Ban
 }
 
 func ParseFeatureNotificationToProto(featureNotification model.Notification) *protobuf.FeatureNotification {
+	title := ""
+	if featureNotification.Title != nil {
+		title = *featureNotification.Title
+	}
+
 	return &protobuf.FeatureNotification{
 		Id:     uint32(featureNotification.ID),
-		Title:  *featureNotification.Title,
+		Title:  title,
 		Body:   featureNotification.Body,
 		Target: uint32(featureNotification.Target),
 	}
