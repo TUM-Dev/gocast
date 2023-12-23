@@ -39,11 +39,11 @@ service API {
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "User"
-      summary: "Get the current user"
-      description: "Returns the user assigned to the token"
+      summary: "Get the current user."
+      description: "Returns a user based on the JWT claims."
     };
   }
-
+  
   rpc getUserCourses(GetUserCoursesRequest) returns (GetUserCoursesResponse) {
     option (google.api.http) = {
       get: "/user/courses"
@@ -52,7 +52,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "User"
       summary: "Get the current user's courses."
-      description: "Returns all courses of the current user live courses optionally filtered by year, term and paginated by limit and skip."
+      description: "Returns all courses in which the current user is enrolled in, optionally filtered by year, term, limit and skip."
     };
   }
  
@@ -64,56 +64,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "User"
       summary: "Get the current user's pinned courses."
-      description: "Returns all courses pinned by the current user optionally filtered by year, term and paginated by limit and skip."
-    };
-  }
-
-  rpc getUserAdminCourses(GetUserAdminRequest) returns (GetUserAdminResponse) {
-    option (google.api.http) = {
-      get: "/user/administered-courses"
-      response_body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
-      summary: "Get the current user's administered courses."
-      description: "Returns all courses that the current user is an admin of."
-    };
-  }
-
-  rpc getUserSettings(GetUserSettingsRequest) returns (GetUserSettingsResponse) {
-    option (google.api.http) = {
-      get: "/user/settings"
-      response_body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
-      summary: "Get the current user's settings."
-      description: "Returns the settings of the current user."
-    };
-  }
-
-  rpc patchUserSettings(PatchUserSettingsRequest) returns (PatchUserSettingsResponse) {
-    option (google.api.http) = {
-      patch: "/user/settings"
-      body: "*"
-      response_body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
-      summary: "Update the current user's settings."
-      description: "Updates the settings of the current user."
-    };
-  }
-
-  rpc getUserBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
-    option (google.api.http) = {
-      get: "/user/bookmarks"
-      response_body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
-      summary: "Get the current user's bookmarks."
-      description: "Returns the bookmarks created by the current user, optionally filtered by stream."
+      description: "Returns all current user's pinned courses, optionally filtered by year, term, limit and skip."
     };
   }
 
@@ -126,7 +77,68 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "User"
       summary: "Add a course to the user's pinned courses."
-      description: "Adds a new course to the current user's pinned courses."
+      description: "Adds a course to the current user's pinned courses."
+    };
+  }
+
+  rpc deleteUserPinned(DeletePinnedRequest) returns (DeletePinnedResponse) {
+    option (google.api.http) = {
+      delete: "/user/pinned/{courseID}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Delete a user's pinned course."
+      description: "Removes a course from the current user's pinned courses."
+    };
+  }
+
+  rpc getUserAdminCourses(GetUserAdminRequest) returns (GetUserAdminResponse) {
+    option (google.api.http) = {
+      get: "/user/administered-courses"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user's administered courses."
+      description: "Returns all courses that are administered by the current user."
+    };
+  }
+
+  rpc getUserSettings(GetUserSettingsRequest) returns (GetUserSettingsResponse) {
+    option (google.api.http) = {
+      get: "/user/settings"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user's settings."
+      description: "Returns current user's settings."
+    };
+  }
+
+  rpc patchUserSettings(PatchUserSettingsRequest) returns (PatchUserSettingsResponse) {
+    option (google.api.http) = {
+      patch: "/user/settings"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Update the current user's settings."
+      description: "Updates the current user's settings."
+    };
+  }
+
+  rpc getUserBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
+    option (google.api.http) = {
+      get: "/user/bookmarks"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get the current user's bookmarks."
+      description: "Returns the bookmarks created by the current user, optionally filtered by stream."
     };
   }
 
@@ -164,19 +176,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "User"
       summary: "Delete a bookmark."
-      description: "Deletes a bookmark of the current user."
-    };
-  }
-
-  rpc deleteUserPinned(DeletePinnedRequest) returns (DeletePinnedResponse) {
-    option (google.api.http) = {
-      delete: "/user/pinned/{courseID}"
-      response_body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
-      summary: "Delete a user's pinned course."
-      description: "Removes a course from the current user's pinned courses."
+      description: "Deletes a stream's bookmark (=timestamp) for the current user."
     };
   }
   // END API/V2/USER
@@ -190,7 +190,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notifications"
       summary: "Get all banner alerts."
-      description: "Returns all banner alerts."
+      description: "Returns all banner alerts (=system wide notifications)."
     };
   }
 
@@ -202,7 +202,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notifications"
       summary: "Get all feature notifications."
-      description: "Returns all feature notifications."
+      description: "Returns all feature notifications (=can be user-role specific)."
     };
   }
 
@@ -214,7 +214,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notifications"
       summary: "Post a user's device token."
-      description: "Add a device entry from the current user's device token list."
+      description: "Adds a new deviceToken to the user's list of active device tokens."
     };
   }
 
@@ -226,7 +226,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notifications"
       summary: "Delete a user's device token."
-      description: "Removes a device entry from the current user's device token list."
+      description: "Removes an existing entry from the current user's list of active device tokens."
     };
   }
   // END API/V2/NOTIFICATIONS
@@ -240,7 +240,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Get all public courses"
-      description: "Returns all public courses."
+      description: "Returns all public courses, optionally filtered by year, term, limit and skip. Includes courses with the visibility \"loggedIn\" if user is authenticated/valid jwt is present and courses with the visibility \"enrolled\" if the user is authenticated and enrolled in that course."
     };
   }
 
@@ -250,9 +250,9 @@ service API {
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Semester"
+      tags: "Courses"
       summary: "Get all semesters"
-      description: "Returns all semesters"
+      description: "Returns all semesters including the current one."
     };
   }
 
@@ -264,7 +264,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Get all streams"
-      description: "Returns all streams for a given course."
+      description: "Returns all streams for a given course if course is public OR user is enrolled in course and course has visibility \"enrolled\" OR user is logged / valid jwt is present and course has visibility \"loggedIn.\""
     };
   }
 
@@ -277,21 +277,20 @@ service API {
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Stream"
+      tags: "Streams"
       summary: "Get stream for VOD"
-      description: "Returns stream for VOD."
+      description: "Returns a stream for a given streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course."
     };
   }
   
   rpc GetNowLive(GetNowLiveRequest) returns (GetNowLiveResponse) {
     option (google.api.http) = {
-      get: "/streams/w/live/streamID"
+      get: "/streams/w/live"
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Stream"
-      summary: "Get stream for livestream"
-      description: "Returns stream for livestream."
+      tags: "Streams"
+      description: "Returns all currently live streams if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course."
     };
   }
 
@@ -301,9 +300,9 @@ service API {
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Stream"
+      tags: "Streams"
       summary: "Get thumbnail of VOD"
-      description: "Returns path of thumbnail for a VOD."
+      description: "Returns thumbnail path for a VoD, given a streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course."
     };
   }
 
@@ -313,9 +312,9 @@ service API {
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Stream"
+      tags: "Streams"
       summary: "Get thumbnail of livestream"
-      description: "Returns path of thumbnail for a livestream."
+      description: "Returns thumbnail path for a currently live stream, given a streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course."
     };
   }
 
@@ -325,9 +324,9 @@ service API {
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Stream"
+      tags: "Streams"
       summary: "Get progress of stream"
-      description: "Returns progress of stream."
+      description: "Returns current user's watch progress of stream."
     };
   }
 
@@ -338,9 +337,9 @@ service API {
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Stream"
+      tags: "Streams"
       summary: "Update progress of stream"
-      description: "Updates progress of stream."
+      description: "Updates current user's watch progress of stream."
     };
   }
 
@@ -351,12 +350,11 @@ service API {
       response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Stream"
+      tags: "Streams"
       summary: "Mark stream as watched"
       description: "Marks stream as watched."
     };
   }
-  
   // END API/V2/STREAMS
 }
 ///////////////////////////////

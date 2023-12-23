@@ -34,7 +34,7 @@
     "/courses/public": {
       "get": {
         "summary": "Get all public courses",
-        "description": "Returns all public courses.",
+        "description": "Returns all public courses, optionally filtered by year, term, limit and skip. Includes courses with the visibility \"loggedIn\" if user is authenticated/valid jwt is present and courses with the visibility \"enrolled\" if the user is authenticated and enrolled in that course.",
         "operationId": "API_getPublicCourses",
         "responses": {
           "200": {
@@ -87,7 +87,7 @@
     "/courses/semesters": {
       "get": {
         "summary": "Get all semesters",
-        "description": "Returns all semesters",
+        "description": "Returns all semesters including the current one.",
         "operationId": "API_getSemesters",
         "responses": {
           "200": {
@@ -104,14 +104,14 @@
           }
         },
         "tags": [
-          "Semester"
+          "Courses"
         ]
       }
     },
     "/courses/{courseID}/streams": {
       "get": {
         "summary": "Get all streams",
-        "description": "Returns all streams for a given course.",
+        "description": "Returns all streams for a given course if course is public OR user is enrolled in course and course has visibility \"enrolled\" OR user is logged / valid jwt is present and course has visibility \"loggedIn.\"",
         "operationId": "API_getCourseStreams",
         "responses": {
           "200": {
@@ -144,7 +144,7 @@
     "/notifications/banner-alerts": {
       "get": {
         "summary": "Get all banner alerts.",
-        "description": "Returns all banner alerts.",
+        "description": "Returns all banner alerts (=system wide notifications).",
         "operationId": "API_getBannerAlerts",
         "responses": {
           "200": {
@@ -168,7 +168,7 @@
     "/notifications/device/{deviceToken}": {
       "delete": {
         "summary": "Delete a user's device token.",
-        "description": "Removes a device entry from the current user's device token list.",
+        "description": "Removes an existing entry from the current user's list of active device tokens.",
         "operationId": "API_deleteDeviceToken",
         "responses": {
           "200": {
@@ -198,7 +198,7 @@
       },
       "post": {
         "summary": "Post a user's device token.",
-        "description": "Add a device entry from the current user's device token list.",
+        "description": "Adds a new deviceToken to the user's list of active device tokens.",
         "operationId": "API_postDeviceToken",
         "responses": {
           "200": {
@@ -230,7 +230,7 @@
     "/notifications/feature-notifications": {
       "get": {
         "summary": "Get all feature notifications.",
-        "description": "Returns all feature notifications.",
+        "description": "Returns all feature notifications (=can be user-role specific).",
         "operationId": "API_getFeatureNotifications",
         "responses": {
           "200": {
@@ -254,7 +254,7 @@
     "/streams/progress/{streamID}": {
       "get": {
         "summary": "Get progress of stream",
-        "description": "Returns progress of stream.",
+        "description": "Returns current user's watch progress of stream.",
         "operationId": "API_getProgress",
         "responses": {
           "200": {
@@ -280,12 +280,12 @@
           }
         ],
         "tags": [
-          "Stream"
+          "Streams"
         ]
       },
       "put": {
         "summary": "Update progress of stream",
-        "description": "Updates progress of stream.",
+        "description": "Updates current user's watch progress of stream.",
         "operationId": "API_putProgress",
         "responses": {
           "200": {
@@ -325,7 +325,7 @@
           }
         ],
         "tags": [
-          "Stream"
+          "Streams"
         ]
       }
     },
@@ -366,14 +366,14 @@
           }
         ],
         "tags": [
-          "Stream"
+          "Streams"
         ]
       }
     },
     "/streams/thumbs/live/{streamID}": {
       "get": {
         "summary": "Get thumbnail of livestream",
-        "description": "Returns path of thumbnail for a livestream.",
+        "description": "Returns thumbnail path for a currently live stream, given a streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
         "operationId": "API_getThumbsLive",
         "responses": {
           "200": {
@@ -399,14 +399,14 @@
           }
         ],
         "tags": [
-          "Stream"
+          "Streams"
         ]
       }
     },
     "/streams/thumbs/vod/{streamID}/thumbs": {
       "get": {
         "summary": "Get thumbnail of VOD",
-        "description": "Returns path of thumbnail for a VOD.",
+        "description": "Returns thumbnail path for a VoD, given a streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
         "operationId": "API_getThumbsVOD",
         "responses": {
           "200": {
@@ -432,14 +432,13 @@
           }
         ],
         "tags": [
-          "Stream"
+          "Streams"
         ]
       }
     },
-    "/streams/w/live/streamID": {
+    "/streams/w/live": {
       "get": {
-        "summary": "Get stream for livestream",
-        "description": "Returns stream for livestream.",
+        "description": "Returns all currently live streams if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
         "operationId": "API_GetNowLive",
         "responses": {
           "200": {
@@ -456,14 +455,14 @@
           }
         },
         "tags": [
-          "Stream"
+          "Streams"
         ]
       }
     },
     "/streams/w/vod/streamID": {
       "get": {
         "summary": "Get stream for VOD",
-        "description": "Returns stream for VOD.",
+        "description": "Returns a stream for a given streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
         "operationId": "API_GetStream",
         "responses": {
           "200": {
@@ -489,14 +488,14 @@
           }
         ],
         "tags": [
-          "Stream"
+          "Streams"
         ]
       }
     },
     "/user/administered-courses": {
       "get": {
         "summary": "Get the current user's administered courses.",
-        "description": "Returns all courses that the current user is an admin of.",
+        "description": "Returns all courses that are administered by the current user.",
         "operationId": "API_getUserAdminCourses",
         "responses": {
           "200": {
@@ -585,7 +584,7 @@
     "/user/bookmarks/{bookmarkID}": {
       "delete": {
         "summary": "Delete a bookmark.",
-        "description": "Deletes a bookmark of the current user.",
+        "description": "Deletes a stream's bookmark (=timestamp) for the current user.",
         "operationId": "API_deleteUserBookmark",
         "responses": {
           "200": {
@@ -674,7 +673,7 @@
     "/user/courses": {
       "get": {
         "summary": "Get the current user's courses.",
-        "description": "Returns all courses of the current user live courses optionally filtered by year, term and paginated by limit and skip.",
+        "description": "Returns all courses in which the current user is enrolled in, optionally filtered by year, term, limit and skip.",
         "operationId": "API_getUserCourses",
         "responses": {
           "200": {
@@ -726,8 +725,8 @@
     },
     "/user/me": {
       "get": {
-        "summary": "Get the current user",
-        "description": "Returns the user assigned to the token",
+        "summary": "Get the current user.",
+        "description": "Returns a user based on the JWT claims.",
         "operationId": "API_getUser",
         "responses": {
           "200": {
@@ -751,7 +750,7 @@
     "/user/pinned": {
       "get": {
         "summary": "Get the current user's pinned courses.",
-        "description": "Returns all courses pinned by the current user optionally filtered by year, term and paginated by limit and skip.",
+        "description": "Returns all current user's pinned courses, optionally filtered by year, term, limit and skip.",
         "operationId": "API_getUserPinned",
         "responses": {
           "200": {
@@ -802,7 +801,7 @@
       },
       "post": {
         "summary": "Add a course to the user's pinned courses.",
-        "description": "Adds a new course to the current user's pinned courses.",
+        "description": "Adds a course to the current user's pinned courses.",
         "operationId": "API_postUserPinned",
         "responses": {
           "200": {
@@ -869,7 +868,7 @@
     "/user/settings": {
       "get": {
         "summary": "Get the current user's settings.",
-        "description": "Returns the settings of the current user.",
+        "description": "Returns current user's settings.",
         "operationId": "API_getUserSettings",
         "responses": {
           "200": {
@@ -891,7 +890,7 @@
       },
       "patch": {
         "summary": "Update the current user's settings.",
-        "description": "Updates the settings of the current user.",
+        "description": "Updates the current user's settings.",
         "operationId": "API_patchUserSettings",
         "responses": {
           "200": {

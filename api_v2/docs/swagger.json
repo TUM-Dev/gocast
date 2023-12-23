@@ -1,0 +1,2439 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "gocast API",
+    "description": "The shiny new gocast API!",
+    "version": "2.0",
+    "contact": {
+      "name": "TUM-Developers - gocast",
+      "url": "https://github.com/TUM-Dev/gocast"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/TUM-Dev/gocast/blob/main/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "API"
+    }
+  ],
+  "host": "localhost:8081",
+  "basePath": "/api/v2",
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/courses/public": {
+      "get": {
+        "summary": "Get all public courses",
+        "description": "Returns all public courses, optionally filtered by year, term, limit and skip.\nIncludes courses with the visibility \"LoggedIn\" if user is authenticated/valid jwt is present and courses with the visibility \"Enrolled\" if the user is authenticated and enrolled in that course.",
+        "operationId": "API_getPublicCourses",
+        "responses": {
+          "200": {
+            "description": "[0 OK] A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetPublicCoursesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/semesters": {
+      "get": {
+        "summary": "Get all semesters",
+        "description": "Returns all semesters including the current one.",
+        "operationId": "API_getSemesters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetSemestersResponse"
+            }
+          }
+        },
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseID}/streams": {
+      "get": {
+        "summary": "Get all streams",
+        "description": "Returns all streams for a given course if course is public OR user is enrolled in course and course has visibility \"enrolled\" OR user is logged / valid jwt is present and course has visibility \"loggedIn\".",
+        "operationId": "API_getCourseStreams",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetCourseStreamsResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing stream or course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseID",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/notifications/banner-alerts": {
+      "get": {
+        "summary": "Get all banner alerts.",
+        "description": "Returns all banner alerts (=system wide notifications).",
+        "operationId": "API_getBannerAlerts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetBannerAlertsResponse"
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/notifications/device/{deviceToken}": {
+      "delete": {
+        "summary": "Delete a user's device token.",
+        "description": "Removes an existing entry from the current user's list of active device tokens.",
+        "operationId": "API_deleteDeviceToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeleteDeviceTokenResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing device token field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing device token",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceToken",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      },
+      "post": {
+        "summary": "Post a user's device token.",
+        "description": "Adds a new deviceToken to the user's list of active device tokens.",
+        "operationId": "API_postDeviceToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPostDeviceTokenResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing device token in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "409": {
+            "description": "**[6 ALREADY_EXISTS]** *Entity already persisted.* \n**Returned in case of:**\n- Device token already registered",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceToken",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/notifications/feature-notifications": {
+      "get": {
+        "summary": "Get all feature notifications.",
+        "description": "Returns all feature notifications (=can be user-role specific).",
+        "operationId": "API_getFeatureNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetFeatureNotificationsResponse"
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found"
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/streams/progress/{streamID}": {
+      "get": {
+        "summary": "Get progress of stream",
+        "description": "Returns current user's watch progress of stream.",
+        "operationId": "API_getProgress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetProgressResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing streamID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing stream",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      },
+      "put": {
+        "summary": "Update progress of stream",
+        "description": "Updates current user's watch progress of stream.",
+        "operationId": "API_putProgress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPutProgressResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing or malformed request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing stream",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "progress": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/progress/{streamID}/watched": {
+      "put": {
+        "summary": "Mark stream as watched",
+        "description": "Marks stream as watched.",
+        "operationId": "API_markAsWatched",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufMarkAsWatchedResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing streamID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing stream",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/thumbs/live/{streamID}": {
+      "get": {
+        "summary": "Get thumbnail of livestream",
+        "description": "Returns thumbnail path for a currently live stream, given a streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
+        "operationId": "API_getThumbsLive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetThumbsLiveResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing streamID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing stream",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/thumbs/vod/{streamID}/thumbs": {
+      "get": {
+        "summary": "Get thumbnail of VOD",
+        "description": "Returns thumbnail path for a VoD, given a streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
+        "operationId": "API_getThumbsVOD",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetThumbsVODResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing streamID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing stream",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/w/live": {
+      "get": {
+        "summary": "Get currently live streams",
+        "description": "Returns all currently live streams if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
+        "operationId": "API_GetNowLive",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetNowLiveResponse"
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          }
+        },
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/w/vod/streamID": {
+      "get": {
+        "summary": "Get stream for VOD",
+        "description": "Returns a stream for a given streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course.",
+        "operationId": "API_GetStream",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetStreamResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing stream or course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/user/administered-courses": {
+      "get": {
+        "summary": "Get the current user's administered courses.",
+        "description": "Returns all courses that are administered by the current user.",
+        "operationId": "API_getUserAdminCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserAdminResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/bookmarks": {
+      "get": {
+        "summary": "Get the current user's bookmarks.",
+        "description": "Returns the bookmarks created by the current user, optionally filtered by stream.",
+        "operationId": "API_getUserBookmarks",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetBookmarksResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      },
+      "put": {
+        "summary": "Create a new bookmark.",
+        "description": "Creates a new bookmark for the current user.",
+        "operationId": "API_putUserBookmark",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPutBookmarkResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufPutBookmarkRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/bookmarks/{bookmarkID}": {
+      "delete": {
+        "summary": "Delete a bookmark.",
+        "description": "Deletes a stream's bookmark (=timestamp) for the current user.",
+        "operationId": "API_deleteUserBookmark",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeleteBookmarkResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "bookmarkID",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      },
+      "patch": {
+        "summary": "Update a bookmark.",
+        "description": "Updates a bookmark of the current user.",
+        "operationId": "API_patchUserBookmark",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPatchBookmarkResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "bookmarkID",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "hours": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "minutes": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "seconds": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/courses": {
+      "get": {
+        "summary": "Get the current user's courses.",
+        "description": "Returns all courses in which the current user is enrolled in, optionally filtered by year, term, limit and skip.",
+        "operationId": "API_getUserCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserCoursesResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/me": {
+      "get": {
+        "summary": "Get the current user.",
+        "description": "Returns a user based on the JWT claims.",
+        "operationId": "API_getUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/pinned": {
+      "get": {
+        "summary": "Get the current user's pinned courses.",
+        "description": "Returns all current user's pinned courses, optionally filtered by year, term, limit and skip.",
+        "operationId": "API_getUserPinned",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserPinnedResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      },
+      "post": {
+        "summary": "Add a course to the user's pinned courses.",
+        "description": "Adds a course to the current user's pinned courses.",
+        "operationId": "API_postUserPinned",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPostPinnedResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufPostPinnedRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/pinned/{courseID}": {
+      "delete": {
+        "summary": "Delete a user's pinned course.",
+        "description": "Removes a course from the current user's pinned courses.",
+        "operationId": "API_deleteUserPinned",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeletePinnedResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseID",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/settings": {
+      "get": {
+        "summary": "Get the current user's settings.",
+        "description": "Returns current user's settings.",
+        "operationId": "API_getUserSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserSettingsResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      },
+      "patch": {
+        "summary": "Update the current user's settings.",
+        "description": "Updates the current user's settings.",
+        "operationId": "API_patchUserSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPatchUserSettingsResponse"
+            }
+          },
+          "400": {
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 3,
+                "message": "Invalid argument. Check the message and invoke the method again."
+              }
+            }
+          },
+          "401": {
+            "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 16,
+                "message": "Could not authorize the operation."
+              }
+            }
+          },
+          "403": {
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 7,
+                "message": "Access denied. You do not have permission to execute the specified operation."
+              }
+            }
+          },
+          "404": {
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 5,
+                "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufPatchUserSettingsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "protobufBannerAlert": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startsAt": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "warn": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufBookmark": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": {
+          "type": "string"
+        },
+        "hours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "minutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufCourse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "semester": {
+          "$ref": "#/definitions/protobufSemester"
+        },
+        "TUMOnlineIdentifier": {
+          "type": "string"
+        },
+        "VODEnabled": {
+          "type": "boolean"
+        },
+        "downloadsEnabled": {
+          "type": "boolean"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "anonymousChatEnabled": {
+          "type": "boolean"
+        },
+        "moderatedChatEnabled": {
+          "type": "boolean"
+        },
+        "vodChatEnabled": {
+          "type": "boolean"
+        },
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStream"
+          }
+        },
+        "cameraPresetPreferences": {
+          "type": "string"
+        },
+        "sourcePreferences": {
+          "type": "string"
+        },
+        "lastRecordingID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nextLectureID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufDeleteBookmarkResponse": {
+      "type": "object"
+    },
+    "protobufDeleteDeviceTokenResponse": {
+      "type": "object"
+    },
+    "protobufDeletePinnedResponse": {
+      "type": "object"
+    },
+    "protobufDownload": {
+      "type": "object",
+      "properties": {
+        "friendlyName": {
+          "type": "string"
+        },
+        "downloadURL": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufFeatureNotification": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "Title": {
+          "type": "string"
+        },
+        "Body": {
+          "type": "string"
+        },
+        "Target": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufGetBannerAlertsResponse": {
+      "type": "object",
+      "properties": {
+        "bannerAlerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBannerAlert"
+          }
+        }
+      }
+    },
+    "protobufGetBookmarksResponse": {
+      "type": "object",
+      "properties": {
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBookmark"
+          }
+        }
+      }
+    },
+    "protobufGetCourseStreamsResponse": {
+      "type": "object",
+      "properties": {
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStream"
+          }
+        }
+      }
+    },
+    "protobufGetFeatureNotificationsResponse": {
+      "type": "object",
+      "properties": {
+        "featureNotifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufFeatureNotification"
+          }
+        }
+      }
+    },
+    "protobufGetNowLiveResponse": {
+      "type": "object",
+      "properties": {
+        "stream": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStream"
+          }
+        }
+      }
+    },
+    "protobufGetProgressResponse": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "$ref": "#/definitions/protobufProgress"
+        }
+      }
+    },
+    "protobufGetPublicCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetSemestersResponse": {
+      "type": "object",
+      "properties": {
+        "current": {
+          "$ref": "#/definitions/protobufSemester"
+        },
+        "semesters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufSemester"
+          }
+        }
+      }
+    },
+    "protobufGetStreamResponse": {
+      "type": "object",
+      "properties": {
+        "stream": {
+          "$ref": "#/definitions/protobufStream"
+        }
+      }
+    },
+    "protobufGetThumbsLiveResponse": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufGetThumbsVODResponse": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufGetUserAdminResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetUserCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetUserPinnedResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/protobufUser"
+        }
+      }
+    },
+    "protobufGetUserSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
+    "protobufMarkAsWatchedResponse": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "$ref": "#/definitions/protobufProgress"
+        }
+      }
+    },
+    "protobufPatchBookmarkResponse": {
+      "type": "object",
+      "properties": {
+        "bookmark": {
+          "$ref": "#/definitions/protobufBookmark"
+        }
+      }
+    },
+    "protobufPatchUserSettingsRequest": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
+    "protobufPatchUserSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
+    "protobufPostDeviceTokenResponse": {
+      "type": "object"
+    },
+    "protobufPostPinnedRequest": {
+      "type": "object",
+      "properties": {
+        "courseID": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "protobufPostPinnedResponse": {
+      "type": "object"
+    },
+    "protobufProgress": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "type": "number",
+          "format": "float"
+        },
+        "watched": {
+          "type": "boolean"
+        },
+        "userID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufPutBookmarkRequest": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "hours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "minutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufPutBookmarkResponse": {
+      "type": "object",
+      "properties": {
+        "bookmark": {
+          "$ref": "#/definitions/protobufBookmark"
+        }
+      }
+    },
+    "protobufPutProgressResponse": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "$ref": "#/definitions/protobufProgress"
+        }
+      }
+    },
+    "protobufSemester": {
+      "type": "object",
+      "properties": {
+        "teachingTerm": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufStream": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "courseID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "roomName": {
+          "type": "string"
+        },
+        "roomCode": {
+          "type": "string"
+        },
+        "eventTypeName": {
+          "type": "string"
+        },
+        "TUMOnlineEventID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seriesIdentifier": {
+          "type": "string"
+        },
+        "playlistUrl": {
+          "type": "string"
+        },
+        "playlistUrlPRES": {
+          "type": "string"
+        },
+        "playlistUrlCAM": {
+          "type": "string"
+        },
+        "liveNow": {
+          "type": "boolean"
+        },
+        "liveNowTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "recording": {
+          "type": "boolean"
+        },
+        "premiere": {
+          "type": "boolean"
+        },
+        "ended": {
+          "type": "boolean"
+        },
+        "vodViews": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "endOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "duration": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "downloads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufDownload"
+          }
+        },
+        "isPlanned": {
+          "type": "boolean"
+        },
+        "isComingUp": {
+          "type": "boolean"
+        },
+        "HLSUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "matriculationNumber": {
+          "type": "string"
+        },
+        "lrzID": {
+          "type": "string"
+        },
+        "role": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "administeredCourses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "pinnedCourses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        },
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBookmark"
+          }
+        }
+      }
+    },
+    "protobufUserSetting": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/protobufUserSettingType"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufUserSettingType": {
+      "type": "string",
+      "enum": [
+        "PREFERRED_NAME",
+        "GREETING",
+        "CUSTOM_PLAYBACK_SPEEDS"
+      ],
+      "default": "PREFERRED_NAME"
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

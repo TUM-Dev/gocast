@@ -22,15 +22,15 @@ const (
 	API_GetUser_FullMethodName                 = "/protobuf.API/getUser"
 	API_GetUserCourses_FullMethodName          = "/protobuf.API/getUserCourses"
 	API_GetUserPinned_FullMethodName           = "/protobuf.API/getUserPinned"
+	API_PostUserPinned_FullMethodName          = "/protobuf.API/postUserPinned"
+	API_DeleteUserPinned_FullMethodName        = "/protobuf.API/deleteUserPinned"
 	API_GetUserAdminCourses_FullMethodName     = "/protobuf.API/getUserAdminCourses"
 	API_GetUserSettings_FullMethodName         = "/protobuf.API/getUserSettings"
 	API_PatchUserSettings_FullMethodName       = "/protobuf.API/patchUserSettings"
 	API_GetUserBookmarks_FullMethodName        = "/protobuf.API/getUserBookmarks"
-	API_PostUserPinned_FullMethodName          = "/protobuf.API/postUserPinned"
 	API_PutUserBookmark_FullMethodName         = "/protobuf.API/putUserBookmark"
 	API_PatchUserBookmark_FullMethodName       = "/protobuf.API/patchUserBookmark"
 	API_DeleteUserBookmark_FullMethodName      = "/protobuf.API/deleteUserBookmark"
-	API_DeleteUserPinned_FullMethodName        = "/protobuf.API/deleteUserPinned"
 	API_GetBannerAlerts_FullMethodName         = "/protobuf.API/getBannerAlerts"
 	API_GetFeatureNotifications_FullMethodName = "/protobuf.API/getFeatureNotifications"
 	API_PostDeviceToken_FullMethodName         = "/protobuf.API/postDeviceToken"
@@ -55,15 +55,15 @@ type APIClient interface {
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	GetUserCourses(ctx context.Context, in *GetUserCoursesRequest, opts ...grpc.CallOption) (*GetUserCoursesResponse, error)
 	GetUserPinned(ctx context.Context, in *GetUserPinnedRequest, opts ...grpc.CallOption) (*GetUserPinnedResponse, error)
+	PostUserPinned(ctx context.Context, in *PostPinnedRequest, opts ...grpc.CallOption) (*PostPinnedResponse, error)
+	DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error)
 	GetUserAdminCourses(ctx context.Context, in *GetUserAdminRequest, opts ...grpc.CallOption) (*GetUserAdminResponse, error)
 	GetUserSettings(ctx context.Context, in *GetUserSettingsRequest, opts ...grpc.CallOption) (*GetUserSettingsResponse, error)
 	PatchUserSettings(ctx context.Context, in *PatchUserSettingsRequest, opts ...grpc.CallOption) (*PatchUserSettingsResponse, error)
 	GetUserBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
-	PostUserPinned(ctx context.Context, in *PostPinnedRequest, opts ...grpc.CallOption) (*PostPinnedResponse, error)
 	PutUserBookmark(ctx context.Context, in *PutBookmarkRequest, opts ...grpc.CallOption) (*PutBookmarkResponse, error)
 	PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequest, opts ...grpc.CallOption) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error)
-	DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error)
 	// BEGIN API/V2/NOTIFICATIONS
 	GetBannerAlerts(ctx context.Context, in *GetBannerAlertsRequest, opts ...grpc.CallOption) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(ctx context.Context, in *GetFeatureNotificationsRequest, opts ...grpc.CallOption) (*GetFeatureNotificationsResponse, error)
@@ -118,6 +118,24 @@ func (c *aPIClient) GetUserPinned(ctx context.Context, in *GetUserPinnedRequest,
 	return out, nil
 }
 
+func (c *aPIClient) PostUserPinned(ctx context.Context, in *PostPinnedRequest, opts ...grpc.CallOption) (*PostPinnedResponse, error) {
+	out := new(PostPinnedResponse)
+	err := c.cc.Invoke(ctx, API_PostUserPinned_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error) {
+	out := new(DeletePinnedResponse)
+	err := c.cc.Invoke(ctx, API_DeleteUserPinned_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aPIClient) GetUserAdminCourses(ctx context.Context, in *GetUserAdminRequest, opts ...grpc.CallOption) (*GetUserAdminResponse, error) {
 	out := new(GetUserAdminResponse)
 	err := c.cc.Invoke(ctx, API_GetUserAdminCourses_FullMethodName, in, out, opts...)
@@ -154,15 +172,6 @@ func (c *aPIClient) GetUserBookmarks(ctx context.Context, in *GetBookmarksReques
 	return out, nil
 }
 
-func (c *aPIClient) PostUserPinned(ctx context.Context, in *PostPinnedRequest, opts ...grpc.CallOption) (*PostPinnedResponse, error) {
-	out := new(PostPinnedResponse)
-	err := c.cc.Invoke(ctx, API_PostUserPinned_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *aPIClient) PutUserBookmark(ctx context.Context, in *PutBookmarkRequest, opts ...grpc.CallOption) (*PutBookmarkResponse, error) {
 	out := new(PutBookmarkResponse)
 	err := c.cc.Invoke(ctx, API_PutUserBookmark_FullMethodName, in, out, opts...)
@@ -184,15 +193,6 @@ func (c *aPIClient) PatchUserBookmark(ctx context.Context, in *PatchBookmarkRequ
 func (c *aPIClient) DeleteUserBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*DeleteBookmarkResponse, error) {
 	out := new(DeleteBookmarkResponse)
 	err := c.cc.Invoke(ctx, API_DeleteUserBookmark_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *aPIClient) DeleteUserPinned(ctx context.Context, in *DeletePinnedRequest, opts ...grpc.CallOption) (*DeletePinnedResponse, error) {
-	out := new(DeletePinnedResponse)
-	err := c.cc.Invoke(ctx, API_DeleteUserPinned_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -333,15 +333,15 @@ type APIServer interface {
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error)
 	GetUserPinned(context.Context, *GetUserPinnedRequest) (*GetUserPinnedResponse, error)
+	PostUserPinned(context.Context, *PostPinnedRequest) (*PostPinnedResponse, error)
+	DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error)
 	GetUserAdminCourses(context.Context, *GetUserAdminRequest) (*GetUserAdminResponse, error)
 	GetUserSettings(context.Context, *GetUserSettingsRequest) (*GetUserSettingsResponse, error)
 	PatchUserSettings(context.Context, *PatchUserSettingsRequest) (*PatchUserSettingsResponse, error)
 	GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
-	PostUserPinned(context.Context, *PostPinnedRequest) (*PostPinnedResponse, error)
 	PutUserBookmark(context.Context, *PutBookmarkRequest) (*PutBookmarkResponse, error)
 	PatchUserBookmark(context.Context, *PatchBookmarkRequest) (*PatchBookmarkResponse, error)
 	DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error)
-	DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error)
 	// BEGIN API/V2/NOTIFICATIONS
 	GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error)
 	GetFeatureNotifications(context.Context, *GetFeatureNotificationsRequest) (*GetFeatureNotificationsResponse, error)
@@ -375,6 +375,12 @@ func (UnimplementedAPIServer) GetUserCourses(context.Context, *GetUserCoursesReq
 func (UnimplementedAPIServer) GetUserPinned(context.Context, *GetUserPinnedRequest) (*GetUserPinnedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserPinned not implemented")
 }
+func (UnimplementedAPIServer) PostUserPinned(context.Context, *PostPinnedRequest) (*PostPinnedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostUserPinned not implemented")
+}
+func (UnimplementedAPIServer) DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserPinned not implemented")
+}
 func (UnimplementedAPIServer) GetUserAdminCourses(context.Context, *GetUserAdminRequest) (*GetUserAdminResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserAdminCourses not implemented")
 }
@@ -387,9 +393,6 @@ func (UnimplementedAPIServer) PatchUserSettings(context.Context, *PatchUserSetti
 func (UnimplementedAPIServer) GetUserBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserBookmarks not implemented")
 }
-func (UnimplementedAPIServer) PostUserPinned(context.Context, *PostPinnedRequest) (*PostPinnedResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PostUserPinned not implemented")
-}
 func (UnimplementedAPIServer) PutUserBookmark(context.Context, *PutBookmarkRequest) (*PutBookmarkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutUserBookmark not implemented")
 }
@@ -398,9 +401,6 @@ func (UnimplementedAPIServer) PatchUserBookmark(context.Context, *PatchBookmarkR
 }
 func (UnimplementedAPIServer) DeleteUserBookmark(context.Context, *DeleteBookmarkRequest) (*DeleteBookmarkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserBookmark not implemented")
-}
-func (UnimplementedAPIServer) DeleteUserPinned(context.Context, *DeletePinnedRequest) (*DeletePinnedResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserPinned not implemented")
 }
 func (UnimplementedAPIServer) GetBannerAlerts(context.Context, *GetBannerAlertsRequest) (*GetBannerAlertsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBannerAlerts not implemented")
@@ -511,6 +511,42 @@ func _API_GetUserPinned_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_PostUserPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostPinnedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PostUserPinned(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PostUserPinned_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PostUserPinned(ctx, req.(*PostPinnedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_DeleteUserPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePinnedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).DeleteUserPinned(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_DeleteUserPinned_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).DeleteUserPinned(ctx, req.(*DeletePinnedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _API_GetUserAdminCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserAdminRequest)
 	if err := dec(in); err != nil {
@@ -583,24 +619,6 @@ func _API_GetUserBookmarks_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_PostUserPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PostPinnedRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(APIServer).PostUserPinned(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: API_PostUserPinned_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).PostUserPinned(ctx, req.(*PostPinnedRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _API_PutUserBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PutBookmarkRequest)
 	if err := dec(in); err != nil {
@@ -651,24 +669,6 @@ func _API_DeleteUserBookmark_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(APIServer).DeleteUserBookmark(ctx, req.(*DeleteBookmarkRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _API_DeleteUserPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeletePinnedRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(APIServer).DeleteUserPinned(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: API_DeleteUserPinned_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).DeleteUserPinned(ctx, req.(*DeletePinnedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -945,6 +945,14 @@ var API_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _API_GetUserPinned_Handler,
 		},
 		{
+			MethodName: "postUserPinned",
+			Handler:    _API_PostUserPinned_Handler,
+		},
+		{
+			MethodName: "deleteUserPinned",
+			Handler:    _API_DeleteUserPinned_Handler,
+		},
+		{
 			MethodName: "getUserAdminCourses",
 			Handler:    _API_GetUserAdminCourses_Handler,
 		},
@@ -961,10 +969,6 @@ var API_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _API_GetUserBookmarks_Handler,
 		},
 		{
-			MethodName: "postUserPinned",
-			Handler:    _API_PostUserPinned_Handler,
-		},
-		{
 			MethodName: "putUserBookmark",
 			Handler:    _API_PutUserBookmark_Handler,
 		},
@@ -975,10 +979,6 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteUserBookmark",
 			Handler:    _API_DeleteUserBookmark_Handler,
-		},
-		{
-			MethodName: "deleteUserPinned",
-			Handler:    _API_DeleteUserPinned_Handler,
 		},
 		{
 			MethodName: "getBannerAlerts",
