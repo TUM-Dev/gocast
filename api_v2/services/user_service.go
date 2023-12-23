@@ -149,7 +149,7 @@ func PutUserBookmark(db *gorm.DB, uID uint, req *protobuf.PutBookmarkRequest) (b
 	}
 
 	if err = db.Create(bookmark).Error; err != nil {
-		return nil, err
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
 	return bookmark, nil
@@ -165,7 +165,7 @@ func PatchUserBookmark(db *gorm.DB, uID uint, req *protobuf.PatchBookmarkRequest
 
 	// check user allowed to patch bookmark
 	if bookmark.UserID != uID {
-		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("user not allowed to patch bookmark"))
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("user not allowed to patch bookmark"))
 	}
 
 	//	patch it
@@ -192,7 +192,7 @@ func DeleteUserBookmark(db *gorm.DB, uID uint, req *protobuf.DeleteBookmarkReque
 
 	// check user allowed to delete bookmark
 	if bookmark.UserID != uID {
-		return e.WithStatus(http.StatusUnauthorized, errors.New("user not allowed to delete bookmark"))
+		return e.WithStatus(http.StatusForbidden, errors.New("user not allowed to delete bookmark"))
 	}
 
 	//	delete it

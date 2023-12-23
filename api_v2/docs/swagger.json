@@ -292,8 +292,8 @@
             },
             "examples": {
               "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
+                "code": 6,
+                "message": "Entity already persisted."
               }
             }
           }
@@ -844,18 +844,6 @@
               "$ref": "#/definitions/protobufGetUserAdminResponse"
             }
           },
-          "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 3,
-                "message": "Invalid argument. Check the message and invoke the method again."
-              }
-            }
-          },
           "401": {
             "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
             "schema": {
@@ -865,30 +853,6 @@
               "application/json": {
                 "code": 16,
                 "message": "Could not authorize the operation."
-              }
-            }
-          },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
-          "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
               }
             }
           }
@@ -910,18 +874,6 @@
               "$ref": "#/definitions/protobufGetBookmarksResponse"
             }
           },
-          "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 3,
-                "message": "Invalid argument. Check the message and invoke the method again."
-              }
-            }
-          },
           "401": {
             "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
             "schema": {
@@ -931,30 +883,6 @@
               "application/json": {
                 "code": 16,
                 "message": "Could not authorize the operation."
-              }
-            }
-          },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
-          "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
               }
             }
           }
@@ -1060,7 +988,7 @@
             }
           },
           "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing bookmarkID field in request message.",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1084,7 +1012,7 @@
             }
           },
           "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- Deleting bookmark not created/owned by user",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1096,7 +1024,7 @@
             }
           },
           "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing bookmark",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1133,7 +1061,7 @@
             }
           },
           "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
+            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing bookmarkID field in request message.",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1157,7 +1085,7 @@
             }
           },
           "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- Updating bookmark not created/owned by user",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1169,7 +1097,7 @@
             }
           },
           "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing bookmark",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1232,18 +1160,6 @@
               "$ref": "#/definitions/protobufGetUserCoursesResponse"
             }
           },
-          "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 3,
-                "message": "Invalid argument. Check the message and invoke the method again."
-              }
-            }
-          },
           "401": {
             "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
             "schema": {
@@ -1253,30 +1169,6 @@
               "application/json": {
                 "code": 16,
                 "message": "Could not authorize the operation."
-              }
-            }
-          },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
-          "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
               }
             }
           }
@@ -1327,18 +1219,6 @@
               "$ref": "#/definitions/protobufGetUserResponse"
             }
           },
-          "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 3,
-                "message": "Invalid argument. Check the message and invoke the method again."
-              }
-            }
-          },
           "401": {
             "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
             "schema": {
@@ -1348,30 +1228,6 @@
               "application/json": {
                 "code": 16,
                 "message": "Could not authorize the operation."
-              }
-            }
-          },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
-          "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
               }
             }
           }
@@ -1393,18 +1249,6 @@
               "$ref": "#/definitions/protobufGetUserPinnedResponse"
             }
           },
-          "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 3,
-                "message": "Invalid argument. Check the message and invoke the method again."
-              }
-            }
-          },
           "401": {
             "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
             "schema": {
@@ -1414,30 +1258,6 @@
               "application/json": {
                 "code": 16,
                 "message": "Could not authorize the operation."
-              }
-            }
-          },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
-          "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
               }
             }
           }
@@ -1511,7 +1331,7 @@
             }
           },
           "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
+            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1531,6 +1351,18 @@
               "application/json": {
                 "code": 5,
                 "message": "Could not find the entity. Check the message and invoke the method again."
+              }
+            }
+          },
+          "409": {
+            "description": "**[6 ALREADY_EXISTS]** *Entity already persisted.* \n**Returned in case of:**\n- Course already pinned",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            },
+            "examples": {
+              "application/json": {
+                "code": 6,
+                "message": "Entity already persisted."
               }
             }
           }
@@ -1586,20 +1418,8 @@
               }
             }
           },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
           "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
+            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Trying to unpin non-pinned course",
             "schema": {
               "$ref": "#/definitions/rpcStatus"
             },
@@ -1637,18 +1457,6 @@
               "$ref": "#/definitions/protobufGetUserSettingsResponse"
             }
           },
-          "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 3,
-                "message": "Invalid argument. Check the message and invoke the method again."
-              }
-            }
-          },
           "401": {
             "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
             "schema": {
@@ -1658,30 +1466,6 @@
               "application/json": {
                 "code": 16,
                 "message": "Could not authorize the operation."
-              }
-            }
-          },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
-          "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
               }
             }
           }
@@ -1701,18 +1485,6 @@
               "$ref": "#/definitions/protobufPatchUserSettingsResponse"
             }
           },
-          "400": {
-            "description": "**[3 INVALID_ARGUMENT]** *Bad request.* \n**Returned in case of:**\n- Missing courseID field in request message.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 3,
-                "message": "Invalid argument. Check the message and invoke the method again."
-              }
-            }
-          },
           "401": {
             "description": "**[16 UNAUTHENTICATED]** *Could not authorize the operation.*\n**Returned in case of:**\n- Missing JWT cookie header\n- Crypto/rsa: verification error (invalid jwt)\n- JWT cookie not found",
             "schema": {
@@ -1724,31 +1496,7 @@
                 "message": "Could not authorize the operation."
               }
             }
-          },
-          "403": {
-            "description": "**[7 PERMISSION_DENIED]** *Access denied.*\n**Returned in case of:**\n- User is not logged in (jwt not set) and tries to access stream with course visibility \"loggedIn\" or \"enrolled\"\n- User is logged in, but tries to access stream with course visibility \"enrolled\" without being enrolled in the course\n- User tries to access stream with course visibility \"private\"",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 7,
-                "message": "Access denied. You do not have permission to execute the specified operation."
-              }
-            }
-          },
-          "404": {
-            "description": "**[5 NOT_FOUND]** *Could not find entity.* \n**Returned in case of:**\n- Non-existing course",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            },
-            "examples": {
-              "application/json": {
-                "code": 5,
-                "message": "Could not find the entity. Check the message and invoke the method again."
-              }
-            }
-          }
+          } 
         },
         "parameters": [
           {
