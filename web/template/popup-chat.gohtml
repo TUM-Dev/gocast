@@ -19,4 +19,5 @@
 </head>
 <body class="bg-white dark:bg-secondary h-screen" x-data="interaction.popupContext({{$stream.ID}})">
     {{template "chat-component" .}}
+    <script> interaction.closeChatOnEscapePressed(); </script>
 </body>
