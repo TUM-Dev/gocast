@@ -1,9 +1,8 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
-	log "github.com/sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
@@ -34,7 +33,7 @@ func (r seekStatsRoutes) reportSeek(c *gin.Context) {
 	}
 
 	if err := r.VideoSeekDao.Add(c.Param("streamID"), req.Position); err != nil {
-		log.WithError(err).Error("Could not add seek hit")
+		logger.Error("Could not add seek hit", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -50,7 +49,7 @@ func (r seekStatsRoutes) getSeek(c *gin.Context) {
 	chunks, err := r.VideoSeekDao.Get(c.Param("streamID"))
 
 	if err != nil {
-		log.WithError(err).Error("Could not get seek hits")
+		logger.Error("Could not get seek hits", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

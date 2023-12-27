@@ -68,11 +68,15 @@
             <span class="text-white rounded bg-danger px-4 py-2" >Something went wrong.</span>
         </div>
 
+        <div x-show="!canContinue" class="flex justify-end px-6">
+            <span class="text-gray-500" style="white-space: pre-wrap; text-align: right;" x-text="cannotContinueReason"></span>
+        </div>
+
         <div class="flex justify-end py-2 px-4">
             <button x-show="!loading" :disabled="!canGoBack" class="mx-2 disabled:text-gray-300 dark:disabled:text-gray-500" @click.prevent="() => prev()">
                 Back
             </button>
-            <button :disabled="loading || !canContinue" class="btn mx-2" @click.prevent="() => next()">
+            <button :disabled="loading || !canContinue" class="btn mx-2 disabled:text-gray-300 dark:disabled:text-gray-500" @click.prevent="() => next()">
                 <span x-show="!loading && !onLastSlide">Continue</span>
                 <span x-show="!loading && onLastSlide" x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
                                                             ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`

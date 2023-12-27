@@ -16,7 +16,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -114,7 +113,7 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 	user.Role = req.Role
 	err = r.UsersDao.UpdateUser(user)
 	if err != nil {
-		log.WithError(err).Error("can not update user")
+		logger.Error("can not update user", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not update user",
@@ -305,7 +304,7 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 			Courses:  []model.Course{course},
 		}
 		if err = r.UsersDao.CreateUser(context.Background(), &createdUser); err != nil {
-			log.Printf("%v", err)
+			logger.Error("Error creating User", "err", err)
 		} else {
 			go r.forgotPassword(email)
 		}
@@ -314,7 +313,7 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 		foundUser.Courses = append(foundUser.Courses, course)
 		err := r.UsersDao.UpdateUser(foundUser)
 		if err != nil {
-			log.WithError(err).Error("Can't update user")
+			logger.Error("Can't update user", "err", err)
 			return
 		}
 		err = r.EmailDao.Create(context.Background(), &model.Email{
@@ -326,7 +325,7 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 				course.Name),
 		})
 		if err != nil {
-			log.Printf("%v", err)
+			logger.Error("Some error", "err", err)
 		}
 	}
 }
@@ -373,7 +372,7 @@ func (r usersRoutes) pinCourse(pin bool) gin.HandlerFunc {
 		}
 		err := c.BindJSON(&request)
 		if err != nil {
-			log.WithError(err).Error("Could not bind JSON.")
+			logger.Error("Could not bind JSON.", "err", err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -398,7 +397,7 @@ func (r usersRoutes) pinCourse(pin bool) gin.HandlerFunc {
 		// Update user in database
 		err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
 		if err != nil {
-			log.WithError(err).Error("Can't update user")
+			logger.Error("Can't update user", "err", err)
 			return
 		}
 	}
@@ -509,12 +508,12 @@ func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) 
 func (r usersRoutes) forgotPassword(email string) {
 	u, err := r.UsersDao.GetUserByEmail(context.Background(), email)
 	if err != nil {
-		log.Println("couldn't get user by email")
+		logger.Error("couldn't get user by email")
 		return
 	}
 	registerLink, err := r.UsersDao.CreateRegisterLink(context.Background(), u)
 	if err != nil {
-		log.Println("couldn't create register link")
+		logger.Error("couldn't create register link")
 		return
 	}
 	body := fmt.Sprintf("Hello!\n"+
@@ -528,7 +527,7 @@ func (r usersRoutes) forgotPassword(email string) {
 		Body:    body,
 	})
 	if err != nil {
-		log.Println("couldn't send password mail")
+		logger.Error("couldn't send password mail")
 	}
 }
 
@@ -653,7 +652,6 @@ func (r usersRoutes) updateCustomSpeeds(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
@@ -773,12 +771,12 @@ func (r usersRoutes) resetPassword(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		log.WithError(err).Error("can't get user for password reset")
+		logger.Error("can't get user for password reset", "err", err)
 		return
 	}
 	link, err := r.UsersDao.CreateRegisterLink(c, user)
 	if err != nil {
-		log.WithError(err).Error("can't create register link")
+		logger.Error("can't create register link", "err", err)
 		return
 	}
 	err = r.EmailDao.Create(c, &model.Email{
@@ -788,7 +786,7 @@ func (r usersRoutes) resetPassword(c *gin.Context) {
 		Body:    "Hi! \n\nYou can reset your TUM-Live password by clicking on the following link: \n\n" + tools.Cfg.WebUrl + "/setPassword/" + link.RegisterSecret + "\n\nIf you did not request a password reset, please ignore this email. \n\nBest regards",
 	})
 	if err != nil {
-		log.WithError(err).Error("can't save reset password email")
+		logger.Error("can't save reset password email", "err", err)
 	}
 }
 

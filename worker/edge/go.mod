@@ -1,6 +1,6 @@
 module github.com/TUM-Dev/gocast/worker/edge
 
-go 1.19
+go 1.21
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0

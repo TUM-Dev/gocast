@@ -8,7 +8,6 @@ export enum UserSetting {
     Greeting = "greeting",
     PlaybackSpeeds = "playbackSpeeds",
     CustomSpeeds = "customSpeeds",
-
 }
 
 export function updatePreference(t: UserSetting, value: string | boolean | number[]): Promise<string> {

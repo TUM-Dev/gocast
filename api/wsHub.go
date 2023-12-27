@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
-	log "github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
 	"sync"
@@ -52,11 +51,12 @@ var connHandler = func(context *realtime.Context) {
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
 	err := context.Send(msg)
 	if err != nil {
-		log.WithError(err).Error("can't write initial stats to session")
+		logger.Error("can't write initial stats to session", "err", err)
 	}
 }
 
 // sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)
+//
 //lint:ignore U1000 Ignore unused function
 func sendServerMessageWithBackoff(session *realtime.Context, userId uint, streamId uint, msg string, t string) {
 	if userId == 0 {
@@ -71,7 +71,7 @@ func sendServerMessageWithBackoff(session *realtime.Context, userId uint, stream
 	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
 	err := session.Send(msgBytes)
 	if err != nil {
-		log.WithError(err).Error("can't write server message to session")
+		logger.Error("can't write server message to session", "err", err)
 	}
 	// set cache item with ttl, so the user won't get a message for 10 Minutes
 	tools.SetCacheItem(cacheKey, true, time.Minute*10)
@@ -83,7 +83,7 @@ func sendServerMessage(msg string, t string, sessions ...*realtime.Context) {
 	for _, session := range sessions {
 		err := session.Send(msgBytes)
 		if err != nil {
-			log.WithError(err).Error("can't write server message to session")
+			logger.Error("can't write server message to session", "err", err)
 		}
 	}
 
