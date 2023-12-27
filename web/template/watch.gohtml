@@ -37,7 +37,7 @@
 </div>
 <div x-cloak x-show="showShare"
      id="share-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false">
+    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false" x-init="() => { window.addEventListener('keydown', (e) => { if (e.key === 'Escape') showShare = false; }); }">
         <div class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
             <div class="flex justify-between items-center px-3 pt-3 pb-1">
                 <h3 class="text-3 text-sm font-semibold">Share</h3>
