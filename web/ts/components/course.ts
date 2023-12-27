@@ -35,6 +35,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         streamSortMode: +getFromStorage("streamSortMode") ?? StreamSortMode.NewestFirst,
         streamFilterMode: +getFromStorage("streamFilterMode") ?? StreamFilterMode.ShowWatched,
+        listView: +getFromStorage("listView") ?? false,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -115,6 +116,15 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         isHideWatched() {
             return this.streamFilterMode === StreamFilterMode.HideWatched;
+        },
+
+        toggleListView() {
+            this.listView = !this.listView;
+            setInStorage("listView", this.listView.toString());
+        },
+
+        isListView() {
+            return this.listView;
         },
 
         /**

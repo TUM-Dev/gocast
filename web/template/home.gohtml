@@ -432,6 +432,11 @@
                                             Hide watched
                                         </button>
                                     {{end}}
+                                    <button type="button" @click="toggleListView()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isListView() }">
+                                        List View
+                                    </button>
                                 </section>
                             </header>
                             <section>
@@ -443,17 +448,18 @@
                                                 <header class="mb-2">
                                                     <h6 class="font-semibold" x-text="group[0].GetMonthName()"></h6>
                                                 </header>
-                                                <section class="grid gap-3 md:grid-cols-2 grid-cols-1"
-                                                         :class="plannedStreams.hasElements()
-                                                                        ? 'xl:grid-cols-4 lg:grid-cols-3'
-                                                                        : 'xl:grid-cols-5 lg:grid-cols-4'">
+                                                <section class="grid gap-3  grid-cols-1"
+                                                         :class="isListView() ? 'xl:grid-cols-1 lg:grid-cols-1 md:grid-cols-1 grid-cols-1' : plannedStreams.hasElements()
+                                                                        ? 'xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2'
+                                                                        : 'xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-2'">
                                                     <template x-for="vod in group" :key="vod.ID">
                                                         <article
                                                                 class="tum-live-stream group sm:col-span-1 col-span-full"
                                                                 @click.outside="vod.Dropdown.toggle(false)">
                                                             <a :href="course.WatchURL(vod.ID)" class="block mb-2">
                                                                 <div :style="`background: url('/api/stream/${vod.ID}/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;`"
-                                                                     class="aspect-video tum-live-thumbnail">
+                                                                     class="aspect-video tum-live-thumbnail"
+                                                                    x-show="!isListView()">
                                                                     <div :id="`vod-progress-${vod.ID}`"
                                                                          class="tum-live-thumbnail-progress">
                                                                         <div>
