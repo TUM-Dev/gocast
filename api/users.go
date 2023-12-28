@@ -129,7 +129,7 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
 	q = reg.ReplaceAllString(q, "")
 	// Removed in order to make the search work with empty query but selected role
-	if len(q) < 3 && rQ == "-1" {
+	if len(q) < 3 && (rQ == "-1" || rQ == "") {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "query too short (minimum length is 3)",
