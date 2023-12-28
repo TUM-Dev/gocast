@@ -63,7 +63,7 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		endTime:       time.Now().Add(time.Hour * 7),
 		publishVoD:    request.GetUploadVoD(),
 		streamVersion: "COMB",
-		isSelfStream:  false,
+		isSelfStream:  true,
 		ingestServer:  request.IngestServer,
 		sourceUrl:     "rtmp://localhost/" + slug,
 		streamName:    request.StreamName,
