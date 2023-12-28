@@ -25,10 +25,10 @@ func buildCommand(niceness int, infile string, outfile string, tune string, crf 
 	if tune != "" {
 		c = append(c, "-tune", tune)
 	}
-	c = append(c, "-c:a", "aac", "-b:a", "128k", "-crf", fmt.Sprintf("%d", crf), outfile)
 	if self {
 		c = append(c, "-probesize 25M -analyzeduration 50M")
 	}
+	c = append(c, "-c:a", "aac", "-b:a", "128k", "-crf", fmt.Sprintf("%d", crf), outfile)
 	return exec.Command("nice", c...)
 }
 
