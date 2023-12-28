@@ -45,9 +45,8 @@ func HandlePremiere(request *pb.PremiereRequest) {
 		outUrl:        request.OutUrl,
 	}
 	// Register worker for premiere
-	if !streamCtx.isSelfStream {
-		regularStreams.addContext(streamCtx.streamId, streamCtx)
-	}
+	regularStreams.addContext(streamCtx.streamId, streamCtx)
+
 	S.startStream(streamCtx)
 	streamPremiere(streamCtx)
 	S.endStream(streamCtx)
@@ -264,7 +263,6 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 			log.WithError(err).Error("Error transcoding audio")
 		}
 	}
-
 
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
@@ -492,15 +490,9 @@ func (s StreamContext) getRecordingFileName() string {
 	if s.recordingPath != nil {
 		return *s.recordingPath
 	}
-	if !s.isSelfStream {
-		return fmt.Sprintf("%s/%s.ts",
-			cfg.TempDir,
-			s.getStreamName())
-	}
-	return fmt.Sprintf("%s/%s_%s.flv",
+	return fmt.Sprintf("%s/%s.ts",
 		cfg.TempDir,
-		s.courseSlug,
-		s.startTime.Format("02012006"))
+		s.getStreamName())
 }
 
 func (s StreamContext) getRecordingTrashName() string {
@@ -511,16 +503,6 @@ func (s StreamContext) getRecordingTrashName() string {
 // getTranscodingFileName returns the filename a stream should be saved to after transcoding.
 // example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES.mp4
 func (s StreamContext) getTranscodingFileName() string {
-	if s.isSelfStream {
-		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s.mp4",
-			cfg.StorageDir,
-			s.teachingYear,
-			s.teachingTerm,
-			s.courseSlug,
-			s.startTime.Format("2006-01-02_15-04"),
-			s.courseSlug,
-			s.startTime.Format("02012006"))
-	}
 	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.mp4",
 		cfg.StorageDir,
 		s.teachingYear,
@@ -554,16 +536,6 @@ func (s StreamContext) getLargeThumbnailSpriteFileName() string {
 // getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.
 // example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES-thumb.jpg
 func (s StreamContext) getThumbnailSpriteFileName() string {
-	if s.isSelfStream {
-		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s-thumb.jpg",
-			cfg.StorageDir,
-			s.teachingYear,
-			s.teachingTerm,
-			s.courseSlug,
-			s.startTime.Format("2006-01-02_15-04"),
-			s.courseSlug,
-			s.startTime.Format("02012006"))
-	}
 	return fmt.Sprintf("%s/%d/%s/%s/%s/%s-thumb.jpg",
 		cfg.StorageDir,
 		s.teachingYear,
@@ -575,25 +547,19 @@ func (s StreamContext) getThumbnailSpriteFileName() string {
 
 // getStreamName returns the stream name, used for the worker status
 func (s StreamContext) getStreamName() string {
-	if !s.isSelfStream {
-		return fmt.Sprintf("%s-%s%s",
-			s.courseSlug,
-			s.startTime.Format("2006-01-02-15-04"),
-			s.streamVersion)
-	}
-	return s.courseSlug
+	return fmt.Sprintf("%s-%s%s",
+		s.courseSlug,
+		s.startTime.Format("2006-01-02-15-04"),
+		s.streamVersion)
 }
 
 var vodFileNameIllegal = regexp.MustCompile(`[^a-zA-Z0-9_\\.]+`)
 
 // getStreamNameVoD returns the stream name for vod (lrz replaces - with _)
 func (s StreamContext) getStreamNameVoD() string {
-	if !s.isSelfStream {
-		name := strings.ReplaceAll(fmt.Sprintf("%s_%s%s",
-			s.courseSlug,
-			s.startTime.Format("2006_01_02_15_04"),
-			s.streamVersion), "-", "_")
-		return vodFileNameIllegal.ReplaceAllString(name, "_")
-	}
-	return s.courseSlug
+	name := strings.ReplaceAll(fmt.Sprintf("%s_%s%s",
+		s.courseSlug,
+		s.startTime.Format("2006_01_02_15_04"),
+		s.streamVersion), "-", "_")
+	return vodFileNameIllegal.ReplaceAllString(name, "_")
 }
