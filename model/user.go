@@ -98,6 +98,7 @@ func (u *User) GetEnabledPlaybackSpeeds() (res []float32) {
 	if u == nil {
 		return []float32{1}
 	}
+	// Possibly, this could be collapsed into a single line, but readibility suffers.
 	res = append(res, u.GetPlaybackSpeeds().GetEnabled()...)
 	res = append(res, u.GetCustomSpeeds()...)
 	sort.SliceStable(res, func(i, j int) bool {
