@@ -454,18 +454,18 @@ func moveFile(sourcePath, destPath string) error {
 
 // StreamContext contains all important information on a stream
 type StreamContext struct {
-	streamId       uint32    //id of the stream
-	sourceUrl      string    //url of the streams source, e.g. 10.0.0.4
-	courseSlug     string    //slug of the course, e.g. eidi
-	teachingTerm   string    //S or W depending on the courses teaching-term
-	teachingYear   uint32    //Year the course takes place in
-	startTime      time.Time //time the stream should start
-	endTime        time.Time //end of the stream (including +10 minute safety)
-	streamVersion  string    //version of the stream to be handled, e.g. PRES, COMB or CAM
-	publishVoD     bool      //whether file should be uploaded
+	streamId       uint32    // id of the stream
+	sourceUrl      string    // url of the streams source, e.g. 10.0.0.4
+	courseSlug     string    // slug of the course, e.g. eidi
+	teachingTerm   string    // S or W depending on the courses teaching-term
+	teachingYear   uint32    // Year the course takes place in
+	startTime      time.Time // time the stream should start
+	endTime        time.Time // end of the stream (including +10 minute safety)
+	streamVersion  string    // version of the stream to be handled, e.g. PRES, COMB or CAM
+	publishVoD     bool      // whether file should be uploaded
 	streamCmd      *exec.Cmd // command used for streaming
 	transcodingCmd *exec.Cmd // command used for transcoding
-	isSelfStream   bool      //deprecated
+	isSelfStream   bool      // whether the stream is self stream or not
 	canceled       bool      // selfstreams are canceled when the same stream starts again.
 
 	streamName   string // ingest target
