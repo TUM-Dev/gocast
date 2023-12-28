@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"github.com/TUM-Dev/gocast/model"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -37,8 +38,14 @@ func (d runnerDao) Get(c context.Context, hostname string) (res model.Runner, er
 }
 
 // Get all Runners in an array
-func (d runnerDao) GetAll(c context.Context) (res []model.Runner, err error) {
-	return res, d.db.WithContext(c).Model(&model.Runner{}).Find(&res).Error
+func (d runnerDao) GetAll(c context.Context) ([]model.Runner, error) {
+	var runners []model.Runner
+	err := d.db.WithContext(c).Model(&model.Runner{}).Find(&runners).Error
+	if err != nil {
+		log.Error("no runners found")
+		return nil, err
+	}
+	return runners, err
 }
 
 // Create a Runner.

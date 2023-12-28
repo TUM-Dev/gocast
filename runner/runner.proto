@@ -156,12 +156,14 @@ message RegisterResponse {
 message HeartbeatRequest {
   string hostname = 1;
   int32 port = 2;
-  uint32 Workload = 3;
-  string Version = 4;
-  string CPU = 5;
-  string Memory = 6;
-  string Disk = 7;
-  string Uptime = 8;
+  google.protobuf.Timestamp LastSeen = 3;
+  string Status = 4;
+  uint32 Workload = 5;
+  string CPU = 6;
+  string Memory = 7;
+  string Disk = 8;
+  string Uptime = 9;
+  string Version = 10;
 }
 
 message HeartbeatResponse {
@@ -175,6 +177,12 @@ message SelfStreamRequest {
 message SelfStreamResponse {
   uint64 stream = 1;
   uint64 course = 2;
-  string version = 3;
+  uint64 courseYear = 3;
+  google.protobuf.Timestamp streamStart = 4;
+  google.protobuf.Timestamp streamEnd = 5;
+  bool uploadVoD = 6;
+  string ingestServer = 7;
+  string streamName = 8;
+  string outURL = 9;
 }
 

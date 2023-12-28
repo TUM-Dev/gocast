@@ -16,22 +16,26 @@ func contextFromStreamReq(req *protobuf.StreamRequest, ctx context.Context) cont
 }
 
 func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
+	r.ReadDiagnostics(5)
 	// don't reuse context from grpc, it will be canceled when the request is done.
 	ctx = context.Background()
 	ctx = contextFromStreamReq(req, ctx)
+	ctx = context.WithValue(ctx, "URL", "")
 	a := []*actions.Action{
 		r.actions.PrepareAction(),
 		r.actions.StreamAction(),
 		r.actions.TranscodeAction(),
-		r.actions.GenerateVideoThumbnail(),
+		//r.actions.GenerateVideoThumbnail(),
 		r.actions.UploadAction(),
 	}
 	jobID := r.AddJob(ctx, a)
+	r.log.Info("job added", "jobID", jobID)
 
 	return &protobuf.StreamResponse{Job: jobID}, nil
 }
 
 func (r *Runner) RequestStreamEnd(ctx context.Context, request *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
+	r.ReadDiagnostics(5)
 	if job, ok := r.jobs[request.GetJobID()]; ok {
 		job.Cancel(errors.New("canceled by user request"), actions.StreamAction, actions.UploadAction)
 		return &protobuf.StreamEndResponse{}, nil
@@ -40,10 +44,21 @@ func (r *Runner) RequestStreamEnd(ctx context.Context, request *protobuf.StreamE
 }
 
 func (r *Runner) GenerateLivePreview(ctx context.Context, request *protobuf.LivePreviewRequest) (*protobuf.LivePreviewResponse, error) {
+	r.ReadDiagnostics(5)
 	if job, ok := r.jobs[request.GetRunnerID()]; ok {
 		job.Cancel(errors.New("canceled by user request"), actions.StreamAction)
 		return &protobuf.LivePreviewResponse{}, nil
 	}
 
 	return nil, errors.New("Live Preview not Generated")
+}
+
+func (r *Runner) GenerateSectionImages(ctx context.Context, request *protobuf.GenerateSectionImageRequest) (*protobuf.Status, error) {
+	r.ReadDiagnostics(5)
+	if job, ok := r.jobs[request.PlaylistURL]; ok {
+		job.Cancel(errors.New("canceled by user request"), actions.StreamAction)
+		return &protobuf.Status{Ok: true}, nil
+	}
+
+	return nil, errors.New("Section Images not Generated")
 }

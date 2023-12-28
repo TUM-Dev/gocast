@@ -15,11 +15,12 @@
                 <tbody class="text-3">
                 {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
                 {{range $runner := .Runners}}
-                    <a>huui there</a>
+
                     <tr class="border-gray-500">
-                        <td class="pt-3 px-6">
-                            <div class="font-semibold text-1">{{$runner.Host}}<span
+                        <td class="pt-3 px-6 text-left">
+                            <div class="font-semibold text-1">{{$runner.Hostname}}<span
                                         class="font-normal text-4">@{{$runner.Version}}</span>
+
                             </div>
                             <div class="pl-1 text-2 italic font-light">
                                 <span class="mr-4">CPU: {{$runner.CPU}}</span>
@@ -36,10 +37,10 @@
                         </td>
                         <td class="px-6">{{$runner.Uptime}}</td>
                         <td x-data class="px-6">
-                            <button @click="admin.deleteWorker('{{$runner.WorkerID}}').then(() => window.location.reload())"
+                            <button @click="admin.deleteRunner('{{$runner.Hostname}}').then(() => window.location.reload())"
                                     class="text-5 hover:text-1 items-center justify-center"
                                     type="button"
-                                    title="Delete Worker">
+                                    title="Delete Runner">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>

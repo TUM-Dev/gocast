@@ -15,6 +15,7 @@ func (a *ActionProvider) TranscodeAction() *Action {
 	return &Action{
 		Type: TranscodeAction,
 		ActionFn: func(ctx context.Context, log *slog.Logger) (context.Context, error) {
+
 			files, ok := ctx.Value("files").([]string)
 			if !ok {
 				return ctx, ErrActionInputWrongType
@@ -47,7 +48,7 @@ func (a *ActionProvider) TranscodeAction() *Action {
 			if len(fileName) == 1 {
 				filenames = fileName[0]
 			} else {
-				filenames := `"concat:` + fileName[0]
+				filenames = `"concat:` + fileName[0]
 				for i := 1; i < len(fileName); i++ {
 					filenames += "|" + fileName[i]
 				}

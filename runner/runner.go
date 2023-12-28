@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"github.com/caarlos0/env"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/tum-dev/gocast/runner/actions"
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/logging"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
 	"github.com/tum-dev/gocast/runner/protobuf"
+	"github.com/tum-dev/gocast/runner/vmstat"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
 	"net"
 	"os"
@@ -29,6 +32,7 @@ type envConfig struct {
 	RecPath      string `env:"REC_PATH" envDefault:"storage/rec"`
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
+	Version      string `env:"VERSION" envDefault:"v0.0.0"`
 }
 
 type Runner struct {
@@ -42,6 +46,10 @@ type Runner struct {
 
 	actions   actions.ActionProvider
 	hlsServer *HLSServer
+
+	stats *vmstat.VmStat
+
+	StartTime time.Time
 
 	protobuf.UnimplementedToRunnerServer
 }
@@ -57,6 +65,9 @@ func NewRunner(v string) *Runner {
 	cmd := config.NewCmd(log)
 	log.Info("loading cmd.yaml", "cmd", cmd)
 
+	vmstats := vmstat.New()
+
+	start := time.Now()
 	return &Runner{
 		log:      log,
 		JobCount: make(chan int, 1),
@@ -72,6 +83,8 @@ func NewRunner(v string) *Runner {
 			MassDir:    cfg.StoragePath,
 		},
 		hlsServer: NewHLSServer(cfg.SegmentPath, log.WithGroup("HLSServer")),
+		stats:     vmstats,
+		StartTime: start,
 	}
 }
 
@@ -137,6 +150,7 @@ func (r *Runner) RegisterWithGocast(retries int) {
 		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", registerRetries-retries)
 		time.Sleep(time.Second * time.Duration(registerRetries-retries))
 		r.RegisterWithGocast(retries - 1)
+		r.ReadDiagnostics(5)
 		return
 	}
 	_, err = con.Register(context.Background(), &protobuf.RegisterRequest{Hostname: r.cfg.Hostname, Port: int32(r.cfg.Port)})
@@ -144,8 +158,10 @@ func (r *Runner) RegisterWithGocast(retries int) {
 		r.log.Warn("error registering with gocast", "error", err, "sleeping(s)", registerRetries-retries)
 		time.Sleep(time.Second * time.Duration(registerRetries-retries))
 		r.RegisterWithGocast(retries - 1)
+		r.ReadDiagnostics(5)
 		return
 	}
+	r.ReadDiagnostics(5)
 }
 
 // dialIn connects to manager instance and returns a client
@@ -158,18 +174,72 @@ func (r *Runner) dialIn() (protobuf.FromRunnerClient, error) {
 	return protobuf.NewFromRunnerClient(conn), nil
 }
 
-// Todo: implement heartbeat here so you can reach server and make actions from runner more easier to reach
-func (r *Runner) ReadDiagnostics(retries int) (protobuf.HeartbeatRequest, error) {
+func (r *Runner) ReadDiagnostics(retries int) {
+
+	r.log.Info("Started Sending Diagnostic Data", "retriesLeft", retries)
+
+	if retries == 0 {
+		return
+	}
+	err := r.stats.Update()
+	if err != nil {
+		r.ReadDiagnostics(retries - 1)
+		return
+	}
+	cpu := r.stats.GetCpuStr()
+	memory := r.stats.GetMemStr()
+	disk := r.stats.GetDiskStr()
+	uptime := time.Now().Sub(r.StartTime).String()
 	con, err := r.dialIn()
 	if err != nil {
-		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", registerRetries-retries)
-		time.Sleep(time.Second * time.Duration(registerRetries-retries))
-		return r.ReadDiagnostics(retries - 1)
+		log.Warn("couldn't dial into server", "error", err, "sleeping(s)", 5-retries)
+		time.Sleep(time.Second * time.Duration(5-retries))
+		r.ReadDiagnostics(retries - 1)
+		return
 	}
-	if con == nil {
 
+	_, err = con.Heartbeat(context.Background(), &protobuf.HeartbeatRequest{
+		Hostname: r.cfg.Hostname,
+		Port:     int32(r.cfg.Port),
+		LastSeen: timestamppb.New(time.Now()),
+		Status:   "Alive",
+		Workload: uint32(len(r.jobs)),
+		CPU:      cpu,
+		Memory:   memory,
+		Disk:     disk,
+		Uptime:   uptime,
+		Version:  r.cfg.Version,
+	})
+	if err != nil {
+		r.log.Warn("Error sending the heartbeat", "error", err, "sleeping(s)", 5-retries)
+		time.Sleep(time.Second * time.Duration(5-retries))
+		r.ReadDiagnostics(retries - 1)
+		return
 	}
-	return protobuf.HeartbeatRequest{}, nil
+	r.log.Info("Successfully sent heartbeat", "retriesLeft", retries)
+}
+
+func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
+	r.log.Info("Started Requesting Self Stream", "retriesLeft", retries)
+
+	streamKey := ctx.Value("streamkey").(string)
+
+	if retries == 0 {
+		r.log.Error("no more retries left, can't start Self Stream")
+		return
+	}
+
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", 5-retries)
+		time.Sleep(time.Second * time.Duration(5-retries))
+		r.RequestSelfStream(ctx, retries-1)
+		return
+	}
+
+	_, err = con.RequestSelfStream(context.Background(), &protobuf.SelfStreamRequest{
+		StreamKey: streamKey,
+	})
 }
 
 type Job struct {

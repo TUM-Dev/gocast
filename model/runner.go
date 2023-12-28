@@ -36,14 +36,14 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) (err error) {
 
 // SendHeartbeat updates the last seen time of the runner and gives runner stats
 func (r *Runner) UpdateStats(tx *gorm.DB, ctx context.Context) (bool, error) {
-	runner := ctx.Value("runner").(Runner)
-	err := tx.WithContext(ctx).Model(&r).Updates(runner).Error
+	newStats := ctx.Value("newStats").(Runner)
+	err := tx.WithContext(ctx).Model(&r).Updates(newStats).Error
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (r *Runner) isAlive() bool {
+func (r *Runner) IsAlive() bool {
 	return r.LastSeen.Time.After(time.Now().Add(time.Minute * -6))
 }
