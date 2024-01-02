@@ -1,4 +1,4 @@
 stream: '-y -hide_banner -nostats %v -t %.0f -i %v -c:v copy -c:a copy -f mpegts %v -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k -f hls -hls_time 2 -hls_list_size 3600 -hls_playlist_type event -hls_flags append_list -hls_segment_filename %v/%%05d.ts %v'
 
-Transcoding: '-i %v -c copy -f mpegts probesize 100M -analyzeduration 250M -c:v libx264 -c:a aac -b:a 128k  %v'
+Transcoding: '-i %v -c:v libx264 %v'
 
