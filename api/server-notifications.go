@@ -1,13 +1,14 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"log"
-	"net/http"
-	"time"
+	"github.com/gin-gonic/gin"
 )
 
 func configServerNotificationsRoutes(engine *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -25,7 +26,7 @@ type serverNotificationRoutes struct {
 func (r serverNotificationRoutes) updateServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
-		log.Printf("%v", err)
+		logger.Debug(fmt.Sprintf("%v", err))
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -54,7 +55,7 @@ func (r serverNotificationRoutes) updateServerNotification(c *gin.Context) {
 func (r serverNotificationRoutes) createServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
-		log.Printf("%v", err)
+		logger.Debug(fmt.Sprintf("%v", err))
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",

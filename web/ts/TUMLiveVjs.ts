@@ -65,7 +65,7 @@ class PlayerSettings {
             let iOSReady;
             const t: number | undefined = +getQueryParam("t");
             this.player.on("loadedmetadata", () => {
-                if (!isNaN(t) && t) {
+                if (!isNaN(t)) {
                     this.player.currentTime(t);
                     console.log(`⚫️ jump to: ${t}`);
                 }
@@ -73,7 +73,7 @@ class PlayerSettings {
             if (videojs.browser.IS_IOS) {
                 this.player.on("canplaythrough", () => {
                     // Can be executed multiple times during playback
-                    if (!iOSReady && t) {
+                    if (!iOSReady) {
                         this.player.currentTime(t);
                         iOSReady = true;
                     }
@@ -323,11 +323,12 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let iOSReady = false;
         let intervalMillis = 10000;
         let jumpTo: number;
+        const tParam = +getQueryParam("t");
 
         // Fetch the user's video progress from the database and set the time in the player
         players[j].on("loadedmetadata", () => {
             duration = players[j].duration();
-            jumpTo = +getQueryParam("t") || lastProgress * duration;
+            jumpTo = isNaN(tParam) ? lastProgress * duration : tParam;
             players[j].currentTime(jumpTo);
         });
 

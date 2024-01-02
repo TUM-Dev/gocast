@@ -11,7 +11,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
 	"regexp"
@@ -34,7 +33,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
-		log.WithError(err).Error("couldn't query courses for user.")
+		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
 	workers, err := r.WorkerDao.GetAllWorkers()
@@ -81,7 +80,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		page = "notifications"
 		found, err := r.NotificationsDao.GetAllNotifications()
 		if err != nil {
-			log.WithError(err).Error("couldn't query notifications")
+			logger.Error("couldn't query notifications", "err", err)
 		} else {
 			notifications = found
 		}
@@ -91,7 +90,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		page = "token"
 		tokens, err = r.TokenDao.GetAllTokens()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.WithError(err).Error("couldn't query tokens")
+			logger.Error("couldn't query tokens", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
@@ -100,7 +99,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		page = "info-pages"
 		infopages, err = r.InfoPageDao.GetAll()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.WithError(err).Error("couldn't query texts")
+			logger.Error("couldn't query texts", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
@@ -108,7 +107,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		page = "serverStats"
 		streams, err := r.StreamsDao.GetAllStreams()
 		if err != nil {
-			log.WithError(err).Error("Can't get all streams")
+			logger.Error("Can't get all streams", "err", err)
 			sentry.CaptureException(err)
 			streams = []model.Stream{}
 		}
@@ -123,7 +122,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		if res, err := r.ServerNotificationDao.GetAllServerNotifications(); err == nil {
 			serverNotifications = res
 		} else {
-			log.WithError(err).Warn("could not get all server notifications")
+			logger.Warn("could not get all server notifications", "err", err)
 		}
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
@@ -145,7 +144,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Runners:             RunnersData{Runners: runners},
 		})
 	if err != nil {
-		log.Printf("%v", err)
+		logger.Error("Error executing template admin.gohtml", "err", err)
 	}
 }
 
@@ -167,7 +166,7 @@ func (r mainRoutes) LectureCutPage(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", tumLiveContext); err != nil {
-		log.Fatalln(err)
+		logger.Error("Error executing template lecture-cut.gohtml", "err", err)
 	}
 }
 
@@ -202,7 +201,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	indexData.TUMLiveContext = tumLiveContext
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
-		log.Printf("couldn't query courses for user. %v\n", err)
+		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
@@ -215,7 +214,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 		CurT:      tumLiveContext.Course.TeachingTerm,
 	})
 	if err != nil {
-		log.Printf("%v\n", err)
+		logger.Error("Error getting available semesters", "err", err)
 	}
 }
 
@@ -230,20 +229,20 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	err := r.CoursesDao.GetInvitedUsersForCourse(tumLiveContext.Course)
 	if err != nil {
-		log.Printf("%v", err)
+		logger.Error("Error getting invited users for course", "err", err)
 	}
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
-		log.Printf("couldn't query courses for user. %v\n", err)
+		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	for i := range tumLiveContext.Course.Streams {
 		err := tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, true)
 		if err != nil {
-			log.WithError(err).Error("could not set signed playlist for admin page")
+			logger.Error("could not set signed playlist for admin page", "err", err)
 		}
 	}
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
@@ -256,7 +255,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		EditCourseData: EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, LectureHalls: lectureHalls},
 	})
 	if err != nil {
-		log.Printf("%v\n", err)
+		logger.Error("Error executing template admin.gohtml", "err", err)
 	}
 }
 

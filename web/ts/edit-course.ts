@@ -1,4 +1,4 @@
-import { Delete, patchData, postData, putData, sendFormData, showMessage, uploadFile } from "./global";
+import {patchData, postData, putData, sendFormData} from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
@@ -8,10 +8,16 @@ import {
     LectureVideoTypeCam,
     LectureVideoTypeComb,
     LectureVideoTypePres,
-    LectureVideoTypes,
+    VideoSection,
+    videoSectionFriendlyTimestamp,
+    videoSectionHasChanged,
+    videoSectionListDelta,
+    videoSectionSort,
+    videoSectionTimestamp,
 } from "./api/admin-lecture-list";
-import { ChangeSet, ignoreKeys } from "./change-set";
+import {ChangeSet, comparatorPipeline, ignoreKeys, singleProperty} from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
+import {uploadFile} from "./utilities/fetch-wrappers";
 
 export enum UIEditMode {
     none,
@@ -114,8 +120,29 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
+            const customComparator = comparatorPipeline([
+                ignoreKeys(["files"]),
+                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
+                    // List length differs, something was removed or added
+                    if (a.videoSections.length !== b.videoSections.length) {
+                        return true;
+                    }
+
+                    // List length is the same but items do have no id, so they are new.
+                    if (
+                        a.videoSections.some(({id}) => id === undefined) ||
+                        b.videoSections.some(({id}) => id === undefined)
+                    ) {
+                        return true;
+                    }
+
+                    // A section has edited and different information now
+                    return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
+                }),
+            ]);
+
             // This tracks changes that are not saved yet
-            this.changeSet = new ChangeSet<Lecture>(lecture, ignoreKeys(["files"]), (data, dirtyState) => {
+            this.changeSet = new ChangeSet<Lecture>(lecture, customComparator, (data, dirtyState) => {
                 this.lectureData = data;
                 this.isDirty = dirtyState.isDirty;
             });
@@ -191,8 +218,71 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
         },
 
+        friendlySectionTimestamp(section: VideoSection): string {
+            return videoSectionFriendlyTimestamp(section);
+        },
+
+        getSectionKey(section: VideoSection): string {
+            return section.id ? `sid_${section.id}` : section.key;
+        },
+
+        genPseudoSectionKey(): string {
+            return `sts_${new Date().getTime()}`;
+        },
+
+        addSection(section: VideoSection) {
+            this.changeSet.patch(
+                "videoSections",
+                [
+                    ...this.lectureData.videoSections,
+                    {
+                        ...section,
+                        key: this.genPseudoSectionKey(),
+                    },
+                ].sort(videoSectionSort),
+            );
+        },
+
+        updateSection(section: VideoSection) {
+            const sectionKey = this.getSectionKey(section);
+            this.changeSet.patch(
+                "videoSections",
+                [...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)), section].sort(
+                    videoSectionSort,
+                ),
+            );
+        },
+
+        deleteSection(section) {
+            const sectionKey = this.getSectionKey(section);
+            this.changeSet.patch("videoSections", [
+                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
+            ]);
+        },
+
+        isValidVideoSection(section: VideoSection): boolean {
+            const sectionKey = this.getSectionKey(section);
+            const hasValidTime = !this.lectureData.videoSections.some(
+                (s) =>
+                    videoSectionTimestamp(s) == videoSectionTimestamp(section) && sectionKey != this.getSectionKey(s),
+            );
+
+            return (
+                section.description !== "" &&
+                section.startHours !== null &&
+                section.startHours < 32 &&
+                section.startMinutes !== null &&
+                section.startMinutes < 60 &&
+                section.startSeconds !== null &&
+                section.startSeconds < 60 &&
+                hasValidTime
+            );
+        },
+
         deleteLecture() {
-            DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
+            if (confirm("Do you really want to delete this lecture? This includes any recordings.")) {
+                DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
+            }
         },
 
         deleteLectureSeries() {
@@ -229,7 +319,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled } = this.lectureData;
+            const {courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections} =
+                this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
             try {
@@ -245,6 +336,22 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         saveSeries: this.uiEditMode === UIEditMode.series,
                     },
                 });
+
+                // Saving VideoSections
+                if (changedKeys.includes("videoSections")) {
+                    const oldVideoSections = this.changeSet.getValue("videoSections", {lastCommittedState: true});
+                    const delta = videoSectionListDelta(oldVideoSections, videoSections);
+
+                    if (delta.toAdd.length > 0) {
+                        await DataStore.adminLectureList.addSections(courseId, lectureId, delta.toAdd);
+                    }
+                    for (const section of delta.toUpdate) {
+                        await DataStore.adminLectureList.updateSection(courseId, lectureId, section);
+                    }
+                    for (const section of delta.toDelete) {
+                        await DataStore.adminLectureList.deleteSection(courseId, lectureId, section.id);
+                    }
+                }
 
                 // Uploading new videos
                 for (const videoFile of this.videoFiles) {
@@ -319,10 +426,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number): Prom
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
     return putData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -331,10 +435,7 @@ export function saveLectureName(e: Event, cID: number, lID: number): Promise<boo
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
     return postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -638,6 +739,7 @@ export function createLectureForm(args: { s: [] }) {
         error: false,
         courseID: -1,
         invalidReason: "",
+        cannotContinueReason: "",
         init() {
             this.onUpdate();
         },
@@ -658,11 +760,7 @@ export function createLectureForm(args: { s: [] }) {
         },
         updateCreateType(newType: LectureCreateType) {
             this.createType = newType;
-            if (newType === LectureCreateType.livestream) {
-                this.formData.vodup = false;
-            } else {
-                this.formData.vodup = true;
-            }
+            this.formData.vodup = newType !== LectureCreateType.livestream;
         },
         updateLiveAdHoc(adHoc: boolean) {
             this.formData.adHoc = adHoc;
@@ -717,8 +815,11 @@ export function createLectureForm(args: { s: [] }) {
 
         // This function sets flags depending on the current tab and current data
         onUpdate() {
+            this.error = false;
+
             if (this.currentTab === 0) {
                 this.canContinue = true;
+                this.cannotContinueReason = "";
                 this.canGoBack = false;
                 this.onLastSlide = false;
                 return;
@@ -731,10 +832,21 @@ export function createLectureForm(args: { s: [] }) {
                     // => we are not on the last tab
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
                 } else {
                     this.onLastSlide = true;
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
+                    if (this.formData.end.length <= 0) {
+                        this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                    }
                 }
                 return;
             }
@@ -743,6 +855,14 @@ export function createLectureForm(args: { s: [] }) {
                 this.canContinue =
                     (this.getMediaFiles().length > 0 && this.formData.vodup) ||
                     (this.formData.adHoc && this.formData.end != "");
+                this.cannotContinueReason = "";
+                if (this.formData.vodup && this.getMediaFiles().length <= 0) {
+                    this.cannotContinueReason += "No media files!\n";
+                }
+                if (this.formData.adHoc && this.formData.end == "") {
+                    this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                }
+
                 this.canGoBack = true;
                 this.onLastSlide = true;
                 return;

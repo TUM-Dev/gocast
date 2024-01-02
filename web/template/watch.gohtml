@@ -37,7 +37,8 @@
 </div>
 <div x-cloak x-show="showShare"
      id="share-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false">
+    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false"
+         x-init="() => { window.addEventListener('keydown', (e) => { if (e.key === 'Escape') showShare = false; }); }">
         <div class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
             <div class="flex justify-between items-center px-3 pt-3 pb-1">
                 <h3 class="text-3 text-sm font-semibold">Share</h3>
@@ -76,7 +77,7 @@
     <div id="bookmarks-mobile" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
          class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
         <div @click.outside="sidebar = watch.SidebarState.Hidden"
-             class="m-auto w-3/4 h-96 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+             class="m-auto w-3/4 h-16/9 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
             {{template "bookmarks-modal" $stream.ID}}
         </div>
     </div>
@@ -401,8 +402,8 @@
             <div x-show="sidebar === watch.SidebarState.Chat"
                  :class="sidebar === watch.SidebarState.Chat ? 'lg:basis-1/4' : 'lg:basis-0'"
                  class="z-20 basis-full order-5
-                        md:px-2 md:pt-2
-                        lg:h-16/6 h-96 lg:order-none">
+                        md:px-2
+                        lg:h-16/6 h-16/9 lg:order-none">
                 <div class="border dark:border-gray-800 rounded-lg h-full">
                     {{template "chat-component" .ChatData}}
                 </div>
@@ -413,7 +414,7 @@
         {{if .IndexData.TUMLiveContext.User}}
             <div id="bookmarks-desktop" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
                  :class="sidebar === watch.SidebarState.Bookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="hidden md:block basis-full h-96 lg:h-16/6 px-5 md:px-2 md:pt-2 lg:order-none order-4">
+                 class="hidden md:block basis-full h-16/9 lg:h-16/6 px-5 md:px-2 lg:order-none order-4">
                 {{template "bookmarks-modal" $stream.ID}}
             </div>
         {{end}}
@@ -422,7 +423,7 @@
         {{if .IndexData.TUMLiveContext.User}}
             <div id="streams-box" x-cloak="" x-show="sidebar === watch.SidebarState.Streams"
                  :class="sidebar === watch.SidebarState.Streams ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="order-4 z-20 basis-full px-5 md:px-2 md:pt-2 lg:order-none lg:h-16/6 h-96">
+                 class="order-4 z-20 basis-full px-5 md:px-2 lg:order-none lg:h-16/6 h-16/9">
                 {{template "playlist" $stream.ID}}
             </div>
         {{end}}
@@ -628,12 +629,12 @@
     {{if (eq .Version "SPLIT")}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
-    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
-    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     watch.syncPlayers();
@@ -641,10 +642,10 @@
     {{else}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     {{end}}

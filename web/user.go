@@ -7,7 +7,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strings"
@@ -25,7 +24,7 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 
 	err := templateExecutor.ExecuteTemplate(c.Writer, "user-settings.gohtml", d.IndexData)
 	if err != nil {
-		log.Error(err)
+		logger.Error("Error executing template user-settings.gohtml", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
@@ -49,7 +48,7 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 			HandleValidLogin(c, data)
 			return
 		} else if err != tum.ErrLdapBadAuth {
-			log.WithError(err).Error("Login error")
+			logger.Error("Login error", "err", err)
 		}
 	}
 
@@ -112,7 +111,7 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 		}
 		err = usersDao.UpsertUser(&user)
 		if err != nil {
-			log.Printf("%v", err)
+			logger.Error("Error upserting user", "err", err)
 			return nil, err
 		}
 
@@ -165,13 +164,13 @@ func (r mainRoutes) CreatePasswordPage(c *gin.Context) {
 		}
 		err = u.SetPassword(p1)
 		if err != nil {
-			log.WithError(err).Error("error setting password.")
+			logger.Error("error setting password.", "err", err)
 			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		} else {
 			err := r.UsersDao.UpdateUser(u)
 			if err != nil {
-				log.WithError(err).Error("CreatePasswordPage: Can't update user")
+				logger.Error("CreatePasswordPage: Can't update user", "err", err)
 			}
 			r.UsersDao.DeleteResetKey(c.Param("key"))
 			c.Redirect(http.StatusFound, "/")

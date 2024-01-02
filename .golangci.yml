@@ -1,3 +1,4 @@
+# For a description for each linter, see https://golangci-lint.run/usage/linters/.
 linters:
   enable:
     - gosimple
@@ -14,7 +15,6 @@ linters:
     - ineffassign
     - gofumpt
     - revive
-    - depguard
     - nakedret
     - unconvert
     - wastedassign
@@ -25,7 +25,7 @@ linters:
   fast: false
 
 run:
-  go: '1.19'
+  go: '1.21'
   timeout: 10m
   skip-dirs:
     - node_modules
@@ -67,13 +67,14 @@ linters-settings:
       - name: modifies-value-receiver
   gofumpt:
     extra-rules: false
-    lang-version: "1.19"
+    lang-version: "1.21"
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   new: true
-  new-from-rev: HEAD
+  new-from-rev: dev
+  fix: false
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go

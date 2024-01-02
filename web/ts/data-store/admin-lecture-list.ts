@@ -1,7 +1,14 @@
 import { StreamableMapProvider } from "./provider";
-import { AdminLectureList, Lecture, LectureFile, UpdateLectureMetaRequest } from "../api/admin-lecture-list";
+import {
+    AdminLectureList,
+    Lecture,
+    LectureFile,
+    UpdateLectureMetaRequest,
+    VideoSection,
+    videoSectionSort,
+} from "../api/admin-lecture-list";
 import { FileType } from "../edit-course";
-import { UploadFileListener } from "../global";
+import {PostFormDataListener} from "../utilities/fetch-wrappers";
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -22,25 +29,19 @@ export interface UpdateMetaProps {
 }
 
 export class AdminLectureListProvider extends StreamableMapProvider<number, Lecture[]> {
-    protected async fetcher(courseId: number): Promise<Lecture[]> {
-        const result = await AdminLectureList.get(courseId);
-        return result.map((s) => {
-            s.hasAttachments = (s.files || []).some((f) => f.fileType === FileType.attachment);
+    async addSections(courseId: number, lectureId: number, videoSections: VideoSection[]) {
+        const newSections = await AdminLectureList.addSections(lectureId, videoSections);
 
-            s.startDate = new Date(s.start);
-            s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);
-            s.startTimeFormatted = s.startDate.toLocaleTimeString("en-US", timeFormatOptions);
-
-            s.endDate = new Date(s.end);
-            s.endDateFormatted = s.endDate.toLocaleDateString("en-US", dateFormatOptions);
-            s.endTimeFormatted = s.endDate.toLocaleTimeString("en-US", timeFormatOptions);
-
-            s.newCombinedVideo = null;
-            s.newPresentationVideo = null;
-            s.newCameraVideo = null;
-
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId === lectureId) {
+                return {
+                    ...s,
+                    videoSections: [...s.videoSections, ...newSections],
+                };
+            }
             return s;
         });
+        await this.triggerUpdate(courseId);
     }
 
     async add(courseId: number, lecture: Lecture): Promise<void> {
@@ -167,13 +168,68 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
+    async updateSection(courseId: number, lectureId: number, videoSection: VideoSection) {
+        await AdminLectureList.updateSection(lectureId, videoSection);
+
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId === lectureId) {
+                return {
+                    ...s,
+                    videoSections: [...s.videoSections.filter((a) => a.id !== videoSection.id), videoSection].sort(
+                        videoSectionSort,
+                    ),
+                };
+            }
+            return s;
+        });
+        await this.triggerUpdate(courseId);
+    }
+
+    async deleteSection(courseId: number, lectureId: number, videoSectionId: number) {
+        await AdminLectureList.deleteSection(lectureId, videoSectionId);
+
+        this.data[courseId] = (await this.getData(courseId)).map((s) => {
+            if (s.lectureId === lectureId) {
+                return {
+                    ...s,
+                    videoSections: [...s.videoSections.filter((a) => a.id !== videoSectionId)].sort(videoSectionSort),
+                };
+            }
+            return s;
+        });
+        await this.triggerUpdate(courseId);
+    }
+
     async uploadVideo(
         courseId: number,
         lectureId: number,
         videoType: string,
         file: File,
-        listener: UploadFileListener = {},
+        listener: PostFormDataListener = {},
     ) {
         await AdminLectureList.uploadVideo(courseId, lectureId, videoType, file, listener);
+    }
+
+    protected async fetcher(courseId: number): Promise<Lecture[]> {
+        const result = await AdminLectureList.get(courseId);
+        return result.map((s) => {
+            s.hasAttachments = (s.files || []).some((f) => f.fileType === FileType.attachment);
+
+            s.videoSections = (s.videoSections ?? []).sort(videoSectionSort);
+
+            s.startDate = new Date(s.start);
+            s.startDateFormatted = s.startDate.toLocaleDateString("en-US", dateFormatOptions);
+            s.startTimeFormatted = s.startDate.toLocaleTimeString("en-US", timeFormatOptions);
+
+            s.endDate = new Date(s.end);
+            s.endDateFormatted = s.endDate.toLocaleDateString("en-US", dateFormatOptions);
+            s.endTimeFormatted = s.endDate.toLocaleTimeString("en-US", timeFormatOptions);
+
+            s.newCombinedVideo = null;
+            s.newPresentationVideo = null;
+            s.newCameraVideo = null;
+
+            return s;
+        });
     }
 }

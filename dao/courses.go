@@ -10,7 +10,6 @@ import (
 
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -201,6 +200,7 @@ func (d coursesDao) GetCourseByToken(token string) (course model.Course, err err
 func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.TranscodingProgresses").
+		Preload("Streams.VideoSections").
 		Preload("Streams.Files").
 		Preload("Streams", func(db *gorm.DB) *gorm.DB {
 			return db.Order("streams.start desc")
@@ -218,7 +218,7 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 		return cachedCourses.(model.Course), nil
 	}
 	var course model.Course
-	err := DB.Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
+	err := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start desc")
@@ -304,16 +304,16 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	for _, stream := range course.Streams {
 		err := DB.Delete(&stream).Error
 		if err != nil {
-			log.WithError(err).Error("Can't delete stream")
+			logger.Error("Can't delete stream", "err", err)
 		}
 	}
 	err := DB.Model(&course).Updates(map[string]interface{}{"vod_enabled": false}).Error
 	if err != nil {
-		log.WithError(err).Error("Can't update course settings when deleting")
+		logger.Error("Can't update course settings when deleting", "err", err)
 	}
 	err = DB.Delete(&course, course.ID).Error
 	if err != nil {
-		log.WithError(err).Error("Can't delete course")
+		logger.Error("Can't delete course", "err", err)
 	}
 }
 

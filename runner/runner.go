@@ -32,7 +32,7 @@ type envConfig struct {
 	RecPath      string `env:"REC_PATH" envDefault:"storage/rec"`
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
-	Version      string `env:"VERSION" envDefault:"v0.0.0"`
+	Version      string `env:"VERSION" envDefault:"dev"`
 }
 
 type Runner struct {

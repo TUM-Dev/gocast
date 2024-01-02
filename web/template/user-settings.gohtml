@@ -17,6 +17,8 @@
     <script src="static/assets/init.js"></script>
     <script src="/static/assets/ts-dist/global.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
 
+    <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
     <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
     <style>[x-cloak] {
@@ -32,10 +34,15 @@
         </a>
     </div>
 </header>
-<main id="content" class="flex justify-center grow h-full overflow-y-scroll">
+<main id="content" class="flex justify-center grow h-full overflow-y-scroll" )>
     <article class="tum-live-settings-grid" x-data=" { err: '' } ">
         <header>
-            <h1 class="font-bold text-3">Settings</h1>
+            <div class="flex flex-row justify-between">
+                <h1 class="font-bold text-3">Settings</h1>
+                <div class="h-fit w-fit">
+                    {{template "close-button"}}
+                </div>
+            </div>
         </header>
         <div x-cloak x-show="err!==''" class="bg-danger/25 text-sm rounded-lg px-2 py-1 space-x-3 py-2">
             <i class="fa-solid fa-triangle-exclamation"></i>
@@ -68,9 +75,10 @@
                    @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r;})">
             <label for="greeting2">Servus</label>
         </section>
-        <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetPlaybackSpeeds}} }">
+        <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetPlaybackSpeeds}}}">
             <h2>Playback Speeds</h2>
-            <template x-for="ps in playbackspeeds">
+            <div class="flex flex-row">
+                <template x-for="ps in playbackspeeds">
                     <span class="mr-2">
                         <label>
                             <input :disabled="ps.speed===1" type="checkbox" x-model="ps.enabled" class="w-auto"
@@ -78,7 +86,41 @@
                             <span x-text="ps.speed"></span>
                         </label>
                     </span>
-            </template>
+                </template>
+            </div>
+        </section>
+        <section x-data="{ playbackspeeds: {{toJson .TUMLiveContext.User.GetCustomSpeeds}}, newSpeed: ''}">
+            <h2>Custom Speeds</h2>
+            <div class="flex flex-row">
+                <template x-for="ps in playbackspeeds">
+                    <span class="mr-2">
+                        <button class="tum-live-input-submit tum-live-button-tertiary p-1 text-sm"
+                                style="min-width: 5ch"
+                                x-text="ps"
+                                @click="playbackspeeds.splice(playbackspeeds.indexOf(ps), 1); global.updatePreference(global.UserSetting.CustomSpeeds, playbackspeeds);"></button>
+                    </span>
+                </template>
+                <style>
+                    input[type='number'] {
+                        -moz-appearance: textfield;
+                        outline: 0;
+                        border-color: #1f2937;
+                        border-width: 0 0 2px;
+                    }
+
+                    input::-webkit-outer-spin-button,
+                    input::-webkit-inner-spin-button {
+                        -webkit-appearance: none;
+                    }
+                </style>
+                <input x-model="newSpeed" type="number" min="0.01" max="5" maxlength="4" style="width: 7ch;"
+                       class="bg-transparent" @change="newSpeed = global.sanitizeInputSpeed(newSpeed)"
+                       placeholder="1.00">
+                <button class="tum-live-input-submit tum-live-button-primary p-1 text-sm ml-2 pl-2 pr-2"
+                        @click="newSpeed = global.sanitizeInputSpeed(newSpeed); if(global.checkInputSpeed(newSpeed, playbackspeeds)) {playbackspeeds.push(newSpeed); playbackspeeds.sort(); global.updatePreference(global.UserSetting.CustomSpeeds, playbackspeeds); newSpeed='';}">
+                    Add
+                </button>
+            </div>
         </section>
         <section>
             <h2>Privacy & Data Protection</h2>

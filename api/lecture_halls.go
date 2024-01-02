@@ -4,12 +4,11 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 	"strings"
@@ -91,7 +90,7 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 	lectureHall.PwrCtrlIp = req.PwrCtrlIp
 	err = r.LectureHallsDao.SaveLectureHall(lectureHall)
 	if err != nil {
-		log.WithError(err).Error("error while updating lecture hall")
+		logger.Error("error while updating lecture hall", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "error while updating lecture hall",
@@ -126,7 +125,7 @@ func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 	preset.IsDefault = true
 	err = r.LectureHallsDao.UnsetDefaults(c.Param("id"))
 	if err != nil {
-		log.WithError(err).Error("error unsetting default presets")
+		logger.Error("error unsetting default presets", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "error unsetting default presets",
@@ -136,7 +135,7 @@ func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 	}
 	err = r.LectureHallsDao.SavePreset(preset)
 	if err != nil {
-		log.WithError(err).Error("error saving preset as default")
+		logger.Error("error saving preset as default", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "error saving preset as default",
@@ -244,7 +243,7 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	c.Header("content-type", "text/calendar")
 	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", icalData)
 	if err != nil {
-		log.Printf("%v", err)
+		logger.Error("Error executing template ical.gotemplate", "err", err)
 	}
 }
 
@@ -310,7 +309,7 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 
 	streams, err := r.StreamsDao.GetStreamsByIds(req.StreamIDs)
 	if err != nil || len(streams) != len(req.StreamIDs) {
-		log.WithError(err).Error("can not get all streams to update lecture hall")
+		logger.Error("can not get all streams to update lecture hall", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get all streams to update lecture hall",
@@ -322,7 +321,7 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 	if req.LectureHallID == 0 {
 		err = r.StreamsDao.UnsetLectureHall(req.StreamIDs)
 		if err != nil {
-			log.WithError(err).Error("can not update lecture hall for streams")
+			logger.Error("can not update lecture hall for streams", "err", err)
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusInternalServerError,
 				CustomMessage: "can not update lecture hall for streams",
@@ -343,7 +342,7 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 	}
 	err = r.StreamsDao.SetLectureHall(req.StreamIDs, req.LectureHallID)
 	if err != nil {
-		log.WithError(err).Error("can not update lecture hall")
+		logger.Error("can not update lecture hall", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not update lecture hall",

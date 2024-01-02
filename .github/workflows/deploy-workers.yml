@@ -54,6 +54,6 @@ jobs:
           context: ./${{ matrix.module }}
           pull: true
           push: true
-          build-args: version=${{ steps.vars.outputs.sha_short }}
+          build-args: version=${{ github.ref_name }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -4,7 +4,6 @@ import (
 	"embed"
 	"fmt"
 	"github.com/getsentry/sentry-go"
-	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"os"
@@ -200,7 +199,7 @@ func (r mainRoutes) home(c *gin.Context) {
 	indexData := NewIndexDataWithContext(c)
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
-		log.WithError(err).Errorf("Could not execute template: 'home.gohtml'")
+		logger.Error("Could not execute template: 'home.gohtml'", "err", err)
 	}
 }
 

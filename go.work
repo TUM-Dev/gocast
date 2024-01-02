@@ -1,9 +1,9 @@
-go 1.21.1
+go 1.21.0
 
 use (
 	.
 	./worker
 	./worker/edge
-	runner
 	vod-service
+	./runner
 )

@@ -2,19 +2,23 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
     <div class="text-1 container mx-auto"
-         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', searchResults: [] }"
-        x-init="$watch('year',(value)=>{if(value<2000)return; yearW = (value%1000) + 1})">
+         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', searchResults: [] , isSearchResultVisible: false}"
+         x-init="$watch('year',(value)=>{ yearW = (value<2000) ? '' : (value%1000) + 1 })">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
                 <h2 class="mb-0">Find your course from TUMOnline</h2>
                 <form id="createCourseForm" aria-haspopup="listbox" class="grid gap-3 mt-3">
                     <div class="flex space-x-1">
-                        <input class="w-full box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white"
-                               type="search" autocomplete="off" placeholder="Search" x-model="searchQuery"
+                        <label for="search-course" class="hidden">Search Course</label>
+                        <input class="w-full box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 dark:bg-gray-600 dark:text-white"
+                               id="search-course" type="search" autocomplete="off" placeholder="Search"
+                               x-model="searchQuery"
                                @change="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
-                               @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"/>
+                               @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
+                               @focus="isSearchResultVisible = true"
+                               @blur="setTimeout(() => isSearchResultVisible = false, 100)"/>
                     </div>
-                    <div class="px-2" x-show="searchResults.length!==0">
+                    <div class="px-2" x-show="isSearchResultVisible && searchQuery !== '' && searchResults.length!==0">
                         <ul role="listbox">
                             <template x-for="searchResult in searchResults">
                                 <li role="option" aria-selected="false"
@@ -33,19 +37,20 @@
                     <h2>Manually enter Infos:</h2>
                     <div class="flex space-x-1">
                         <label for="name" class="hidden">Course Title</label>
-                        <input class="w-4/5 tl-input !ml-0" id="name" name="name" type="text"
+                        <input class="w-4/5 tl-input border !ml-0" id="name" name="name" type="text"
                                autocomplete="off"
                                placeholder="Einführung in die Informatik (IN0001)"
                                x-model="title"
                                required
                                :class="title === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                         <label for="slug" class="hidden">Slug</label>
-                        <input class="w-1/5 tl-input" id="slug" name="slug" type="text" x-ref="slug"
+                        <input class="w-1/5 tl-input border" id="slug" name="slug" type="text" x-ref="slug"
                                autocomplete="off"
                                x-model="slug"
                                required
                                placeholder="eidi"
-                               :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"/>
+                               :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"
+                               @input="slug = slug.replace(/[^A-Za-z0-9\-_.+()~]/g, '')"/>
                     </div>
                     {{template "semester-selection"}}
                 </form>
