@@ -160,3 +160,66 @@ func ParseProgressToProto(progress *model.StreamProgress) *protobuf.Progress {
 		UserID:   uint32(progress.UserID),
 	}
 }
+
+func ParseReactionToProto(reaction model.ChatReaction) *protobuf.ChatReaction {
+	return &protobuf.ChatReaction{
+		ChatID:   uint32(reaction.ChatID),
+		UserID:   uint32(reaction.UserID),
+		Username: reaction.Username,
+		Emoji:    reaction.Emoji,
+	}
+}
+
+func ParseAddressedUserToProto(addressedUser model.User) *protobuf.AddressedUser {
+	return &protobuf.AddressedUser{
+		Id:       uint32(addressedUser.ID),
+		Username: addressedUser.Name,
+	}
+}
+
+func ParseChatMessageToProto(chat model.Chat) *protobuf.ChatMessage {
+
+	var reactions []*protobuf.ChatReaction
+
+	for _, reaction := range chat.Reactions {
+		reactions = append(reactions, ParseReactionToProto(reaction))
+	}
+
+	var replies []*protobuf.ChatMessage
+	for _, reply := range chat.Replies {
+		replies = append(replies, ParseChatMessageToProto(reply))
+	}
+
+	var addressedUsers []*protobuf.AddressedUser
+	for _, addressedUser := range chat.AddressedToUsers {
+		addressedUsers = append(addressedUsers, ParseAddressedUserToProto(addressedUser))
+	}
+
+	timestamp := timestamppb.New(chat.CreatedAt)
+
+	return &protobuf.ChatMessage{
+		Id:               uint32(chat.ID),
+		StreamID:         uint32(chat.StreamID),
+		UserID:           chat.UserID,
+		Username:         chat.UserName,
+		Message:          chat.Message,
+		SanitizedMessage: chat.SanitizedMessage,
+		Color:            chat.Color,
+		IsVisible:        chat.IsVisible,
+		Reactions:        reactions,
+		Replies:          replies,
+		AddressedUsers:   addressedUsers,
+		IsResolved:       chat.Resolved,
+		IsAdmin:          chat.Admin,
+		CreatedAt:        timestamp,
+	}
+}
+
+func ParseChatReactionToProto(chatReaction model.ChatReaction) *protobuf.ChatReaction {
+	return &protobuf.ChatReaction{
+		ChatID:   uint32(chatReaction.ChatID),
+		UserID:   uint32(chatReaction.UserID),
+		Username: chatReaction.Username,
+		Emoji:    chatReaction.Emoji,
+	}
+}
