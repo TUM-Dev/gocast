@@ -222,7 +222,7 @@ func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reac
 
 	// TODO check reaction is valid (1 singular emoji)
 	// this is not so easy since skin tones, or flags are composed of a variety of emojis/ unicode characters
-	
+
 	existingChat := &model.Chat{}
 	err = db.Where("id = ?", chatID).First(existingChat).Error
 
@@ -260,8 +260,7 @@ func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reac
 	case result.Error != nil:
 		return nil, e.WithStatus(http.StatusInternalServerError, result.Error)
 	default:
-		reactionModel.Emoji = reaction
-		if err := db.Save(reactionModel).Error; err != nil {
+		if err := db.Model(reactionModel).Update("emoji", reaction).Error; err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
 	}
