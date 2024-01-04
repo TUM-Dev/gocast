@@ -2,6 +2,7 @@
 package services
 
 import (
+	"database/sql"
 	"errors"
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	"github.com/TUM-Dev/gocast/model"
@@ -141,7 +142,15 @@ func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgre
 
 func GetChatMessages(db *gorm.DB, streamID uint) ([]*model.Chat, error) {
 	var chats []*model.Chat
-	if err := db.Preload("Reactions").Where("stream_id = ?", streamID).Find(&chats).Error; err != nil {
+
+	////also preload replies which are chats themselves
+	//if err := db.Preload("Reactions").Preload("Replies").Where("stream_id = ?", streamID).Find(&chats).Error; err != nil {
+	//	return nil, err
+	//}
+
+	//chats which are replies should not be listed in the chat list itself only in the replies of the chat they are replying to
+	// also preload reactions and replies of chats
+	if err := db.Preload("Reactions").Preload("Replies").Where("stream_id = ? AND reply_to IS NULL", streamID).Find(&chats).Error; err != nil {
 		return nil, err
 	}
 
@@ -313,13 +322,14 @@ func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message
 
 	// role is 1 or 2 means lecturer or admin
 	isAdmin := user.Role == 1 || user.Role == 2
-
+	
 	c := &model.Chat{
 		UserID:   strconv.Itoa(int(userID)),
 		UserName: user.Name,
 		Message:  message,
 		StreamID: streamID,
 		Admin:    isAdmin,
+		ReplyTo:  sql.NullInt64{Int64: int64(chatID), Valid: true},
 	}
 
 	// save both chats
