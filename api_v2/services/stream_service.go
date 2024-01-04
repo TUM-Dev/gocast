@@ -141,7 +141,7 @@ func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgre
 
 func GetChatMessages(db *gorm.DB, streamID uint) ([]*model.Chat, error) {
 	var chats []*model.Chat
-	if err := db.Where("stream_id = ?", streamID).Find(&chats).Error; err != nil {
+	if err := db.Preload("Reactions").Where("stream_id = ?", streamID).Find(&chats).Error; err != nil {
 		return nil, err
 	}
 
@@ -157,12 +157,37 @@ func PostChatMessage(db *gorm.DB, streamID uint, userID uint, message string) (*
 	user := &model.User{}
 	err = db.Where("id = ?", userID).First(user).Error
 
-	coolDownSeconds := 60
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
 
-	result := db.Where("created_at > ? AND user_id = ?", time.Now().Add(time.Duration(-coolDownSeconds)), userID).First(user)
+	coolDown := 10 * time.Second
+	coolDownMessages := 1
 
-	if result.Error == nil {
-		return nil, e.WithStatus(http.StatusBadRequest, errors.New("user has posted a message in the last 60 seconds"))
+	var recentMessages int64
+	err = db.Model(&model.Chat{}).
+		Where("created_at > ? AND user_id = ?", time.Now().Add(-coolDown), userID).
+		Count(&recentMessages).Error
+
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	if recentMessages >= int64(coolDownMessages) {
+		return nil, e.WithStatus(http.StatusTooManyRequests, errors.New("user is posting too fast"))
+	}
+
+	var recentMessagesWithSameContent int64
+	err = db.Model(&model.Chat{}).
+		Where("created_at > ? AND user_id = ? AND message = ?", time.Now().Add(-60*time.Second), userID, message).
+		Count(&recentMessagesWithSameContent).Error
+
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	if recentMessagesWithSameContent >= int64(coolDownMessages) {
+		return nil, e.WithStatus(http.StatusTooManyRequests, errors.New("user is posting the same message too fast"))
 	}
 
 	if err != nil {
@@ -197,6 +222,17 @@ func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reac
 
 	// TODO check reaction is valid (1 singular emoji)
 	// this is not so easy since skin tones, or flags are composed of a variety of emojis/ unicode characters
+	
+	existingChat := &model.Chat{}
+	err = db.Where("id = ?", chatID).First(existingChat).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, e.WithStatus(http.StatusNotFound, errors.New("chat not found"))
+		} else {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+	}
 
 	user := &model.User{}
 
@@ -215,27 +251,20 @@ func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reac
 
 	result := db.Where("chat_id = ? AND user_id = ?", chatID, userID).First(reactionModel)
 
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		chat := &model.Chat{}
-		err = db.Where("id = ?", chatID).First(chat).Error
-
-		if err != nil {
+	switch {
+	case errors.Is(result.Error, gorm.ErrRecordNotFound):
+		if err := db.Save(reactionModel).Error; err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
-
-		chat.Reactions = append(chat.Reactions, *reactionModel)
-
-		if err := db.Save(chat).Error; err != nil {
-			return nil, e.WithStatus(http.StatusInternalServerError, err)
-		}
-	} else if result.Error != nil {
+		return reactionModel, nil
+	case result.Error != nil:
 		return nil, e.WithStatus(http.StatusInternalServerError, result.Error)
-	} else {
+	default:
+		reactionModel.Emoji = reaction
 		if err := db.Save(reactionModel).Error; err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
 	}
-
 	return reactionModel, nil
 }
 
