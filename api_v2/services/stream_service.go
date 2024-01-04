@@ -3,12 +3,12 @@ package services
 
 import (
 	"errors"
-	"net/http"
-	"strconv"
-
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 // GetStreamByID retrieves a stream by its id.
@@ -157,6 +157,14 @@ func PostChatMessage(db *gorm.DB, streamID uint, userID uint, message string) (*
 	user := &model.User{}
 	err = db.Where("id = ?", userID).First(user).Error
 
+	coolDownSeconds := 60
+
+	result := db.Where("created_at > ? AND user_id = ?", time.Now().Add(time.Duration(-coolDownSeconds)), userID).First(user)
+
+	if result.Error == nil {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("user has posted a message in the last 60 seconds"))
+	}
+
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -207,15 +215,23 @@ func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reac
 
 	result := db.Where("chat_id = ? AND user_id = ?", chatID, userID).First(reactionModel)
 
-	switch {
-	case errors.Is(result.Error, gorm.ErrRecordNotFound):
-		if err := db.Save(reactionModel).Error; err != nil {
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		chat := &model.Chat{}
+		err = db.Where("id = ?", chatID).First(chat).Error
+
+		if err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
-	case result.Error != nil:
+
+		chat.Reactions = append(chat.Reactions, *reactionModel)
+
+		if err := db.Save(chat).Error; err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+	} else if result.Error != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, result.Error)
-	default:
-		if err := db.Delete(reactionModel).Error; err != nil {
+	} else {
+		if err := db.Save(reactionModel).Error; err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
 	}
