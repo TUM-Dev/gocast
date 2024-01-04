@@ -191,7 +191,6 @@ func (a *API) GetChatMessages(ctx context.Context, req *protobuf.GetChatMessages
 	a.log.Info("GetChatMessages")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
@@ -207,7 +206,6 @@ func (a *API) GetChatMessages(ctx context.Context, req *protobuf.GetChatMessages
 	}
 
 	chats, err := s.GetChatMessages(a.db, uint(req.StreamID))
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -225,7 +223,6 @@ func (a *API) PostChatMessage(ctx context.Context, req *protobuf.PostChatMessage
 	a.log.Info("PostChatMessage")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
@@ -254,7 +251,6 @@ func (a *API) PostChatReaction(ctx context.Context, req *protobuf.PostChatReacti
 	a.log.Info("PostChatReaction")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
@@ -283,7 +279,6 @@ func (a *API) DeleteChatReaction(ctx context.Context, req *protobuf.DeleteChatRe
 	a.log.Info("DeleteChatReaction")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
@@ -310,13 +305,11 @@ func (a *API) PostChatReply(ctx context.Context, req *protobuf.PostChatReplyRequ
 	a.log.Info("PostChatReply")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
-
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +321,6 @@ func (a *API) PostChatReply(ctx context.Context, req *protobuf.PostChatReplyRequ
 	}
 
 	chat, err := s.PostChatReply(a.db, uint(req.StreamID), uID, uint(req.ChatID), req.Message)
-
 	if err != nil {
 		return nil, err
 	}
@@ -342,13 +334,11 @@ func (a *API) MarkChatMessageAsResolved(ctx context.Context, req *protobuf.MarkC
 	a.log.Info("MarkChatMessageAsResolved")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
-
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +350,6 @@ func (a *API) MarkChatMessageAsResolved(ctx context.Context, req *protobuf.MarkC
 	}
 
 	chat, err := s.MarkChatMessageAsResolved(a.db, uID, uint(req.ChatID))
-
 	if err != nil {
 		return nil, err
 	}
@@ -374,16 +363,13 @@ func (a *API) MarkChatMessageAsUnresolved(ctx context.Context, req *protobuf.Mar
 	a.log.Info("MarkChatMessageAsUnresolved")
 
 	uID, err := a.getCurrentID(ctx)
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
-
 	if err != nil {
 		return nil, err
-
 	}
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
@@ -393,7 +379,6 @@ func (a *API) MarkChatMessageAsUnresolved(ctx context.Context, req *protobuf.Mar
 	}
 
 	chat, err := s.MarkChatMessageAsUnresolved(a.db, uID, uint(req.ChatID))
-
 	if err != nil {
 		return nil, err
 	}

@@ -178,7 +178,6 @@ func ParseAddressedUserToProto(addressedUser model.User) *protobuf.AddressedUser
 }
 
 func ParseChatMessageToProto(chat model.Chat) *protobuf.ChatMessage {
-
 	var reactions []*protobuf.ChatReaction
 
 	for _, reaction := range chat.Reactions {

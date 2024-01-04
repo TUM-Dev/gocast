@@ -4,12 +4,13 @@ package services
 import (
 	"database/sql"
 	"errors"
-	e "github.com/TUM-Dev/gocast/api_v2/errors"
-	"github.com/TUM-Dev/gocast/model"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"time"
+
+	e "github.com/TUM-Dev/gocast/api_v2/errors"
+	"github.com/TUM-Dev/gocast/model"
+	"gorm.io/gorm"
 )
 
 // GetStreamByID retrieves a stream by its id.
@@ -148,7 +149,7 @@ func GetChatMessages(db *gorm.DB, streamID uint) ([]*model.Chat, error) {
 	//	return nil, err
 	//}
 
-	//chats which are replies should not be listed in the chat list itself only in the replies of the chat they are replying to
+	// chats which are replies should not be listed in the chat list itself only in the replies of the chat they are replying to
 	// also preload reactions and replies of chats
 	if err := db.Preload("Reactions").Preload("Replies").Where("stream_id = ? AND reply_to IS NULL", streamID).Find(&chats).Error; err != nil {
 		return nil, err
@@ -305,7 +306,7 @@ func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message
 		return nil, err
 	}
 
-	//create chat and attach it to the chat with chatID
+	// create chat and attach it to the chat with chatID
 	existingThread := &model.Chat{}
 	err = db.Where("id = ?", chatID).First(existingThread).Error
 
@@ -346,12 +347,10 @@ func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message
 }
 
 func MarkChatMessageAsResolved(db *gorm.DB, userID uint, chatID uint) (*model.Chat, error) {
-
-	//find chat check if user owns it or is admin
+	// find chat check if user owns it or is admin
 	chat := &model.Chat{}
 
 	err := db.Where("id = ?", chatID).First(chat).Error
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -384,13 +383,11 @@ func MarkChatMessageAsResolved(db *gorm.DB, userID uint, chatID uint) (*model.Ch
 }
 
 func MarkChatMessageAsUnresolved(db *gorm.DB, userID uint, chatID uint) (*model.Chat, error) {
-
-	//find chat check if user owns it or is admin
+	// find chat check if user owns it or is admin
 
 	chat := &model.Chat{}
 
 	err := db.Where("id = ?", chatID).First(chat).Error
-
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
