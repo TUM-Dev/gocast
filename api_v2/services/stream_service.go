@@ -322,7 +322,7 @@ func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message
 
 	// role is 1 or 2 means lecturer or admin
 	isAdmin := user.Role == 1 || user.Role == 2
-	
+
 	c := &model.Chat{
 		UserID:   strconv.Itoa(int(userID)),
 		UserName: user.Name,
@@ -332,7 +332,6 @@ func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message
 		ReplyTo:  sql.NullInt64{Int64: int64(chatID), Valid: true},
 	}
 
-	// save both chats
 	if err := db.Save(c).Error; err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -349,7 +348,6 @@ func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message
 func MarkChatMessageAsResolved(db *gorm.DB, userID uint, chatID uint) (*model.Chat, error) {
 
 	//find chat check if user owns it or is admin
-
 	chat := &model.Chat{}
 
 	err := db.Where("id = ?", chatID).First(chat).Error
