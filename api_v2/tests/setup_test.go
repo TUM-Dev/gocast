@@ -168,7 +168,14 @@ func setup() *api_v2.API {
 		logger.Error("Error running after db", "err", err)
 		return nil
 	}
-
+    // Delete all entries from the Device table (temporary workaround for db not resetting when running tests)
+    err = db.Delete(&model.Device{}).Error
+    if err != nil {
+        sentry.CaptureException(err)
+        sentry.Flush(time.Second * 5)
+        logger.Error("can't delete entries from Device table", "err", err)
+    }
+	
 	l, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		logger.Error("can't listen on port 8081", "err", err)
