@@ -76,6 +76,16 @@ func TestGetPublicCourses(t *testing.T) {
 	}
 }
 
+func TestGetPublicCourses_Unauthenticated(t *testing.T) {
+	// Get "public" courses with invalid jwt
+	ctx := metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
+	req := &protobuf.GetPublicCoursesRequest{}
+	_, err := a.GetPublicCourses(ctx, req)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("expected UNAUTHENTICATED, got %v", err)
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////// GET SEMESTERS /////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +142,7 @@ func TestGetCourseStreams(t *testing.T) {
 	}
 }
 
-func TestGetCourseStreams_MissingCourseID(t *testing.T) {
+func TestGetCourseStreams_InvalidArgument(t *testing.T) {
 	// Call GetCourseStreams without a CourseID
 	ctx := metadata.NewIncomingContext(context.Background(), md_student_loggedin)
 	req := &protobuf.GetCourseStreamsRequest{}
