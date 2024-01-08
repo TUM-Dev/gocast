@@ -18,7 +18,7 @@ import (
 // Stream related resources are all fetched according to the same schema:
 // 0. Check if request is valid
 // 1. Fetch the resource from the database
-// 1. Check if the user is enrolled in the course of this resource or if the course is public
+// 2. Check if the user is enrolled in the course of this resource or if the course is public
 // 3. Parse the resource to a protobuf representation
 // 4. Return the protobuf representation
 
@@ -133,12 +133,38 @@ func (a *API) GetThumbsLive(ctx context.Context, req *protobuf.GetThumbsLiveRequ
 	return &protobuf.GetThumbsLiveResponse{Path: path}, nil
 }
 
-func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest) (*protobuf.GetProgressResponse, error) {
-	a.log.Info("GetStreamProgress")
+// Progress related resources are all fetched according to the same schema:
+// 0. Check if request is valid
+// 1. Check if the user is enrolled in the course of the stream or if the course is public
+
+func (a *API) handleProgressRequest(ctx context.Context, sID uint64) (uint, error) {
+	if sID == 0 {
+		return 0, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
 
 	uID, err := a.getCurrentID(ctx)
 	if err != nil {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
+		return 0, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+	s, err := s.GetStreamByID(a.db, uint(sID))
+	if err != nil {
+		return 0, err
+	}
+
+	_, err = h.CheckAuthorized(a.db, uID, s.CourseID)
+	if err != nil {
+		return 0, err
+	}
+
+	return uID, nil
+}
+
+func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest) (*protobuf.GetProgressResponse, error) {
+	a.log.Info("GetStreamProgress")
+	uID, err := a.handleProgressRequest(ctx, req.StreamID) 
+	if err != nil {
+		return nil, err
 	}
 
 	p, err := s.GetProgress(a.db, uint(req.StreamID), uID)
@@ -153,10 +179,13 @@ func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest)
 
 func (a *API) PutProgress(ctx context.Context, req *protobuf.PutProgressRequest) (*protobuf.PutProgressResponse, error) {
 	a.log.Info("SetStreamProgress")
+	if req.Progress <= 0 || req.Progress >= 1 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("progress must not be empty, negative or greater than 1"))
+	}
 
-	uID, err := a.getCurrentID(ctx)
+	uID, err := a.handleProgressRequest(ctx, req.StreamID) 
 	if err != nil {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
+		return nil, err
 	}
 
 	p, err := s.SetProgress(a.db, uint(req.StreamID), uID, float64(req.Progress))
@@ -170,10 +199,9 @@ func (a *API) PutProgress(ctx context.Context, req *protobuf.PutProgressRequest)
 
 func (a *API) MarkAsWatched(ctx context.Context, req *protobuf.MarkAsWatchedRequest) (*protobuf.MarkAsWatchedResponse, error) {
 	a.log.Info("MarkAsWatched")
-
-	uID, err := a.getCurrentID(ctx)
+	uID, err := a.handleProgressRequest(ctx, req.StreamID) 
 	if err != nil {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
+		return nil, err
 	}
 
 	p, err := s.MarkAsWatched(a.db, uint(req.StreamID), uID)

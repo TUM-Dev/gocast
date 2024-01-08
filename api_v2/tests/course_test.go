@@ -24,7 +24,6 @@ func TestGetPublicCourses(t *testing.T) {
 	}
 
 	// Get "loggedin" courses for loggedin users
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_loggedin)
 	req = &protobuf.GetPublicCoursesRequest{}
 	_, err = a.GetPublicCourses(ctx, req)
 	if status.Code(err) != codes.OK {
@@ -32,7 +31,6 @@ func TestGetPublicCourses(t *testing.T) {
 	}
 
 	// Get "enrolled" courses for enrolled users
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
 	req = &protobuf.GetPublicCoursesRequest{}
 	_, err = a.GetPublicCourses(ctx, req)
 	if status.Code(err) != codes.OK {
@@ -40,35 +38,30 @@ func TestGetPublicCourses(t *testing.T) {
 	}
 
 	// Get public courses + year
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
 	req = &protobuf.GetPublicCoursesRequest{Year: 2021}
 	_, err = a.GetPublicCourses(ctx, req)
 	if status.Code(err) != codes.OK {
 		t.Errorf("expected OK, got %v", err)
 	}
 	// Get public courses + term
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
 	req = &protobuf.GetPublicCoursesRequest{Term: "WS"}
 	_, err = a.GetPublicCourses(ctx, req)
 	if status.Code(err) != codes.OK {
 		t.Errorf("expected OK, got %v", err)
 	}
 	// Get public courses limit
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
 	req = &protobuf.GetPublicCoursesRequest{Limit: 10}
 	_, err = a.GetPublicCourses(ctx, req)
 	if status.Code(err) != codes.OK {
 		t.Errorf("expected OK, got %v", err)
 	}
 	// Get public courses + skip
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
 	req = &protobuf.GetPublicCoursesRequest{Skip: 1}
 	_, err = a.GetPublicCourses(ctx, req)
 	if status.Code(err) != codes.OK {
 		t.Errorf("expected OK, got %v", err)
 	}
 	// Get public courses + year + term + limit + skip
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
 	req = &protobuf.GetPublicCoursesRequest{Year: 2021, Term: "WS", Limit: 10, Skip: 0}
 	_, err = a.GetPublicCourses(ctx, req)
 	if status.Code(err) != codes.OK {
@@ -172,16 +165,31 @@ func TestGetCourseStreams_PermissionDenied(t *testing.T) {
 	}
 
 	// Course has visibility "enrolled" and user not enrolled in the course
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_loggedin)
+	ctx = metadata.NewIncomingContext(context.Background(), nil)
 	req = &protobuf.GetCourseStreamsRequest{CourseID: 3}
+	_, err = a.GetCourseStreams(ctx, req)
+	if status.Code(err) != codes.PermissionDenied {
+		t.Errorf("expected PERMISSION_DENIED, got %v", err)
+	}
+	ctx = metadata.NewIncomingContext(context.Background(), md_student_loggedin)
 	_, err = a.GetCourseStreams(ctx, req)
 	if status.Code(err) != codes.PermissionDenied {
 		t.Errorf("expected PERMISSION_DENIED, got %v", err)
 	}
 
 	// Course has visibility "private"
-	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	ctx = metadata.NewIncomingContext(context.Background(), nil)
 	req = &protobuf.GetCourseStreamsRequest{CourseID: 4}
+	_, err = a.GetCourseStreams(ctx, req)
+	if status.Code(err) != codes.PermissionDenied {
+		t.Errorf("expected PERMISSION_DENIED, got %v", err)
+	}
+	ctx = metadata.NewIncomingContext(context.Background(), md_student_loggedin)
+	_, err = a.GetCourseStreams(ctx, req)
+	if status.Code(err) != codes.PermissionDenied {
+		t.Errorf("expected PERMISSION_DENIED, got %v", err)
+	}
+	ctx = metadata.NewIncomingContext(context.Background(), md_student_enrolled)
 	_, err = a.GetCourseStreams(ctx, req)
 	if status.Code(err) != codes.PermissionDenied {
 		t.Errorf("expected PERMISSION_DENIED, got %v", err)
