@@ -10,8 +10,8 @@ export function videoInformationContext(streamId: number): AlpineComponent {
     const descriptionEl = document.getElementById("description") as HTMLInputElement;
     return {
         viewers: 0 as number,
-        description: descriptionEl.value as string,
-        less: descriptionEl.value.length > CUTOFFLENGTH,
+        description: descriptionEl.innerHTML as string,
+        less: descriptionEl.innerHTML.length > CUTOFFLENGTH,
 
         showFullDescription: new ToggleableElement(),
 
