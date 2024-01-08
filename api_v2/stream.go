@@ -195,12 +195,21 @@ func (a *API) GetChatMessages(ctx context.Context, req *protobuf.GetChatMessages
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if req.StreamID == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
+
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.CheckCanChat(a.db, uID, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -227,12 +236,21 @@ func (a *API) PostChatMessage(ctx context.Context, req *protobuf.PostChatMessage
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if req.StreamID == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
+
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.CheckCanChat(a.db, uID, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -255,12 +273,21 @@ func (a *API) PostChatReaction(ctx context.Context, req *protobuf.PostChatReacti
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if req.StreamID == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
+
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.CheckCanChat(a.db, uID, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -283,12 +310,21 @@ func (a *API) DeleteChatReaction(ctx context.Context, req *protobuf.DeleteChatRe
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if req.StreamID == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
+
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.CheckCanChat(a.db, uID, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -309,6 +345,10 @@ func (a *API) PostChatReply(ctx context.Context, req *protobuf.PostChatReplyRequ
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if req.StreamID == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
+
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
 	if err != nil {
 		return nil, err
@@ -316,6 +356,11 @@ func (a *API) PostChatReply(ctx context.Context, req *protobuf.PostChatReplyRequ
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
 
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.CheckCanChat(a.db, uID, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -338,6 +383,10 @@ func (a *API) MarkChatMessageAsResolved(ctx context.Context, req *protobuf.MarkC
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if req.StreamID == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
+
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
 	if err != nil {
 		return nil, err
@@ -345,6 +394,11 @@ func (a *API) MarkChatMessageAsResolved(ctx context.Context, req *protobuf.MarkC
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
 
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.CheckCanChat(a.db, uID, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -367,6 +421,10 @@ func (a *API) MarkChatMessageAsUnresolved(ctx context.Context, req *protobuf.Mar
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
+	if req.StreamID == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+	}
+
 	stream, err := s.GetStreamByID(a.db, uint(req.StreamID))
 	if err != nil {
 		return nil, err
@@ -374,6 +432,11 @@ func (a *API) MarkChatMessageAsUnresolved(ctx context.Context, req *protobuf.Mar
 
 	_, err = h.CheckAuthorized(a.db, uID, stream.CourseID)
 
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.CheckCanChat(a.db, uID, uint(req.StreamID))
 	if err != nil {
 		return nil, err
 	}
