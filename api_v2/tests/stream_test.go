@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"	
+	"github.com/TUM-Dev/gocast/api_v2/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -431,7 +431,6 @@ func TestPutProgress_Unauthenticated(t *testing.T) {
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected UNAUTHENTICATED, got %v", err)
 	}
-
 }
 
 func TestPutProgress_PermissionDenied(t *testing.T) {
@@ -515,7 +514,6 @@ func TestGetProgress_Unauthenticated(t *testing.T) {
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected UNAUTHENTICATED, got %v", err)
 	}
-
 }
 
 func TestGetProgress_PermissionDenied(t *testing.T) {
@@ -599,7 +597,6 @@ func TestMarkAsWatched_Unauthenticated(t *testing.T) {
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected UNAUTHENTICATED, got %v", err)
 	}
-
 }
 
 func TestMarkAsWatched_PermissionDenied(t *testing.T) {

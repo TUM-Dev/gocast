@@ -162,7 +162,7 @@ func (a *API) handleProgressRequest(ctx context.Context, sID uint64) (uint, erro
 
 func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest) (*protobuf.GetProgressResponse, error) {
 	a.log.Info("GetStreamProgress")
-	uID, err := a.handleProgressRequest(ctx, req.StreamID) 
+	uID, err := a.handleProgressRequest(ctx, req.StreamID)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (a *API) PutProgress(ctx context.Context, req *protobuf.PutProgressRequest)
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("progress must not be empty, negative or greater than 1"))
 	}
 
-	uID, err := a.handleProgressRequest(ctx, req.StreamID) 
+	uID, err := a.handleProgressRequest(ctx, req.StreamID)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (a *API) PutProgress(ctx context.Context, req *protobuf.PutProgressRequest)
 
 func (a *API) MarkAsWatched(ctx context.Context, req *protobuf.MarkAsWatchedRequest) (*protobuf.MarkAsWatchedResponse, error) {
 	a.log.Info("MarkAsWatched")
-	uID, err := a.handleProgressRequest(ctx, req.StreamID) 
+	uID, err := a.handleProgressRequest(ctx, req.StreamID)
 	if err != nil {
 		return nil, err
 	}
