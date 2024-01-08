@@ -31,7 +31,7 @@ func GetCourseById(db *gorm.DB, id uint) (*model.Course, error) {
 func FetchCourses(db *gorm.DB, req *protobuf.GetPublicCoursesRequest, uID *uint) ([]model.Course, error) {
 	query := db.Where("visibility = \"public\"")
 	if *uID != 0 {
-		query = db.Where("visibility = \"loggedin\"")
+		query = db.Where("visibility = \"loggedin\" OR visibility = \"public\"")
 	}
 	if req.Year != 0 {
 		query = query.Where("year = ?", req.Year)
