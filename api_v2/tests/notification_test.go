@@ -47,7 +47,6 @@ func TestGetFeatureNotifications_Unauthenticated(t *testing.T) {
 
 	// Case missing jwt
 	ctx = metadata.NewIncomingContext(context.Background(), nil)
-	req = &protobuf.GetFeatureNotificationsRequest{}
 	_, err = a.GetFeatureNotifications(ctx, req)
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected UNAUTHENTICATED, got %v", err)
@@ -96,7 +95,6 @@ func TestPostDeviceToken_Unauthenticated(t *testing.T) {
 
 	// Case missing jwt
 	ctx = metadata.NewIncomingContext(context.Background(), nil)
-	req = &protobuf.PostDeviceTokenRequest{DeviceToken: "TestPostDeviceToken_Unauthenticated"}
 	_, err = a.PostDeviceToken(ctx, req)
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected UNAUTHENTICATED, got %v", err)
@@ -175,7 +173,6 @@ func TestDeleteDeviceToken_Unauthenticated(t *testing.T) {
 
 	// Case missing jwt
 	ctx = metadata.NewIncomingContext(context.Background(), nil)
-	req = &protobuf.DeleteDeviceTokenRequest{DeviceToken: "TestDeleteDeviceToken_Unauthenticated"}
 	_, err = a.DeleteDeviceToken(ctx, req)
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected UNAUTHENTICATED, got %v", err)
