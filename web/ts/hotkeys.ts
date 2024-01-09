@@ -1,4 +1,5 @@
 import videojs from "video.js";
+import KeyboardEvent from "video.js/dist/types/utils/events"
 
 // VideoJS uses `import * as keycode from "keycode";`
 // However, keycode uses deprecated event.keyCode https://github.com/timoxley/keycode/issues/52
@@ -21,7 +22,7 @@ const vjsIcon = (icon) => `vjs-icon-${icon}`;
  * @param keys An iterable of strings, each naming a key code as per {@link KeyboardEvent#key}.
  * @param event The event to match.
  */
-const matchKeys = (keys: Iterable<string>, event: videojs.KeyboardEvent) =>
+const matchKeys = (keys: Iterable<string>, event: KeyboardEvent) =>
     Array.from(keys).includes(event.key) ? event.key : undefined;
 
 const matches = (match, player, event) =>
@@ -30,7 +31,7 @@ const matches = (match, player, event) =>
 const getIcon = (icon, player, event) => (typeof icon === "function" ? icon(player, event) : icon);
 
 const handleWithClick = (name) => (player, event) => {
-    const ButtonComponent = videojs.getComponent(name);
+    const ButtonComponent = videojs.getComponent(name) as any;
     ButtonComponent.prototype.handleClick.call(player, event);
 };
 
@@ -189,7 +190,7 @@ export const defaultOptions = {
 export function handleHotkeys(extraOptions = {}) {
     const options = videojs.mergeOptions(defaultOptions, extraOptions) as typeof defaultOptions;
 
-    return function (event: videojs.KeyboardEvent) {
+    return function (event: KeyboardEvent) {
         // ignore events where Alt, Ctrl or Meta is pressed
         // note: we are processing keydown events
         if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -200,9 +201,10 @@ export function handleHotkeys(extraOptions = {}) {
                 event.preventDefault();
                 event.stopPropagation();
                 const handleIcon = handle(this, event, data);
-                optional(icon)
+                // No more OverlayIcons in Player as they are not used
+                /*optional(icon)
                     .or(handleIcon)
-                    .map((i) => this.getChild("OverlayIcon").showIcon(getIcon(i, this, event)));
+                    .map((i) => this.getChild("OverlayIcon").showIcon(getIcon(i, this, event)));*/
             });
         }
     };

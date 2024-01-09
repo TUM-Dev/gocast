@@ -5,14 +5,12 @@ import Player from "video.js/dist/types/player";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
-//import { handleHotkeys } from "./hotkeys";
+import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
 
 require("videojs-seek-buttons");
 require("videojs-sprite-thumbnails");
 require("videojs-contrib-quality-levels");
-
-const Button = videojs.getComponent("Button");
 
 const players: Player[] = [];
 
@@ -95,9 +93,10 @@ class PlayerSettings {
         }
     }
 
-    addOverlayIcon(options: object = {}) {
+    // Removed because not used
+    /*addOverlayIcon(options: object = {}) {
         this.player.addChild("OverlayIcon", options);
-    }
+    }*/
 
     addTimeToolTipClass(spriteID?: number) {
         if (spriteID) {
@@ -167,7 +166,7 @@ export const initPlayer = function (
             nativeTextTracks: false,
         },
         userActions: {
-            //hotkeys: handleHotkeys(),
+            hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
         /* eslint-disable  @typescript-eslint/no-explicit-any */
@@ -222,7 +221,7 @@ export const initPlayer = function (
         settings.addTitleBar({ ...options });
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
-        settings.addOverlayIcon();
+        //settings.addOverlayIcon(); // Removed because not used
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
@@ -588,6 +587,8 @@ export class StartInOverlay extends Component {
     }
 }
 
+// Removed because not used
+/*
 export class OverlayIcon extends Component {
     private removeIconTimeout;
     private readonly removeIconAfter;
@@ -625,7 +626,7 @@ export class OverlayIcon extends Component {
         dom.emptyEl(this.el());
         this.el().classList.remove("vjs-overlay-icon-animate");
     }
-}
+}*/
 
 export type jumpToSettings = {
     timeParts: { hours: number; minutes: number; seconds: number } | undefined;
@@ -707,5 +708,5 @@ function debounce(func, timeout) {
 videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
-videojs.registerComponent("OverlayIcon", OverlayIcon);
+//videojs.registerComponent("OverlayIcon", OverlayIcon); // Removed because not used
 airplay(videojs); //calls registerComponent internally
