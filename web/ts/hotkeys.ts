@@ -202,6 +202,7 @@ export function handleHotkeys(extraOptions = {}) {
                 event.stopPropagation();
                 const handleIcon = handle(this, event, data);
                 // No more OverlayIcons in Player as they are not used
+                optional(icon).or(handleIcon);
                 /*optional(icon)
                     .or(handleIcon)
                     .map((i) => this.getChild("OverlayIcon").showIcon(getIcon(i, this, event)));*/
