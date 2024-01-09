@@ -2,11 +2,13 @@ import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import Player from "video.js/dist/types/player";
+import type Button from "video.js/dist/types/button.d.ts";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
+import {Event} from "video.js/dist/types/event-target";
 
 require("videojs-seek-buttons");
 require("videojs-sprite-thumbnails");
@@ -230,38 +232,41 @@ export const initPlayer = function (
 
 let skipTo = 0;
 
+// Should be changed when videojs fully supports typescript, but for now this works as a fix
+const CustomButton = videojs.getComponent("Button") as any;
+
 /**
  * Button to add a class to passed player that will toggle skip silence button.
  */
-/*
-export const SkipSilenceToggle = videojs.extend(Button, {
-    constructor: function (...args) {
-        Button.apply(this, args);
+export class SkipSilenceButton extends CustomButton {
+    constructor(player, options) {
+        super(player, options);
         this.controlText("Skip pause");
         (this.el().firstChild as HTMLElement).classList.add("icon-forward");
-    },
-    handleClick: function () {
+    }
+
+    handleClick(event: Event, ...args) {
         for (let i = 0; i < players.length; i++) {
             players[i].currentTime(skipTo);
         }
-    },
-    buildCSSClass: function () {
+    }
+
+    buildCSSClass(): string {
         return `vjs-skip-silence-control`;
-    },
-});
+    }
 
-videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
+}
 
+// Should be changed when videojs fully supports typescript, but for now this works as a fix
+videojs.registerComponent("SkipSilenceToggle", SkipSilenceButton as any as typeof Button);
 
-*/
-/*
 export const skipSilence = function (options) {
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
             players[j].addClass("vjs-skip-silence");
             const toggle = players[j].addChild("SkipSilenceToggle");
             toggle.el().classList.add("invisible");
-            players[j].el().insertBefore(toggle.el(), players[j].bigPlayButton.el());
+            players[j].el().insertBefore(toggle.el(), (players[j] as any).bigPlayButton.el());
 
             let isShowing = false;
             const silences = JSON.parse(options);
@@ -311,7 +316,7 @@ export const skipSilence = function (options) {
         });
     }
 };
-*/
+
 
 /**
  * @function watchProgress
