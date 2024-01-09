@@ -1,11 +1,11 @@
-import { VideoJsPlayer } from "video.js";
+import Player from "video.js/dist/types/player";
 
 const LANGUAGES = [
     { id: "en", label: "English" },
     { id: "de", label: "Deutsch" },
 ];
 
-export async function loadAndSetTrackbars(player: VideoJsPlayer, streamID: number) {
+export async function loadAndSetTrackbars(player: Player, streamID: number) {
     for (const language of LANGUAGES) {
         await fetch(`/api/stream/${streamID}/subtitles/${language.id}`).then((res) => {
             if (res.ok) {

@@ -1,30 +1,31 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { StatusCodes } from "http-status-codes";
-import videojs, { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
+import Player from "video.js/dist/types/player";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
-import { handleHotkeys } from "./hotkeys";
+//import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
 
-require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
+require("videojs-sprite-thumbnails");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
 
-const players: VideoJsPlayer[] = [];
+const players: Player[] = [];
 
-export function getPlayers(): VideoJsPlayer[] {
+export function getPlayers(): Player[] {
     return players;
 }
 
 class PlayerSettings {
-    private readonly player: VideoJsPlayer;
+    private readonly player: Player;
     private readonly isLive: boolean;
     private readonly isEmbedded: boolean;
 
-    constructor(player: VideoJsPlayer, isLive: boolean, isEmbedded: boolean) {
+    constructor(player: Player, isLive: boolean, isEmbedded: boolean) {
         this.player = player;
         this.isLive = isLive;
         this.isEmbedded = isEmbedded;
@@ -166,7 +167,7 @@ export const initPlayer = function (
             nativeTextTracks: false,
         },
         userActions: {
-            hotkeys: handleHotkeys(),
+            //hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
         /* eslint-disable  @typescript-eslint/no-explicit-any */
@@ -233,6 +234,7 @@ let skipTo = 0;
 /**
  * Button to add a class to passed player that will toggle skip silence button.
  */
+/*
 export const SkipSilenceToggle = videojs.extend(Button, {
     constructor: function (...args) {
         Button.apply(this, args);
@@ -251,6 +253,9 @@ export const SkipSilenceToggle = videojs.extend(Button, {
 
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
+
+*/
+/*
 export const skipSilence = function (options) {
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
@@ -307,6 +312,7 @@ export const skipSilence = function (options) {
         });
     }
 };
+*/
 
 /**
  * @function watchProgress
@@ -697,7 +703,7 @@ function debounce(func, timeout) {
 }
 
 // Register the plugin with video.js.
-videojs.registerPlugin("skipSilence", skipSilence);
+//videojs.registerPlugin("skipSilence", skipSilence);
 videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);

@@ -39,7 +39,9 @@ export class StreamPlaylist {
     }
 
     public scrollSelectedIntoView() {
-        this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
+        if(this.elem.querySelector(".--selected")) {
+            this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
+        }
     }
 
     private findNextAndPrev(): { next: StreamPlaylistEntry; prev: StreamPlaylistEntry } {
