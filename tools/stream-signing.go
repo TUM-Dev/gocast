@@ -2,8 +2,8 @@ package tools
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/golang-jwt/jwt/v4"
 	"strings"
 	"time"
 )
@@ -33,7 +33,7 @@ func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool
 	}
 
 	for _, playlist := range playlists {
-		if strings.Contains(playlist.Playlist, "lrz.de") { // todo: remove after migration from lrz services
+		if strings.Contains(playlist.Playlist, "localhost") || strings.Contains(playlist.Playlist, "lrz.de") { // todo: remove after migration from lrz services
 			continue
 		}
 

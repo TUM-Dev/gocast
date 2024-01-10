@@ -74,7 +74,7 @@ issues:
   max-same-issues: 0
   new: true
   new-from-rev: dev
-  fix: false 
+  fix: false
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go
