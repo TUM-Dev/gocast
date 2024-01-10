@@ -85,7 +85,13 @@
     {{template "alert-modal" . }}
 {{end}}
 <div id="watchPageMainWrapper">
-    <span id="description" class="offscreen">{{.Description}}</span>
+    <div class="offscreen video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
+        <div>
+            <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm">
+                <span id="description">{{.Description}}</span>
+            </div>
+        </div>
+    </div>
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div x-data="interaction.videoInformationContext({{$stream.ID}});"
          class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
