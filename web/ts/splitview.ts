@@ -1,6 +1,8 @@
 import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
 import { cloneEvents } from "./global";
+import videojs, {VideoJsPlayer} from "video.js";
+import PlayerOptions = videojs.PlayerOptions;
 
 const mouseMovingTimeout = 2200;
 
@@ -152,12 +154,21 @@ export class SplitView {
         fullscreenToggle.off("click");
 
         fullscreenToggle.on("click", async () => {
-            if (document.fullscreenElement === null) {
-                await this.splitParent.requestFullscreen();
-            } else {
-                await document.exitFullscreen();
-            }
+            await this.toggleFullscreen();
         });
+
+        (this.players[0] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
+        (this.players[1] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
+
+        this.splitParent.addEventListener("fullscreenchange", () => this.update(25))
+    }
+
+    private async toggleFullscreen() {
+        if (document.fullscreenElement === null) {
+            await this.splitParent.requestFullscreen();
+        } else {
+            await document.exitFullscreen();
+        }
     }
 
     private setTrackBarModes(k: number, mode: string) {
