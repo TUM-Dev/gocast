@@ -4,6 +4,7 @@ import { ToggleableElement } from "../utilities/ToggleableElement";
 import { RealtimeFacade } from "../utilities/ws";
 
 const CUTOFFLENGTH = 256;
+const CUTOFFHEIGHT = 56; // This is the height of one line of level 1 title + one line of plain text
 
 export function videoInformationContext(streamId: number): AlpineComponent {
     // TODO: REST
@@ -11,12 +12,14 @@ export function videoInformationContext(streamId: number): AlpineComponent {
     return {
         viewers: 0 as number,
         description: descriptionEl.innerHTML as string,
-        less: descriptionEl.innerHTML.length > CUTOFFLENGTH,
+        less: descriptionEl.innerHTML.length > CUTOFFLENGTH || descriptionEl.offsetHeight > CUTOFFHEIGHT,
 
         showFullDescription: new ToggleableElement(),
 
         init() {
             SocketConnections.ws = new RealtimeFacade("chat/" + streamId);
+            console.log(descriptionEl.offsetHeight);
+            console.log(descriptionEl.getBoundingClientRect().height);
             Promise.all([this.initWebsocket()]);
         },
 
