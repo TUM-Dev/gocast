@@ -1,0 +1,24 @@
+{{define "footer"}}
+<footer id="desktop-footer"
+        class="tum-live-footer justify-between space-x-3 items-center hidden md:flex">
+    <div class="flex space-x-3">
+        <a href="/about">About</a>
+        <a href="/privacy">Data Privacy</a>
+        <a href="/imprint">Imprint</a>
+    </div>
+    <a href="https://github.com/TUM-Dev/gocast" class="">gocast@{{.}} <i class="fa-brands fa-github"></i></a>
+</footer>
+{{end}}
+
+{{define "mobile_footer"}}
+    <footer class="tum-live-footer w-full md:hidden">
+        <div class="grid divide-y dark:divide-gray-800">
+            <a href="/about">About</a>
+            <a href="/privacy">Data Privacy</a>
+            <a href="/imprint">Imprint</a>
+        </div>
+        <a href="https://github.com/TUM-Dev/gocast" class="block mt-1 text-center">
+            gocast@{{.}} <i class="fa-brands fa-github"></i>
+        </a>
+    </footer>
+{{end}}

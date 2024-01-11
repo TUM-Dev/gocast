@@ -280,7 +280,9 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         deleteLecture() {
-            DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
+            if (confirm("Do you really want to delete this lecture? This includes any recordings.")) {
+                DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
+            }
         },
 
         deleteLectureSeries() {
@@ -424,10 +426,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number): Prom
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
     return putData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -436,10 +435,7 @@ export function saveLectureName(e: Event, cID: number, lID: number): Promise<boo
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
     return postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -743,6 +739,7 @@ export function createLectureForm(args: { s: [] }) {
         error: false,
         courseID: -1,
         invalidReason: "",
+        cannotContinueReason: "",
         init() {
             this.onUpdate();
         },
@@ -763,11 +760,7 @@ export function createLectureForm(args: { s: [] }) {
         },
         updateCreateType(newType: LectureCreateType) {
             this.createType = newType;
-            if (newType === LectureCreateType.livestream) {
-                this.formData.vodup = false;
-            } else {
-                this.formData.vodup = true;
-            }
+            this.formData.vodup = newType !== LectureCreateType.livestream;
         },
         updateLiveAdHoc(adHoc: boolean) {
             this.formData.adHoc = adHoc;
@@ -822,8 +815,11 @@ export function createLectureForm(args: { s: [] }) {
 
         // This function sets flags depending on the current tab and current data
         onUpdate() {
+            this.error = false;
+
             if (this.currentTab === 0) {
                 this.canContinue = true;
+                this.cannotContinueReason = "";
                 this.canGoBack = false;
                 this.onLastSlide = false;
                 return;
@@ -836,10 +832,21 @@ export function createLectureForm(args: { s: [] }) {
                     // => we are not on the last tab
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
                 } else {
                     this.onLastSlide = true;
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
+                    if (this.formData.end.length <= 0) {
+                        this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                    }
                 }
                 return;
             }
@@ -848,6 +855,14 @@ export function createLectureForm(args: { s: [] }) {
                 this.canContinue =
                     (this.getMediaFiles().length > 0 && this.formData.vodup) ||
                     (this.formData.adHoc && this.formData.end != "");
+                this.cannotContinueReason = "";
+                if (this.formData.vodup && this.getMediaFiles().length <= 0) {
+                    this.cannotContinueReason += "No media files!\n";
+                }
+                if (this.formData.adHoc && this.formData.end == "") {
+                    this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                }
+
                 this.canGoBack = true;
                 this.onLastSlide = true;
                 return;

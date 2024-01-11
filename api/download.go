@@ -3,12 +3,11 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 )
@@ -119,7 +118,7 @@ func sendDownloadFile(c *gin.Context, file model.File, tumLiveContext tools.TUML
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
 	}
-	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", uid, file.ID, file.Path))
+	logger.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", uid, file.ID, file.Path))
 	f, err := os.Open(file.Path)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
