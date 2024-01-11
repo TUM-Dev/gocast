@@ -77,11 +77,11 @@ func SetConfig() {
 	if PersistDir == "" {
 		PersistDir = "."
 	}
-	err := os.MkdirAll(PersistDir, 0o755)
+	err := os.MkdirAll(PersistDir, 0755)
 	if err != nil {
 		log.Error(err)
 	}
-	err = os.MkdirAll(LogDir, 0o755)
+	err = os.MkdirAll(LogDir, 0755)
 	if err != nil {
 		log.Warn("Could not create log directory: ", err)
 	}

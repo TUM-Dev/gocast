@@ -374,7 +374,7 @@ func fetchFile(host, file string) error {
 		return fmt.Errorf("parse file path: %s", file)
 	}
 	d := filepath.Dir(diskDir)
-	err = os.MkdirAll(d, 0o755)
+	err = os.MkdirAll(d, 0755)
 	if err != nil {
 		return err
 	}

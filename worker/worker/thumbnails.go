@@ -50,7 +50,7 @@ func createVideoThumbnail(ctx *StreamContext, source string) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(ctx.getLargeThumbnailSpriteFileName(), os.O_CREATE|os.O_WRONLY, 0o644)
+	file, err := os.OpenFile(ctx.getLargeThumbnailSpriteFileName(), os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}

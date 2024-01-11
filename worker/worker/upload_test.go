@@ -72,7 +72,7 @@ func createDummyFile(filesize uint) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	f, err := os.OpenFile(file.Name(), os.O_APPEND|os.O_WRONLY, 0o600)
+	f, err := os.OpenFile(file.Name(), os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		return "", err
 	}
