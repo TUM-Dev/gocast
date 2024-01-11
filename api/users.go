@@ -668,6 +668,7 @@ func (r usersRoutes) updateSeekingTime(c *gin.Context) {
 		})
 		return
 	}
+
 	// Decode the JSON request body into a userSettingsRequest struct.
 	var request userSettingsRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&request)
@@ -679,12 +680,14 @@ func (r usersRoutes) updateSeekingTime(c *gin.Context) {
 		})
 		return
 	}
+
 	// Add the user's seeking time setting to the database.
 	err = r.UsersDao.AddUserSetting(&model.UserSetting{
 		UserID: u.ID,
 		Type:   model.SeekingTime,
 		Value:  request.Value,
 	})
+
 	// Handle errors that may occur during the database operation.
 	if err != nil {
 		_ = c.Error(tools.RequestError{
