@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"io"
 	"net"
 	"net/http"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/TUM-Dev/gocast/dao"
@@ -115,7 +116,6 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
-
 }
 
 // SendSelfStreamRequest handles the request from a worker when a stream starts publishing via obs, etc.
@@ -679,7 +679,7 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 		return
 	}
 	var slot model.StreamName
-	if sourceType == "COMB" { //try to find a transcoding slot for comb view:
+	if sourceType == "COMB" { // try to find a transcoding slot for comb view:
 		slot, err = daoWrapper.IngestServerDao.GetTranscodedStreamSlot(server.ID)
 	}
 	if sourceType != "COMB" || err != nil {

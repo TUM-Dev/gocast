@@ -62,7 +62,6 @@ func RegisterRealtimeChatChannel() {
 			}
 
 			req, err := parseChatPayload(message)
-
 			if err != nil {
 				logger.Warn("could not unmarshal request", "err", err)
 				return
@@ -93,7 +92,7 @@ func RegisterRealtimeChatChannel() {
 		},
 	})
 
-	//delete closed sessions every second
+	// delete closed sessions every second
 	go func() {
 		c := time.Tick(time.Second)
 		for range c {

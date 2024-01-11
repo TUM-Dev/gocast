@@ -25,6 +25,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/name", routes.updatePreferredName)
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
+	router.POST("/api/users/settings/seekingTime", routes.updateSeekingTime)
 	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
@@ -89,7 +90,7 @@ func (r usersRoutes) impersonateUser(c *gin.Context) {
 }
 
 func (r usersRoutes) updateUser(c *gin.Context) {
-	var req = struct {
+	req := struct {
 		ID   uint `json:"id"`
 		Role uint `json:"role"`
 	}{}
@@ -278,7 +279,6 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 func (r usersRoutes) addUserBatchToCourse(users string, course model.Course) {
@@ -347,7 +347,7 @@ func (r usersRoutes) getPinForCourse(c *gin.Context) {
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	var has = false
+	has := false
 	var err error
 	if tumLiveContext.User != nil {
 		has, err = r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
@@ -484,7 +484,7 @@ func (r usersRoutes) CreateUser(c *gin.Context) {
 }
 
 func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
-	var u = model.User{
+	u := model.User{
 		Name:  request.Name,
 		Email: sql.NullString{String: request.Email, Valid: true},
 		Role:  userType,
@@ -499,7 +499,7 @@ func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) 
 	if dbErr != nil {
 		return u, errors.New("user could not be created")
 	}
-	if userType != model.AdminType { //generate password set link and send out email
+	if userType != model.AdminType { // generate password set link and send out email
 		go r.forgotPassword(request.Email)
 	}
 	return u, nil
@@ -585,15 +585,19 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 	}
 }
 
-func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
+func getUserFromContext(c *gin.Context) *model.User {
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	if u == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusUnauthorized,
 			CustomMessage: "login required",
 		})
-		return
+		return nil
 	}
+	return u
+}
+
+func getRequestFromContext(c *gin.Context) *userSettingsRequest {
 	var request userSettingsRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&request)
 	if err != nil {
@@ -602,9 +606,16 @@ func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
 			CustomMessage: "can not bind body",
 			Err:           err,
 		})
-		return
+		return nil
 	}
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+	return &request
+}
+
+func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
+	u := getUserFromContext(c)
+	request := getRequestFromContext(c)
+
+	err := r.UsersDao.AddUserSetting(&model.UserSetting{
 		UserID: u.ID,
 		Type:   model.Greeting,
 		Value:  request.Value,
@@ -659,7 +670,7 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	if u == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
+			CustomMessage: "login required for updating user settings",
 		})
 		return
 	}
@@ -667,7 +678,7 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
+			CustomMessage: "can not bind body to request",
 			Err:           err,
 		})
 		return
@@ -681,6 +692,27 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	}
 	settingBytes, _ := json.Marshal(req.Value)
 	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.CustomPlaybackSpeeds, Value: string(settingBytes)})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+func (r usersRoutes) updateSeekingTime(c *gin.Context) {
+	u := getUserFromContext(c)
+	request := getRequestFromContext(c)
+
+	// Add the user's seeking time setting to the database.
+	err := r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.SeekingTime,
+		Value:  request.Value,
+	})
+	// Handle errors that may occur during the database operation.
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

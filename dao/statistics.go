@@ -2,6 +2,7 @@ package dao
 
 import (
 	"fmt"
+
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/timing"
 	"gorm.io/gorm"
@@ -125,7 +126,7 @@ func (d statisticsDao) GetStudentActivityCourseStats(courseID uint, live bool) (
         	JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ? AND week(stats.time) > 0
 		GROUP BY year, week
-		ORDER BY year, week;`, //or ? = 0 -> if courseID is 0, all stats are selected
+		ORDER BY year, week;`, // or ? = 0 -> if courseID is 0, all stats are selected
 		courseID, courseID, live).Scan(&res).Error
 
 	var retVal []Stat

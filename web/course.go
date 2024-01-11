@@ -182,7 +182,7 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 		Recording bool   `json:"recording"`
 	}
 
-	var clientWatchState = make([]watchedStateData, 0)
+	clientWatchState := make([]watchedStateData, 0)
 	for _, s := range streamsWithWatchState {
 		clientWatchState = append(clientWatchState, watchedStateData{
 			ID:        s.Model.ID,

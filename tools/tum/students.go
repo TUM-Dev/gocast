@@ -3,6 +3,7 @@ package tum
 import (
 	"errors"
 	"fmt"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"

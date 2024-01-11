@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -55,6 +56,7 @@ const (
 	PreferredName UserSettingType = iota + 1
 	Greeting
 	CustomPlaybackSpeeds
+	SeekingTime
 	UserDefinedSpeeds
 )
 
@@ -63,7 +65,7 @@ type UserSetting struct {
 
 	UserID uint            `gorm:"not null"`
 	Type   UserSettingType `gorm:"not null"`
-	Value  string          `gorm:"not null"` //json encoded setting
+	Value  string          `gorm:"not null"` // json encoded setting
 }
 
 // GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
@@ -163,6 +165,28 @@ func (u User) GetPreferredGreeting() string {
 	return "Moin"
 }
 
+// GetSeekingTime returns the seeking time preference for the user.
+// If the user is nil, the default seeking time of 15 seconds is returned.
+func (u *User) GetSeekingTime() int {
+	// Check if the user is nil
+	if u == nil {
+		return 15
+	}
+	// Check if the setting type is SeekingTime
+	for _, setting := range u.Settings {
+		if setting.Type == SeekingTime {
+			// Attempt to convert the setting value from string to an integer
+			seekingTime, err := strconv.Atoi(setting.Value)
+			if err != nil {
+				break
+			}
+			return seekingTime
+		}
+	}
+	// If no seeking time setting is found, return the default seeking time
+	return 15
+}
+
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
 func (u User) PreferredNameChangeAllowed() bool {
 	for _, setting := range u.Settings {
@@ -207,7 +231,7 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 }
 
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
-	var cMap = make(map[uint]Course)
+	cMap := make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
 			cMap[c.ID] = c

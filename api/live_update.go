@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"sync"
+
 	"github.com/RBG-TUM/commons"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -11,7 +13,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"sync"
 )
 
 const (

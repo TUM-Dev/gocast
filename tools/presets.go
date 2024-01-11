@@ -3,11 +3,12 @@ package tools
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/camera"
 	"github.com/getsentry/sentry-go"
-	"time"
 )
 
 //go:generate mockgen -source=presets.go -destination ../mock_tools/presets.go

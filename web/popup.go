@@ -2,10 +2,11 @@ package web
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func (r mainRoutes) PopOutChat(c *gin.Context) {

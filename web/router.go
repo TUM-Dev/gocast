@@ -3,11 +3,12 @@ package web
 import (
 	"embed"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"html/template"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/TUM-Dev/gocast/dao"

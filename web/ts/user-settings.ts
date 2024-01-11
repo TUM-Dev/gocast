@@ -7,6 +7,7 @@ export enum UserSetting {
     Name = "name",
     Greeting = "greeting",
     PlaybackSpeeds = "playbackSpeeds",
+    SeekingTime = "seekingTime",
     CustomSpeeds = "customSpeeds",
 }
 

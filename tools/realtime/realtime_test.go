@@ -5,10 +5,12 @@ import (
 	"testing"
 )
 
-type FakeSocketHandleConnectFunc func(session *FakeSocketSession)
-type FakeSocketHandleDisconnectFunc func(session *FakeSocketSession)
-type FakeSocketHandleMessageFunc func(session *FakeSocketSession, msg []byte)
-type FakeSocketHandleOutgoingMessageFunc func(msg []byte)
+type (
+	FakeSocketHandleConnectFunc         func(session *FakeSocketSession)
+	FakeSocketHandleDisconnectFunc      func(session *FakeSocketSession)
+	FakeSocketHandleMessageFunc         func(session *FakeSocketSession, msg []byte)
+	FakeSocketHandleOutgoingMessageFunc func(msg []byte)
+)
 
 type FakeSocket struct {
 	handleConnect    FakeSocketHandleConnectFunc
@@ -35,7 +37,7 @@ type FakeSocketSession struct {
 	onOutgoingMessage FakeSocketHandleOutgoingMessageFunc
 }
 
-/// Send emulate a data message from the frontend
+// / Send emulate a data message from the frontend
 func (s *FakeSocketSession) Send(data []byte) {
 	s.onMessage(s, data)
 }
@@ -118,7 +120,6 @@ func UnsubMessage(path string) []byte {
 }
 
 func TestRealtimeConnection(t *testing.T) {
-
 	t.Run("Simple Connect Disconnect", func(t *testing.T) {
 		fakeConnector, fakeSocket := NewFakeConnector()
 
@@ -139,7 +140,6 @@ func TestRealtimeConnection(t *testing.T) {
 			t.Errorf("len(fakeConnector.clients.clients) = %d, want %d", len(fakeConnector.clients.clients), 0)
 			return
 		}
-
 	})
 
 	t.Run("IsConnected should return connection status", func(t *testing.T) {
@@ -216,13 +216,10 @@ func TestRealtimeConnection(t *testing.T) {
 			t.Errorf("unsubContext = nil, want *Context")
 			return
 		}
-
 	})
-
 }
 
 func TestRealtimeMessaging(t *testing.T) {
-
 	t.Run("Client Sends Message", func(t *testing.T) {
 		testChannelPath := "example/path/foobar"
 		testPayload := map[string]interface{}{"name": "Jon Doe", "admin": false}
@@ -276,7 +273,6 @@ func TestRealtimeMessaging(t *testing.T) {
 		})
 
 		fakeClient := fakeSocket.NewClientConnects(func(msg []byte) {
-
 		})
 		fakeClient.Send(SubMessage(channelA))
 		fakeClient.Send(SubMessage(channelB))
@@ -331,5 +327,4 @@ func TestRealtimeMessaging(t *testing.T) {
 			return
 		}
 	})
-
 }
