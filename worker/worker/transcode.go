@@ -159,7 +159,7 @@ func prepare(out string) error {
 // markForDeletion moves the file to $recfolder/.trash/
 func markForDeletion(ctx *StreamContext) error {
 	trashName := ctx.getRecordingTrashName()
-	err := os.MkdirAll(filepath.Dir(trashName), 0	750)
+	err := os.MkdirAll(filepath.Dir(trashName), 0750)
 	if err != nil {
 		return fmt.Errorf("create trash directory: %s", err)
 	}
