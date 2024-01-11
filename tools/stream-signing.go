@@ -2,8 +2,8 @@ package tools
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/golang-jwt/jwt/v4"
 	"strings"
 	"time"
 )

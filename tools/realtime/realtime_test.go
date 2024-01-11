@@ -35,7 +35,7 @@ type FakeSocketSession struct {
 	onOutgoingMessage FakeSocketHandleOutgoingMessageFunc
 }
 
-/// Send emulate a data message from the frontend
+// / Send emulate a data message from the frontend
 func (s *FakeSocketSession) Send(data []byte) {
 	s.onMessage(s, data)
 }

@@ -1,8 +1,8 @@
 package connector
 
 import (
-	"github.com/gabstv/melody"
 	"github.com/TUM-Dev/gocast/tools/realtime"
+	"github.com/gabstv/melody"
 	"net/http"
 )
 

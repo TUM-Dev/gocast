@@ -77,7 +77,7 @@ func (m *MeiliExporter) Export() {
 					logger.Warn("could not parse subtitles", "err", err)
 					continue
 				}
-				for i, _ := range vtt.Items {
+				for i := range vtt.Items {
 					sub := MeiliSubtitles{
 						ID:        fmt.Sprintf("%d-%d", stream.ID, vtt.Items[i].StartAt.Milliseconds()),
 						StreamID:  stream.ID,

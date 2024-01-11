@@ -3,8 +3,8 @@ package camera
 import (
 	"bytes"
 	"fmt"
-	"github.com/icholy/digest"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/icholy/digest"
 	"io"
 	"net/http"
 	"os"
@@ -22,9 +22,9 @@ type Cam interface {
 	GetPresets() ([]model.CameraPreset, error)
 }
 
-//makeAuthenticatedRequest Sends a request to the camera.
-//Example usage: c.makeAuthenticatedRequest("GET", "/base","/some.cgi?preset=1")
-//Returns the response body as a buffer.
+// makeAuthenticatedRequest Sends a request to the camera.
+// Example usage: c.makeAuthenticatedRequest("GET", "/base","/some.cgi?preset=1")
+// Returns the response body as a buffer.
 func makeAuthenticatedRequest(auth *string, method string, body string, url string) (*bytes.Buffer, error) {
 	// var camCurl *exec.Cmd
 	client := http.DefaultClient

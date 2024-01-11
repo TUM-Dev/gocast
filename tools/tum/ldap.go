@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/go-ldap/ldap/v3"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
+	"github.com/go-ldap/ldap/v3"
 	"time"
 )
 
@@ -20,7 +20,7 @@ type LdapResp struct {
 	LastName  *string
 }
 
-//LoginWithTumCredentials returns student id if login and password match, err otherwise
+// LoginWithTumCredentials returns student id if login and password match, err otherwise
 func LoginWithTumCredentials(username string, password string) (*LdapResp, error) {
 	// sanitize possibly malicious username
 	username = ldap.EscapeFilter(username)

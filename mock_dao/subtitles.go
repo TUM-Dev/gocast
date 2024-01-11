@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	model "github.com/TUM-Dev/gocast/model"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockSubtitlesDao is a mock of SubtitlesDao interface.

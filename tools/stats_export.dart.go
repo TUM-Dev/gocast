@@ -1,8 +1,8 @@
 package tools
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
 )

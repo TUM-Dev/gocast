@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-//StreamName is essentially a "streaming slot" used for load balancing
+// StreamName is essentially a "streaming slot" used for load balancing
 type StreamName struct {
 	gorm.Model
 

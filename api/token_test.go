@@ -2,13 +2,13 @@ package api
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"net/http"
 	"testing"

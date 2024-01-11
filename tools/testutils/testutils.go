@@ -1,8 +1,8 @@
 package testutils
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

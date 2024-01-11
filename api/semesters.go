@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
