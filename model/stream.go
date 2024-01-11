@@ -4,14 +4,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"strings"
-	"time"
 )
 
 type Stream struct {
@@ -88,7 +89,7 @@ func (s Stream) GetVodFiles() []DownloadableVod {
 }
 
 func (s Stream) GetLGThumbnail() (string, error) {
-	var thumbs = map[string]string{}
+	thumbs := map[string]string{}
 	for _, file := range s.Files {
 		if file.Type == FILETYPE_THUMB_LG_CAM_PRES {
 			thumbs["CAM_PRES"] = file.Path

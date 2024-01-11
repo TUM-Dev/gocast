@@ -2,10 +2,11 @@ package api
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func configSemestersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {

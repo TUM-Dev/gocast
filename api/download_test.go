@@ -3,6 +3,11 @@ package api
 import (
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -11,10 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
-	"log"
-	"net/http"
-	"os"
-	"testing"
 )
 
 func DownloadRouterWrapper(r *gin.Engine) {
@@ -214,7 +215,8 @@ func TestDownload(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: fileContent,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)

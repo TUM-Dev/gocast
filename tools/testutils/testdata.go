@@ -2,10 +2,11 @@ package testutils
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"math"
 	"testing"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"

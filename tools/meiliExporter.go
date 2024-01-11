@@ -3,10 +3,11 @@ package tools
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/asticode/go-astisub"
 	"github.com/meilisearch/meilisearch-go"
-	"strings"
 )
 
 type MeiliStream struct {
@@ -104,7 +105,6 @@ func (m *MeiliExporter) Export() {
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
-
 	})
 }
 

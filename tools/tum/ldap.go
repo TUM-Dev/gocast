@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-ldap/ldap/v3"
-	"time"
 )
 
 var ErrLdapBadAuth = errors.New("login failed")
@@ -92,7 +93,6 @@ func LoginWithTumCredentials(username string, password string) (*LdapResp, error
 		FirstName: name,
 		LastName:  lastName,
 	}, nil
-
 }
 
 func FindUserWithEmail(email string) (*model.User, error) {

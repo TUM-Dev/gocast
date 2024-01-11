@@ -3,6 +3,9 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/tools"
@@ -10,8 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
-	"net/http"
-	"testing"
 )
 
 func TestWorker(t *testing.T) {
@@ -55,7 +56,8 @@ func TestWorker(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodDelete).
 			Url(url).
 			Run(t, testutils.Equal)

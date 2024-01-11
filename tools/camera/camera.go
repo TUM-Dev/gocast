@@ -3,12 +3,13 @@ package camera
 import (
 	"bytes"
 	"fmt"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/icholy/digest"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/icholy/digest"
 )
 
 //go:generate mockgen -source=camera.go -destination ../../mock_tools/mock_camera/camera.go

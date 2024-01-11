@@ -3,6 +3,11 @@ package api
 import (
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/Masterminds/sprig/v3"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
@@ -15,10 +20,6 @@ import (
 	"github.com/matthiasreumann/gomino"
 	"github.com/u2takey/go-utils/uuid"
 	"gorm.io/gorm"
-	"html/template"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func CourseRouterWrapper(r *gin.Engine) {
@@ -146,7 +147,8 @@ func TestCoursesCRUD(t *testing.T) {
 						Viewers:     0,
 					},
 				},
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -521,7 +523,8 @@ func TestCoursesCRUD(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodDelete).
 			Url(fmt.Sprintf("%s?token=%s", url, token)).
 			Run(t, testutils.Equal)
@@ -997,7 +1000,8 @@ func TestCoursesLectureActions(t *testing.T) {
 					},
 				},
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -1049,8 +1053,10 @@ func TestCoursesLectureActions(t *testing.T) {
 					configGinCourseRouter(r, wrapper)
 				},
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				Body: deleteLecturesRequest{StreamIDs: []string{
-					fmt.Sprintf("%d", testutils.StreamGBSLive.ID)},
+				Body: deleteLecturesRequest{
+					StreamIDs: []string{
+						fmt.Sprintf("%d", testutils.StreamGBSLive.ID),
+					},
 				},
 				ExpectedCode: http.StatusForbidden,
 			},
@@ -1077,11 +1083,14 @@ func TestCoursesLectureActions(t *testing.T) {
 					configGinCourseRouter(r, wrapper)
 				},
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				Body: deleteLecturesRequest{StreamIDs: []string{
-					fmt.Sprintf("%d", testutils.StreamFPVLive.ID)},
+				Body: deleteLecturesRequest{
+					StreamIDs: []string{
+						fmt.Sprintf("%d", testutils.StreamFPVLive.ID),
+					},
 				},
 				ExpectedCode: http.StatusOK,
-			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
+			},
+		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/course/:courseID/renameLecture/:streamID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/renameLecture/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
@@ -1199,7 +1208,8 @@ func TestCoursesLectureActions(t *testing.T) {
 					Name: "Proofs #1",
 				},
 				ExpectedCode: http.StatusOK,
-			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
+			},
+		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/course/:courseID/updateLectureSeries/:streamID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/updateLectureSeries/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
@@ -1286,7 +1296,8 @@ func TestCoursesLectureActions(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -1338,7 +1349,7 @@ func TestCoursesLectureActions(t *testing.T) {
 							streamsMock.
 								EXPECT().
 								GetStreamByID(gomock.Any(), gomock.Any()).
-								Return(testutils.StreamGBSLive, nil). //StreamGBSLive.SeriesIdentifier == ""
+								Return(testutils.StreamGBSLive, nil). // StreamGBSLive.SeriesIdentifier == ""
 								AnyTimes()
 							return streamsMock
 						}(),
@@ -1397,7 +1408,8 @@ func TestCoursesLectureActions(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodDelete).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -1501,7 +1513,8 @@ func TestCoursesLectureActions(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPut).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -1604,7 +1617,8 @@ func TestUnits(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusOK,
-			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
+			},
+		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/course/:courseID/deleteUnit/:unitID", func(t *testing.T) {
 		unit := testutils.StreamFPVLive.Units[0]
@@ -1656,7 +1670,8 @@ func TestUnits(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
+			},
+		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 }
 
@@ -1754,7 +1769,8 @@ func TestCuts(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusOK,
-			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
+			},
+		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 }
 
@@ -1832,7 +1848,8 @@ func TestAdminFunctions(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
-			}}.Method(http.MethodGet).Url(url).Run(t, testutils.Equal)
+			},
+		}.Method(http.MethodGet).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("PUT/api/course/:courseID/admins/:userID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/admins/%d", testutils.CourseFPV.ID, testutils.Admin.ID)
@@ -2030,7 +2047,8 @@ func TestAdminFunctions(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: resStudent,
-			}}.
+			},
+		}.
 			Method(http.MethodPut).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -2204,7 +2222,8 @@ func TestAdminFunctions(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
-			}}.
+			},
+		}.
 			Method(http.MethodDelete).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -2221,10 +2240,12 @@ func TestLectureHallsById(t *testing.T) {
 
 		var sourceMode model.SourceMode = 0
 		response := []lhResp{
-			{LectureHallName: testutils.LectureHall.Name,
-				LectureHallID: testutils.LectureHall.ID,
-				Presets:       testutils.LectureHall.CameraPresets,
-				SourceMode:    sourceMode},
+			{
+				LectureHallName: testutils.LectureHall.Name,
+				LectureHallID:   testutils.LectureHall.ID,
+				Presets:         testutils.LectureHall.CameraPresets,
+				SourceMode:      sourceMode,
+			},
 		}
 
 		gomino.TestCases{
@@ -2377,7 +2398,8 @@ func TestActivateToken(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -2503,7 +2525,8 @@ func TestPresets(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -2737,7 +2760,8 @@ func TestGetTranscodingProgress(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url("/api/course/40/stream/1969/transcodingProgress").
 			Run(t, testutils.Equal)

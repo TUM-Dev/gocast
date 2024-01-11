@@ -3,12 +3,13 @@ package tum
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/TUM-Dev/CampusProxy/client"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model/search"
 	"github.com/TUM-Dev/gocast/tools"
-	"strconv"
-	"strings"
 )
 
 // PrefetchCourses loads all courses from tumonline, so we can use them in the course creation from search

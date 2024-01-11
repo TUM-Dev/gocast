@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
+	"net/http"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -13,8 +16,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
-	"net/http"
-	"testing"
 )
 
 func UsersRouterWrapper(r *gin.Engine) {
@@ -38,15 +39,20 @@ func TestUsersCRUD(t *testing.T) {
 			},
 		}
 		response := []userSearchDTO{
-			{ID: users[0].ID,
+			{
+				ID:    users[0].ID,
 				LrzID: tools.MaskLogin(users[0].LrzID),
 				Email: gomino.First(tools.MaskEmail(users[0].Email.String)).(string),
 				Name:  users[0].Name,
-				Role:  users[0].Role},
-			{ID: users[1].ID,
+				Role:  users[0].Role,
+			},
+			{
+				ID:    users[1].ID,
 				LrzID: tools.MaskLogin(users[1].LrzID),
 				Email: gomino.First(tools.MaskEmail(users[1].Email.String)).(string),
-				Name:  users[1].Name, Role: users[1].Role}}
+				Name:  users[1].Name, Role: users[1].Role,
+			},
+		}
 		gomino.TestCases{
 			"GET[Query to short]": {
 				Router:       UsersRouterWrapper,
@@ -96,7 +102,8 @@ func TestUsersCRUD(t *testing.T) {
 		userLecturer := model.User{
 			Name:  "Hansi",
 			Email: sql.NullString{String: "hansi@tum.de", Valid: true},
-			Role:  model.LecturerType}
+			Role:  model.LecturerType,
+		}
 		request := createUserRequest{
 			Name:     userLecturer.Name,
 			Email:    userLecturer.Email.String,
@@ -491,7 +498,8 @@ func TestSearchUserForCourse(t *testing.T) {
 				Name:  "Hannes",
 				Email: sql.NullString{String: "hannes@tum.de", Valid: true},
 				Role:  model.StudentType,
-			}}
+			},
+		}
 		response := []userForLecturerDto{
 			{
 				ID:       users[0].ID,
@@ -504,7 +512,8 @@ func TestSearchUserForCourse(t *testing.T) {
 				Name:     users[1].Name,
 				LastName: users[1].LastName,
 				Login:    users[1].GetLoginString(),
-			}}
+			},
+		}
 		gomino.TestCases{
 			"GET[success]": {
 				Router: func(r *gin.Engine) {

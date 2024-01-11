@@ -1,9 +1,10 @@
 package connector
 
 import (
+	"net/http"
+
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/gabstv/melody"
-	"net/http"
 )
 
 func NewMelodyConnector() *realtime.Connector {

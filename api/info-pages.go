@@ -1,12 +1,13 @@
 package api
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 func configInfoPageRouter(router *gin.Engine, wrapper dao.DaoWrapper) {

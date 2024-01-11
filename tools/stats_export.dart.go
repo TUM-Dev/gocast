@@ -1,10 +1,11 @@
 package tools
 
 import (
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/gin-gonic/gin"
 )
 
 type ExportDataEntry struct {
@@ -18,8 +19,10 @@ type ExportStatsContainer struct {
 	data []*ExportDataEntry
 }
 
-const CSVSep = ","
-const CSVLb = "\n\r"
+const (
+	CSVSep = ","
+	CSVLb  = "\n\r"
+)
 
 func csvCell(val string) string {
 	val = strings.ReplaceAll(val, "\"", "\"\"")

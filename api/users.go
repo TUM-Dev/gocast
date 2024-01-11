@@ -90,7 +90,7 @@ func (r usersRoutes) impersonateUser(c *gin.Context) {
 }
 
 func (r usersRoutes) updateUser(c *gin.Context) {
-	var req = struct {
+	req := struct {
 		ID   uint `json:"id"`
 		Role uint `json:"role"`
 	}{}
@@ -279,7 +279,6 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 func (r usersRoutes) addUserBatchToCourse(users string, course model.Course) {
@@ -348,7 +347,7 @@ func (r usersRoutes) getPinForCourse(c *gin.Context) {
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	var has = false
+	has := false
 	var err error
 	if tumLiveContext.User != nil {
 		has, err = r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
@@ -485,7 +484,7 @@ func (r usersRoutes) CreateUser(c *gin.Context) {
 }
 
 func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
-	var u = model.User{
+	u := model.User{
 		Name:  request.Name,
 		Email: sql.NullString{String: request.Email, Valid: true},
 		Role:  userType,
@@ -500,7 +499,7 @@ func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) 
 	if dbErr != nil {
 		return u, errors.New("user could not be created")
 	}
-	if userType != model.AdminType { //generate password set link and send out email
+	if userType != model.AdminType { // generate password set link and send out email
 		go r.forgotPassword(request.Email)
 	}
 	return u, nil
@@ -713,7 +712,6 @@ func (r usersRoutes) updateSeekingTime(c *gin.Context) {
 		Type:   model.SeekingTime,
 		Value:  request.Value,
 	})
-
 	// Handle errors that may occur during the database operation.
 	if err != nil {
 		_ = c.Error(tools.RequestError{

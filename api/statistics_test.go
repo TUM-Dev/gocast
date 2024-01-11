@@ -3,6 +3,9 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -12,8 +15,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
-	"net/http"
-	"testing"
 )
 
 func TestStatistics(t *testing.T) {

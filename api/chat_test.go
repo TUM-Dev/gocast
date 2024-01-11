@@ -77,7 +77,8 @@ func TestMessages(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: chats,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -141,7 +142,8 @@ func TestActivePoll(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -197,7 +199,8 @@ func TestUsers(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: usersResponse,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)

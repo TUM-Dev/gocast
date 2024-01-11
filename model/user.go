@@ -65,7 +65,7 @@ type UserSetting struct {
 
 	UserID uint            `gorm:"not null"`
 	Type   UserSettingType `gorm:"not null"`
-	Value  string          `gorm:"not null"` //json encoded setting
+	Value  string          `gorm:"not null"` // json encoded setting
 }
 
 // GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
@@ -231,7 +231,7 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 }
 
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
-	var cMap = make(map[uint]Course)
+	cMap := make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
 			cMap[c.ID] = c

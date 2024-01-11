@@ -3,10 +3,11 @@ package camera
 import (
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/model"
-	uuid "github.com/satori/go.uuid"
 	"strconv"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/model"
+	uuid "github.com/satori/go.uuid"
 )
 
 // AxisCam represents AXIS IP cameras the TUM uses

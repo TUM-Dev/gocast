@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -12,9 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
-	"html/template"
-	"net/http"
-	"testing"
 )
 
 func TestDownloadICS(t *testing.T) {
@@ -82,7 +83,8 @@ func TestDownloadICS(t *testing.T) {
 				},
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res.Bytes(),
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
