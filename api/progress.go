@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 var progressBuff *progressBuffer
@@ -57,7 +56,7 @@ func (b *progressBuffer) run() {
 		time.Sleep(b.interval)
 		err := b.flush()
 		if err != nil {
-			log.WithError(err).Error("Error flushing progress buffer")
+			logger.Error("Error flushing progress buffer", "err", err)
 		}
 	}
 }
@@ -91,7 +90,7 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 	err := c.BindJSON(&request)
 
 	if err != nil {
-		log.WithError(err).Warn("Could not bind JSON.")
+		logger.Warn("Could not bind JSON.", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -133,7 +132,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	var request watchedRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		log.WithError(err).Error("Could not bind JSON.")
+		logger.Error("Could not bind JSON.", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -164,7 +163,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	}
 	err = r.ProgressDao.SaveWatchedState(&prog)
 	if err != nil {
-		log.WithError(err).Error("can not mark VoD as watched.")
+		logger.Error("can not mark VoD as watched.", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not mark VoD as watched.",

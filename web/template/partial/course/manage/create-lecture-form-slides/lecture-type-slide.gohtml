@@ -4,8 +4,8 @@
             <button
                     x-data="{ itemCreateType: admin.LectureCreateType.livestream }"
                     @click.prevent="() => updateCreateType(itemCreateType)"
-                    class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
-                    :class="createType === itemCreateType ? 'dark:text-white dark:border-white border-blue-600 text-blue-600' : ''"
+                    class="inline-flex items-center justify-between w-full p-5 bg-white border rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+                    :class="createType === itemCreateType ? 'dark:text-white dark:border-white border-blue-600 text-blue-600' : 'text-gray-500 border-gray-200'"
             >
                 <div class="block text-left">
                     <div class="w-full text-lg font-semibold">Livestream</div>
@@ -17,8 +17,8 @@
             <button
                     x-data="{ itemCreateType: admin.LectureCreateType.vodRecord }"
                     @click.prevent="() => updateCreateType(itemCreateType)"
-                    class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
-                    :class="createType === itemCreateType ? 'dark:text-white dark:border-white border-blue-600 text-blue-600' : ''"
+                    class="inline-flex items-center justify-between w-full p-5 bg-white border rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+                    :class="createType === itemCreateType ? 'dark:text-white dark:border-white border-blue-600 text-blue-600' : 'text-gray-500 border-gray-200'"
             >
                 <div class="block text-left">
                     <div class="w-full text-lg font-semibold">Record Lecture</div>
@@ -30,8 +30,8 @@
             <button
                     x-data="{ itemCreateType: admin.LectureCreateType.vodUpload }"
                     @click.prevent="() => updateCreateType(itemCreateType)"
-                    class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
-                    :class="createType === itemCreateType ? 'dark:text-white dark:border-white border-blue-600 text-blue-600' : ''"
+                    class="inline-flex items-center justify-between w-full p-5 bg-white border rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+                    :class="createType === itemCreateType ? 'dark:text-white dark:border-white border-blue-600 text-blue-600' : 'text-gray-500 border-gray-200'"
             >
                 <div class="block text-left">
                     <div class="w-full text-lg font-semibold">Video Upload</div>

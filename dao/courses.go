@@ -10,7 +10,6 @@ import (
 
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -305,16 +304,16 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	for _, stream := range course.Streams {
 		err := DB.Delete(&stream).Error
 		if err != nil {
-			log.WithError(err).Error("Can't delete stream")
+			logger.Error("Can't delete stream", "err", err)
 		}
 	}
 	err := DB.Model(&course).Updates(map[string]interface{}{"vod_enabled": false}).Error
 	if err != nil {
-		log.WithError(err).Error("Can't update course settings when deleting")
+		logger.Error("Can't update course settings when deleting", "err", err)
 	}
 	err = DB.Delete(&course, course.ID).Error
 	if err != nil {
-		log.WithError(err).Error("Can't delete course")
+		logger.Error("Can't delete course", "err", err)
 	}
 }
 

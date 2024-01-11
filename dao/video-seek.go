@@ -3,7 +3,6 @@ package dao
 import (
 	"errors"
 	"github.com/TUM-Dev/gocast/model"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -32,7 +31,7 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 	}
 
 	if (pos / float64(stream.Duration.Int32)) > 1 {
-		log.Error("position is bigger than stream duration")
+		logger.Error("position is bigger than stream duration")
 		return errors.New("position is bigger than stream duration")
 	}
 

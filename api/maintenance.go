@@ -1,13 +1,14 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strconv"
+	"github.com/gin-gonic/gin"
 )
 
 func configMaintenanceRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -50,11 +51,11 @@ func (r *maintenanceRoutes) generateThumbnails(c *gin.Context) {
 		})
 		return
 	}
-	log.Info("generating ", noFiles, " thumbs")
+	logger.Info("generating " + strconv.FormatInt(noFiles, 10) + " thumbs")
 	go func() {
 		courses, err := r.GetAllCourses()
 		if err != nil {
-			log.WithError(err).Error("Can't get courses")
+			logger.Error("Can't get courses", "err", err)
 		}
 		processed := 0
 		r.thumbGenRunning = true
@@ -72,14 +73,14 @@ func (r *maintenanceRoutes) generateThumbnails(c *gin.Context) {
 					// Request thumbnail for VoD.
 					err := RegenerateThumbs(dao.NewDaoWrapper(), file, &stream, &course)
 					if err != nil {
-						log.WithError(err).Errorf(
+						logger.Error(fmt.Sprintf(
 							"Can't regenerate thumbnail for stream %d with file %s",
 							stream.ID,
 							file.Path,
-						)
+						))
 						continue
 					}
-					log.Info("Processed thumbnail", processed, "of", noFiles)
+					logger.Info("Processed thumbnail" + string(rune(processed)) + "of" + strconv.FormatInt(noFiles, 10))
 					processed++
 					r.thumbGenProgress = float32(processed) / float32(noFiles)
 				}
@@ -110,7 +111,7 @@ func (r *maintenanceRoutes) runCronJob(c *gin.Context) {
 		return
 	}
 	jobName := c.Request.FormValue("job")
-	log.Info("request to run ", jobName)
+	logger.Info("request to run " + jobName)
 	tools.Cron.RunJob(jobName)
 }
 

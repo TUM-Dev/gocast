@@ -1,11 +1,10 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	log "github.com/sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -15,7 +14,7 @@ import (
 func configGinDownloadICSRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	templates, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
-		log.WithError(err).Fatal("could not parse templates")
+		logger.Error("could not parse templates", "err", err)
 		return
 	}
 	routes := downloadICSRoutes{daoWrapper, templates}

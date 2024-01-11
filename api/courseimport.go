@@ -6,13 +6,12 @@ import (
 	"errors"
 	"fmt"
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -90,7 +89,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 		for _, event := range courseReq.Events {
 			lectureHall, err := r.LectureHallsDao.GetLectureHallByPartialName(event.RoomName)
 			if err != nil {
-				log.WithError(err).Error("No room found for request")
+				logger.Error("No room found for request", "err", err)
 				continue
 			}
 			var eventID uint
@@ -122,7 +121,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			mail := contact.Email
 			user, err := tum.FindUserWithEmail(mail)
 			if err != nil || user == nil {
-				log.WithError(err).Errorf("can't find user %v", mail)
+				logger.Error("can't find user "+mail, "err", err)
 				continue
 			}
 			time.Sleep(time.Millisecond * 200) // wait a bit, otherwise ldap locks us out
@@ -130,14 +129,14 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			user.Role = model.LecturerType
 			err = r.UsersDao.UpsertUser(user)
 			if err != nil {
-				log.Error(err)
+				logger.Error("Could not upsert user", "err", err)
 			} else {
 				users = append(users, user)
 			}
 		}
 		for _, user := range users {
 			if err := r.CoursesDao.AddAdminToCourse(user.ID, course.ID); err != nil {
-				log.WithError(err).Error("can't add admin to course")
+				logger.Error("can't add admin to course", "err", err)
 			}
 			err := r.notifyCourseCreated(MailTmpl{
 				Name:   user.Name,
@@ -146,7 +145,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 				OptIn:  req.OptIn,
 			}, user.Email.String, fmt.Sprintf("Vorlesungsstreams %s | Lecture streaming %s", course.Name, course.Name))
 			if err != nil {
-				log.WithFields(log.Fields{"course": course.Name, "email": user.Email.String}).WithError(err).Error("can't send email")
+				logger.Error("can't send email", "course", course.Name, "email", user.Email.String, "err", err)
 			}
 			time.Sleep(time.Millisecond * 100) // 1/10th second delay, being nice to our mailrelay
 		}
@@ -172,7 +171,7 @@ func (r lectureHallRoutes) notifyCourseCreated(d MailTmpl, mailAddr string, subj
 	var body bytes.Buffer
 	err = templ.ExecuteTemplate(&body, "mail-course-registered.gotemplate", d)
 	if err != nil {
-		log.Error(err)
+		logger.Error("Could not execute mail-course-registered.gotemplate", "err", err)
 	}
 	return r.EmailDao.Create(context.Background(), &model.Email{
 		From:    tools.Cfg.Mail.Sender,
@@ -219,7 +218,7 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	//todo figure out right token
 	campus, err := campusonline.New(tools.Cfg.Campus.Tokens[0], "")
 	if err != nil {
-		log.WithError(err).Error("Can't create campus client")
+		logger.Error("Can't create campus client", "err", err)
 		return
 	}
 	var room campusonline.ICalendar
@@ -245,7 +244,7 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 		room, err = campus.GetXCalOrg(from, to, depInt)
 	}
 	if err != nil {
-		log.WithError(err).Error("can not get room schedule")
+		logger.Error("can not get room schedule", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get room schedule",

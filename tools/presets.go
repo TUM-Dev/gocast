@@ -3,11 +3,10 @@ package tools
 import (
 	"context"
 	"errors"
-	"github.com/getsentry/sentry-go"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/camera"
-	log "github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
 	"time"
 )
 
@@ -39,7 +38,7 @@ func (p presetUtility) ProvideCamera(ctype model.CameraType, ip string) (camera.
 	return nil, errors.New("invalid camera type")
 }
 
-//FetchCameraPresets Queries all cameras of lecture halls for their camera presets and saves them to the database
+// FetchCameraPresets Queries all cameras of lecture halls for their camera presets and saves them to the database
 func (p presetUtility) FetchCameraPresets(ctx context.Context) {
 	span := sentry.StartSpan(ctx, "FetchCameraPresets")
 	defer span.Finish()
@@ -53,12 +52,12 @@ func (p presetUtility) FetchLHPresets(lectureHall model.LectureHall) {
 	if lectureHall.CameraIP != "" {
 		cam, err := p.ProvideCamera(lectureHall.CameraType, lectureHall.CameraIP)
 		if err != nil {
-			log.WithError(err)
+			logger.Error("Error providing camera", "err", err)
 			return
 		}
 		presets, err := cam.GetPresets()
 		if err != nil {
-			log.WithError(err).WithField("AxisCam", lectureHall.CameraIP).Warn("FetchCameraPresets: failed to get Presets")
+			logger.Warn("FetchCameraPresets: failed to get Presets", "err", err, "AxisCam", lectureHall.CameraIP)
 			return
 		}
 		/*for i := range presets {
@@ -78,17 +77,17 @@ func (p presetUtility) UsePreset(preset model.CameraPreset) {
 	}
 	cam, err := p.ProvideCamera(lectureHall.CameraType, lectureHall.CameraIP)
 	if err != nil {
-		log.WithError(err)
+		logger.Error("Error providing camera", "err", err)
 		return
 	}
 	err = cam.SetPreset(preset.PresetID)
 	if err != nil {
-		log.WithError(err).Error("UsePreset: unable to set preset for camera")
+		logger.Error("UsePreset: unable to set preset for camera", "err", err)
 	}
 }
 
-//TakeSnapshot Creates an image for a preset. Saves it to the disk and database.
-//Function is blocking and needs ~20 Seconds to complete! Only call in goroutine.
+// TakeSnapshot Creates an image for a preset. Saves it to the disk and database.
+// Function is blocking and needs ~20 Seconds to complete! Only call in goroutine.
 func (p presetUtility) TakeSnapshot(preset model.CameraPreset) {
 	p.UsePreset(preset)
 	time.Sleep(time.Second * 10)
@@ -99,18 +98,18 @@ func (p presetUtility) TakeSnapshot(preset model.CameraPreset) {
 	}
 	cam, err := p.ProvideCamera(lectureHall.CameraType, lectureHall.CameraIP)
 	if err != nil {
-		log.WithError(err)
+		logger.Error("Error providing camera", "err", err)
 		return
 	}
 	fileName, err := cam.TakeSnapshot(Cfg.Paths.Static)
 	if err != nil {
-		log.WithField("cam", lectureHall.CameraIP).WithError(err).Error("TakeSnapshot: failed to get camera snapshot")
+		logger.Error("TakeSnapshot: failed to get camera snapshot", "err", err, "cam", lectureHall.CameraIP)
 		return
 	}
 	preset.Image = fileName
 	err = p.LectureHallDao.SavePreset(preset)
 	if err != nil {
-		log.WithField("cam", lectureHall.CameraIP).WithError(err).Error("TakeSnapshot: failed to save snapshot file")
+		logger.Error("TakeSnapshot: failed to save snapshot file", "err", err, "cam", lectureHall.CameraIP)
 		return
 	}
 }

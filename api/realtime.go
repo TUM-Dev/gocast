@@ -1,11 +1,10 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/TUM-Dev/gocast/tools/realtime/connector"
-	log "github.com/sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 )
 
 type realtimeRoutes struct {
@@ -25,6 +24,6 @@ func (r realtimeRoutes) handleRealtimeConnect(c *gin.Context) {
 	properties["dao"] = r.DaoWrapper
 
 	if err := RealtimeInstance.HandleRequest(c.Writer, c.Request, properties); err != nil {
-		log.WithError(err).Warn("Something went wrong while handling Realtime-Socket request")
+		logger.Warn("Something went wrong while handling Realtime-Socket request", "err", err)
 	}
 }

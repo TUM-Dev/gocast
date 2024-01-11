@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func buildCommand(niceness int, infile string, outfile string, tune string, crf int) *exec.Cmd {
+func buildCommand(niceness int, infile string, outfile string, tune string, crf int, self bool) *exec.Cmd {
 	c := []string{
 		"-n", fmt.Sprintf("%d", niceness),
 		"ffmpeg", "-nostats", "-loglevel", "error", "-y",
@@ -24,6 +24,9 @@ func buildCommand(niceness int, infile string, outfile string, tune string, crf 
 		"-vsync", "2", "-c:v", "libx264", "-level", "4.0", "-movflags", "+faststart"}
 	if tune != "" {
 		c = append(c, "-tune", tune)
+	}
+	if self {
+		c = append(c, "-probesize 25M -analyzeduration 50M")
 	}
 	c = append(c, "-c:a", "aac", "-b:a", "128k", "-crf", fmt.Sprintf("%d", crf), outfile)
 	return exec.Command("nice", c...)
@@ -67,14 +70,14 @@ func transcode(streamCtx *StreamContext) error {
 	switch streamCtx.streamVersion {
 	case "CAM":
 		// compress camera image slightly more
-		cmd = buildCommand(10, in, out, "", 26)
+		cmd = buildCommand(10, in, out, "", 26, streamCtx.isSelfStream)
 	case "PRES":
-		cmd = buildCommand(9, in, out, "stillimage", 20)
+		cmd = buildCommand(9, in, out, "stillimage", 20, streamCtx.isSelfStream)
 	case "COMB":
-		cmd = buildCommand(8, in, out, "", 24)
+		cmd = buildCommand(8, in, out, "", 24, streamCtx.isSelfStream)
 	default:
 		//unknown source, use higher compression and less priority
-		cmd = buildCommand(10, in, out, "", 26)
+		cmd = buildCommand(10, in, out, "", 26, streamCtx.isSelfStream)
 	}
 	log.WithFields(log.Fields{"input": in, "output": out, "command": cmd.String()}).Info("Transcoding")
 	streamCtx.transcodingCmd = cmd

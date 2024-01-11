@@ -4,14 +4,15 @@ import { ToggleableElement } from "../utilities/ToggleableElement";
 import { RealtimeFacade } from "../utilities/ws";
 
 const CUTOFFLENGTH = 256;
+const CUTOFFHEIGHT = 52; // This is the height of one line of level 1 title + one line of plain text
 
 export function videoInformationContext(streamId: number): AlpineComponent {
     // TODO: REST
     const descriptionEl = document.getElementById("description") as HTMLInputElement;
     return {
         viewers: 0 as number,
-        description: descriptionEl.value as string,
-        less: descriptionEl.value.length > CUTOFFLENGTH,
+        description: descriptionEl.innerHTML as string,
+        less: descriptionEl.innerHTML.length > CUTOFFLENGTH || descriptionEl.offsetHeight > CUTOFFHEIGHT,
 
         showFullDescription: new ToggleableElement(),
 

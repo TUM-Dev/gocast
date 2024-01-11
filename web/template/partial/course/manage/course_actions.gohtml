@@ -1,7 +1,17 @@
 {{define "dangerzone"}}
     {{- /*gotype: github.com/TUM-Dev/gocast/model.Course*/ -}}
     <div class="form-container-body grid gap-3"
-         x-data="{ copying: false , year: '', yearW: '', semester: 'Wintersemester' }">
+         x-data="{ copying: false , year: '', yearW: '', semester: 'Wintersemester',
+         init() {
+              this.$watch('year', (newYear) => {
+                  if (newYear.length === 4) {
+                      const nextYear = parseInt(newYear) + 1;
+                      this.yearW = ('' + nextYear).slice(-2);
+                  } else {
+                      this.yearW = '';
+                  }
+              });
+         }}">
         <div x-show="copying" class="grid gap-3">
             {{template "semester-selection"}}
             <button :disabled="year==''" class="btn" @click="admin.copyCourse('{{.Model.ID}}',year,yearW,semester)">
