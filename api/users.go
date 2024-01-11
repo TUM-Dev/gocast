@@ -660,7 +660,7 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	if u == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
+			CustomMessage: "login required for updating user settings",
 		})
 		return
 	}
@@ -668,7 +668,7 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
+			CustomMessage: "can not bind body to request",
 			Err:           err,
 		})
 		return
