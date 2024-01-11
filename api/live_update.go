@@ -20,10 +20,8 @@ const (
 	UpdateTypeCourseWentLive = "course_went_live"
 )
 
-var (
-	liveUpdateListenerMutex sync.RWMutex
-	liveUpdateListener      = map[uint]*liveUpdateUserSessionsWrapper{}
-)
+var liveUpdateListenerMutex sync.RWMutex
+var liveUpdateListener = map[uint]*liveUpdateUserSessionsWrapper{}
 
 type liveUpdateUserSessionsWrapper struct {
 	sessions []*realtime.Context
