@@ -586,15 +586,19 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 	}
 }
 
-func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
+func getUserFromContext(c *gin.Context) *model.User {
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	if u == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusUnauthorized,
 			CustomMessage: "login required",
 		})
-		return
+		return nil
 	}
+	return u
+}
+
+func getRequestFromContext(c *gin.Context) *userSettingsRequest {
 	var request userSettingsRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&request)
 	if err != nil {
@@ -603,9 +607,16 @@ func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
 			CustomMessage: "can not bind body",
 			Err:           err,
 		})
-		return
+		return nil
 	}
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+	return &request
+}
+
+func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
+	u := getUserFromContext(c)
+	request := getRequestFromContext(c)
+
+	err := r.UsersDao.AddUserSetting(&model.UserSetting{
 		UserID: u.ID,
 		Type:   model.Greeting,
 		Value:  request.Value,
@@ -693,31 +704,11 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 }
 
 func (r usersRoutes) updateSeekingTime(c *gin.Context) {
-	// Extract the user from the Gin context
-	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	// Check if the user is authenticated.
-	if u == nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
-		})
-		return
-	}
-
-	// Decode the JSON request body into a userSettingsRequest struct.
-	var request userSettingsRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&request)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
+	u := getUserFromContext(c)
+	request := getRequestFromContext(c)
 
 	// Add the user's seeking time setting to the database.
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+	err := r.UsersDao.AddUserSetting(&model.UserSetting{
 		UserID: u.ID,
 		Type:   model.SeekingTime,
 		Value:  request.Value,
