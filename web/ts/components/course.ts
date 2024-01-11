@@ -124,7 +124,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
         },
 
         toggleListView() {
-            if(this.viewMode == ViewMode.Grid) {
+            if (this.viewMode == ViewMode.Grid) {
                 this.viewMode = ViewMode.List;
             } else {
                 this.viewMode = ViewMode.Grid;
