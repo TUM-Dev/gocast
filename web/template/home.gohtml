@@ -476,11 +476,14 @@
                                                                 </div>
                                                             </a>
                                                             <div class="relative flex justify-between px-1 min-h-[32px]">
-                                                                <div>
+                                                                <div class="w-full">
                                                                     <template x-if="vod.HasName()">
-                                                                        <a class="title"
+                                                                        <a class="title overflow-hidden"
                                                                            :href="course.WatchURL(vod.ID)"
-                                                                           x-text="vod.Name"></a>
+                                                                           :title="vod.Name"
+                                                                           x-text="vod.Name">
+
+                                                                        </a>
                                                                     </template>
                                                                     <span class="date text-sm"
                                                                           x-text="vod.FriendlyDateStart()"></span>
