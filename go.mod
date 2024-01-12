@@ -2,8 +2,6 @@ module github.com/TUM-Dev/gocast
 
 go 1.21
 
-toolchain go1.21.5
-
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
