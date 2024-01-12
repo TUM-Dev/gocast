@@ -140,6 +140,96 @@ func TestGetUserPinned_InvalidJWT(t *testing.T) {
 	}
 }
 
+// test post user pinned and delete user pinned
+func TestPostUserPinned_InvalidJWT(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
+	req := &protobuf.PostPinnedRequest{
+		CourseID: 1,
+	}
+	_, err := a.PostUserPinned(ctx, req)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("expected Unauthenticated, got %v", err)
+	}
+}
+
+func TestPostUserPinned_Enrolled(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	req := &protobuf.PostPinnedRequest{
+		CourseID: 1,
+	}
+	_, err := a.PostUserPinned(ctx, req)
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	// check if it is pinned
+	courses, err := a.GetUserPinned(ctx, &protobuf.GetUserPinnedRequest{})
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	any := false
+	for _, c := range courses.Courses {
+		if c.Id == 1 {
+			any = true
+		}
+	}
+	if !any {
+		t.Errorf("expected to be pinned in id: 1, got %v", courses.Courses)
+	}
+}
+
+func TestDeleteUserPinned_InvalidJWT(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
+	req := &protobuf.DeletePinnedRequest{
+		CourseID: 1,
+	}
+	_, err := a.DeleteUserPinned(ctx, req)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("expected Unauthenticated, got %v", err)
+	}
+}
+
+func TestDeleteUserPinned_Enrolled(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	//  first create one to delete
+	postReq := &protobuf.PostPinnedRequest{
+		CourseID: 3,
+	}
+
+	_, err := a.PostUserPinned(ctx, postReq)
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	// delete it
+	deleteReq := &protobuf.DeletePinnedRequest{
+		CourseID: 3,
+	}
+
+	_, err = a.DeleteUserPinned(ctx, deleteReq)
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	// check if it is deleted
+	courses, err := a.GetUserPinned(ctx, &protobuf.GetUserPinnedRequest{})
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	any := false
+	for _, c := range courses.Courses {
+		if c.Id == 1 {
+			any = true
+		}
+	}
+	if any {
+		t.Errorf("expected to be deleted in id: 1, got %v", courses.Courses)
+	}
+
+}
+
 // Test Get User Bookmarks
 func TestGetUserBookmarks_NoCourses(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), md_student_loggedin)
@@ -210,5 +300,223 @@ func TestPutUserBookmarks_Enrolled(t *testing.T) {
 
 	if bookmark.Bookmark.Hours != 1 {
 		t.Errorf("expected 1, got %v", bookmark.Bookmark.Hours)
+	}
+}
+
+// Patch user bookmark for this put one to know what to patch
+func TestPatchUserBookmarks_InvalidJWT(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
+	req := &protobuf.PatchBookmarkRequest{}
+	_, err := a.PatchUserBookmark(ctx, req)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("expected Unauthenticated, got %v", err)
+	}
+}
+
+func TestPatchUserBookmarks_Enrolled(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+
+	// put one to know what to patch
+	putReq := &protobuf.PutBookmarkRequest{
+		Description: "test",
+		Hours:       1,
+		Minutes:     1,
+		Seconds:     1,
+		StreamID:    1,
+	}
+
+	res, _ := a.PutUserBookmark(ctx, putReq)
+	// handling error is not necessary because we know it works from the previous test
+
+	req := &protobuf.PatchBookmarkRequest{
+		BookmarkID:  res.Bookmark.Id,
+		Description: "test",
+		Hours:       1,
+		Minutes:     1,
+		Seconds:     1,
+	}
+
+	bookmark, err := a.PatchUserBookmark(ctx, req)
+
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	if bookmark.Bookmark.Description != "test" {
+		t.Errorf("expected test, got %v", bookmark.Bookmark.Description)
+	}
+
+	if bookmark.Bookmark.Hours != 1 {
+		t.Errorf("expected 1, got %v", bookmark.Bookmark.Hours)
+	}
+}
+
+// Delete user bookmark for this put one to know what to delete
+func TestDeleteUserBookmarks_InvalidJWT(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
+	req := &protobuf.DeleteBookmarkRequest{}
+	_, err := a.DeleteUserBookmark(ctx, req)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("expected Unauthenticated, got %v", err)
+	}
+}
+
+func TestDeleteUserBookmarks_Enrolled(t *testing.T) {
+	// put one to know what to delete
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	putReq := &protobuf.PutBookmarkRequest{
+		Description: "test",
+		Hours:       1,
+		Minutes:     1,
+		Seconds:     1,
+		StreamID:    1,
+	}
+
+	res, _ := a.PutUserBookmark(ctx, putReq)
+	// handling error is not necessary because we know it works from the previous test
+
+	req := &protobuf.DeleteBookmarkRequest{
+		BookmarkID: res.Bookmark.Id,
+	}
+
+	_, err := a.DeleteUserBookmark(ctx, req)
+
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	// check if it is deleted
+	_, err = a.DeleteUserBookmark(ctx, req)
+	if status.Code(err) != codes.NotFound {
+		t.Errorf("expected NotFound, got %v", err)
+	}
+}
+
+// Test Settings
+func TestGetUserSettings_InvalidJWT(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
+	req := &protobuf.GetUserSettingsRequest{}
+	_, err := a.GetUserSettings(ctx, req)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("expected Unauthenticated, got %v", err)
+	}
+}
+
+func TestGetUserSettings_Enrolled_EmptySettings(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	req := &protobuf.GetUserSettingsRequest{}
+	settings, err := a.GetUserSettings(ctx, req)
+
+	fmt.Println("settings")
+	fmt.Println(settings)
+
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+}
+
+// test patch user settings
+func TestPatchUserSettings_InvalidJWT(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
+	req := &protobuf.PatchUserSettingsRequest{}
+	_, err := a.PatchUserSettings(ctx, req)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("expected Unauthenticated, got %v", err)
+	}
+}
+
+func TestPatchUserSettings_Enrolled_ChangeNameValid(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	req := &protobuf.PatchUserSettingsRequest{
+		UserSettings: []*protobuf.UserSetting{
+			{
+				Type:  protobuf.UserSettingType_PREFERRED_NAME,
+				Value: "test",
+			},
+		},
+	}
+
+	settings, err := a.PatchUserSettings(ctx, req)
+
+	fmt.Println("settings")
+	fmt.Println(settings)
+
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+}
+
+func TestPatchUserSettings_Enrolled_ChangeNameEmpty(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	req := &protobuf.PatchUserSettingsRequest{
+		UserSettings: []*protobuf.UserSetting{
+			{
+				Type:  protobuf.UserSettingType_PREFERRED_NAME,
+				Value: "",
+			},
+		},
+	}
+
+	_, err := a.PatchUserSettings(ctx, req)
+
+	if status.Code(err) != codes.InvalidArgument {
+		t.Errorf("expected InvalidArgument, got %v", err)
+	}
+}
+
+func TestPatchUserSettings_Enrolled_ChangeNameTwice(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	req := &protobuf.PatchUserSettingsRequest{
+		UserSettings: []*protobuf.UserSetting{
+			{
+				Type:  protobuf.UserSettingType_PREFERRED_NAME,
+				Value: "test",
+			},
+		},
+	}
+
+	_, err := a.PatchUserSettings(ctx, req)
+
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	_, err = a.PatchUserSettings(ctx, req)
+
+	if status.Code(err) != codes.InvalidArgument {
+		t.Errorf("expected InvalidArgument, got %v", err)
+	}
+}
+
+// now remaining tests are greeting change, playback speed change
+
+func TestPatchUserSettings_Enrolled_ChangeGreetingValid(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), md_student_enrolled)
+	req := &protobuf.PatchUserSettingsRequest{
+		UserSettings: []*protobuf.UserSetting{
+			{
+				Type:  protobuf.UserSettingType_GREETING,
+				Value: "Moin",
+			},
+		},
+	}
+
+	settings, err := a.PatchUserSettings(ctx, req)
+
+	fmt.Println("settings")
+	fmt.Println(settings)
+
+	if status.Code(err) != codes.OK {
+		t.Errorf("expected OK, got %v", err)
+	}
+
+	any := false
+	for _, s := range settings.UserSettings {
+		if s.Type == protobuf.UserSettingType_GREETING && s.Value == "Moin" {
+			any = true
+		}
+	}
+	if !any {
+		t.Errorf("expected to be changed, got %v", settings.UserSettings)
 	}
 }
