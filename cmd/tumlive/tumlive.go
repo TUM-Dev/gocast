@@ -98,7 +98,7 @@ func GinServer() (err error) {
 	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.Run(":8081")
+	err = router.RunListener(l)
 	// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)
