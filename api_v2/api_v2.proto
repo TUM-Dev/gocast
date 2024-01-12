@@ -382,9 +382,9 @@ message UserSetting {
 }
 
 enum UserSettingType {
-  PREFERRED_NAME = 1;
-  GREETING = 2;
-  CUSTOM_PLAYBACK_SPEEDS = 3;
+  PREFERRED_NAME = 0;
+  GREETING = 1;
+  CUSTOM_PLAYBACK_SPEEDS = 2;
 }
 
 ///////////////////////////////
