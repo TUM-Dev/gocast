@@ -3,9 +3,10 @@ package dao
 import (
 	"context"
 	"fmt"
-	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
+
+	"gorm.io/gorm/clause"
 
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
@@ -321,7 +322,8 @@ func (d streamsDao) UpdateStream(stream model.Stream) error {
 		"description":  stream.Description,
 		"start":        stream.Start,
 		"end":          stream.End,
-		"chat_enabled": stream.ChatEnabled}).Error
+		"chat_enabled": stream.ChatEnabled,
+	}).Error
 	return err
 }
 

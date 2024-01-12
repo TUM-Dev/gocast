@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"github.com/joschahenningsen/thumbgen"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"time"
+
+	"github.com/joschahenningsen/thumbgen"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

@@ -45,9 +45,8 @@ func HandlePremiere(request *pb.PremiereRequest) {
 		outUrl:        request.OutUrl,
 	}
 	// Register worker for premiere
-	if !streamCtx.isSelfStream {
-		regularStreams.addContext(streamCtx.streamId, streamCtx)
-	}
+	regularStreams.addContext(streamCtx.streamId, streamCtx)
+
 	S.startStream(streamCtx)
 	streamPremiere(streamCtx)
 	S.endStream(streamCtx)
@@ -64,7 +63,7 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		endTime:       time.Now().Add(time.Hour * 7),
 		publishVoD:    request.GetUploadVoD(),
 		streamVersion: "COMB",
-		isSelfStream:  false,
+		isSelfStream:  true,
 		ingestServer:  request.IngestServer,
 		sourceUrl:     "rtmp://localhost/" + slug,
 		streamName:    request.StreamName,
@@ -219,7 +218,7 @@ func cancelCmd(cmd *exec.Cmd) {
 
 func HandleStreamRequest(request *pb.StreamRequest) {
 	log.WithField("request", request).Info("Request to stream")
-	//setup context with relevant information to pass to other subprocesses
+	// setup context with relevant information to pass to other subprocesses
 	streamCtx := &StreamContext{
 		streamId:      request.GetStreamID(),
 		sourceUrl:     "rtsp://" + request.GetSourceUrl(),
@@ -264,7 +263,6 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 			log.WithError(err).Error("Error transcoding audio")
 		}
 	}
-
 
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
@@ -456,18 +454,18 @@ func moveFile(sourcePath, destPath string) error {
 
 // StreamContext contains all important information on a stream
 type StreamContext struct {
-	streamId       uint32    //id of the stream
-	sourceUrl      string    //url of the streams source, e.g. 10.0.0.4
-	courseSlug     string    //slug of the course, e.g. eidi
-	teachingTerm   string    //S or W depending on the courses teaching-term
-	teachingYear   uint32    //Year the course takes place in
-	startTime      time.Time //time the stream should start
-	endTime        time.Time //end of the stream (including +10 minute safety)
-	streamVersion  string    //version of the stream to be handled, e.g. PRES, COMB or CAM
-	publishVoD     bool      //whether file should be uploaded
+	streamId       uint32    // id of the stream
+	sourceUrl      string    // url of the streams source, e.g. 10.0.0.4
+	courseSlug     string    // slug of the course, e.g. eidi
+	teachingTerm   string    // S or W depending on the courses teaching-term
+	teachingYear   uint32    // Year the course takes place in
+	startTime      time.Time // time the stream should start
+	endTime        time.Time // end of the stream (including +10 minute safety)
+	streamVersion  string    // version of the stream to be handled, e.g. PRES, COMB or CAM
+	publishVoD     bool      // whether file should be uploaded
 	streamCmd      *exec.Cmd // command used for streaming
 	transcodingCmd *exec.Cmd // command used for transcoding
-	isSelfStream   bool      //deprecated
+	isSelfStream   bool      // whether the stream is self stream or not
 	canceled       bool      // selfstreams are canceled when the same stream starts again.
 
 	streamName   string // ingest target
@@ -477,7 +475,7 @@ type StreamContext struct {
 	discardVoD   bool   // whether the VoD should be discarded
 
 	// calculated after stream:
-	duration      uint32 //duration of the stream in seconds
+	duration      uint32 // duration of the stream in seconds
 	thumbInterval uint32 // interval between thumbnails in seconds
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful
@@ -492,15 +490,9 @@ func (s StreamContext) getRecordingFileName() string {
 	if s.recordingPath != nil {
 		return *s.recordingPath
 	}
-	if !s.isSelfStream {
-		return fmt.Sprintf("%s/%s.ts",
-			cfg.TempDir,
-			s.getStreamName())
-	}
-	return fmt.Sprintf("%s/%s_%s.flv",
+	return fmt.Sprintf("%s/%s.ts",
 		cfg.TempDir,
-		s.courseSlug,
-		s.startTime.Format("02012006"))
+		s.getStreamName())
 }
 
 func (s StreamContext) getRecordingTrashName() string {
@@ -511,16 +503,6 @@ func (s StreamContext) getRecordingTrashName() string {
 // getTranscodingFileName returns the filename a stream should be saved to after transcoding.
 // example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES.mp4
 func (s StreamContext) getTranscodingFileName() string {
-	if s.isSelfStream {
-		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s.mp4",
-			cfg.StorageDir,
-			s.teachingYear,
-			s.teachingTerm,
-			s.courseSlug,
-			s.startTime.Format("2006-01-02_15-04"),
-			s.courseSlug,
-			s.startTime.Format("02012006"))
-	}
 	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.mp4",
 		cfg.StorageDir,
 		s.teachingYear,
@@ -554,16 +536,6 @@ func (s StreamContext) getLargeThumbnailSpriteFileName() string {
 // getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.
 // example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES-thumb.jpg
 func (s StreamContext) getThumbnailSpriteFileName() string {
-	if s.isSelfStream {
-		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s-thumb.jpg",
-			cfg.StorageDir,
-			s.teachingYear,
-			s.teachingTerm,
-			s.courseSlug,
-			s.startTime.Format("2006-01-02_15-04"),
-			s.courseSlug,
-			s.startTime.Format("02012006"))
-	}
 	return fmt.Sprintf("%s/%d/%s/%s/%s/%s-thumb.jpg",
 		cfg.StorageDir,
 		s.teachingYear,
@@ -575,25 +547,19 @@ func (s StreamContext) getThumbnailSpriteFileName() string {
 
 // getStreamName returns the stream name, used for the worker status
 func (s StreamContext) getStreamName() string {
-	if !s.isSelfStream {
-		return fmt.Sprintf("%s-%s%s",
-			s.courseSlug,
-			s.startTime.Format("2006-01-02-15-04"),
-			s.streamVersion)
-	}
-	return s.courseSlug
+	return fmt.Sprintf("%s-%s%s",
+		s.courseSlug,
+		s.startTime.Format("2006-01-02-15-04"),
+		s.streamVersion)
 }
 
 var vodFileNameIllegal = regexp.MustCompile(`[^a-zA-Z0-9_\\.]+`)
 
 // getStreamNameVoD returns the stream name for vod (lrz replaces - with _)
 func (s StreamContext) getStreamNameVoD() string {
-	if !s.isSelfStream {
-		name := strings.ReplaceAll(fmt.Sprintf("%s_%s%s",
-			s.courseSlug,
-			s.startTime.Format("2006_01_02_15_04"),
-			s.streamVersion), "-", "_")
-		return vodFileNameIllegal.ReplaceAllString(name, "_")
-	}
-	return s.courseSlug
+	name := strings.ReplaceAll(fmt.Sprintf("%s_%s%s",
+		s.courseSlug,
+		s.startTime.Format("2006_01_02_15_04"),
+		s.streamVersion), "-", "_")
+	return vodFileNameIllegal.ReplaceAllString(name, "_")
 }

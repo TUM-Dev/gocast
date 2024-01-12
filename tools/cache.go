@@ -1,8 +1,9 @@
 package tools
 
 import (
-	"github.com/dgraph-io/ristretto"
 	"time"
+
+	"github.com/dgraph-io/ristretto"
 )
 
 var cache *ristretto.Cache

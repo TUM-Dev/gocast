@@ -2,11 +2,12 @@ package tools
 
 import (
 	"errors"
-	"github.com/TUM-Dev/gocast/model"
 	"log"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // CourseListContains checks whether courses contain a course with a given courseId

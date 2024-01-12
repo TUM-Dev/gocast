@@ -1,13 +1,13 @@
 package worker
 
 import (
-	"github.com/tidwall/gjson"
 	"os/exec"
+
+	"github.com/tidwall/gjson"
 )
 
 func getDuration(file string) (float64, error) {
 	probe, err := probe(file)
-
 	if err != nil {
 		return 0, err
 	}

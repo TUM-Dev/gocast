@@ -2,10 +2,11 @@ package model
 
 import (
 	"fmt"
+	"html/template"
+
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
-	"html/template"
 )
 
 type StreamUnit struct {

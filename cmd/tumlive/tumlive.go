@@ -61,13 +61,16 @@ func GinServer() (err error) {
 	}
 
 	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
-			param.TimeStamp.Format(time.DateTime),
-			param.StatusCode,
-			param.ClientIP,
-			param.Path,
-			param.Request.UserAgent(),
-		)
+		if param.StatusCode >= 400 {
+			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
+				param.TimeStamp.Format(time.DateTime),
+				param.StatusCode,
+				param.ClientIP,
+				param.Path,
+				param.Request.UserAgent(),
+			)
+		}
+		return ""
 	}))
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
@@ -95,7 +98,7 @@ func GinServer() (err error) {
 	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.RunListener(l)
+	err = router.Run(":8081")
 	// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)

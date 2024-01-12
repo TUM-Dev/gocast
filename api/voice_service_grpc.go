@@ -5,6 +5,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -14,8 +17,6 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"net"
-	"time"
 )
 
 type subtitleReceiverServer struct {

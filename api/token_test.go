@@ -2,17 +2,18 @@ package api
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func TokenRouterWrapper(r *gin.Engine) {
@@ -71,7 +72,8 @@ func TestToken(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         req{Expires: &now, Scope: model.TokenScopeAdmin},
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(TokenRouterWrapper).
 			Method(http.MethodPost).
 			Url(url).
@@ -108,7 +110,8 @@ func TestToken(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodDelete).
 			Url(url).
 			Run(t, testutils.Equal)

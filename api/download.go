@@ -3,13 +3,14 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"os"
 )
 
 func configGinDownloadRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {

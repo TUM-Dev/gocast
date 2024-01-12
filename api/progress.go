@@ -2,14 +2,15 @@ package api
 
 import (
 	"errors"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -88,7 +89,6 @@ type progressRequest struct {
 func (r progressRoutes) saveProgress(c *gin.Context) {
 	var request progressRequest
 	err := c.BindJSON(&request)
-
 	if err != nil {
 		logger.Warn("Could not bind JSON.", "err", err)
 		_ = c.Error(tools.RequestError{

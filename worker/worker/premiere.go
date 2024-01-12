@@ -2,10 +2,11 @@ package worker
 
 import (
 	"fmt"
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	log "github.com/sirupsen/logrus"
 )
 
 func streamPremiere(ctx *StreamContext) {
