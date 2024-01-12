@@ -25,6 +25,16 @@ func GetCourseById(db *gorm.DB, id uint) (*model.Course, error) {
 	return c, nil
 }
 
+func GetStreamById(db *gorm.DB, id uint) (*model.Stream, error) {
+	s := &model.Stream{}
+	if err := db.Where("id = ?", id).First(s).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	} else if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("stream not found"))
+	}
+	return s, nil
+}
+
 // FetchCourses fetches public courses from the database based on the provided request.
 // It filters the courses by year, term, and query if they are specified in the request.
 // It returns a slice of Course models or an error if one occurs.

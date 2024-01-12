@@ -332,6 +332,280 @@
         ]
       }
     },
+    "/streams/chat/{streamID}": {
+      "get": {
+        "summary": "Get all chat messages of a stream",
+        "description": "Returns all chat messages of a stream.",
+        "operationId": "API_getChatMessages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetChatMessagesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      },
+      "post": {
+        "summary": "Post a chat message to a stream",
+        "description": "Posts a chat message to a stream.",
+        "operationId": "API_postChatMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPostChatMessageResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/chat/{streamID}/{chatID}/reactions": {
+      "post": {
+        "summary": "Post a reaction to a chat message",
+        "description": "Posts a reaction to a chat message.",
+        "operationId": "API_postChatReaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPostChatReactionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "chatID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "emoji": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/chat/{streamID}/{chatID}/reactions/{reactionID}": {
+      "delete": {
+        "summary": "Delete a reaction to a chat message",
+        "description": "Deletes a reaction to a chat message.",
+        "operationId": "API_deleteChatReaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDeleteChatReactionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "chatID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "reactionID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/chat/{streamID}/{chatID}/replies": {
+      "post": {
+        "summary": "Post a reply to a chat message",
+        "description": "Posts a reply to a chat message.",
+        "operationId": "API_postChatReply",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPostChatReplyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "chatID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/chat/{streamID}/{chatID}/resolved": {
+      "delete": {
+        "summary": "Mark a chat message as unresolved",
+        "description": "Marks a chat message as unresolved.",
+        "operationId": "API_markChatMessageAsUnresolved",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufMarkChatMessageAsUnresolvedResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "chatID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      },
+      "put": {
+        "summary": "Mark a chat message as resolved",
+        "description": "Marks a chat message as resolved.",
+        "operationId": "API_markChatMessageAsResolved",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufMarkChatMessageAsResolvedResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "chatID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/streams/progress/{streamID}": {
       "get": {
         "summary": "Get progress of stream",
@@ -1496,7 +1770,7 @@
                 "message": "Could not authorize the operation."
               }
             }
-          } 
+          }
         },
         "parameters": [
           {
@@ -1515,6 +1789,18 @@
     }
   },
   "definitions": {
+    "protobufAddressedUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -1574,6 +1860,87 @@
         "streamID": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "protobufChatMessage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userID": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "sanitizedMessage": {
+          "type": "string"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "color": {
+          "type": "string"
+        },
+        "isVisible": {
+          "type": "boolean"
+        },
+        "reactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatReaction"
+          }
+        },
+        "replies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatMessage"
+          }
+        },
+        "addressedUsers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAddressedUser"
+          }
+        },
+        "isResolved": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "isAdmin": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufChatReaction": {
+      "type": "object",
+      "properties": {
+        "chatID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        },
+        "emoji": {
+          "type": "string"
         }
       }
     },
@@ -1640,6 +2007,9 @@
     "protobufDeleteBookmarkResponse": {
       "type": "object"
     },
+    "protobufDeleteChatReactionResponse": {
+      "type": "object"
+    },
     "protobufDeleteDeviceTokenResponse": {
       "type": "object"
     },
@@ -1700,7 +2070,18 @@
         }
       }
     },
-    "protobufGetCourseStreamsResponse": {
+    "protobufGetChatMessagesResponse": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatMessage"
+          }
+        }
+      }
+    },    "protobufGetCourseStreamsResponse": {
       "type": "object",
       "properties": {
         "streams": {
@@ -1859,6 +2240,22 @@
         }
       }
     },
+    "protobufMarkChatMessageAsResolvedResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/protobufChatMessage"
+        }
+      }
+    },
+    "protobufMarkChatMessageAsUnresolvedResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/protobufChatMessage"
+        }
+      }
+    },
     "protobufPatchBookmarkResponse": {
       "type": "object",
       "properties": {
@@ -1888,6 +2285,30 @@
             "type": "object",
             "$ref": "#/definitions/protobufUserSetting"
           }
+        }
+      }
+    },
+    "protobufPostChatMessageResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/protobufChatMessage"
+        }
+      }
+    },
+    "protobufPostChatReactionResponse": {
+      "type": "object",
+      "properties": {
+        "reaction": {
+          "$ref": "#/definitions/protobufChatReaction"
+        }
+      }
+    },
+    "protobufPostChatReplyResponse": {
+      "type": "object",
+      "properties": {
+        "reply": {
+          "$ref": "#/definitions/protobufChatMessage"
         }
       }
     },
