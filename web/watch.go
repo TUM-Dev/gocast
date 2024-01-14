@@ -99,7 +99,10 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		if err != nil {
 			log.Printf("Couldn't decode user setting: %v\n", err)
 		} else if autoSkip.Enabled {
-			data.Progress.Progress = math.Max(data.Progress.Progress, tumLiveContext.Stream.FirstSilenceAsProgress())
+			// The length of the stream may mismatch with the length of the video if it is a self-stream
+			if tumLiveContext.Stream.LectureHallID != 0 {
+				data.Progress.Progress = math.Max(data.Progress.Progress, tumLiveContext.Stream.FirstSilenceAsProgress())
+			}
 		}
 	}
 	if c.Query("restart") == "1" {
