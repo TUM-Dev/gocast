@@ -413,6 +413,9 @@ func (s Stream) ToDTO() StreamDTO {
 
 // FirstSilenceAsProgress returns the end of the first silence as a quotient of the length of the stream
 func (s Stream) FirstSilenceAsProgress() float64 {
+	if len(s.Silences) == 0 {
+		return 0
+	}
 	// Sanity check: first silence at beginning of stream
 	if s.Silences[0].Start != 0 {
 		return 0
