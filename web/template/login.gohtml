@@ -39,6 +39,20 @@
         <header>
             <h1 class="font-bold text-3">Login</h1>
         </header>
+
+        <div x-show="!resetPassword" class="flex">
+            <input type="checkbox" name="rememberMe" id="rememberMe">
+            <label for="rememberMe" class="text-5 text-sm px-2">Remember me for 6 months</label>
+            <script>
+                document.getElementById('rememberMe').addEventListener('change', function() {
+                    document.cookie = "rememberMe=" + this.checked + "; path=/; max-age=600";
+                    // The status whether "remember me" is checked is saved in a cookie, valid for 10 minutes
+                    // This cookie will be deleted once logged in
+                });
+            </script>
+        </div>
+
+
         {{if .UseSAML}}
             <article class="text-center w-full">
                 <a href="/saml/out"

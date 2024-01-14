@@ -86,7 +86,7 @@ func (r usersRoutes) impersonateUser(c *gin.Context) {
 		})
 		return
 	}
-	tools.StartSession(c, &tools.SessionData{Userid: u.ID})
+	tools.StartSession(c, &tools.SessionData{Userid: u.ID}, false)
 }
 
 func (r usersRoutes) updateUser(c *gin.Context) {

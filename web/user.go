@@ -58,7 +58,15 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 
 // HandleValidLogin starts a session and redirects the user to the page they were trying to access.
 func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
-	tools.StartSession(c, data)
+	rememberMeCookie, err := c.Request.Cookie("rememberMe")
+	rememberMe := false
+	if err == nil && rememberMeCookie.Value == "true" {
+		rememberMe = true
+	}
+	// Delete cookie that was used for saving the status of "remember me"
+	c.SetCookie("rememberMe", "", -1, "/", "", tools.CookieSecure, true)
+
+	tools.StartSession(c, data, rememberMe)
 	redirURL, err := c.Cookie(redirCookieName)
 	if err != nil {
 		redirURL = "/" // Fallback in case no cookie is present: Redirect to index page
