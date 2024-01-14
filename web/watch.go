@@ -2,6 +2,12 @@ package web
 
 import (
 	"errors"
+	"html/template"
+	"math"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -10,11 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"html/template"
-	"math"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {

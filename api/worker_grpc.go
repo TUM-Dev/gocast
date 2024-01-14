@@ -882,7 +882,7 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		return err
 	}
 
-	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0750); err != nil {
+	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0o750); err != nil {
 		return err
 	}
 
