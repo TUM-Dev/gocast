@@ -144,11 +144,6 @@ func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgre
 func GetChatMessages(db *gorm.DB, streamID uint) ([]*model.Chat, error) {
 	var chats []*model.Chat
 
-	////also preload replies which are chats themselves
-	//if err := db.Preload("Reactions").Preload("Replies").Where("stream_id = ?", streamID).Find(&chats).Error; err != nil {
-	//	return nil, err
-	//}
-
 	// chats which are replies should not be listed in the chat list itself only in the replies of the chat they are replying to
 	// also preload reactions and replies of chats
 	if err := db.Preload("Reactions").Preload("Replies").Where("stream_id = ? AND reply_to IS NULL", streamID).Find(&chats).Error; err != nil {
@@ -239,9 +234,8 @@ func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reac
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, e.WithStatus(http.StatusNotFound, errors.New("chat not found"))
-		} else {
-			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
 	user := &model.User{}
