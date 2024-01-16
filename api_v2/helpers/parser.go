@@ -115,7 +115,7 @@ func ParseSemesterToProto(semester dao.Semester) *protobuf.Semester {
 
 // ParseStreamToProto converts a Stream model to its protobuf representation.
 // It returns an error if the conversion of timestamps fails.
-func ParseStreamToProto(stream *model.Stream) (*protobuf.Stream, error) {
+func ParseStreamToProto(stream *model.Stream, downloads []model.DownloadableVod) (*protobuf.Stream, error) {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
 	s := &protobuf.Stream{
@@ -148,7 +148,18 @@ func ParseStreamToProto(stream *model.Stream) (*protobuf.Stream, error) {
 		s.Duration = stream.Duration.Int32
 	}
 
+	for _, download := range downloads {
+		s.Downloads = append(s.Downloads, ParseDownloadToProto(download))
+	}
+
 	return s, nil
+}
+
+func ParseDownloadToProto(download model.DownloadableVod) *protobuf.Download {
+	return &protobuf.Download{
+		FriendlyName: download.FriendlyName,
+		DownloadURL:  download.DownloadURL,
+	}
 }
 
 // Parse Progress To Proto

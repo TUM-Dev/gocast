@@ -22,31 +22,32 @@ import (
 // 3. Parse the resource to a protobuf representation
 // 4. Return the protobuf representation
 
-func (a *API) handleStreamRequest(ctx context.Context, sID uint64) (*model.Stream, error) {
+func (a *API) handleStreamRequest(ctx context.Context, sID uint64) (*model.Stream, []model.DownloadableVod, error) {
 	if sID == 0 {
-		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
+		return nil, nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
 	}
 
 	uID, err := a.getCurrentID(ctx)
 	if err != nil && err.Error() != "missing cookie header" {
-		return nil, e.WithStatus(http.StatusUnauthorized, err)
+		return nil, nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
 	s, err := s.GetStreamByID(a.db, uint(sID))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	c, err := h.CheckAuthorized(a.db, uID, s.CourseID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if err = h.SignStream(s, c, uID); err != nil {
-		return nil, err
+	downloads, err := h.SignStream(s, c, uID)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return s, nil
+	return s, downloads, nil
 }
 
 // Chat related resources are all fetched according to the same schema:
@@ -86,12 +87,12 @@ func (a *API) handleChatRequest(ctx context.Context, sID uint64) (uint, error) {
 func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*protobuf.GetStreamResponse, error) {
 	a.log.Info("GetStream")
 
-	s, err := a.handleStreamRequest(ctx, req.StreamID)
+	s, d, err := a.handleStreamRequest(ctx, req.StreamID)
 	if err != nil {
 		return nil, err
 	}
 
-	stream, err := h.ParseStreamToProto(s)
+	stream, err := h.ParseStreamToProto(s, d)
 	if err != nil {
 		return nil, err
 	}
@@ -120,11 +121,12 @@ func (a *API) GetNowLive(ctx context.Context, req *protobuf.GetNowLiveRequest) (
 			return nil, err
 		}
 
-		if err := h.SignStream(stream, c, uID); err != nil {
+		downloads, err := h.SignStream(stream, c, uID)
+		if err != nil {
 			return nil, err
 		}
 
-		s, err := h.ParseStreamToProto(stream)
+		s, err := h.ParseStreamToProto(stream, downloads)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +140,7 @@ func (a *API) GetNowLive(ctx context.Context, req *protobuf.GetNowLiveRequest) (
 func (a *API) GetThumbsVOD(ctx context.Context, req *protobuf.GetThumbsVODRequest) (*protobuf.GetThumbsVODResponse, error) {
 	a.log.Info("GetThumbsVOD")
 
-	s, err := a.handleStreamRequest(ctx, req.StreamID)
+	s, _, err := a.handleStreamRequest(ctx, req.StreamID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +156,7 @@ func (a *API) GetThumbsVOD(ctx context.Context, req *protobuf.GetThumbsVODReques
 func (a *API) GetThumbsLive(ctx context.Context, req *protobuf.GetThumbsLiveRequest) (*protobuf.GetThumbsLiveResponse, error) {
 	a.log.Info("GetThumbsLive")
 
-	s, err := a.handleStreamRequest(ctx, req.StreamID)
+	s, _, err := a.handleStreamRequest(ctx, req.StreamID)
 	if err != nil {
 		return nil, err
 	}
