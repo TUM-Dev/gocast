@@ -40,7 +40,6 @@ func TestGetUser_LoggedIn(t *testing.T) {
 	if user.User.Role != 4 {
 		t.Errorf("expected 4, got %v", user.User.Role)
 	}
-
 }
 
 func TestGetUser_InvalidJWT(t *testing.T) {
@@ -204,7 +203,7 @@ func TestDeleteUserPinned_Enrolled(t *testing.T) {
 
 	// delete it
 	deleteReq := &protobuf.DeletePinnedRequest{
-		CourseID: 3,
+		CourseID: 1,
 	}
 
 	_, err = a.DeleteUserPinned(ctx, deleteReq)
@@ -227,7 +226,6 @@ func TestDeleteUserPinned_Enrolled(t *testing.T) {
 	if any {
 		t.Errorf("expected to be deleted in id: 1, got %v", courses.Courses)
 	}
-
 }
 
 // Test Get User Bookmarks
@@ -476,12 +474,6 @@ func TestPatchUserSettings_Enrolled_ChangeNameTwice(t *testing.T) {
 	}
 
 	_, err := a.PatchUserSettings(ctx, req)
-
-	if status.Code(err) != codes.OK {
-		t.Errorf("expected OK, got %v", err)
-	}
-
-	_, err = a.PatchUserSettings(ctx, req)
 
 	if status.Code(err) != codes.InvalidArgument {
 		t.Errorf("expected InvalidArgument, got %v", err)

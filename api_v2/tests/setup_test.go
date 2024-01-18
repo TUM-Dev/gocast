@@ -80,8 +80,8 @@ func TestMain(m *testing.M) {
 	// Set the JWTs
 	setupJWTs()
 
-	// Run the tests
-	code := m.Run()
+	// code := 0 // Disable api_v2 tests when deploying / pushing to dev as they currently don't work on gocast's github pipelines
+	code := m.Run() // Uncomment this line to run the tests
 
 	// Exit with the code returned from running the tests
 	os.Exit(code)

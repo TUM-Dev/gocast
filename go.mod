@@ -1,6 +1,8 @@
 module github.com/TUM-Dev/gocast
 
-go 1.21
+go 1.21.0
+
+toolchain go1.21.3
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
@@ -57,6 +59,9 @@ require (
 )
 
 require (
+	cloud.google.com/go/compute v1.23.2 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	firebase.google.com/go/v4 v4.13.0 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/asticode/go-astikit v0.40.0 // indirect
 	github.com/asticode/go-astits v1.13.0 // indirect
@@ -66,6 +71,8 @@ require (
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/google/pprof v0.0.0-20231101202521-4ca4178f5c7a // indirect
+	github.com/google/s2a-go v0.1.4 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.4 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
@@ -73,8 +80,11 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.48.0 // indirect
+	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/arch v0.4.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	google.golang.org/api v0.128.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231106174013-bbf56f31fb17 // indirect
