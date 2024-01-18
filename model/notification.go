@@ -1,21 +1,22 @@
 package model
 
 import (
+	"html/template"
+
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
-	"html/template"
 )
 
 // NotificationTarget is a User group the Notification is displayed to
 type NotificationTarget int
 
 const (
-	TargetAll      = iota + 1 //TargetAll Is any user, regardless if logged in or not
-	TargetUser                //TargetUser Are all users that are logged in
-	TargetStudent             //TargetStudent Are all users that are logged in and are students
-	TargetLecturer            //TargetLecturer Are all users that are logged in and are lecturers
-	TargetAdmin               //TargetAdmin Are all users that are logged in and are admins
+	TargetAll      = iota + 1 // TargetAll Is any user, regardless if logged in or not
+	TargetUser                // TargetUser Are all users that are logged in
+	TargetStudent             // TargetStudent Are all users that are logged in and are students
+	TargetLecturer            // TargetLecturer Are all users that are logged in and are lecturers
+	TargetAdmin               // TargetAdmin Are all users that are logged in and are admins
 
 )
 

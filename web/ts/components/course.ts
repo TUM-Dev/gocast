@@ -19,6 +19,11 @@ export enum StreamFilterMode {
     HideWatched,
 }
 
+export enum ViewMode {
+    Grid,
+    List,
+}
+
 export function courseContext(slug: string, year: number, term: string, userId: number): AlpineComponent {
     return {
         userId: userId as number,
@@ -35,6 +40,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         streamSortMode: +getFromStorage("streamSortMode") ?? StreamSortMode.NewestFirst,
         streamFilterMode: +getFromStorage("streamFilterMode") ?? StreamFilterMode.ShowWatched,
+        viewMode: (+getFromStorage("viewMode") ?? ViewMode.Grid) as number,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -115,6 +121,15 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         isHideWatched() {
             return this.streamFilterMode === StreamFilterMode.HideWatched;
+        },
+
+        toggleListView() {
+            this.viewMode = this.viewMode === ViewMode.Grid ? ViewMode.List : ViewMode.Grid;
+            setInStorage("viewMode", this.viewMode.toString());
+        },
+
+        isListView() {
+            return this.viewMode == ViewMode.List;
         },
 
         /**

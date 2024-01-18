@@ -19,32 +19,39 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	API_GetUser_FullMethodName                 = "/protobuf.API/getUser"
-	API_GetUserCourses_FullMethodName          = "/protobuf.API/getUserCourses"
-	API_GetUserPinned_FullMethodName           = "/protobuf.API/getUserPinned"
-	API_PostUserPinned_FullMethodName          = "/protobuf.API/postUserPinned"
-	API_DeleteUserPinned_FullMethodName        = "/protobuf.API/deleteUserPinned"
-	API_GetUserAdminCourses_FullMethodName     = "/protobuf.API/getUserAdminCourses"
-	API_GetUserSettings_FullMethodName         = "/protobuf.API/getUserSettings"
-	API_PatchUserSettings_FullMethodName       = "/protobuf.API/patchUserSettings"
-	API_GetUserBookmarks_FullMethodName        = "/protobuf.API/getUserBookmarks"
-	API_PutUserBookmark_FullMethodName         = "/protobuf.API/putUserBookmark"
-	API_PatchUserBookmark_FullMethodName       = "/protobuf.API/patchUserBookmark"
-	API_DeleteUserBookmark_FullMethodName      = "/protobuf.API/deleteUserBookmark"
-	API_GetBannerAlerts_FullMethodName         = "/protobuf.API/getBannerAlerts"
-	API_GetFeatureNotifications_FullMethodName = "/protobuf.API/getFeatureNotifications"
-	API_PostDeviceToken_FullMethodName         = "/protobuf.API/postDeviceToken"
-	API_DeleteDeviceToken_FullMethodName       = "/protobuf.API/deleteDeviceToken"
-	API_GetPublicCourses_FullMethodName        = "/protobuf.API/getPublicCourses"
-	API_GetSemesters_FullMethodName            = "/protobuf.API/getSemesters"
-	API_GetCourseStreams_FullMethodName        = "/protobuf.API/getCourseStreams"
-	API_GetStream_FullMethodName               = "/protobuf.API/GetStream"
-	API_GetNowLive_FullMethodName              = "/protobuf.API/GetNowLive"
-	API_GetThumbsVOD_FullMethodName            = "/protobuf.API/getThumbsVOD"
-	API_GetThumbsLive_FullMethodName           = "/protobuf.API/getThumbsLive"
-	API_GetProgress_FullMethodName             = "/protobuf.API/getProgress"
-	API_PutProgress_FullMethodName             = "/protobuf.API/putProgress"
-	API_MarkAsWatched_FullMethodName           = "/protobuf.API/markAsWatched"
+	API_GetUser_FullMethodName                     = "/protobuf.API/getUser"
+	API_GetUserCourses_FullMethodName              = "/protobuf.API/getUserCourses"
+	API_GetUserPinned_FullMethodName               = "/protobuf.API/getUserPinned"
+	API_PostUserPinned_FullMethodName              = "/protobuf.API/postUserPinned"
+	API_DeleteUserPinned_FullMethodName            = "/protobuf.API/deleteUserPinned"
+	API_GetUserAdminCourses_FullMethodName         = "/protobuf.API/getUserAdminCourses"
+	API_GetUserSettings_FullMethodName             = "/protobuf.API/getUserSettings"
+	API_PatchUserSettings_FullMethodName           = "/protobuf.API/patchUserSettings"
+	API_GetUserBookmarks_FullMethodName            = "/protobuf.API/getUserBookmarks"
+	API_PutUserBookmark_FullMethodName             = "/protobuf.API/putUserBookmark"
+	API_PatchUserBookmark_FullMethodName           = "/protobuf.API/patchUserBookmark"
+	API_DeleteUserBookmark_FullMethodName          = "/protobuf.API/deleteUserBookmark"
+	API_GetBannerAlerts_FullMethodName             = "/protobuf.API/getBannerAlerts"
+	API_GetFeatureNotifications_FullMethodName     = "/protobuf.API/getFeatureNotifications"
+	API_PostDeviceToken_FullMethodName             = "/protobuf.API/postDeviceToken"
+	API_DeleteDeviceToken_FullMethodName           = "/protobuf.API/deleteDeviceToken"
+	API_GetPublicCourses_FullMethodName            = "/protobuf.API/getPublicCourses"
+	API_GetSemesters_FullMethodName                = "/protobuf.API/getSemesters"
+	API_GetCourseStreams_FullMethodName            = "/protobuf.API/getCourseStreams"
+	API_GetStream_FullMethodName                   = "/protobuf.API/GetStream"
+	API_GetNowLive_FullMethodName                  = "/protobuf.API/GetNowLive"
+	API_GetThumbsVOD_FullMethodName                = "/protobuf.API/getThumbsVOD"
+	API_GetThumbsLive_FullMethodName               = "/protobuf.API/getThumbsLive"
+	API_GetProgress_FullMethodName                 = "/protobuf.API/getProgress"
+	API_PutProgress_FullMethodName                 = "/protobuf.API/putProgress"
+	API_MarkAsWatched_FullMethodName               = "/protobuf.API/markAsWatched"
+	API_GetChatMessages_FullMethodName             = "/protobuf.API/getChatMessages"
+	API_PostChatMessage_FullMethodName             = "/protobuf.API/postChatMessage"
+	API_PostChatReaction_FullMethodName            = "/protobuf.API/postChatReaction"
+	API_DeleteChatReaction_FullMethodName          = "/protobuf.API/deleteChatReaction"
+	API_PostChatReply_FullMethodName               = "/protobuf.API/postChatReply"
+	API_MarkChatMessageAsResolved_FullMethodName   = "/protobuf.API/markChatMessageAsResolved"
+	API_MarkChatMessageAsUnresolved_FullMethodName = "/protobuf.API/markChatMessageAsUnresolved"
 )
 
 // APIClient is the client API for API service.
@@ -81,6 +88,13 @@ type APIClient interface {
 	GetProgress(ctx context.Context, in *GetProgressRequest, opts ...grpc.CallOption) (*GetProgressResponse, error)
 	PutProgress(ctx context.Context, in *PutProgressRequest, opts ...grpc.CallOption) (*PutProgressResponse, error)
 	MarkAsWatched(ctx context.Context, in *MarkAsWatchedRequest, opts ...grpc.CallOption) (*MarkAsWatchedResponse, error)
+	GetChatMessages(ctx context.Context, in *GetChatMessagesRequest, opts ...grpc.CallOption) (*GetChatMessagesResponse, error)
+	PostChatMessage(ctx context.Context, in *PostChatMessageRequest, opts ...grpc.CallOption) (*PostChatMessageResponse, error)
+	PostChatReaction(ctx context.Context, in *PostChatReactionRequest, opts ...grpc.CallOption) (*PostChatReactionResponse, error)
+	DeleteChatReaction(ctx context.Context, in *DeleteChatReactionRequest, opts ...grpc.CallOption) (*DeleteChatReactionResponse, error)
+	PostChatReply(ctx context.Context, in *PostChatReplyRequest, opts ...grpc.CallOption) (*PostChatReplyResponse, error)
+	MarkChatMessageAsResolved(ctx context.Context, in *MarkChatMessageAsResolvedRequest, opts ...grpc.CallOption) (*MarkChatMessageAsResolvedResponse, error)
+	MarkChatMessageAsUnresolved(ctx context.Context, in *MarkChatMessageAsUnresolvedRequest, opts ...grpc.CallOption) (*MarkChatMessageAsUnresolvedResponse, error)
 }
 
 type aPIClient struct {
@@ -325,6 +339,69 @@ func (c *aPIClient) MarkAsWatched(ctx context.Context, in *MarkAsWatchedRequest,
 	return out, nil
 }
 
+func (c *aPIClient) GetChatMessages(ctx context.Context, in *GetChatMessagesRequest, opts ...grpc.CallOption) (*GetChatMessagesResponse, error) {
+	out := new(GetChatMessagesResponse)
+	err := c.cc.Invoke(ctx, API_GetChatMessages_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) PostChatMessage(ctx context.Context, in *PostChatMessageRequest, opts ...grpc.CallOption) (*PostChatMessageResponse, error) {
+	out := new(PostChatMessageResponse)
+	err := c.cc.Invoke(ctx, API_PostChatMessage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) PostChatReaction(ctx context.Context, in *PostChatReactionRequest, opts ...grpc.CallOption) (*PostChatReactionResponse, error) {
+	out := new(PostChatReactionResponse)
+	err := c.cc.Invoke(ctx, API_PostChatReaction_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) DeleteChatReaction(ctx context.Context, in *DeleteChatReactionRequest, opts ...grpc.CallOption) (*DeleteChatReactionResponse, error) {
+	out := new(DeleteChatReactionResponse)
+	err := c.cc.Invoke(ctx, API_DeleteChatReaction_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) PostChatReply(ctx context.Context, in *PostChatReplyRequest, opts ...grpc.CallOption) (*PostChatReplyResponse, error) {
+	out := new(PostChatReplyResponse)
+	err := c.cc.Invoke(ctx, API_PostChatReply_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) MarkChatMessageAsResolved(ctx context.Context, in *MarkChatMessageAsResolvedRequest, opts ...grpc.CallOption) (*MarkChatMessageAsResolvedResponse, error) {
+	out := new(MarkChatMessageAsResolvedResponse)
+	err := c.cc.Invoke(ctx, API_MarkChatMessageAsResolved_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) MarkChatMessageAsUnresolved(ctx context.Context, in *MarkChatMessageAsUnresolvedRequest, opts ...grpc.CallOption) (*MarkChatMessageAsUnresolvedResponse, error) {
+	out := new(MarkChatMessageAsUnresolvedResponse)
+	err := c.cc.Invoke(ctx, API_MarkChatMessageAsUnresolved_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility
@@ -359,6 +436,13 @@ type APIServer interface {
 	GetProgress(context.Context, *GetProgressRequest) (*GetProgressResponse, error)
 	PutProgress(context.Context, *PutProgressRequest) (*PutProgressResponse, error)
 	MarkAsWatched(context.Context, *MarkAsWatchedRequest) (*MarkAsWatchedResponse, error)
+	GetChatMessages(context.Context, *GetChatMessagesRequest) (*GetChatMessagesResponse, error)
+	PostChatMessage(context.Context, *PostChatMessageRequest) (*PostChatMessageResponse, error)
+	PostChatReaction(context.Context, *PostChatReactionRequest) (*PostChatReactionResponse, error)
+	DeleteChatReaction(context.Context, *DeleteChatReactionRequest) (*DeleteChatReactionResponse, error)
+	PostChatReply(context.Context, *PostChatReplyRequest) (*PostChatReplyResponse, error)
+	MarkChatMessageAsResolved(context.Context, *MarkChatMessageAsResolvedRequest) (*MarkChatMessageAsResolvedResponse, error)
+	MarkChatMessageAsUnresolved(context.Context, *MarkChatMessageAsUnresolvedRequest) (*MarkChatMessageAsUnresolvedResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -443,6 +527,27 @@ func (UnimplementedAPIServer) PutProgress(context.Context, *PutProgressRequest) 
 }
 func (UnimplementedAPIServer) MarkAsWatched(context.Context, *MarkAsWatchedRequest) (*MarkAsWatchedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkAsWatched not implemented")
+}
+func (UnimplementedAPIServer) GetChatMessages(context.Context, *GetChatMessagesRequest) (*GetChatMessagesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChatMessages not implemented")
+}
+func (UnimplementedAPIServer) PostChatMessage(context.Context, *PostChatMessageRequest) (*PostChatMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostChatMessage not implemented")
+}
+func (UnimplementedAPIServer) PostChatReaction(context.Context, *PostChatReactionRequest) (*PostChatReactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostChatReaction not implemented")
+}
+func (UnimplementedAPIServer) DeleteChatReaction(context.Context, *DeleteChatReactionRequest) (*DeleteChatReactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteChatReaction not implemented")
+}
+func (UnimplementedAPIServer) PostChatReply(context.Context, *PostChatReplyRequest) (*PostChatReplyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostChatReply not implemented")
+}
+func (UnimplementedAPIServer) MarkChatMessageAsResolved(context.Context, *MarkChatMessageAsResolvedRequest) (*MarkChatMessageAsResolvedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkChatMessageAsResolved not implemented")
+}
+func (UnimplementedAPIServer) MarkChatMessageAsUnresolved(context.Context, *MarkChatMessageAsUnresolvedRequest) (*MarkChatMessageAsUnresolvedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkChatMessageAsUnresolved not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -925,6 +1030,132 @@ func _API_MarkAsWatched_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetChatMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetChatMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetChatMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetChatMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetChatMessages(ctx, req.(*GetChatMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_PostChatMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostChatMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PostChatMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PostChatMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PostChatMessage(ctx, req.(*PostChatMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_PostChatReaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostChatReactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PostChatReaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PostChatReaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PostChatReaction(ctx, req.(*PostChatReactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_DeleteChatReaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteChatReactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).DeleteChatReaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_DeleteChatReaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).DeleteChatReaction(ctx, req.(*DeleteChatReactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_PostChatReply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostChatReplyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PostChatReply(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PostChatReply_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PostChatReply(ctx, req.(*PostChatReplyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_MarkChatMessageAsResolved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkChatMessageAsResolvedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).MarkChatMessageAsResolved(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_MarkChatMessageAsResolved_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).MarkChatMessageAsResolved(ctx, req.(*MarkChatMessageAsResolvedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_MarkChatMessageAsUnresolved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkChatMessageAsUnresolvedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).MarkChatMessageAsUnresolved(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_MarkChatMessageAsUnresolved_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).MarkChatMessageAsUnresolved(ctx, req.(*MarkChatMessageAsUnresolvedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1035,6 +1266,34 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "markAsWatched",
 			Handler:    _API_MarkAsWatched_Handler,
+		},
+		{
+			MethodName: "getChatMessages",
+			Handler:    _API_GetChatMessages_Handler,
+		},
+		{
+			MethodName: "postChatMessage",
+			Handler:    _API_PostChatMessage_Handler,
+		},
+		{
+			MethodName: "postChatReaction",
+			Handler:    _API_PostChatReaction_Handler,
+		},
+		{
+			MethodName: "deleteChatReaction",
+			Handler:    _API_DeleteChatReaction_Handler,
+		},
+		{
+			MethodName: "postChatReply",
+			Handler:    _API_PostChatReply_Handler,
+		},
+		{
+			MethodName: "markChatMessageAsResolved",
+			Handler:    _API_MarkChatMessageAsResolved_Handler,
+		},
+		{
+			MethodName: "markChatMessageAsUnresolved",
+			Handler:    _API_MarkChatMessageAsUnresolved_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

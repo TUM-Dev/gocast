@@ -112,5 +112,4 @@ func SetConfig() {
 		defer sentry.Recover()
 		log.AddHook(sentryhook.New([]log.Level{log.PanicLevel, log.FatalLevel, log.ErrorLevel, log.WarnLevel}))
 	}
-
 }

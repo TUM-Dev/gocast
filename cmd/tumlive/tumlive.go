@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/soheilhy/cmux"
 	"log/slog"
 	"net"
 	"net/http"
@@ -61,13 +62,16 @@ func GinServer() (err error) {
 	}
 
 	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
-			param.TimeStamp.Format(time.DateTime),
-			param.StatusCode,
-			param.ClientIP,
-			param.Path,
-			param.Request.UserAgent(),
-		)
+		if param.StatusCode >= 400 {
+			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
+				param.TimeStamp.Format(time.DateTime),
+				param.StatusCode,
+				param.ClientIP,
+				param.Path,
+				param.Request.UserAgent(),
+			)
+		}
+		return ""
 	}))
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
@@ -77,9 +81,12 @@ func GinServer() (err error) {
 		logger.Error("can't listen on port 8081", "err", err)
 	}
 
+	m := cmux.New(l)
+	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+
 	api2Client := api_v2.New(dao.DB)
 	go func() {
-		if err := api2Client.Run(l); err != nil {
+		if err := api2Client.Run(grpcl); err != nil {
 			logger.Error("can't launch grpc server", "err", err)
 		}
 	}()
@@ -95,13 +102,16 @@ func GinServer() (err error) {
 	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.RunListener(l)
-	// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
-	if err != nil {
-		sentry.CaptureException(err)
-		logger.Error("Error starting tumlive", "err", err)
-	}
-	return
+	go func() {
+		err = router.RunListener(m.Match(cmux.Any()))
+		// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
+		if err != nil {
+			sentry.CaptureException(err)
+			logger.Error("Error starting tumlive", "err", err)
+		}
+	}()
+
+	return m.Serve()
 }
 
 var osSignal chan os.Signal

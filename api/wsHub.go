@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 var wsMapLock sync.RWMutex
@@ -86,7 +87,6 @@ func sendServerMessage(msg string, t string, sessions ...*realtime.Context) {
 			logger.Error("can't write server message to session", "err", err)
 		}
 	}
-
 }
 
 func BroadcastStats(streamsDao dao.StreamsDao) {

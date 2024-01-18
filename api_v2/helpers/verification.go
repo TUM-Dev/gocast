@@ -38,6 +38,36 @@ func CheckAuthorized(db *gorm.DB, uID uint, courseID uint) (*model.Course, error
 	}
 }
 
+func CheckCanChat(db *gorm.DB, uID uint, streamID uint) (*model.Stream, error) {
+	// in the future, we can add a check for the user's role in the course
+
+	stream, err := s.GetStreamById(db, streamID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !stream.ChatEnabled {
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("chat is disabled for this stream"))
+	}
+
+	course, err := s.GetCourseById(db, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !stream.LiveNow {
+		if (!course.ChatEnabled && !course.ModeratedChatEnabled) || !course.VodChatEnabled {
+			return nil, e.WithStatus(http.StatusForbidden, errors.New("chat is disabled for this stream"))
+		}
+	} else {
+		if !course.ChatEnabled && !course.ModeratedChatEnabled {
+			return nil, e.WithStatus(http.StatusForbidden, errors.New("chat is disabled for this stream"))
+		}
+	}
+
+	return stream, nil
+}
+
 func checkUserEnrolled(db *gorm.DB, uID uint, c *model.Course) (*model.Course, error) {
 	if uID == 0 {
 		return nil, e.WithStatus(http.StatusForbidden, errors.New("course can only be accessed by enrolled users"))

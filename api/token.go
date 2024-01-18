@@ -2,13 +2,14 @@ package api
 
 import (
 	"database/sql"
+	"net/http"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
-	"net/http"
-	"time"
 )
 
 func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {

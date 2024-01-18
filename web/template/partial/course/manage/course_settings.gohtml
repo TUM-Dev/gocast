@@ -48,30 +48,35 @@
                     <input class="w-auto" id="enVOD" name="enVOD" type="checkbox" {{if and . .VODEnabled}}checked{{end}}
                             {{if not .}}checked{{end}}>
                     Enable VOD
+                    <help-icon text="Students can watch this lecture after the livestream ended"/>
                 </label>
                 <label class="block text-slate-900 dark:text-slate-200" for="enDL">
                     <input class="w-auto" id="enDL" name="enDL" type="checkbox"
                            {{if and . .DownloadsEnabled}}checked{{end}}
                            {{if not .}}checked{{end}}>
                     Enable Downloads
+                    <help-icon text="Students can download this lecture after the livestream ended"/>
                 </label>
                 <div x-init="isChatEnabledForCourse={{.ChatEnabled}}">
                     <label class="block" for="enChat">
                         <input x-model="isChatEnabledForCourse" class="w-auto" id="enChat" name="enChat" type="checkbox"
                                {{if and . .ChatEnabled}}checked{{end}} {{if not .}}checked{{end}}>
                         Enable Live Chat
+                        <help-icon text="Students use the chat during the lecture"/>
                     </label>
                     <label class="block" for="enChatAnon">
                         <input :disabled="!isChatEnabledForCourse" class="w-auto" id="enChatAnon" name="enChatAnon"
                                type="checkbox"
                                {{if and . .AnonymousChatEnabled}}checked{{end}} {{if not .}}checked{{end}}>
                         Allow Anonymous Messages
+                        <help-icon text="Students are allowed to send messages anonymously"/>
                     </label>
                     <label class="block" for="enChatMod">
                         <input :disabled="!isChatEnabledForCourse" class="w-auto" id="enChatMod" name="enChatMod"
                                type="checkbox"
                                {{if and . .ModeratedChatEnabled}}checked{{end}} {{if not .}}checked{{end}}>
                         Enable Moderate Chat
+                        <help-icon text="Every Chat message has to be checked and approved by a moderator"/>
                     </label>
                 </div>
             </div>

@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/thumbgen"
 	"net"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/joschahenningsen/thumbgen"
 
 	"github.com/u2takey/go-utils/uuid"
 

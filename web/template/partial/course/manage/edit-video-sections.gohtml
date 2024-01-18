@@ -3,29 +3,10 @@
         <header class="flex justify-between items-center border-b dark:border-gray-600">
             <div class="flex items-center">
                 <h6 class="text-sm text-5 font-light">Video Sections</h6>
-                <div x-data="{showInfo: false}"
-                     class="relative my-auto">
-                    <button @click="showInfo = !showInfo;">
-                        <i class="fa fa-circle-info text-3 ml-2"></i>
-                    </button>
-                    <div x-show="showInfo"
-                         class="absolute top-full z-50"
-                         @mouseleave="showInfo = false">
-                        <div>
-                            <div class="tooltip relative w-56">
-                                <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
-                                <div class="bg-black dark:bg-white rounded-md px-2 py-1">
-                                    <span class="text-white dark:text-black text-xs font-bold">
-                                        Structuring lectures into sections makes lectures more rewatchable.
+                <help-icon text='Structuring lectures into sections makes lectures more rewatchable.
                                         For detailed information visit: <a
                                                 class="underline hover:text-white dark:hover:text-black"
-                                                href="https://docs.live.mm.rbg.tum.de">https://docs.live.mm.rbg.tum.de</a>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                href="https://docs.live.mm.rbg.tum.de">https://docs.live.mm.rbg.tum.de</a>'/>
             </div>
         </header>
         <form

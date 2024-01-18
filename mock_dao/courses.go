@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	dao "github.com/TUM-Dev/gocast/dao"
 	model "github.com/TUM-Dev/gocast/model"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockCoursesDao is a mock of CoursesDao interface.
@@ -354,11 +354,10 @@ func (mr *MockCoursesDaoMockRecorder) UpdateCourseMetadata(ctx, course interface
 
 // GetSubscribedDevices indicates an expected call of UpdateCourseMetadata.
 func (m *MockCoursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
-    // Replace with your actual mock implementation
+	// Replace with your actual mock implementation
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSubscribedDevices", streamID)
 	err, _ := ret[0].(error)
 	device_tokens, _ := ret[1].([]string)
 	return device_tokens, err
 }
-

@@ -3,10 +3,11 @@ package worker
 import (
 	"encoding/gob"
 	"errors"
-	"github.com/TUM-Dev/gocast/worker/cfg"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
 )
 
 var persisted *Persistable

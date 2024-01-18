@@ -90,11 +90,12 @@ func (a *API) GetCourseStreams(ctx context.Context, req *protobuf.GetCourseStrea
 
 	resp := make([]*protobuf.Stream, len(streams))
 	for i, stream := range streams {
-		if err := h.SignStream(stream, c, uID); err != nil {
+		downloads, err := h.SignStream(stream, c, uID)
+		if err != nil {
 			return nil, err
 		}
 
-		s, err := h.ParseStreamToProto(stream)
+		s, err := h.ParseStreamToProto(stream, downloads)
 		if err != nil {
 			return nil, err
 		}

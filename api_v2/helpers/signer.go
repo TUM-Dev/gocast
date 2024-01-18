@@ -3,6 +3,7 @@ package helpers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	e "github.com/TUM-Dev/gocast/api_v2/errors"
@@ -11,11 +12,19 @@ import (
 	"gorm.io/gorm"
 )
 
-func SignStream(s *model.Stream, c *model.Course, uID uint) error {
+func SignStream(s *model.Stream, c *model.Course, uID uint) ([]model.DownloadableVod, error) {
+	fmt.Println("c.DownloadsEnabled: ", c.DownloadsEnabled)
+	fmt.Println("s: ", s)
 	if err := tools.SetSignedPlaylists(s, &model.User{
 		Model: gorm.Model{ID: uID},
 	}, c.DownloadsEnabled); err != nil {
-		return e.WithStatus(http.StatusInternalServerError, errors.New("can't sign stream"))
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("can't sign stream"))
 	}
-	return nil
+
+	if c.DownloadsEnabled && s.IsDownloadable() {
+		return s.GetVodFiles(), nil
+	}
+
+	fmt.Println("s: ", s)
+	return nil, nil
 }

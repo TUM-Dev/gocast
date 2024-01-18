@@ -31,8 +31,8 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service API {
-   // BEGIN API/V2/USER
-   rpc getUser(GetUserRequest) returns (GetUserResponse) {
+  // BEGIN API/V2/USER
+  rpc getUser(GetUserRequest) returns (GetUserResponse) {
     option (google.api.http) = {
       get: "/user/me"
       response_body: "*"
@@ -43,7 +43,7 @@ service API {
       description: "Returns a user based on the JWT claims."
     };
   }
-  
+
   rpc getUserCourses(GetUserCoursesRequest) returns (GetUserCoursesResponse) {
     option (google.api.http) = {
       get: "/user/courses"
@@ -55,7 +55,7 @@ service API {
       description: "Returns all courses in which the current user is enrolled in, optionally filtered by year, term, limit and skip."
     };
   }
- 
+
   rpc getUserPinned(GetUserPinnedRequest) returns (GetUserPinnedResponse) {
     option (google.api.http) = {
       get: "/user/pinned"
@@ -282,7 +282,7 @@ service API {
       description: "Returns a stream for a given streamID if stream's course is public OR stream's course has visibility \"loggedIn\" and user is logged in / valid jwt is present OR stream's course has visibility \"enrolled\" and user is enrolled in stream's course."
     };
   }
-  
+
   rpc GetNowLive(GetNowLiveRequest) returns (GetNowLiveResponse) {
     option (google.api.http) = {
       get: "/streams/w/live"
@@ -355,8 +355,234 @@ service API {
       description: "Marks stream as watched."
     };
   }
-  // END API/V2/STREAMS
+
+
+  rpc getChatMessages(GetChatMessagesRequest) returns (GetChatMessagesResponse) {
+    option (google.api.http) = {
+      get: "/streams/chat/{streamID}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Get all chat messages of a stream"
+      description: "Returns all chat messages of a stream."
+    };
+  }
+
+  rpc postChatMessage(PostChatMessageRequest) returns (PostChatMessageResponse) {
+    option (google.api.http) = {
+      post: "/streams/chat/{streamID}"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Post a chat message to a stream"
+      description: "Posts a chat message to a stream."
+    };
+  }
+
+  //    rpc deleteChatMessage(DeleteChatMessageRequest) returns (DeleteChatMessageResponse) {
+  //      option (google.api.http) = {
+  //        delete: "/streams/chat/{streamID}/{chatID}"
+  //        response_body: "*"
+  //      };
+  //      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+  //        tags:  "Chat"
+  //        summary: "Delete a chat message"
+  //        description: "Deletes a chat message."
+  //      };
+  //    }
+
+  rpc postChatReaction(PostChatReactionRequest) returns (PostChatReactionResponse) {
+    option (google.api.http) = {
+      post: "/streams/chat/{streamID}/{chatID}/reactions"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Post a reaction to a chat message"
+      description: "Posts a reaction to a chat message."
+    };
+  }
+
+  rpc deleteChatReaction(DeleteChatReactionRequest) returns (DeleteChatReactionResponse) {
+    option (google.api.http) = {
+      delete: "/streams/chat/{streamID}/{chatID}/reactions/{reactionID}"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Delete a reaction to a chat message"
+      description: "Deletes a reaction to a chat message."
+    };
+  }
+
+  rpc postChatReply(PostChatReplyRequest) returns (PostChatReplyResponse) {
+    option (google.api.http) = {
+      post: "/streams/chat/{streamID}/{chatID}/replies"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Post a reply to a chat message"
+      description: "Posts a reply to a chat message."
+    };
+  }
+
+
+  //    rpc deleteChatReply(DeleteChatReplyRequest) returns (DeleteChatReplyResponse) {
+  //      option (google.api.http) = {
+  //        delete: "/streams/chat/{streamID}/{chatID}/replies/{replyID}"
+  //        response_body: "*"
+  //      };
+  //      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+  //        tags:  "Chat"
+  //        summary: "Delete a reply to a chat message"
+  //        description: "Deletes a reply to a chat message."
+  //      };
+  //    }
+
+  //    patching not supported yet
+
+  rpc markChatMessageAsResolved(MarkChatMessageAsResolvedRequest) returns (MarkChatMessageAsResolvedResponse) {
+    option (google.api.http) = {
+      put: "/streams/chat/{streamID}/{chatID}/resolved"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Mark a chat message as resolved"
+      description: "Marks a chat message as resolved."
+    };
+  }
+
+  rpc markChatMessageAsUnresolved(MarkChatMessageAsUnresolvedRequest) returns (MarkChatMessageAsUnresolvedResponse) {
+    option (google.api.http) = {
+      delete: "/streams/chat/{streamID}/{chatID}/resolved"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Mark a chat message as unresolved"
+      description: "Marks a chat message as unresolved."
+    };
+  }
 }
+
+
+  // END API/V2/STREAMS
+
+
+
+///////////////////////////////
+//////// CHAT_MESSAGE /////////
+///////////////////////////////
+
+
+message ChatReaction {
+  uint32 chatID = 1;
+  uint32 userID = 2;
+  string username = 3;
+  string emoji = 4;
+}
+
+message AddressedUser {
+  uint32 id = 1;
+  string username = 2;
+}
+
+message ChatMessage {
+  uint32 id = 1;
+  string userID = 2;
+  string username = 3;
+  string message = 4;
+  string sanitizedMessage = 5;
+  uint32 streamID = 6;
+  string color = 7;
+  bool isVisible = 8;
+  repeated ChatReaction reactions = 9;
+  repeated ChatMessage replies = 10;
+  repeated AddressedUser addressedUsers = 11;
+  bool isResolved = 12;
+  google.protobuf.Timestamp createdAt = 13;
+  bool isAdmin = 14;
+}
+
+///////////////////////////////
+//////// CHAT_REQUEST /////////
+///////////////////////////////
+
+message GetChatMessagesRequest {
+  uint64 streamID = 1;
+}
+
+message PostChatMessageRequest {
+  string message = 1;
+  uint64 streamID = 2;
+}
+
+message PostChatReactionRequest {
+  string emoji = 1;
+  uint64 streamID = 2;
+  uint64 chatID = 3;
+}
+
+message DeleteChatReactionRequest {
+  uint64 streamID = 1;
+  uint64 chatID = 2;
+  uint64 reactionID = 3;
+}
+
+message PostChatReplyRequest {
+  string message = 1;
+  uint64 streamID = 2;
+  uint64 chatID = 3;
+}
+
+message MarkChatMessageAsResolvedRequest {
+  uint64 streamID = 1;
+  uint64 chatID = 2;
+}
+
+message MarkChatMessageAsUnresolvedRequest {
+  uint64 streamID = 1;
+  uint64 chatID = 2;
+}
+
+///////////////////////////////
+//////// CHAT_RESPONSE ////////
+///////////////////////////////
+
+message GetChatMessagesResponse {
+  repeated ChatMessage messages = 1;
+}
+
+message PostChatMessageResponse {
+  ChatMessage message = 1;
+}
+
+message PostChatReactionResponse {
+  ChatReaction reaction = 1;
+}
+
+message DeleteChatReactionResponse {}
+
+message PostChatReplyResponse {
+  ChatMessage reply = 1;
+}
+
+message MarkChatMessageAsResolvedResponse {
+  ChatMessage message = 1;
+}
+
+message MarkChatMessageAsUnresolvedResponse {
+  ChatMessage message = 1;
+}
+
 ///////////////////////////////
 //////// USER_MESSAGE /////////
 ///////////////////////////////
