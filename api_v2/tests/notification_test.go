@@ -105,8 +105,8 @@ func TestPostDeviceToken_AlreadyExists(t *testing.T) {
 	// Case device_token already exsits (e.g., submitted same token twice)
 	ctx := metadata.NewIncomingContext(context.Background(), md_student_loggedin)
 	req := &protobuf.PostDeviceTokenRequest{DeviceToken: "TestPostDeviceToken_AlreadyExists"}
+	_, _ = a.PostDeviceToken(ctx, req)
 	_, err := a.PostDeviceToken(ctx, req)
-	_, err = a.PostDeviceToken(ctx, req)
 	if status.Code(err) != codes.AlreadyExists {
 		t.Errorf("expected ALREAD_EXISTS, got %v", err)
 	}
@@ -120,11 +120,11 @@ func TestDeleteDeviceToken(t *testing.T) {
 	// Create device_token first
 	ctx := metadata.NewIncomingContext(context.Background(), md_student_loggedin)
 	req_post := &protobuf.PostDeviceTokenRequest{DeviceToken: "TestDeleteDeviceToken"}
-	_, err := a.PostDeviceToken(ctx, req_post)
+	_, _ = a.PostDeviceToken(ctx, req_post)
 
 	// Delete device_token
 	req := &protobuf.DeleteDeviceTokenRequest{DeviceToken: "TestDeleteDeviceToken"}
-	_, err = a.DeleteDeviceToken(ctx, req)
+	_, err := a.DeleteDeviceToken(ctx, req)
 	if status.Code(err) != codes.OK {
 		t.Errorf("expected OK, got %v", err)
 	}
@@ -161,12 +161,12 @@ func TestDeleteDeviceToken_Unauthenticated(t *testing.T) {
 	// Create device_token first
 	ctx := metadata.NewIncomingContext(context.Background(), md_student_loggedin)
 	req_post := &protobuf.PostDeviceTokenRequest{DeviceToken: "TestDeleteDeviceToken_Unauthenticated"}
-	_, err := a.PostDeviceToken(ctx, req_post)
+	_, _ = a.PostDeviceToken(ctx, req_post)
 
 	// Case invalid jwt
 	ctx = metadata.NewIncomingContext(context.Background(), md_invalid_jwt)
 	req := &protobuf.DeleteDeviceTokenRequest{DeviceToken: "TestDeleteDeviceToken_Unauthenticated"}
-	_, err = a.DeleteDeviceToken(ctx, req)
+	_, err := a.DeleteDeviceToken(ctx, req)
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected UNAUTHENTICATED, got %v", err)
 	}

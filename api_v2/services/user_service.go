@@ -115,7 +115,7 @@ func PatchUserSettings(db *gorm.DB, user *model.User, req *protobuf.PatchUserSet
 			} else if errors.Is(err, gorm.ErrRecordNotFound) {
 				// no last change found, so we can just continue
 			} else {
-				diff := time.Now().Sub(lastChange.CreatedAt)
+				diff := time.Since(lastChange.CreatedAt)
 				if diff.Hours() < 24*30*3 {
 					return nil, e.WithStatus(http.StatusBadRequest, errors.New("preferred name can only be changed every 3 months"))
 				}
