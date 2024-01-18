@@ -26,7 +26,7 @@ const persistFileName = "/persist.gob"
 
 // writeOut writes out the persistable object to disk
 func (p *Persistable) writeOut() error {
-	f, err := os.OpenFile(cfg.PersistDir+persistFileName, os.O_RDWR|os.O_CREATE, 0666)
+	f, err := os.OpenFile(cfg.PersistDir+persistFileName, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		return err
 	}

@@ -16,8 +16,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-var Cfg Config
-var Loc *time.Location
+var (
+	Cfg Config
+	Loc *time.Location
+)
 
 func LoadConfig() {
 	initCache()

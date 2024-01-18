@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/soheilhy/cmux"
 	"log/slog"
 	"net"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/soheilhy/cmux"
 
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/api_v2"
