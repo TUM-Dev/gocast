@@ -1,5 +1,33 @@
 package tests
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TO RUN THE API_V2 TESTS COMMENT OUT THE FOLLOWING CODE (lines 7-25) AND UNCOMMENT THE ACTUAL TEST SETUP (lines 27-EOF) //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+import (
+	"os"
+	"testing"
+
+	"github.com/TUM-Dev/gocast/api_v2"
+	"google.golang.org/grpc/metadata"
+)
+
+var (
+	a                   *api_v2.API
+	md_student_loggedin metadata.MD // LoggedIn user which is not enrolled in any courses
+	md_student_enrolled metadata.MD // LoggedIn user which is not enrolled in courses
+	md_invalid_jwt      metadata.MD
+)
+
+func TestMain(m *testing.M) {
+	code := 0 // Disable api_v2 tests when deploying / pushing to dev as they currently don't work on gocast's github pipelines
+	os.Exit(code)
+}
+
+/*
+
+// NOTE: Currently, you might have to reset the db every time you run the tests
+
 import (
 	"fmt"
 	"log/slog"
@@ -74,17 +102,11 @@ func setupJWTs() {
 }
 
 func TestMain(m *testing.M) {
-	// UNCOMMENT THE FOLLOWING LINES TO RUN API_V2 TESTS (currently you might have to reset the db every time you run the tests)
-	/*
 	// Call the setup function to get an instance of your API
 	a = setup()
 	// Set the JWTs
 	setupJWTs()
-	// code := m.Run() 
-	*/
-	
-	code := 0 // Disable api_v2 tests when deploying / pushing to dev as they currently don't work on gocast's github pipelines
-
+	code := m.Run()
 	// Exit with the code returned from running the tests
 	os.Exit(code)
 }
@@ -200,14 +222,5 @@ func setupDb(db *gorm.DB) {
 	} else {
 		logger.Info("deleted all entries from StreamProgress table")
 	}
-
-	/*    err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model.StreamProgress{}).Error
-	      if err != nil {
-	          sentry.CaptureException(err)
-	          sentry.Flush(time.Second * 5)
-	          logger.Error("can't delete entries from StreamProgress table", "err", err)
-	      } else {
-	          logger.Info("deleted all entries from StreamProgress table")
-	      }
-	*/
 }
+*/
