@@ -168,20 +168,15 @@ func setup() *api_v2.API {
 		logger.Error("Error running after db", "err", err)
 		return nil
 	}
-    // Delete all entries from the Device table (temporary workaround for db not resetting when running tests)
-    err = db.Delete(&model.Device{}).Error
-    if err != nil {
-        sentry.CaptureException(err)
-        sentry.Flush(time.Second * 5)
-        logger.Error("can't delete entries from Device table", "err", err)
-    }
-	
+
+	setupDb(db)
+
 	l, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		logger.Error("can't listen on port 8081", "err", err)
 	}
-
 	api2Client := api_v2.New(dao.DB)
+
 	go func() {
 		if err := api2Client.Run(l); err != nil {
 			logger.Error("can't launch grpc server", "err", err)
@@ -189,4 +184,28 @@ func setup() *api_v2.API {
 	}()
 
 	return api2Client
+}
+
+// Temporary workaround for db not resetting when running tests
+func setupDb(db *gorm.DB) {
+	if err := db.Where("1 != ", 11).Unscoped().Delete(&model.Device{}).Error; err != nil {
+		logger.Error("can't delete entries from Device table", "err", err)
+	} else {
+		logger.Info("deleted all entries from Device table")
+	}
+	if err := db.Where("1 = ?", 1).Unscoped().Delete(&model.StreamProgress{}).Error; err != nil {
+		logger.Error("can't delete entries from StreamProgress table", "err", err)
+	} else {
+		logger.Info("deleted all entries from StreamProgress table")
+	}
+
+	/*    err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model.StreamProgress{}).Error
+	      if err != nil {
+	          sentry.CaptureException(err)
+	          sentry.Flush(time.Second * 5)
+	          logger.Error("can't delete entries from StreamProgress table", "err", err)
+	      } else {
+	          logger.Info("deleted all entries from StreamProgress table")
+	      }
+	*/
 }
