@@ -3,6 +3,11 @@ package web
 import (
 	"context"
 	"errors"
+	"html/template"
+	"net/http"
+	"sort"
+	"strconv"
+
 	"github.com/RBG-TUM/commons"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -11,10 +16,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"html/template"
-	"net/http"
-	"sort"
-	"strconv"
 )
 
 var VersionTag string
@@ -228,8 +229,7 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 		case model.LecturerType:
 			{
 				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
-				coursesForLecturer, err :=
-					coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
+				coursesForLecturer, err := coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}

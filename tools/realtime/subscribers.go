@@ -18,14 +18,14 @@ func (subs *ChannelSubscribers) init() {
 func (subs *ChannelSubscribers) IsSubscribed(clientId string, path string) bool {
 	subs.mutex.Lock()
 	defer subs.mutex.Unlock()
-	var _, exists = subs.subscribers[createKey(clientId, path)]
+	_, exists := subs.subscribers[createKey(clientId, path)]
 	return exists
 }
 
 func (subs *ChannelSubscribers) GetContext(clientId string, path string) (*Context, bool) {
 	subs.mutex.Lock()
 	defer subs.mutex.Unlock()
-	var context, exists = subs.subscribers[createKey(clientId, path)]
+	context, exists := subs.subscribers[createKey(clientId, path)]
 	return context, exists
 }
 

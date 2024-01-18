@@ -3,22 +3,24 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
+	"net/http"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
-	"net/http"
-	"testing"
 )
 
 func ProgressRouterWrapper(r *gin.Engine) {
 	configProgressRouter(r, dao.DaoWrapper{})
 }
+
 func TestProgressReport(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -53,7 +55,8 @@ func TestProgressReport(t *testing.T) {
 				Body:         req,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -124,7 +127,8 @@ func TestWatched(t *testing.T) {
 				Body:         req,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -224,10 +228,10 @@ func TestUserProgress(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: []model.StreamProgress{{StreamID: 16, Watched: true, Progress: 0.5}},
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
-
 	})
 }

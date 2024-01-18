@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"regexp"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -12,8 +15,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
-	"regexp"
 )
 
 // AdminPage serves all administration pages. todo: refactor into multiple methods
@@ -121,7 +122,8 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
-		AdminPageData{Users: users,
+		AdminPageData{
+			Users:               users,
 			Courses:             courses,
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,

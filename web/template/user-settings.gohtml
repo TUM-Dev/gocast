@@ -118,6 +118,27 @@
                 </div>
             </div>
         </section>
+        <section x-data="{ seekingTime: {{toJson .TUMLiveContext.User.GetSeekingTime}} }">
+            <h2>Seeking Time in Seconds</h2>
+            <div>
+                <input class="w-auto" type="radio" name="seek-time" value="5" id="seek-time-5" x-model="seekingTime"
+                       :checked="seekingTime === 5"
+                       @change="global.updatePreference(global.UserSetting.SeekingTime, seekingTime).then((r) => {err = r;})">
+                <label for="seek-time-5" x-data x-init="$el.style.marginRight = '10px'">5s</label>
+                <input class="w-auto" type="radio" name="seek-time" value="10" id="seek-time-10" x-model="seekingTime"
+                       :checked="seekingTime === 10"
+                       @change="global.updatePreference(global.UserSetting.SeekingTime, seekingTime).then((r) => {err = r;})">
+                <label for="seek-time-10" x-data x-init="$el.style.marginRight = '10px'">10s</label>
+                <input class="w-auto" type="radio" name="seek-time" value="15" id="seek-time-15" x-model="seekingTime"
+                       :checked="seekingTime === 15"
+                       @change="global.updatePreference(global.UserSetting.SeekingTime, seekingTime).then((r) => {err = r;})">
+                <label for="seek-time-15" x-data x-init="$el.style.marginRight = '10px'">15s</label>
+                <input class="w-auto" type="radio" name="seek-time" value="20" id="seek-time-20" x-model="seekingTime"
+                       :checked="seekingTime === 20"
+                       @change="global.updatePreference(global.UserSetting.SeekingTime, seekingTime).then((r) => {err = r;})">
+                <label for="seek-time-20">20s</label>
+            </div>
+        </section>
         <section>
             <h2>Privacy & Data Protection</h2>
             <a href="/api/users/exportData" download="personal_data.json"

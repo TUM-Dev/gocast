@@ -2,17 +2,18 @@ package testutils
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"math"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/mock_tools"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/golang/mock/gomock"
 	"gorm.io/gorm"
 )
 

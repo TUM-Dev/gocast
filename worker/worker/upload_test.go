@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"github.com/TUM-Dev/gocast/worker/cfg"
 	"net/http"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
 )
 
 func TestUpload(t *testing.T) {

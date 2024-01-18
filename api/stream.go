@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/tools/pathprovider"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -353,7 +353,8 @@ func (r streamRoutes) getStream(c *gin.Context) {
 		"end":         stream.End,
 		"ingest":      fmt.Sprintf("%s%s-%d?secret=%s", tools.Cfg.IngestBase, course.Slug, stream.ID, stream.StreamKey),
 		"live":        stream.LiveNow,
-		"vod":         stream.Recording})
+		"vod":         stream.Recording,
+	})
 }
 
 func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
@@ -378,7 +379,7 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 	streamProgresses := make(map[uint]model.StreamProgress)
 	res, err := r.LoadProgress(tumLiveContext.User.ID, streamIDs)
 	if err != nil {
-		log.WithError(err).Error("Couldn't load progresses")
+		logger.Error("Couldn't load progresses", "err", err)
 	} else {
 		for _, progress := range res {
 			streamProgresses[progress.StreamID] = progress
@@ -555,7 +556,8 @@ func (r streamRoutes) updateVideoSection(c *gin.Context) {
 		Description:  update.Description,
 		StartHours:   update.StartHours,
 		StartMinutes: update.StartMinutes,
-		StartSeconds: update.StartSeconds})
+		StartSeconds: update.StartSeconds,
+	})
 	if err != nil {
 		logger.Error("failed to update video section", "err", err)
 		_ = c.Error(tools.RequestError{
@@ -879,5 +881,4 @@ func (r streamRoutes) updateChatEnabled(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
 		return
 	}
-
 }

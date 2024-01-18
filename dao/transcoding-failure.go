@@ -8,13 +8,13 @@ import (
 //go:generate mockgen -source=transcoding-failure.go -destination ../mock_dao/transcoding-failure.go
 
 type TranscodingFailureDao interface {
-	//All returns all open transcoding failures
+	// All returns all open transcoding failures
 	All() ([]model.TranscodingFailure, error)
 
-	//New creates a new transcoding failure
+	// New creates a new transcoding failure
 	New(*model.TranscodingFailure) error
 
-	//Delete deletes a transcoding failure
+	// Delete deletes a transcoding failure
 	Delete(id uint) error
 }
 

@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/TUM-Dev/gocast/dao"
 	"net/smtp"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/TUM-Dev/gocast/dao"
 )
 
 type Mailer struct {

@@ -5,16 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/RBG-TUM/commons"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/meilisearch/meilisearch-go"
-	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -25,6 +15,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/RBG-TUM/commons"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"github.com/meilisearch/meilisearch-go"
+	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 )
 
 func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -1343,7 +1344,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		return
 	}
 
-	//verify teaching term input, should either be Sommersemester 2020 or Wintersemester 2020/21
+	// verify teaching term input, should either be Sommersemester 2020 or Wintersemester 2020/21
 	match, err = regexp.MatchString("(Sommersemester [0-9]{4}|Wintersemester [0-9]{4}/[0-9]{2})$", req.TeachingTerm)
 	if err != nil || !match {
 		_ = c.Error(tools.RequestError{
@@ -1481,7 +1482,7 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 }
 
 type createCourseRequest struct {
-	Access       string //enrolled, public, hidden or loggedin
+	Access       string // enrolled, public, hidden or loggedin
 	CourseID     string
 	EnChat       bool
 	EnDL         bool
