@@ -645,6 +645,44 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 
+	// Send push notifications to users enrolled in stream's course and subscribed to push notifications
+	go func() {
+		if s.FcmClient != nil {
+			deviceTokens, err := s.CoursesDao.GetSubscribedDevices(stream.ID)
+			if err != nil {
+				logger.Error("Get subscribed devices:", "err", err)
+			} else {
+				logger.Info(fmt.Sprintf("Start sending push notifications to devices: %d", len(deviceTokens)))
+
+				// Create a new notification payload
+				notification := &fcm.NotificationPayload{
+					Title: fmt.Sprintf("%s is currently live!", course.Slug),
+					Body:  fmt.Sprintf("%s %s", stream.Name, stream.Description),
+				}
+
+				// Create a new data payload
+				data := map[string]interface{}{
+					// Add any key-value pairs that you want to send along with the notification
+				}
+
+				// Create a new FCM message
+				msg := s.FcmClient.NewFcmRegIdsMsg(deviceTokens, data)
+
+				// Set the notification payload of the message
+				msg.SetNotificationPayload(notification)
+
+				// Send the message
+				status, err := s.FcmClient.Send()
+				if err != nil {
+					logger.Error("Error sending push notification", "err", err)
+					return
+				}
+
+				logger.Info("Sent push notifications to devices: ", "status", fmt.Sprintf("%v", status))
+			}
+		}
+	}()
+
 	return &pb.Status{Ok: true}, nil
 }
 
