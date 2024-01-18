@@ -74,14 +74,16 @@ func setupJWTs() {
 }
 
 func TestMain(m *testing.M) {
+	// UNCOMMENT THE FOLLOWING LINES TO RUN API_V2 TESTS (currently you might have to reset the db every time you run the tests)
+	/*
 	// Call the setup function to get an instance of your API
 	a = setup()
-
 	// Set the JWTs
 	setupJWTs()
-
+	// code := m.Run() 
+	*/
+	
 	code := 0 // Disable api_v2 tests when deploying / pushing to dev as they currently don't work on gocast's github pipelines
-	// code := m.Run() // Uncomment this line to run the tests
 
 	// Exit with the code returned from running the tests
 	os.Exit(code)
