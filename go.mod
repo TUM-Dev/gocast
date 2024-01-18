@@ -1,6 +1,8 @@
 module github.com/TUM-Dev/gocast
 
-go 1.21
+go 1.21.0
+
+toolchain go1.21.1
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
@@ -53,6 +55,7 @@ require (
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/orandin/slog-gorm v1.1.0
+	github.com/soheilhy/cmux v0.1.5
 	google.golang.org/genproto/googleapis/api v0.0.0-20240102182953-50ed04b92917
 )
 

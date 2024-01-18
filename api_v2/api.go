@@ -40,12 +40,8 @@ func New(db *gorm.DB) *API {
 }
 
 // Run starts the grpc server on port 12544 and the grpc gateway on ::8081/api/v2
-func (a *API) Run(net.Listener) error {
+func (a *API) Run(lis net.Listener) error {
 	a.log.Info("Running")
-	lis, err := net.Listen("tcp", ":12544")
-	if err != nil {
-		return err
-	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Minute,
 		MaxConnectionAge:      time.Minute,
@@ -65,7 +61,7 @@ func (a *API) Proxy() func(c *gin.Context) {
 	mux := runtime.NewServeMux()
 	// DEPRECATED: opts := []grpc.DialOption{grpc.WithInsecure()}
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err := protobuf.RegisterAPIHandlerFromEndpoint(context.Background(), mux, ":12544", opts)
+	err := protobuf.RegisterAPIHandlerFromEndpoint(context.Background(), mux, ":8081", opts)
 	if err != nil {
 		a.log.With("err", err).Error("can't register grpc handler")
 		os.Exit(1)
