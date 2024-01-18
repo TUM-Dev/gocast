@@ -72,7 +72,7 @@ func PostDeviceToken(db *gorm.DB, u model.User, deviceToken string) (err error) 
 	if err := db.Table("devices").Where("user_id = ? AND device_token = ?", u.ID, deviceToken).Count(&count).Error; err != nil {
 		return e.WithStatus(http.StatusInternalServerError, err)
 	}
-	print("Count = ?", count)
+
 	if count != 0 {
 		return e.WithStatus(http.StatusConflict, errors.New("device is already registered"))
 	}

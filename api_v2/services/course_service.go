@@ -41,7 +41,7 @@ func GetStreamById(db *gorm.DB, id uint) (*model.Stream, error) {
 func FetchCourses(db *gorm.DB, req *protobuf.GetPublicCoursesRequest, uID *uint) ([]model.Course, error) {
 	query := db.Where("visibility = \"public\"")
 	if *uID != 0 {
-		query = query.Or("visibility = \"loggedin\"")
+		query = db.Where("visibility = \"loggedin\" OR visibility = \"public\"")
 	}
 	if req.Year != 0 {
 		query = query.Where("year = ?", req.Year)
@@ -51,9 +51,12 @@ func FetchCourses(db *gorm.DB, req *protobuf.GetPublicCoursesRequest, uID *uint)
 	}
 	if req.Limit > 0 {
 		query = query.Limit(int(req.Limit))
-	}
-	if req.Skip >= 0 {
-		query = query.Offset(int(req.Skip))
+		if req.Skip >= 0 {
+			query = query.Offset(int(req.Skip))
+		}
+	} else if req.Skip > 0 {
+		// If Skip is set but Limit is not, set large limit to avoid SQL syntax error
+		query = query.Limit(1<<63 - 1).Offset(int(req.Skip))
 	}
 
 	var courses []model.Course
