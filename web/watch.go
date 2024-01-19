@@ -98,7 +98,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		// Check if user wants to skip first silence
 		autoSkip, err := tumLiveContext.User.GetAutoSkipEnabled()
 		if err != nil {
-			log.Printf("Couldn't decode user setting: %v\n", err)
+			logger.Error("Couldn't decode user setting", "err", err)
 		} else if autoSkip.Enabled {
 			// The length of the stream may mismatch with the length of the video if it is a self-stream
 			if tumLiveContext.Stream.LectureHallID != 0 {
