@@ -58,6 +58,7 @@ const (
 	CustomPlaybackSpeeds
 	SeekingTime
 	UserDefinedSpeeds
+	AutoSkip
 )
 
 type UserSetting struct {
@@ -195,6 +196,26 @@ func (u User) PreferredNameChangeAllowed() bool {
 		}
 	}
 	return true
+}
+
+// AutoSkipSetting wraps whether auto skip is enabled in JSON
+type AutoSkipSetting struct {
+	Enabled bool `json:"enabled"`
+}
+
+// GetAutoSkipEnabled returns whether the user has enabled auto skip
+func (u User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
+	for _, setting := range u.Settings {
+		if setting.Type == AutoSkip {
+			var a AutoSkipSetting
+			err := json.Unmarshal([]byte(setting.Value), &a)
+			if err != nil {
+				return AutoSkipSetting{Enabled: false}, err
+			}
+			return a, nil
+		}
+	}
+	return AutoSkipSetting{Enabled: false}, nil
 }
 
 type argonParams struct {

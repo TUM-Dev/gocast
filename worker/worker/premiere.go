@@ -20,7 +20,7 @@ func streamPremiere(ctx *StreamContext) {
 		"-acodec", "aac", "-b:a", "128k", "-ac", "2", "-ar", "48000", "-af", "aresample=async=1:min_hard_comp=0.100000:first_pts=0",
 		"-f", "flv", fmt.Sprintf("%s%s", ctx.ingestServer, ctx.streamName))
 	log.WithField("cmd", cmd.String()).Info("Starting premiere")
-	ffmpegErr, errFfmpegErrFile := os.OpenFile(fmt.Sprintf("%s/ffmpeg_%s.log", cfg.LogDir, ctx.getStreamName()), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	ffmpegErr, errFfmpegErrFile := os.OpenFile(fmt.Sprintf("%s/ffmpeg_%s.log", cfg.LogDir, ctx.getStreamName()), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o644)
 	if errFfmpegErrFile == nil {
 		cmd.Stderr = ffmpegErr
 	} else {

@@ -149,7 +149,7 @@ func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressCh
 // creates folder for output file if it doesn't exist
 func prepare(out string) error {
 	dir := filepath.Dir(out)
-	err := os.MkdirAll(dir, 0750)
+	err := os.MkdirAll(dir, 0o750)
 	if err != nil {
 		return fmt.Errorf("create output directory for transcoding: %s", err)
 	}
@@ -159,7 +159,7 @@ func prepare(out string) error {
 // markForDeletion moves the file to $recfolder/.trash/
 func markForDeletion(ctx *StreamContext) error {
 	trashName := ctx.getRecordingTrashName()
-	err := os.MkdirAll(filepath.Dir(trashName), 0750)
+	err := os.MkdirAll(filepath.Dir(trashName), 0o750)
 	if err != nil {
 		return fmt.Errorf("create trash directory: %s", err)
 	}
