@@ -225,6 +225,13 @@
     @apply bg-gray-100 dark:bg-gray-800
 }
 
+.tum-live-menu .tum-live-menu-item .icon-wrapper {
+    width: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 
 .tum-live-course-list > header {
     @apply flex items-center justify-between mb-8
