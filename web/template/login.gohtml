@@ -24,6 +24,13 @@
     <style>[x-cloak] {
             display: none !important;
         }</style>
+
+    <script>
+        window.onload = function() {
+            document.cookie = 'rememberMe=; path=/; max-age=-1';
+        };
+    </script>
+
 </head>
 <body class="h-screen flex flex-col items-stretch tum-live-bg">
 <header class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
@@ -39,6 +46,19 @@
         <header>
             <h1 class="font-bold text-3">Login</h1>
         </header>
+
+        <div x-show="!resetPassword" class="flex">
+            <input type="checkbox" name="rememberMe" id="rememberMe">
+            <label for="rememberMe" class="text-5 text-sm px-2">Remember me for 6 months</label>
+            <script>
+                document.getElementById('rememberMe').addEventListener('change', function() {
+                    document.cookie = "rememberMe=" + this.checked + "; path=/; max-age=600";
+                    // The status whether "remember me" is checked is saved in a cookie, valid for 10 minutes
+                    // This cookie will be deleted once logged in
+                });
+            </script>
+        </div>
+
         {{if .UseSAML}}
             <article class="text-center w-full">
                 <a href="/saml/out"
