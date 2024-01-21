@@ -76,13 +76,13 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 		// but only when the token has not been updated during the last 1 hour
 		if claims.RememberMe && time.Since(claims.UpdatedAt.Time).Hours() > MinUpdateIntervalInHours {
 			// remove jwt cookie older than MaxTokenAgeWithRefreshInDays
-			expiresAt := &jwt.NumericDate{time.Now().Add(time.Hour * 24 * MaxTokenAgeInDays)}
+			expiresAt := &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * MaxTokenAgeInDays)}
 			if expiresAt.Sub(claims.IssuedAt.Time).Hours() > MaxTokenLifetimeWithRememberMeInDays*24 {
 				c.SetCookie("jwt", "", -1, "/", "", false, true)
 				return
 			}
 			claims.ExpiresAt = expiresAt
-			claims.UpdatedAt = &jwt.NumericDate{time.Now()}
+			claims.UpdatedAt = &jwt.NumericDate{Time: time.Now()}
 
 			token = jwt.NewWithClaims(token.Method, claims)
 			signedToken, err := token.SignedString(Cfg.GetJWTKey())
