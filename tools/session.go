@@ -30,8 +30,10 @@ func createToken(user uint, samlSubjectID *string, rememberMe bool) (string, err
 
 	t.Claims = &JWTClaims{
 		RegisteredClaims: &jwt.RegisteredClaims{
+			IssuedAt:  &jwt.NumericDate{Time: time.Now()},
 			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * MaxTokenAgeInDays)}, // Token expires in one week
 		},
+		UpdatedAt:     &jwt.NumericDate{Time: time.Now()},
 		UserID:        user,
 		SamlSubjectID: samlSubjectID,
 		RememberMe:    rememberMe,

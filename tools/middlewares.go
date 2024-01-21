@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -13,6 +14,11 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+)
+
+const (
+	MaxTokenLifetimeWithRememberMeInDays = 180
+	MinUpdateIntervalInHours             = 1
 )
 
 var templateExecutor TemplateExecutor
@@ -25,6 +31,7 @@ func SetTemplateExecutor(e TemplateExecutor) {
 // JWTClaims are the claims contained in a session
 type JWTClaims struct {
 	*jwt.RegisteredClaims
+	UpdatedAt     *jwt.NumericDate
 	UserID        uint
 	SamlSubjectID *string // identifier of the SAML session (if any)
 	RememberMe    bool
@@ -61,6 +68,28 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			c.SetCookie("jwt", "", -1, "/", "", false, true)
 			return
+		}
+
+		claims := token.Claims.(*JWTClaims)
+
+		// in case when the user has selected "remember me" when logging in, prolong the validity of the token
+		// but only when the token has not been updated during the last 1 hour
+		if claims.RememberMe && time.Now().Sub(claims.UpdatedAt.Time).Hours() > MinUpdateIntervalInHours {
+			// remove jwt cookie older than MaxTokenAgeWithRefreshInDays
+			expiresAt := &jwt.NumericDate{time.Now().Add(time.Hour * 24 * MaxTokenAgeInDays)}
+			if expiresAt.Sub(claims.IssuedAt.Time).Hours() > MaxTokenLifetimeWithRememberMeInDays*24 {
+				c.SetCookie("jwt", "", -1, "/", "", false, true)
+				return
+			}
+			claims.ExpiresAt = expiresAt
+			claims.UpdatedAt = &jwt.NumericDate{time.Now()}
+
+			token = jwt.NewWithClaims(token.Method, claims)
+			signedToken, err := token.SignedString(Cfg.GetJWTKey())
+			if err == nil {
+				c.SetCookie("jwt", signedToken, 60*60*24*MaxTokenAgeInDays, "/", "", CookieSecure, true)
+			}
+			logger.Error(signedToken)
 		}
 
 		user, err := daoWrapper.UsersDao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
