@@ -74,7 +74,7 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 
 		// in case when the user has selected "remember me" when logging in, prolong the validity of the token
 		// but only when the token has not been updated during the last 1 hour
-		if claims.RememberMe && time.Now().Sub(claims.UpdatedAt.Time).Hours() > MinUpdateIntervalInHours {
+		if claims.RememberMe && time.Since(claims.UpdatedAt.Time).Hours() > MinUpdateIntervalInHours {
 			// remove jwt cookie older than MaxTokenAgeWithRefreshInDays
 			expiresAt := &jwt.NumericDate{time.Now().Add(time.Hour * 24 * MaxTokenAgeInDays)}
 			if expiresAt.Sub(claims.IssuedAt.Time).Hours() > MaxTokenLifetimeWithRememberMeInDays*24 {
