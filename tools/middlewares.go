@@ -27,6 +27,7 @@ type JWTClaims struct {
 	*jwt.RegisteredClaims
 	UserID        uint
 	SamlSubjectID *string // identifier of the SAML session (if any)
+	RememberMe    bool
 }
 
 func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
