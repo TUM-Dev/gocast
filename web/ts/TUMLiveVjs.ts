@@ -30,6 +30,64 @@ class PlayerSettings {
         this.isEmbedded = isEmbedded;
     }
 
+    initShortcutsWhenMouseOn(seekingTime: number) {
+        console.log("test59");
+
+        const controlBar = this.player.getChild("controlBar");
+        console.log(controlBar);
+
+        function updatePlayToggleText() {
+            const playToggle = controlBar.getChild("PlayToggle");
+            const currentText = playToggle.contentEl().innerHTML;
+            const newText = `${currentText} (K)`;
+            var controlText = playToggle.getAttribute("controlText");
+            console.log(controlText);
+            playToggle.controlText(newText);
+        }
+
+        function updateMuteToggleText() {
+            const muteToggle = controlBar.getChild("VolumePanel").getChild("MuteToggle");
+
+            if (muteToggle) {
+                const isMuted = this.player.muted();
+                const text = isMuted ? "Unmute (M)" : "Mute (M)";
+                muteToggle.controlText(text);
+            }
+        }
+
+        // Set initial text when the player is ready
+        this.player.ready(() => {
+            // Call the update functions
+            updatePlayToggleText.call(this);
+            updateMuteToggleText.call(this);
+        });
+
+        // Listen for play and pause events
+        this.player.on(["play", "pause"], () => {
+            updatePlayToggleText.call(this);
+        });
+
+        // Listen for mute event
+        this.player.on("volumechange", () => {
+            updateMuteToggleText.call(this);
+        });
+
+        // Set fullscreen toggle
+        controlBar.getChild("FullscreenToggle").controlText("Fullscreen (F)");
+        this.player.on("fullscreenchange", () => {
+            const fullscreenToggle = controlBar.getChild("FullscreenToggle");
+            if (fullscreenToggle) {
+                const isFullscreen = document.fullscreenElement;
+                const text = isFullscreen ? "Exit Fullscreen (F)" : "Fullscreen (F)";
+                fullscreenToggle.controlText(text);
+            }
+        });
+
+        controlBar.children()[0].controlText(`Seek back ${seekingTime} seconds (J)`);
+        controlBar.children()[2].controlText(`Seek forward ${seekingTime} seconds (L)`);
+    }
+
+
     initTrackbars(streamID: number) {
         loadAndSetTrackbars(this.player, streamID);
     }
@@ -223,6 +281,7 @@ export const initPlayer = function (
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
         settings.addOverlayIcon();
+        settings.initShortcutsWhenMouseOn(seekingTime);
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
