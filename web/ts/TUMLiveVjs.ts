@@ -65,7 +65,7 @@ class PlayerSettings {
         });
 
         // Listen for mute/unmute event
-        this.player.on('volumechange', () => {
+        this.player.on("volumechange", () => {
             updateMuteToggleControlText.call(this);
         });
 
