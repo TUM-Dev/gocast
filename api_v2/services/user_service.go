@@ -125,7 +125,7 @@ func PatchUserSettings(db *gorm.DB, user *model.User, req *protobuf.PatchUserSet
 
 	for _, setting := range req.UserSettings {
 		var userSetting model.UserSetting
-		if err = db.Where("user_id = ? AND type = ?", userID, setting.Type).First(&userSetting).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		if err = db.Where("user_id = ? AND type = ?", userID, setting.Type+1).First(&userSetting).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			userSetting = model.UserSetting{

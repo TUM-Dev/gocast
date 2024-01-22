@@ -36,7 +36,7 @@ func ParseUserToProto(u *model.User) *protobuf.User {
 // ParseUserSettingToProto converts a UserSetting model to its protobuf representation.
 func ParseUserSettingToProto(setting model.UserSetting) *protobuf.UserSetting {
 	return &protobuf.UserSetting{
-		Type:  protobuf.UserSettingType(setting.Type),
+		Type:  protobuf.UserSettingType(setting.Type - 1),
 		Value: setting.Value,
 	}
 }

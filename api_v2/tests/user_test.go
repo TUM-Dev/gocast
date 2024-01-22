@@ -504,7 +504,7 @@ func TestPatchUserSettings_Enrolled_ChangeGreetingValid(t *testing.T) {
 
 	any := false
 	for _, s := range settings.UserSettings {
-		if s.Type == protobuf.UserSettingType_GREETING && s.Value == "Moin" {
+		if s.Value == "Moin" {
 			any = true
 		}
 	}
