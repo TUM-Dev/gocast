@@ -491,8 +491,18 @@
 
                                                                         </a>
                                                                     </template>
+                                                                    <template x-if="vod.HasName()">
+
                                                                     <span class="date text-sm"
                                                                           x-text="vod.FriendlyDateStart()"></span>
+                                                                    </template>
+
+                                                                    <template x-if="!vod.HasName()">
+                                                                        <a :href="course.WatchURL(vod.ID)">
+                                                                        <span class="date text-sm"
+                                                                              x-text="vod.FriendlyDateStart()"></span>
+                                                                        </a>
+                                                                    </template>
                                                                 </div>
                                                                 <button type="button" @click="vod.Dropdown.toggle()"
                                                                         class="md:group-hover:opacity-100 md:opacity-0 px-2">
