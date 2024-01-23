@@ -4,14 +4,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"strings"
-	"time"
 )
 
 type Stream struct {
@@ -88,7 +89,7 @@ func (s Stream) GetVodFiles() []DownloadableVod {
 }
 
 func (s Stream) GetLGThumbnail() (string, error) {
-	var thumbs = map[string]string{}
+	thumbs := map[string]string{}
 	for _, file := range s.Files {
 		if file.Type == FILETYPE_THUMB_LG_CAM_PRES {
 			thumbs["CAM_PRES"] = file.Path
@@ -408,4 +409,19 @@ func (s Stream) ToDTO() StreamDTO {
 		End:         s.End,
 		Duration:    duration,
 	}
+}
+
+// FirstSilenceAsProgress returns the end of the first silence as a quotient of the length of the stream
+func (s Stream) FirstSilenceAsProgress() float64 {
+	if len(s.Silences) == 0 {
+		return 0
+	}
+	// Sanity check: first silence at beginning of stream
+	if s.Silences[0].Start != 0 {
+		return 0
+	}
+	duration := s.End.Sub(s.Start).Seconds()
+	p := float64(s.Silences[0].End) / duration
+
+	return p
 }

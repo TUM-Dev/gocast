@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
 	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
+
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
 )
 
 // Matrix strategy
-type Matrix struct {
-}
+type Matrix struct{}
 
 // matrixMessage represents a Matrix message event that includes html formatting as specified
 // in https://spec.matrix.org/v1.2/client-server-api/#mroommessage-msgtypes
@@ -97,7 +97,7 @@ func (m *Matrix) sendMessageToRoom(roomID string, message Message) error {
 		return errors.New("authentication failed, could not get token")
 	}
 
-	var roomMessageSuffix = roomMsgPrefix + id + accessTokenSuffix
+	roomMessageSuffix := roomMsgPrefix + id + accessTokenSuffix
 	url := m.getClientUrl() + roomSuffix + roomID + roomMessageSuffix + authToken
 	matrixMessage := matrixMessage{
 		MsgType:       msgType,

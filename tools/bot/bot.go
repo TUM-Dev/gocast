@@ -1,12 +1,13 @@
 package bot
 
 import (
+	"strings"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/getsentry/sentry-go"
 	"github.com/microcosm-cc/bluemonday"
-	"strings"
-	"time"
 )
 
 // Bot is the bot that will be used to send messages to the chat.

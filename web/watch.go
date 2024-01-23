@@ -2,6 +2,12 @@ package web
 
 import (
 	"errors"
+	"html/template"
+	"math"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -9,10 +15,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"html/template"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {
@@ -91,6 +93,17 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 			}
 		} else if len(progress) > 0 {
 			data.Progress = progress[0]
+		}
+
+		// Check if user wants to skip first silence
+		autoSkip, err := tumLiveContext.User.GetAutoSkipEnabled()
+		if err != nil {
+			logger.Error("Couldn't decode user setting", "err", err)
+		} else if autoSkip.Enabled {
+			// The length of the stream may mismatch with the length of the video if it is a self-stream
+			if tumLiveContext.Stream.LectureHallID != 0 {
+				data.Progress.Progress = math.Max(data.Progress.Progress, tumLiveContext.Stream.FirstSilenceAsProgress())
+			}
 		}
 	}
 	if c.Query("restart") == "1" {

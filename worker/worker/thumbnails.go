@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"github.com/joschahenningsen/thumbgen"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"time"
+
+	"github.com/joschahenningsen/thumbgen"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -49,7 +50,7 @@ func createVideoThumbnail(ctx *StreamContext, source string) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(ctx.getLargeThumbnailSpriteFileName(), os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(ctx.getLargeThumbnailSpriteFileName(), os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}

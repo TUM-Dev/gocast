@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/tools/pathprovider"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -352,31 +353,50 @@ func (r streamRoutes) getStream(c *gin.Context) {
 		"end":         stream.End,
 		"ingest":      fmt.Sprintf("%s%s-%d?secret=%s", tools.Cfg.IngestBase, course.Slug, stream.ID, stream.StreamKey),
 		"live":        stream.LiveNow,
-		"vod":         stream.Recording})
+		"vod":         stream.Recording,
+	})
 }
 
 func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 	type StreamPlaylistEntry struct {
-		StreamID   uint      `json:"streamId"`
-		CourseSlug string    `json:"courseSlug"`
-		StreamName string    `json:"streamName"`
-		LiveNow    bool      `json:"liveNow"`
-		Watched    bool      `json:"watched"`
-		Start      time.Time `json:"start"`
-		CreatedAt  time.Time `json:"createdAt"`
+		StreamID       uint                 `json:"streamId"`
+		CourseSlug     string               `json:"courseSlug"`
+		StreamName     string               `json:"streamName"`
+		LiveNow        bool                 `json:"liveNow"`
+		Watched        bool                 `json:"watched"`
+		Start          time.Time            `json:"start"`
+		StreamProgress model.StreamProgress `json:"streamProgress"`
+		CreatedAt      time.Time            `json:"createdAt"`
 	}
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	// Create mapping of stream id to progress for all progresses of user
+	var streamIDs []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		streamIDs = append(streamIDs, stream.ID)
+	}
+	streamProgresses := make(map[uint]model.StreamProgress)
+	res, err := r.LoadProgress(tumLiveContext.User.ID, streamIDs)
+	if err != nil {
+		logger.Error("Couldn't load progresses", "err", err)
+	} else {
+		for _, progress := range res {
+			streamProgresses[progress.StreamID] = progress
+		}
+	}
+
 	var result []StreamPlaylistEntry
 	for _, stream := range tumLiveContext.Course.Streams {
 		result = append(result, StreamPlaylistEntry{
-			StreamID:   stream.ID,
-			CourseSlug: tumLiveContext.Course.Slug,
-			StreamName: stream.GetName(),
-			LiveNow:    stream.LiveNow,
-			Watched:    stream.Watched,
-			Start:      stream.Start,
-			CreatedAt:  stream.CreatedAt,
+			StreamID:       stream.ID,
+			CourseSlug:     tumLiveContext.Course.Slug,
+			StreamName:     stream.GetName(),
+			LiveNow:        stream.LiveNow,
+			Watched:        stream.Watched,
+			Start:          stream.Start,
+			StreamProgress: streamProgresses[stream.ID],
+			CreatedAt:      stream.CreatedAt,
 		})
 	}
 
@@ -536,7 +556,8 @@ func (r streamRoutes) updateVideoSection(c *gin.Context) {
 		Description:  update.Description,
 		StartHours:   update.StartHours,
 		StartMinutes: update.StartMinutes,
-		StartSeconds: update.StartSeconds})
+		StartSeconds: update.StartSeconds,
+	})
 	if err != nil {
 		logger.Error("failed to update video section", "err", err)
 		_ = c.Error(tools.RequestError{
@@ -860,5 +881,4 @@ func (r streamRoutes) updateChatEnabled(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
 		return
 	}
-
 }
