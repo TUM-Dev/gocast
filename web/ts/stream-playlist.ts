@@ -39,7 +39,7 @@ export class StreamPlaylist {
     }
 
     public scrollSelectedIntoView() {
-        if(this.elem.querySelector(".--selected")) {
+        if (this.elem.querySelector(".--selected")) {
             this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
         }
     }

@@ -1,4 +1,4 @@
-import Player  from "video.js/dist/types/player";
+import Player from "video.js/dist/types/player";
 
 /**
  * Registers a time watcher that observes the time of the current player

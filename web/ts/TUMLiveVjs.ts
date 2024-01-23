@@ -8,7 +8,7 @@ import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
-import {Event} from "video.js/dist/types/event-target";
+import { Event } from "video.js/dist/types/event-target";
 
 require("videojs-seek-buttons");
 require("videojs-sprite-thumbnails");
@@ -255,7 +255,6 @@ export class SkipSilenceButton extends CustomButton {
     buildCSSClass(): string {
         return `vjs-skip-silence-control`;
     }
-
 }
 
 // Should be changed when videojs fully supports typescript, but for now this works as a fix
@@ -317,7 +316,6 @@ export const skipSilence = function (options) {
         });
     }
 };
-
 
 /**
  * @function watchProgress

@@ -1,5 +1,6 @@
 import videojs from "video.js";
-import KeyboardEvent from "video.js/dist/types/utils/events"
+import Button from "video.js/dist/types/button";
+import KeyboardEvent from "video.js/dist/types/utils/events";
 
 // VideoJS uses `import * as keycode from "keycode";`
 // However, keycode uses deprecated event.keyCode https://github.com/timoxley/keycode/issues/52
@@ -31,6 +32,7 @@ const matches = (match, player, event) =>
 const getIcon = (icon, player, event) => (typeof icon === "function" ? icon(player, event) : icon);
 
 const handleWithClick = (name) => (player, event) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ButtonComponent = videojs.getComponent(name) as any;
     ButtonComponent.prototype.handleClick.call(player, event);
 };
