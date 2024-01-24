@@ -37,6 +37,26 @@
         link.setAttribute('href', location.href);
         document.head.appendChild(link);
     </script>
+    {{if $user}}
+    <script>
+        let lastUsedVersion = {{$user.LastUsedVersion}};
+        let currentVersion = {{.VersionTag}}
+        if(lastUsedVersion !== {{.VersionTag}}) {
+            alert(lastUsedVersion + " but new version is " + currentVersion);
+            let value = {
+                version: currentVersion
+            }
+            console.log(JSON.stringify(value))
+            fetch(`/api/users/lastUsedVersion`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(value),
+            })
+        }
+    </script>
+    {{end}}
 </head>
 <body x-data="home.skeleton()"
       @popstate.window="onPopState"

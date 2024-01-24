@@ -29,6 +29,8 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
 	router.POST("/api/users/settings/autoSkip", routes.updateAutoSkip)
 
+	router.POST("/api/users/lastUsedVersion", routes.updateLastUsedVersion)
+
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
 	courses := router.Group("/api/users/courses")
@@ -720,6 +722,36 @@ func (r usersRoutes) updateSeekingTime(c *gin.Context) {
 			CustomMessage: "can not add user setting",
 			Err:           err,
 		})
+		return
+	}
+}
+
+func (r usersRoutes) updateLastUsedVersion(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+
+	var req model.LastVersion
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body to request",
+			Err:           err,
+		})
+		return
+	}
+
+	fmt.Printf("New Version Tag: %v\n", req.Version)
+
+	u.SetLastUsedVersion(req.Version)
+	err := r.DaoWrapper.UsersDao.UpdateUser(*u)
+	if err != nil {
 		return
 	}
 }

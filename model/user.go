@@ -46,8 +46,9 @@ type User struct {
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
 	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
 
-	Settings  []UserSetting `gorm:"foreignkey:UserID"`
-	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
+	Settings        []UserSetting `gorm:"foreignkey:UserID"`
+	Bookmarks       []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
+	LastUsedVersion string        `gorm:"default:null"`
 }
 
 type UserSettingType int
@@ -77,6 +78,19 @@ func (u User) GetPreferredName() string {
 		}
 	}
 	return u.Name
+}
+
+// LastVersion wraps last version in JSON
+type LastVersion struct {
+	Version string `json:"version"`
+}
+
+func (u *User) GetLastUsedVersion() string {
+	return u.LastUsedVersion
+}
+
+func (u *User) SetLastUsedVersion(version string) {
+	u.LastUsedVersion = version
 }
 
 type PlaybackSpeedSetting struct {
