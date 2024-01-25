@@ -1,5 +1,5 @@
 .playlist-thumbnail {
-    @apply bg-gray-100 dark:bg-gray-800 rounded-lg mr-4 bg-cover transition-all duration-500 hover:shadow-xl dark:shadow-gray-900/75;
+    @apply relative bg-gray-100 dark:bg-gray-800 rounded-lg mr-4 bg-cover transition-all duration-500 hover:shadow-xl dark:shadow-gray-900/75;
 }
 
 /* Rendered, but not visible on the screen. Enables layout calculations. */

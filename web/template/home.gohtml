@@ -84,8 +84,8 @@
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
                                    class="tum-live-menu-item">
-                                    <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                        <i class="fa-solid fa-hammer mr-3"></i>
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-solid fa-hammer"></i>
                                     </div>
                                     <p>Admin</p>
                                 </a>
@@ -95,8 +95,8 @@
                                 <button type="button"
                                         class="tum-live-menu-item"
                                         @click="userContext.getChild('themePicker').toggle()">
-                                    <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                        <i class="fa-regular fa-moon mr-3"></i>
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-regular fa-moon"></i>
                                     </div>
                                     <span>Theme</span>
                                     <i class="fa-solid ml-auto"
@@ -106,7 +106,7 @@
                                     <template x-for="[modeId, mode] of Object.entries($store.theme.modes)"
                                               :key="modeId">
                                         <button type="button" tabindex="0"
-                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
+                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-1 px-10"
                                                 :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
                                                 @click="$store.theme.setTheme(modeId)"
                                                 x-text="mode.name">
@@ -116,8 +116,8 @@
                             </div>
                             <a href="/settings"
                                class="tum-live-menu-item">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-solid fa-gear mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-gear"></i>
                                 </div>
                                 <p>Settings</p>
                             </a>
@@ -125,24 +125,24 @@
                             <a href="https://github.com/TUM-Dev/gocast"
                                target="_blank"
                                class="tum-live-menu-item">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-regular fa-comment mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-regular fa-comment"></i>
                                 </div>
                                 <p>Send Feedback</p>
                             </a>
                             <a href="https://github.com/TUM-Dev/gocast/issues/new?assignees=&labels=&template=bug_report.md&title="
                                class="tum-live-menu-item"
                                target="_blank">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-brands fa-github mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-brands fa-github"></i>
                                 </div>
                                 <p>Report problem</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="/logout"
                                class="tum-live-menu-item">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-solid fa-sign-out mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-sign-out"></i>
                                 </div>
                                 <p>Logout</p>
                             </a>

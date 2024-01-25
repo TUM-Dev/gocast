@@ -359,26 +359,44 @@ func (r streamRoutes) getStream(c *gin.Context) {
 
 func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 	type StreamPlaylistEntry struct {
-		StreamID   uint      `json:"streamId"`
-		CourseSlug string    `json:"courseSlug"`
-		StreamName string    `json:"streamName"`
-		LiveNow    bool      `json:"liveNow"`
-		Watched    bool      `json:"watched"`
-		Start      time.Time `json:"start"`
-		CreatedAt  time.Time `json:"createdAt"`
+		StreamID       uint                 `json:"streamId"`
+		CourseSlug     string               `json:"courseSlug"`
+		StreamName     string               `json:"streamName"`
+		LiveNow        bool                 `json:"liveNow"`
+		Watched        bool                 `json:"watched"`
+		Start          time.Time            `json:"start"`
+		StreamProgress model.StreamProgress `json:"streamProgress"`
+		CreatedAt      time.Time            `json:"createdAt"`
 	}
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	// Create mapping of stream id to progress for all progresses of user
+	var streamIDs []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		streamIDs = append(streamIDs, stream.ID)
+	}
+	streamProgresses := make(map[uint]model.StreamProgress)
+	res, err := r.LoadProgress(tumLiveContext.User.ID, streamIDs)
+	if err != nil {
+		logger.Error("Couldn't load progresses", "err", err)
+	} else {
+		for _, progress := range res {
+			streamProgresses[progress.StreamID] = progress
+		}
+	}
+
 	var result []StreamPlaylistEntry
 	for _, stream := range tumLiveContext.Course.Streams {
 		result = append(result, StreamPlaylistEntry{
-			StreamID:   stream.ID,
-			CourseSlug: tumLiveContext.Course.Slug,
-			StreamName: stream.GetName(),
-			LiveNow:    stream.LiveNow,
-			Watched:    stream.Watched,
-			Start:      stream.Start,
-			CreatedAt:  stream.CreatedAt,
+			StreamID:       stream.ID,
+			CourseSlug:     tumLiveContext.Course.Slug,
+			StreamName:     stream.GetName(),
+			LiveNow:        stream.LiveNow,
+			Watched:        stream.Watched,
+			Start:          stream.Start,
+			StreamProgress: streamProgresses[stream.ID],
+			CreatedAt:      stream.CreatedAt,
 		})
 	}
 
