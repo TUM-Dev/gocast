@@ -172,6 +172,7 @@ func main() {
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
+		&model.Changelog{},
 		&model.StreamProgress{},
 		&model.Token{},
 		&model.Poll{},

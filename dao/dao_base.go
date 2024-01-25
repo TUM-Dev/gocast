@@ -15,6 +15,7 @@ type DaoWrapper struct {
 	CameraPresetDao
 	ChatDao
 	FileDao
+	ChangelogDao
 	StreamsDao
 	CoursesDao
 	WorkerDao
@@ -43,6 +44,7 @@ func NewDaoWrapper() DaoWrapper {
 		CameraPresetDao:       NewCameraPresetDao(),
 		ChatDao:               NewChatDao(),
 		FileDao:               NewFileDao(),
+		ChangelogDao:          NewChangelogDao(),
 		StreamsDao:            NewStreamsDao(),
 		CoursesDao:            NewCoursesDao(),
 		WorkerDao:             NewWorkerDao(),
