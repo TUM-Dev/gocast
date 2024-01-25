@@ -52,6 +52,8 @@ const (
 	API_PostChatReply_FullMethodName               = "/protobuf.API/postChatReply"
 	API_MarkChatMessageAsResolved_FullMethodName   = "/protobuf.API/markChatMessageAsResolved"
 	API_MarkChatMessageAsUnresolved_FullMethodName = "/protobuf.API/markChatMessageAsUnresolved"
+	API_GetPolls_FullMethodName                    = "/protobuf.API/getPolls"
+	API_PostPollVote_FullMethodName                = "/protobuf.API/postPollVote"
 )
 
 // APIClient is the client API for API service.
@@ -88,6 +90,7 @@ type APIClient interface {
 	GetProgress(ctx context.Context, in *GetProgressRequest, opts ...grpc.CallOption) (*GetProgressResponse, error)
 	PutProgress(ctx context.Context, in *PutProgressRequest, opts ...grpc.CallOption) (*PutProgressResponse, error)
 	MarkAsWatched(ctx context.Context, in *MarkAsWatchedRequest, opts ...grpc.CallOption) (*MarkAsWatchedResponse, error)
+	// START API/V2/CHATS
 	GetChatMessages(ctx context.Context, in *GetChatMessagesRequest, opts ...grpc.CallOption) (*GetChatMessagesResponse, error)
 	PostChatMessage(ctx context.Context, in *PostChatMessageRequest, opts ...grpc.CallOption) (*PostChatMessageResponse, error)
 	PostChatReaction(ctx context.Context, in *PostChatReactionRequest, opts ...grpc.CallOption) (*PostChatReactionResponse, error)
@@ -95,6 +98,8 @@ type APIClient interface {
 	PostChatReply(ctx context.Context, in *PostChatReplyRequest, opts ...grpc.CallOption) (*PostChatReplyResponse, error)
 	MarkChatMessageAsResolved(ctx context.Context, in *MarkChatMessageAsResolvedRequest, opts ...grpc.CallOption) (*MarkChatMessageAsResolvedResponse, error)
 	MarkChatMessageAsUnresolved(ctx context.Context, in *MarkChatMessageAsUnresolvedRequest, opts ...grpc.CallOption) (*MarkChatMessageAsUnresolvedResponse, error)
+	GetPolls(ctx context.Context, in *GetPollsRequest, opts ...grpc.CallOption) (*GetPollsResponse, error)
+	PostPollVote(ctx context.Context, in *PostPollVoteRequest, opts ...grpc.CallOption) (*PostPollVoteResponse, error)
 }
 
 type aPIClient struct {
@@ -402,6 +407,24 @@ func (c *aPIClient) MarkChatMessageAsUnresolved(ctx context.Context, in *MarkCha
 	return out, nil
 }
 
+func (c *aPIClient) GetPolls(ctx context.Context, in *GetPollsRequest, opts ...grpc.CallOption) (*GetPollsResponse, error) {
+	out := new(GetPollsResponse)
+	err := c.cc.Invoke(ctx, API_GetPolls_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) PostPollVote(ctx context.Context, in *PostPollVoteRequest, opts ...grpc.CallOption) (*PostPollVoteResponse, error) {
+	out := new(PostPollVoteResponse)
+	err := c.cc.Invoke(ctx, API_PostPollVote_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility
@@ -436,6 +459,7 @@ type APIServer interface {
 	GetProgress(context.Context, *GetProgressRequest) (*GetProgressResponse, error)
 	PutProgress(context.Context, *PutProgressRequest) (*PutProgressResponse, error)
 	MarkAsWatched(context.Context, *MarkAsWatchedRequest) (*MarkAsWatchedResponse, error)
+	// START API/V2/CHATS
 	GetChatMessages(context.Context, *GetChatMessagesRequest) (*GetChatMessagesResponse, error)
 	PostChatMessage(context.Context, *PostChatMessageRequest) (*PostChatMessageResponse, error)
 	PostChatReaction(context.Context, *PostChatReactionRequest) (*PostChatReactionResponse, error)
@@ -443,6 +467,8 @@ type APIServer interface {
 	PostChatReply(context.Context, *PostChatReplyRequest) (*PostChatReplyResponse, error)
 	MarkChatMessageAsResolved(context.Context, *MarkChatMessageAsResolvedRequest) (*MarkChatMessageAsResolvedResponse, error)
 	MarkChatMessageAsUnresolved(context.Context, *MarkChatMessageAsUnresolvedRequest) (*MarkChatMessageAsUnresolvedResponse, error)
+	GetPolls(context.Context, *GetPollsRequest) (*GetPollsResponse, error)
+	PostPollVote(context.Context, *PostPollVoteRequest) (*PostPollVoteResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -548,6 +574,12 @@ func (UnimplementedAPIServer) MarkChatMessageAsResolved(context.Context, *MarkCh
 }
 func (UnimplementedAPIServer) MarkChatMessageAsUnresolved(context.Context, *MarkChatMessageAsUnresolvedRequest) (*MarkChatMessageAsUnresolvedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkChatMessageAsUnresolved not implemented")
+}
+func (UnimplementedAPIServer) GetPolls(context.Context, *GetPollsRequest) (*GetPollsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPolls not implemented")
+}
+func (UnimplementedAPIServer) PostPollVote(context.Context, *PostPollVoteRequest) (*PostPollVoteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostPollVote not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 
@@ -1156,6 +1188,42 @@ func _API_MarkChatMessageAsUnresolved_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetPolls_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPollsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetPolls(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetPolls_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetPolls(ctx, req.(*GetPollsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_PostPollVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostPollVoteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).PostPollVote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_PostPollVote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).PostPollVote(ctx, req.(*PostPollVoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1294,6 +1362,14 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "markChatMessageAsUnresolved",
 			Handler:    _API_MarkChatMessageAsUnresolved_Handler,
+		},
+		{
+			MethodName: "getPolls",
+			Handler:    _API_GetPolls_Handler,
+		},
+		{
+			MethodName: "postPollVote",
+			Handler:    _API_PostPollVote_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

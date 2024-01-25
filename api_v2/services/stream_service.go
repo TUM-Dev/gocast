@@ -412,3 +412,17 @@ func MarkChatMessageAsUnresolved(db *gorm.DB, userID uint, chatID uint) (*model.
 
 	return chat, nil
 }
+
+func GetPolls(db *gorm.DB, streamID uint) ([]*model.Poll, error) {
+	var polls []*model.Poll
+
+	if err := db.Preload("PollOptions.Votes").Order("created_at desc").Find(&polls, "stream_id = ?", streamID).Error; err != nil {
+		return nil, err
+	}
+
+	return polls, nil
+}
+
+func PostPollVote(db *gorm.DB, userId uint, pollOptionID uint) error {
+	return db.Exec("INSERT INTO poll_option_user_votes (poll_option_id, user_id) VALUES (?, ?)", pollOptionID, userId).Error
+}

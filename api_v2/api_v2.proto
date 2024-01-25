@@ -355,8 +355,9 @@ service API {
       description: "Marks stream as watched."
     };
   }
+  // END API/V2/STREAMS
 
-
+  // START API/V2/CHATS
   rpc getChatMessages(GetChatMessagesRequest) returns (GetChatMessagesResponse) {
     option (google.api.http) = {
       get: "/streams/chat/{streamID}"
@@ -381,18 +382,6 @@ service API {
       description: "Posts a chat message to a stream."
     };
   }
-
-  //    rpc deleteChatMessage(DeleteChatMessageRequest) returns (DeleteChatMessageResponse) {
-  //      option (google.api.http) = {
-  //        delete: "/streams/chat/{streamID}/{chatID}"
-  //        response_body: "*"
-  //      };
-  //      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-  //        tags:  "Chat"
-  //        summary: "Delete a chat message"
-  //        description: "Deletes a chat message."
-  //      };
-  //    }
 
   rpc postChatReaction(PostChatReactionRequest) returns (PostChatReactionResponse) {
     option (google.api.http) = {
@@ -432,21 +421,6 @@ service API {
     };
   }
 
-
-  //    rpc deleteChatReply(DeleteChatReplyRequest) returns (DeleteChatReplyResponse) {
-  //      option (google.api.http) = {
-  //        delete: "/streams/chat/{streamID}/{chatID}/replies/{replyID}"
-  //        response_body: "*"
-  //      };
-  //      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-  //        tags:  "Chat"
-  //        summary: "Delete a reply to a chat message"
-  //        description: "Deletes a reply to a chat message."
-  //      };
-  //    }
-
-  //    patching not supported yet
-
   rpc markChatMessageAsResolved(MarkChatMessageAsResolvedRequest) returns (MarkChatMessageAsResolvedResponse) {
     option (google.api.http) = {
       put: "/streams/chat/{streamID}/{chatID}/resolved"
@@ -471,10 +445,36 @@ service API {
       description: "Marks a chat message as unresolved."
     };
   }
+
+  rpc getPolls(GetPollsRequest) returns (GetPollsResponse) {
+    option (google.api.http) = {
+      get: "/streams/chat/{streamID}/polls"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Get all polls of a stream"
+      description: "Returns all polls of a stream."
+    };
+  }
+
+  rpc postPollVote(PostPollVoteRequest) returns (PostPollVoteResponse) {
+    option (google.api.http) = {
+      post: "/streams/chat/{streamID}/polls/{pollOptionID}"
+      body: "*"
+      response_body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags:  "Chat"
+      summary: "Post a vote for an actove poll"
+      description: "Posts a vote for an active poll."
+    };
+  }
+  // END API/V2/CHATS
+
 }
 
 
-  // END API/V2/STREAMS
 
 
 
@@ -582,6 +582,48 @@ message MarkChatMessageAsResolvedResponse {
 message MarkChatMessageAsUnresolvedResponse {
   ChatMessage message = 1;
 }
+
+///////////////////////////////
+//////// POLL_MESSAGE /////////
+///////////////////////////////
+
+
+message Poll {
+  uint32 id = 1;
+  uint32 streamID = 2;
+  string question = 3;
+  bool active = 4;
+  repeated PollOption pollOptions = 5;
+}
+
+message PollOption {
+  uint32 id = 1;
+  string answer = 2;
+  uint32 votes = 3;
+}
+
+///////////////////////////////
+//////// POLL_REQUEST /////////
+///////////////////////////////
+
+message GetPollsRequest {
+  uint64 streamID = 1;
+}
+
+message PostPollVoteRequest {
+  uint64 streamID = 1;
+  uint64 pollOptionID = 2;
+}
+
+///////////////////////////////
+//////// POLL_RESPONSE ////////
+///////////////////////////////
+
+message GetPollsResponse {
+  repeated Poll polls = 1;
+}
+
+message PostPollVoteResponse {}
 
 ///////////////////////////////
 //////// USER_MESSAGE /////////

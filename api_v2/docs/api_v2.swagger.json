@@ -328,6 +328,87 @@
         ]
       }
     },
+    "/streams/chat/{streamID}/polls": {
+      "get": {
+        "summary": "Get all polls of a stream",
+        "description": "Returns all polls of a stream.",
+        "operationId": "API_getPolls",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetPollsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/chat/{streamID}/polls/{pollOptionID}": {
+      "post": {
+        "summary": "Post a vote for an actove poll",
+        "description": "Posts a vote for an active poll.",
+        "operationId": "API_postPollVote",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPostPollVoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pollOptionID",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/streams/chat/{streamID}/{chatID}/reactions": {
       "post": {
         "summary": "Post a reaction to a chat message",
@@ -1568,6 +1649,18 @@
         }
       }
     },
+    "protobufGetPollsResponse": {
+      "type": "object",
+      "properties": {
+        "polls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufPoll"
+          }
+        }
+      }
+    },
     "protobufGetProgressResponse": {
       "type": "object",
       "properties": {
@@ -1739,6 +1832,48 @@
         }
       }
     },
+    "protobufPoll": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "question": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "pollOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufPollOption"
+          }
+        }
+      }
+    },
+    "protobufPollOption": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "votes": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "protobufPostChatMessageResponse": {
       "type": "object",
       "properties": {
@@ -1776,6 +1911,9 @@
       }
     },
     "protobufPostPinnedResponse": {
+      "type": "object"
+    },
+    "protobufPostPollVoteResponse": {
       "type": "object"
     },
     "protobufProgress": {

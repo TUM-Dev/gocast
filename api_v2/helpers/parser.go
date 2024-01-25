@@ -2,6 +2,7 @@
 package helpers
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
@@ -231,5 +232,31 @@ func ParseChatReactionToProto(chatReaction model.ChatReaction) *protobuf.ChatRea
 		UserID:   uint32(chatReaction.UserID),
 		Username: chatReaction.Username,
 		Emoji:    chatReaction.Emoji,
+	}
+}
+
+func ParsePollToProto(poll model.Poll) *protobuf.Poll {
+	var pollOptions []*protobuf.PollOption
+
+	for _, option := range poll.PollOptions {
+		pollOptions = append(pollOptions, ParsePollOptionToProto(option))
+	}
+
+	return &protobuf.Poll{
+		Id:          uint32(poll.ID),
+		StreamID:    uint32(poll.StreamID),
+		Question:    poll.Question,
+		Active:      poll.Active,
+		PollOptions: pollOptions,
+	}
+}
+
+func ParsePollOptionToProto(pollOption model.PollOption) *protobuf.PollOption {
+	fmt.Printf("Debug: %+v\n", pollOption)
+
+	return &protobuf.PollOption{
+		Id:     uint32(pollOption.ID),
+		Answer: pollOption.Answer,
+		Votes:  uint32(len(pollOption.Votes)),
 	}
 }

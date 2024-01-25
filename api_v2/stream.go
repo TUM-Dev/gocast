@@ -378,3 +378,40 @@ func (a *API) MarkChatMessageAsUnresolved(ctx context.Context, req *protobuf.Mar
 
 	return &protobuf.MarkChatMessageAsUnresolvedResponse{Message: chatMessage}, nil
 }
+
+func (a *API) GetPolls(ctx context.Context, req *protobuf.GetPollsRequest) (*protobuf.GetPollsResponse, error) {
+	a.log.Info("GetPolls")
+
+	_, err := a.handleChatRequest(ctx, req.StreamID)
+	if err != nil {
+		return nil, err
+	}
+
+	polls, err := s.GetPolls(a.db, uint(req.StreamID))
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	var pollsMessages []*protobuf.Poll
+
+	for _, poll := range polls {
+		pollsMessages = append(pollsMessages, h.ParsePollToProto(*poll))
+	}
+
+	return &protobuf.GetPollsResponse{Polls: pollsMessages}, nil
+}
+
+func (a *API) PostPollVote(ctx context.Context, req *protobuf.PostPollVoteRequest) (*protobuf.PostPollVoteResponse, error) {
+	a.log.Info("PostPollVote")
+
+	uID, err := a.handleChatRequest(ctx, req.StreamID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.PostPollVote(a.db, uID, uint(req.PollOptionID)); err != nil {
+		return nil, err
+	}
+
+	return &protobuf.PostPollVoteResponse{}, nil
+}
