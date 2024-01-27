@@ -32,7 +32,7 @@ func (a *API) handleStreamRequest(ctx context.Context, sID uint32) (*model.Strea
 		return nil, nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	s, err := s.GetStreamByID(a.db, uint32(sID))
+	s, err := s.GetStreamByID(a.db, sID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,7 +67,7 @@ func (a *API) handleChatRequest(ctx context.Context, sID uint32) (uint, error) {
 		return 0, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
 	}
 
-	stream, err := s.GetStreamByID(a.db, uint32(sID))
+	stream, err := s.GetStreamByID(a.db, sID)
 	if err != nil {
 		return 0, err
 	}
@@ -183,7 +183,7 @@ func (a *API) handleProgressRequest(ctx context.Context, sID uint32) (uint, erro
 		return 0, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	s, err := s.GetStreamByID(a.db, uint32(sID))
+	s, err := s.GetStreamByID(a.db, sID)
 	if err != nil {
 		return 0, err
 	}
@@ -203,7 +203,7 @@ func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest)
 		return nil, err
 	}
 
-	p, err := s.GetProgress(a.db, uint32(req.StreamID), uID)
+	p, err := s.GetProgress(a.db, req.StreamID, uID)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (a *API) MarkAsWatched(ctx context.Context, req *protobuf.MarkAsWatchedRequ
 		return nil, err
 	}
 
-	p, err := s.MarkAsWatched(a.db, uint32(req.StreamID), uID)
+	p, err := s.MarkAsWatched(a.db, req.StreamID, uID)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +259,7 @@ func (a *API) GetChatMessages(ctx context.Context, req *protobuf.GetChatMessages
 		return nil, err
 	}
 
-	chats, err := s.GetChatMessages(a.db, uint32(req.StreamID))
+	chats, err := s.GetChatMessages(a.db, req.StreamID)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -281,7 +281,7 @@ func (a *API) PostChatMessage(ctx context.Context, req *protobuf.PostChatMessage
 		return nil, err
 	}
 
-	chat, err := s.PostChatMessage(a.db, uint32(req.StreamID), uID, req.Message)
+	chat, err := s.PostChatMessage(a.db, req.StreamID, uID, req.Message)
 	if err != nil {
 		return nil, err
 	}

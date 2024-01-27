@@ -51,7 +51,7 @@ func FetchCourses(db *gorm.DB, req *protobuf.GetPublicCoursesRequest, uID *uint)
 	}
 	if req.Limit > 0 {
 		query = query.Limit(int(req.Limit))
-		if req.Skip >= 0 {
+		if req.Skip > 0 {
 			query = query.Offset(int(req.Skip))
 		}
 	} else if req.Skip > 0 {
