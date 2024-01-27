@@ -268,7 +268,8 @@
                                         : 'No upcoming lecture.'"></span>
                                 <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
-                                    <span class="hover:underline">Most recent lecture</span>
+                                    <span class="hover:underline">Most recent lecture:</span>
+                                    <span x-text="`${course.LastRecording.FriendlyDateStart()}`"></span>
                                 </a>
                             </div>
                         </section>
@@ -297,12 +298,13 @@
                                x-text="course.Name">
                             </a>
                             <div class="links">
-                                <span x-text="course.LastRecording.ID !== 0
-                                        ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
+                                <span x-text="course.NextLecture.ID !== 0
+                                        ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
                                         : 'No upcoming lecture.'"></span>
                                 <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
-                                    <span class="hover:underline">Most recent lecture</span>
+                                    <span class="hover:underline">Most recent lecture:</span>
+                                    <span x-text="`${course.LastRecording.FriendlyDateStart()}`"></span>
                                 </a>
                             </div>
                         </section>
@@ -726,12 +728,13 @@
                                            x-text="course.Name">
                                         </a>
                                         <div class="links">
-                                            <span x-text="course.LastRecording.ID !== 0
-                                                    ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
+                                            <span x-text="course.NextLecture.ID !== 0
+                                                    ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
                                                     : 'No upcoming lecture.'"></span>
                                             <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                                 <i class="fa-solid fa-square-up-right"></i>
-                                                <span class="hover:underline">Most recent lecture</span>
+                                                <span class="hover:underline">Most recent lecture:</span>
+                                                <span x-text="`${course.LastRecording.FriendlyDateStart()}`"></span>
                                             </a>
                                         </div>
                                     </section>
