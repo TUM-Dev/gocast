@@ -14,7 +14,7 @@ import (
 )
 
 // GetStreamByID retrieves a stream by its id.
-func GetStreamByID(db *gorm.DB, streamID uint) (*model.Stream, error) {
+func GetStreamByID(db *gorm.DB, streamID uint32) (*model.Stream, error) {
 	s := &model.Stream{}
 	err := db.Where("streams.id = ?", streamID).First(s).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -63,7 +63,7 @@ func GetEnrolledOrPublicLiveStreams(db *gorm.DB, uID *uint) ([]*model.Stream, er
 }
 
 // GetProgress retrieves the progress of a stream for a user.
-func GetProgress(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgress, error) {
+func GetProgress(db *gorm.DB, streamID uint32, userID uint) (*model.StreamProgress, error) {
 	p := &model.StreamProgress{}
 
 	err := db.Where("stream_id = ? AND user_id = ?", streamID, userID).First(p).Error
@@ -77,7 +77,7 @@ func GetProgress(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgress
 	return p, nil
 }
 
-func SetProgress(db *gorm.DB, streamID uint, userID uint, progress float64) (*model.StreamProgress, error) {
+func SetProgress(db *gorm.DB, streamID uint32, userID uint, progress float64) (*model.StreamProgress, error) {
 	_, err := GetStreamByID(db, streamID)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func SetProgress(db *gorm.DB, streamID uint, userID uint, progress float64) (*mo
 
 	switch {
 	case errors.Is(result.Error, gorm.ErrRecordNotFound):
-		p.StreamID = streamID
+		p.StreamID = uint(streamID)
 		p.UserID = userID
 		p.Progress = progress
 		p.Watched = progress == 1
@@ -111,7 +111,7 @@ func SetProgress(db *gorm.DB, streamID uint, userID uint, progress float64) (*mo
 	return p, nil
 }
 
-func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgress, error) {
+func MarkAsWatched(db *gorm.DB, streamID uint32, userID uint) (*model.StreamProgress, error) {
 	_, err := GetStreamByID(db, streamID)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgre
 
 	switch {
 	case errors.Is(result.Error, gorm.ErrRecordNotFound):
-		p.StreamID = streamID
+		p.StreamID = uint(streamID)
 		p.UserID = userID
 		p.Progress = 1
 		p.Watched = true
@@ -141,7 +141,7 @@ func MarkAsWatched(db *gorm.DB, streamID uint, userID uint) (*model.StreamProgre
 	return p, nil
 }
 
-func GetChatMessages(db *gorm.DB, streamID uint) ([]*model.Chat, error) {
+func GetChatMessages(db *gorm.DB, streamID uint32) ([]*model.Chat, error) {
 	var chats []*model.Chat
 
 	// chats which are replies should not be listed in the chat list itself only in the replies of the chat they are replying to
@@ -153,7 +153,7 @@ func GetChatMessages(db *gorm.DB, streamID uint) ([]*model.Chat, error) {
 	return chats, nil
 }
 
-func PostChatMessage(db *gorm.DB, streamID uint, userID uint, message string) (*model.Chat, error) {
+func PostChatMessage(db *gorm.DB, streamID uint32, userID uint, message string) (*model.Chat, error) {
 	_, err := GetStreamByID(db, streamID)
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func PostChatMessage(db *gorm.DB, streamID uint, userID uint, message string) (*
 		UserID:   strconv.Itoa(int(userID)),
 		UserName: user.Name,
 		Message:  message,
-		StreamID: streamID,
+		StreamID: uint(streamID),
 		Admin:    isAdmin,
 	}
 
@@ -219,7 +219,7 @@ func PostChatMessage(db *gorm.DB, streamID uint, userID uint, message string) (*
 	return c, nil
 }
 
-func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reaction string) (*model.ChatReaction, error) {
+func PostChatReaction(db *gorm.DB, streamID uint32, userID uint, chatID uint, reaction string) (*model.ChatReaction, error) {
 	_, err := GetStreamByID(db, streamID)
 	if err != nil {
 		return nil, err
@@ -271,7 +271,7 @@ func PostChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint, reac
 	return reactionModel, nil
 }
 
-func DeleteChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint) (*model.ChatReaction, error) {
+func DeleteChatReaction(db *gorm.DB, streamID uint32, userID uint, chatID uint) (*model.ChatReaction, error) {
 	_, err := GetStreamByID(db, streamID)
 	if err != nil {
 		return nil, err
@@ -294,7 +294,7 @@ func DeleteChatReaction(db *gorm.DB, streamID uint, userID uint, chatID uint) (*
 	}
 }
 
-func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message string) (*model.Chat, error) {
+func PostChatReply(db *gorm.DB, streamID uint32, userID uint, chatID uint, message string) (*model.Chat, error) {
 	_, err := GetStreamByID(db, streamID)
 	if err != nil {
 		return nil, err
@@ -322,7 +322,7 @@ func PostChatReply(db *gorm.DB, streamID uint, userID uint, chatID uint, message
 		UserID:   strconv.Itoa(int(userID)),
 		UserName: user.Name,
 		Message:  message,
-		StreamID: streamID,
+		StreamID: uint(streamID),
 		Admin:    isAdmin,
 		ReplyTo:  sql.NullInt64{Int64: int64(chatID), Valid: true},
 	}
@@ -413,7 +413,7 @@ func MarkChatMessageAsUnresolved(db *gorm.DB, userID uint, chatID uint) (*model.
 	return chat, nil
 }
 
-func GetPolls(db *gorm.DB, streamID uint) ([]*model.Poll, error) {
+func GetPolls(db *gorm.DB, streamID uint32) ([]*model.Poll, error) {
 	var polls []*model.Poll
 
 	if err := db.Preload("PollOptions.Votes").Order("created_at desc").Find(&polls, "stream_id = ?", streamID).Error; err != nil {

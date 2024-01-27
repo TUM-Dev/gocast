@@ -517,40 +517,40 @@ message ChatMessage {
 ///////////////////////////////
 
 message GetChatMessagesRequest {
-  uint64 streamID = 1;
+  uint32 streamID = 1;
 }
 
 message PostChatMessageRequest {
   string message = 1;
-  uint64 streamID = 2;
+  uint32 streamID = 2;
 }
 
 message PostChatReactionRequest {
   string emoji = 1;
-  uint64 streamID = 2;
-  uint64 chatID = 3;
+  uint32 streamID = 2;
+  uint32 chatID = 3;
 }
 
 message DeleteChatReactionRequest {
-  uint64 streamID = 1;
-  uint64 chatID = 2;
-  uint64 reactionID = 3;
+  uint32 streamID = 1;
+  uint32 chatID = 2;
+  uint32 reactionID = 3;
 }
 
 message PostChatReplyRequest {
   string message = 1;
-  uint64 streamID = 2;
-  uint64 chatID = 3;
+  uint32 streamID = 2;
+  uint32 chatID = 3;
 }
 
 message MarkChatMessageAsResolvedRequest {
-  uint64 streamID = 1;
-  uint64 chatID = 2;
+  uint32 streamID = 1;
+  uint32 chatID = 2;
 }
 
 message MarkChatMessageAsUnresolvedRequest {
-  uint64 streamID = 1;
-  uint64 chatID = 2;
+  uint32 streamID = 1;
+  uint32 chatID = 2;
 }
 
 ///////////////////////////////
@@ -600,6 +600,7 @@ message PollOption {
   uint32 id = 1;
   string answer = 2;
   uint32 votes = 3;
+  bool voted = 4;
 }
 
 ///////////////////////////////
@@ -607,12 +608,12 @@ message PollOption {
 ///////////////////////////////
 
 message GetPollsRequest {
-  uint64 streamID = 1;
+  uint32 streamID = 1;
 }
 
 message PostPollVoteRequest {
-  uint64 streamID = 1;
-  uint64 pollOptionID = 2;
+  uint32 streamID = 1;
+  uint32 pollOptionID = 2;
 }
 
 ///////////////////////////////
@@ -662,17 +663,17 @@ enum UserSettingType {
 message GetUserRequest {}
 
 message GetUserCoursesRequest {
-  int32 year = 1;
+  uint32 year = 1;
   string term = 2;
-  int32 limit = 3;
-  int32 skip = 4;
+  uint32 limit = 3;
+  uint32 skip = 4;
 }
 
 message GetUserPinnedRequest {
-  int32 year = 1;
+  uint32 year = 1;
   string term = 2; 
-  int32 limit = 3;
-  int32 skip = 4;
+  uint32 limit = 3;
+  uint32 skip = 4;
 }
 
 message GetUserAdminRequest {}
@@ -688,11 +689,11 @@ message PatchUserSettingsResponse {
 }
 
 message PostPinnedRequest {
-  int32 courseID = 1;
+  uint32 courseID = 1;
 }
 
 message DeletePinnedRequest {
-  int32 courseID = 1;
+  uint32 courseID = 1;
 }
 
 ///////////////////////////////
@@ -742,7 +743,7 @@ message Bookmark {
 ///////////////////////////////
 
 message GetBookmarksRequest {
-  int32 streamID = 1;
+  uint32 streamID = 1;
 }
 
 message PutBookmarkRequest {
@@ -868,16 +869,16 @@ message Semester {
 ///////////////////////////////
 
 message GetPublicCoursesRequest {
-  int32 year = 1;
+  uint32 year = 1;
   string term = 2;
-  int32 limit = 3;
-  int32 skip = 4;
+  uint32 limit = 3;
+  uint32 skip = 4;
 }
 
 message GetSemestersRequest {}
 
 message GetCourseStreamsRequest {
-  int32 courseID = 1;
+  uint32 courseID = 1;
 }
 ///////////////////////////////
 /////// COURSE_RESPONSE ///////
@@ -901,7 +902,7 @@ message GetCourseStreamsResponse {
 ///////////////////////////////
 
 message Stream {
-  uint64 id = 1;
+  uint32 id = 1;
   string name = 2;
   string description = 3;
   uint32 courseID = 4;
@@ -924,7 +925,7 @@ message Stream {
   uint32 vodViews = 21;
   uint32 startOffset = 22;
   uint32 endOffset = 23;
-  int32 duration = 28;
+  uint32 duration = 28;
   repeated Download downloads = 29;
   bool isPlanned = 30;
   bool isComingUp = 31;
@@ -936,17 +937,17 @@ message Stream {
 ///////////////////////////////
 
 message GetStreamRequest {
-  uint64 streamID = 1;
+  uint32 streamID = 1;
 }
 
 message GetNowLiveRequest {}
 
 message GetThumbsLiveRequest {
-  uint64 streamID = 1;
+  uint32 streamID = 1;
 }
 
 message GetThumbsVODRequest {
-  uint64 streamID = 1;
+  uint32 streamID = 1;
 }
 
 ///////////////////////////////
@@ -995,16 +996,16 @@ message Progress {
 ///////////////////////////////
 
 message GetProgressRequest {
-  uint64 streamID = 1;
+  uint32 streamID = 1;
 }
 
 message PutProgressRequest {
   float progress = 1;
-  uint64 streamID = 3;
+  uint32 streamID = 3;
 }
 
 message MarkAsWatchedRequest {
-  uint64 streamID = 1;
+  uint32 streamID = 1;
 }
 
 ///////////////////////////////

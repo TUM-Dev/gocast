@@ -22,7 +22,7 @@ import (
 // 3. Parse the resource to a protobuf representation
 // 4. Return the protobuf representation
 
-func (a *API) handleStreamRequest(ctx context.Context, sID uint64) (*model.Stream, []model.DownloadableVod, error) {
+func (a *API) handleStreamRequest(ctx context.Context, sID uint32) (*model.Stream, []model.DownloadableVod, error) {
 	if sID == 0 {
 		return nil, nil, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
 	}
@@ -32,7 +32,7 @@ func (a *API) handleStreamRequest(ctx context.Context, sID uint64) (*model.Strea
 		return nil, nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	s, err := s.GetStreamByID(a.db, uint(sID))
+	s, err := s.GetStreamByID(a.db, uint32(sID))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -57,7 +57,7 @@ func (a *API) handleStreamRequest(ctx context.Context, sID uint64) (*model.Strea
 // 3. Check if the user is enrolled in the course of this resource or if the course is public
 // 4. Check if chats are enabled for requested resource
 
-func (a *API) handleChatRequest(ctx context.Context, sID uint64) (uint, error) {
+func (a *API) handleChatRequest(ctx context.Context, sID uint32) (uint, error) {
 	uID, err := a.getCurrentID(ctx)
 	if err != nil {
 		return 0, e.WithStatus(http.StatusUnauthorized, err)
@@ -67,7 +67,7 @@ func (a *API) handleChatRequest(ctx context.Context, sID uint64) (uint, error) {
 		return 0, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
 	}
 
-	stream, err := s.GetStreamByID(a.db, uint(sID))
+	stream, err := s.GetStreamByID(a.db, uint32(sID))
 	if err != nil {
 		return 0, err
 	}
@@ -173,7 +173,7 @@ func (a *API) GetThumbsLive(ctx context.Context, req *protobuf.GetThumbsLiveRequ
 // 0. Check if request is valid
 // 1. Check if the user is enrolled in the course of the stream or if the course is public
 
-func (a *API) handleProgressRequest(ctx context.Context, sID uint64) (uint, error) {
+func (a *API) handleProgressRequest(ctx context.Context, sID uint32) (uint, error) {
 	if sID == 0 {
 		return 0, e.WithStatus(http.StatusBadRequest, errors.New("stream id must not be empty"))
 	}
@@ -183,7 +183,7 @@ func (a *API) handleProgressRequest(ctx context.Context, sID uint64) (uint, erro
 		return 0, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	s, err := s.GetStreamByID(a.db, uint(sID))
+	s, err := s.GetStreamByID(a.db, uint32(sID))
 	if err != nil {
 		return 0, err
 	}
@@ -203,7 +203,7 @@ func (a *API) GetProgress(ctx context.Context, req *protobuf.GetProgressRequest)
 		return nil, err
 	}
 
-	p, err := s.GetProgress(a.db, uint(req.StreamID), uID)
+	p, err := s.GetProgress(a.db, uint32(req.StreamID), uID)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (a *API) PutProgress(ctx context.Context, req *protobuf.PutProgressRequest)
 		return nil, err
 	}
 
-	p, err := s.SetProgress(a.db, uint(req.StreamID), uID, float64(req.Progress))
+	p, err := s.SetProgress(a.db, req.StreamID, uID, float64(req.Progress))
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (a *API) MarkAsWatched(ctx context.Context, req *protobuf.MarkAsWatchedRequ
 		return nil, err
 	}
 
-	p, err := s.MarkAsWatched(a.db, uint(req.StreamID), uID)
+	p, err := s.MarkAsWatched(a.db, uint32(req.StreamID), uID)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +259,7 @@ func (a *API) GetChatMessages(ctx context.Context, req *protobuf.GetChatMessages
 		return nil, err
 	}
 
-	chats, err := s.GetChatMessages(a.db, uint(req.StreamID))
+	chats, err := s.GetChatMessages(a.db, uint32(req.StreamID))
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -281,7 +281,7 @@ func (a *API) PostChatMessage(ctx context.Context, req *protobuf.PostChatMessage
 		return nil, err
 	}
 
-	chat, err := s.PostChatMessage(a.db, uint(req.StreamID), uID, req.Message)
+	chat, err := s.PostChatMessage(a.db, uint32(req.StreamID), uID, req.Message)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func (a *API) PostChatReaction(ctx context.Context, req *protobuf.PostChatReacti
 		return nil, err
 	}
 
-	chatReaction, err := s.PostChatReaction(a.db, uint(req.StreamID), uID, uint(req.ChatID), req.Emoji)
+	chatReaction, err := s.PostChatReaction(a.db, req.StreamID, uID, uint(req.ChatID), req.Emoji)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +317,7 @@ func (a *API) DeleteChatReaction(ctx context.Context, req *protobuf.DeleteChatRe
 		return nil, err
 	}
 
-	_, err = s.DeleteChatReaction(a.db, uint(req.StreamID), uID, uint(req.ChatID))
+	_, err = s.DeleteChatReaction(a.db, req.StreamID, uID, uint(req.ChatID))
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (a *API) PostChatReply(ctx context.Context, req *protobuf.PostChatReplyRequ
 		return nil, err
 	}
 
-	chat, err := s.PostChatReply(a.db, uint(req.StreamID), uID, uint(req.ChatID), req.Message)
+	chat, err := s.PostChatReply(a.db, req.StreamID, uID, uint(req.ChatID), req.Message)
 	if err != nil {
 		return nil, err
 	}
@@ -382,12 +382,12 @@ func (a *API) MarkChatMessageAsUnresolved(ctx context.Context, req *protobuf.Mar
 func (a *API) GetPolls(ctx context.Context, req *protobuf.GetPollsRequest) (*protobuf.GetPollsResponse, error) {
 	a.log.Info("GetPolls")
 
-	_, err := a.handleChatRequest(ctx, req.StreamID)
+	uID, err := a.handleChatRequest(ctx, req.StreamID)
 	if err != nil {
 		return nil, err
 	}
 
-	polls, err := s.GetPolls(a.db, uint(req.StreamID))
+	polls, err := s.GetPolls(a.db, req.StreamID)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -395,7 +395,7 @@ func (a *API) GetPolls(ctx context.Context, req *protobuf.GetPollsRequest) (*pro
 	var pollsMessages []*protobuf.Poll
 
 	for _, poll := range polls {
-		pollsMessages = append(pollsMessages, h.ParsePollToProto(*poll))
+		pollsMessages = append(pollsMessages, h.ParsePollToProto(*poll, uID))
 	}
 
 	return &protobuf.GetPollsResponse{Polls: pollsMessages}, nil

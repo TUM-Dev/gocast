@@ -120,7 +120,7 @@ func ParseStreamToProto(stream *model.Stream, downloads []model.DownloadableVod)
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
 	s := &protobuf.Stream{
-		Id:               uint64(stream.ID),
+		Id:               uint32(stream.ID),
 		Name:             stream.Name,
 		Description:      stream.Description,
 		CourseID:         uint32(stream.CourseID),
@@ -146,7 +146,7 @@ func ParseStreamToProto(stream *model.Stream, downloads []model.DownloadableVod)
 	}
 
 	if stream.Duration.Valid {
-		s.Duration = stream.Duration.Int32
+		s.Duration = uint32(stream.Duration.Int32)
 	}
 
 	for _, download := range downloads {
@@ -235,11 +235,18 @@ func ParseChatReactionToProto(chatReaction model.ChatReaction) *protobuf.ChatRea
 	}
 }
 
-func ParsePollToProto(poll model.Poll) *protobuf.Poll {
+func ParsePollToProto(poll model.Poll, uID uint) *protobuf.Poll {
 	var pollOptions []*protobuf.PollOption
 
 	for _, option := range poll.PollOptions {
-		pollOptions = append(pollOptions, ParsePollOptionToProto(option))
+		voted := false
+		for _, user := range option.Votes {
+			if user.ID == uID {
+				voted = true
+				break
+			}
+		}
+		pollOptions = append(pollOptions, ParsePollOptionToProto(option, voted))
 	}
 
 	return &protobuf.Poll{
@@ -251,12 +258,13 @@ func ParsePollToProto(poll model.Poll) *protobuf.Poll {
 	}
 }
 
-func ParsePollOptionToProto(pollOption model.PollOption) *protobuf.PollOption {
+func ParsePollOptionToProto(pollOption model.PollOption, voted bool) *protobuf.PollOption {
 	fmt.Printf("Debug: %+v\n", pollOption)
 
 	return &protobuf.PollOption{
 		Id:     uint32(pollOption.ID),
 		Answer: pollOption.Answer,
 		Votes:  uint32(len(pollOption.Votes)),
+		Voted:  voted,
 	}
 }
