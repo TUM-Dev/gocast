@@ -1,0 +1,60 @@
+#keyboardShortcutsPopup {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popup {
+    /*background-color: white; */
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    width: 70%;
+    max-width: 800px;
+    height: 70%;
+    max-height: 600px;
+    overflow: auto;
+    position: relative;
+}
+
+h2 {
+    font-weight: bold;
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    border-top: 1px solid #ddd;
+}
+
+li {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+strong {
+    display: inline-block;
+    width: 380px;
+    /*font-weight: bold;*/
+    margin-right: 20px;
+}
+
+b1 {
+    font-weight: bold;
+}
+
+.closeButton {
+    cursor: pointer;
+}

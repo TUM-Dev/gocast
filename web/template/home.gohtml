@@ -28,6 +28,7 @@
           rel="stylesheet">
     <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
+    <link rel="stylesheet" href="/static/assets/css/keyboard-shortcuts.css">
     <style>[x-cloak] {
             display: none !important;
         }</style>
@@ -108,7 +109,7 @@
                                         <button type="button" tabindex="0"
                                                 class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
                                                 :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
-                                                @click="$store.theme.setTheme(modeId)"
+                                                @click="$store.theme.setTheme(modeId); console.log('Theme changed:', modeId)"
                                                 x-text="mode.name">
                                         </button>
                                     </template>
@@ -121,6 +122,36 @@
                                 </div>
                                 <p>Settings</p>
                             </a>
+                            <script src="static/assets/keyboard-shortcuts-helper.js"></script>
+                            <div class="tum-live-menu-item" onclick="openKeyboardShortcutsPopup()" style="cursor: pointer;">
+                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                    <i class="fa-solid fa-keyboard mr-3"></i>
+                                </div>
+                                <p>Keyboard Shortcuts</p>
+                            </div>
+                            <div id="keyboardShortcutsPopup" class="overlay" style="display: none;">
+                                <div class="popup"
+                                     :style="{ 'background-color': $store.theme.activeTheme === 'light' ? 'white' :  'rgba(22, 27, 34, 1)' }">
+                                <h2>
+                                        Keyboard Shortcuts
+                                        <span class="closeButton" onclick="closeKeyboardShortcutsPopup()"> <i class="icon-cancel"></i> </span>
+                                    </h2>
+                                    <ul>
+                                        <li><strong>Toggle play/pause</strong> <b1> K / k / SPACEBAR</b1></li>
+                                        <li><strong>Mute/Unmute</strong><b1> M / m</b1></li>
+                                        <li><strong>Open/Exit toggle fullscreen</strong><b1> F / f</b1></li>
+                                        <li><strong>Seek forward</strong><b1> L / l / ArrowRight / Right</b1></li>
+                                        <li><strong>Seek backwards</strong><b1> J / j / ArrowLeft / Left</b1></li>
+                                        <li><strong>Volume up</strong><b1> ArrowUp / Up</b1></li>
+                                        <li><strong>Volume down</strong><b1> ArrowDown / Down</b1></li>
+                                        <li><strong>Increase playback rate</strong><b1> <</b1></li>
+                                        <li><strong>Decrease playback rate</strong><b1> ></b1></li>
+                                        <li><strong>Seek to specific point in the video (7 advances to 70% of duration)</strong><b1> 0...9</b1></li>
+                                        <li><strong>Skip silence</strong><b1> S / s</b1></li>
+                                        <li><strong>Close any kind of popup - e.g. popup chat, popup keyboard shortcuts etc.</strong><b1> ESCAPE</b1></li>
+                                    </ul>
+                                </div>
+                            </div>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="https://github.com/TUM-Dev/gocast"
                                target="_blank"
