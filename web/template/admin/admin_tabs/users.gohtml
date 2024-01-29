@@ -6,6 +6,15 @@
         <h2>Search</h2>
         <input class="tl-input" placeholder="Search for users" type="text" x-model="userlist.searchInput"
                @keyup="userlist.search()">
+        <div class="bg-transparent text-gray-800 dark:text-gray-200">
+            <label for="role">Role:</label>
+            <select id="role" class="bg-transparent dark:text-gray-300 text-gray-800" x-model="userlist.roles" @change="userlist.search()">
+                <option value="-1">All</option>
+                <option value="1">Admin</option>
+                <option value="2">Lecturer</option>
+                <option value="4">Student</option>
+            </select>
+        </div>
         <div class="w-4 m-auto">
             <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
         </div>
