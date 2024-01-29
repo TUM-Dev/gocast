@@ -30,6 +30,55 @@ class PlayerSettings {
         this.isEmbedded = isEmbedded;
     }
 
+    initShortcutsWhenMouseOn(seekingTime: number) {
+        const controlBar = this.player.getChild("controlBar");
+
+        // Set seek back/forward control text
+        controlBar.children()[0].controlText(`Seek back ${seekingTime} seconds (J/j)`);
+        controlBar.children()[2].controlText(`Seek forward ${seekingTime} seconds (L/l)`);
+
+        // function to update play/pause toggle control text
+        // when playing text should be pause(k), when pause text should be play(k)
+        function updatePlayToggleControlText() {
+            const playToggle = controlBar.getChild("PlayToggle");
+            const text = !this.player.paused() ? "Pause (K/k)" : "Play (K/k)";
+            playToggle.controlText(text);
+        }
+
+        // function to update mute/unmute toggle control text
+        function updateMuteToggleControlText() {
+            const muteToggle = controlBar.getChild("VolumePanel").getChild("MuteToggle");
+            const text = this.player.muted() ? "Unmute (M/m)" : "Mute (M/m)";
+            muteToggle.controlText(text);
+        }
+
+        // Set initial text for play/pause and mute/unmute when the player is ready
+        this.player.ready(() => {
+            // Call the update functions
+            updatePlayToggleControlText.call(this);
+            updateMuteToggleControlText.call(this);
+        });
+
+        // Listen for play/pause event
+        this.player.on(["play", "pause"], () => {
+            updatePlayToggleControlText.call(this);
+        });
+
+        // Listen for mute/unmute event
+        this.player.on("volumechange", () => {
+            updateMuteToggleControlText.call(this);
+        });
+
+        // Set fullscreen toggle control text
+        controlBar.getChild("FullscreenToggle").controlText("Fullscreen (F/f)");
+        // Listen for fullscreen/exit fullscreen event
+        this.player.on("fullscreenchange", () => {
+            const fullscreenToggle = controlBar.getChild("FullscreenToggle");
+            const text = document.fullscreenElement ? "Exit Fullscreen (F)" : "Fullscreen (F)";
+            fullscreenToggle.controlText(text);
+        });
+    }
+
     initTrackbars(streamID: number) {
         loadAndSetTrackbars(this.player, streamID);
     }
@@ -223,6 +272,7 @@ export const initPlayer = function (
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
         settings.addOverlayIcon();
+        settings.initShortcutsWhenMouseOn(seekingTime);
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
