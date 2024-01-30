@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -10,7 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/soheilhy/cmux"
+
 	"github.com/TUM-Dev/gocast/api"
+	"github.com/TUM-Dev/gocast/api_v2"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -73,6 +77,21 @@ func GinServer() (err error) {
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
+	l, err := net.Listen("tcp", ":8081")
+	if err != nil {
+		logger.Error("can't listen on port 8081", "err", err)
+	}
+
+	m := cmux.New(l)
+	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+
+	api2Client := api_v2.New(dao.DB)
+	go func() {
+		if err := api2Client.Run(grpcl); err != nil {
+			logger.Error("can't launch grpc server", "err", err)
+		}
+	}()
+
 	liveUpdates := router.Group("/api/pub-sub")
 	api.ConfigRealtimeRouter(liveUpdates)
 
@@ -81,15 +100,19 @@ func GinServer() (err error) {
 	api.ConfigChatRouter(chat)
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.Run(":8081")
-	// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
-	if err != nil {
-		sentry.CaptureException(err)
-		logger.Error("Error starting tumlive", "err", err)
-	}
-	return
+	go func() {
+		err = router.RunListener(m.Match(cmux.Any()))
+		// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
+		if err != nil {
+			sentry.CaptureException(err)
+			logger.Error("Error starting tumlive", "err", err)
+		}
+	}()
+
+	return m.Serve()
 }
 
 var osSignal chan os.Signal
@@ -189,6 +212,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Device{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/NaySoftware/go-fcm"
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
@@ -170,6 +171,7 @@ type Config struct {
 	} `yaml:"meili"`
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
+	FCMServerKey   string `yaml:"fcmServerKey"`
 }
 
 type MailConfig struct {
@@ -191,6 +193,15 @@ func (c Config) GetMeiliClient() (*meilisearch.Client, error) {
 		return nil, ErrMeiliNotConfigured
 	}
 	return meilisearch.NewClient(meilisearch.ClientConfig{Host: c.Meili.Host, APIKey: c.Meili.ApiKey}), nil
+}
+
+var ErrFCMNotConfigured = errors.New("Firebase Cloud Messaging is not configured")
+
+func (c Config) GetFCMClient() (*fcm.FcmClient, error) {
+	if c.FCMServerKey == "" {
+		return nil, ErrFCMNotConfigured
+	}
+	return fcm.NewFcmClient(c.FCMServerKey), nil
 }
 
 var jwtKey *rsa.PrivateKey
