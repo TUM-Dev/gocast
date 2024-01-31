@@ -33,6 +33,7 @@ type Course struct {
 	Users                   []User `gorm:"many2many:course_users;"`
 	Admins                  []User `gorm:"many2many:course_admins;"`
 	Token                   string
+	StreamKey               string // Course-wide stream key
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
 	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]

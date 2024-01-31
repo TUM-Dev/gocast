@@ -73,6 +73,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
 			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 			courses.POST("/submitCut", routes.submitCut)
+			courses.POST("/regenerateKey", routes.regenerateCourseKey)
 
 			courses.POST("/addUnit", routes.addUnit)
 			courses.POST("/deleteUnit/:unitID", routes.deleteUnit)
@@ -1234,8 +1235,13 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
-		streamKey := uuid.NewV4().String()
-		streamKey = strings.ReplaceAll(streamKey, "-", "")
+		// When defined use course wide stream key
+		var streamKey string
+		if tumLiveContext.Course.StreamKey == "" {
+			streamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+		} else {
+			streamKey = tumLiveContext.Course.StreamKey
+		}
 
 		lecture := model.Stream{
 			Name:          req.Title,
@@ -1391,6 +1397,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		ChatEnabled:         req.EnChat,
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
+		StreamKey:           strings.ReplaceAll(uuid.NewV4().String(), "-", ""),
 	}
 	if tumLiveContext.User.Role != model.AdminType {
 		course.Admins = []model.User{*tumLiveContext.User}
@@ -1481,8 +1488,31 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 	dao.Cache.Clear()
 }
 
+// regenerateCourseKey updates the stream key of the course and updates the key of all the streams
+func (r coursesRoutes) regenerateCourseKey(c *gin.Context) {
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	course := *ctx.Course
+
+	course.StreamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+	err := r.DaoWrapper.CoursesDao.UpdateCourse(c, course)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update course")
+		return
+	}
+
+	for _, s := range course.Streams {
+		s.StreamKey = course.StreamKey
+
+		err := r.DaoWrapper.StreamsDao.UpdateStream(s)
+		// Log error but continue on remaining streams
+		if err != nil {
+			logger.Error("could not modify stream key ", err)
+		}
+	}
+}
+
 type createCourseRequest struct {
-	Access       string // enrolled, public, hidden or loggedin
+	Access       string // enrolled, public, hidden or logged in
 	CourseID     string
 	EnChat       bool
 	EnDL         bool

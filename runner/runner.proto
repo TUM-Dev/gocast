@@ -1,0 +1,70 @@
+syntax = "proto3";
+package protobuf;
+option go_package = "runner/protobuf";
+
+import "google/protobuf/timestamp.proto";
+
+service ToRunner {
+  // Requests a stream from a lecture hall
+  rpc RequestStream (StreamRequest) returns (StreamResponse) {}
+  rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+}
+
+message StreamRequest {
+  uint64 stream = 1;
+  uint64 course = 2;
+  string version = 3;
+  google.protobuf.Timestamp end = 4;
+  string source = 5;
+}
+
+
+message StreamResponse {
+  string job = 1;
+}
+
+message StreamEndRequest {
+  string jobID = 1;
+  bool keepVod = 2;
+}
+
+message StreamEndResponse {}
+
+// FromRunner service defines communication from runners to gocast
+service FromRunner {
+  // Register is a request to the server to join the runners pool.
+  rpc Register (RegisterRequest) returns (RegisterResponse) {}
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse) {}
+  rpc RequestSelfStream (SelfStreamRequest) returns (SelfStreamResponse) {}
+}
+
+message RegisterRequest {
+  string hostname = 1;
+  int32 port = 2;
+}
+
+message RegisterResponse {
+}
+
+message HeartbeatRequest {
+  uint64 ID = 1;
+  uint32 Workload = 2;
+  string Version = 3;
+  string CPU = 4;
+  string Memory = 5;
+  string Disk = 6;
+  string Uptime = 7;
+}
+
+message HeartbeatResponse {}
+
+message SelfStreamRequest {
+  string streamKey = 1;
+}
+
+message SelfStreamResponse {
+  uint64 stream = 1;
+  uint64 course = 2;
+  string version = 3;
+}
+

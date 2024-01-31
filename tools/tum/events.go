@@ -92,6 +92,13 @@ func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 			stream, err := daoWrapper.StreamsDao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
 			if err != nil { // Lecture does not exist yet
 				logger.Info("Adding course")
+				// When defined use course wide stream key
+				var streamKey string
+				if course.StreamKey == "" {
+					streamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+				} else {
+					streamKey = course.StreamKey
+				}
 				course.Streams = append(course.Streams, model.Stream{
 					CourseID:         course.ID,
 					Start:            event.Start,
@@ -100,7 +107,7 @@ func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 					RoomCode:         event.RoomCode,
 					EventTypeName:    event.SingleEventTypeName,
 					TUMOnlineEventID: event.SingleEventID,
-					StreamKey:        strings.ReplaceAll(uuid.NewV4().String(), "-", ""),
+					StreamKey:        streamKey,
 					PlaylistUrl:      "",
 					LiveNow:          false,
 				})

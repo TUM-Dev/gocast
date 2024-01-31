@@ -84,6 +84,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			Streams:             nil,
 			Users:               nil,
 			Token:               token,
+			StreamKey:           strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
 		}
 
 		var streams []model.Stream
@@ -98,12 +99,13 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			if err == nil {
 				eventID = uint(eventIDInt)
 			}
+
 			streams = append(streams, model.Stream{
 				Start:            event.Start,
 				End:              event.End,
 				RoomName:         event.RoomName,
 				LectureHallID:    lectureHall.ID,
-				StreamKey:        strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				StreamKey:        course.StreamKey,
 				TUMOnlineEventID: eventID,
 			})
 		}

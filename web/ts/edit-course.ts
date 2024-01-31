@@ -315,6 +315,28 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             this.uiEditMode = UIEditMode.none;
         },
 
+        regenerateKey() {
+            const url = `/api/stream/${lecture.lectureId}/regenerateKey`;
+            fetch(url, { method: "POST" }).then((res) => {
+                if (!res.ok) {
+                    alert("Couldn't regenerate key.");
+                } else {
+                    window.location.replace(`/admin/course/${lecture.courseId}`);
+                }
+            });
+        },
+
+        restoreKey() {
+            const url = `/api/stream/${lecture.lectureId}/restoreKey`;
+            fetch(url, { method: "POST" }).then((res) => {
+                if (!res.ok) {
+                    alert("Couldn't restore key.");
+                } else {
+                    window.location.replace(`/admin/course/${lecture.courseId}`);
+                }
+            });
+        },
+
         /**
          * Save changes send them to backend and commit change set.
          */
@@ -1067,6 +1089,19 @@ export function deleteCourse(courseID: string) {
                 alert("Couldn't delete course.");
             } else {
                 window.location.replace("/admin");
+            }
+        });
+    }
+}
+
+export function regenerateCourseKeys(courseID: string) {
+    if (confirm("Do you really want to regenerate all stream keys? This will affect all users.")) {
+        const url = `/api/course/${courseID}/regenerateKey`;
+        fetch(url, { method: "POST" }).then((res) => {
+            if (!res.ok) {
+                alert("Couldn't regenerate keys.");
+            } else {
+                window.location.replace(`/admin/course/${courseID}`);
             }
         });
     }

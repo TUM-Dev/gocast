@@ -33,14 +33,14 @@
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
                         <span class="font-semibold">Stream Server:</span>
-                        <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
+                        <span x-text="'{{$ingestBase}}{{$course.Slug}}'+'?secret=' + lectureData.streamKey"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey)"></i>
+                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}'+'?secret=' + lectureData.streamKey)"></i>
                         <br>
                         <span class="font-semibold">Stream Key:</span>
-                        <span x-text="lectureData.courseSlug + '-' + lectureData.lectureId"></span>
+                        <span x-text="lectureData.courseSlug"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard(lectureData.courseSlug + '-' + lectureData.lectureId)"></i>
+                           @click="() => global.copyToClipboard(lectureData.courseSlug)"></i>
                         <br>
                         {{if ne $user.Role 1}}
                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
@@ -368,10 +368,19 @@
                         after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600"></div>
                         <span class="ml-3 text-sm font-medium text-3">Chat Enabled</span>
                     </label>
+                    &nbsp; &nbsp;
+                    <button @click="regenerateKey();"
+                            class="px-6 py-3 text-1 text-white rounded bg-green-500/70 hover:bg-green-500/90 dark:bg-green-500/10 disabled:opacity-20 dark:hover:bg-green-500/20 mr-4">
+                        Regenerate Key
+                    </button>
+                    <button @click="restoreKey();"
+                            class="px-6 py-3 text-1 text-white rounded bg-green-500/70 hover:bg-green-500/90 dark:bg-green-500/10 disabled:opacity-20 dark:hover:bg-green-500/20 mr-4">
+                        Restore Key
+                    </button>
                 </section>
                 <div>
                     <button :disabled="isSaving" @click="discardEdit();"
-                            class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
+                            class="px-4 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
                         Discard Changes
                     </button>
                     <button
