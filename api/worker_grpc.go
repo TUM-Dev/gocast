@@ -137,8 +137,8 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		return nil, err
 	}
 
-	if request.CourseSlug != fmt.Sprintf("%s", course.Slug) {
-		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s", course.Slug), request.CourseSlug)
+	if request.CourseSlug != course.Slug {
+		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", course.Slug, request.CourseSlug)
 	}
 
 	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer()

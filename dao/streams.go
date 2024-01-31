@@ -20,7 +20,7 @@ type StreamsDao interface {
 
 	GetDueStreamsForWorkers() []model.Stream
 	GetDuePremieresForWorkers() []model.Stream
-	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) //deprecated
+	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) // deprecated
 	GetStreamByKeyAndTime(ctx context.Context, key string, time2 time.Time) (stream model.Stream, err error)
 	GetUnitByID(id string) (model.StreamUnit, error)
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)

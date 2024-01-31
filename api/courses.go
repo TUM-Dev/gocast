@@ -1512,7 +1512,7 @@ func (r coursesRoutes) regenerateCourseKey(c *gin.Context) {
 }
 
 type createCourseRequest struct {
-	Access       string //enrolled, public, hidden or logged in
+	Access       string // enrolled, public, hidden or logged in
 	CourseID     string
 	EnChat       bool
 	EnDL         bool
