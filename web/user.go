@@ -2,14 +2,15 @@ package web
 
 import (
 	"context"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
 type userSettingsData struct {

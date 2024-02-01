@@ -7,9 +7,9 @@ package mock_dao
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	dao "github.com/TUM-Dev/gocast/dao"
 	model "github.com/TUM-Dev/gocast/model"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockTokenDao is a mock of TokenDao interface.

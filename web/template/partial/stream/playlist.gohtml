@@ -32,6 +32,15 @@
                             <div
                                 :style="`background-image:url('/api/stream/${elem.streamId}/thumbs/vod')`"
                                  class="h-14 w-24 shrink-0 playlist-thumbnail">
+                                <div :id="`vod-progress-${elem.streamId}`"
+                                     class="tum-live-thumbnail-progress">
+                                    <div>
+                                        <template x-if="elem.progress !== undefined">
+                                            <span :style="`width: ${elem.progress.Percentage()}%`"
+                                                  :class="{'rounded-br-lg': elem.progress.HasProgressOne()}"></span>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                             <i x-show="selected" class="fa-solid fa-play text-2 mr-2"></i>
                             <h2 x-text="elem.streamName" class="text-sm dark:text-white"></h2>

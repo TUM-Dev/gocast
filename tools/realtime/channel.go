@@ -2,8 +2,9 @@ package realtime
 
 import (
 	"errors"
-	"github.com/getsentry/sentry-go"
 	"strings"
+
+	"github.com/getsentry/sentry-go"
 )
 
 // channelPathSep describes the separator of paths in a channel name. e.g 'stream/123' is seperated by channelPathSep

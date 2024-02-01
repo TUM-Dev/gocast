@@ -7,15 +7,18 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
-	"os"
-	"time"
 )
 
-var Cfg Config
-var Loc *time.Location
+var (
+	Cfg Config
+	Loc *time.Location
+)
 
 func LoadConfig() {
 	initCache()

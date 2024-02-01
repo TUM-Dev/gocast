@@ -84,8 +84,8 @@
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
                                    class="tum-live-menu-item">
-                                    <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                        <i class="fa-solid fa-hammer mr-3"></i>
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-solid fa-hammer"></i>
                                     </div>
                                     <p>Admin</p>
                                 </a>
@@ -95,8 +95,8 @@
                                 <button type="button"
                                         class="tum-live-menu-item"
                                         @click="userContext.getChild('themePicker').toggle()">
-                                    <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                        <i class="fa-regular fa-moon mr-3"></i>
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-regular fa-moon"></i>
                                     </div>
                                     <span>Theme</span>
                                     <i class="fa-solid ml-auto"
@@ -106,7 +106,7 @@
                                     <template x-for="[modeId, mode] of Object.entries($store.theme.modes)"
                                               :key="modeId">
                                         <button type="button" tabindex="0"
-                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
+                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-1 px-10"
                                                 :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
                                                 @click="$store.theme.setTheme(modeId)"
                                                 x-text="mode.name">
@@ -116,8 +116,8 @@
                             </div>
                             <a href="/settings"
                                class="tum-live-menu-item">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-solid fa-gear mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-gear"></i>
                                 </div>
                                 <p>Settings</p>
                             </a>
@@ -125,24 +125,24 @@
                             <a href="https://github.com/TUM-Dev/gocast"
                                target="_blank"
                                class="tum-live-menu-item">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-regular fa-comment mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-regular fa-comment"></i>
                                 </div>
                                 <p>Send Feedback</p>
                             </a>
                             <a href="https://github.com/TUM-Dev/gocast/issues/new?assignees=&labels=&template=bug_report.md&title="
                                class="tum-live-menu-item"
                                target="_blank">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-brands fa-github mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-brands fa-github"></i>
                                 </div>
                                 <p>Report problem</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="/logout"
                                class="tum-live-menu-item">
-                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
-                                    <i class="fa-solid fa-sign-out mr-3"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-sign-out"></i>
                                 </div>
                                 <p>Logout</p>
                             </a>
@@ -268,7 +268,8 @@
                                         : 'No upcoming lecture.'"></span>
                                 <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
-                                    <span class="hover:underline">Most recent lecture</span>
+                                    <span class="hover:underline"
+                                          x-text="`Most recent lecture: ${course.LastRecording.FriendlyDateStart()}`"></span>
                                 </a>
                             </div>
                         </section>
@@ -297,12 +298,13 @@
                                x-text="course.Name">
                             </a>
                             <div class="links">
-                                <span x-text="course.LastRecording.ID !== 0
-                                        ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
+                                <span x-text="course.NextLecture.ID !== 0
+                                        ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
                                         : 'No upcoming lecture.'"></span>
                                 <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
-                                    <span class="hover:underline">Most recent lecture</span>
+                                    <span class="hover:underline"
+                                          x-text="`Most recent lecture: ${course.LastRecording.FriendlyDateStart()}`"></span>
                                 </a>
                             </div>
                         </section>
@@ -432,6 +434,11 @@
                                             Hide watched
                                         </button>
                                     {{end}}
+                                    <button type="button" @click="toggleListView()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isListView() }">
+                                        List View
+                                    </button>
                                 </section>
                             </header>
                             <section>
@@ -443,17 +450,18 @@
                                                 <header class="mb-2">
                                                     <h6 class="font-semibold" x-text="group[0].GetMonthName()"></h6>
                                                 </header>
-                                                <section class="grid gap-3 md:grid-cols-2 grid-cols-1"
-                                                         :class="plannedStreams.hasElements()
-                                                                        ? 'xl:grid-cols-4 lg:grid-cols-3'
-                                                                        : 'xl:grid-cols-5 lg:grid-cols-4'">
+                                                <section class="grid gap-3  grid-cols-1"
+                                                         :class="isListView() ? 'xl:grid-cols-1 lg:grid-cols-1 md:grid-cols-1 grid-cols-1' : plannedStreams.hasElements()
+                                                                        ? 'xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2'
+                                                                        : 'xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-2'">
                                                     <template x-for="vod in group" :key="vod.ID">
                                                         <article
                                                                 class="tum-live-stream group sm:col-span-1 col-span-full"
                                                                 @click.outside="vod.Dropdown.toggle(false)">
                                                             <a :href="course.WatchURL(vod.ID)" class="block mb-2">
                                                                 <div :style="`background: url('/api/stream/${vod.ID}/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;`"
-                                                                     class="aspect-video tum-live-thumbnail">
+                                                                     class="aspect-video tum-live-thumbnail"
+                                                                    x-show="!isListView()">
                                                                     <div :id="`vod-progress-${vod.ID}`"
                                                                          class="tum-live-thumbnail-progress">
                                                                         <div>
@@ -476,14 +484,26 @@
                                                                 </div>
                                                             </a>
                                                             <div class="relative flex justify-between px-1 min-h-[32px]">
-                                                                <div>
+                                                                <div class="w-full">
                                                                     <template x-if="vod.HasName()">
-                                                                        <a class="title"
+                                                                        <a class="title overflow-hidden"
                                                                            :href="course.WatchURL(vod.ID)"
-                                                                           x-text="vod.Name"></a>
+                                                                           :title="vod.Name"
+                                                                           x-text="vod.Name">
+
+                                                                        </a>
                                                                     </template>
+                                                                    <template x-if="vod.HasName()">
                                                                     <span class="date text-sm"
                                                                           x-text="vod.FriendlyDateStart()"></span>
+                                                                    </template>
+
+                                                                    <template x-if="!vod.HasName()">
+                                                                        <a :class="isListView() ? 'title overflow-hidden' : ''" :href="course.WatchURL(vod.ID)">
+                                                                        <span class="date" :class="isListView() ? '' : 'text-sm'"   
+                                                                              x-text="vod.FriendlyDateStart()"></span>
+                                                                        </a>
+                                                                    </template>
                                                                 </div>
                                                                 <button type="button" @click="vod.Dropdown.toggle()"
                                                                         class="md:group-hover:opacity-100 md:opacity-0 px-2">
@@ -717,12 +737,13 @@
                                            x-text="course.Name">
                                         </a>
                                         <div class="links">
-                                            <span x-text="course.LastRecording.ID !== 0
-                                                    ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
+                                            <span x-text="course.NextLecture.ID !== 0
+                                                    ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
                                                     : 'No upcoming lecture.'"></span>
                                             <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                                 <i class="fa-solid fa-square-up-right"></i>
-                                                <span class="hover:underline">Most recent lecture</span>
+                                                <span class="hover:underline"
+                                                      x-text="`Most recent lecture: ${course.LastRecording.FriendlyDateStart()}`"></span>
                                             </a>
                                         </div>
                                     </section>

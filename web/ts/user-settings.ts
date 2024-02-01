@@ -7,7 +7,9 @@ export enum UserSetting {
     Name = "name",
     Greeting = "greeting",
     PlaybackSpeeds = "playbackSpeeds",
+    SeekingTime = "seekingTime",
     CustomSpeeds = "customSpeeds",
+    AutoSkip = "autoSkip",
 }
 
 export function updatePreference(t: UserSetting, value: string | boolean | number[]): Promise<string> {
@@ -37,5 +39,5 @@ export function sanitizeInputSpeed(value: number): number {
 
 export function checkInputSpeed(value: number, currentSpeeds: number[]) {
     const defaultSpeeds = [0.25, 0.5, 0.75, 1, 1.5, 1.5, 1.75, 2, 2.5, 3, 3.5];
-    return !defaultSpeeds.includes(value) && !currentSpeeds.includes(value);
+    return !defaultSpeeds.includes(value) && !currentSpeeds.includes(value) && currentSpeeds.length < 3;
 }

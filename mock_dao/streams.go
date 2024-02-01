@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	dao "github.com/TUM-Dev/gocast/dao"
 	model "github.com/TUM-Dev/gocast/model"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockStreamsDao is a mock of StreamsDao interface.

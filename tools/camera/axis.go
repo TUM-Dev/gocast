@@ -3,13 +3,14 @@ package camera
 import (
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/model"
-	uuid "github.com/satori/go.uuid"
 	"strconv"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/model"
+	uuid "github.com/satori/go.uuid"
 )
 
-//AxisCam represents AXIS IP cameras the TUM uses
+// AxisCam represents AXIS IP cameras the TUM uses
 type AxisCam struct {
 	Ip   string
 	Auth string
@@ -17,9 +18,9 @@ type AxisCam struct {
 
 const axisBaseURL = "http://%s"
 
-//NewAxisCam Acts as a constructor for cameras.
-//ip: the ip address of the camera
-//auth: username and password of the camera (e.g. "user:password")
+// NewAxisCam Acts as a constructor for cameras.
+// ip: the ip address of the camera
+// auth: username and password of the camera (e.g. "user:password")
 func NewAxisCam(ip string, auth string) Cam {
 	return &AxisCam{Ip: ip, Auth: auth}
 }
@@ -35,7 +36,7 @@ func (c *AxisCam) TakeSnapshot(outDir string) (filename string, err error) {
 	return filename, err
 }
 
-//SetPreset tells the camera to use a preset specified by presetId
+// SetPreset tells the camera to use a preset specified by presetId
 func (c AxisCam) SetPreset(presetId int) error {
 	_, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/com/ptz.cgi?gotoserverpresetno=%d&camera=1", fmt.Sprintf(axisBaseURL, c.Ip), presetId))
 	if err != nil {
@@ -44,7 +45,7 @@ func (c AxisCam) SetPreset(presetId int) error {
 	return nil
 }
 
-//GetPresets fetches all presets stored on the camera
+// GetPresets fetches all presets stored on the camera
 func (c AxisCam) GetPresets() ([]model.CameraPreset, error) {
 	var presetsForLectureHall []model.CameraPreset
 	resp, err := makeAuthenticatedRequest(&c.Auth, "POST", "action=list&group=root.PTZ.Preset.P0.Position.*.Name", fmt.Sprintf("%s/axis-cgi/param.cgi", fmt.Sprintf(axisBaseURL, c.Ip)))
