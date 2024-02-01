@@ -72,12 +72,12 @@ func (c *Course) ToDTO() CourseDTO {
 }
 
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
-func (c Course) GetUrl() string {
+func (c *Course) GetUrl() string {
 	return fmt.Sprintf("/course/%d/%s/%s", c.Year, c.TeachingTerm, c.Slug)
 }
 
 // GetStreamUrl returns the URL of the stream, e.g. /w/MyStream/42
-func (c Course) GetStreamUrl(stream Stream) string {
+func (c *Course) GetStreamUrl(stream Stream) string {
 	return fmt.Sprintf("/w/%s/%d", c.Slug, stream.ID)
 }
 
@@ -87,7 +87,7 @@ type CameraPresetPreference struct {
 }
 
 // GetCameraPresetPreference retrieves the camera preset preferences
-func (c Course) GetCameraPresetPreference() []CameraPresetPreference {
+func (c *Course) GetCameraPresetPreference() []CameraPresetPreference {
 	var res []CameraPresetPreference
 	err := json.Unmarshal([]byte(c.CameraPresetPreferences), &res)
 	if err != nil {
@@ -111,7 +111,7 @@ type SourcePreference struct {
 }
 
 // GetSourcePreference retrieves the source preferences
-func (c Course) GetSourcePreference() []SourcePreference {
+func (c *Course) GetSourcePreference() []SourcePreference {
 	var res []SourcePreference
 	err := json.Unmarshal([]byte(c.SourcePreferences), &res)
 	if err != nil {
@@ -121,7 +121,7 @@ func (c Course) GetSourcePreference() []SourcePreference {
 }
 
 // GetSourceModeForLectureHall retrieves the source preference for the given lecture hall, returns default SourcePreference if non-existing
-func (c Course) GetSourceModeForLectureHall(id uint) SourceMode {
+func (c *Course) GetSourceModeForLectureHall(id uint) SourceMode {
 	for _, preference := range c.GetSourcePreference() {
 		if preference.LectureHallID == id {
 			return preference.SourceMode
@@ -131,7 +131,7 @@ func (c Course) GetSourceModeForLectureHall(id uint) SourceMode {
 }
 
 // CanUseSource returns whether the specified source type is allowed for the lecture hall id given
-func (c Course) CanUseSource(lectureHallID uint, sourceType string) bool {
+func (c *Course) CanUseSource(lectureHallID uint, sourceType string) bool {
 	mode := c.GetSourceModeForLectureHall(lectureHallID)
 	switch sourceType {
 	case "PRES":
@@ -155,7 +155,7 @@ func (c *Course) SetSourcePreference(pref []SourcePreference) {
 }
 
 // CompareTo used for sorting. Falling back to old java habits...
-func (c Course) CompareTo(other Course) bool {
+func (c *Course) CompareTo(other Course) bool {
 	if !other.HasNextLecture() {
 		return true
 	}
@@ -163,7 +163,7 @@ func (c Course) CompareTo(other Course) bool {
 }
 
 // IsLive returns whether the course has a lecture that is live
-func (c Course) IsLive() bool {
+func (c *Course) IsLive() bool {
 	for _, s := range c.Streams {
 		if s.LiveNow {
 			return true
@@ -173,7 +173,7 @@ func (c Course) IsLive() bool {
 }
 
 // IsNextLectureStartingSoon checks whether the course has a lecture that starts soon
-func (c Course) IsNextLectureStartingSoon() bool {
+func (c *Course) IsNextLectureStartingSoon() bool {
 	for _, s := range c.Streams {
 		if s.IsComingUp() {
 			return true
@@ -183,7 +183,7 @@ func (c Course) IsNextLectureStartingSoon() bool {
 }
 
 // NumStreams returns the number of streams for the course that are VoDs or live
-func (c Course) NumStreams() int {
+func (c *Course) NumStreams() int {
 	res := 0
 	for i := range c.Streams {
 		if c.Streams[i].Recording || c.Streams[i].LiveNow {
@@ -193,7 +193,7 @@ func (c Course) NumStreams() int {
 	return res
 }
 
-func (c Course) StreamTimes() []string {
+func (c *Course) StreamTimes() []string {
 	streamTimes := make([]string, len(c.Streams))
 
 	for i, s := range c.Streams {
@@ -204,7 +204,7 @@ func (c Course) StreamTimes() []string {
 }
 
 // HasRecordings returns whether the course has any recordings.
-func (c Course) HasRecordings() bool {
+func (c *Course) HasRecordings() bool {
 	for i := range c.Streams {
 		if c.Streams[i].Recording {
 			return true
@@ -214,17 +214,17 @@ func (c Course) HasRecordings() bool {
 }
 
 // NumUsers returns the number of users enrolled in the course
-func (c Course) NumUsers() int {
+func (c *Course) NumUsers() int {
 	return len(c.Users)
 }
 
 // NextLectureHasReachedTimeSlot returns whether the courses next lecture arrived at its timeslot
-func (c Course) NextLectureHasReachedTimeSlot() bool {
+func (c *Course) NextLectureHasReachedTimeSlot() bool {
 	return c.GetNextLecture().TimeSlotReached()
 }
 
 // GetNextLecture returns the next lecture of the course
-func (c Course) GetNextLecture() Stream {
+func (c *Course) GetNextLecture() Stream {
 	var earliestLecture Stream
 	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
@@ -238,7 +238,7 @@ func (c Course) GetNextLecture() Stream {
 
 // GetLastRecording returns the most recent lecture of the course
 // Assumes an ascending order of c.Streams
-func (c Course) GetLastRecording() Stream {
+func (c *Course) GetLastRecording() Stream {
 	var lastLecture Stream
 	now := time.Now()
 	for _, s := range c.Streams {
@@ -253,7 +253,7 @@ func (c Course) GetLastRecording() Stream {
 }
 
 // GetLiveStreams returns the current live streams of the course or an empty slice if none are live
-func (c Course) GetLiveStreams() []Stream {
+func (c *Course) GetLiveStreams() []Stream {
 	var res []Stream
 	for _, s := range c.Streams {
 		if s.LiveNow {
@@ -264,7 +264,7 @@ func (c Course) GetLiveStreams() []Stream {
 }
 
 // GetNextLectureDate returns the next lecture date of the course
-func (c Course) GetNextLectureDate() time.Time {
+func (c *Course) GetNextLectureDate() time.Time {
 	// TODO: Refactor this with IsNextLectureSelfStream when the sorting error fixed
 	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
@@ -276,17 +276,17 @@ func (c Course) GetNextLectureDate() time.Time {
 }
 
 // IsNextLectureSelfStream checks whether the next lecture is a self stream
-func (c Course) IsNextLectureSelfStream() bool {
+func (c *Course) IsNextLectureSelfStream() bool {
 	return c.GetNextLecture().IsSelfStream()
 }
 
 // GetNextLectureDateFormatted returns a JavaScript friendly formatted date string
-func (c Course) GetNextLectureDateFormatted() string {
+func (c *Course) GetNextLectureDateFormatted() string {
 	return c.GetNextLectureDate().Format("2006-01-02 15:04:05")
 }
 
 // HasNextLecture checks whether there is another upcoming lecture
-func (c Course) HasNextLecture() bool {
+func (c *Course) HasNextLecture() bool {
 	n := time.Now()
 	for _, s := range c.Streams {
 		if s.Start.After(n) {
@@ -297,12 +297,12 @@ func (c Course) HasNextLecture() bool {
 }
 
 // HasStreams checks whether the lecture has any streams (recorded, live or upcoming) associated to it
-func (c Course) HasStreams() bool {
+func (c *Course) HasStreams() bool {
 	return len(c.Streams) > 0
 }
 
 // GetRecordings returns all recording of this course as streams
-func (c Course) GetRecordings() []Stream {
+func (c *Course) GetRecordings() []Stream {
 	var recordings []Stream
 	for _, s := range c.Streams {
 		if s.Recording {
@@ -313,22 +313,22 @@ func (c Course) GetRecordings() []Stream {
 }
 
 // IsHidden returns true if visibility is set to 'hidden' and false if not
-func (c Course) IsHidden() bool {
+func (c *Course) IsHidden() bool {
 	return c.Visibility == "hidden"
 }
 
 // IsLoggedIn returns true if visibility is set to 'loggedin' and false if not
-func (c Course) IsLoggedIn() bool {
+func (c *Course) IsLoggedIn() bool {
 	return c.Visibility == "loggedin"
 }
 
 // IsEnrolled returns true if visibility is set to 'enrolled' and false if not
-func (c Course) IsEnrolled() bool {
+func (c *Course) IsEnrolled() bool {
 	return c.Visibility == "enrolled"
 }
 
 // AdminJson is the JSON representation of a courses streams for the admin panel
-func (c Course) AdminJson(lhs []LectureHall) []gin.H {
+func (c *Course) AdminJson(lhs []LectureHall) []gin.H {
 	var res []gin.H
 	for _, s := range c.Streams {
 		res = append(res, s.getJson(lhs, c))

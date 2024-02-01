@@ -307,7 +307,7 @@ func (s Stream) Color() string {
 	}
 }
 
-func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
+func (s Stream) getJson(lhs []LectureHall, course *Course) gin.H {
 	var files []gin.H
 	for _, file := range s.Files {
 		files = append(files, gin.H{
