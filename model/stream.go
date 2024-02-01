@@ -64,7 +64,7 @@ type DownloadableVod struct {
 }
 
 // GetVodFiles returns all downloadable files that user can see when using the download dropdown for a stream.
-func (s Stream) GetVodFiles() []DownloadableVod {
+func (s *Stream) GetVodFiles() []DownloadableVod {
 	dFiles := make([]DownloadableVod, 0)
 
 	if s.PlaylistUrl != "" {
@@ -88,7 +88,7 @@ func (s Stream) GetVodFiles() []DownloadableVod {
 	return dFiles
 }
 
-func (s Stream) GetLGThumbnail() (string, error) {
+func (s *Stream) GetLGThumbnail() (string, error) {
 	thumbs := map[string]string{}
 	for _, file := range s.Files {
 		if file.Type == FILETYPE_THUMB_LG_CAM_PRES {
@@ -119,7 +119,7 @@ func (s Stream) GetLGThumbnail() (string, error) {
 	return "", fmt.Errorf("no large thumbnail found")
 }
 
-func (s Stream) GetLGThumbnailForVideoType(videoType VideoType) (string, error) {
+func (s *Stream) GetLGThumbnailForVideoType(videoType VideoType) (string, error) {
 	mapping := map[VideoType]FileType{
 		VideoTypePresentation: FILETYPE_THUMB_LG_PRES,
 		VideoTypeCamera:       FILETYPE_THUMB_LG_CAM,
@@ -138,7 +138,7 @@ func (s Stream) GetLGThumbnailForVideoType(videoType VideoType) (string, error) 
 }
 
 // GetThumbIdForSource returns the id of file that stores the thumbnail sprite for a specific source type.
-func (s Stream) GetThumbIdForSource(source string) uint {
+func (s *Stream) GetThumbIdForSource(source string) uint {
 	var fileType FileType
 	switch source {
 	case "CAM":
@@ -158,67 +158,67 @@ func (s Stream) GetThumbIdForSource(source string) uint {
 }
 
 // GetStartInSeconds returns the number of seconds until the stream starts (or 0 if it has already started or is a vod)
-func (s Stream) GetStartInSeconds() int {
+func (s *Stream) GetStartInSeconds() int {
 	if s.LiveNow || s.Recording {
 		return 0
 	}
 	return int(time.Until(s.Start).Seconds())
 }
 
-func (s Stream) GetName() string {
+func (s *Stream) GetName() string {
 	if s.Name != "" {
 		return s.Name
 	}
 	return fmt.Sprintf("Lecture: %s", s.Start.Format("Jan 2, 2006"))
 }
 
-func (s Stream) IsConverting() bool {
+func (s *Stream) IsConverting() bool {
 	return len(s.TranscodingProgresses) > 0
 }
 
 // IsDownloadable returns true if the stream is a recording and has at least one stream associated with it.
-func (s Stream) IsDownloadable() bool {
+func (s *Stream) IsDownloadable() bool {
 	return s.Recording && (s.PlaylistUrl != "" || s.PlaylistUrlPRES != "" || s.PlaylistUrlCAM != "")
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
-func (s Stream) IsSelfStream() bool {
+func (s *Stream) IsSelfStream() bool {
 	return s.LectureHallID == 0
 }
 
 // IsPast returns whether the stream end time was reached
-func (s Stream) IsPast() bool {
+func (s *Stream) IsPast() bool {
 	return s.End.Before(time.Now()) || s.Ended
 }
 
 // IsComingUp returns whether the stream begins in 30 minutes
-func (s Stream) IsComingUp() bool {
+func (s *Stream) IsComingUp() bool {
 	eligibleForWait := s.Start.Before(time.Now().Add(30*time.Minute)) && time.Now().Before(s.End)
 	return !s.IsPast() && !s.Recording && !s.LiveNow && eligibleForWait
 }
 
 // TimeSlotReached returns whether stream has passed the starting time
-func (s Stream) TimeSlotReached() bool {
+func (s *Stream) TimeSlotReached() bool {
 	// Used to stop displaying the timer when there is less than 1 minute left
 	return time.Now().After(s.Start.Add(-time.Minute)) && time.Now().Before(s.End)
 }
 
 // IsStartingInOneDay returns whether the stream starts within 1 day
-func (s Stream) IsStartingInOneDay() bool {
+func (s *Stream) IsStartingInOneDay() bool {
 	return s.Start.After(time.Now().Add(24 * time.Hour))
 }
 
 // IsStartingInMoreThanOneDay returns whether the stream starts in at least 2 days
-func (s Stream) IsStartingInMoreThanOneDay() bool {
+func (s *Stream) IsStartingInMoreThanOneDay() bool {
 	return s.Start.After(time.Now().Add(48 * time.Hour))
 }
 
 // IsPlanned returns whether the stream is planned or not
-func (s Stream) IsPlanned() bool {
+func (s *Stream) IsPlanned() bool {
 	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
 }
 
-func (s Stream) HLSUrl() string {
+func (s *Stream) HLSUrl() string {
 	hls := s.PlaylistUrl
 	if s.StartOffset > 0 {
 		hls = fmt.Sprintf("%s?wowzaplaystart=%d&wowzaplayduration=%d", s.PlaylistUrl, s.StartOffset, s.EndOffset)
@@ -232,7 +232,7 @@ type silence struct {
 	End   uint `json:"end"`
 }
 
-func (s Stream) GetSilencesJson() string {
+func (s *Stream) GetSilencesJson() string {
 	forServe := make([]silence, len(s.Silences))
 	for i := range forServe {
 		forServe[i] = silence{
@@ -246,7 +246,7 @@ func (s Stream) GetSilencesJson() string {
 	return "[]"
 }
 
-func (s Stream) GetDescriptionHTML() string {
+func (s *Stream) GetDescriptionHTML() string {
 	unsafe := blackfriday.Run([]byte(s.Description))
 	html := bluemonday.
 		UGCPolicy().
@@ -255,11 +255,11 @@ func (s Stream) GetDescriptionHTML() string {
 	return string(html)
 }
 
-func (s Stream) FriendlyDate() string {
+func (s *Stream) FriendlyDate() string {
 	return s.Start.Format("Mon 02.01.2006")
 }
 
-func (s Stream) FriendlyTime() string {
+func (s *Stream) FriendlyTime() string {
 	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
 }
 
@@ -272,16 +272,16 @@ func ParsableTimeFormat(time time.Time) string {
 }
 
 // ParsableStartTime returns a JavaScript friendly formatted date string
-func (s Stream) ParsableStartTime() string {
+func (s *Stream) ParsableStartTime() string {
 	return ParsableTimeFormat(s.Start)
 }
 
 // ParsableLiveNowTimestamp returns a JavaScript friendly formatted date string
-func (s Stream) ParsableLiveNowTimestamp() string {
+func (s *Stream) ParsableLiveNowTimestamp() string {
 	return ParsableTimeFormat(s.LiveNowTimestamp)
 }
 
-func (s Stream) FriendlyNextDate() string {
+func (s *Stream) FriendlyNextDate() string {
 	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
@@ -292,7 +292,7 @@ func (s Stream) FriendlyNextDate() string {
 }
 
 // Color returns the ui color of the stream that indicates it's status
-func (s Stream) Color() string {
+func (s *Stream) Color() string {
 	if s.Recording {
 		if s.Private {
 			return "gray-500"
@@ -307,7 +307,7 @@ func (s Stream) Color() string {
 	}
 }
 
-func (s Stream) getJson(lhs []LectureHall, course *Course) gin.H {
+func (s *Stream) getJson(lhs []LectureHall, course *Course) gin.H {
 	var files []gin.H
 	for _, file := range s.Files {
 		files = append(files, gin.H{
@@ -363,7 +363,7 @@ func (s Stream) getJson(lhs []LectureHall, course *Course) gin.H {
 	}
 }
 
-func (s Stream) Attachments() []File {
+func (s *Stream) Attachments() []File {
 	attachments := make([]File, 0)
 	for _, f := range s.Files {
 		if f.Type == FILETYPE_ATTACHMENT {
@@ -387,8 +387,8 @@ type StreamDTO struct {
 	Duration    int32
 }
 
-func (s Stream) ToDTO() StreamDTO {
-	downloads := []DownloadableVod{}
+func (s *Stream) ToDTO() StreamDTO {
+	var downloads []DownloadableVod
 	if s.IsDownloadable() {
 		downloads = s.GetVodFiles()
 	}
@@ -412,7 +412,7 @@ func (s Stream) ToDTO() StreamDTO {
 }
 
 // FirstSilenceAsProgress returns the end of the first silence as a quotient of the length of the stream
-func (s Stream) FirstSilenceAsProgress() float64 {
+func (s *Stream) FirstSilenceAsProgress() float64 {
 	if len(s.Silences) == 0 {
 		return 0
 	}

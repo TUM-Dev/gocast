@@ -224,7 +224,7 @@ func (c *Course) NextLectureHasReachedTimeSlot() bool {
 }
 
 // GetNextLecture returns the next lecture of the course
-func (c *Course) GetNextLecture() Stream {
+func (c *Course) GetNextLecture() *Stream {
 	var earliestLecture Stream
 	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
@@ -233,23 +233,23 @@ func (c *Course) GetNextLecture() Stream {
 			earliestLecture = s
 		}
 	}
-	return earliestLecture
+	return &earliestLecture
 }
 
 // GetLastRecording returns the most recent lecture of the course
 // Assumes an ascending order of c.Streams
-func (c *Course) GetLastRecording() Stream {
+func (c *Course) GetLastRecording() *Stream {
 	var lastLecture Stream
 	now := time.Now()
 	for _, s := range c.Streams {
 		if s.Start.After(now) {
-			return lastLecture
+			return &lastLecture
 		}
 		if s.Recording {
 			lastLecture = s
 		}
 	}
-	return lastLecture
+	return &lastLecture
 }
 
 // GetLiveStreams returns the current live streams of the course or an empty slice if none are live
