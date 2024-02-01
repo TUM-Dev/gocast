@@ -86,21 +86,21 @@
                         </label>
                         <table>
                             <tbody>
-                                <template x-for="contact in course.contacts">
-                                    <tr class="pl-3" :class="contact.main_contact?'text-green-400':'text-3'">
-                                        <td class="px-2">
-                                            <label>
-                                                <i class="fa fa-envelope" x-show="contact.main_contact"></i>
-                                                <input class="w-auto" type="checkbox" x-model="contact.main_contact">
-                                            </label>
-                                        </td>
-                                        <td class="px-2" x-text="contact.role + ':'"></td>
-                                        <td x-text="contact.first_name + ' ' + contact.last_name" class="px-2"></td>
-                                        <td class="px-2">
-                                            <a :href="'mailto:'+contact.email" x-text="contact.email"></a>
-                                        </td>
-                                    </tr>
-                                </template>
+                            <template x-for="contact in admin.filterUniqueContacts(course.contacts)">
+                                <tr class="pl-3" :class="contact.main_contact ? 'text-green-400' : 'text-3'">
+                                    <td class="px-2">
+                                        <label>
+                                            <i class="fa fa-envelope" x-show="contact.main_contact"></i>
+                                            <input class="w-auto" type="checkbox" x-model="contact.main_contact">
+                                        </label>
+                                    </td>
+                                    <td class="px-2" x-text="contact.role + ':'"></td>
+                                    <td x-text="contact.first_name + ' ' + contact.last_name" class="px-2"></td>
+                                    <td class="px-2">
+                                        <a :href="'mailto:' + contact.email" x-text="contact.email"></a>
+                                    </td>
+                                </tr>
+                            </template>
                             </tbody>
                         </table>
                         <template x-for="event in course.events">
