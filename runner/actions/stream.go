@@ -3,6 +3,8 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/pkg/server"
+	"github.com/tum-dev/gocast/runner/protobuf"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -88,7 +90,24 @@ func (a *ActionProvider) StreamAction() *Action {
 					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
 					continue
 				}
+				con, err := server.Instance.DialIn()
+				if err != nil {
+					log.Error("Error in dialing in")
+				}
+				_, err = con.NotifyStreamStarted(context.Background(), &protobuf.StreamStarted{})
+				if err != nil {
+					return nil, err
+				}
 				err = c.Wait()
+				con, err = server.Instance.DialIn()
+				if err != nil {
+					log.Error("Error in dialing in")
+				}
+				_, err = con.NotifyStreamEnded(context.Background(), &protobuf.StreamEnded{})
+				if err != nil {
+					return nil, err
+				}
+				// TODO: Check if correct end time
 				if err != nil {
 					log.Warn("stream command exited", "err", err)
 					time.Sleep(5 * time.Second) // little backoff to prevent dossing source

@@ -22,11 +22,11 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	ctx = contextFromStreamReq(req, ctx)
 	ctx = context.WithValue(ctx, "URL", "")
 	a := []*actions.Action{
-		r.actions.PrepareAction(),
-		r.actions.StreamAction(),
-		r.actions.TranscodeAction(),
+		r.Actions.PrepareAction(),
+		r.Actions.StreamAction(),
+		r.Actions.TranscodeAction(),
 		//r.actions.GenerateVideoThumbnail(),
-		r.actions.UploadAction(),
+		r.Actions.UploadAction(),
 	}
 	jobID := r.AddJob(ctx, a)
 	r.log.Info("job added", "jobID", jobID)
@@ -36,7 +36,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 
 func (r *Runner) RequestStreamEnd(ctx context.Context, request *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
 	r.ReadDiagnostics(5)
-	if job, ok := r.jobs[request.GetJobID()]; ok {
+	if job, ok := r.Jobs[request.GetJobID()]; ok {
 		job.Cancel(errors.New("canceled by user request"), actions.StreamAction, actions.UploadAction)
 		return &protobuf.StreamEndResponse{}, nil
 	}
@@ -45,7 +45,7 @@ func (r *Runner) RequestStreamEnd(ctx context.Context, request *protobuf.StreamE
 
 func (r *Runner) GenerateLivePreview(ctx context.Context, request *protobuf.LivePreviewRequest) (*protobuf.LivePreviewResponse, error) {
 	r.ReadDiagnostics(5)
-	if job, ok := r.jobs[request.GetRunnerID()]; ok {
+	if job, ok := r.Jobs[request.GetRunnerID()]; ok {
 		job.Cancel(errors.New("canceled by user request"), actions.StreamAction)
 		return &protobuf.LivePreviewResponse{}, nil
 	}
@@ -55,7 +55,7 @@ func (r *Runner) GenerateLivePreview(ctx context.Context, request *protobuf.Live
 
 func (r *Runner) GenerateSectionImages(ctx context.Context, request *protobuf.GenerateSectionImageRequest) (*protobuf.Status, error) {
 	r.ReadDiagnostics(5)
-	if job, ok := r.jobs[request.PlaylistURL]; ok {
+	if job, ok := r.Jobs[request.PlaylistURL]; ok {
 		job.Cancel(errors.New("canceled by user request"), actions.StreamAction)
 		return &protobuf.Status{Ok: true}, nil
 	}
