@@ -27,7 +27,7 @@ const (
 	Panasonic
 )
 
-func (l LectureHall) NumSources() int {
+func (l *LectureHall) NumSources() int {
 	num := 0
 	if l.CombIP != "" {
 		num++

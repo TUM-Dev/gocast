@@ -68,7 +68,7 @@ type Chat struct {
 }
 
 // getColors returns all colors chat names are mapped to
-func (c Chat) getColors() []string {
+func getColors() []string {
 	return []string{"#368bd6", "#ac3ba8", "#0dbd8b", "#e64f7a", "#ff812d", "#2dc2c5", "#5c56f5", "#74d12c"}
 }
 
@@ -103,7 +103,7 @@ func (c *Chat) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 
 	// set chat color:
-	colors := c.getColors()
+	colors := getColors()
 	userIdInt, err := strconv.Atoi(c.UserID)
 	if err != nil {
 		c.Color = colors[0]
@@ -135,6 +135,12 @@ func (c *Chat) AfterFind(_ *gorm.DB) (err error) {
 	return nil
 }
 
+// getUrlHtml returns the html for urls, the <a> tag includes target="_blank" and rel="nofollow noopener"
+func getUrlHtml(url string) string {
+	h := blackfriday.Run([]byte(url))
+	return strings.TrimSuffix(string(chatHTMLPolicy.SanitizeBytes(h)), "\n")
+}
+
 // SanitiseMessage sets chat.SanitizedMessage to the sanitized html version of chat.Message, including <a> tags for links
 func (c *Chat) SanitiseMessage() {
 	msg := html.EscapeString(c.Message)
@@ -142,7 +148,7 @@ func (c *Chat) SanitiseMessage() {
 	newMsg := ""
 	for _, urlIndex := range urls {
 		newMsg += msg[:urlIndex[0]]
-		newMsg += c.getUrlHtml(msg[urlIndex[0]:urlIndex[1]])
+		newMsg += getUrlHtml(msg[urlIndex[0]:urlIndex[1]])
 	}
 	if len(urls) > 0 {
 		newMsg += msg[urls[len(urls)-1][1]:]
@@ -150,10 +156,4 @@ func (c *Chat) SanitiseMessage() {
 		newMsg = msg
 	}
 	c.SanitizedMessage = newMsg
-}
-
-// getUrlHtml returns the html for urls, the <a> tag includes target="_blank" and rel="nofollow noopener"
-func (c Chat) getUrlHtml(url string) string {
-	h := blackfriday.Run([]byte(url))
-	return strings.TrimSuffix(string(chatHTMLPolicy.SanitizeBytes(h)), "\n")
 }
