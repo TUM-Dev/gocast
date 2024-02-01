@@ -22,7 +22,7 @@ type InfoPage struct {
 	Type       InfoPageType `gorm:"not null; default: 1"`
 }
 
-func (mt InfoPage) Render() template.HTML {
+func (mt *InfoPage) Render() template.HTML {
 	var renderedContent template.HTML = ""
 	switch mt.Type {
 	case INFOPAGE_MARKDOWN:

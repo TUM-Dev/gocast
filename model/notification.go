@@ -43,6 +43,6 @@ func (n *Notification) AfterFind(_ *gorm.DB) error {
 	return nil
 }
 
-func (n Notification) GetBodyForGoTemplate() template.HTML {
+func (n *Notification) GetBodyForGoTemplate() template.HTML {
 	return template.HTML(n.SanitizedBody)
 }
