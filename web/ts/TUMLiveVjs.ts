@@ -275,6 +275,12 @@ export const skipSilence = function (options) {
                 }, intervalMillis);
             });
 
+            // Triggered when user seeks
+            players[j].on("seeked", () => {
+                toggleSkipSilence();
+            });
+
+            // Updates if skip silence button be shown
             const toggleSkipSilence = () => {
                 const ctime = players[j].currentTime();
                 let shouldShow = false;
