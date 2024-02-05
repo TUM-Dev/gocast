@@ -83,7 +83,7 @@ func (a *ActionProvider) StreamAction() *Action {
 				c := exec.CommandContext(ctx, "ffmpeg", strings.Split(cmd, " ")...)
 				c.Stderr = os.Stderr
 				log.Info("constructed stream command", "cmd", c.String())
-				resp := a.Server.NotifyStreamStarted(&protobuf.StreamStarted{StreamID: uint32(streamID)})
+				resp := a.Server.NotifyStreamStarted(ctx, &protobuf.StreamStarted{StreamID: uint32(streamID)})
 				if resp.Ok != true {
 
 				}

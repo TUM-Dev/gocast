@@ -2,9 +2,6 @@ package main
 
 import (
 	"github.com/tum-dev/gocast/runner"
-	"github.com/tum-dev/gocast/runner/config"
-	"github.com/tum-dev/gocast/runner/pkg/logging"
-	"github.com/tum-dev/gocast/runner/pkg/server"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -16,21 +13,17 @@ var V = "dev"
 
 func main() {
 	// ...
-	logger := logging.GetLogger(V)
 
 	// Init EnvConfig
-	config.Init(logger)
-	server.InitServer(config.Cfg, logger)
-
-	runner.InitRunner(V, server.Instance.GRPCServer)
-	go runner.Instance.Run()
+	r := runner.NewRunner(V)
+	go r.Run()
 
 	shouldShutdown := false // set to true once we receive a shutdown signal
 
 	currentCount := 0
 	go func() {
 		for {
-			currentCount = <-runner.Instance.JobCount // wait for a job to finish
+			currentCount = <-r.JobCount // wait for a job to finish
 			slog.Info("current job count", "count", currentCount)
 			if shouldShutdown && currentCount == 0 { // if we should shut down and no jobs are running, exit.
 				slog.Info("No jobs left, shutting down")
@@ -44,7 +37,7 @@ func main() {
 	s := <-osSignal
 	slog.Info("Received signal", "signal", s)
 	shouldShutdown = true
-	runner.Instance.Drain()
+	r.Drain()
 
 	if currentCount == 0 {
 		slog.Info("No jobs left, shutting down")

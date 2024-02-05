@@ -116,8 +116,48 @@ func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
 	})
 }
 
-func (r *Runner) NotifyStreamStarted(started *protobuf.StreamStarted) protobuf.Status {
+func (r *Runner) NotifyStreamStarted(ctx context.Context, started *protobuf.StreamStarted) protobuf.Status {
 	//TODO implement me
 	r.log.Warn("Got called with request", "request", started)
 	return protobuf.Status{Ok: true}
+}
+
+func (r *Runner) Register(ctx context.Context, request *protobuf.RegisterRequest) protobuf.RegisterResponse {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *Runner) Heartbeat(ctx context.Context, request *protobuf.HeartbeatRequest) protobuf.HeartbeatResponse {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *Runner) NotifyVoDUploadFinished(ctx context.Context, request *protobuf.VoDUploadFinished) protobuf.Status {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *Runner) NotifySilenceResults(ctx context.Context, request *protobuf.SilenceResults) protobuf.Status {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *Runner) NotifyStreamEnded(ctx context.Context, request *protobuf.StreamEnded) protobuf.Status {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *Runner) NotifyThumbnailsFinished(ctx context.Context, request *protobuf.ThumbnailsFinished) protobuf.Status {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *Runner) NotifyTranscodingFailure(ctx context.Context, request *protobuf.TranscodingFailureNotification) protobuf.Status {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *Runner) GetStreamInfoForUpload(ctx context.Context, request *protobuf.StreamInfoForUploadRequest) protobuf.StreamInfoForUploadResponse {
+	//TODO implement me
+	panic("implement me")
 }
