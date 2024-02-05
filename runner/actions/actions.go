@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tum-dev/gocast/runner/ServerInterface"
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/ServerInterface"
 	"log/slog"
 	"path"
 )
