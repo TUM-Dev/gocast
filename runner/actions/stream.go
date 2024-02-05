@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/protobuf"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -82,6 +83,10 @@ func (a *ActionProvider) StreamAction() *Action {
 				c := exec.CommandContext(ctx, "ffmpeg", strings.Split(cmd, " ")...)
 				c.Stderr = os.Stderr
 				log.Info("constructed stream command", "cmd", c.String())
+				resp := a.Server.NotifyStreamStarted(&protobuf.StreamStarted{StreamID: uint32(streamID)})
+				if resp.Ok != true {
+
+				}
 				err = c.Start()
 				if err != nil {
 					log.Warn("streamAction: ", err)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/caarlos0/env"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"github.com/tum-dev/gocast/runner/actions"
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/logging"
@@ -13,10 +12,8 @@ import (
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"github.com/tum-dev/gocast/runner/vmstat"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
 	"net"
 	"os"
@@ -50,7 +47,6 @@ type Runner struct {
 	stats *vmstat.VmStat
 
 	StartTime time.Time
-
 	protobuf.UnimplementedToRunnerServer
 }
 
@@ -90,6 +86,7 @@ func NewRunner(v string) *Runner {
 
 func (r *Runner) Run() {
 	r.log.Info("Running!")
+	r.actions.Server = r
 	if r.cfg.Port == 0 {
 		r.log.Info("Getting free port")
 		p, err := netutil.GetFreePort()
@@ -102,7 +99,12 @@ func (r *Runner) Run() {
 	r.log.Info("using port", "port", r.cfg.Port)
 
 	go r.InitApiGrpc()
-	go r.hlsServer.Start()
+	go func() {
+		err := r.hlsServer.Start()
+		if err != nil {
+
+		}
+	}()
 
 	r.RegisterWithGocast(5)
 	r.log.Info("successfully connected to gocast")
@@ -135,111 +137,6 @@ func (r *Runner) InitApiGrpc() {
 		os.Exit(1)
 	}
 
-}
-
-const registerRetries = 5
-
-func (r *Runner) RegisterWithGocast(retries int) {
-	r.log.Debug("connecting with gocast", slog.Group("conn", "host", r.cfg.GocastServer, "retriesLeft", retries))
-	if retries == 0 {
-		r.log.Error("no more retries left, can't connect to gocast")
-		os.Exit(1)
-	}
-	con, err := r.dialIn()
-	if err != nil {
-		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", registerRetries-retries)
-		time.Sleep(time.Second * time.Duration(registerRetries-retries))
-		r.RegisterWithGocast(retries - 1)
-		r.ReadDiagnostics(5)
-		return
-	}
-	_, err = con.Register(context.Background(), &protobuf.RegisterRequest{Hostname: r.cfg.Hostname, Port: int32(r.cfg.Port)})
-	if err != nil {
-		r.log.Warn("error registering with gocast", "error", err, "sleeping(s)", registerRetries-retries)
-		time.Sleep(time.Second * time.Duration(registerRetries-retries))
-		r.RegisterWithGocast(retries - 1)
-		r.ReadDiagnostics(5)
-		return
-	}
-	r.ReadDiagnostics(5)
-}
-
-// dialIn connects to manager instance and returns a client
-func (r *Runner) dialIn() (protobuf.FromRunnerClient, error) {
-	credentials := insecure.NewCredentials()
-	conn, err := grpc.Dial(r.cfg.GocastServer, grpc.WithTransportCredentials(credentials))
-	if err != nil {
-		return nil, err
-	}
-	return protobuf.NewFromRunnerClient(conn), nil
-}
-
-func (r *Runner) ReadDiagnostics(retries int) {
-
-	r.log.Info("Started Sending Diagnostic Data", "retriesLeft", retries)
-
-	if retries == 0 {
-		return
-	}
-	err := r.stats.Update()
-	if err != nil {
-		r.ReadDiagnostics(retries - 1)
-		return
-	}
-	cpu := r.stats.GetCpuStr()
-	memory := r.stats.GetMemStr()
-	disk := r.stats.GetDiskStr()
-	uptime := time.Now().Sub(r.StartTime).String()
-	con, err := r.dialIn()
-	if err != nil {
-		log.Warn("couldn't dial into server", "error", err, "sleeping(s)", 5-retries)
-		time.Sleep(time.Second * time.Duration(5-retries))
-		r.ReadDiagnostics(retries - 1)
-		return
-	}
-
-	_, err = con.Heartbeat(context.Background(), &protobuf.HeartbeatRequest{
-		Hostname: r.cfg.Hostname,
-		Port:     int32(r.cfg.Port),
-		LastSeen: timestamppb.New(time.Now()),
-		Status:   "Alive",
-		Workload: uint32(len(r.jobs)),
-		CPU:      cpu,
-		Memory:   memory,
-		Disk:     disk,
-		Uptime:   uptime,
-		Version:  r.cfg.Version,
-	})
-	if err != nil {
-		r.log.Warn("Error sending the heartbeat", "error", err, "sleeping(s)", 5-retries)
-		time.Sleep(time.Second * time.Duration(5-retries))
-		r.ReadDiagnostics(retries - 1)
-		return
-	}
-	r.log.Info("Successfully sent heartbeat", "retriesLeft", retries)
-}
-
-func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
-	r.log.Info("Started Requesting Self Stream", "retriesLeft", retries)
-
-	streamKey := ctx.Value("streamkey").(string)
-
-	if retries == 0 {
-		r.log.Error("no more retries left, can't start Self Stream")
-		return
-	}
-
-	con, err := r.dialIn()
-	if err != nil {
-		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", 5-retries)
-		time.Sleep(time.Second * time.Duration(5-retries))
-		r.RequestSelfStream(ctx, retries-1)
-		return
-	}
-
-	_, err = con.RequestSelfStream(context.Background(), &protobuf.SelfStreamRequest{
-		StreamKey: streamKey,
-	})
 }
 
 type Job struct {

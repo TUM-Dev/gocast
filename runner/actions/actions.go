@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/ServerInterface"
 	"github.com/tum-dev/gocast/runner/config"
 	"log/slog"
 	"path"
@@ -17,6 +18,7 @@ var (
 type ActionProvider struct {
 	Log        *slog.Logger
 	Cmd        config.CmdList
+	Server     ServerInterface.ServerInf
 	SegmentDir string // for storing live hls segments locally. This should be fast storage (e.g. ssd).
 	RecDir     string // for storing recordings locally.
 	MassDir    string // for storing final files like Thumbnails, mp4s, ... Mass storage like Ceph.
