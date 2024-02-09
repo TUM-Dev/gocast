@@ -726,14 +726,7 @@ func (r usersRoutes) updateSeekingTime(c *gin.Context) {
 }
 
 func (r usersRoutes) updateAutoSkip(c *gin.Context) {
-	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	if u == nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
-		})
-		return
-	}
+	u := getUserFromContext(c)
 	var req struct{ Value model.AutoSkipSetting }
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
@@ -758,15 +751,7 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 
 // updateDefaultMode updates whether the default stream mode for a user should be "beta"
 func (r usersRoutes) updateDefaultMode(c *gin.Context) {
-	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	if u == nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
-		})
-		return
-	}
-
+	u := getUserFromContext(c)
 	var req struct{ Value model.DefaultModeSetting }
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
