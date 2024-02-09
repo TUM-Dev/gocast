@@ -59,6 +59,7 @@ const (
 	SeekingTime
 	UserDefinedSpeeds
 	AutoSkip
+	DefaultMode
 )
 
 type UserSetting struct {
@@ -216,6 +217,25 @@ func (u User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
 		}
 	}
 	return AutoSkipSetting{Enabled: false}, nil
+}
+
+// DefaultModeSetting wraps whether the default stream mode for the user is beta
+type DefaultModeSetting struct {
+	Beta bool `json:"beta"`
+}
+
+func (u User) GetDefaultMode() (DefaultModeSetting, error) {
+	for _, setting := range u.Settings {
+		if setting.Type == DefaultMode {
+			var m DefaultModeSetting
+			err := json.Unmarshal([]byte(setting.Value), &m)
+			if err != nil {
+				return DefaultModeSetting{Beta: false}, err
+			}
+			return m, nil
+		}
+	}
+	return DefaultModeSetting{Beta: false}, nil
 }
 
 type argonParams struct {

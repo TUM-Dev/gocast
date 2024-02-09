@@ -110,11 +110,18 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
 	}
-	if _, dvr := c.GetQuery("dvr"); dvr {
+	// Check if user wants to use beta stream mode
+	mode, err := tumLiveContext.User.GetDefaultMode()
+	if err != nil {
+		logger.Error("Couldn't decode user setting", "err", err)
+	}
+
+	if _, dvr := c.GetQuery("dvr"); dvr || mode.Beta {
 		data.DVR = "?dvr"
 	} else {
 		data.DVR = ""
 	}
+
 	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = data.Unit.GetDescriptionHTML()
