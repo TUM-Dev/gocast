@@ -124,11 +124,11 @@ func getInfoForAudioNormalization(ctx context.Context, cmdFmt string, filename s
 	c.Stderr = os.Stderr
 	stdoutPipe, err := c.StdoutPipe()
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	err = c.Start()
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	var output bytes.Buffer
@@ -142,15 +142,15 @@ func getInfoForAudioNormalization(ctx context.Context, cmdFmt string, filename s
 
 	err = c.Wait()
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	info := &InfoForAudioNormalization{}
 	err = extractAndParseJSON(output.String(), info)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
-	return info, nil
+	return info, err
 }
 
 func extractAndParseJSON(output string, info *InfoForAudioNormalization) error {
