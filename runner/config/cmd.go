@@ -13,7 +13,7 @@ type CmdList struct {
 	SeparateAudioFast string `Default:"-i %v -vn -c:a copy %v"`
 	SeparateAudio     string `Default:"-i %v -vn %v"`
 	AudioNormalize1   string `Default:"-i %v -nostats -y -af loudnorm=I=-23:TP=-2:LRA=7:print_format=json -f null -"`
-	AudioNormalize2   string `Default:"-i %v -af loudnorm=I=-23:TP=-2:LRA=7:measured_i=%v:measured_tp=%v:measured_lra=%v:measured_thresh=%v:offset=%v:linear=true:print_format=summary -c:v copy -c:a aac %v"`
+	AudioNormalize2   string `Default:"-i %v -af loudnorm=I=-23:TP=-2:LRA=7:measured_i=%v:measured_tp=%v:measured_lra=%v:measured_thresh=%v:offset=%v:linear=true:print_format=summary -c:a aac -c:v libx264 -crf 0 -probesize 100M -analyzeduration 250M %v"`
 	Transcoding       string `Default:"-i %v -c:v libx264 %v"`
 }
 
