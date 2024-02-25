@@ -91,6 +91,7 @@ func (a *ActionProvider) TranscodeAction() *Action {
 			if info != nil {
 				cmd = fmt.Sprintf(a.Cmd.AudioNormalize2, filenames,
 					info.InputI, info.InputTp, info.InputLra, info.InputThresh, info.TargetOffset, outputName)
+				log.Info("Transcoding with audio normalization", "files", files)
 			}
 			c := exec.CommandContext(ctx, "ffmpeg", strings.Split(cmd, " ")...)
 			c.Stderr = os.Stderr
