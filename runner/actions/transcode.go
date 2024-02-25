@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -126,6 +127,8 @@ func getInfoForAudioNormalization(ctx context.Context, cmdFmt string, filename s
 	if err != nil {
 		return nil, err
 	}
+	defer stdoutPipe.Close()
+
 	err = c.Start()
 	if err != nil {
 		return nil, err
@@ -133,7 +136,12 @@ func getInfoForAudioNormalization(ctx context.Context, cmdFmt string, filename s
 
 	var output bytes.Buffer
 	scanner := bufio.NewScanner(stdoutPipe)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() { // Reads the output from FFmpeg
+		defer wg.Done()
 		for scanner.Scan() {
 			line := scanner.Text()
 			output.WriteString(line + "\n")
@@ -144,6 +152,8 @@ func getInfoForAudioNormalization(ctx context.Context, cmdFmt string, filename s
 	if err != nil {
 		return nil, err
 	}
+
+	wg.Wait()
 
 	info := &InfoForAudioNormalization{}
 	err = extractAndParseJSON(output.String(), info)
