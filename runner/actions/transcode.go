@@ -75,7 +75,7 @@ func (a *ActionProvider) TranscodeAction() *Action {
 				return ctx, err
 			}
 			err = c.Wait()
-			return ctx, err
+			return context.WithValue(ctx, "outputFilename", outputName), err
 		},
 	}
 }
