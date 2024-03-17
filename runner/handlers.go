@@ -25,6 +25,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 		r.actions.PrepareAction(),
 		r.actions.StreamAction(),
 		r.actions.TranscodeAction(),
+		r.actions.SilenceDetectAction(),
 		//r.actions.GenerateVideoThumbnail(),
 		r.actions.UploadAction(),
 	}
