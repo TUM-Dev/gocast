@@ -21,6 +21,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	ctx = context.Background()
 	ctx = contextFromStreamReq(req, ctx)
 	ctx = context.WithValue(ctx, "URL", "")
+	ctx = context.WithValue(ctx, "Hostname", r.cfg.Hostname)
 	a := []*actions.Action{
 		r.actions.PrepareAction(),
 		r.actions.StreamAction(),

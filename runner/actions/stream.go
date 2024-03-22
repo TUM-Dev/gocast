@@ -30,6 +30,10 @@ func (a *ActionProvider) StreamAction() *Action {
 			// files will contain all files that were created during the stream
 			var files []string
 
+			hostname, ok := ctx.Value("Hostname").(string)
+			if !ok {
+				return ctx, fmt.Errorf("%w: context doesn't contain hostname", ErrRequiredContextValNotFound)
+			}
 			streamID, ok := ctx.Value("stream").(uint64)
 			if !ok {
 				return ctx, fmt.Errorf("%w: context doesn't contain stream", ErrRequiredContextValNotFound)
@@ -52,20 +56,25 @@ func (a *ActionProvider) StreamAction() *Action {
 			}
 			log.Info("streaming", "source", source, "end", time.Now().Second()+end.Second())
 
-			endingTime := time.Now().Add(time.Second * time.Duration(end.Second()))
-			log.Info("streaming until", "end", endingTime)
+			//endingTime := time.Now().Add(time.Second * time.Duration(end.Second()))
+			log.Info("streaming until", "end", end)
 
 			streamAttempt := 0
-			for time.Now().Before(endingTime) && ctx.Err() == nil {
+			for time.Now().Before(end) && ctx.Err() == nil {
 				streamAttempt++
 				filename := filepath.Join(a.GetRecDir(courseID, streamID, version), fmt.Sprintf("%d.ts", streamAttempt))
 				files = append(files, filename)
-				livePlaylist := filepath.Join(a.GetLiveDir(courseID, streamID, version), endingTime.Format("15-04-05"), "playlist.m3u8")
-				err := os.Mkdir(a.GetLiveDir(courseID, streamID, version)+"/"+endingTime.Format("15-04-05"), 0700)
+				livePlaylist := filepath.Join(a.GetLiveDir(courseID, streamID, version), end.Format("15-04-05"), "playlist.m3u8")
+				_, err := os.Stat(a.GetLiveDir(courseID, streamID, version) + "/" + end.Format("15-04-05"))
 				if err != nil {
-					log.Warn("streamAction: stream folder couldn't be created", err)
-					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
-					continue
+					if os.IsNotExist(err) {
+						err := os.Mkdir(a.GetLiveDir(courseID, streamID, version)+"/"+end.Format("15-04-05"), 0700)
+						if err != nil {
+							log.Warn("streamAction: stream folder couldn't be created", err)
+							time.Sleep(5 * time.Second) // little backoff to prevent dossing source
+							continue
+						}
+					}
 				}
 
 				src := ""
@@ -77,15 +86,25 @@ func (a *ActionProvider) StreamAction() *Action {
 					src += "-re" // read input at native framerate, e.g. when streaming a file in realtime
 				}
 
+				log.Info("streaming", "source", source, "end", time.Now().Second()+end.Second())
+
 				//changing the end variable from a date to a duration and adding the duration to the current time
-				cmd := fmt.Sprintf(a.Cmd.Stream, src, time.Until(endingTime).Seconds(), source, filename, filepath.Join(a.GetLiveDir(courseID, streamID, version), endingTime.Format("15-04-05")), livePlaylist)
+				cmd := fmt.Sprintf(a.Cmd.Stream, src, time.Until(end).Seconds(), source, filename, filepath.Join(a.GetLiveDir(courseID, streamID, version), end.Format("15-04-05")), livePlaylist)
 
 				c := exec.CommandContext(ctx, "ffmpeg", strings.Split(cmd, " ")...)
 				c.Stderr = os.Stderr
 				log.Info("constructed stream command", "cmd", c.String())
-				resp := a.Server.NotifyStreamStarted(ctx, &protobuf.StreamStarted{StreamID: uint32(streamID)})
+				resp := a.Server.NotifyStreamStarted(ctx, &protobuf.StreamStarted{
+					Hostname: hostname,
+					StreamID: uint32(streamID),
+					CourseID: uint32(courseID),
+					Version:  version,
+					HLSUrl:   fmt.Sprintf("http://localhost:8187/%d/%d/%s/%s/playlist.m3u8", courseID, streamID, version, end.Format("15-04-05")),
+				})
 				if resp.Ok != true {
-
+					log.Warn("streamAction: NotifyStreamStarted failed")
+					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
+					continue
 				}
 				err = c.Start()
 				if err != nil {
