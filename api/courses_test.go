@@ -136,12 +136,12 @@ func TestCoursesCRUD(t *testing.T) {
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []CourseStream{
 					{
-						Course:  fpv.ToDTO(),
+						Course:  fpv.ToDTO(testutils.TUMLiveContextAdmin.User),
 						Stream:  testutils.SelfStream.ToDTO(),
 						Viewers: 0,
 					},
 					{
-						Course:      fpv.ToDTO(),
+						Course:      fpv.ToDTO(testutils.TUMLiveContextAdmin.User),
 						Stream:      testutils.StreamFPVLive.ToDTO(),
 						LectureHall: testutils.LectureHall.ToDTO(),
 						Viewers:     0,
@@ -220,8 +220,8 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseFPV.ToDTO(),
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 			"success not logged-in": {
@@ -242,8 +242,8 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseFPV.ToDTO(),
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 		}.
@@ -286,7 +286,7 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextLecturer)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 			"success admin": {
@@ -307,8 +307,8 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseFPV.ToDTO(),
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 		}.
@@ -331,7 +331,7 @@ func TestCoursesCRUD(t *testing.T) {
 				Router:           CourseRouterWrapper,
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: []model.CourseDTO{testutils.CourseFPV.ToDTO()},
+				ExpectedResponse: []model.CourseDTO{testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User)},
 			},
 		}.
 			Method(http.MethodGet).
@@ -342,7 +342,7 @@ func TestCoursesCRUD(t *testing.T) {
 	t.Run("GET/api/courses/:slug/", func(t *testing.T) {
 		url := fmt.Sprintf("/api/courses/%s/", testutils.CourseTensNet.Slug)
 
-		response := testutils.CourseTensNet.ToDTO()
+		response := testutils.CourseTensNet.ToDTO(testutils.TUMLiveContextAdmin.User)
 		response.Streams = []model.StreamDTO{
 			testutils.StreamTensNetLive.ToDTO(),
 		}
