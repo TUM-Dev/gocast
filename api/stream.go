@@ -206,8 +206,6 @@ func (r streamRoutes) getSubtitles(c *gin.Context) {
 
 // livestreams returns all streams that are live
 func (r streamRoutes) liveStreams(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
 	var res []liveStreamDto
 	streams, err := r.StreamsDao.GetCurrentLive(c)
 	if err != nil {
@@ -219,16 +217,10 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 		})
 		return
 	}
-
-	user := tumLiveContext.User
 	for _, s := range streams {
 		course, err := r.CoursesDao.GetCourseById(c, s.CourseID)
 		if err != nil {
 			logger.Error("Error fetching course", "err", err)
-		}
-		// Don't include private stream for non course admins
-		if s.Private && (user == nil || !user.IsAdminOfCourse(course)) {
-			continue
 		}
 		lectureHall := "Selfstream"
 		if s.LectureHallID != 0 {
