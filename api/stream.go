@@ -206,6 +206,8 @@ func (r streamRoutes) getSubtitles(c *gin.Context) {
 
 // livestreams returns all streams that are live
 func (r streamRoutes) liveStreams(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var res []liveStreamDto
 	streams, err := r.StreamsDao.GetCurrentLive(c)
 	if err != nil {
@@ -217,10 +219,16 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 		})
 		return
 	}
+
+	user := tumLiveContext.User
 	for _, s := range streams {
 		course, err := r.CoursesDao.GetCourseById(c, s.CourseID)
 		if err != nil {
 			logger.Error("Error fetching course", "err", err)
+		}
+		// Don't include private stream for non course admins
+		if s.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+			continue
 		}
 		lectureHall := "Selfstream"
 		if s.LectureHallID != 0 {
@@ -342,6 +350,10 @@ func (r streamRoutes) getStream(c *gin.Context) {
 
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
+	user := tumLiveContext.User
+	if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"course":      course.Name,
@@ -370,10 +382,15 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 	}
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	user := tumLiveContext.User
+	course, _ := r.GetCourseById(context.Background(), tumLiveContext.Course.ID)
 
 	// Create mapping of stream id to progress for all progresses of user
 	var streamIDs []uint
 	for _, stream := range tumLiveContext.Course.Streams {
+		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+			continue
+		}
 		streamIDs = append(streamIDs, stream.ID)
 	}
 	streamProgresses := make(map[uint]model.StreamProgress)
@@ -388,6 +405,9 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 
 	var result []StreamPlaylistEntry
 	for _, stream := range tumLiveContext.Course.Streams {
+		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+			continue
+		}
 		result = append(result, StreamPlaylistEntry{
 			StreamID:       stream.ID,
 			CourseSlug:     tumLiveContext.Course.Slug,
