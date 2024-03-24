@@ -359,7 +359,14 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 
-	streams := course.Streams
+	user := tumLiveContext.User
+	var streams []model.Stream
+	for _, stream := range course.Streams {
+		if !stream.Private || (user != nil && user.IsAdminOfCourse(course)) {
+			streams = append(streams, stream)
+		}
+	}
+
 	streamsDTO := make([]model.StreamDTO, len(streams))
 	for i, s := range streams {
 		err := tools.SetSignedPlaylists(&s, &model.User{
