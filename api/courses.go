@@ -153,8 +153,12 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 				continue
 			}
 		}
-		// Only show hidden streams to admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		// Only show hidden streams to course admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
+			continue
+		}
+		// Only show private streams to course admins
+		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
 			continue
 		}
 		var lectureHall *model.LectureHall
