@@ -2,3 +2,4 @@ stream: '-y -hide_banner -nostats %v -t %.0f -i %v -c:v copy -c:a copy -f mpegts
 
 Transcoding: '-i %v -c:v libx264 -c:a copy -crf 0 -probesize 100M -analyzeduration 250M %v'
 
+SilenceDetect: '-nostats -i %v -af silencedetect=n=-15dB:d=30 -f null -'
