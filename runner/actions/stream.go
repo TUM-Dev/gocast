@@ -94,6 +94,13 @@ func (a *ActionProvider) StreamAction() *Action {
 				c := exec.CommandContext(ctx, "ffmpeg", strings.Split(cmd, " ")...)
 				c.Stderr = os.Stderr
 				log.Info("constructed stream command", "cmd", c.String())
+
+				err = c.Start()
+				if err != nil {
+					log.Warn("streamAction: ", err)
+					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
+					continue
+				}
 				resp := a.Server.NotifyStreamStarted(ctx, &protobuf.StreamStarted{
 					Hostname: hostname,
 					StreamID: uint32(streamID),
@@ -106,18 +113,18 @@ func (a *ActionProvider) StreamAction() *Action {
 					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
 					continue
 				}
-				err = c.Start()
-				if err != nil {
-					log.Warn("streamAction: ", err)
-					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
-					continue
-				}
 				err = c.Wait()
 				if err != nil {
 					log.Warn("stream command exited", "err", err)
 					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
 					continue
 				}
+				log.Info("stream finished. now sending notification")
+				resp = a.Server.NotifyStreamEnded(ctx, &protobuf.StreamEnded{
+					RunnerID: hostname,
+					StreamID: uint32(streamID),
+					CourseID: uint32(courseID),
+				})
 			}
 			return set(ctx, "files", files), nil
 		},

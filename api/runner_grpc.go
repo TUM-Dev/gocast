@@ -289,6 +289,42 @@ func isHLSUrlOk(url string) bool {
 	return true
 }
 
+func (g GrpcRunnerServer) NotifyVoDUploadFinished(ctx context.Context, request *protobuf.VoDUploadFinished) (*protobuf.Status, error) {
+
+	panic("implement!")
+}
+
+func (g GrpcRunnerServer) NotifyActionFinished(ctx context.Context, request *protobuf.ActionFinished) (*protobuf.Status, error) {
+	_, err := g.RunnerDao.Get(ctx, request.RunnerID)
+
+	status := &protobuf.Status{Ok: false}
+	switch request.Type {
+	case "Upload":
+		status, err = SetUploadFinished(ctx, request)
+		if err != nil {
+			return nil, err
+		}
+	case "Transcode":
+		status, err = SetTranscodeFinished(ctx, request)
+		if err != nil {
+			return nil, err
+		}
+	case "Stream":
+	}
+
+	return &protobuf.Status{Ok: status.Ok}, nil
+
+	panic("implement me")
+}
+
+func SetUploadFinished(ctx context.Context, req *protobuf.ActionFinished) (*protobuf.Status, error) {
+	panic("implement me")
+}
+
+func SetTranscodeFinished(ctx context.Context, req *protobuf.ActionFinished) (*protobuf.Status, error) {
+	panic("implement me")
+}
+
 func NotifyRunners(dao dao.DaoWrapper) func() {
 	return func() {
 

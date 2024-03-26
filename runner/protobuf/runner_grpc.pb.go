@@ -265,6 +265,7 @@ type FromRunnerClient interface {
 	NotifyThumbnailsFinished(ctx context.Context, in *ThumbnailsFinished, opts ...grpc.CallOption) (*Status, error)
 	NotifyTranscodingFailure(ctx context.Context, in *TranscodingFailureNotification, opts ...grpc.CallOption) (*Status, error)
 	GetStreamInfoForUpload(ctx context.Context, in *StreamInfoForUploadRequest, opts ...grpc.CallOption) (*StreamInfoForUploadResponse, error)
+	NotifyActionFinished(ctx context.Context, in *ActionFinished, opts ...grpc.CallOption) (*Status, error)
 }
 
 type fromRunnerClient struct {
@@ -365,6 +366,15 @@ func (c *fromRunnerClient) GetStreamInfoForUpload(ctx context.Context, in *Strea
 	return out, nil
 }
 
+func (c *fromRunnerClient) NotifyActionFinished(ctx context.Context, in *ActionFinished, opts ...grpc.CallOption) (*Status, error) {
+	out := new(Status)
+	err := c.cc.Invoke(ctx, "/protobuf.FromRunner/NotifyActionFinished", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FromRunnerServer is the server API for FromRunner service.
 // All implementations must embed UnimplementedFromRunnerServer
 // for forward compatibility
@@ -380,6 +390,7 @@ type FromRunnerServer interface {
 	NotifyThumbnailsFinished(context.Context, *ThumbnailsFinished) (*Status, error)
 	NotifyTranscodingFailure(context.Context, *TranscodingFailureNotification) (*Status, error)
 	GetStreamInfoForUpload(context.Context, *StreamInfoForUploadRequest) (*StreamInfoForUploadResponse, error)
+	NotifyActionFinished(context.Context, *ActionFinished) (*Status, error)
 	mustEmbedUnimplementedFromRunnerServer()
 }
 
@@ -416,6 +427,9 @@ func (UnimplementedFromRunnerServer) NotifyTranscodingFailure(context.Context, *
 }
 func (UnimplementedFromRunnerServer) GetStreamInfoForUpload(context.Context, *StreamInfoForUploadRequest) (*StreamInfoForUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStreamInfoForUpload not implemented")
+}
+func (UnimplementedFromRunnerServer) NotifyActionFinished(context.Context, *ActionFinished) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyActionFinished not implemented")
 }
 func (UnimplementedFromRunnerServer) mustEmbedUnimplementedFromRunnerServer() {}
 
@@ -610,6 +624,24 @@ func _FromRunner_GetStreamInfoForUpload_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FromRunner_NotifyActionFinished_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActionFinished)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FromRunnerServer).NotifyActionFinished(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protobuf.FromRunner/NotifyActionFinished",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FromRunnerServer).NotifyActionFinished(ctx, req.(*ActionFinished))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FromRunner_ServiceDesc is the grpc.ServiceDesc for FromRunner service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -656,6 +688,10 @@ var FromRunner_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetStreamInfoForUpload",
 			Handler:    _FromRunner_GetStreamInfoForUpload_Handler,
+		},
+		{
+			MethodName: "NotifyActionFinished",
+			Handler:    _FromRunner_NotifyActionFinished_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

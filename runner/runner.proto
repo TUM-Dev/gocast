@@ -81,6 +81,13 @@ service FromRunner {
   rpc NotifyThumbnailsFinished (ThumbnailsFinished) returns (Status) {}
   rpc NotifyTranscodingFailure (TranscodingFailureNotification) returns (Status) {}
   rpc GetStreamInfoForUpload (StreamInfoForUploadRequest) returns (StreamInfoForUploadResponse) {}
+  rpc NotifyActionFinished (ActionFinished) returns (Status) {}
+}
+
+message ActionFinished{
+  string RunnerID = 1;
+  string ActionID = 2;
+  string type = 3;
 }
 
 message StreamInfoForUploadRequest{
@@ -125,6 +132,8 @@ message StreamStarted {
 message StreamEnded{
   string RunnerID = 1;
   uint32 StreamID = 2;
+  uint32 CourseID = 3;
+  string Version = 4;
 }
 
 message ThumbnailsFinished{

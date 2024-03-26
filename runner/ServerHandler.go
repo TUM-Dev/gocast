@@ -101,7 +101,7 @@ func (r *Runner) ReadDiagnostics(retries int) {
 func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
 	r.log.Info("Started Requesting Self Stream", "retriesLeft", retries)
 
-	streamKey := ctx.Value("streamkey").(string)
+	streamKey := ctx.Value("streamKey").(string)
 
 	if retries == 0 {
 		r.log.Error("no more retries left, can't start Self Stream")
@@ -121,47 +121,148 @@ func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
 	})
 }
 
-func (r *Runner) NotifyStreamStarted(ctx context.Context, started *protobuf.StreamStarted) protobuf.Status {
-	//TODO: Test me
-	r.log.Info("Got called with request", "request", started)
+func (r *Runner) NotifyStreamStarted(ctx context.Context, started *protobuf.StreamStarted) *protobuf.Status {
+
+	r.log.Info("Got called with stream start notify", "request", started)
 
 	con, err := r.dialIn()
 	if err != nil {
 		r.log.Warn("error connecting to gocast", "error", err)
-		return protobuf.Status{Ok: false}
+		time.Sleep(time.Second * 5)
+		return r.NotifyStreamStarted(ctx, started)
+
 	}
 
 	resp, err := con.NotifyStreamStarted(context.Background(), started)
-
-	return protobuf.Status{Ok: resp.Ok}
+	if err != nil {
+		r.log.Warn("error sending stream started", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyStreamStarted(ctx, started)
+	}
+	return resp
 }
 
-func (r *Runner) NotifyVoDUploadFinished(ctx context.Context, request *protobuf.VoDUploadFinished) protobuf.Status {
-	//TODO implement me
-	panic("implement me")
+func (r *Runner) NotifyVoDUploadFinished(ctx context.Context, request *protobuf.VoDUploadFinished) *protobuf.Status {
+	//TODO: Test me
+
+	r.log.Info("Got called with VoD upload finished notify", "request", request)
+
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyVoDUploadFinished(ctx, request)
+	}
+
+	resp, err := con.NotifyVoDUploadFinished(ctx, request)
+	if err != nil {
+		r.log.Warn("error sending VoD upload finished", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyVoDUploadFinished(ctx, request)
+
+	}
+	return resp
 }
 
-func (r *Runner) NotifySilenceResults(ctx context.Context, request *protobuf.SilenceResults) protobuf.Status {
-	//TODO implement me
-	panic("implement me")
+func (r *Runner) NotifySilenceResults(ctx context.Context, request *protobuf.SilenceResults) *protobuf.Status {
+	//TODO: Test me
+
+	r.log.Info("Got called with Silence Results notify", "request", request)
+
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifySilenceResults(ctx, request)
+	}
+
+	resp, err := con.NotifySilenceResults(ctx, request)
+	if err != nil {
+		r.log.Warn("error sending silence results", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifySilenceResults(ctx, request)
+	}
+	return resp
 }
 
-func (r *Runner) NotifyStreamEnded(ctx context.Context, request *protobuf.StreamEnded) protobuf.Status {
-	//TODO implement me
-	panic("implement me")
+func (r *Runner) NotifyStreamEnded(ctx context.Context, request *protobuf.StreamEnded) *protobuf.Status {
+
+	//TODO: Test me
+
+	r.log.Info("Got called with Stream end notify", "request", request)
+
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyStreamEnded(ctx, request)
+	}
+
+	resp, err := con.NotifyStreamEnded(ctx, request)
+	if err != nil {
+		r.log.Warn("error sending stream end", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyStreamEnded(ctx, request)
+	}
+	return resp
 }
 
-func (r *Runner) NotifyThumbnailsFinished(ctx context.Context, request *protobuf.ThumbnailsFinished) protobuf.Status {
-	//TODO implement me
-	panic("implement me")
+func (r *Runner) NotifyThumbnailsFinished(ctx context.Context, request *protobuf.ThumbnailsFinished) *protobuf.Status {
+	//TODO: Test me
+	r.log.Info("Got called with Thumbnails Finished notify", "request", request)
+
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyThumbnailsFinished(ctx, request)
+	}
+
+	resp, err := con.NotifyThumbnailsFinished(ctx, request)
+	if err != nil {
+		r.log.Warn("error sending thumbnails finished", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyThumbnailsFinished(ctx, request)
+	}
+	return resp
 }
 
-func (r *Runner) NotifyTranscodingFailure(ctx context.Context, request *protobuf.TranscodingFailureNotification) protobuf.Status {
-	//TODO implement me
-	panic("implement me")
+func (r *Runner) NotifyTranscodingFailure(ctx context.Context, request *protobuf.TranscodingFailureNotification) *protobuf.Status {
+	//TODO: Test me
+	r.log.Info("Got called with Transcoding Failure notify", "request", request)
+
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyTranscodingFailure(ctx, request)
+	}
+
+	resp, err := con.NotifyTranscodingFailure(ctx, request)
+	if err != nil {
+		r.log.Warn("error sending transcoding failure", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.NotifyTranscodingFailure(ctx, request)
+	}
+	return resp
 }
 
-func (r *Runner) GetStreamInfoForUpload(ctx context.Context, request *protobuf.StreamInfoForUploadRequest) protobuf.StreamInfoForUploadResponse {
-	//TODO implement me
-	panic("implement me")
+func (r *Runner) GetStreamInfoForUpload(ctx context.Context, request *protobuf.StreamInfoForUploadRequest) *protobuf.StreamInfoForUploadResponse {
+	//TODO: Test me
+	r.log.Info("Got called with Stream Info For Upload", "request", request)
+
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.GetStreamInfoForUpload(ctx, request)
+	}
+
+	resp, err := con.GetStreamInfoForUpload(ctx, request)
+	if err != nil {
+		r.log.Warn("error getting stream info for upload", "error", err)
+		time.Sleep(time.Second * 5)
+		return r.GetStreamInfoForUpload(ctx, request)
+	}
+	return resp
 }
