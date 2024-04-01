@@ -50,6 +50,7 @@ require (
 	github.com/TUM-Dev/gocast/worker v0.0.0-20240108170208-25b3b0415b48
 	github.com/asticode/go-astisub v0.26.2
 	github.com/coreos/go-oidc/v3 v3.10.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/orandin/slog-gorm v1.1.0

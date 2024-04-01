@@ -94,10 +94,14 @@ func initConfig() {
 	}
 
 	// generate a cookie secret if not set
-	if Cfg.CookieSecret == "" {
-		logger.Info("Generating new cookie secret")
-		Cfg.CookieSecret = uuid.NewV4().String()
-		viper.Set("cookieSecret", Cfg.CookieSecret)
+	if Cfg.Cookie == nil {
+		Cfg.Cookie = &struct {
+			Secret string `yaml:"secret"`
+			Name   string `yaml:"name"`
+		}{}
+		Cfg.Cookie.Secret = uuid.NewV4().String()
+		Cfg.Cookie.Name = "session"
+		viper.Set("cookie", Cfg.Cookie)
 		err = viper.WriteConfig()
 		if err != nil {
 			logger.Warn("Can't write out config ", "err", err)
@@ -198,7 +202,10 @@ type Config struct {
 		RedirectURL  string `yaml:"redirectURL"`
 		LogoutURL    string `yaml:"logoutURL"`
 	} `yaml:"oauth"`
-	CookieSecret string `yaml:"cookieSecret"`
+	Cookie *struct {
+		Secret string `yaml:"secret"`
+		Name   string `yaml:"name"`
+	}
 }
 
 type MailConfig struct {

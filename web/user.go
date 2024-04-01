@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"net/url"
 	"strings"
@@ -31,12 +32,21 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 }
 
 func (r mainRoutes) OAuth2Login(c *gin.Context) {
-
+	c.Redirect(http.StatusFound, oauth.Auth.OAuth2Config.AuthCodeURL("state"))
 }
 
 func (r mainRoutes) OAuth2Callback(c *gin.Context) {
-
+	oauth.HandleOAuth2Callback(c)
 }
+
+func (r mainRoutes) OAuth2Logout(c *gin.Context) {
+	oauth.HandleOAuth2Logout(c)
+}
+
+//func (r mainRoutes) ShowRoles(c *gin.Context) {
+//	roles := oauth.GetRoles(c)
+//	c.JSON(http.StatusOK, gin.H{"roles": roles})
+//}
 
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")

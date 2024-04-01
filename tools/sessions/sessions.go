@@ -26,7 +26,7 @@ func InitSessions() {
 		os.Exit(1)
 	}
 
-	Store, err = mysqlstore.NewMySQLStoreFromConnection(db, "sessions", "/", 3600, []byte(os.Getenv("STORE_SECRET")))
+	Store, err = mysqlstore.NewMySQLStoreFromConnection(db, "sessions", "/", 3600, []byte(tools.Cfg.Cookie.Secret))
 	if err != nil {
 		slog.Error("Error creating session store", "err", err)
 		os.Exit(1)

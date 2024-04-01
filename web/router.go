@@ -148,6 +148,8 @@ func configMainRoute(router *gin.Engine) {
 	// Oauth
 	router.GET("/oauth/login", routes.OAuth2Login)
 	router.GET("/oauth/callback", routes.OAuth2Callback)
+	router.GET("/oauth/logout", routes.OAuth2Logout)
+	//router.GET("/oauth/roles", routes.ShowRoles)
 
 	// home & course pages
 	oldStartPage(router, &routes)

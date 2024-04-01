@@ -110,4 +110,6 @@ oauth:
   providerURL: providerURL
   redirectURL: redirectURL
   logoutURL: logoutURL
-cookieSecret: secret
+cookie:
+  secret: secret
+  name: name
