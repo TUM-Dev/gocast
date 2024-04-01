@@ -97,6 +97,17 @@ func GetRoles(c *gin.Context) []string {
 	return claims.RealmAccess.Roles
 }
 
+func LoggedInUsersOnly() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !CheckLoggedIn(c) {
+			tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func CheckLoggedIn(c *gin.Context) bool {
 	if cookie, _ := c.Cookie(tools.Cfg.Cookie.Name); cookie == "" {
 		logger.Debug("No cookie found")
