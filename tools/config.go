@@ -104,11 +104,12 @@ type Config struct {
 	} `yaml:"lrz"`
 	Mail MailConfig `yaml:"mail"`
 	Db   struct {
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		Database string `yaml:"database"`
-		Host     string `yaml:"host"`
-		Port     uint   `yaml:"port"`
+		User            string `yaml:"user"`
+		Password        string `yaml:"password"`
+		Database        string `yaml:"database"`
+		SessionDatabase string `yaml:"sessionDB"`
+		Host            string `yaml:"host"`
+		Port            uint   `yaml:"port"`
 	} `yaml:"db"`
 	Campus struct {
 		Base        string   `yaml:"base"`
@@ -170,6 +171,13 @@ type Config struct {
 	} `yaml:"meili"`
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
+	OAuth          *struct {
+		ClientID     string `yaml:"clientID"`
+		ClientSecret string `yaml:"clientSecret"`
+		ProviderURL  string `yaml:"providerURL"`
+		LogoutURL    string `yaml:"logoutURL"`
+	} `yaml:"oauth"`
+	CookieSecret string `yaml:"cookieSecret"`
 }
 
 type MailConfig struct {

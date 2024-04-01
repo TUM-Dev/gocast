@@ -28,6 +28,7 @@ db:
   host: localhost
   port: 3306
   database: tumlive
+  sessionDB: sessions
   password: example
   user: root
 ingestbase: rtmp://ingest.tum.live/
@@ -103,3 +104,9 @@ meili:
   apiKey: MASTER_KEY
 vodURLTemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
 canonicalURL: https://tum.live
+oauth:
+  clientID: clientID
+  clientSecret: clientSecret
+  providerURL: providerURL
+  logoutURL: logoutURL
+cookieSecret: secret
