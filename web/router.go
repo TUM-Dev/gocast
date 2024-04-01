@@ -145,6 +145,10 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/setPassword/:key", routes.CreatePasswordPage)
 	router.POST("/setPassword/:key", routes.CreatePasswordPage)
 
+	// Oauth
+	router.GET("/oauth/login", routes.OAuth2Login)
+	router.GET("/oauth/callback", routes.OAuth2Callback)
+
 	// home & course pages
 	oldStartPage(router, &routes)
 	newStartPage(router, &routes)

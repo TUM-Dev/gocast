@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/oauth"
+	"github.com/TUM-Dev/gocast/tools/sessions"
 	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
@@ -39,6 +41,8 @@ var initializers = []initializer{
 	tools.LoadConfig,
 	api.ServeWorkerGRPC,
 	tools.InitBranding,
+	oauth.Auth.SetupOauth,
+	sessions.InitSessions,
 }
 
 func initAll(initializers []initializer) {

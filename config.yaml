@@ -108,5 +108,6 @@ oauth:
   clientID: clientID
   clientSecret: clientSecret
   providerURL: providerURL
+  redirectURL: redirectURL
   logoutURL: logoutURL
 cookieSecret: secret

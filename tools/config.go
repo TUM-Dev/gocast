@@ -92,6 +92,26 @@ func initConfig() {
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
 	}
+
+	// generate a cookie secret if not set
+	if Cfg.CookieSecret == "" {
+		logger.Info("Generating new cookie secret")
+		Cfg.CookieSecret = uuid.NewV4().String()
+		viper.Set("cookieSecret", Cfg.CookieSecret)
+		err = viper.WriteConfig()
+		if err != nil {
+			logger.Warn("Can't write out config ", "err", err)
+		}
+	}
+
+	// Check if oauth is disabled and log it
+	if Cfg.OAuth == nil {
+		logger.Info("Oauth disabled")
+	}
+
+	if Cfg.Db.SessionDB == "" {
+		logger.Error("No session database configured")
+	}
 }
 
 type Config struct {
@@ -104,12 +124,12 @@ type Config struct {
 	} `yaml:"lrz"`
 	Mail MailConfig `yaml:"mail"`
 	Db   struct {
-		User            string `yaml:"user"`
-		Password        string `yaml:"password"`
-		Database        string `yaml:"database"`
-		SessionDatabase string `yaml:"sessionDB"`
-		Host            string `yaml:"host"`
-		Port            uint   `yaml:"port"`
+		User      string `yaml:"user"`
+		Password  string `yaml:"password"`
+		Database  string `yaml:"database"`
+		SessionDB string `yaml:"sessionDB"`
+		Host      string `yaml:"host"`
+		Port      uint   `yaml:"port"`
 	} `yaml:"db"`
 	Campus struct {
 		Base        string   `yaml:"base"`
@@ -175,6 +195,7 @@ type Config struct {
 		ClientID     string `yaml:"clientID"`
 		ClientSecret string `yaml:"clientSecret"`
 		ProviderURL  string `yaml:"providerURL"`
+		RedirectURL  string `yaml:"redirectURL"`
 		LogoutURL    string `yaml:"logoutURL"`
 	} `yaml:"oauth"`
 	CookieSecret string `yaml:"cookieSecret"`

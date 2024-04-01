@@ -30,6 +30,14 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 	}
 }
 
+func (r mainRoutes) OAuth2Login(c *gin.Context) {
+
+}
+
+func (r mainRoutes) OAuth2Callback(c *gin.Context) {
+
+}
+
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
