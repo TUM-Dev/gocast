@@ -32,6 +32,7 @@ var (
 	ErrUsernameNoText  = errors.New("username has no text")
 )
 
+// TODO: Remove password from user if every user is in new system
 type User struct {
 	gorm.Model
 
@@ -41,10 +42,13 @@ type User struct {
 	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	LrzID               string         `json:"-"`
 	Role                uint           `gorm:"default:4" json:"-"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
+	Roles               []string       `gorm:"type:varchar(256)" json:"-"`
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
 	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
+
+	OAuthID string `gorm:"varchar(50)"`
 
 	Settings  []UserSetting `gorm:"foreignkey:UserID"`
 	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`

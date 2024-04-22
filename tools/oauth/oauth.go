@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"context"
+	"errors"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/sessions"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -95,6 +96,70 @@ func GetRoles(c *gin.Context) []string {
 		return make([]string, 0)
 	}
 	return claims.RealmAccess.Roles
+}
+
+func getUID(c *gin.Context) (string, error) {
+	if !CheckLoggedIn(c) {
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	if cookie, _ := c.Cookie(tools.Cfg.Cookie.Name); cookie == "" {
+		logger.Debug("No cookie found")
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	session, err := sessions.Store.Get(c, tools.Cfg.Cookie.Name)
+	if err != nil {
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	var claims struct {
+		*jwt.RegisteredClaims
+		Uid string `json:"sub"`
+	}
+
+	_, _, err = jwt.NewParser(jwt.WithoutClaimsValidation()).ParseUnverified(session.Values["access_token"].(string), &claims)
+	if err != nil {
+		logger.Debug("Error parsing claims", "err", err)
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+	return claims.Uid, nil
+}
+
+func getUsername(c *gin.Context) (string, error) {
+	if !CheckLoggedIn(c) {
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	if cookie, _ := c.Cookie(tools.Cfg.Cookie.Name); cookie == "" {
+		logger.Debug("No cookie found")
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	session, err := sessions.Store.Get(c, tools.Cfg.Cookie.Name)
+	if err != nil {
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	var claims struct {
+		*jwt.RegisteredClaims
+		Username string `json:"preferred_username"`
+	}
+
+	_, _, err = jwt.NewParser(jwt.WithoutClaimsValidation()).ParseUnverified(session.Values["access_token"].(string), &claims)
+	if err != nil {
+		logger.Debug("Error parsing claims", "err", err)
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+	return claims.Username, nil
 }
 
 func LoggedInUsersOnly() gin.HandlerFunc {

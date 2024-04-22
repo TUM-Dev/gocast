@@ -2,6 +2,7 @@ package tools
 
 import (
 	"errors"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -38,38 +39,40 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			return
 		}
 
+		loggedIn := oauth.CheckLoggedIn(c)
+
 		// get the session
-		cookie, err := c.Cookie("jwt")
-		if err != nil {
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			return
-		}
-
-		token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-			key := Cfg.GetJWTKey().Public()
-			return key, nil
-		})
-		if err != nil {
-			logger.Info("JWT parsing error: ", "err", err)
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			c.SetCookie("jwt", "", -1, "/", "", false, true)
-			return
-		}
-		if !token.Valid {
-			logger.Info("JWT token is not valid")
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			c.SetCookie("jwt", "", -1, "/", "", false, true)
-			return
-		}
-
-		user, err := daoWrapper.UsersDao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
-		if err != nil {
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			return
-		} else {
-			c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
-			return
-		}
+		//cookie, err := c.Cookie("jwt")
+		//if err != nil {
+		//	c.Set("TUMLiveContext", TUMLiveContext{})
+		//	return
+		//}
+		//
+		//token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		//	key := Cfg.GetJWTKey().Public()
+		//	return key, nil
+		//})
+		//if err != nil {
+		//	logger.Info("JWT parsing error: ", "err", err)
+		//	c.Set("TUMLiveContext", TUMLiveContext{})
+		//	c.SetCookie("jwt", "", -1, "/", "", false, true)
+		//	return
+		//}
+		//if !token.Valid {
+		//	logger.Info("JWT token is not valid")
+		//	c.Set("TUMLiveContext", TUMLiveContext{})
+		//	c.SetCookie("jwt", "", -1, "/", "", false, true)
+		//	return
+		//}
+		//
+		//user, err := daoWrapper.UsersDao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
+		//if err != nil {
+		//	c.Set("TUMLiveContext", TUMLiveContext{})
+		//	return
+		//} else {
+		//	c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
+		//	return
+		//}
 	}
 }
 
