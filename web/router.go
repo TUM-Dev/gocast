@@ -151,6 +151,7 @@ func configMainRoute(router *gin.Engine) {
 
 	// watch
 	streamGroup.Use(tools.InitStream(daoWrapper))
+	streamGroup.Use(tools.AddResponseHeaders())
 	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopOutChat)

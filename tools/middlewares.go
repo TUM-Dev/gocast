@@ -29,6 +29,15 @@ type JWTClaims struct {
 	SamlSubjectID *string // identifier of the SAML session (if any)
 }
 
+func AddResponseHeaders() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		for _, h := range Cfg.Headers {
+			c.Header(h.Header, h.Value)
+		}
+		c.Next()
+	}
+}
+
 func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// no context initialisation required for static assets.

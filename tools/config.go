@@ -168,8 +168,9 @@ type Config struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
-	VodURLTemplate string `yaml:"vodURLTemplate"`
-	CanonicalURL   string `yaml:"canonicalURL"`
+	VodURLTemplate string   `yaml:"vodURLTemplate"`
+	CanonicalURL   string   `yaml:"canonicalURL"`
+	Headers        []Header `yaml:"headers"`
 }
 
 type MailConfig struct {
@@ -178,6 +179,11 @@ type MailConfig struct {
 	SMIMECert         string `yaml:"SMIMECert"`
 	SMIMEKey          string `yaml:"SMIMEKey"`
 	MaxMailsPerMinute int    `yaml:"maxMailsPerMinute"`
+}
+
+type Header struct {
+	Header string `yaml:"header"`
+	Value  string `yaml:"value"`
 }
 
 func (Config) GetJWTKey() *rsa.PrivateKey {
