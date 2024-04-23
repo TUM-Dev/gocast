@@ -39,12 +39,13 @@ func (a *ActionProvider) GetMassDir(courseID, streamID uint64, version string) s
 type ActionType string
 
 const (
-	PrepareAction    ActionType = "prepare"
-	StreamAction                = "stream"
-	TranscodeAction             = "transcode"
-	UploadAction                = "upload"
-	ThumbnailAction             = "thumbnail"
-	SelfStreamAction            = "selfstream"
+	PrepareAction       ActionType = "prepare"
+	StreamAction                   = "stream"
+	TranscodeAction                = "transcode"
+	UploadAction                   = "upload"
+	ThumbnailAction                = "thumbnail"
+	SelfStreamAction               = "selfstream"
+	SilenceDetectAction            = "silence_detect"
 )
 
 type Action struct {
