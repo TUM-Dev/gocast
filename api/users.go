@@ -726,7 +726,15 @@ func (r usersRoutes) updateSeekingTime(c *gin.Context) {
 }
 
 func (r usersRoutes) updateAutoSkip(c *gin.Context) {
-	u := getUserFromContext(c)
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required for updating user settings",
+		})
+		return
+	}
+
 	var req struct{ Value model.AutoSkipSetting }
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
