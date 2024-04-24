@@ -28,6 +28,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/seekingTime", routes.updateSeekingTime)
 	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
 	router.POST("/api/users/settings/autoSkip", routes.updateAutoSkip)
+	router.POST("/api/users/settings/defaultMode", routes.updateDefaultMode)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
@@ -729,10 +730,11 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 	if u == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
+			CustomMessage: "login required for updating user settings",
 		})
 		return
 	}
+
 	var req struct{ Value model.AutoSkipSetting }
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
@@ -745,6 +747,31 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 
 	settingBytes, _ := json.Marshal(req.Value)
 	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.AutoSkip, Value: string(settingBytes)})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+// updateDefaultMode updates whether the default stream mode for a user should be "beta"
+func (r usersRoutes) updateDefaultMode(c *gin.Context) {
+	u := getUserFromContext(c)
+	var req struct{ Value model.DefaultModeSetting }
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body to request",
+			Err:           err,
+		})
+		return
+	}
+
+	settingBytes, _ := json.Marshal(req.Value)
+	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.DefaultMode, Value: string(settingBytes)})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
