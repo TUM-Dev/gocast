@@ -30,13 +30,14 @@ func (d progressDao) GetProgressesForUser(userID uint) (r []model.StreamProgress
 	return r, DB.Where("user_id = ?", userID).Find(&r).Error
 }
 
-func filterProgress(progresses []model.StreamProgress, watched bool) (result []model.StreamProgress) {
+func filterProgress(progresses []model.StreamProgress, watched bool) []model.StreamProgress {
+	var result []model.StreamProgress
 	for _, progress := range progresses {
 		if progress.Watched == watched {
 			result = append(result, progress)
 		}
 	}
-	return
+	return result
 }
 
 // SaveProgresses saves a slice of stream progresses. If a progress already exists, it will be updated.
