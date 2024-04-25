@@ -117,7 +117,12 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 		return
 	}
 
-	stream, err := r.StreamsDao.GetStreamByID(c, strconv.FormatUint(uint64(request.StreamID), 10))
+	streamIDString := strconv.FormatUint(uint64(request.StreamID), 10)
+	if r.StreamsDao == nil {
+		logger.Error("StreamsDao is nil")
+		return
+	}
+	stream, err := r.StreamsDao.GetStreamByID(c, streamIDString)
 
 	if err == nil {
 		lastSilence := slices.MaxFunc(stream.Silences, func(silence model.Silence, other model.Silence) int {
