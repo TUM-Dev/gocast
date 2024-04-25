@@ -36,7 +36,7 @@ func filterProgress(progresses []model.StreamProgress, watched bool) (result []m
 			result = append(result, progress)
 		}
 	}
-	return result
+	return
 }
 
 // SaveProgresses saves a slice of stream progresses. If a progress already exists, it will be updated.
