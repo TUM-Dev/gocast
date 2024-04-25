@@ -30,12 +30,39 @@ func (d progressDao) GetProgressesForUser(userID uint) (r []model.StreamProgress
 	return r, DB.Where("user_id = ?", userID).Find(&r).Error
 }
 
+func filterProgress(progresses []model.StreamProgress, watched bool) (result []model.StreamProgress) {
+	for _, progress := range progresses {
+		if progress.Watched == watched {
+			result = append(result, progress)
+		}
+	}
+	return result
+}
+
 // SaveProgresses saves a slice of stream progresses. If a progress already exists, it will be updated.
 func (d progressDao) SaveProgresses(progresses []model.StreamProgress) error {
-	return DB.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
-		DoUpdates: clause.AssignmentColumns([]string{"progress"}),          // column needed to be updated
-	}).Create(progresses).Error
+	noWatched := filterProgress(progresses, false)
+	watched := filterProgress(progresses, true)
+	var err error = nil
+	if len(noWatched) > 0 {
+		err = DB.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
+			DoUpdates: clause.AssignmentColumns([]string{"progress"}),          // column needed to be updated
+		}).Create(noWatched).Error
+	}
+	var err2 error = nil
+
+	if len(watched) > 0 {
+		err2 = DB.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}},   // key column
+			DoUpdates: clause.AssignmentColumns([]string{"progress", "watched"}), // column needed to be updated
+		}).Create(watched).Error
+	}
+
+	if err != nil {
+		return err
+	}
+	return err2
 }
 
 // SaveWatchedState creates/updates a stream progress with its corresponding watched state.

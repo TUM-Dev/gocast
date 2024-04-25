@@ -2,7 +2,9 @@ package api
 
 import (
 	"errors"
+	"math"
 	"net/http"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -114,6 +116,28 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 		})
 		return
 	}
+
+	stream, err := r.StreamsDao.GetStreamByID(c, strconv.FormatUint(uint64(request.StreamID), 10))
+
+	if err == nil {
+		lastSilence := slices.MaxFunc(stream.Silences, func(silence model.Silence, other model.Silence) int {
+			return int(silence.End) - int(other.End)
+		})
+
+		if math.Abs(float64(lastSilence.End-uint(stream.Duration.Int32))) < 10 {
+			lastSilencePercent := float64(lastSilence.Start) / float64(stream.Duration.Int32)
+			if request.Progress >= lastSilencePercent {
+				progressBuff.add(model.StreamProgress{
+					Progress: request.Progress,
+					StreamID: request.StreamID,
+					UserID:   tumLiveContext.User.ID,
+					Watched:  true,
+				})
+				return
+			}
+		}
+	}
+
 	if request.Progress > .9 {
 		progressBuff.add(model.StreamProgress{
 			Progress: request.Progress,
