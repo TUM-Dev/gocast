@@ -43,14 +43,14 @@ func filterProgress(progresses []model.StreamProgress, watched bool) (result []m
 func (d progressDao) SaveProgresses(progresses []model.StreamProgress) error {
 	noWatched := filterProgress(progresses, false)
 	watched := filterProgress(progresses, true)
-	var err error = nil
+	var err error
 	if len(noWatched) > 0 {
 		err = DB.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
 			DoUpdates: clause.AssignmentColumns([]string{"progress"}),          // column needed to be updated
 		}).Create(noWatched).Error
 	}
-	var err2 error = nil
+	var err2 error
 
 	if len(watched) > 0 {
 		err2 = DB.Clauses(clause.OnConflict{
