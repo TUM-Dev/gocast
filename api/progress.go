@@ -119,7 +119,7 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 
 	stream := tumLiveContext.Stream
 
-	var watchedToLastSilence = false
+	watchedToLastSilence := false
 
 	if stream != nil {
 		duration := stream.Duration.Int32
