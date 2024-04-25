@@ -114,11 +114,21 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 		})
 		return
 	}
-	progressBuff.add(model.StreamProgress{
-		Progress: request.Progress,
-		StreamID: request.StreamID,
-		UserID:   tumLiveContext.User.ID,
-	})
+	if request.Progress > .9 {
+		progressBuff.add(model.StreamProgress{
+			Progress: request.Progress,
+			StreamID: request.StreamID,
+			UserID:   tumLiveContext.User.ID,
+			Watched:  true,
+		})
+	} else {
+		progressBuff.add(model.StreamProgress{
+			Progress: request.Progress,
+			StreamID: request.StreamID,
+			UserID:   tumLiveContext.User.ID,
+		})
+	}
+
 }
 
 // watchedRequest corresponds the request that is sent when a user marked the video as watched on the watch page.
