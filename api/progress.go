@@ -143,7 +143,6 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 		UserID:   tumLiveContext.User.ID,
 		Watched:  request.Progress > .9,
 	})
-
 }
 
 // watchedRequest corresponds the request that is sent when a user marked the video as watched on the watch page.
