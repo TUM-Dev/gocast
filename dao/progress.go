@@ -41,6 +41,7 @@ func filterProgress(progresses []model.StreamProgress, watched bool) []model.Str
 }
 
 // SaveProgresses saves a slice of stream progresses. If a progress already exists, it will be updated.
+// We need two different methods for that because else the watched state will be overwritten.
 func (d progressDao) SaveProgresses(progresses []model.StreamProgress) error {
 	noWatched := filterProgress(progresses, false)
 	watched := filterProgress(progresses, true)
