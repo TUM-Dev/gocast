@@ -124,13 +124,13 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 
 	watchedToLastSilence := false
 
-	logger.Debug("Save progress")
+	//logger.Debug("Save progress")
 	duration := stream.Duration.Int32
 	if duration == 0 {
 		dur := stream.End.Sub(stream.Start)
 		duration += int32(dur.Seconds()) + int32(dur.Minutes())*60 + int32(dur.Minutes())*60*60
 	}
-	logger.Debug("Duration", "duration", duration)
+	//logger.Debug("Duration", "duration", duration)
 	if duration != 0 {
 		lastSilence := slices.MaxFunc(stream.Silences, func(silence model.Silence, other model.Silence) int {
 			return int(silence.End) - int(other.End)
