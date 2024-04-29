@@ -126,7 +126,6 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 
 	logger.Debug("Save progress")
 	duration := stream.Duration.Int32
-	duration = 0
 	if duration == 0 {
 		dur := stream.End.Sub(stream.Start)
 		duration += int32(dur.Seconds()) + int32(dur.Minutes())*60 + int32(dur.Minutes())*60*60
