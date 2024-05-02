@@ -2,7 +2,9 @@ package api
 
 import (
 	"errors"
+	"math"
 	"net/http"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -114,10 +116,40 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 		})
 		return
 	}
+
+	stream, err := r.DaoWrapper.StreamsDao.GetStreamByID(c, strconv.FormatUint(uint64(request.StreamID), 10))
+	if err != nil {
+		return
+	}
+
+	watchedToLastSilence := false
+
+	// logger.Debug("Save progress")
+	duration := stream.Duration.Int32
+	if duration == 0 {
+		dur := stream.End.Sub(stream.Start)
+		duration += int32(dur.Seconds()) + int32(dur.Minutes())*60 + int32(dur.Minutes())*60*60
+	}
+	// logger.Debug("Duration", "duration", duration)
+	if duration != 0 && len(stream.Silences) > 0 {
+		lastSilence := slices.MaxFunc(stream.Silences, func(silence model.Silence, other model.Silence) int {
+			return int(silence.End) - int(other.End)
+		})
+
+		// Add a little wiggle time to the end if ffmpeg didn't detect the silence till the end
+		if math.Abs(float64(lastSilence.End-uint(duration))) < 10 {
+			lastSilencePercent := float64(lastSilence.Start) / float64(duration)
+			if request.Progress >= lastSilencePercent {
+				watchedToLastSilence = true
+			}
+		}
+	}
+
 	progressBuff.add(model.StreamProgress{
 		Progress: request.Progress,
 		StreamID: request.StreamID,
 		UserID:   tumLiveContext.User.ID,
+		Watched:  request.Progress > .9 || watchedToLastSilence,
 	})
 }
 

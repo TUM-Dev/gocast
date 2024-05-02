@@ -58,7 +58,6 @@ func (r infoPageRoutes) updateText(c *gin.Context) {
 		RawContent: reqBody.RawContent,
 		Type:       reqBody.Type,
 	})
-
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

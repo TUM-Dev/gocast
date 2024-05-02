@@ -2,6 +2,7 @@ package connector
 
 import (
 	"net/http"
+
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/gabstv/melody"
 )
