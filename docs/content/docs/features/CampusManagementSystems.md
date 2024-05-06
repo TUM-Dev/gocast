@@ -1,6 +1,6 @@
 ---
 title: "Connect Campus Management Systems"
-draft: false
+draft: true
 weight: 50
 ---
 
