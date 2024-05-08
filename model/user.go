@@ -224,7 +224,10 @@ type DefaultModeSetting struct {
 	Beta bool `json:"beta"`
 }
 
-func (u User) GetDefaultMode() (DefaultModeSetting, error) {
+func (u *User) GetDefaultMode() (DefaultModeSetting, error) {
+	if u == nil {
+		return DefaultModeSetting{Beta: false}, nil
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == DefaultMode {
 			var m DefaultModeSetting
