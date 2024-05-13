@@ -35,7 +35,12 @@ func (r *Runner) RegisterWithGocast(retries int) {
 		r.ReadDiagnostics(5)
 		return
 	}
-	r.ReadDiagnostics(5)
+	go func() {
+		for {
+			r.ReadDiagnostics(5)
+			time.Sleep(time.Minute)
+		}
+	}()
 }
 
 // dialIn connects to manager instance and returns a client
@@ -117,19 +122,18 @@ func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
 }
 
 func (r *Runner) NotifyStreamStarted(ctx context.Context, started *protobuf.StreamStarted) protobuf.Status {
-	//TODO implement me
-	r.log.Warn("Got called with request", "request", started)
-	return protobuf.Status{Ok: true}
-}
+	//TODO: Test me
+	r.log.Info("Got called with request", "request", started)
 
-func (r *Runner) Register(ctx context.Context, request *protobuf.RegisterRequest) protobuf.RegisterResponse {
-	//TODO implement me
-	panic("implement me")
-}
+	con, err := r.dialIn()
+	if err != nil {
+		r.log.Warn("error connecting to gocast", "error", err)
+		return protobuf.Status{Ok: false}
+	}
 
-func (r *Runner) Heartbeat(ctx context.Context, request *protobuf.HeartbeatRequest) protobuf.HeartbeatResponse {
-	//TODO implement me
-	panic("implement me")
+	resp, err := con.NotifyStreamStarted(context.Background(), started)
+
+	return protobuf.Status{Ok: resp.Ok}
 }
 
 func (r *Runner) NotifyVoDUploadFinished(ctx context.Context, request *protobuf.VoDUploadFinished) protobuf.Status {

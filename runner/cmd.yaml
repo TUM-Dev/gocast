@@ -10,4 +10,8 @@ AudioNormalize1: "-i %v -nostats -y -af loudnorm=I=-23:TP=-2:LRA=7:print_format=
 ## Second pass: Apply normalization to the audio
 AudioNormalize2: "-i %v -af loudnorm=I=-23:TP=-2:LRA=7:measured_i=%v:measured_tp=%v:measured_lra=%v:measured_thresh=%v:offset=%v:linear=true:print_format=summary -c:a aac -c:v libx264 -crf 0 -probesize 100M -analyzeduration 250M %v"
 
+
 Transcoding: '-i %v -c:v libx264 -c:a copy -crf 0 -probesize 100M -analyzeduration 250M %v'
+
+SilenceDetect: '-nostats -i %v -af silencedetect=n=-15dB:d=30 -f null -'
+

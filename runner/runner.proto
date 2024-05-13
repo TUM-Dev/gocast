@@ -114,10 +114,12 @@ message SilenceResults{
 }
 
 message StreamStarted {
-  string RunnerID = 1;
+  string Hostname = 1;
   uint32 StreamID = 2;
-  string HLSUrl = 3;
-  string SourceType = 4;
+  uint32 CourseID = 3;
+  string Version = 4;
+  string HLSUrl = 5;
+  string SourceType = 6;
 }
 
 message StreamEnded{
