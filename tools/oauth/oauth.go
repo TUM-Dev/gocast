@@ -54,7 +54,7 @@ func (oauth *OAuth) SetupOauth() {
 
 		Endpoint: oauth.Provider.Endpoint(),
 
-		Scopes: []string{oidc.ScopeOpenID, "profile", "email", "roles"},
+		Scopes: []string{oidc.ScopeOpenID, "profile", "email", "roles", "identity_provider"},
 	}
 
 	oauth.Verifier = oauth.Provider.Verifier(&oidc.Config{ClientID: oauth.OAuth2Config.ClientID})
@@ -96,6 +96,38 @@ func GetRoles(c *gin.Context) []string {
 		return make([]string, 0)
 	}
 	return claims.RealmAccess.Roles
+}
+
+func getIdP(c *gin.Context) (string, error) {
+	if !CheckLoggedIn(c) {
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	if cookie, _ := c.Cookie(tools.Cfg.Cookie.Name); cookie == "" {
+		logger.Debug("No cookie found")
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	session, err := sessions.Store.Get(c, tools.Cfg.Cookie.Name)
+	if err != nil {
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+
+	var claims struct {
+		*jwt.RegisteredClaims
+		IdP string `json:"identity_provider"`
+	}
+
+	_, _, err = jwt.NewParser(jwt.WithoutClaimsValidation()).ParseUnverified(session.Values["access_token"].(string), &claims)
+	if err != nil {
+		logger.Debug("Error parsing claims", "err", err)
+		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
+		return "", errors.New("unauthorized")
+	}
+	return claims.IdP, nil
 }
 
 func getUID(c *gin.Context) (string, error) {
@@ -266,7 +298,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	// Handle OAuth2 callback
 	oauth2Token, err := Auth.OAuth2Config.Exchange(c, c.Query("code"))
 	if err != nil {
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occured during login")
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error exchanging token", "err", err)
 		return
 	}
@@ -274,7 +306,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	// Extract the ID Token from OAuth2 token
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occured during login")
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error getting ID Token")
 		return
 	}
@@ -282,7 +314,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	// Parse and verify ID Token payload
 	idToken, err := Auth.Verifier.Verify(c, rawIDToken)
 	if err != nil {
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occured during login")
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error verifying ID Token", "err", err)
 		return
 	}
@@ -295,21 +327,21 @@ func HandleOAuth2Callback(c *gin.Context) {
 	}
 
 	if err := idToken.Claims(&claims); err != nil {
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occured during login")
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error extracting claims", "err", err)
 		return
 	}
 
 	_, err = Auth.KeySet.VerifySignature(c, oauth2Token.AccessToken)
 	if err != nil {
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occured during login")
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error verifying signature", "err", err)
 		return
 	}
 
 	session, err := sessions.Store.Get(c, tools.Cfg.Cookie.Name)
 	if err != nil {
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occured during login")
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error getting session", "err", err)
 		return
 	}
@@ -320,7 +352,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	session.Values["id_token"] = rawIDToken
 	err = session.Save(c)
 	if err != nil {
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occured during login")
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error saving session", "err", err)
 		return
 	}

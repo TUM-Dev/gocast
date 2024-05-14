@@ -38,6 +38,8 @@ type Course struct {
 	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
 	Pinned                  bool   `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
 
+	UserOAuthID string `gorm:"not null; type:varchar(50)"` // User's OAuth ID
+
 	LivePrivate bool `gorm:"not null; default:false"` // whether Livestreams are private
 	VodPrivate  bool `gorm:"not null; default:false"` // Whether VODs are made private after livestreams
 }

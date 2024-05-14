@@ -2,7 +2,6 @@ package tools
 
 import (
 	"errors"
-	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -39,7 +38,7 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			return
 		}
 
-		loggedIn := oauth.CheckLoggedIn(c)
+		//loggedIn := oauth.CheckLoggedIn(c)
 
 		// get the session
 		//cookie, err := c.Cookie("jwt")

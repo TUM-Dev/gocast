@@ -17,4 +17,6 @@ type Token struct {
 	Expires sql.NullTime `json:"expires"`                                                                   // expiration date (null if none)
 	Scope   string       `json:"scope" gorm:"not null"`                                                     // scope of the token, currently only admin
 	LastUse sql.NullTime `json:"last_use"`                                                                  // last time the token was used
+
+	UserOAuthID string `gorm:"not null; type:varchar(50)"` // User's OAuth ID
 }

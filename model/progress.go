@@ -8,4 +8,6 @@ type StreamProgress struct {
 	// We need to use a primary key in order to use ON CONFLICT in dao/progress.go, same as e.g. https://www.sqlite.org/lang_conflict.html.
 	StreamID uint `gorm:"primaryKey" json:"streamId"`
 	UserID   uint `gorm:"primaryKey" json:"-"`
+
+	UserOAuthID string `gorm:"not null; type:varchar(50)"` // User's OAuth ID
 }

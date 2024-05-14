@@ -13,4 +13,6 @@ type Bookmark struct {
 	Seconds     uint   `gorm:"not null" json:"seconds"`
 	UserID      uint   `gorm:"not null" json:"-"`
 	StreamID    uint   `gorm:"not null" json:"-"`
+
+	UserOAuthID string `gorm:"not null; type:varchar(50)"` // User's OAuth ID
 }

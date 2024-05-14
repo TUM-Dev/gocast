@@ -53,6 +53,8 @@ type Chat struct {
 	Admin            bool   `gorm:"not null;default:false" json:"admin"`
 	Color            string `gorm:"not null;default:'#368bd6'" json:"color"`
 
+	UserOAuthID string `gorm:"not null; type:varchar(50)"` // User's OAuth ID
+
 	Visible   sql.NullBool `gorm:"not null;default:true" json:"-"`
 	IsVisible bool         `gorm:"-" json:"visible"` // IsVisible is .Bool value of Visible for simplicity
 

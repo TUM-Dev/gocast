@@ -5,4 +5,6 @@ type ChatReaction struct {
 	UserID   uint   `gorm:"primaryKey; not null" json:"userID"`
 	Username string `gorm:"not null" json:"username"`
 	Emoji    string `gorm:"primaryKey; not null" json:"emoji"`
+
+	UserOAuthID string `gorm:"not null; type:varchar(50)"` // User's OAuth ID
 }

@@ -48,7 +48,7 @@ type User struct {
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
 	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
 
-	OAuthID string `gorm:"varchar(50)"`
+	OAuthID string `gorm:"type:varchar(50)"`
 
 	Settings  []UserSetting `gorm:"foreignkey:UserID"`
 	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
