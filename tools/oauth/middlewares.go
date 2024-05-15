@@ -30,12 +30,20 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{})
 		} else {
 			uid, err := GetUID(c)
+			if uid == "" {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{})
+				logger.Debug("UID is empty.")
+				return
+			}
 			if err != nil {
 				c.Set("TUMLiveContext", tools.TUMLiveContext{})
+				logger.Debug("Error getting UID.", "err", err)
+				return
 			}
 			user, err := daoWrapper.UsersDao.GetUserByOAuthID(c, uid)
-			if err != nil {
+			if err != nil || user.OAuthID == "" {
 				c.Set("TUMLiveContext", tools.TUMLiveContext{})
+				logger.Debug("Error getting user by OAuth ID.", "err", err)
 				return
 			} else {
 				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &user, OAuthID: &uid})

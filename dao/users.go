@@ -24,6 +24,7 @@ type UsersDao interface {
 	GetAllAdminsAndLecturers(users *[]model.User) (err error)
 	GetUserByID(ctx context.Context, id uint) (user model.User, err error)
 	GetUserByOAuthID(ctx context.Context, id string) (user model.User, err error)
+	GetUserByMatrNr(ctx context.Context, matrNr string) (user model.User, err error)
 	CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error)
 	GetUserByResetKey(key string) (model.User, error)
 	DeleteResetKey(key string)
@@ -111,6 +112,18 @@ func (d usersDao) GetUserByOAuthID(ctx context.Context, id string) (user model.U
 	dbErr := DB.Preload("AdministeredCourses").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "o_auth_id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userByOAuthId%d", id), foundUser, 1, time.Second*10)
+	}
+	return foundUser, dbErr
+}
+
+func (d usersDao) GetUserByMatrNr(ctx context.Context, matrNr string) (user model.User, err error) {
+	if cached, found := Cache.Get(fmt.Sprintf("matrNr%d", matrNr)); found {
+		return cached.(model.User), nil
+	}
+	var foundUser model.User
+	dbErr := DB.Preload("AdministeredCourses").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "matriculation_number = ?", matrNr).Error
+	if dbErr == nil {
+		Cache.SetWithTTL(fmt.Sprintf("matrNr%d", matrNr), foundUser, 1, time.Second*10)
 	}
 	return foundUser, dbErr
 }

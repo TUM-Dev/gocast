@@ -164,8 +164,10 @@ func (r mainRoutes) LoginPage(c *gin.Context) {
 }
 
 func (r mainRoutes) LogoutPage(c *gin.Context) {
-	c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
-	c.Redirect(http.StatusFound, "/")
+	c.Redirect(http.StatusFound, "/oauth/logout")
+	// Old logout
+	//c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
+	//c.Redirect(http.StatusFound, "/")
 }
 
 func (r mainRoutes) CreatePasswordPage(c *gin.Context) {

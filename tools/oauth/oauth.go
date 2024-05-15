@@ -3,6 +3,7 @@ package oauth
 import (
 	"context"
 	"errors"
+	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/sessions"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -16,6 +17,7 @@ import (
 )
 
 var Auth *OAuth = &OAuth{}
+var daoWrapper dao.DaoWrapper
 
 type OAuth struct {
 	LogoutURL    string
@@ -27,6 +29,7 @@ type OAuth struct {
 }
 
 func (oauth *OAuth) SetupOauth() {
+	daoWrapper = dao.NewDaoWrapper()
 	if oauth.ProviderURL == "" && (tools.Cfg.OAuth == nil || tools.Cfg.OAuth.ProviderURL == "") {
 		logger.Info("Provider URL is empty, oauth not enabled")
 		return
@@ -290,7 +293,7 @@ func validateAccessToken(rawIdToken string, token string) bool {
 		logger.Debug("Token expired")
 		return false
 	}
-	logger.Debug("Claims", "claims", claims)
+	//logger.Debug("Claims", "claims", claims)
 	return true
 }
 
@@ -324,6 +327,11 @@ func HandleOAuth2Callback(c *gin.Context) {
 		Email    string `json:"email"`
 		Verified bool   `json:"email_verified"`
 		Roles    string `json:"roles"`
+		IdP      string `json:"identity_provider"`
+		Edu      struct {
+			MatrNr string `json:"matrNr"`
+		} `json:"edu"`
+		Uid string `json:"sub"`
 	}
 
 	if err := idToken.Claims(&claims); err != nil {
@@ -355,6 +363,27 @@ func HandleOAuth2Callback(c *gin.Context) {
 		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error saving session", "err", err)
 		return
+	}
+
+	// TODO: Add OAuth Id to correct user in DB
+	if claims.IdP == "" {
+		// local account, verify by email
+	} else {
+		// saml account, verify by matriculation number
+		user, err := daoWrapper.UsersDao.GetUserByMatrNr(c, claims.Edu.MatrNr)
+		if user.OAuthID == "" {
+			if err != nil {
+				// TODO: Create new User
+				logger.Debug("User not found in new db", "err", err)
+				tools.RenderErrorPage(c, http.StatusInternalServerError, "User not found in old db")
+			}
+			user.OAuthID = claims.Uid
+			err = daoWrapper.UsersDao.UpdateUser(user)
+			if err != nil {
+				tools.RenderErrorPage(c, http.StatusInternalServerError, "Error updating user")
+			}
+			// TODO: Context broken if OAuth ID newly set, users have to reload next page
+		}
 	}
 
 	// Redirect to home of current host or to the host specified in the redirectURL cookie
