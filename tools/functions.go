@@ -2,6 +2,7 @@ package tools
 
 import (
 	"errors"
+	"github.com/gin-gonic/gin"
 	"log"
 	"os/exec"
 	"regexp"
@@ -58,4 +59,8 @@ func MaskEmail(email string) (masked string, err error) {
 func MaskLogin(login string) (masked string) {
 	re := regexp.MustCompile("[0-9]")
 	return re.ReplaceAllString(login, "*")
+}
+
+func SetLocationCookie(c *gin.Context) {
+	c.SetCookie("redirectURL", c.Request.RequestURI, 30*60, "/", "", false, false)
 }

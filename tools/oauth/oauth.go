@@ -357,13 +357,21 @@ func HandleOAuth2Callback(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "OK",
-		"email":         claims.Email,
-		"expires":       oauth2Token.Expiry,
-		"access_token":  oauth2Token.AccessToken,
-		"refresh_token": oauth2Token.RefreshToken,
-	})
+	// Redirect to home of current host or to the host specified in the redirectURL cookie
+	if cookie, _ := c.Cookie("redirectURL"); cookie != "" {
+		c.SetCookie("redirectURL", "", -1, "/", "", false, true)
+		c.Redirect(http.StatusFound, cookie)
+	} else {
+		c.Redirect(http.StatusFound, "/")
+	}
+
+	//c.JSON(http.StatusOK, gin.H{
+	//	"message":       "OK",
+	//	"email":         claims.Email,
+	//	"expires":       oauth2Token.Expiry,
+	//	"access_token":  oauth2Token.AccessToken,
+	//	"refresh_token": oauth2Token.RefreshToken,
+	//})
 }
 
 // Logs the user out and redirects to home of current host or to the host specified in the redirectURL cookie

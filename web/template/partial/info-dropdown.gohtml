@@ -65,7 +65,7 @@
                 <h6 class="text-sm text-3 font-bold my-auto">Start</h6>
             </a>
             {{if not .User}}
-                <a href="/login" class = "flex">
+                <a href="/login" @click="home.setLocationCookie()" class = "flex">
                     <i class="text-3 fas fa-sign-in-alt w-8 mr-2"></i>
                     <h6 class="text-sm text-3 font-bold my-auto">Login</h6>
                 </a>

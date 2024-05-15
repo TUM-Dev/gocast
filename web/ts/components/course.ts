@@ -8,6 +8,7 @@ import { Tunnel } from "../utilities/tunnels";
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { getFromStorage, setInStorage } from "../utilities/storage";
 import { GroupedSmartArray, SmartArray } from "../utilities/smartarray";
+import {setLocationCookie} from "./locationCookie";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -59,6 +60,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
             this.loadCourse()
                 .catch((err) => {
                     if (err.message === "Unauthorized") {
+                        setLocationCookie()
                         document.location.href = "/login";
                     } else {
                         document.location.href = `/?year=${year}&term=${term}`; // redirect to start page on error

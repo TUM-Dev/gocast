@@ -13,6 +13,7 @@
                 </a>
                 {{if not .User}}
                     <a href="/login"
+                       @click="home.setLocationCookie();"
                        class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                         Login
                     </a>

@@ -3,7 +3,6 @@ package tools
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -72,12 +71,14 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 		//	c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 		//	return
 		//}
+		c.Set("TUMLiveContext", TUMLiveContext{})
 	}
 }
 
 // LoggedIn is a middleware that checks if the user is logged in and redirects to the login page if not
 func LoggedIn(c *gin.Context) {
 	if c.MustGet("TUMLiveContext").(TUMLiveContext).User == nil {
+		SetLocationCookie(c)
 		c.Redirect(http.StatusFound, "/login")
 		c.Abort()
 	}
@@ -166,7 +167,8 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			tumLiveContext.Course = &course
 			c.Set("TUMLiveContext", tumLiveContext)
 		} else if tumLiveContext.User == nil {
-			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+			SetLocationCookie(c)
+			c.Redirect(http.StatusFound, "/login")
 			c.Abort()
 			return
 		} else {
@@ -221,7 +223,8 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		}
 		if course.Visibility != "public" && course.Visibility != "hidden" {
 			if tumLiveContext.User == nil {
-				c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+				c.SetCookie("redirectURL", c.Request.RequestURI, 30*60, "/", "", false, false)
+				c.Redirect(http.StatusFound, "/login")
 				c.Abort()
 				return
 			} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
@@ -318,7 +321,8 @@ func AdminOfCourse(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+		c.SetCookie("redirectURL", c.Request.RequestURI, 30*60, "/", "", false, false)
+		c.Redirect(http.StatusFound, "/login")
 		c.Abort()
 		return
 	}
