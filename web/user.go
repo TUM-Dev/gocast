@@ -76,7 +76,7 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 
 // HandleValidLogin starts a session and redirects the user to the page they were trying to access.
 func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
-	tools.StartSession(c, data)
+	//tools.StartSession(c, data) // TODO: Implement this new with oauth
 	redirURL, err := c.Cookie(redirCookieName)
 	if err != nil {
 		redirURL = "/" // Fallback in case no cookie is present: Redirect to index page

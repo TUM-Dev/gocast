@@ -98,7 +98,7 @@ func GetRoles(c *gin.Context) []string {
 	return claims.RealmAccess.Roles
 }
 
-func getIdP(c *gin.Context) (string, error) {
+func GetIdP(c *gin.Context) (string, error) {
 	if !CheckLoggedIn(c) {
 		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
 		return "", errors.New("unauthorized")
@@ -130,7 +130,7 @@ func getIdP(c *gin.Context) (string, error) {
 	return claims.IdP, nil
 }
 
-func getUID(c *gin.Context) (string, error) {
+func GetUID(c *gin.Context) (string, error) {
 	if !CheckLoggedIn(c) {
 		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
 		return "", errors.New("unauthorized")
@@ -162,7 +162,7 @@ func getUID(c *gin.Context) (string, error) {
 	return claims.Uid, nil
 }
 
-func getUsername(c *gin.Context) (string, error) {
+func GetUsername(c *gin.Context) (string, error) {
 	if !CheckLoggedIn(c) {
 		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
 		return "", errors.New("unauthorized")
@@ -364,14 +364,6 @@ func HandleOAuth2Callback(c *gin.Context) {
 	} else {
 		c.Redirect(http.StatusFound, "/")
 	}
-
-	//c.JSON(http.StatusOK, gin.H{
-	//	"message":       "OK",
-	//	"email":         claims.Email,
-	//	"expires":       oauth2Token.Expiry,
-	//	"access_token":  oauth2Token.AccessToken,
-	//	"refresh_token": oauth2Token.RefreshToken,
-	//})
 }
 
 // Logs the user out and redirects to home of current host or to the host specified in the redirectURL cookie

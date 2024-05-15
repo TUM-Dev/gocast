@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/TUM-Dev/gocast/tools/oauth"
-	"github.com/TUM-Dev/gocast/tools/sessions"
 	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
@@ -16,6 +14,8 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/oauth"
+	"github.com/TUM-Dev/gocast/tools/sessions"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/web"
 	"github.com/dgraph-io/ristretto"
@@ -75,7 +75,7 @@ func GinServer() (err error) {
 		return ""
 	}))
 
-	router.Use(tools.InitContext(dao.NewDaoWrapper()))
+	router.Use(oauth.InitContext(dao.NewDaoWrapper()))
 
 	liveUpdates := router.Group("/api/pub-sub")
 	api.ConfigRealtimeRouter(liveUpdates)

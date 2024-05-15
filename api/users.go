@@ -78,16 +78,16 @@ func (r usersRoutes) impersonateUser(c *gin.Context) {
 		})
 		return
 	}
-	u, err := r.UsersDao.GetUserByID(c, request.UserID)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "User not found",
-			Err:           err,
-		})
-		return
-	}
-	tools.StartSession(c, &tools.SessionData{Userid: u.ID})
+	//u, err := r.UsersDao.GetUserByID(c, request.UserID)
+	//if err != nil {
+	//	_ = c.Error(tools.RequestError{
+	//		Status:        http.StatusNotFound,
+	//		CustomMessage: "User not found",
+	//		Err:           err,
+	//	})
+	//	return
+	//}
+	//tools.StartSession(c, &tools.SessionData{Userid: u.ID}) // TODO: Implement this
 }
 
 func (r usersRoutes) updateUser(c *gin.Context) {

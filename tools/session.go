@@ -1,18 +1,11 @@
 package tools
 
-import (
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
-)
-
 type SessionData struct {
 	Userid        uint
 	SamlSubjectID *string
 }
 
-func StartSession(c *gin.Context, data *SessionData) {
+/*func StartSession(c *gin.Context, data *SessionData) {
 	token, err := createToken(data.Userid, data.SamlSubjectID)
 	if err != nil {
 		logger.Error("Could not create token", "err", err)
@@ -32,4 +25,4 @@ func createToken(user uint, samlSubjectID *string) (string, error) {
 		SamlSubjectID: samlSubjectID,
 	}
 	return t.SignedString(Cfg.GetJWTKey())
-}
+}*/

@@ -2,16 +2,13 @@ package tools
 
 import (
 	"errors"
-	"net/http"
-	"strconv"
-	"strings"
-
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
+	"net/http"
+	"strconv"
 )
 
 var templateExecutor TemplateExecutor
@@ -21,59 +18,52 @@ func SetTemplateExecutor(e TemplateExecutor) {
 	templateExecutor = e
 }
 
-// JWTClaims are the claims contained in a session
-type JWTClaims struct {
-	*jwt.RegisteredClaims
-	UserID        uint
-	SamlSubjectID *string // identifier of the SAML session (if any)
-}
-
-func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// no context initialisation required for static assets.
-		if strings.HasPrefix(c.Request.RequestURI, "/static") ||
-			strings.HasPrefix(c.Request.RequestURI, "/public") ||
-			strings.HasPrefix(c.Request.RequestURI, "/favicon") {
-			return
-		}
-
-		//loggedIn := oauth.CheckLoggedIn(c)
-
-		// get the session
-		//cookie, err := c.Cookie("jwt")
-		//if err != nil {
-		//	c.Set("TUMLiveContext", TUMLiveContext{})
-		//	return
-		//}
-		//
-		//token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		//	key := Cfg.GetJWTKey().Public()
-		//	return key, nil
-		//})
-		//if err != nil {
-		//	logger.Info("JWT parsing error: ", "err", err)
-		//	c.Set("TUMLiveContext", TUMLiveContext{})
-		//	c.SetCookie("jwt", "", -1, "/", "", false, true)
-		//	return
-		//}
-		//if !token.Valid {
-		//	logger.Info("JWT token is not valid")
-		//	c.Set("TUMLiveContext", TUMLiveContext{})
-		//	c.SetCookie("jwt", "", -1, "/", "", false, true)
-		//	return
-		//}
-		//
-		//user, err := daoWrapper.UsersDao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
-		//if err != nil {
-		//	c.Set("TUMLiveContext", TUMLiveContext{})
-		//	return
-		//} else {
-		//	c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
-		//	return
-		//}
-		c.Set("TUMLiveContext", TUMLiveContext{})
-	}
-}
+//func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
+//	return func(c *gin.Context) {
+//		// no context initialisation required for static assets.
+//		if strings.HasPrefix(c.Request.RequestURI, "/static") ||
+//			strings.HasPrefix(c.Request.RequestURI, "/public") ||
+//			strings.HasPrefix(c.Request.RequestURI, "/favicon") {
+//			return
+//		}
+//
+//		//loggedIn := oauth.CheckLoggedIn(c)
+//
+//		// get the session
+//		//cookie, err := c.Cookie("jwt")
+//		//if err != nil {
+//		//	c.Set("TUMLiveContext", TUMLiveContext{})
+//		//	return
+//		//}
+//		//
+//		//token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+//		//	key := Cfg.GetJWTKey().Public()
+//		//	return key, nil
+//		//})
+//		//if err != nil {
+//		//	logger.Info("JWT parsing error: ", "err", err)
+//		//	c.Set("TUMLiveContext", TUMLiveContext{})
+//		//	c.SetCookie("jwt", "", -1, "/", "", false, true)
+//		//	return
+//		//}
+//		//if !token.Valid {
+//		//	logger.Info("JWT token is not valid")
+//		//	c.Set("TUMLiveContext", TUMLiveContext{})
+//		//	c.SetCookie("jwt", "", -1, "/", "", false, true)
+//		//	return
+//		//}
+//		//
+//		//user, err := daoWrapper.UsersDao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
+//		//if err != nil {
+//		//	c.Set("TUMLiveContext", TUMLiveContext{})
+//		//	return
+//		//} else {
+//		//	c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
+//		//	return
+//		//}
+//		c.Set("TUMLiveContext", TUMLiveContext{})
+//	}
+//}
 
 // LoggedIn is a middleware that checks if the user is logged in and redirects to the login page if not
 func LoggedIn(c *gin.Context) {
@@ -388,6 +378,7 @@ type TUMLiveContext struct {
 	Course        *model.Course
 	Stream        *model.Stream
 	SamlSubjectID *string
+	OAuthID       *string
 }
 
 func (c *TUMLiveContext) UserIsAdmin() bool {
