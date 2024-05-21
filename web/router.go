@@ -3,6 +3,7 @@ package web
 import (
 	"embed"
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"html/template"
 	"net/http"
 	"os"
@@ -102,7 +103,7 @@ func configMainRoute(router *gin.Engine) {
 
 	// lecturers
 	atLeastLecturerGroup := router.Group("/")
-	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
+	atLeastLecturerGroup.Use(oauth.AtLeastLecturer)
 	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
 	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
 

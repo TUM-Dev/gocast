@@ -66,64 +66,11 @@ type usersRoutes struct {
 }
 
 func (r usersRoutes) impersonateUser(c *gin.Context) {
-	type req struct {
-		UserID uint `json:"id"`
-	}
-	var request req
-	err := c.Bind(&request)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "Bad Request",
-			Err:           err,
-		})
-		return
-	}
-	//u, err := r.UsersDao.GetUserByID(c, request.UserID)
-	//if err != nil {
-	//	_ = c.Error(tools.RequestError{
-	//		Status:        http.StatusNotFound,
-	//		CustomMessage: "User not found",
-	//		Err:           err,
-	//	})
-	//	return
-	//}
-	//tools.StartSession(c, &tools.SessionData{Userid: u.ID}) // TODO: Implement this
+	// TODO: Add impersonation with keycloak (feature token_exchange activated)
 }
 
 func (r usersRoutes) updateUser(c *gin.Context) {
-	req := struct {
-		ID   uint `json:"id"`
-		Role uint `json:"role"`
-	}{}
-	if err := c.BindJSON(&req); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	user, err := r.UsersDao.GetUserByID(c, req.ID)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not get user by id",
-			Err:           err,
-		})
-		return
-	}
-	user.Role = req.Role
-	err = r.UsersDao.UpdateUser(user)
-	if err != nil {
-		logger.Error("can not update user", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not update user",
-			Err:           err,
-		})
-		return
-	}
+	// TODO: Update user on keycloak (new UI needed)
 }
 
 func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err error) {
@@ -168,26 +115,7 @@ func (r usersRoutes) SearchUserForCourse(c *gin.Context) {
 }
 
 func (r usersRoutes) SearchUser(c *gin.Context) {
-	users, err := r.prepareUserSearch(c)
-	if err != nil {
-		return
-	}
-	res := make([]userSearchDTO, len(users))
-	for i, user := range users {
-		email, err := tools.MaskEmail(user.Email.String)
-		if err != nil {
-			email = ""
-		}
-		lrzID := tools.MaskLogin(user.LrzID)
-		res[i] = userSearchDTO{
-			ID:    user.ID,
-			LrzID: lrzID,
-			Email: email,
-			Name:  user.GetPreferredName(),
-			Role:  user.Role,
-		}
-	}
-	c.JSON(http.StatusOK, res)
+	// TODO: Search user on keylcoak
 }
 
 type userForLecturerDto struct {
@@ -209,46 +137,7 @@ type userSearchDTO struct {
 }
 
 func (r usersRoutes) DeleteUser(c *gin.Context) {
-	var deleteRequest deleteUserRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	// currently admins can not be deleted.
-	res, err := r.UsersDao.IsUserAdmin(context.Background(), deleteRequest.Id)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not find user",
-			Err:           err,
-		})
-		return
-	}
-	if res {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "user is admin (admins can not be deleted)",
-		})
-		return
-	}
-
-	err = r.UsersDao.DeleteUser(context.Background(), deleteRequest.Id)
-	if err != nil {
-		sentry.CaptureException(err)
-		defer sentry.Flush(time.Second * 2)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not delete user",
-			Err:           err,
-		})
-		return
-	}
-	c.Status(http.StatusOK)
+	// TODO: Delete user from keycloak
 }
 
 func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
@@ -446,43 +335,7 @@ func (r usersRoutes) InitUser(c *gin.Context) {
 }
 
 func (r usersRoutes) CreateUser(c *gin.Context) {
-	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not find users",
-			Err:           err,
-		})
-		return
-	}
-	if usersEmpty {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "No users in database. Use /api/users/init instead.",
-		})
-		return
-	}
-	var request createUserRequest
-	err = json.NewDecoder(c.Request.Body).Decode(&request)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-
-	createdUser, err := r.createUserHelper(request, model.LecturerType)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not create user",
-			Err:           err,
-		})
-		return
-	}
-	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
+	// TODO: Create user on keycloak
 }
 
 func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
@@ -816,43 +669,7 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 }
 
 func (r usersRoutes) resetPassword(c *gin.Context) {
-	type resetPasswordRequest struct {
-		Username string `json:"username"`
-	}
-	var req resetPasswordRequest
-	err := c.BindJSON(&req)
-	if err != nil {
-		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "Can't bind request body",
-			Err:           err,
-		})
-		return
-	}
-
-	user, err := r.UsersDao.GetUserByEmail(c, req.Username)
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		// wrong username/email -> pass
-		return
-	}
-	if err != nil {
-		logger.Error("can't get user for password reset", "err", err)
-		return
-	}
-	link, err := r.UsersDao.CreateRegisterLink(c, user)
-	if err != nil {
-		logger.Error("can't create register link", "err", err)
-		return
-	}
-	err = r.EmailDao.Create(c, &model.Email{
-		From:    tools.Cfg.Mail.Sender,
-		To:      user.Email.String,
-		Subject: "TUM-Live: Reset Password",
-		Body:    "Hi! \n\nYou can reset your TUM-Live password by clicking on the following link: \n\n" + tools.Cfg.WebUrl + "/setPassword/" + link.RegisterSecret + "\n\nIf you did not request a password reset, please ignore this email. \n\nBest regards",
-	})
-	if err != nil {
-		logger.Error("can't save reset password email", "err", err)
-	}
+	// TODO: Reset password on keycloak for local accounts
 }
 
 type personalData struct {

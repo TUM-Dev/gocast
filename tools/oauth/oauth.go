@@ -378,6 +378,18 @@ func HandleOAuth2Callback(c *gin.Context) {
 		return
 	}
 
+	handleMigration(c, &claims)
+
+	// Redirect to home of current host or to the host specified in the redirectURL cookie
+	if cookie, _ := c.Cookie("redirectURL"); cookie != "" {
+		c.SetCookie("redirectURL", "", -1, "/", "", false, true)
+		c.Redirect(http.StatusFound, cookie)
+	} else {
+		c.Redirect(http.StatusFound, "/")
+	}
+}
+
+func handleMigration(c *gin.Context, claims *loginClaims) {
 	var newUser = false
 
 	// TODO: Add OAuth Id to correct user in DB
@@ -385,8 +397,10 @@ func HandleOAuth2Callback(c *gin.Context) {
 		// local account, verify by email
 		user, err := daoWrapper.UsersDao.GetUserByEmail(c, claims.Email)
 		if err != nil || user.Email.String == "" {
-			// TODO: Create new user if user not exists
-			createNewUser(c, &claims)
+			// Create new user in db, because user doesnt exists (just for migration, after some time, user table can be
+			// deleted from the project, will be handled by oauth provider, reading needs to be done through claims,
+			// user just temporarily needed for migration)
+			createNewUser(c, claims)
 			newUser = true
 			//tools.RenderErrorPage(c, http.StatusInternalServerError, "User not found in old db")
 			//logger.Debug("User not found in old db", "err", err)
@@ -405,8 +419,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 		// saml account, verify by matriculation number
 		user, err := daoWrapper.UsersDao.GetUserByMatrNr(c, claims.Edu.MatrNr)
 		if err != nil || user.MatriculationNumber == "" {
-			// TODO: Create new user if user not exists
-			createNewUser(c, &claims)
+			createNewUser(c, claims)
 			newUser = true
 			//tools.RenderErrorPage(c, http.StatusInternalServerError, "User not found in old db")
 			//logger.Debug("User not found in old db", "err", err)
@@ -419,14 +432,6 @@ func HandleOAuth2Callback(c *gin.Context) {
 			}
 			// TODO: Context broken if OAuth ID newly set, users have to reload next page
 		}
-	}
-
-	// Redirect to home of current host or to the host specified in the redirectURL cookie
-	if cookie, _ := c.Cookie("redirectURL"); cookie != "" {
-		c.SetCookie("redirectURL", "", -1, "/", "", false, true)
-		c.Redirect(http.StatusFound, cookie)
-	} else {
-		c.Redirect(http.StatusFound, "/")
 	}
 }
 
