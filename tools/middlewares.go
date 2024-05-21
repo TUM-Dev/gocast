@@ -286,20 +286,6 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 	}
 }
 
-func OwnerOfCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-	}
-}
-
 // AdminOfCourse checks if the user is an admin of the course or admin.
 // If not, aborts with status Forbidden.
 func AdminOfCourse(c *gin.Context) {
@@ -320,34 +306,6 @@ func AdminOfCourse(c *gin.Context) {
 		return
 	}
 	c.AbortWithStatus(http.StatusForbidden) // user is not admin of course
-}
-
-func AtLeastLecturer(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Role != model.LecturerType) {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-	}
-}
-
-func Admin(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-	}
 }
 
 func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {

@@ -41,8 +41,7 @@ type User struct {
 	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	LrzID               string         `json:"-"`
-	Role                uint           `gorm:"default:4" json:"-"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
-	Roles               []string       `gorm:"type:varchar(256)" json:"-"`
+	Role                uint           `gorm:"default:4" json:"-"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4, InsertedFromOAuth = 5 (just temporary, roles will be replaced by oauth groups)
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of

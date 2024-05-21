@@ -2,8 +2,10 @@ package oauth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/sessions"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -57,7 +59,7 @@ func (oauth *OAuth) SetupOauth() {
 
 		Endpoint: oauth.Provider.Endpoint(),
 
-		Scopes: []string{oidc.ScopeOpenID, "profile", "email", "roles", "identity_provider"},
+		Scopes: []string{oidc.ScopeOpenID, "profile", "email", "roles", "identity_provider", "groups"},
 	}
 
 	oauth.Verifier = oauth.Provider.Verifier(&oidc.Config{ClientID: oauth.OAuth2Config.ClientID})
@@ -67,7 +69,7 @@ func (oauth *OAuth) SetupOauth() {
 	logger.Info("Successfully created OAuthConfig")
 }
 
-func GetRoles(c *gin.Context) []string {
+func GetGroups(c *gin.Context) []string {
 	if !CheckLoggedIn(c) {
 		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
 		return make([]string, 0)
@@ -88,7 +90,7 @@ func GetRoles(c *gin.Context) []string {
 	var claims struct {
 		*jwt.RegisteredClaims
 		RealmAccess struct {
-			Roles []string `json:"roles"`
+			Groups []string `json:"groups"`
 		} `json:"realm_access"`
 	}
 
@@ -98,7 +100,7 @@ func GetRoles(c *gin.Context) []string {
 		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
 		return make([]string, 0)
 	}
-	return claims.RealmAccess.Roles
+	return claims.RealmAccess.Groups
 }
 
 func GetIdP(c *gin.Context) (string, error) {
@@ -297,6 +299,23 @@ func validateAccessToken(rawIdToken string, token string) bool {
 	return true
 }
 
+// TODO: Roles not read correctly
+type loginClaims struct {
+	Email    string `json:"email"`
+	Verified bool   `json:"email_verified"`
+	IdP      string `json:"identity_provider"`
+	Edu      struct {
+		MatrNr string `json:"matrNr"`
+		LrzId  string `json:"uid"`
+	} `json:"edu"`
+	Uid string `json:"sub"`
+
+	Groups []string `json:"groups"`
+
+	FamName   string `json:"family_name"`
+	GivenName string `json:"given_name"`
+}
+
 func HandleOAuth2Callback(c *gin.Context) {
 	// Handle OAuth2 callback
 	oauth2Token, err := Auth.OAuth2Config.Exchange(c, c.Query("code"))
@@ -322,18 +341,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 		return
 	}
 
-	// Extract custom claims
-	var claims struct {
-		Email    string `json:"email"`
-		Verified bool   `json:"email_verified"`
-		Roles    string `json:"roles"`
-		IdP      string `json:"identity_provider"`
-		Edu      struct {
-			MatrNr string `json:"matrNr"`
-		} `json:"edu"`
-		Uid string `json:"sub"`
-	}
-
+	var claims loginClaims
 	if err := idToken.Claims(&claims); err != nil {
 		tools.RenderErrorPage(c, http.StatusInternalServerError, "Some error occurred during login")
 		logger.Debug("Error extracting claims", "err", err)
@@ -365,18 +373,40 @@ func HandleOAuth2Callback(c *gin.Context) {
 		return
 	}
 
+	var newUser = false
+
 	// TODO: Add OAuth Id to correct user in DB
 	if claims.IdP == "" {
 		// local account, verify by email
+		user, err := daoWrapper.UsersDao.GetUserByEmail(c, claims.Email)
+		if err != nil || user.Email.String == "" {
+			// TODO: Create new user if user not exists
+			createNewUser(c, &claims)
+			newUser = true
+			//tools.RenderErrorPage(c, http.StatusInternalServerError, "User not found in old db")
+			//logger.Debug("User not found in old db", "err", err)
+		}
+		if user.OAuthID == "" && !newUser {
+			if user.OAuthID == "" {
+				user.OAuthID = claims.Uid
+				err = daoWrapper.UsersDao.UpdateUser(user)
+				if err != nil {
+					tools.RenderErrorPage(c, http.StatusInternalServerError, "Error updating user")
+				}
+				// TODO: Maybe Context broken if OAuth ID newly set, users have to reload next page
+			}
+		}
 	} else {
 		// saml account, verify by matriculation number
 		user, err := daoWrapper.UsersDao.GetUserByMatrNr(c, claims.Edu.MatrNr)
-		if user.OAuthID == "" {
-			if err != nil {
-				// TODO: Create new User
-				logger.Debug("User not found in new db", "err", err)
-				tools.RenderErrorPage(c, http.StatusInternalServerError, "User not found in old db")
-			}
+		if err != nil || user.MatriculationNumber == "" {
+			// TODO: Create new user if user not exists
+			createNewUser(c, &claims)
+			newUser = true
+			//tools.RenderErrorPage(c, http.StatusInternalServerError, "User not found in old db")
+			//logger.Debug("User not found in old db", "err", err)
+		}
+		if user.OAuthID == "" && !newUser {
 			user.OAuthID = claims.Uid
 			err = daoWrapper.UsersDao.UpdateUser(user)
 			if err != nil {
@@ -392,6 +422,32 @@ func HandleOAuth2Callback(c *gin.Context) {
 		c.Redirect(http.StatusFound, cookie)
 	} else {
 		c.Redirect(http.StatusFound, "/")
+	}
+}
+
+func createNewUser(c *gin.Context, claims *loginClaims) {
+	// TODO: Check role and insert correct role
+	logger.Debug("Groups", "roles", claims.Groups)
+	user := model.User{
+		Name:                claims.GivenName,
+		LastName:            &claims.FamName,
+		Email:               sql.NullString{String: claims.Email, Valid: true},
+		MatriculationNumber: claims.Edu.MatrNr,
+		LrzID:               claims.Edu.LrzId,
+		Role:                5,
+		Password:            "",
+		Courses:             nil,
+		AdministeredCourses: nil,
+		PinnedCourses:       nil,
+		OAuthID:             claims.Uid,
+		Settings:            nil,
+		Bookmarks:           nil,
+	}
+	err := daoWrapper.UsersDao.CreateUser(c, &user)
+	if err != nil {
+		tools.RenderErrorPage(c, http.StatusInternalServerError, "Error creating user")
+		logger.Error("Error creating user", "err", err)
+		return
 	}
 }
 
@@ -412,6 +468,7 @@ func HandleOAuth2Logout(c *gin.Context) {
 		tools.RenderErrorPage(c, http.StatusInternalServerError, "Error deleting session")
 		return
 	}
+	c.SetCookie(tools.Cfg.Cookie.Name, "", -1, "/", "", false, true)
 
 	if cookie, _ := c.Cookie("redirectURL"); cookie != "" {
 		c.SetCookie("redirectURL", "", -1, "/", "", false, true)
