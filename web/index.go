@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"errors"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"html/template"
 	"net/http"
 	"sort"
@@ -200,7 +201,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 			continue
 		}
 		var lectureHall *model.LectureHall
-		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+		if tumLiveContext.User != nil && oauth.IsAdmin(c) && stream.LectureHallID != 0 {
 			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 			if err != nil {
 				logger.Error("Error getting lecture hall by id", "err", err)

@@ -14,6 +14,7 @@ import (
 	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 )
@@ -208,6 +209,10 @@ func LoggedInUsersOnly() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+func IsAdmin(c *gin.Context) bool {
+	return slices.Contains(GetGroups(c), "/admin")
 }
 
 func CheckLoggedIn(c *gin.Context) bool {

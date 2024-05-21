@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"strconv"
 
@@ -15,7 +16,7 @@ func configMaintenanceRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := maintenanceRoutes{DaoWrapper: daoWrapper}
 
 	g := router.Group("/api/maintenance")
-	g.Use(tools.Admin)
+	g.Use(oauth.Admin)
 	{
 		g.POST("/generateThumbnails", routes.generateThumbnails)
 		g.GET("/generateThumbnails/status", routes.getThumbGenProgress)

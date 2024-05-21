@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"strconv"
 
@@ -14,7 +15,7 @@ func configInfoPageRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
 	routes := infoPageRoutes{wrapper}
 	api := router.Group("/api")
 	{
-		api.Use(tools.Admin)
+		api.Use(oauth.Admin)
 		api.PUT("/texts/:id", routes.updateText)
 	}
 }

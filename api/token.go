@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := tokenRoutes{daoWrapper}
 	g := r.Group("/api/token")
-	g.Use(tools.Admin)
+	g.Use(oauth.Admin)
 	g.POST("/create", routes.createToken)
 	g.DELETE("/:id", routes.deleteToken)
 }

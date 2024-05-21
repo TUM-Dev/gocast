@@ -1,7 +1,9 @@
 package api
 
 import (
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -17,8 +19,8 @@ func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	{
 		notifications.GET("/", routes.getNotifications)
 		notifications.GET("/server", routes.getServerNotifications)
-		notifications.POST("/", tools.Admin, routes.createNotification)
-		notifications.DELETE("/:id", tools.Admin, routes.deleteNotification)
+		notifications.POST("/", oauth.Admin, routes.createNotification)
+		notifications.DELETE("/:id", oauth.Admin, routes.deleteNotification)
 	}
 }
 
@@ -32,12 +34,12 @@ func (r notificationRoutes) getNotifications(c *gin.Context) {
 	targets := []model.NotificationTarget{model.TargetAll}
 	if ctx.User != nil {
 		targets = append(targets, model.TargetUser)
-		switch ctx.User.Role {
-		case model.AdminType:
+		groups := oauth.GetGroups(c)
+		if slices.Contains(groups, "/admin") {
 			targets = append(targets, model.TargetAdmin)
-		case model.LecturerType:
+		} else if slices.Contains(groups, "/lecturer") {
 			targets = append(targets, model.TargetLecturer)
-		case model.StudentType:
+		} else if slices.Contains(groups, "/student") {
 			targets = append(targets, model.TargetStudent)
 		}
 	}

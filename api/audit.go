@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -18,7 +19,7 @@ type auditRoutes struct {
 func configAuditRouter(r *gin.Engine, d dao.DaoWrapper) {
 	auditRouter := auditRoutes{d}
 	g := r.Group("/api")
-	g.Use(tools.Admin)
+	g.Use(oauth.Admin)
 	{
 		g.GET("/audits", auditRouter.getAudits)
 	}

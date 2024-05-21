@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"strconv"
 
 	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
 )
@@ -35,7 +35,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	// check if request is for server -> validate
 	cidFromContext := c.Param("courseID")
 	if cidFromContext == "0" {
-		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
+		if !oauth.IsAdmin(c) {
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusForbidden,
 				CustomMessage: "not admin",
@@ -218,7 +218,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 	// check if request is for server -> validate
 	cidFromContext := c.Param("courseId")
 	if cidFromContext == "0" {
-		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
+		if !oauth.IsAdmin(c) {
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusForbidden,
 				CustomMessage: "not admin",

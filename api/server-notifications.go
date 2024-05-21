@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 func configServerNotificationsRoutes(engine *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := serverNotificationRoutes{daoWrapper}
 	adminGroup := engine.Group("/api/serverNotification")
-	adminGroup.Use(tools.Admin)
+	adminGroup.Use(oauth.Admin)
 	adminGroup.POST("/:notificationId", routes.updateServerNotification)
 	adminGroup.POST("/create", routes.createServerNotification)
 }

@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -48,7 +50,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 		lecturers := api.Group("")
 		{
-			lecturers.Use(tools.AtLeastLecturer)
+			lecturers.Use(oauth.AtLeastLecturer)
 			lecturers.POST("/courseInfo", routes.courseInfo)
 			lecturers.POST("/createCourse", routes.createCourse)
 			lecturers.GET("/searchCourse", routes.searchCourse)
@@ -154,7 +156,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 			}
 		}
 		// Only show hidden streams to admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || !oauth.IsAdmin(c)) {
 			continue
 		}
 		var lectureHall *model.LectureHall
@@ -238,16 +240,16 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 
 	var courses []model.Course
 	if tumLiveContext.User != nil {
-		switch tumLiveContext.User.Role {
-		case model.AdminType:
+		groups := oauth.GetGroups(c)
+		if slices.Contains(groups, "/admin") {
 			courses = r.GetAllCoursesForSemester(year, term, c)
-		case model.LecturerType:
+		} else if slices.Contains(groups, "/lecturer") {
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
 			if err == nil {
 				courses = append(courses, coursesForLecturer...)
 			}
-		default:
+		} else {
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 		}
 	}
@@ -1392,7 +1394,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
 	}
-	if tumLiveContext.User.Role != model.AdminType {
+	if !oauth.IsAdmin(c) {
 		course.Admins = []model.User{*tumLiveContext.User}
 	}
 

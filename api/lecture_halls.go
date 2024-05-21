@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,7 +22,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	routes := lectureHallRoutes{daoWrapper, utility}
 
 	admins := router.Group("/api")
-	admins.Use(tools.Admin)
+	admins.Use(oauth.Admin)
 	admins.PUT("/lectureHall/:id", routes.updateLectureHall)
 	admins.POST("/lectureHall/:id/defaultPreset", routes.updateLectureHallsDefaultPreset)
 	admins.DELETE("/lectureHall/:id", routes.deleteLectureHall)
@@ -233,7 +234,7 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	// pass 0 to db query to get all lectures if user is not logged in or admin
 	queryUid := uint(0)
-	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
+	if tumLiveContext.User != nil && !oauth.IsAdmin(c) {
 		queryUid = tumLiveContext.User.ID
 	}
 	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid, lectureHalls, all)

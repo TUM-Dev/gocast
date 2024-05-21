@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/TUM-Dev/gocast/tools/oauth"
 	"net/http"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -10,7 +11,7 @@ import (
 
 func configWorkerRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := r.Group("/api/workers")
-	g.Use(tools.Admin)
+	g.Use(oauth.Admin)
 
 	routes := workerRoutes{dao: daoWrapper.WorkerDao}
 
