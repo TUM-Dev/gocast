@@ -42,7 +42,7 @@
                         <i class="fas fa-clipboard hover:text-purple-500"
                            @click="() => global.copyToClipboard(lectureData.courseSlug + '-' + lectureData.lectureId)"></i>
                         <br>
-                        {{if ne $user.Role 1}}
+                        {{if not .IndexData.TUMLiveContext.IsAdmin}}
                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
                         {{end}}
                     </p>
@@ -287,7 +287,7 @@
 
                 <div x-show="!lectureData.isPast && !lectureData.isRecording"
                      class="p-3 border dark:border-gray-600 rounded mt-3">
-                    {{if eq $user.Role 1}}
+                    {{if .IndexData.TUMLiveContext.IsAdmin}}
                         <div x-data="{ id: $id('select') }">
                             <label class="mx-2">
                                 <span>Select Lecture Hall</span>
@@ -307,7 +307,7 @@
                             </label>
                         </div>
                     {{end}}
-                    {{if eq $user.Role 2}}
+                    {{if .IndexData.TUMLiveContext.IsLecturer}}
                         <div x-show="lectureData.newLectureHallId !== '0'">
                             This lecture will be streamed from <span
                                     class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span

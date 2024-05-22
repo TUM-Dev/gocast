@@ -19,7 +19,7 @@
                     <span x-text="selectedLectures.length == 1 ? 'Lecture' : 'Lectures'"></span>
                 </button>
 
-                {{if eq $user.Role 1}}
+                {{if .IndexData.TUMLiveContext.IsAdmin}}
                     <div class="flex items-center">
                         <label class="mx-2">
                             <select class="tl-select w-fit"

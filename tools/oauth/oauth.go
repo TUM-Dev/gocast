@@ -90,9 +90,7 @@ func GetGroups(c *gin.Context) []string {
 
 	var claims struct {
 		*jwt.RegisteredClaims
-		RealmAccess struct {
-			Groups []string `json:"groups"`
-		} `json:"realm_access"`
+		Groups []string `json:"groups"`
 	}
 
 	_, _, err = jwt.NewParser(jwt.WithoutClaimsValidation()).ParseUnverified(session.Values["access_token"].(string), &claims)
@@ -101,7 +99,7 @@ func GetGroups(c *gin.Context) []string {
 		tools.RenderErrorPage(c, http.StatusUnauthorized, "Unauthorized")
 		return make([]string, 0)
 	}
-	return claims.RealmAccess.Groups
+	return claims.Groups
 }
 
 func GetIdP(c *gin.Context) (string, error) {
@@ -215,6 +213,10 @@ func IsAdmin(c *gin.Context) bool {
 	return slices.Contains(GetGroups(c), "/admin")
 }
 
+func IsLecturer(c *gin.Context) bool {
+	return slices.Contains(GetGroups(c), "/lecturer")
+}
+
 func CheckLoggedIn(c *gin.Context) bool {
 	if cookie, _ := c.Cookie(tools.Cfg.Cookie.Name); cookie == "" {
 		logger.Debug("No cookie found")
@@ -300,7 +302,7 @@ func validateAccessToken(rawIdToken string, token string) bool {
 		logger.Debug("Token expired")
 		return false
 	}
-	//logger.Debug("Claims", "claims", claims)
+	logger.Debug("Claims", "claims", claims)
 	return true
 }
 

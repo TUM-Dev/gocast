@@ -50,7 +50,8 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 				logger.Debug("Error getting user by OAuth ID.", "err", err)
 				return
 			} else {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &user, OAuthID: &uid})
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &user, OAuthID: &uid, IsAdmin: IsAdmin(c), IsLecturer: IsLecturer(c)})
+				logger.Debug("User features: ", "admin", IsAdmin(c), "lecturer", IsLecturer(c))
 				return
 			}
 		}

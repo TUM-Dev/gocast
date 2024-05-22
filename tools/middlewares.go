@@ -337,6 +337,8 @@ type TUMLiveContext struct {
 	Stream        *model.Stream
 	SamlSubjectID *string
 	OAuthID       *string
+	IsAdmin       bool
+	IsLecturer    bool
 }
 
 func (c *TUMLiveContext) UserIsAdmin() bool {
