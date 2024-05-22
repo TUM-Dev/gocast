@@ -1,9 +1,12 @@
 package model
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type Job struct {
-	ID          uint32
+	ID          string
 	Actions     []*Action
 	Runners     []*Runner
 	Description string
@@ -13,9 +16,29 @@ type Job struct {
 }
 
 func (j Job) GetAllActions() ([]*Action, error) {
-	panic("implement me")
+	if j.Actions == nil {
+		return nil, errors.New("no actions found")
+	}
+	return j.Actions, nil
 }
 
 func (j Job) GetAllRunners() ([]*Runner, error) {
-	panic("implement me")
+	if j.Runners == nil {
+		return nil, errors.New("no actions found")
+	}
+	return j.Runners, nil
+}
+
+func (j Job) SetToCompleted() error {
+	if j.Completed == true {
+		return errors.New("job already completed")
+	}
+	j.Completed = true
+
+	return nil
+}
+
+func (j Job) AddAction(a *Action) error {
+	j.Actions = append(j.Actions, a)
+	return nil
 }

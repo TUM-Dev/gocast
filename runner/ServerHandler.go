@@ -98,7 +98,7 @@ func (r *Runner) ReadDiagnostics(retries int) {
 	r.log.Info("Successfully sent heartbeat", "retriesLeft", retries)
 }
 
-func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
+func (r *Runner) handleSelfStream(ctx context.Context, retries int) {
 	r.log.Info("Started Requesting Self Stream", "retriesLeft", retries)
 
 	streamKey := ctx.Value("streamKey").(string)
@@ -112,13 +112,17 @@ func (r *Runner) RequestSelfStream(ctx context.Context, retries int) {
 	if err != nil {
 		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", 5-retries)
 		time.Sleep(time.Second * time.Duration(5-retries))
-		r.RequestSelfStream(ctx, retries-1)
+		r.handleSelfStream(ctx, retries-1)
 		return
 	}
 
 	_, err = con.RequestSelfStream(context.Background(), &protobuf.SelfStreamRequest{
 		StreamKey: streamKey,
 	})
+}
+
+func (r *Runner) RequestSelfStream(ctx context.Context, req *protobuf.SelfStreamRequest) *protobuf.SelfStreamResponse {
+	panic("implement me")
 }
 
 func (r *Runner) NotifyStreamStarted(ctx context.Context, started *protobuf.StreamStarted) *protobuf.Status {

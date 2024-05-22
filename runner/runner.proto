@@ -11,6 +11,49 @@ service ToRunner {
   rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse){}
   rpc GenerateSectionImages (GenerateSectionImageRequest) returns (Status) {}
   rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
+  rpc RequestTranscoding(TranscodingRequest) returns (TranscodingResponse) {}
+  rpc RequestThumbnail(ThumbnailRequest) returns (ThumbnailResponse) {}
+  rpc RequestUpload(UploadRequest) returns (UploadResponse) {}
+}
+
+message UploadRequest{
+  string RunnerID = 1;
+  string HLSUrl = 2;
+  string SourceType = 3;
+  string CourseName = 4;
+  uint32 CourseYear = 5;
+  string CourseTeachingTerm = 6;
+  string ThumbnailUrl = 7;
+}
+
+message UploadResponse{
+  string UploadKey = 1;
+}
+
+message ThumbnailRequest{
+  string RunnerID = 1;
+  string HLSUrl = 2;
+  string SourceType = 3;
+  string CourseName = 4;
+  uint32 CourseYear = 5;
+  string CourseTeachingTerm = 6;
+}
+
+message ThumbnailResponse{
+  string ThumbnailUrl = 1;
+}
+
+message TranscodingRequest{
+  string RunnerID = 1;
+  string SourceType = 2;
+  string CourseName = 3;
+  string DataURL = 4;
+  string streamName = 5;
+}
+
+message TranscodingResponse{
+  string TranscodingID = 1;
+
 }
 
 message LivePreviewRequest{

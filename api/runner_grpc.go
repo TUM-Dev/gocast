@@ -133,6 +133,43 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream,
 	if err = conn.Close(); err != nil {
 		logger.Error("Can't close connection", "err", err)
 	}
+
+	return
+}
+func TranscodingRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream, course model.Course, source string, runners []model.Runner, version string) {
+	if source == "" {
+		return
+	}
+
+	//gather all data into one part url
+
+	runner, err := getRunnerWithLeastWorkloadForJob(runners, "transcode")
+	if err != nil {
+		logger.Error("No runners available", "err", err)
+		return
+	}
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Error("Can't dial runner", "err", err)
+		return
+	}
+	client := protobuf.NewToRunnerClient(conn)
+	resp, err := client.RequestTranscoding(context.Background(), &protobuf.TranscodingRequest{
+		DataURL:    "",
+		RunnerID:   runner.Hostname,
+		StreamName: stream.StreamName,
+		CourseName: course.Name,
+		SourceType: version,
+	})
+	if err != nil {
+		logger.Error("Can't request transcode", "err", err)
+		return
+	}
+	logger.Info("Transcode requested", "jobID", resp.TranscodingID)
+	if err = conn.Close(); err != nil {
+		logger.Error("Can't close connection", "err", err)
+	}
+
 }
 
 func getRunnerWithLeastWorkloadForJob(runner []model.Runner, Job string) (model.Runner, error) {
@@ -189,6 +226,20 @@ func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protob
 		StreamName:   stream.StreamName,
 		OutURL:       ingestServer.OutUrl,
 	}, nil
+}
+
+func (g GrpcRunnerServer) NotifyStreamEnd(ctx context.Context, request *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
+	//TODO Test me
+	stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.JobID))
+	if err != nil {
+		return nil, err
+	}
+	err = g.StreamsDao.SaveEndedState(stream.ID, true)
+	if err != nil {
+		return nil, err
+	}
+	return &protobuf.StreamEndResponse{}, nil
+
 }
 
 func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *protobuf.StreamStarted) (*protobuf.Status, error) {
@@ -377,6 +428,7 @@ func NotifyRunners(dao dao.DaoWrapper) func() {
 			//this part until now was the old system for testing but we will be creating the job tables from here
 
 		}
+
 	}
 }
 

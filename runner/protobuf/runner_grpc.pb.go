@@ -28,6 +28,9 @@ type ToRunnerClient interface {
 	GenerateLivePreview(ctx context.Context, in *LivePreviewRequest, opts ...grpc.CallOption) (*LivePreviewResponse, error)
 	GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*Status, error)
 	DeleteSectionImage(ctx context.Context, in *DeleteSectionImageRequest, opts ...grpc.CallOption) (*Status, error)
+	RequestTranscoding(ctx context.Context, in *TranscodingRequest, opts ...grpc.CallOption) (*TranscodingResponse, error)
+	RequestThumbnail(ctx context.Context, in *ThumbnailRequest, opts ...grpc.CallOption) (*ThumbnailResponse, error)
+	RequestUpload(ctx context.Context, in *UploadRequest, opts ...grpc.CallOption) (*UploadResponse, error)
 }
 
 type toRunnerClient struct {
@@ -83,6 +86,33 @@ func (c *toRunnerClient) DeleteSectionImage(ctx context.Context, in *DeleteSecti
 	return out, nil
 }
 
+func (c *toRunnerClient) RequestTranscoding(ctx context.Context, in *TranscodingRequest, opts ...grpc.CallOption) (*TranscodingResponse, error) {
+	out := new(TranscodingResponse)
+	err := c.cc.Invoke(ctx, "/protobuf.ToRunner/RequestTranscoding", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *toRunnerClient) RequestThumbnail(ctx context.Context, in *ThumbnailRequest, opts ...grpc.CallOption) (*ThumbnailResponse, error) {
+	out := new(ThumbnailResponse)
+	err := c.cc.Invoke(ctx, "/protobuf.ToRunner/RequestThumbnail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *toRunnerClient) RequestUpload(ctx context.Context, in *UploadRequest, opts ...grpc.CallOption) (*UploadResponse, error) {
+	out := new(UploadResponse)
+	err := c.cc.Invoke(ctx, "/protobuf.ToRunner/RequestUpload", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ToRunnerServer is the server API for ToRunner service.
 // All implementations must embed UnimplementedToRunnerServer
 // for forward compatibility
@@ -93,6 +123,9 @@ type ToRunnerServer interface {
 	GenerateLivePreview(context.Context, *LivePreviewRequest) (*LivePreviewResponse, error)
 	GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*Status, error)
 	DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error)
+	RequestTranscoding(context.Context, *TranscodingRequest) (*TranscodingResponse, error)
+	RequestThumbnail(context.Context, *ThumbnailRequest) (*ThumbnailResponse, error)
+	RequestUpload(context.Context, *UploadRequest) (*UploadResponse, error)
 	mustEmbedUnimplementedToRunnerServer()
 }
 
@@ -114,6 +147,15 @@ func (UnimplementedToRunnerServer) GenerateSectionImages(context.Context, *Gener
 }
 func (UnimplementedToRunnerServer) DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSectionImage not implemented")
+}
+func (UnimplementedToRunnerServer) RequestTranscoding(context.Context, *TranscodingRequest) (*TranscodingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestTranscoding not implemented")
+}
+func (UnimplementedToRunnerServer) RequestThumbnail(context.Context, *ThumbnailRequest) (*ThumbnailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestThumbnail not implemented")
+}
+func (UnimplementedToRunnerServer) RequestUpload(context.Context, *UploadRequest) (*UploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestUpload not implemented")
 }
 func (UnimplementedToRunnerServer) mustEmbedUnimplementedToRunnerServer() {}
 
@@ -218,6 +260,60 @@ func _ToRunner_DeleteSectionImage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ToRunner_RequestTranscoding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TranscodingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToRunnerServer).RequestTranscoding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protobuf.ToRunner/RequestTranscoding",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToRunnerServer).RequestTranscoding(ctx, req.(*TranscodingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ToRunner_RequestThumbnail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ThumbnailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToRunnerServer).RequestThumbnail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protobuf.ToRunner/RequestThumbnail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToRunnerServer).RequestThumbnail(ctx, req.(*ThumbnailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ToRunner_RequestUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToRunnerServer).RequestUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protobuf.ToRunner/RequestUpload",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToRunnerServer).RequestUpload(ctx, req.(*UploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ToRunner_ServiceDesc is the grpc.ServiceDesc for ToRunner service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -244,6 +340,18 @@ var ToRunner_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSectionImage",
 			Handler:    _ToRunner_DeleteSectionImage_Handler,
+		},
+		{
+			MethodName: "RequestTranscoding",
+			Handler:    _ToRunner_RequestTranscoding_Handler,
+		},
+		{
+			MethodName: "RequestThumbnail",
+			Handler:    _ToRunner_RequestThumbnail_Handler,
+		},
+		{
+			MethodName: "RequestUpload",
+			Handler:    _ToRunner_RequestUpload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
