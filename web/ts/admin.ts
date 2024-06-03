@@ -1,7 +1,24 @@
-import { Delete, postData, showMessage } from "./global";
+import { Delete, patchData, postData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
 class Admin {}
+
+export class User {
+    readonly id: number;
+    readonly name: string;
+    readonly email: string;
+    readonly role: number;
+    readonly lrz_id: string;
+
+    constructor(id: number, name: string, email: string, role: number, lrz_id: string) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+        this.lrz_id = lrz_id;
+    }
+
+}
 
 export class AdminUserList {
     readonly rowsPerPage: number;
@@ -90,6 +107,93 @@ export class AdminUserList {
     }
 }
 
+export class SchoolsList {
+    readonly rowsPerPage: number;
+
+    numberOfPages: number;
+    currentIndex: number;
+
+    list: object[]; // Pre-loaded schools
+    currentPage: object[]; // Subset of list
+
+    showSearchResults: boolean;
+    searchLoading: boolean;
+    searchInput: string;
+
+    constructor(schoolsAsJson: object[]) {
+        this.list = schoolsAsJson;
+        this.rowsPerPage = 10;
+        this.showSearchResults = false;
+        this.currentIndex = 0;
+        this.numberOfPages = Math.ceil(this.list.length / this.rowsPerPage);
+        this.updateVisibleRows();
+    }
+
+    async search() {
+        if (this.searchInput.length < 3) {
+            this.showSearchResults = false;
+            this.updateVisibleRows();
+            return;
+        }
+        if (this.searchInput.length > 2) {
+            this.searchLoading = true;
+            fetch("/api/schools?q=" + this.searchInput)
+                .then((response) => {
+                    this.searchLoading = false;
+                    if (!response.ok) {
+                        throw new Error(response.statusText);
+                    }
+                    return response.json();
+                })
+                .then((r) => {
+                    this.currentPage = r; // show all results on page one.
+                    this.showSearchResults = true;
+                })
+                .catch((err) => {
+                    console.error(err);
+                    this.showSearchResults = false;
+                    this.updateVisibleRows();
+                });
+        }
+    }
+
+    clearSearch() {
+        this.showSearchResults = false;
+        this.searchLoading = false;
+        this.updateVisibleRows();
+        this.searchInput = "";
+    }
+
+    currentIndexString(): string {
+        return `${this.currentIndex + 1}/${this.numberOfPages}`;
+    }
+
+    prevDisabled(): boolean {
+        return this.currentIndex === 0;
+    }
+
+    nextDisabled(): boolean {
+        return this.currentIndex === this.numberOfPages - 1;
+    }
+
+    next() {
+        this.currentIndex = (this.currentIndex + 1) % this.numberOfPages;
+        this.updateVisibleRows();
+    }
+
+    prev() {
+        this.currentIndex = (this.currentIndex - 1) % this.numberOfPages;
+        this.updateVisibleRows();
+    }
+
+    updateVisibleRows() {
+        this.currentPage = this.list.slice(
+            this.currentIndex * this.rowsPerPage,
+            this.currentIndex * this.rowsPerPage + this.rowsPerPage,
+        );
+    }
+}
+
 export async function createLectureHall(
     name: string,
     combIP: string,
@@ -110,6 +214,101 @@ export async function deleteLectureHall(lectureHallID: number) {
             document.location.reload();
         } catch (e) {
             alert("Something went wrong while deleting!");
+        }
+    }
+}
+
+export async function createSchool(
+    name: string,
+    university: string,
+    admin_email: string,
+    shared_resources_allowed: any = false,
+) {
+    // Ensure shared_resources_allowed is a boolean
+    if (typeof shared_resources_allowed === "string") {
+        shared_resources_allowed = shared_resources_allowed.toLowerCase() === "true";
+    }
+
+    const response = await postData("/api/schools", { name, university, shared_resources_allowed, admin_email });
+
+    if (response.status === StatusCodes.OK) {
+        showMessage("School was created successfully. Reload to see changes.");
+    } else {
+        const errorData = await response.json();
+        showMessage(`Error creating the school: ${errorData.error}`);
+    }
+}
+
+export async function updateSchool(
+    schoolID: number,
+    name: string,
+    university: string,
+    shared_resources_allowed: boolean = false,
+) {
+    return patchData(`/api/schools/${schoolID}`, { name, university, shared_resources_allowed }).then((e) => {
+        if (e.status === StatusCodes.OK) {
+            showMessage("School was updated successfully. Reload to see changes.");
+        } else {
+            showMessage("There was an error updating the school: " + e.body);
+        }
+    });
+}
+
+export async function deleteSchool(schoolID: number) {
+    if (
+        confirm(
+            "Do you really want to remove this school? This will also remove all associated lecture halls and users!",
+        )
+    ) {
+        const response = await fetch(`/api/schools/${schoolID}`, { method: "DELETE" });
+
+        if (response.ok) {
+            showMessage("School removed successfully. Reload to see changes.");
+        } else {
+            const errorData = await response.json();
+            showMessage(`Error deleting the school: ${errorData.error}`);
+        }
+    }
+}
+
+export async function addSchoolAdmin(schoolID: number, email: string, id: number, lrz_id: string) {
+    if (
+        confirm(
+            "Do you really want to add this user as an maintainer? If you do, they will be granted full admin priviledges for all resources of school!",
+        )
+    ) {
+        const adminDetail = email ? { email } : id ? { id } : { lrz_id };
+
+        const response = await fetch(`/api/schools/${schoolID}/admins`, { 
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(adminDetail)
+        });
+
+        if (response.ok) {
+            showMessage("Maintainer added successfully. Reload to see changes.");
+        } else {
+            const errorData = await response.json();
+            showMessage(`Error adding the admin: ${errorData.error}`);
+        }
+    }
+}
+
+export async function deleteSchoolAdmin(schoolID: number, adminID: number) {
+    if (
+        confirm(
+            "Do you really want to remove this maintainer? If you do, they will lose admin priviledges for the school's resources! (If you are the only admin, you will lose access to the school as well!)",
+        )
+    ) {
+        const response = await fetch(`/api/schools/${schoolID}/admins/${adminID}`, { method: "DELETE" });
+
+        if (response.ok) {
+            showMessage("Maintainer removed successfully. Reload to see changes.");
+        } else {
+            const errorData = await response.json();
+            showMessage(`Error removing the admin: ${errorData.error}`);
         }
     }
 }

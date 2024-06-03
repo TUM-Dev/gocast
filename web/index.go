@@ -196,11 +196,11 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 			}
 		}
 		// Only show hidden streams to admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType || !tumLiveContext.User.IsMaintainerOfCourse(courseForLiveStream)) {
 			continue
 		}
 		var lectureHall *model.LectureHall
-		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+		if tumLiveContext.User != nil && (tumLiveContext.User.Role == model.AdminType || tumLiveContext.User.IsMaintainerOfCourse(courseForLiveStream)) && stream.LectureHallID != 0 {
 			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 			if err != nil {
 				logger.Error("Error getting lecture hall by id", "err", err)
@@ -226,6 +226,8 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
 			courses = coursesDao.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+		case model.MaintainerType:
+			courses = coursesDao.GetAllCoursesForSchoolsForSemester(d.TUMLiveContext.User.AdministeredSchools, d.CurrentYear, d.CurrentTerm, spanMain.Context())
 		case model.LecturerType:
 			{
 				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())

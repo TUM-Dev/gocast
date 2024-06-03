@@ -31,6 +31,7 @@ var (
 var (
 	Student          = model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType, PinnedCourses: []model.Course{CourseFPV}}
 	Lecturer         = model.User{Model: gorm.Model{ID: 31}, Role: model.LecturerType}
+	Maintainer       = model.User{Model: gorm.Model{ID: 21}, Role: model.MaintainerType}
 	Admin            = model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}
 	EmptyLectureHall = model.LectureHall{}
 	LectureHall      = model.LectureHall{

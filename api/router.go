@@ -31,6 +31,7 @@ func ConfigGinRouter(router *gin.Engine) {
 
 	configGinStreamRestRouter(router, daoWrapper)
 	configGinUsersRouter(router, daoWrapper)
+	configGinSchoolsRouter(router, daoWrapper)
 	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)

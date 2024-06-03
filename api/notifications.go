@@ -17,8 +17,8 @@ func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	{
 		notifications.GET("/", routes.getNotifications)
 		notifications.GET("/server", routes.getServerNotifications)
-		notifications.POST("/", tools.Admin, routes.createNotification)
-		notifications.DELETE("/:id", tools.Admin, routes.deleteNotification)
+		notifications.POST("/", tools.AdminOrMaintainer, routes.createNotification)
+		notifications.DELETE("/:id", tools.AdminOrMaintainer, routes.deleteNotification)
 	}
 }
 
@@ -35,6 +35,8 @@ func (r notificationRoutes) getNotifications(c *gin.Context) {
 		switch ctx.User.Role {
 		case model.AdminType:
 			targets = append(targets, model.TargetAdmin)
+		case model.MaintainerType:
+			targets = append(targets, model.TargetMaintainer)
 		case model.LecturerType:
 			targets = append(targets, model.TargetLecturer)
 		case model.StudentType:

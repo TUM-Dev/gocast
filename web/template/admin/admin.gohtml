@@ -23,7 +23,7 @@
     </button>
     <div class="w-full text-1" x-show="!hidden">
         <ul>
-            {{if eq $curUser.Role 1}}
+            {{if or (eq $curUser.Role 1)}}
                 <li class="mt-8"><h5
                             class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
                         Administration</h5>
@@ -33,6 +33,12 @@
                                href="/admin/users"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                         class="relative">Users</span></a></li>
+                        <li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/schools"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Schools</span></a></li>
                         <li>
                         <li>
                             <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "lectureHalls"}}text-1{{else}}text-5{{end}} relative block"
@@ -143,6 +149,12 @@
                                                 class="relative">Users</span></a></li>
                                 <li>
                                 <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/schools"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Schools</span></a></li>
+                                <li>                           
+                                <li>
                                     <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "lectureHalls"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/lectureHalls"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
@@ -196,6 +208,58 @@
                             </ul>
                         </li>
                     {{end}}
+                           
+                    {{if eq $curUser.Role 2}}
+                        <li class="mt-8"><h5
+                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
+                                Administration</h5>
+                            <ul>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/users"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Users</span></a></li>
+                                <li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/schools"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Schools</span></a></li>
+                                <li>                           
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "lectureHalls"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/lectureHalls"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Lecture Halls</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "workers"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/workers"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Workers</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "notifications"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/notifications"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">User Notifications</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "courseImport"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/course-import"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Course Import</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "token"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/token"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Token Management</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "maintenance"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/maintenance"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Maintenance</span></a></li>
+                            </ul>
+                        </li>
+                    {{end}}
+
                     <li class="mt-8"><span
                                 class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
                             <span class="grow">Courses</span><a title="Create Course" href="/admin/create-course"><i
@@ -239,35 +303,37 @@
     <div class="min-w-0 w-full flex-auto lg:static max-h-full lg:overflow-visible">
         <div class="px-4 sm:px-6 xl:px-8">
             <div class="w-full">
-                {{if and (eq $curUser.Role 1) (eq .Page "users")}}
-                    {{template "users" .UsersAsJson}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "course")}}
+                {{if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "users")}}
+                    {{template "users" dict "Data" .UsersAsJson "Role" $curUser.Role}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schools")}}
+                    {{template "schools" dict "Data" .SchoolsAsJson "Role" $curUser.Role}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2) (eq $curUser.Role 3)) (eq .Page "course")}}
                     {{template "edit-course" .EditCourseData}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "lectureHalls")}}
                     {{template "lectureHalls" .LectureHalls}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "createLectureHalls")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createLectureHalls")}}
                     {{template "createLectureHalls" .LectureHalls}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "workers")}}
                     {{template "workers" .Workers}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "stats")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2) (eq $curUser.Role 3)) (eq .Page "stats")}}
                     {{template "stats" .IndexData}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverStats")}}
                     {{template "stats" .IndexData}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2) (eq $curUser.Role 3)) (eq .Page "schedule")}}
                     {{template "schedule" .LectureHalls}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverNotifications")}}
                     {{template "server-notifications-admin-list" .ServerNotifications}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2) (eq $curUser.Role 3)) (eq .Page "createCourse")}}
                     {{template "create-course" .IndexData.VersionTag}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "courseImport")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "courseImport")}}
                     {{template "course-import" .}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "token")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "token")}}
                     {{template "token" .Tokens}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "info-pages")}}
                     {{template "info-pages" .InfoPages}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
+                {{else if and ( or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "notifications")}}
                     {{template "notification_management" .Notifications}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "maintenance")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "maintenance")}}
                     {{template "maintenance"}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "audits")}}
                     {{template "audits"}}

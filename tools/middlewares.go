@@ -299,7 +299,8 @@ func OwnerOfCourse(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
+
+	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID && !tumLiveContext.User.IsMaintainerOfCourse(*tumLiveContext.Course)) {
 		c.Status(http.StatusForbidden)
 		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 	}
@@ -334,7 +335,21 @@ func AtLeastLecturer(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Role != model.LecturerType) {
+	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Role != model.LecturerType && tumLiveContext.User.Role != model.MaintainerType) {
+		c.Status(http.StatusForbidden)
+		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
+	}
+}
+
+func AdminOrMaintainer(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(TUMLiveContext)
+	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.MaintainerType && tumLiveContext.User.Role != model.AdminType) {
 		c.Status(http.StatusForbidden)
 		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 	}

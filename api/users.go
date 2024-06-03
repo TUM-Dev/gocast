@@ -43,9 +43,12 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	router.POST("/api/users/init", routes.InitUser)
 
+	maintainers := router.Group("/api")
+	maintainers.Use(tools.AdminOrMaintainer)
+	maintainers.POST("/createUser", routes.CreateUser)
+
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
-	admins.POST("/createUser", routes.CreateUser)
 	admins.POST("/deleteUser", routes.DeleteUser)
 	admins.GET("/searchUser", routes.SearchUser)
 	admins.POST("/users/update", routes.updateUser)

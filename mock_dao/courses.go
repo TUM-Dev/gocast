@@ -106,6 +106,20 @@ func (mr *MockCoursesDaoMockRecorder) GetAllCourses() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCourses", reflect.TypeOf((*MockCoursesDao)(nil).GetAllCourses))
 }
 
+// GetAllCoursesForSchoolsForSemester mocks base method.
+func (m *MockCoursesDao) GetAllCoursesForSchoolsForSemester(schools []model.School, year int, term string, ctx context.Context) []model.Course {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllCoursesForSchoolsForSemester", schools, year, term, ctx)
+	ret0, _ := ret[0].([]model.Course)
+	return ret0
+}
+
+// GetAllCoursesForSchoolsForSemester indicates an expected call of GetAllCoursesForSchoolsForSemester.
+func (mr *MockCoursesDaoMockRecorder) GetAllCoursesForSchoolsForSemester(schools, year, term, ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCoursesForSchoolsForSemester", reflect.TypeOf((*MockCoursesDao)(nil).GetAllCoursesForSchoolsForSemester), schools, year, term, ctx)
+}
+
 // GetAllCoursesForSemester mocks base method.
 func (m *MockCoursesDao) GetAllCoursesForSemester(year int, term string, ctx context.Context) []model.Course {
 	m.ctrl.T.Helper()

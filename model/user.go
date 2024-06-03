@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	AdminType    = 1
-	LecturerType = 2
-	GenericType  = 3
-	StudentType  = 4
-
+	AdminType         = 1
+	MaintainerType    = 2
+	LecturerType      = 3
+	GenericType       = 4
+	StudentType       = 5
 	maxUsernameLength = 80
 )
 
@@ -40,11 +40,12 @@ type User struct {
 	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	LrzID               string         `json:"-"`
-	Role                uint           `gorm:"default:4" json:"-"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
+	Role                uint           `gorm:"default:5" json:"-"` // AdminType = 1, MaintainerType = 2, LecturerType = 3, GenericType = 4, StudentType  = 5
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
 	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
+	AdministeredSchools []School       `gorm:"many2many:school_admins"`
 
 	Settings  []UserSetting `gorm:"foreignkey:UserID"`
 	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
@@ -259,7 +260,8 @@ func (u *User) IsAdminOfCourse(course Course) bool {
 			return true
 		}
 	}
-	return u.Role == AdminType || course.UserID == u.ID
+
+	return u.Role == AdminType || course.UserID == u.ID || u.IsMaintainerOfCourse(course)
 }
 
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
@@ -431,4 +433,23 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 		return ErrUsernameNoText
 	}
 	return nil
+}
+
+// IsMaintainerOfCourse checks if the user is a maintainer of the course's school
+func (u *User) IsMaintainerOfCourse(course Course) bool {
+	if u == nil {
+		return false
+	}
+	logger.Error("Checking if user is maintainer of course", "user", u.ID, "course", course.ID)
+	logger.Error("User role and number of administered schools", "role", u.Role, "numSchools", len(u.AdministeredSchools))
+	if u.Role == MaintainerType || u.Role == AdminType {
+		for _, s := range u.AdministeredSchools {
+			logger.Error("Checking if user is maintainer of course", "school", s.ID, "course", course.ID)
+			if s.ID == course.SchoolID {
+				return true
+			}
+		}
+	}
+	logger.Error("User is not maintainer of course", "user", u.ID, "course", course.ID)
+	return false
 }

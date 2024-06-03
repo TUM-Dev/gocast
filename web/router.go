@@ -114,6 +114,7 @@ func configMainRoute(router *gin.Engine) {
 	// admins
 	adminGroup := router.Group("/")
 	adminGroup.GET("/admin/users", routes.AdminPage)
+	adminGroup.GET("/admin/schools", routes.AdminPage)
 	adminGroup.GET("/admin/lectureHalls", routes.AdminPage)
 	adminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
 	adminGroup.GET("/admin/workers", routes.AdminPage)

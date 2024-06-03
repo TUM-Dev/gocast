@@ -12,12 +12,12 @@ import (
 type NotificationTarget int
 
 const (
-	TargetAll      = iota + 1 // TargetAll Is any user, regardless if logged in or not
-	TargetUser                // TargetUser Are all users that are logged in
-	TargetStudent             // TargetStudent Are all users that are logged in and are students
-	TargetLecturer            // TargetLecturer Are all users that are logged in and are lecturers
-	TargetAdmin               // TargetAdmin Are all users that are logged in and are admins
-
+	TargetAll        = iota + 1 // TargetAll Is any user, regardless if logged in or not
+	TargetUser                  // TargetUser Are all users that are logged in
+	TargetStudent               // TargetStudent Are all users that are logged in and are students
+	TargetLecturer              // TargetLecturer Are all users that are logged in and are lecturers
+	TargetMaintainer            // TargetMaintainer Are all users that are logged in and are maintainers
+	TargetAdmin                 // TargetAdmin Are all users that are logged in and are admins
 )
 
 // Notification is a message (e.g. a feature alert) that is displayed to users

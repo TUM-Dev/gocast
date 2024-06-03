@@ -247,6 +247,8 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
 			courses = r.GetAllCoursesForSemester(year, term, c)
+		case model.MaintainerType:
+			courses = r.GetAllCoursesForSchoolsForSemester(tumLiveContext.User.AdministeredSchools, year, term, c)
 		case model.LecturerType:
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
@@ -1407,8 +1409,9 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		ChatEnabled:         req.EnChat,
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
+		SchoolID:            req.SchoolID,
 	}
-	if tumLiveContext.User.Role != model.AdminType {
+	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Role != model.MaintainerType {
 		course.Admins = []model.User{*tumLiveContext.User}
 	}
 
@@ -1506,6 +1509,7 @@ type createCourseRequest struct {
 	Name         string
 	Slug         string
 	TeachingTerm string
+	SchoolID     uint
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {

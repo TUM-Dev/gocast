@@ -20,6 +20,7 @@ type UsersDao interface {
 	DeleteUser(ctx context.Context, uid uint) (err error)
 	SearchUser(query string) (users []model.User, err error)
 	IsUserAdmin(ctx context.Context, uid uint) (res bool, err error)
+	IsUserMaintainer(ctx context.Context, uid uint) (res bool, err error)
 	GetUserByEmail(ctx context.Context, email string) (user model.User, err error)
 	GetAllAdminsAndLecturers(users *[]model.User) (err error)
 	GetUserByID(ctx context.Context, id uint) (user model.User, err error)
@@ -76,7 +77,16 @@ func (d usersDao) IsUserAdmin(ctx context.Context, uid uint) (res bool, err erro
 	if err != nil {
 		return false, err
 	}
-	return user.Role == 1, nil
+	return user.Role == model.AdminType, nil
+}
+
+func (d usersDao) IsUserMaintainer(ctx context.Context, uid uint) (res bool, err error) {
+	var user model.User
+	err = DB.Find(&user, "id = ?", uid).Error
+	if err != nil {
+		return false, err
+	}
+	return user.Role == model.MaintainerType, nil
 }
 
 func (d usersDao) GetUserByEmail(ctx context.Context, email string) (user model.User, err error) {
@@ -86,7 +96,7 @@ func (d usersDao) GetUserByEmail(ctx context.Context, email string) (user model.
 }
 
 func (d usersDao) GetAllAdminsAndLecturers(users *[]model.User) (err error) {
-	err = DB.Preload("Settings").Find(users, "role < 3").Error
+	err = DB.Preload("Settings").Find(users, "role < 4").Error
 	return err
 }
 
@@ -95,7 +105,7 @@ func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, er
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("AdministeredCourses").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("AdministeredCourses").Preload("AdministeredSchools").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}

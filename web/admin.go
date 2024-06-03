@@ -32,6 +32,11 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	var users []model.User
 	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
+	schools, err := r.SchoolsDao.GetAdministeredSchoolsByUserId(context.Background(), tumLiveContext.User.ID)
+	if err != nil {
+		logger.Error("couldn't query schools for user.", "err", err)
+		schools = []model.School{}
+	}
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		logger.Error("couldn't query courses for user.", "err", err)
@@ -47,6 +52,9 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	page := "schedule"
 	if c.Request.URL.Path == "/admin/users" {
 		page = "users"
+	}
+	if c.Request.URL.Path == "/admin/schools" {
+		page = "schools"
 	}
 	if c.Request.URL.Path == "/admin/lectureHalls" {
 		page = "lectureHalls"
@@ -121,9 +129,11 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
+
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
 			Users:               users,
+			Schools:             schools,
 			Courses:             courses,
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
@@ -293,6 +303,7 @@ func (r mainRoutes) UpdateCourse(c *gin.Context) {
 type AdminPageData struct {
 	IndexData           IndexData
 	Users               []model.User
+	Schools             []model.School
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
@@ -325,6 +336,30 @@ func (apd AdminPageData) UsersAsJson() string {
 		}
 	}
 	jsonStr, _ := json.Marshal(users)
+	return string(jsonStr)
+}
+
+func (apd AdminPageData) SchoolsAsJson() string {
+	type relevantSchoolInfo struct {
+		ID                     uint         `json:"id"`
+		Name                   string       `json:"name"`
+		University             string       `json:"university"`
+		SharedResourcesAllowed bool         `json:"shared_resources_allowed"`
+		Admins                 []model.User `json:"admins"`
+	}
+
+	schools := make([]relevantSchoolInfo, len(apd.Schools))
+	for i, school := range apd.Schools {
+		schools[i] = relevantSchoolInfo{
+			ID:                     school.ID,
+			Name:                   school.Name,
+			University:             school.University,
+			SharedResourcesAllowed: school.SharedResourcesAllowed,
+			Admins:                 school.Admins,
+		}
+	}
+
+	jsonStr, _ := json.Marshal(schools)
 	return string(jsonStr)
 }
 

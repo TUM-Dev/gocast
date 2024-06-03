@@ -24,6 +24,7 @@ type CoursesDao interface {
 	GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error)
 	GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error)
 	GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course)
+	GetAllCoursesForSchoolsForSemester(schools []model.School, year int, term string, ctx context.Context) (courses []model.Course)
 	GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error)
 	GetCourseByToken(token string) (course model.Course, err error)
@@ -110,6 +111,10 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 	if err != nil {
 		return nil, err
 	}
+	isMaintainer, err := d.usersDao.IsUserMaintainer(ctx, userid)
+	if err != nil {
+		return nil, err
+	}
 	var foundCourses []model.Course
 	// all courses for admins
 	if isAdmin {
@@ -121,6 +126,27 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 		}
 		return foundCourses, dbErr
 	}
+	// all courses of schools maintained by the user
+	if isMaintainer {
+		var maintainedSchools []model.School
+		DB.Table("schools").
+			Joins("JOIN school_admins ON school_admins.school_id = schools.id").
+			Where("school_admins.user_id = ?", userid).
+			Find(&maintainedSchools)
+		var schoolIDs []uint
+		for _, school := range maintainedSchools {
+			schoolIDs = append(schoolIDs, school.ID)
+		}
+
+		dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+			return db.Order("start asc")
+		}).Find(&foundCourses, "school_id IN ? AND ((teaching_term = ? AND year = ?) OR ? = 0)", schoolIDs, teachingTerm, year, year).Error
+		if dbErr == nil {
+			Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v", userid), foundCourses, 1, time.Minute)
+		}
+		return foundCourses, dbErr
+	}
+
 	dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
 	}).Find(&foundCourses, "user_id = ? and ((teaching_term = ? and year = ?) or ? = 0)", userid, teachingTerm, year, year).Error
@@ -152,6 +178,18 @@ func (d coursesDao) GetAllCoursesForSemester(year int, term string, ctx context.
 	DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
 	}).Find(&foundCourses, "teaching_term = ? AND year = ?", term, year)
+	return foundCourses
+}
+
+func (d coursesDao) GetAllCoursesForSchoolsForSemester(schools []model.School, year int, term string, ctx context.Context) (courses []model.Course) {
+	span := sentry.StartSpan(ctx, "SQL: GetAllCoursesForSchoolsForSemester")
+	defer span.Finish()
+
+	var foundCourses []model.Course
+	for _, school := range schools {
+		DB.Preload("Courses", "teaching_term = ? AND year = ?", term, year).Find(&school)
+		foundCourses = append(foundCourses, school.Courses...)
+	}
 	return foundCourses
 }
 

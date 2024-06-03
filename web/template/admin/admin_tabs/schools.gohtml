@@ -1,0 +1,230 @@
+{{template "header" .IndexData.TUMLiveContext}}
+{{define "schools"}}
+<section class="form-container" x-data="{schoollist: new admin.SchoolsList({{.Data}}), role: {{.Role}}}">
+    <h1 class="form-container-title">School Management</h1>
+
+    <div class="form-container-body">
+        <h2>Search</h2>
+        <input class="tl-input" placeholder="Search for schools administered by you" type="text" x-model="schoollist.searchInput"
+               @keyup="schoollist.search()">
+        <div class="w-4 m-auto">
+            <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="schoollist.searchLoading"></i>
+        </div>
+        <table>
+            <thead>
+            <tr class="p-4 bg-gray-200 dark:bg-secondary-light text-3 uppercase text-sm leading-normal">
+                <th class="rounded-tl-lg text-left pl-6 py-3">Name</th>
+                <th>University</th>
+                <th>Maintainers</th>
+                <th>Resources</th>
+                <th>Shared</th>
+                <th class="rounded-tr-lg">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="admin-school-list" class="w-full bg-transparent text-4">
+            <template x-for="(school, i) in schoollist.currentPage">
+                <tr :id="`school-${i}`"
+                    class="w-full bg-white dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent"
+                    :data-schoollist-index="i">
+                    <td class="pl-6 py-3 text-left whitespace-nowrap" x-text="school.name"></td>
+                    <template x-if="schoollist.showSearchResults">
+                        <td class="text-center cursor-pointer" @click="school.changing=true">
+                            <span x-show="school.university==='TUM'"
+                                  class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
+                            <span x-show="school.university==='LMU'"
+                                  class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
+                            <span x-show="school.university==='service'"
+                                class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
+                                 <div class="flex flex-row">
+                                    Service
+                                    <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
+                                </div>
+                            </span>
+                            <span x-show="school.university!=='TUM' && school.university!=='LMU' && school.university!=='service'" x-text="school.university"
+                                  class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
+                        </td>
+                    </template>
+                    <template x-if="!schoollist.showSearchResults">
+                        <td class="text-center">
+                            <span x-show="school.university==='TUM'"
+                                  class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
+                            <span x-show="school.university==='LMU'"
+                                  class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
+                            <span x-show="school.university==='service'"
+                                class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
+                                 <div class="flex flex-row">
+                                    Service
+                                    <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
+                                </div>
+                            </span>
+                            <span x-show="school.university!=='TUM' && school.university!=='LMU' && school.university!=='service'" x-text="school.university"
+                                class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
+                        </td>
+                    </template>
+                    <td class="py-3 px-6 text-center">
+                        <p class="font-bold cursor-pointer" x-text="school.admins.length + ' maintainer(s)'" @click="openMaintainerModal(school, i)" @mouseover="event.target.style.color = 'grey'" @mouseleave="event.target.style.color = ''"></p>                        <!-- Admin Modal -->
+                        <div class="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center" style="display: none;" x-bind:id="'adminModal-' + i">
+                            <div class="fixed inset-0 opacity-100 backdrop-blur-sm"></div>
+                            <!-- Backdrop -->
+
+                            <div class="fixed inset-0 flex items-center justify-center">
+                                <div class="rounded-lg px-2 pt-5 pb-4 text-center overflow-hidden transform transition-all sm:max-w-lg sm:w-full">
+                                    <!-- Modal Content -->
+                                    <div class="inline-block align-middle bg-gray-100 dark:bg-secondary rounded-lg text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                        <button id="'closeModal" class="absolute top-0 right-0 m-2" type="button" @click="closeModal(i)">
+                                            <i class="fas fa-x absolute top-0 right-0 m-2"></i>
+                                        </button>
+
+                                        <div class="px-2 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                            <h3 class="text-lg leading-6 font-medium text-3" id="modal-title">
+                                                Manage Maintainers
+                                            </h3>
+                                            <div class="mt-2 w-full" x-bind:id="'maintainerList-' + i">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="px-2 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                            <h3 class="text-lg leading-6 font-medium text-3" id="modal-title">
+                                                Add Maintainers
+                                            </h3>
+                                            <form x-data="{ maintainerEmail: '', maintainerId: '', maintainerLrzId: ''}">
+                                                <div class="flex flex-row mb-1">
+                                                    <h2 class="italic" x-text="'Add a Maintainer for ' + school.name + ' (' + school.university + ')'"></h2>
+                                                    <help-icon class="transform -translate-x-0.5" text="Add either using Email, ID or LRZ ID."/>
+                                                </div>
+                                                <div class="flex flex-wrap">
+                                                    <div class="text-xs w-full">
+                                                        <input class="tl-input" id="newmaintainerEmail" name="newmaintainerEmail" type="text" required="false" placeholder="Enter email (e.g., max.mustermann@tum.de)" autocomplete="off" x-model="maintainerEmail"/>
+                                                    </div>
+                                                    <div class="text-xs w-full mt-1">
+                                                        <input class="tl-input" disabled id="newmaintainerId" name="newmaintainerId" type="text" required="false" placeholder="Enter internal user ID (e.g., 1234)" autocomplete="off" x-model="maintainerId"/>
+                                                    </div>
+                                                    <div class="text-xs w-full mt-1">
+                                                        <input class="tl-input" disabled id="newmaintainerLrzId" name="newmaintainerLrzId" type="text" required="false" placeholder="Enter LRZ ID (e.g., ge42dip)" autocomplete="off" x-model="maintainerLrzId"/>
+                                                    </div>
+                                                </div>
+                                                <button id="createAdmin" title="Create Admin" class="btn primary mt-3 w-full" 
+                                                    @click.prevent="admin.addSchoolAdmin(school.id, maintainerEmail, maintainerId, maintainerLrzId)" 
+                                                    :disabled="maintainerEmail === '' && maintainerId === '' && maintainerLrzId === ''">
+                                                    Create Maintainer
+                                                </button>
+                                            </form>
+                                        <div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <script>
+                        function openMaintainerModal(school, id) {
+                            var maintainerList = '';
+                            for (var i = 0; i < school.admins.length; i++) {
+                                maintainerList += '<div class="admin flex flex-row items-center justify-between text-sm mb-3">' +
+                                    '<p class="mr-1">' + school.admins[i].name + '</p>' +
+                                    '<div>' +
+                                        '<button type="button" x-bind-show="role == 1" class="btn text-xs mr-1 py-1 px-2" onclick="admin.deleteUser(' + school.admins[i].id + ')">Delete User</button>' +
+                                        '<button type="button" class="btn text-xs py-1 px-2" onclick="admin.deleteSchoolAdmin(' + school.id + ',' + school.admins[i].ID + ')">Revoke Admin Role for this school</button>' +
+                                    '</div>' +
+                                '</div>';
+                            }
+                            document.getElementById('maintainerList-' + id).innerHTML = maintainerList;
+                            document.getElementById('adminModal-' + id).style.display = 'block';
+                        }
+
+                        function closeModal(id) {
+                            document.getElementById('adminModal-' + id).style.display = 'none';
+                        }
+                    </script>
+                    </td>
+                    <td class="py-3 px-6 text-center" x-text="school.resources"></td>
+                    <td class="py-3 px-6 text-center" x-text="school.shared_resources_allowed"></td>
+                    <td class="py-3 px-6 text-center">
+                        <div class="flex item-center justify-center">
+                            <button title="Manage Maintainers"
+                                    class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                <i @click="openMaintainerModal(school, i)"
+                                   class="fas fa-address-card"></i>
+                            </button>
+                            <template x-if="school.university === 'service' && school.name === 'master'">
+                                <button title="View Schools"
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
+                                    <i @click="window.location.replace('/admin/workers)"
+                                    class="fas fa-school"></i>
+                                </button>
+                            </template>
+                            <template x-if="school.university !== 'service' && school.name != 'master'">
+                                <button title="View Resources"
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                    <i @click="window.location.replace('/admin/workers?s=' + school.id)"
+                                    class="fas fa-server"></i>
+                                </button>
+                            </template>
+                            <template x-if="school.university !== 'service' && school.name != 'master'">
+                                <button title="Delete School"
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110">
+                                    <i @click="admin.deleteSchool(school.id)" class="fas fa-trash"></i>
+                                </button>
+                            </template>
+                        </div>
+                    </td>
+                </tr>
+            </template>
+            </tbody>
+        </table>
+        <template x-if="!schoollist.showSearchResults">
+            <div class="flex justify-center text-3">
+                <button title="Previous Page"
+                        class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                        :disabled="schoollist.prevDisabled()" @click="schoollist.prev()">
+                    <i class="text-sm m-auto fa fa-chevron-left"></i>
+                </button>
+                <div class="flex h-8 w-8 px-2">
+                    <span class="text-sm font-semibold m-auto" x-text="schoollist.currentIndexString()"></span>
+                </div>
+                <button title="Next Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                        :disabled="schoollist.nextDisabled()" @click="schoollist.next()">
+                    <i class="text-sm m-auto fa fa-chevron-right"></i>
+                </button>
+            </div>
+        </template>
+    </div>
+</section>
+
+<section class="form-container" x-data="{ university: '', name: '', adminEmail: '' }" x-bind-show="role == 1">
+    <h1 class="form-container-title">New School</h1>
+        <div class="form-container-body">
+        <form>
+            <div class="flex flex-row mt-3">
+                <h2 class="italic">General Information (required)</h2>
+                <help-icon class="transform -translate-x-0.5" text="You will be able to edit this information afterwards. Combinations of university- and schoolnames need to be unique."/>
+            </div>
+            <div class="flex flex-wrap">
+                <div class="w-full md:w-1/2">
+                    <select class="tl-input mt-3 md:mt-0" id="universityInput" name="universityInput" required x-model="university">
+                        <option value="">Select University</option>
+                        <option value="TUM">TUM</option>
+                        <option value="LMU">LMU</option>
+                        <option value="other">other</option>
+                    </select>
+                </div>
+                <div class="w-full md:w-1/2 mb-6 md:mb-0 pl-3">
+                    <input class="tl-input" id="nameInput" name="nameInput" placeholder="Enter School Name (e.g., CIT)" type="text" autocomplete="off" required x-model="name"/>
+                </div>
+            </div>
+            <div class="flex flex-row mt-3">
+                <h2 class="italic">Invite an Admin for this school (optional)</h2>
+                <help-icon class="transform -translate-x-0.5" text="When you create the school, by default you will be its admin. You will be able to add additional admins later on."/>
+            </div>
+            <div class="flex flex-wrap">
+                <div class="w-full">
+                    <input class="tl-input" id="maintainerEmailInput" name="maintainerEmailInput" type="text" required="false" placeholder="Enter Admin Email (e.g., max.mustermann@tum.de)" autocomplete="off" x-model="adminEmail"/>
+                </div>
+            </div>
+            <button id="createSchool" title="Create School" class="btn primary mt-3 w-full" 
+                @click.prevent="admin.createSchool(name, university, adminEmail)" 
+                :disabled="university === '' || name === ''">
+                Create School
+            </button>
+        </form>
+    </div>
+</section>
+{{end}}

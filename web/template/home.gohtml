@@ -81,7 +81,7 @@
                             <span>@{{$user.Name}}</span>
                         </header>
                         <nav class="d-grid gap-3 font-light">
-                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                            {{if or (eq $user.Role 1) (eq $user.Role 2) (eq $user.Role 3) }}
                                 <a href="/admin"
                                    class="tum-live-menu-item">
                                     <div class="icon-wrapper mr-2">
@@ -340,7 +340,7 @@
                             .ics
                         </a>
                         {{if $user}}
-                            <template x-if="course.IsAdmin || {{$user.Role}} === 1">
+                            <template x-if="course.IsAdmin || {{$user.Role}} === 1 || {{$user.Role}} === 2">
                                 <a :href="`/admin/course/${course.ID}`"
                                    class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
                                    title="Go to admin page">

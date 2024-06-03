@@ -222,6 +222,21 @@ func (mr *MockUsersDaoMockRecorder) IsUserAdmin(ctx, uid interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserAdmin", reflect.TypeOf((*MockUsersDao)(nil).IsUserAdmin), ctx, uid)
 }
 
+// IsUserMaintainer mocks base method.
+func (m *MockUsersDao) IsUserMaintainer(ctx context.Context, uid uint) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUserMaintainer", ctx, uid)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsUserMaintainer indicates an expected call of IsUserMaintainer.
+func (mr *MockUsersDaoMockRecorder) IsUserMaintainer(ctx, uid interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserMaintainer", reflect.TypeOf((*MockUsersDao)(nil).IsUserMaintainer), ctx, uid)
+}
+
 // PinCourse mocks base method.
 func (m *MockUsersDao) PinCourse(user model.User, course model.Course, pin bool) error {
 	m.ctrl.T.Helper()

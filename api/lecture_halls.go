@@ -20,15 +20,18 @@ import (
 func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, utility tools.PresetUtility) {
 	routes := lectureHallRoutes{daoWrapper, utility}
 
+	maintainers := router.Group("/api")
+	maintainers.Use(tools.AdminOrMaintainer)
+	maintainers.PUT("/lectureHall/:id", routes.updateLectureHall)
+	maintainers.DELETE("/lectureHall/:id", routes.deleteLectureHall)
+	maintainers.POST("/createLectureHall", routes.createLectureHall)
+	maintainers.GET("/course-schedule", routes.getSchedule)
+	maintainers.POST("/course-schedule/:year/:term", routes.postSchedule)
+
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
-	admins.PUT("/lectureHall/:id", routes.updateLectureHall)
 	admins.POST("/lectureHall/:id/defaultPreset", routes.updateLectureHallsDefaultPreset)
-	admins.DELETE("/lectureHall/:id", routes.deleteLectureHall)
-	admins.POST("/createLectureHall", routes.createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot)
-	admins.GET("/course-schedule", routes.getSchedule)
-	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
 	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets)
 	admins.POST("/setLectureHall", routes.setLectureHall)
 

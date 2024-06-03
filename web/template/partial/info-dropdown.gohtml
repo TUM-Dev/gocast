@@ -74,7 +74,7 @@
                     <i class="text-3 fas fa-sign-out-alt w-8 mr-2"></i>
                     <h6 class="text-sm text-3 font-bold my-auto">Logout</h6>
                 </a>
-                {{if or (eq .User.Role 1) (eq .User.Role 2) }}
+                {{if or (eq .User.Role 1) (eq .User.Role 2) (eq .User.Role 3) }}
                     <a href="/admin" class = "flex">
                         <i class="text-3 fas fa-user-shield w-8 mr-2"></i>
                         <h6 class="text-sm text-3 font-bold my-auto">Admin</h6>
