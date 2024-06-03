@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -33,15 +32,18 @@ func configGinSchoolsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		schools.DELETE("/:id", routes.DeleteSchool)
 	}
 
+	router.GET("/api/schools/:id", tools.AtLeastLecturer, routes.GetSchoolById)
+
 	admins := router.Group("/api/schools/:id/admins")
 	admins.Use(tools.AdminOrMaintainer)
 
 	{
-		admins.GET("/", routes.SearchForSchoolAdmin)
+		admins.GET("/", routes.GetSchoolAdmin)
 		admins.POST("/", routes.AddAdminToSchool)
 		admins.DELETE("/:admin_id", routes.DeleteAdminFromSchool)
 	}
 
+	router.GET("/api/schools/all", tools.AtLeastLecturer, routes.SearchAllSchools)
 }
 
 func (s *schoolsRoutes) getResourceForSchool(c *gin.Context) {
@@ -184,6 +186,31 @@ func (s *schoolsRoutes) SearchSchool(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func (s schoolsRoutes) SearchAllSchools(c *gin.Context) {
+	query := c.Query("q")
+	schools, err := s.SchoolsDao.Query(c, query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not search schools"})
+		return
+	}
+
+	type relevantSchoolInfo struct {
+		ID         uint   `json:"id"`
+		Name       string `json:"name"`
+		University string `json:"university"`
+	}
+
+	res := make([]relevantSchoolInfo, len(schools))
+	for i, school := range schools {
+		res[i] = relevantSchoolInfo{
+			ID:         school.ID,
+			Name:       school.Name,
+			University: school.University,
+		}
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 func (s *schoolsRoutes) updateSchool(c *gin.Context) {
 	var req updateSchoolRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -211,7 +238,7 @@ func (s *schoolsRoutes) updateSchool(c *gin.Context) {
 	c.JSON(http.StatusOK, school)
 }
 
-func (s *schoolsRoutes) SearchForSchoolAdmin(c *gin.Context) {
+func (s *schoolsRoutes) GetSchoolAdmin(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	admins, err := s.SchoolsDao.GetAdmins(c, uint(id))
 	if err != nil {
@@ -230,7 +257,9 @@ func (s *schoolsRoutes) AddAdminToSchool(c *gin.Context) {
 	}
 
 	var req struct {
-		Email string `json:"email"`
+		Email  string `json:"email"`
+		MatrNr string `json:"matr_nr"`
+		ID     string `json:"id"`
 	}
 
 	if err := c.BindJSON(&req); err != nil {
@@ -265,6 +294,8 @@ func (s *schoolsRoutes) DeleteAdminFromSchool(c *gin.Context) {
 		return
 	}
 
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	// Fetch the user with the adminId
 	admin, err := s.GetUserByID(c, uint(adminId))
 	if err != nil {
@@ -285,7 +316,6 @@ func (s *schoolsRoutes) DeleteAdminFromSchool(c *gin.Context) {
 		return
 	}
 
-	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	if adminCount <= 1 && admin.ID == ctx.User.ID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "you can't remove yourself as the only maintainer"})
 		return
@@ -306,6 +336,12 @@ func (s *schoolsRoutes) isAdminOfSchool(c *gin.Context, schoolId uint) bool {
 	}
 
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	if ctx.User == nil {
+		return false
+	}
+	if ctx.User.Role == model.AdminType {
+		return true
+	}
 	for _, admin := range admins {
 		if admin.ID == ctx.User.ID {
 			return true
@@ -315,26 +351,19 @@ func (s *schoolsRoutes) isAdminOfSchool(c *gin.Context, schoolId uint) bool {
 	return false
 }
 
-type schoolsRoutes struct {
-	dao.DaoWrapper
+func (s *schoolsRoutes) GetSchoolById(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	school, err := s.SchoolsDao.Get(c, uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get school"})
+		return
+	}
+
+	c.JSON(http.StatusOK, school)
 }
 
-type schoolResponse struct {
-	SchoolData struct {
-		Name                   string    `json:"name,omitempty"`
-		University             string    `json:"university,omitempty"`
-		SharedResourcesAllowed bool      `json:"shared_resources_allowed,omitempty"`
-		CreatedAt              time.Time `json:"created_at"`
-	} `json:"school_data,omitempty"`
-	Admins []struct {
-		Name     string  `json:"name,omitempty"`
-		LastName *string `json:"last_name,omitempty"`
-		Email    string  `json:"email,omitempty"`
-		Role     uint    `json:"role,omitempty"`
-	} `json:"admins,omitempty"`
-	Resources []struct {
-		ResourceID uint `json:"resource_id"`
-	} `json:"resources,omitempty"`
+type schoolsRoutes struct {
+	dao.DaoWrapper
 }
 
 type updateSchoolRequest struct {
@@ -346,12 +375,6 @@ type updateSchoolRequest struct {
 
 type createSchoolRequest struct {
 	AdminEmail             string `json:"admin_email"`
-	Name                   string `json:"name"`
-	University             string `json:"university"`
-	SharedResourcesAllowed bool   `json:"shared_resources_allowed"`
-}
-
-type createSchoolResponse struct {
 	Name                   string `json:"name"`
 	University             string `json:"university"`
 	SharedResourcesAllowed bool   `json:"shared_resources_allowed"`

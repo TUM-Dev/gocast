@@ -10,8 +10,22 @@ import (
 //go:generate mockgen -source=schools.go -destination ../mock_dao/schools.go
 
 type SchoolsDao interface {
+	/* ==> SCHOOL FUNCTIONS <== */
+
 	// Get School by ID
 	Get(context.Context, uint) (model.School, error)
+
+	// Returns all Schools that match the query
+	Query(context.Context, string) ([]model.School, error)
+
+	// Search for Schools by query
+	QueryAdministerdSchools(context.Context, *model.User, string) ([]model.School, error)
+
+	// Get all Schools administered by a User
+	GetAdministeredSchoolsByUserId(context.Context, uint) ([]model.School, error)
+
+	// Get by name and university
+	GetByNameAndUniversity(context.Context, string, string) (model.School, error)
 
 	// Create a new School for the database
 	Create(context.Context, *model.School) error
@@ -22,8 +36,7 @@ type SchoolsDao interface {
 	// Update a School
 	Update(context.Context, *model.School) error
 
-	// Search for Schools by query
-	QueryAdministerdSchools(context.Context, *model.User, string) ([]model.School, error)
+	/* ==> MAINTAINER FUNCTIONS <== */
 
 	// Get all Admins for a School
 	GetAdmins(context.Context, uint) ([]model.User, error)
@@ -34,17 +47,13 @@ type SchoolsDao interface {
 	// Remove an Admin from a School
 	RemoveAdmin(context.Context, uint, uint) error
 
-	// Get all Schools administered by a User
-	GetAdministeredSchoolsByUserId(context.Context, uint) ([]model.School, error)
-
-	// Get by name and university
-	GetByNameAndUniversity(context.Context, string, string) (model.School, error)
-
 	// Get admin count
 	GetAdminCount(context.Context, uint) (int, error)
 
 	// Get all Admins for a School
 	GetAdminsBySchoolAndUniversity(context.Context, string, string) ([]model.User, error)
+
+	/* ==> RESOURCE FUNCTIONS <== */
 
 	// Get all Resources for a School
 	// GetResources(context.Context, uint) ([]model.Resource, error)
@@ -103,12 +112,21 @@ func (d schoolDao) Update(c context.Context, it *model.School) error {
 	return d.db.WithContext(c).Model(it).Updates(it).Error
 }
 
-func (d schoolDao) QueryAdministerdSchools(c context.Context, admin *model.User, query string) (res []model.School, err error) {
-	return res, d.db.WithContext(c).
-		Joins("JOIN school_admins ON school_admins.school_id = schools.id").
-		Preload("Admins").
-		Where("(schools.name LIKE ? OR schools.university LIKE ?) AND school_admins.user_id = ?", "%"+query+"%", "%"+query+"%", admin.ID).
-		Find(&res).Error
+func (d schoolDao) QueryAdministerdSchools(c context.Context, user *model.User, query string) (res []model.School, err error) {
+
+	if user.Role == model.AdminType {
+		return res, d.db.WithContext(c).Where("name LIKE ? OR university LIKE ?", "%"+query+"%", "%"+query+"%").Find(&res).Error
+	} else {
+		return res, d.db.WithContext(c).
+			Joins("JOIN school_admins ON school_admins.school_id = schools.id").
+			Preload("Admins").
+			Where("(schools.name LIKE ? OR schools.university LIKE ?) AND school_admins.user_id = ?", "%"+query+"%", "%"+query+"%", user.ID).
+			Find(&res).Error
+	}
+}
+
+func (d schoolDao) Query(c context.Context, query string) (res []model.School, err error) {
+	return res, d.db.WithContext(c).Where("name LIKE ? OR university LIKE ?", "%"+query+"%", "%"+query+"%").Find(&res).Error
 }
 
 func (d schoolDao) GetAdmins(c context.Context, id uint) (res []model.User, err error) {

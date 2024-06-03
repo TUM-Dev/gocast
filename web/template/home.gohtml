@@ -340,7 +340,7 @@
                             .ics
                         </a>
                         {{if $user}}
-                            <template x-if="course.IsAdmin || {{$user.Role}} === 1 || {{$user.Role}} === 2">
+                            <template x-if="course.IsAdmin || {{$user.Role}} === 1">
                                 <a :href="`/admin/course/${course.ID}`"
                                    class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
                                    title="Go to admin page">

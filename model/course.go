@@ -55,6 +55,7 @@ type CourseDTO struct {
 	LastRecording    StreamDTO
 	Streams          []StreamDTO
 	IsAdmin          bool // Set in API handler
+	SchoolId         uint
 }
 
 func (c *Course) ToDTO(u *User) CourseDTO {
@@ -69,6 +70,7 @@ func (c *Course) ToDTO(u *User) CourseDTO {
 		NextLecture:      c.GetNextLecture(u).ToDTO(),
 		LastRecording:    c.GetLastRecording(u).ToDTO(),
 		IsAdmin:          false,
+		SchoolId:         c.SchoolID,
 	}
 }
 

@@ -5,6 +5,7 @@
 {{- /*gotype: github.com/TUM-Dev/gocast/web.AdminPageData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 {{$lecture := .IndexData.TUMLiveContext.Stream}}
+{{$user := .IndexData.TUMLiveContext.User}}
 <div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
     <div class="min-w-screen items-center justify-center">
 
@@ -85,9 +86,10 @@
                         <h2 class="form-container-title">Lecture Hall Settings</h2>
                         {{template "source-settings"}}
                     </div>
+
                     <div class="form-container">
                         <h2 class="form-container-title">Actions</h2>
-                        {{template "dangerzone" $course}}
+                            {{template "dangerzone" dict "User" $user "Course" $course}}
                     </div>
                 </div>
 

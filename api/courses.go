@@ -93,6 +93,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				admins.GET("", routes.getAdmins)
 				admins.PUT("/:userID", routes.addAdminToCourse)
+				courses.PATCH("/school", routes.updateCourseSchool)
 				admins.DELETE("/:userID", routes.removeAdminFromCourse)
 			}
 		}
@@ -396,6 +397,10 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 			isAdmin = true
 			break
 		}
+	}
+
+	if user.Role == model.MaintainerType {
+		isAdmin = user.IsAdminOfCourse(course)
 	}
 
 	courseDTO := course.ToDTO(tumLiveContext.User)
@@ -1594,6 +1599,7 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 		return
 	}
 
+	course.SchoolID = tlctx.Course.SchoolID
 	err = r.CoursesDao.CreateCourse(c, course, true)
 	if err != nil {
 		logger.Error("Can't create course", "err", err)
@@ -1651,6 +1657,35 @@ func (r coursesRoutes) searchCourse(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, search.Hits)
+}
+
+func (r coursesRoutes) updateCourseSchool(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	var request struct {
+		SchoolID uint `json:"schoolID"`
+	}
+	if err := c.BindJSON(&request); err != nil {
+		logger.Error("invalid form", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid form",
+			Err:           err,
+		})
+		return
+	}
+
+	course := tumLiveContext.Course
+	course.SchoolID = request.SchoolID
+	if err := r.CoursesDao.UpdateCourse(c, *course); err != nil {
+		logger.Error("failed to update course", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "failed to update course",
+			Err:           err,
+		})
+		return
+	}
 }
 
 type getCourseRequest struct {

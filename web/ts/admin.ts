@@ -17,7 +17,6 @@ export class User {
         this.role = role;
         this.lrz_id = lrz_id;
     }
-
 }
 
 export class AdminUserList {
@@ -222,11 +221,11 @@ export async function createSchool(
     name: string,
     university: string,
     admin_email: string,
-    shared_resources_allowed: any = false,
+    shared_resources_allowed = false,
 ) {
     // Ensure shared_resources_allowed is a boolean
     if (typeof shared_resources_allowed === "string") {
-        shared_resources_allowed = shared_resources_allowed.toLowerCase() === "true";
+        shared_resources_allowed = shared_resources_allowed === "true";
     }
 
     const response = await postData("/api/schools", { name, university, shared_resources_allowed, admin_email });
@@ -279,12 +278,12 @@ export async function addSchoolAdmin(schoolID: number, email: string, id: number
     ) {
         const adminDetail = email ? { email } : id ? { id } : { lrz_id };
 
-        const response = await fetch(`/api/schools/${schoolID}/admins`, { 
+        const response = await fetch(`/api/schools/${schoolID}/admins`, {
             method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
             },
-            body: JSON.stringify(adminDetail)
+            body: JSON.stringify(adminDetail),
         });
 
         if (response.ok) {

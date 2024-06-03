@@ -189,7 +189,7 @@
     </div>
 </section>
 
-<section class="form-container" x-data="{ university: '', name: '', adminEmail: '' }" x-bind-show="role == 1">
+<section class="form-container" x-data="{ university: '', name: '', adminEmail: '' }" x-show="role == 1" x-init="role = {{.Role}}">
     <h1 class="form-container-title">New School</h1>
         <div class="form-container-body">
         <form>

@@ -1,4 +1,4 @@
-import { patchData, postData, putData, sendFormData } from "./global";
+import { patchData, postData, putData, sendFormData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
@@ -1067,6 +1067,25 @@ export function deleteCourse(courseID: string) {
                 alert("Couldn't delete course.");
             } else {
                 window.location.replace("/admin");
+            }
+        });
+    }
+}
+
+export async function updateCourseSchool(courseID: string, schoolID: string) {
+    if (confirm("Do you really want to update this course's school? This includes all associated lectures.")) {
+        const url = `/api/course/${courseID}/school`;
+        fetch(url, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ schoolID }),
+        }).then((response) => {
+            if (response.status === StatusCodes.OK) {
+                showMessage("Course was updated successfully.");
+            } else {
+                showMessage(`Error updating the course: ${response.statusText}`);
             }
         });
     }

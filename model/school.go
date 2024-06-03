@@ -14,7 +14,8 @@ type School struct {
 	Privileges             string   `gorm:"column:privileges;type:text;not null;default:''"`
 	Admins                 []User   `gorm:"many2many:school_admins"`
 	Courses                []Course `gorm:"foreignkey:SchoolID"`
-	// Resources              []Resource `gorm:"many2many:resources"`
+	TumOnlineId            string   `gorm:"column:tum_online_id;type:text;not null;default:''"` // Used to identify corresponding TUMOnline group (e.g., TU0001...)
+	// Resources              []Resource `gorm:"many2many:resources"` // TODO: Contains workers etc.
 }
 
 // TableName returns the name of the table for the School model in the database.
