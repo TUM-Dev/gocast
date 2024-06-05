@@ -76,7 +76,7 @@ issues:
   new-from-rev: dev
   fix: false
   exclude-dirs:
-#   - node_modules
+    - node_modules
     - template
   exclude-rules:
     # Exclude some linters from running on tests files.
