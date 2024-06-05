@@ -419,6 +419,7 @@ func handleMigration(c *gin.Context, claims *loginClaims) {
 		}
 	} else {
 		// saml account, verify by matriculation number
+		// TODO: If MatrNr empty use LRZ-ID
 		user, err := daoWrapper.UsersDao.GetUserByMatrNr(c, claims.Edu.MatrNr)
 		if err != nil || user.MatriculationNumber == "" {
 			createNewUser(c, claims)

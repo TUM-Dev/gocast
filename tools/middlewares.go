@@ -302,6 +302,9 @@ func AdminOfCourse(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	if tumLiveContext.IsAdmin {
+		return
+	}
 	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
 		return
 	}
