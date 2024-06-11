@@ -238,6 +238,20 @@ export async function createSchool(
     }
 }
 
+export async function createTokenForSchool(schoolID: number) {
+    const response = await postData(`/api/schools/${schoolID}/token`);
+
+    if (response.status === StatusCodes.OK) {
+        const data = await response.json();
+        const token = data.token;
+        await navigator.clipboard.writeText(token);
+        showMessage(`Token was created successfully and copied to your clipboard.`);
+    } else {
+        const errorData = await response.json();
+        showMessage(`Error creating the token: ${errorData.error}`);
+    }
+}
+
 export async function updateSchool(
     schoolID: number,
     name: string,

@@ -14,7 +14,9 @@ type School struct {
 	Privileges             string   `gorm:"column:privileges;type:text;not null;default:''"`
 	Admins                 []User   `gorm:"many2many:school_admins"`
 	Courses                []Course `gorm:"foreignkey:SchoolID"`
-	TumOnlineId            string   `gorm:"column:tum_online_id;type:text;not null;default:''"` // Used to identify corresponding TUMOnline group (e.g., TU0001...)
+	Workers                []Worker `gorm:"foreignkey:SchoolID"`
+	// Runner                 []Runner `gorm:"foreignkey:SchoolID"`
+	TumOnlineId string `gorm:"column:tum_online_id;type:text;not null;default:''"` // Used to identify corresponding TUMOnline group (e.g., TU0001...)
 	// Resources              []Resource `gorm:"many2many:resources"` // TODO: Contains workers etc.
 }
 

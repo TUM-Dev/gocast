@@ -134,7 +134,6 @@ func (d schoolDao) GetAdmins(c context.Context, id uint) (res []model.User, err 
 }
 
 func (d schoolDao) AddAdmin(c context.Context, school *model.School, admin *model.User) error {
-	logger.Info("Adding Admin to School", "adminID", admin)
 	return d.db.WithContext(c).Model(school).Association("Admins").Append(admin)
 }
 

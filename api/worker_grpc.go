@@ -13,11 +13,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
+	"github.com/golang-jwt/jwt"
 
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/TUM-Dev/gocast/dao"
@@ -62,15 +64,29 @@ func endConnection(conn *grpc.ClientConn) {
 // JoinWorkers is a request from a worker to join the pool. On success, the workerID is returned.
 func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest) (*pb.JoinWorkersResponse, error) {
 	logger.Info("JoinWorkers called", "host", request.Hostname)
-	if request.Token != tools.Cfg.WorkerToken {
+
+	// Parse and validate worker token
+	token, err := jwt.ParseWithClaims(request.Token, &JWTSchoolClaims{}, func(token *jwt.Token) (interface{}, error) {
+		key := tools.Cfg.GetJWTKey().Public()
+		return key, nil
+	})
+	if err != nil || !token.Valid {
 		return nil, status.Error(codes.Unauthenticated, "Invalid token")
 	}
+	claims, ok := token.Claims.(*JWTSchoolClaims)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "Invalid token claims")
+	}
 
+	schoolID, err := strconv.ParseUint(claims.SchoolID, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SchoolID: %v", err)
+	}
 	worker, err := s.DaoWrapper.WorkerDao.GetWorkerByHostname(ctx, request.Hostname)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, status.Errorf(codes.Internal, "get worker by hostname: %v", err)
 	}
-	if err == nil {
+	if err == nil && worker.SchoolID == uint(schoolID) {
 		// worker already exists, return its ID
 		return &pb.JoinWorkersResponse{
 			WorkerId: worker.WorkerID,
@@ -82,6 +98,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 		Host:     request.Hostname,
 		WorkerID: uuid.NewV4().String(),
 		LastSeen: time.Now(),
+		SchoolID: uint(schoolID),
 	}
 	if err := s.DaoWrapper.WorkerDao.CreateWorker(&worker); err != nil {
 		logger.Error("Could not add worker to database", "err", err)

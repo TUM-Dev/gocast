@@ -3,11 +3,13 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
 )
 
@@ -30,6 +32,7 @@ func configGinSchoolsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		schools.POST("/", routes.CreateSchool)
 		schools.PATCH("/:id", routes.updateSchool)
 		schools.DELETE("/:id", routes.DeleteSchool)
+		schools.POST("/:id/token", routes.createTokenForSchool)
 	}
 
 	router.GET("/api/schools/:id", tools.AtLeastLecturer, routes.GetSchoolById)
@@ -60,6 +63,12 @@ func (s *schoolsRoutes) updateResource(c *gin.Context) {
 
 func (s *schoolsRoutes) deleteResource(c *gin.Context) {
 	// TODO: Implement this function
+}
+
+type JWTSchoolClaims struct {
+	jwt.RegisteredClaims
+	UserID   uint
+	SchoolID string
 }
 
 func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
@@ -360,6 +369,31 @@ func (s *schoolsRoutes) GetSchoolById(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, school)
+}
+
+func (s *schoolsRoutes) createTokenForSchool(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	if !s.isAdminOfSchool(c, uint(id)) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
+		return
+	}
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	token := jwt.New(jwt.GetSigningMethod("RS256"))
+	token.Claims = &JWTSchoolClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 7)}, // Token expires in 7 hours
+		},
+		UserID:   ctx.User.ID,
+		SchoolID: strconv.FormatUint(uint64(id), 10),
+	}
+	str, err := token.SignedString(tools.Cfg.GetJWTKey())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create school token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": str})
 }
 
 type schoolsRoutes struct {

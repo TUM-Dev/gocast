@@ -16,6 +16,8 @@ type Worker struct {
 	Uptime string
 
 	Version string
+
+	SchoolID uint `gorm:"not null"` // School the worker belongs to
 }
 
 func (w *Worker) IsAlive() bool {

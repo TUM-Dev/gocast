@@ -144,20 +144,15 @@
                                 <i @click="openMaintainerModal(school, i)"
                                    class="fas fa-address-card"></i>
                             </button>
-                            <template x-if="school.university === 'service' && school.name === 'master'">
-                                <button title="View Schools"
-                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
-                                    <i @click="window.location.replace('/admin/workers)"
-                                    class="fas fa-school"></i>
-                                </button>
-                            </template>
-                            <template x-if="school.university !== 'service' && school.name != 'master'">
-                                <button title="View Resources"
-                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
-                                    <i @click="window.location.replace('/admin/workers?s=' + school.id)"
-                                    class="fas fa-server"></i>
-                                </button>
-                            </template>
+                            <button title="View Resources"
+                                    class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                <i @click="window.location.replace('/admin/workers?s=' + school.id)"
+                                class="fas fa-server"></i>
+                            </button>
+                            <button title="Create Token for School"
+                                    class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                <i @click="admin.createTokenForSchool(school.id)" class="fas fa-key"></i>
+                            </button>
                             <template x-if="school.university !== 'service' && school.name != 'master'">
                                 <button title="Delete School"
                                         class="w-4 transform hover:text-purple-500 hover:scale-110">
