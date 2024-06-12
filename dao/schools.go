@@ -22,7 +22,7 @@ type SchoolsDao interface {
 	QueryAdministerdSchools(context.Context, *model.User, string) ([]model.School, error)
 
 	// Get all Schools administered by a User
-	GetAdministeredSchoolsByUserId(context.Context, uint) ([]model.School, error)
+	GetAdministeredSchoolsByUserId(context.Context, *model.User) ([]model.School, error)
 
 	// Get by name and university
 	GetByNameAndUniversity(context.Context, string, string) (model.School, error)
@@ -113,7 +113,6 @@ func (d schoolDao) Update(c context.Context, it *model.School) error {
 }
 
 func (d schoolDao) QueryAdministerdSchools(c context.Context, user *model.User, query string) (res []model.School, err error) {
-
 	if user.Role == model.AdminType {
 		return res, d.db.WithContext(c).Where("name LIKE ? OR university LIKE ?", "%"+query+"%", "%"+query+"%").Find(&res).Error
 	} else {
@@ -141,8 +140,12 @@ func (d schoolDao) RemoveAdmin(c context.Context, schoolID, adminID uint) error 
 	return d.db.WithContext(c).Model(&model.School{Model: gorm.Model{ID: schoolID}}).Association("Admins").Delete(&model.User{Model: gorm.Model{ID: adminID}})
 }
 
-func (d schoolDao) GetAdministeredSchoolsByUserId(c context.Context, userID uint) (res []model.School, err error) {
-	return res, d.db.WithContext(c).Preload("Admins").Model(&model.User{Model: gorm.Model{ID: userID}}).Association("AdministeredSchools").Find(&res)
+func (d schoolDao) GetAdministeredSchoolsByUserId(c context.Context, user *model.User) (res []model.School, err error) {
+	if user.Role == model.AdminType {
+		return res, d.db.WithContext(c).Preload("Admins").Find(&res).Error
+	} else {
+		return res, d.db.WithContext(c).Preload("Admins").Model(&model.User{Model: gorm.Model{ID: user.ID}}).Association("AdministeredSchools").Find(&res)
+	}
 }
 
 func (d schoolDao) GetByNameAndUniversity(c context.Context, name, university string) (res model.School, err error) {

@@ -56,7 +56,8 @@ type Stream struct {
 	TranscodingProgresses []TranscodingProgress `gorm:"foreignKey:StreamID"`
 	Private               bool                  `gorm:"not null;default:false"`
 
-	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+	Requested bool `gorm:"default:false"`
+	Watched   bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
 
 type DownloadableVod struct {

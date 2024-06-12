@@ -32,7 +32,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	var users []model.User
 	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
-	schools, err := r.SchoolsDao.GetAdministeredSchoolsByUserId(context.Background(), tumLiveContext.User.ID)
+	schools, err := r.SchoolsDao.GetAdministeredSchoolsByUserId(context.Background(), tumLiveContext.User)
 	if err != nil {
 		logger.Error("couldn't query schools for user.", "err", err)
 		schools = []model.School{}
@@ -43,6 +43,10 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		courses = []model.Course{}
 	}
 	workers, err := r.WorkerDao.GetAllWorkers()
+	if err != nil {
+		sentry.CaptureException(err)
+	}
+	runners, err := r.RunnerDao.GetAll(context.Background())
 	if err != nil {
 		sentry.CaptureException(err)
 	}
@@ -64,6 +68,9 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	if c.Request.URL.Path == "/admin/workers" {
 		page = "workers"
+	}
+	if c.Request.URL.Path == "/admin/runners" {
+		page = "runners"
 	}
 	if c.Request.URL.Path == "/admin/create-course" {
 		page = "createCourse"
@@ -146,6 +153,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
+			Runners:             RunnersData{Runners: runners},
 		})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
@@ -155,6 +163,10 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
+}
+
+type RunnersData struct {
+	Runners []model.Runner
 }
 
 func (r mainRoutes) LectureCutPage(c *gin.Context) {
@@ -316,6 +328,7 @@ type AdminPageData struct {
 	Tokens              []dao.AllTokensDto
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
+	Runners             RunnersData
 }
 
 func (apd AdminPageData) UsersAsJson() string {

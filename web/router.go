@@ -126,6 +126,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/notifications", routes.AdminPage)
 	adminGroup.GET("/admin/audits", routes.AdminPage)
 	adminGroup.GET("/admin/maintenance", routes.AdminPage)
+	adminGroup.GET("/admin/runners", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
