@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         node-version: "latest"
       - uses: actions/checkout@v3
-      - run: npm ci
+      - run: npm ci web/
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
