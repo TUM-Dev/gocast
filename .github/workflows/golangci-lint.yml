@@ -17,8 +17,7 @@ jobs:
         with:
           go-version: 1.22
       - uses: actions/checkout@v3
-      - uses: bahmutov/npm-install@v1
-      - run: npm t
+      - run: mkdir node_modules
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
