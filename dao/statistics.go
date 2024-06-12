@@ -46,7 +46,7 @@ func (d statisticsDao) GetCourseNumStudents(courseID uint) (int64, error) {
 // GetCourseNumVodViews returns the sum of vod views of a course
 func (d statisticsDao) GetCourseNumVodViews(courseID uint) (int, error) {
 	var res int
-	err := DB.Raw(`SELECT SUM(stats.viewers) FROM stats
+	err := DB.Raw(`SELECT IFNULL(SUM(stats.viewers), 0) FROM stats
 		JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? or ? = 0) AND live = 0`, courseID, courseID).Scan(&res).Error
 	return res, err
@@ -61,7 +61,7 @@ func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
 		WHERE (s.course_id = ? OR ? = 0)
             AND stats.live = 1
         GROUP BY stats.stream_id)
-		SELECT SUM(y)
+		SELECT IFNULL(SUM(y), 0)
 			FROM views_per_stream WHERE y IS NOT NULL`, courseID, courseID).Scan(&res).Error
 	return res, err
 }
