@@ -89,3 +89,7 @@ issues:
         - gosec
         - unparam
         - staticcheck
+
+output:
+  formats:
+    - format: colored-line-number
