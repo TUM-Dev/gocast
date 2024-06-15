@@ -1,6 +1,6 @@
 import { Section } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
-import { VideoJsPlayer } from "video.js";
+import Player from "video.js/dist/types/player";
 import { DataStore } from "./data-store/data-store";
 import { Bookmark } from "./data-store/bookmarks";
 
@@ -23,7 +23,7 @@ export type SeekbarSection = {
 
 class SeekbarHighlights {
     streamId: number;
-    player: VideoJsPlayer;
+    player: Player;
     sections: SeekbarSection[];
     marker: SeekbarMarker[];
 

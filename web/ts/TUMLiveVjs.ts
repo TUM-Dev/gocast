@@ -1,30 +1,31 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { StatusCodes } from "http-status-codes";
-import videojs, { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
+import Player from "video.js/dist/types/player";
+import type Button from "video.js/dist/types/button.d.ts";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
+import { Event } from "video.js/dist/types/event-target";
 
-require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
+require("videojs-sprite-thumbnails");
 require("videojs-contrib-quality-levels");
 
-const Button = videojs.getComponent("Button");
+const players: Player[] = [];
 
-const players: VideoJsPlayer[] = [];
-
-export function getPlayers(): VideoJsPlayer[] {
+export function getPlayers(): Player[] {
     return players;
 }
 
 class PlayerSettings {
-    private readonly player: VideoJsPlayer;
+    private readonly player: Player;
     private readonly isLive: boolean;
     private readonly isEmbedded: boolean;
 
-    constructor(player: VideoJsPlayer, isLive: boolean, isEmbedded: boolean) {
+    constructor(player: Player, isLive: boolean, isEmbedded: boolean) {
         this.player = player;
         this.isLive = isLive;
         this.isEmbedded = isEmbedded;
@@ -94,9 +95,10 @@ class PlayerSettings {
         }
     }
 
-    addOverlayIcon(options: object = {}) {
+    // Removed because not used
+    /*addOverlayIcon(options: object = {}) {
         this.player.addChild("OverlayIcon", options);
-    }
+    }*/
 
     addTimeToolTipClass(spriteID?: number) {
         if (spriteID) {
@@ -222,7 +224,7 @@ export const initPlayer = function (
         settings.addTitleBar({ ...options });
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
-        settings.addOverlayIcon();
+        //settings.addOverlayIcon(); // Removed because not used
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
@@ -231,26 +233,32 @@ export const initPlayer = function (
 
 let skipTo = 0;
 
+// Should be changed when videojs fully supports typescript, but for now this works as a fix
+const CustomButton = videojs.getComponent("Button") as any;
+
 /**
  * Button to add a class to passed player that will toggle skip silence button.
  */
-export const SkipSilenceToggle = videojs.extend(Button, {
-    constructor: function (...args) {
-        Button.apply(this, args);
+export class SkipSilenceButton extends CustomButton {
+    constructor(player, options) {
+        super(player, options);
         this.controlText("Skip pause");
         (this.el().firstChild as HTMLElement).classList.add("icon-forward");
-    },
-    handleClick: function () {
+    }
+
+    handleClick(event: Event, ...args) {
         for (let i = 0; i < players.length; i++) {
             players[i].currentTime(skipTo);
         }
-    },
-    buildCSSClass: function () {
-        return `vjs-skip-silence-control`;
-    },
-});
+    }
 
-videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
+    buildCSSClass(): string {
+        return `vjs-skip-silence-control`;
+    }
+}
+
+// Should be changed when videojs fully supports typescript, but for now this works as a fix
+videojs.registerComponent("SkipSilenceToggle", SkipSilenceButton as any as typeof Button);
 
 export const skipSilence = function (options) {
     for (let j = 0; j < players.length; j++) {
@@ -258,7 +266,7 @@ export const skipSilence = function (options) {
             players[j].addClass("vjs-skip-silence");
             const toggle = players[j].addChild("SkipSilenceToggle");
             toggle.el().classList.add("invisible");
-            players[j].el().insertBefore(toggle.el(), players[j].bigPlayButton.el());
+            players[j].el().insertBefore(toggle.el(), (players[j] as any).bigPlayButton.el());
 
             let isShowing = false;
             const silences = JSON.parse(options);
@@ -589,6 +597,8 @@ export class StartInOverlay extends Component {
     }
 }
 
+// Removed because not used
+/*
 export class OverlayIcon extends Component {
     private removeIconTimeout;
     private readonly removeIconAfter;
@@ -626,7 +636,7 @@ export class OverlayIcon extends Component {
         dom.emptyEl(this.el());
         this.el().classList.remove("vjs-overlay-icon-animate");
     }
-}
+}*/
 
 export type jumpToSettings = {
     timeParts: { hours: number; minutes: number; seconds: number } | undefined;
@@ -704,9 +714,9 @@ function debounce(func, timeout) {
 }
 
 // Register the plugin with video.js.
-videojs.registerPlugin("skipSilence", skipSilence);
+//videojs.registerPlugin("skipSilence", skipSilence);
 videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
-videojs.registerComponent("OverlayIcon", OverlayIcon);
+//videojs.registerComponent("OverlayIcon", OverlayIcon); // Removed because not used
 airplay(videojs); //calls registerComponent internally
