@@ -1,0 +1,333 @@
+{{define "resources"}}
+    {{if $.Query}}
+        {{range $school := .Schools}}
+            {{if eq $school.ID $.Query}}
+                <div class="container">
+                    <div id="alertBox" class="text-center">
+                        <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex" role="alert">
+                            <span id="alertText" class="font-semibold mx-2 text-left flex-auto">Currently only showing resources for {{$school.University}}-{{$school.Name}}</span>
+                            <span id="alertOk" onclick="window.location.replace('/admin/resources')" class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">View all resources for your schools</span>
+                        </div>
+                    </div>
+                </div>
+            {{end}}
+        {{end}}
+    {{end}}
+
+    <div class="form-container">
+        <h1 class="form-container-title">Runners</h1>
+        <div class="form-container-body grid grid-cols-2 gap-3">
+            <table class="table-auto w-full col-span-full">
+                <thead>
+                    <tr class="text-2 uppercase text-left">
+                        <th class="px-6 text-left">Name</th>
+                        <th class="px-6 text-left">Status</th>
+                        <th class="px-6 text-left">Workload</th>
+                        <th class="px-6 text-left">Uptime</th>
+                        <th class="px-6 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="text-3">
+                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
+                    {{range $school := .Schools}}
+                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
+                        {{$found := false}}
+                        <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
+                                <thead>
+                                <tr>
+                                    <td colspan="5" class="text-left">
+                                        <h2 class="form-container-title">
+                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.University}}-{{$school.Name}}</a>
+                                        </h2>
+                                    </td>
+                                </tr>
+                                </thead>
+                                <tbody class="text-3">
+                                    {{range $runner := $.Runners}}
+                                        {{if eq $runner.SchoolID $school.ID}}
+                                        {{$found = true}}
+                                            <tr class="border-gray-500">
+                                                <td class="px-6 pb-4 text-left">
+                                                    <div class="font-semibold text-1">{{$runner.Hostname}}<span
+                                                                class="font-normal text-4">@{{$runner.Version}}</span>
+
+                                                    </div>
+                                                    <div class="pl-1 text-2 italic font-light">
+                                                        <span class="mr-4">CPU: {{$runner.CPU}}</span>
+                                                        <span class="mr-4">Mem: {{$runner.Memory}}</span>
+                                                        <span class="mr-4">Disk: {{$runner.Disk}}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6">{{if $runner.IsAlive}}
+                                                        <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
+                                                        <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}
+                                                </td>
+                                                <td class="px-6 text-left whitespace-nowrap">
+                                                    {{$runner.Workload}}
+                                                </td>
+                                                <td class="px-6">{{$runner.Uptime}}</td>
+                                                <td x-data class="px-6">
+                                                    <button @click="admin.deleteRunner('{{$runner.Hostname}}').then(() => window.location.reload())"
+                                                            class="text-5 hover:text-1 items-center justify-center"
+                                                            type="button"
+                                                            title="Delete Runner">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {{end}}
+                                    {{end}}
+                                    {{if not $found}}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No runners found for this school.</td>
+                                        </tr>
+                                    {{end}}
+                                </tbody>
+                        </table>
+                    {{end}}
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <h1 class="form-container-title">VOD-Service</h1>
+        <div class="form-container-body grid grid-cols-2 gap-3">
+            <table class="table-auto w-full col-span-full">
+                <thead>
+                    <tr class="text-2 uppercase text-left">
+                        <th class="px-6 text-left">Name</th>
+                        <th class="px-6 text-left">Status</th>
+                        <th class="px-6 text-left">Workload</th>
+                        <th class="px-6 text-left">Uptime</th>
+                        <th class="px-6 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="text-3">
+                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
+                    {{range $school := .Schools}}
+                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
+                        {{$found := false}}
+                        <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
+                                <thead>
+                                <tr>
+                                    <td colspan="5" class="text-left">
+                                        <h2 class="form-container-title">
+                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.University}}-{{$school.Name}}</a>
+                                        </h2>
+                                    </td>
+                                </tr>
+                                </thead>
+                                <tbody class="text-3">
+                                    {{range $runner := $.VODServices}}
+                                        {{if eq $runner.SchoolID $school.ID}}
+                                        {{$found = true}}
+                                            <tr class="border-gray-500">
+                                                <td class="px-6 pb-4 text-left">
+                                                    <div class="font-semibold text-1">{{$runner.Hostname}}<span
+                                                                class="font-normal text-4">@{{$runner.Version}}</span>
+
+                                                    </div>
+                                                    <div class="pl-1 text-2 italic font-light">
+                                                        <span class="mr-4">CPU: {{$runner.CPU}}</span>
+                                                        <span class="mr-4">Mem: {{$runner.Memory}}</span>
+                                                        <span class="mr-4">Disk: {{$runner.Disk}}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6">{{if $runner.IsAlive}}
+                                                        <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
+                                                        <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}
+                                                </td>
+                                                <td class="px-6 text-left whitespace-nowrap">
+                                                    {{$runner.Workload}}
+                                                </td>
+                                                <td class="px-6">{{$runner.Uptime}}</td>
+                                                <td x-data class="px-6">
+                                                    <button @click="admin.deleteRunner('{{$runner.Hostname}}').then(() => window.location.reload())"
+                                                            class="text-5 hover:text-1 items-center justify-center"
+                                                            type="button"
+                                                            title="Delete Runner">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {{end}}
+                                    {{end}}
+                                    {{if not $found}}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No VOD-services found for this school.</td>
+                                        </tr>
+                                    {{end}}
+                                </tbody>
+                        </table>
+                    {{end}}
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <h1 class="form-container-title">Worker</h1>
+        <div class="form-container-body grid grid-cols-2 gap-3">
+            <table class="table-auto w-full col-span-full">
+                <thead>
+                    <tr class="text-2 uppercase text-left">
+                        <th class="px-6 text-left">Name</th>
+                        <th class="px-6 text-left">Status</th>
+                        <th class="px-6 text-left">Workload</th>
+                        <th class="px-6 text-left">Uptime</th>
+                        <th class="px-6 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="text-3">
+                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
+                    {{range $school := .Schools}}
+                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
+                        {{$found := false}}
+                        <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
+                                <thead>
+                                <tr>
+                                    <td colspan="5" class="text-left">
+                                        <h2 class="form-container-title">
+                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.University}}-{{$school.Name}}</a>
+                                        </h2>
+                                    </td>
+                                </tr>
+                                </thead>
+                                <tbody class="text-3">
+                                    {{range $worker := $.Workers}}
+                                        {{if eq $worker.SchoolID $school.ID}}
+                                        {{$found = true}}
+
+                                        <tr class="border-gray-500">
+                                            <td class="pb-3 px-6">
+                                                <div class="font-semibold text-1">{{$worker.Host}}<span
+                                                    class="font-normal text-4">@{{$worker.Version}}</span>
+                                                </div>
+                                                <div class="pl-1 text-2 italic font-light">
+                                                    <span class="mr-4">CPU: {{$worker.CPU}}</span>
+                                                    <span class="mr-4">Mem: {{$worker.Memory}}</span>
+                                                    <span class="mr-4">Disk: {{$worker.Disk}}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6">{{if $worker.IsAlive}}
+                                                <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
+                                                <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}{{$worker.Status}}
+                                            </td>
+                                            <td class="px-6 text-left whitespace-nowrap">
+                                                {{$worker.Workload}}
+                                            </td>
+                                            <td class="px-6">{{$worker.Uptime}}</td>
+                                            <td x-data class="px-6">
+                                                <button @click="admin.deleteWorker('{{$worker.WorkerID}}').then(() => window.location.reload())"
+                                                    class="text-5 hover:text-1 items-center justify-center"
+                                                    type="button"
+                                                    title="Delete Worker">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {{end}}
+                                    {{end}}
+                                    {{if not $found}}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No workers found for this school.</td>
+                                        </tr>
+                                    {{end}}
+                                </tbody>
+                        </table>
+                    {{end}}
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="p-5">
+        <h3 class="text-3">How to add a RUNNER</h3>
+        <p class="text-6">NOTE: You can fetch a new token for your school by pressing on the key icon in the "schools"-tab</p>
+        <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"
+             x-data="{show:'plain', token:'ABC'}">
+            <div class="w-full dark:bg-secondary bg-gray-200 text-4 uppercase text-sm font-semibold py-3 leading-normal dark:bg-secondary rounded-t-md">
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" :class="show==='plain'&&'font-bold text-1'"
+                      @click="show='plain'">Plain</span>
+                <span class="hover:text-1 hover:font-bold px-6 border-x-2 border-gray-500 cursor-pointer"
+                      :class="show==='docker'&&'font-bold text-1'" @click="show='docker'">Docker</span>
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" @click="show='swarm'"
+                      :class="show==='swarm'&&'font-bold text-1'">Docker Swarm</span>
+            </div>
+            <p class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter p-3" x-show="show==='plain'">
+            <span class="text-gray-500"># Run the TUM-Live-Runner executable with these environment variables:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">export&nbsp;TOKEN</span><span
+                      class="text-gray-300">=</span><span class="text-cyan-500" x-text="token"></span>
+            </span>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">./runner</span>
+            </span>
+            </p>
+            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='docker'">
+                <span class="text-gray-500"># Run the TUM-Live-Runner docker container with the token, make sure to include its hostname:</span><br>
+                <span class="flex">
+                    {{template "terminalprompt"}}
+                    <span class="text-gray-300">docker run -d -p 50057:50057 -e "REALHOST=vm1234" -e "TOKEN=<span x-text="token"></span>" docker.io/carlobortolan/runner:latest</span>
+                </span>
+            </p>
+            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-gray-400 p-3" x-show="show==='swarm'">
+            <span class="text-gray-500"># Refer to your manager node on which token to use here:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377</span>
+            </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="p-5">
+        <h3 class="text-3">How to add a WORKER</h3>
+        <p class="text-6">NOTE: You can fetch a new token for your school by pressing on the key icon in the "schools"-tab</p>
+        <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"
+             x-data="{show:'plain', token:'ABC'}">
+            <div class="w-full dark:bg-secondary bg-gray-200 text-4 uppercase text-sm font-semibold py-3 leading-normal dark:bg-secondary rounded-t-md">
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" :class="show==='plain'&&'font-bold text-1'"
+                      @click="show='plain'">Plain</span>
+                <span class="hover:text-1 hover:font-bold px-6 border-x-2 border-gray-500 cursor-pointer"
+                      :class="show==='docker'&&'font-bold text-1'" @click="show='docker'">Docker</span>
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" @click="show='swarm'"
+                      :class="show==='swarm'&&'font-bold text-1'">Docker Swarm</span>
+            </div>
+            <p class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter p-3" x-show="show==='plain'">
+            <span class="text-gray-500"># Run the TUM-Live-Worker executable with these environment variables:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">export&nbsp;Token</span><span
+                      class="text-gray-300">=</span><span class="text-cyan-500" x-text="token"></span>
+            </span>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">./worker</span>
+            </span>
+            </p>
+            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='docker'">
+            <span class="text-gray-500"># Run the TUM-Live-Worker docker container the token, make sure to include its hostname:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">docker run -p 50051:50051 -e "Host=vm1234" -e "Token=<span
+                      x-text="token"></span>" ghcr.io/TUM-Dev/gocast/worker:latest</span>
+            </span>
+            </p>
+            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-gray-400 p-3" x-show="show==='swarm'">
+            <span class="text-gray-500"># Refer to your manager node on which token to use here:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377</span>
+            </span>
+            </p>
+        </div>
+    </div>
+
+{{end}}

@@ -13,8 +13,8 @@ type WorkerDao interface {
 	CreateWorker(worker *model.Worker) error
 	SaveWorker(worker model.Worker) error
 
-	GetAllWorkers() ([]model.Worker, error)
-	GetAliveWorkers() []model.Worker
+	GetAllWorkers([]model.School) ([]model.Worker, error)
+	GetAliveWorkers(uint) []model.Worker
 	GetWorkerByHostname(ctx context.Context, hostname string) (model.Worker, error)
 	GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error)
 
@@ -37,16 +37,27 @@ func (d workerDao) SaveWorker(worker model.Worker) error {
 	return DB.Save(&worker).Error
 }
 
-func (d workerDao) GetAllWorkers() ([]model.Worker, error) {
+// Return all workers for a user's administered schools
+// Return all workers for a user's administered schools
+func (d workerDao) GetAllWorkers(schools []model.School) ([]model.Worker, error) {
 	var workers []model.Worker
-	err := DB.Find(&workers).Error
+	err := DB.Where("school_id IN (?)", getSchoolIDs(schools)).Find(&workers).Error
 	return workers, err
 }
 
+// Helper function to extract school IDs from a slice of schools
+func getSchoolIDs(schools []model.School) []uint {
+	ids := make([]uint, len(schools))
+	for i, school := range schools {
+		ids[i] = school.ID
+	}
+	return ids
+}
+
 // GetAliveWorkers returns all workers that were active within the last 5 minutes
-func (d workerDao) GetAliveWorkers() []model.Worker {
+func (d workerDao) GetAliveWorkers(schoolID uint) []model.Worker {
 	var workers []model.Worker
-	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE)").Scan(&workers)
+	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE) AND school_id = ?", schoolID).Scan(&workers)
 	return workers
 }
 

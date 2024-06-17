@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -32,24 +33,24 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	var users []model.User
 	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
-	schools, err := r.SchoolsDao.GetAdministeredSchoolsByUserId(context.Background(), tumLiveContext.User)
+	schools, err := r.SchoolsDao.GetAdministeredSchoolsByUser(context.Background(), tumLiveContext.User)
 	if err != nil {
 		logger.Error("couldn't query schools for user.", "err", err)
 		schools = []model.School{}
 	}
+	workers := []model.Worker{}
+	runners := []model.Runner{}
+	for _, school := range schools {
+		workers = append(workers, school.Workers...)
+		runners = append(runners, school.Runners...)
+	}
+
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	workers, err := r.WorkerDao.GetAllWorkers()
-	if err != nil {
-		sentry.CaptureException(err)
-	}
-	runners, err := r.RunnerDao.GetAll(context.Background())
-	if err != nil {
-		sentry.CaptureException(err)
-	}
+
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
@@ -71,6 +72,9 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	if c.Request.URL.Path == "/admin/runners" {
 		page = "runners"
+	}
+	if c.Request.URL.Path == "/admin/resources" {
+		page = "resources"
 	}
 	if c.Request.URL.Path == "/admin/create-course" {
 		page = "createCourse"
@@ -137,6 +141,8 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
 
+	query, _ := strconv.ParseUint(c.Request.URL.Query().Get("id"), 10, 32)
+
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
 			Users:               users,
@@ -154,6 +160,13 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
 			Runners:             RunnersData{Runners: runners},
+			Resources: Resources{
+				Workers:     workers,
+				Runners:     runners,
+				VODServices: runners,
+				Schools:     schools,
+				Query:       uint(query),
+			},
 		})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
@@ -163,6 +176,14 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
+}
+
+type Resources struct {
+	Workers     []model.Worker
+	Runners     []model.Runner
+	VODServices []model.Runner
+	Schools     []model.School
+	Query       uint
 }
 
 type RunnersData struct {
@@ -329,6 +350,7 @@ type AdminPageData struct {
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 	Runners             RunnersData
+	Resources           Resources
 }
 
 func (apd AdminPageData) UsersAsJson() string {

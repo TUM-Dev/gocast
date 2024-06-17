@@ -496,7 +496,18 @@ func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
 		})
 		return
 	}
-	workers := r.WorkerDao.GetAliveWorkers()
+
+	course, err := r.CoursesDao.GetCourseById(context.Background(), stream.CourseID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find course",
+			Err:           err,
+		})
+		return
+	}
+
+	workers := r.WorkerDao.GetAliveWorkers(course.SchoolID)
 	if len(workers) == 0 {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

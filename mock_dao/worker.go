@@ -64,32 +64,32 @@ func (mr *MockWorkerDaoMockRecorder) DeleteWorker(workerID interface{}) *gomock.
 }
 
 // GetAliveWorkers mocks base method.
-func (m *MockWorkerDao) GetAliveWorkers() []model.Worker {
+func (m *MockWorkerDao) GetAliveWorkers(arg0 uint) []model.Worker {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAliveWorkers")
+	ret := m.ctrl.Call(m, "GetAliveWorkers", arg0)
 	ret0, _ := ret[0].([]model.Worker)
 	return ret0
 }
 
 // GetAliveWorkers indicates an expected call of GetAliveWorkers.
-func (mr *MockWorkerDaoMockRecorder) GetAliveWorkers() *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) GetAliveWorkers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAliveWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAliveWorkers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAliveWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAliveWorkers), arg0)
 }
 
 // GetAllWorkers mocks base method.
-func (m *MockWorkerDao) GetAllWorkers() ([]model.Worker, error) {
+func (m *MockWorkerDao) GetAllWorkers(arg0 []model.School) ([]model.Worker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllWorkers")
+	ret := m.ctrl.Call(m, "GetAllWorkers", arg0)
 	ret0, _ := ret[0].([]model.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllWorkers indicates an expected call of GetAllWorkers.
-func (mr *MockWorkerDaoMockRecorder) GetAllWorkers() *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) GetAllWorkers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAllWorkers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAllWorkers), arg0)
 }
 
 // GetWorkerByHostname mocks base method.

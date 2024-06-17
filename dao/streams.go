@@ -18,8 +18,8 @@ type StreamsDao interface {
 	CreateStream(stream *model.Stream) error
 	AddVodView(id string) error
 
-	GetDueStreamsForWorkers() []model.Stream
-	GetDuePremieresForWorkers() []model.Stream
+	GetDueStreamsForWorkers() map[uint][]model.Stream
+	GetDuePremieresForWorkers(uint) []model.Stream
 	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
 	GetUnitByID(id string) (model.StreamUnit, error)
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
@@ -117,21 +117,31 @@ func (d streamsDao) AddVodView(id string) error {
 	return err
 }
 
-// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
-func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
-	var res []model.Stream
+// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall, grouped by schoolID.
+func (d streamsDao) GetDueStreamsForWorkers() map[uint][]model.Stream {
+	var streams []struct {
+		model.Stream
+		SchoolID uint
+	}
 	DB.Model(&model.Stream{}).
 		Joins("JOIN courses c ON c.id = streams.course_id").
+		Joins("JOIN schools s ON s.id = c.school_id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
 			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
-		Scan(&res)
+		Scan(&streams)
+
+	res := make(map[uint][]model.Stream)
+	for _, stream := range streams {
+		res[stream.SchoolID] = append(res[stream.SchoolID], stream.Stream)
+	}
 	return res
 }
 
-func (d streamsDao) GetDuePremieresForWorkers() []model.Stream {
+func (d streamsDao) GetDuePremieresForWorkers(schoolID uint) []model.Stream {
 	var res []model.Stream
-	DB.Preload("Files").
-		Find(&res, "premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false")
+	DB.Joins("JOIN courses ON courses.id = streams.course_id").
+		Preload("Files").
+		Find(&res, "courses.school_id = ? AND premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false", schoolID)
 	return res
 }
 

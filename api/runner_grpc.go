@@ -320,52 +320,52 @@ func NotifyRunners(dao dao.DaoWrapper) func() {
 
 		logger.Info("Notifying runners")
 
-		streams := dao.StreamsDao.GetDueStreamsForWorkers()
-		runners, err := dao.RunnerDao.GetAll(context.Background())
-		if err != nil {
-			logger.Error("Can't get runners", err)
-			return
-		}
-		if len(runners) == 0 {
-			logger.Error("No runners available")
-			return
-		}
-		for i := range streams {
-			err = dao.StreamsDao.SaveEndedState(streams[i].ID, false)
+		schoolsStreams := dao.StreamsDao.GetDueStreamsForWorkers()
+		for schoolID, streams := range schoolsStreams {
+			runners, err := dao.RunnerDao.GetAll(context.Background(), schoolID)
 			if err != nil {
-				logger.Warn("Can't save ended state", err)
-				sentry.CaptureException(err)
+				logger.Error("Can't get runners for school", err)
 				continue
 			}
-			courseForStream, err := dao.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
-			if err != nil {
-				logger.Warn("Can't get course for stream", err)
-				sentry.CaptureException(err)
-				continue
-			}
-			lectureHallForStream, err := dao.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
-			if err != nil {
-				logger.Warn("Can't get lecture hall for stream", err)
-				sentry.CaptureException(err)
+			if len(runners) == 0 {
+				logger.Error("No runners available for school")
 				continue
 			}
 
-			switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
-			case 1: //presentation
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
-				break
-			case 2: //camera
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
-				break
-			default: //combined
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CombIP, runners, "COMB", streams[i].End)
-				break
+			for i := range streams {
+				err = dao.StreamsDao.SaveEndedState(streams[i].ID, false)
+				if err != nil {
+					logger.Warn("Can't save ended state", err)
+					sentry.CaptureException(err)
+					continue
+				}
+				courseForStream, err := dao.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
+				if err != nil {
+					logger.Warn("Can't get course for stream", err)
+					sentry.CaptureException(err)
+					continue
+				}
+				lectureHallForStream, err := dao.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
+				if err != nil {
+					logger.Warn("Can't get lecture hall for stream", err)
+					sentry.CaptureException(err)
+					continue
+				}
+
+				switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
+				case 1: //presentation
+					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
+					break
+				case 2: //camera
+					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
+					break
+				default: //combined
+					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
+					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
+					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CombIP, runners, "COMB", streams[i].End)
+					break
+				}
 			}
-
-			//this part until now was the old system for testing but we will be creating the job tables from here
-
 		}
 	}
 }

@@ -2683,7 +2683,7 @@ func TestUploadVODMedia(t *testing.T) {
 							streamsMock := mock_dao.NewMockWorkerDao(ctrl)
 							streamsMock.
 								EXPECT().
-								GetAliveWorkers().
+								GetAliveWorkers(gomock.Any()).
 								Return([]model.Worker{})
 							return streamsMock
 						}(),

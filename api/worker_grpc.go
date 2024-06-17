@@ -498,6 +498,13 @@ func generateCombinedThumb(streamID uint, dao dao.DaoWrapper) {
 		logger.Warn("error getting stream", "err", err)
 		return
 	}
+
+	course, err := dao.CoursesDao.GetCourseById(context.Background(), stream.CourseID)
+	if err != nil {
+		logger.Warn("Can't get course for stream", err)
+		return
+	}
+
 	var thumbCam, thumbPres string
 	for _, file := range stream.Files {
 		if file.Type == model.FILETYPE_THUMB_LG_CAM {
@@ -510,7 +517,7 @@ func generateCombinedThumb(streamID uint, dao dao.DaoWrapper) {
 	if thumbCam == "" || thumbPres == "" {
 		return // nothing to do
 	}
-	workers := dao.GetAliveWorkers()
+	workers := dao.GetAliveWorkers(course.SchoolID)
 	if len(workers) == 0 {
 		return
 	}
@@ -750,56 +757,59 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 // and invokes the corresponding calls at the workers with the least workload via gRPC
 func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 	return func() {
-		notifyWorkersPremieres(daoWrapper)
-		streams := daoWrapper.StreamsDao.GetDueStreamsForWorkers()
-		workers := daoWrapper.WorkerDao.GetAliveWorkers()
-		if len(workers) == 0 && len(streams) != 0 {
-			logger.Error("not enough workers to handle streams")
-			return
-		}
-		for i := range streams {
-			err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
-			if err != nil {
-				logger.Warn("Can't set stream undone", "err", err)
-				sentry.CaptureException(err)
-				continue
+		schoolsStreams := daoWrapper.StreamsDao.GetDueStreamsForWorkers()
+		for schoolID, streams := range schoolsStreams {
+			notifyWorkersPremieres(daoWrapper, schoolID)
+			workers := daoWrapper.WorkerDao.GetAliveWorkers(schoolID)
+			if len(workers) == 0 && len(streams) != 0 {
+				logger.Error("not enough workers to handle streams")
+				return
 			}
-			courseForStream, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
-			if err != nil {
-				logger.Warn("Can't get course for stream, skipping", "err", err)
-				sentry.CaptureException(err)
-				continue
-			}
-			lectureHallForStream, err := daoWrapper.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
-			if err != nil {
-				logger.Error("Can't get lecture hall for stream, skipping", "err", err)
-				sentry.CaptureException(err)
-				continue
-			}
+			for i := range streams {
+				err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
+				if err != nil {
+					logger.Warn("Can't set stream undone", "err", err)
+					sentry.CaptureException(err)
+					continue
+				}
+				courseForStream, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
+				if err != nil {
+					logger.Warn("Can't get course for stream, skipping", "err", err)
+					sentry.CaptureException(err)
+					continue
+				}
+				lectureHallForStream, err := daoWrapper.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
+				if err != nil {
+					logger.Error("Can't get lecture hall for stream, skipping", "err", err)
+					sentry.CaptureException(err)
+					continue
+				}
 
-			switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
-			// SourceMode == 1 -> Presentation Only
-			case 1:
-				CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "PRES", lectureHallForStream.PresIP)
-				return
-			// SourceMode == 2 -> Camera Only
-			case 2:
-				CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "CAM", lectureHallForStream.CamIP)
-				return
-			// SourceMode != 1,2 -> Combination view
-			default:
-				CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "PRES", lectureHallForStream.PresIP)
-				CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "CAM", lectureHallForStream.CamIP)
-				CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "COMB", lectureHallForStream.CombIP)
+				switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
+				// SourceMode == 1 -> Presentation Only
+				case 1:
+					CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "PRES", lectureHallForStream.PresIP)
+					return
+				// SourceMode == 2 -> Camera Only
+				case 2:
+					CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "CAM", lectureHallForStream.CamIP)
+					return
+				// SourceMode != 1,2 -> Combination view
+				default:
+					CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "PRES", lectureHallForStream.PresIP)
+					CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "CAM", lectureHallForStream.CamIP)
+					CreateStreamRequest(daoWrapper, streams[i], courseForStream, workers, "COMB", lectureHallForStream.CombIP)
+				}
 			}
 		}
 	}
+
 }
 
 // notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
-func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
-	streams := daoWrapper.StreamsDao.GetDuePremieresForWorkers()
-	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+func notifyWorkersPremieres(daoWrapper dao.DaoWrapper, schoolID uint) {
+	streams := daoWrapper.StreamsDao.GetDuePremieresForWorkers(schoolID)
+	workers := daoWrapper.WorkerDao.GetAliveWorkers(schoolID)
 
 	if len(workers) == 0 && len(streams) != 0 {
 		logger.Error("Not enough alive workers for premiere")
@@ -850,37 +860,40 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 // FetchLivePreviews gets a live thumbnail from a worker.
 func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 	return func() {
-		workers := daoWrapper.WorkerDao.GetAliveWorkers()
-		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
-		if err != nil {
-			return
-		}
-
-		// In case of an error, the preview might be outdated.
-		// That's okay since the cron job is run in 10s again.
-		for _, s := range liveStreams {
-			if s.PlaylistUrl == "" {
-				continue
-			}
-			workerIndex := getWorkerWithLeastWorkload(workers)
-			if len(workers) == 0 {
+		schools := daoWrapper.SchoolsDao.GetAll()
+		for _, school := range schools {
+			workers := daoWrapper.WorkerDao.GetAliveWorkers(school.ID)
+			liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
+			if err != nil {
 				return
 			}
-			conn, err := dialIn(workers[workerIndex])
-			if err != nil {
-				logger.Error("Could not connect to worker", "err", err)
-				endConnection(conn)
-				continue
-			}
-			client := pb.NewToWorkerClient(conn)
-			workers[workerIndex].Workload += 1
-			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
+
+			// In case of an error, the preview might be outdated.
+			// That's okay since the cron job is run in 10s again.
+			for _, s := range liveStreams {
+				if s.PlaylistUrl == "" {
+					continue
+				}
+				workerIndex := getWorkerWithLeastWorkload(workers)
+				if len(workers) == 0 {
+					return
+				}
+				conn, err := dialIn(workers[workerIndex])
+				if err != nil {
+					logger.Error("Could not connect to worker", "err", err)
+					endConnection(conn)
+					continue
+				}
+				client := pb.NewToWorkerClient(conn)
+				workers[workerIndex].Workload += 1
+				if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
+					workers[workerIndex].Workload -= 1
+					logger.Error("Could not generate live preview", "err", err)
+					endConnection(conn)
+					continue
+				}
 				workers[workerIndex].Workload -= 1
-				logger.Error("Could not generate live preview", "err", err)
-				endConnection(conn)
-				continue
 			}
-			workers[workerIndex].Workload -= 1
 		}
 		return
 	}
@@ -915,7 +928,7 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 // RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails
 // and for VoDs that were created before the thumbnail feature.
 func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.Stream, course *model.Course) error {
-	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	workers := daoWrapper.WorkerDao.GetAliveWorkers(course.SchoolID)
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	if len(workers) == 0 {
 		return errors.New("no workers available")
@@ -953,8 +966,20 @@ type generateVideoSectionImagesParameters struct {
 	courseYear                                  uint32
 }
 
-func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
-	workers := workerDao.GetAliveWorkers()
+func DeleteVideoSectionImage(daoWrapper dao.DaoWrapper, path string, streamID uint) error {
+	stream, err := daoWrapper.StreamsDao.GetStreamByID(context.Background(), fmt.Sprintf("%d", streamID))
+	if err != nil {
+		logger.Error("Could not get stream", "err", err)
+		return err
+	}
+
+	course, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), stream.CourseID)
+	if err != nil {
+		logger.Error("Could not get course", "err", err)
+		return err
+	}
+
+	workers := daoWrapper.GetAliveWorkers(course.SchoolID)
 	if len(workers) == 0 {
 		return errors.New("no workers available")
 	}
@@ -975,7 +1000,19 @@ func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 }
 
 func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
-	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	stream, err := daoWrapper.StreamsDao.GetStreamByID(context.Background(), fmt.Sprintf("%d", parameters.sections[0].StreamID))
+	if err != nil {
+		logger.Error("Could not get stream", "err", err)
+		return err
+	}
+
+	course, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), stream.CourseID)
+	if err != nil {
+		logger.Error("Could not get course", "err", err)
+		return err
+	}
+
+	workers := daoWrapper.WorkerDao.GetAliveWorkers(course.SchoolID)
 	if len(workers) == 0 {
 		return errors.New("no workers available")
 	}

@@ -201,24 +201,24 @@ func (mr *MockStreamsDaoMockRecorder) GetCurrentLiveNonHidden(ctx interface{}) *
 }
 
 // GetDuePremieresForWorkers mocks base method.
-func (m *MockStreamsDao) GetDuePremieresForWorkers() []model.Stream {
+func (m *MockStreamsDao) GetDuePremieresForWorkers(arg0 uint) []model.Stream {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDuePremieresForWorkers")
+	ret := m.ctrl.Call(m, "GetDuePremieresForWorkers", arg0)
 	ret0, _ := ret[0].([]model.Stream)
 	return ret0
 }
 
 // GetDuePremieresForWorkers indicates an expected call of GetDuePremieresForWorkers.
-func (mr *MockStreamsDaoMockRecorder) GetDuePremieresForWorkers() *gomock.Call {
+func (mr *MockStreamsDaoMockRecorder) GetDuePremieresForWorkers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDuePremieresForWorkers", reflect.TypeOf((*MockStreamsDao)(nil).GetDuePremieresForWorkers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDuePremieresForWorkers", reflect.TypeOf((*MockStreamsDao)(nil).GetDuePremieresForWorkers), arg0)
 }
 
 // GetDueStreamsForWorkers mocks base method.
-func (m *MockStreamsDao) GetDueStreamsForWorkers() []model.Stream {
+func (m *MockStreamsDao) GetDueStreamsForWorkers() map[uint][]model.Stream {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDueStreamsForWorkers")
-	ret0, _ := ret[0].([]model.Stream)
+	ret0, _ := ret[0].(map[uint][]model.Stream)
 	return ret0
 }
 

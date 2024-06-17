@@ -107,19 +107,19 @@ func (mr *MockSchoolsDaoMockRecorder) GetAdminCount(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminCount", reflect.TypeOf((*MockSchoolsDao)(nil).GetAdminCount), arg0, arg1)
 }
 
-// GetAdministeredSchoolsByUserId mocks base method.
-func (m *MockSchoolsDao) GetAdministeredSchoolsByUserId(arg0 context.Context, arg1 uint) ([]model.School, error) {
+// GetAdministeredSchoolsByUser mocks base method.
+func (m *MockSchoolsDao) GetAdministeredSchoolsByUser(arg0 context.Context, arg1 *model.User) ([]model.School, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdministeredSchoolsByUserId", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetAdministeredSchoolsByUser", arg0, arg1)
 	ret0, _ := ret[0].([]model.School)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAdministeredSchoolsByUserId indicates an expected call of GetAdministeredSchoolsByUserId.
-func (mr *MockSchoolsDaoMockRecorder) GetAdministeredSchoolsByUserId(arg0, arg1 interface{}) *gomock.Call {
+// GetAdministeredSchoolsByUser indicates an expected call of GetAdministeredSchoolsByUser.
+func (mr *MockSchoolsDaoMockRecorder) GetAdministeredSchoolsByUser(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdministeredSchoolsByUserId", reflect.TypeOf((*MockSchoolsDao)(nil).GetAdministeredSchoolsByUserId), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdministeredSchoolsByUser", reflect.TypeOf((*MockSchoolsDao)(nil).GetAdministeredSchoolsByUser), arg0, arg1)
 }
 
 // GetAdmins mocks base method.
@@ -152,6 +152,20 @@ func (mr *MockSchoolsDaoMockRecorder) GetAdminsBySchoolAndUniversity(arg0, arg1,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminsBySchoolAndUniversity", reflect.TypeOf((*MockSchoolsDao)(nil).GetAdminsBySchoolAndUniversity), arg0, arg1, arg2)
 }
 
+// GetAll mocks base method.
+func (m *MockSchoolsDao) GetAll() []model.School {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll")
+	ret0, _ := ret[0].([]model.School)
+	return ret0
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockSchoolsDaoMockRecorder) GetAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockSchoolsDao)(nil).GetAll))
+}
+
 // GetByNameAndUniversity mocks base method.
 func (m *MockSchoolsDao) GetByNameAndUniversity(arg0 context.Context, arg1, arg2 string) (model.School, error) {
 	m.ctrl.T.Helper()
@@ -165,6 +179,21 @@ func (m *MockSchoolsDao) GetByNameAndUniversity(arg0 context.Context, arg1, arg2
 func (mr *MockSchoolsDaoMockRecorder) GetByNameAndUniversity(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByNameAndUniversity", reflect.TypeOf((*MockSchoolsDao)(nil).GetByNameAndUniversity), arg0, arg1, arg2)
+}
+
+// Query mocks base method.
+func (m *MockSchoolsDao) Query(arg0 context.Context, arg1 string) ([]model.School, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Query", arg0, arg1)
+	ret0, _ := ret[0].([]model.School)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Query indicates an expected call of Query.
+func (mr *MockSchoolsDaoMockRecorder) Query(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockSchoolsDao)(nil).Query), arg0, arg1)
 }
 
 // QueryAdministerdSchools mocks base method.

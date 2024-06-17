@@ -627,7 +627,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	} else {
 		go func() {
-			err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
+			err := DeleteVideoSectionImage(r.DaoWrapper, file.Path, old.StreamID)
 			if err != nil {
 				logger.Error("failed to generate video section images", "err", err)
 			}

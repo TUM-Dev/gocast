@@ -204,6 +204,9 @@ func main() {
 		return
 	}
 
+	// Import schools and departments from TUMOnline tree
+	tum.LoadTUMOnlineOrgs(db)
+
 	// tools.SwitchPreset()
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
