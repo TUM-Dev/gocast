@@ -24,6 +24,10 @@ export class StreamPlaylist {
         DataStore.streamPlaylist.subscribe(this.streamId, (data) => this.onUpdate(data));
     }
 
+    public scrollSelectedIntoView() {
+        this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
+    }
+
     private onUpdate(data: StreamPlaylistEntry[]) {
         this.list = data.filter((item) => !item.liveNow && new Date(item.start).getTime() < new Date().getTime());
 
@@ -36,10 +40,6 @@ export class StreamPlaylist {
         setTimeout(() => {
             this.scrollSelectedIntoView();
         }, 10);
-    }
-
-    public scrollSelectedIntoView() {
-        this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
     }
 
     private findNextAndPrev(): { next: StreamPlaylistEntry; prev: StreamPlaylistEntry } {

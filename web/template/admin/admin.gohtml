@@ -23,7 +23,7 @@
     </button>
     <div class="w-full text-1" x-show="!hidden">
         <ul>
-            {{if or (eq $curUser.Role 1)}}
+            {{if eq $curUser.Role 1}}
                 <li class="mt-8"><h5
                             class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
                         Administration</h5>
@@ -50,6 +50,13 @@
                                href="/admin/workers"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                         class="relative">Workers</span></a></li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "runners"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/runners">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Runners</span>
+                            </a>
+                        </li>
                         <li>
                             <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverNotifications"}}text-1{{else}}text-5{{end}} relative block"
                                href="/admin/server-notifications"><span
@@ -165,6 +172,13 @@
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Workers</span></a></li>
                                 <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "runners"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/runners">
+                                        <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                        <span class="relative">Runners</span>
+                                    </a>
+                                </li>
+                                <li>
                                     <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverNotifications"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/server-notifications"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
@@ -208,7 +222,7 @@
                             </ul>
                         </li>
                     {{end}}
-                           
+       
                     {{if eq $curUser.Role 2}}
                         <li class="mt-8"><h5
                                     class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
@@ -236,6 +250,13 @@
                                        href="/admin/workers"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Workers</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "runners"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/runners">
+                                        <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                        <span class="relative">Runners</span>
+                                    </a>
+                                </li>
                                 <li>
                                     <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "notifications"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/notifications"><span
@@ -315,6 +336,8 @@
                     {{template "createLectureHalls" .LectureHalls}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "workers")}}
                     {{template "workers" .Workers}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "runners")}}
+                    {{template "runners" .Runners}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2) (eq $curUser.Role 3)) (eq .Page "stats")}}
                     {{template "stats" .IndexData}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverStats")}}

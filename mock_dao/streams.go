@@ -511,6 +511,20 @@ func (mr *MockStreamsDaoMockRecorder) SetStreamNotLiveById(streamID interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreamNotLiveById", reflect.TypeOf((*MockStreamsDao)(nil).SetStreamNotLiveById), streamID)
 }
 
+// SetStreamRequested mocks base method.
+func (m *MockStreamsDao) SetStreamRequested(stream model.Stream) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetStreamRequested", stream)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetStreamRequested indicates an expected call of SetStreamRequested.
+func (mr *MockStreamsDaoMockRecorder) SetStreamRequested(stream interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreamRequested", reflect.TypeOf((*MockStreamsDao)(nil).SetStreamRequested), stream)
+}
+
 // ToggleVisibility mocks base method.
 func (m *MockStreamsDao) ToggleVisibility(streamId uint, private bool) error {
 	m.ctrl.T.Helper()

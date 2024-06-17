@@ -21,7 +21,7 @@ import (
 var VersionTag string
 
 func (r mainRoutes) MainPage(c *gin.Context) {
-	tName := sentry.TransactionName("GET /")
+	tName := sentry.WithTransactionName("GET /")
 	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
 	defer spanMain.Finish()
 
@@ -226,12 +226,11 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
 			courses = coursesDao.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
-		case model.MaintainerType:
-			courses = coursesDao.GetAllCoursesForSchoolsForSemester(d.TUMLiveContext.User.AdministeredSchools, d.CurrentYear, d.CurrentTerm, spanMain.Context())
 		case model.LecturerType:
 			{
 				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
-				coursesForLecturer, err := coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
+				coursesForLecturer, err :=
+					coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}
