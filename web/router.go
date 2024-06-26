@@ -83,6 +83,10 @@ func newStartPage(router *gin.Engine, routes *mainRoutes) {
 	router.GET("/course/:year/:term/:slug", routes.courseRedirect)
 }
 
+func offlinePages(router *gin.Engine, routes *mainRoutes) {
+	router.GET("/offline", routes.offlinePage)
+}
+
 func oldStartPage(router *gin.Engine, routes *mainRoutes) {
 	old := router.Group("/old")
 	{
@@ -148,6 +152,7 @@ func configMainRoute(router *gin.Engine) {
 	// home & course pages
 	oldStartPage(router, &routes)
 	newStartPage(router, &routes)
+	offlinePages(router, &routes)
 
 	// watch
 	streamGroup.Use(tools.InitStream(daoWrapper))
@@ -200,6 +205,28 @@ func (r mainRoutes) home(c *gin.Context) {
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
 		logger.Error("Could not execute template: 'home.gohtml'", "err", err)
+	}
+}
+
+func (r mainRoutes) offlinePage(c *gin.Context) {
+	tName := sentry.WithTransactionSource("GET /")
+	spanMain := sentry.StartSpan(c.Request.Context(), "HomePageHandler", tName)
+	defer spanMain.Finish()
+
+	isFresh, err := IsFreshInstallation(c, r.UsersDao)
+	if err != nil {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		return
+	}
+	if isFresh {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		return
+	}
+
+	indexData := NewIndexDataWithContext(c)
+
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "offline.gohtml", indexData); err != nil {
+		logger.Error("Could not execute template: 'offline.gohtml'", "err", err)
 	}
 }
 

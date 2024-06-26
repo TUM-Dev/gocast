@@ -1,0 +1,123 @@
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IndexData*/ -}}
+{{$user := .TUMLiveContext.User}}
+{{$userID := 0}}
+{{if $user}}{{$userID = $user.ID}}{{end}}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
+
+    <title>{{.Branding.Title}}</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+
+    <script src="static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/home.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+
+    <link rel="manifest" href="/static/assets/manifest.json">
+    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
+    <script defer type='text/javascript'>
+        const link = !!document.querySelector("link[rel='canonical']") ? document.querySelector("link[rel='canonical']") : document.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        link.setAttribute('href', location.href);
+        document.head.appendChild(link);
+    </script>
+</head>
+<body x-data="home.skeleton()"
+      @popstate.window="onPopState"
+      class="h-screen flex flex-col items-stretch tum-live-bg">
+<header x-data="home.header()"
+        class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
+        <button type="button" id="open-sidenav" title="Open Sidenav" @click="navigation.toggle()"
+                class="tum-live-icon-button p-3 text-lg md:hidden">
+            <i class="fa-solid fa-bars" :class="{'rotate-90': navigation.value}"></i>
+        </button>
+        <button class="mx-3" type="button" id="logo" title="Start" @click="showMain()">
+            <img src="/logo.svg" width="64" alt="TUM-Live Logo">
+        </button>
+    </div>
+
+    <div id="user-context" class="flex items-center ms-auto">
+        {{if not $user}}
+            <a href="/login" class="tum-live-button tum-live-button-primary mx-3">Not logged in</a>
+                <!-- TODO: Maybe no page if not logged in -->
+        {{else}}
+            <div>
+                <button type="button" @click="userContext.toggle(true)"
+                        class="border-2 tum-live-border-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
+                    <i class="fa-solid fa-user tum-live-font-primary"></i>
+                </button>
+                <div class="relative">
+                    <article x-cloak x-show="userContext.value"
+                             @click.outside="userContext.toggle();"
+                             class="tum-live-menu absolute top-full right-[50%] mt-2 h-fit overflow-hidden w-56">
+                        <header>
+                            <p class="font-semibold">Signed in as</p>
+                            <span>@{{$user.Name}}</span>
+                        </header>
+                        <nav class="d-grid gap-3 font-light">
+                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                                <a href="/admin"
+                                   class="tum-live-menu-item">
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-solid fa-hammer"></i>
+                                    </div>
+                                    <p>Admin</p>
+                                </a>
+                                <div class="border-b dark:border-gray-800"></div>
+                            {{end}}
+                            <div>
+                                <button type="button"
+                                        class="tum-live-menu-item"
+                                        @click="userContext.getChild('themePicker').toggle()">
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-regular fa-moon"></i>
+                                    </div>
+                                    <span>Theme</span>
+                                    <i class="fa-solid ml-auto"
+                                       :class="userContext.getChild('themePicker').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                </button>
+                                <div x-cloak x-show="userContext.getChild('themePicker').value" class="grid gap-1">
+                                    <template x-for="[modeId, mode] of Object.entries($store.theme.modes)"
+                                              :key="modeId">
+                                        <button type="button" tabindex="0"
+                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-1 px-10"
+                                                :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
+                                                @click="$store.theme.setTheme(modeId)"
+                                                x-text="mode.name">
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="border-b dark:border-gray-800"></div>
+                        </nav>
+                    </article>
+                </div>
+            </div>
+        {{end}}
+    </div>
+</header>
+<main id="content" class="flex grow h-full overflow-y-scroll">
+    <!-- views -->
+    <article class="text-3 p-4 grow">
+    </article>
+</main>
+{{template "footer" .VersionTag}}
+</body>
+</html>
