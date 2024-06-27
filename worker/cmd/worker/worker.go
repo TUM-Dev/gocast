@@ -64,6 +64,8 @@ func main() {
 	resp, err := client.JoinWorkers(ctx, &pb.JoinWorkersRequest{
 		Token:    cfg.Token,
 		Hostname: cfg.Hostname,
+		Address:  cfg.Address,
+		Shared:   cfg.Shared,
 	})
 	if err != nil {
 		log.Warnf("Could not join main tumlive: %v\n", err)

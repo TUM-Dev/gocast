@@ -517,7 +517,11 @@ func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
 		return
 	}
 	w := workers[getWorkerWithLeastWorkload(workers)]
-	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
+	address := "http://" + w.Host
+	if w.Address != "" {
+		address = w.Address
+	}
+	u, err := url.Parse(address + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

@@ -139,6 +139,8 @@ message NotifyTranscodingProgressRequest {
 message JoinWorkersRequest {
   string token = 1; // token to authenticate the worker
   string hostname = 2; // hostname of the worker
+  string address = 3; // address of the worker
+  bool shared = 4; // whether the worker can be shared with other schools
 }
 
 message JoinWorkersResponse {

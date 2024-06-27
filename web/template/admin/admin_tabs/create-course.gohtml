@@ -37,7 +37,9 @@
 
                     <h3 class="text-sm text-5" x-text="isQueryVisible?'Select your university and school:':'Your university and school:'"></h3>
                     <div class="flex flex-col space-x-1 border-red-500" x-show="isQueryVisible === true || !schoolQuery">
-                        <input class="tl-input border border-red-500" type="text" placeholder="Search for your school or university" x-model="schoolQuery" @keyup="fetch('/api/schools/all?q='+schoolQuery).then(r=>r.json()).then(r => schoolResults=r)">
+                        <div x-init="fetch('/api/schools/all?q='+schoolQuery).then(r=>r.json()).then(r => schoolResults=r)">
+                            <input class="tl-input border border-red-500" type="text" placeholder="Search for your school or university" x-model="schoolQuery" @keyup="fetch('/api/schools/all?q='+schoolQuery).then(r=>r.json()).then(r => schoolResults=r)">
+                        </div>
                         <div x-show="schoolResults.length === 0">
                             <div colspan="3" class="p-2 whitespace-nowrap text-center">
                                 <i>No school found</i>

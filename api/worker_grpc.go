@@ -50,8 +50,12 @@ type server struct {
 
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
 	credentials := insecure.NewCredentials()
-	logger.Info("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", targetWorker.Host), grpc.WithTransportCredentials(credentials))
+	address := targetWorker.Host
+	if targetWorker.Address != "" {
+		address = targetWorker.Address
+	}
+	logger.Info("Connecting to:" + fmt.Sprintf("%s:50051", address))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", address), grpc.WithTransportCredentials(credentials))
 	return conn, err
 }
 
@@ -63,7 +67,7 @@ func endConnection(conn *grpc.ClientConn) {
 
 // JoinWorkers is a request from a worker to join the pool. On success, the workerID is returned.
 func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest) (*pb.JoinWorkersResponse, error) {
-	logger.Info("JoinWorkers called", "host", request.Hostname)
+	logger.Info("JoinWorkers called", "host", request.Hostname, "address", request.Address)
 
 	// Parse and validate worker token
 	token, err := jwt.ParseWithClaims(request.Token, &JWTSchoolClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -82,7 +86,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 	if err != nil {
 		return nil, fmt.Errorf("invalid SchoolID: %v", err)
 	}
-	worker, err := s.DaoWrapper.WorkerDao.GetWorkerByHostname(ctx, request.Hostname)
+	worker, err := s.DaoWrapper.WorkerDao.GetWorkerByHostname(ctx, request.Address, request.Hostname)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, status.Errorf(codes.Internal, "get worker by hostname: %v", err)
 	}
@@ -96,6 +100,8 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 	// worker does not exist, create it
 	worker = model.Worker{
 		Host:     request.Hostname,
+		Address:  request.Address,
+		Shared:   request.Shared,
 		WorkerID: uuid.NewV4().String(),
 		LastSeen: time.Now(),
 		SchoolID: uint(schoolID),

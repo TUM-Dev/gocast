@@ -15,7 +15,7 @@ type WorkerDao interface {
 
 	GetAllWorkers([]model.School) ([]model.Worker, error)
 	GetAliveWorkers(uint) []model.Worker
-	GetWorkerByHostname(ctx context.Context, hostname string) (model.Worker, error)
+	GetWorkerByHostname(ctx context.Context, address string, hostname string) (model.Worker, error)
 	GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error)
 
 	DeleteWorker(workerID string) error
@@ -57,13 +57,13 @@ func getSchoolIDs(schools []model.School) []uint {
 // GetAliveWorkers returns all workers that were active within the last 5 minutes
 func (d workerDao) GetAliveWorkers(schoolID uint) []model.Worker {
 	var workers []model.Worker
-	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE) AND school_id = ?", schoolID).Scan(&workers)
+	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE) AND (school_id = ? OR shared = true)", schoolID).Scan(&workers)
 	return workers
 }
 
-func (d workerDao) GetWorkerByHostname(ctx context.Context, hostname string) (model.Worker, error) {
+func (d workerDao) GetWorkerByHostname(ctx context.Context, address string, hostname string) (model.Worker, error) {
 	var worker model.Worker
-	err := DB.Where("host = ?", hostname).First(&worker).Error
+	err := DB.Where("address = ? AND host = ?", address, hostname).First(&worker).Error
 	return worker, err
 }
 

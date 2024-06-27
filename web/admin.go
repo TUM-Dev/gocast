@@ -376,21 +376,25 @@ func (apd AdminPageData) UsersAsJson() string {
 
 func (apd AdminPageData) SchoolsAsJson() string {
 	type relevantSchoolInfo struct {
-		ID                     uint         `json:"id"`
-		Name                   string       `json:"name"`
-		University             string       `json:"university"`
-		SharedResourcesAllowed bool         `json:"shared_resources_allowed"`
-		Admins                 []model.User `json:"admins"`
+		ID         uint         `json:"id"`
+		Name       string       `json:"name"`
+		University string       `json:"university"`
+		OrgId      string       `json:"orgId"`
+		OrgType    string       `json:"orgType"`
+		OrgSlug    string       `json:"orgSlug"`
+		Admins     []model.User `json:"admins"`
 	}
 
 	schools := make([]relevantSchoolInfo, len(apd.Schools))
 	for i, school := range apd.Schools {
 		schools[i] = relevantSchoolInfo{
-			ID:                     school.ID,
-			Name:                   school.Name,
-			University:             school.University,
-			SharedResourcesAllowed: school.SharedResourcesAllowed,
-			Admins:                 school.Admins,
+			ID:         school.ID,
+			Name:       school.Name,
+			University: school.University,
+			OrgId:      school.OrgId,
+			OrgType:    school.OrgType,
+			OrgSlug:    school.OrgSlug,
+			Admins:     school.Admins,
 		}
 	}
 

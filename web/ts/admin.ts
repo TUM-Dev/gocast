@@ -221,14 +221,8 @@ export async function createSchool(
     name: string,
     university: string,
     admin_email: string,
-    shared_resources_allowed = false,
 ) {
-    // Ensure shared_resources_allowed is a boolean
-    if (typeof shared_resources_allowed === "string") {
-        shared_resources_allowed = shared_resources_allowed === "true";
-    }
-
-    const response = await postData("/api/schools", { name, university, shared_resources_allowed, admin_email });
+    const response = await postData("/api/schools", { name, university, admin_email });
 
     if (response.status === StatusCodes.OK) {
         showMessage("School was created successfully. Reload to see changes.");
@@ -244,8 +238,14 @@ export async function createTokenForSchool(schoolID: number) {
     if (response.status === StatusCodes.OK) {
         const data = await response.json();
         const token = data.token;
-        await navigator.clipboard.writeText(token);
-        showMessage(`Token was created successfully and copied to your clipboard.`);
+        if (navigator.clipboard) {
+            await navigator.clipboard.writeText(token);
+            showMessage(`Token was created successfully and copied to your clipboard.`);
+        } else {
+            showMessage(
+                `Token was created successfully but could not be copied to clipboard because the Clipboard API is not available in this context. Copy the token manually: ${token}`,
+            );
+        }
     } else {
         const errorData = await response.json();
         showMessage(`Error creating the token: ${errorData.error}`);
@@ -256,9 +256,8 @@ export async function updateSchool(
     schoolID: number,
     name: string,
     university: string,
-    shared_resources_allowed: boolean = false,
 ) {
-    return patchData(`/api/schools/${schoolID}`, { name, university, shared_resources_allowed }).then((e) => {
+    return patchData(`/api/schools/${schoolID}`, { name, university }).then((e) => {
         if (e.status === StatusCodes.OK) {
             showMessage("School was updated successfully. Reload to see changes.");
         } else {

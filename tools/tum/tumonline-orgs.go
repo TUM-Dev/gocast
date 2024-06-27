@@ -6,8 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/TUM-Dev/gocast/model"
-	"gorm.io/gorm"
+	"github.com/TUM-Dev/gocast/dao"
 )
 
 type Row struct {
@@ -27,36 +26,28 @@ type Data struct {
 	Rows []Row `xml:"row"`
 }
 
-func LoadTUMOnlineOrgs(db *gorm.DB) {
+func LoadTUMOnlineOrgs(daoWrapper dao.DaoWrapper) func() {
 	// Read TUMOnline XML tree (Reference: https://collab.dvb.bayern/display/tumonlineappdevndoc/orgBaum)
-	xmlFile, err := os.Open("./tools/tum/orgBaum.xml")
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-	defer xmlFile.Close()
-
-	byteValue, _ := io.ReadAll(xmlFile)
-
-	var data Data
-	xml.Unmarshal(byteValue, &data)
-
-	// Process each row and update/create School records
-	for _, row := range data.Rows {
-		if row.OrgTypName == "TUM School" {
-			var school model.School
-			db.FirstOrCreate(&school, model.School{
-				OrgId:   fmt.Sprintf("%d", row.Nr),
-				OrgType: row.OrgTypName,
-				OrgSlug: row.Kennung,
-			})
-
-			school.Name = row.NameEn
-			school.University = "TUM"
-
-			db.Save(&school)
+	return func() {
+		xmlFile, err := os.Open("./tools/tum/orgBaum.xml")
+		if err != nil {
+			logger.Error("Error opening orgBaum.xml file:", "err", err)
+			return
 		}
-	}
+		defer xmlFile.Close()
 
-	logger.Info("TUMOnline orgs loaded.")
+		byteValue, _ := io.ReadAll(xmlFile)
+
+		var data Data
+		xml.Unmarshal(byteValue, &data)
+
+		// Process each row and update/create School records
+		for _, row := range data.Rows {
+			if row.OrgTypName == "TUM School" {
+				daoWrapper.SchoolsDao.ImportSchool(fmt.Sprintf("%d", row.Nr), row.Kennung, row.OrgTypName, row.NameEn)
+			}
+		}
+
+		logger.Info("TUMOnline orgs loaded.")
+	}
 }

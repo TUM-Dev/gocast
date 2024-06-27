@@ -8,17 +8,16 @@ import (
 type School struct {
 	gorm.Model
 
-	Name                   string   `gorm:"column:name;type:text;not null"` // e.g., Computation, Information and Technology
-	University             string   `gorm:"column:university;type:text;not null;default:'unknown'"`
-	SharedResourcesAllowed bool     `gorm:"column:shared_resources_allowed;type:boolean;not null;default:false"`
-	Privileges             string   `gorm:"column:privileges;type:text;not null;default:''"`
-	Admins                 []User   `gorm:"many2many:school_admins"`
-	Courses                []Course `gorm:"foreignkey:SchoolID"`
-	Workers                []Worker `gorm:"foreignkey:SchoolID"`
-	Runners                []Runner `gorm:"foreignkey:SchoolID"`
-	OrgId                  string   `gorm:"column:org_id;type:text;not null;default:''"`   // e.g., 51897
-	OrgType                string   `gorm:"column:org_type;type:text;not null;default:''"` // e.g., TUM School
-	OrgSlug                string   `gorm:"column:org_slug;type:text;not null;default:''"` // e.g., TUS1000
+	Name       string   `gorm:"column:name;type:text;not null"` // e.g., Computation, Information and Technology
+	University string   `gorm:"column:university;type:text;not null;default:'unknown'"`
+	Privileges string   `gorm:"column:privileges;type:text;not null;default:''"`
+	Admins     []User   `gorm:"many2many:school_admins"`
+	Courses    []Course `gorm:"foreignkey:SchoolID"`
+	Workers    []Worker `gorm:"foreignkey:SchoolID"`
+	Runners    []Runner `gorm:"foreignkey:SchoolID"`
+	OrgId      string   `gorm:"column:org_id;type:text;not null;default:''"`   // e.g., 51897
+	OrgType    string   `gorm:"column:org_type;type:text;not null;default:''"` // e.g., TUM School
+	OrgSlug    string   `gorm:"column:org_slug;type:text;not null;default:''"` // e.g., TUS1000
 }
 
 // Resources              []Resource `gorm:"many2many:resources"` // TODO: Contains workers etc.

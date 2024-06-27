@@ -22,6 +22,8 @@ var (
 	VodURLTemplate string
 	LogDir         string
 	Hostname       string
+	Address        string
+	Shared         bool   // whether the worker can be shared with other schools (default: false)
 	Token          string // setup token. Used to connect initially and to get a "WorkerID"
 	PersistDir     string // PersistDir is the directory, tum-live-worker will use to store persistent data
 	LogLevel       = log.InfoLevel
@@ -95,6 +97,10 @@ func SetConfig() {
 			log.Fatalf("Could not get hostname: %v\n", err)
 		}
 	}
+
+	Address = os.Getenv("Address")
+
+	Shared = os.Getenv("Shared") == "true" // whether the worker can be shared with other schools (default: false)
 
 	if os.Getenv("SentryDSN") != "" {
 		err := sentry.Init(sentry.ClientOptions{

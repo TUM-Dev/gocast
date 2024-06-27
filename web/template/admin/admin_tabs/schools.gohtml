@@ -15,9 +15,8 @@
             <tr class="p-4 bg-gray-200 dark:bg-secondary-light text-3 uppercase text-sm leading-normal">
                 <th class="rounded-tl-lg text-left pl-6 py-3">Name</th>
                 <th>University</th>
+                <th class="rounded-tl-lg">OrgId-OrgName (OrgType)</th>
                 <th>Maintainers</th>
-                <th>Resources</th>
-                <th>Shared</th>
                 <th class="rounded-tr-lg">Actions</th>
             </tr>
             </thead>
@@ -61,6 +60,7 @@
                                 class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
                         </td>
                     </template>
+                    <td class="py-3 px-6 text-center" x-text="school.orgId + '-' + school.orgSlug + ' (' + school.orgType + ')'"></td>
                     <td class="py-3 px-6 text-center">
                         <p class="font-bold cursor-pointer" x-text="school.admins.length + ' maintainer(s)'" @click="openMaintainerModal(school, i)" @mouseover="event.target.style.color = 'grey'" @mouseleave="event.target.style.color = ''"></p>                        <!-- Admin Modal -->
                         <div class="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center" style="display: none;" x-bind:id="'adminModal-' + i">
@@ -135,8 +135,6 @@
                         }
                     </script>
                     </td>
-                    <td class="py-3 px-6 text-center" x-text="school.resources"></td>
-                    <td class="py-3 px-6 text-center" x-text="school.shared_resources_allowed"></td>
                     <td class="py-3 px-6 text-center">
                         <div class="flex item-center justify-center">
                             <button title="Manage Maintainers"

@@ -204,9 +204,6 @@ func main() {
 		return
 	}
 
-	// Import schools and departments from TUMOnline tree
-	tum.LoadTUMOnlineOrgs(db)
-
 	// tools.SwitchPreset()
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
@@ -245,14 +242,19 @@ func initCron() {
 	tools.InitCronService()
 	// Fetch students every 12 hours
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
+	// Update or create orgs from TUMOnline every week
+	_ = tools.Cron.AddFunc("fetchSchools", tum.LoadTUMOnlineOrgs(daoWrapper), "0 0 * * 0")
+	// Fetch courses for every TUM school every 12 hours
+	_ = tools.Cron.AddFunc("fetchSchoolCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
 	// Collect livestream stats (viewers) every minute
 	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")
 	// Flush stale sentry exceptions and transactions every 5 minutes
 	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
 	// Look for due streams and notify workers about them
-	//_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
+	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	//Look for due work to do and notify runner about them
 	_ = tools.Cron.AddFunc("triggerDueWork", api.NotifyRunners(daoWrapper), "0-59 * * * *") // update courses available
+	// Prefetch courses
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
 	// export data to meili search
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")

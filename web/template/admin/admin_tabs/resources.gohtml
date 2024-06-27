@@ -92,94 +92,23 @@
     </div>
 
     <div class="form-container">
-        <h1 class="form-container-title">VOD-Service</h1>
-        <div class="form-container-body grid grid-cols-2 gap-3">
-            <table class="table-auto w-full col-span-full">
-                <thead>
-                    <tr class="text-2 uppercase text-left">
-                        <th class="px-6 text-left">Name</th>
-                        <th class="px-6 text-left">Status</th>
-                        <th class="px-6 text-left">Workload</th>
-                        <th class="px-6 text-left">Uptime</th>
-                        <th class="px-6 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="text-3">
-                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
-                    {{range $school := .Schools}}
-                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
-                        {{$found := false}}
-                        <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
-                                <thead>
-                                <tr>
-                                    <td colspan="5" class="text-left">
-                                        <h2 class="form-container-title">
-                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.University}}-{{$school.Name}}</a>
-                                        </h2>
-                                    </td>
-                                </tr>
-                                </thead>
-                                <tbody class="text-3">
-                                    {{range $runner := $.VODServices}}
-                                        {{if eq $runner.SchoolID $school.ID}}
-                                        {{$found = true}}
-                                            <tr class="border-gray-500">
-                                                <td class="px-6 pb-4 text-left">
-                                                    <div class="font-semibold text-1">{{$runner.Hostname}}<span
-                                                                class="font-normal text-4">@{{$runner.Version}}</span>
-
-                                                    </div>
-                                                    <div class="pl-1 text-2 italic font-light">
-                                                        <span class="mr-4">CPU: {{$runner.CPU}}</span>
-                                                        <span class="mr-4">Mem: {{$runner.Memory}}</span>
-                                                        <span class="mr-4">Disk: {{$runner.Disk}}</span>
-                                                    </div>
-                                                </td>
-                                                <td class="px-6">{{if $runner.IsAlive}}
-                                                        <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
-                                                        <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}
-                                                </td>
-                                                <td class="px-6 text-left whitespace-nowrap">
-                                                    {{$runner.Workload}}
-                                                </td>
-                                                <td class="px-6">{{$runner.Uptime}}</td>
-                                                <td x-data class="px-6">
-                                                    <button @click="admin.deleteRunner('{{$runner.Hostname}}').then(() => window.location.reload())"
-                                                            class="text-5 hover:text-1 items-center justify-center"
-                                                            type="button"
-                                                            title="Delete Runner">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        {{end}}
-                                    {{end}}
-                                    {{if not $found}}
-                                        <tr>
-                                            <td colspan="5" class="text-center py-3 text-6 text-left">No VOD-services found for this school.</td>
-                                        </tr>
-                                    {{end}}
-                                </tbody>
-                        </table>
-                    {{end}}
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="form-container">
         <h1 class="form-container-title">Worker</h1>
         <div class="form-container-body grid grid-cols-2 gap-3">
             <table class="table-auto w-full col-span-full">
                 <thead>
-                    <tr class="text-2 uppercase text-left">
-                        <th class="px-6 text-left">Name</th>
-                        <th class="px-6 text-left">Status</th>
-                        <th class="px-6 text-left">Workload</th>
-                        <th class="px-6 text-left">Uptime</th>
-                        <th class="px-6 text-left">Actions</th>
-                    </tr>
+                <tr class="text-2 text-left">
+                    <th class="px-6 text-left" style="width: 50%;">NAME</th>
+                    <th class="px-6 text-center" style="width: 10%;">STATUS</th>
+                    <th class="px-6 text-center" style="width: 10%;">WORKLOAD</th>
+                    <th class="px-6 text-center" style="width: 10%;">UPTIME</th>
+                    <th class="px-6 text-center" style="width: 10%;">
+                        <div class="inline-flex items-center">
+                            SHARED
+                            <help-icon class="transform -translate-x-0.5" text="Share resource with other schools. Read more at https://tumlive-docs.pages.dev/docs/deployment/step-by-step/add-worker"/>
+                        </div>
+                    </th>
+                    <th class="px-6 text-center" style="width: 10%;">ACTIONS</th>
+                </tr>
                 </thead>
                 <tbody class="text-3">
                 {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
@@ -200,27 +129,33 @@
                                     {{range $worker := $.Workers}}
                                         {{if eq $worker.SchoolID $school.ID}}
                                         {{$found = true}}
-
                                         <tr class="border-gray-500">
-                                            <td class="pb-3 px-6">
-                                                <div class="font-semibold text-1">{{$worker.Host}}<span
-                                                    class="font-normal text-4">@{{$worker.Version}}</span>
+                                            <td class="pb-3 px-6 text-left" style="width: 50%;">
+                                                <div class="font-semibold text-1">
+                                                    <span class="font-normal text-4">{{$worker.Address}} (Host: <strong>{{$worker.Host}}</strong>@{{$worker.Version}})</span>
                                                 </div>
                                                 <div class="pl-1 text-2 italic font-light">
                                                     <span class="mr-4">CPU: {{$worker.CPU}}</span>
                                                     <span class="mr-4">Mem: {{$worker.Memory}}</span>
-                                                    <span class="mr-4">Disk: {{$worker.Disk}}</span>
+                                                    <span>Disk: {{$worker.Disk}}</span>
                                                 </div>
                                             </td>
-                                            <td class="px-6">{{if $worker.IsAlive}}
+                                            <td class="px-6 text-left" style="width: 10%;">{{if $worker.IsAlive}}
                                                 <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
                                                 <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}{{$worker.Status}}
                                             </td>
-                                            <td class="px-6 text-left whitespace-nowrap">
+                                            <td class="px-6 text-center whitespace-nowrap" style="width: 10%;">
                                                 {{$worker.Workload}}
                                             </td>
-                                            <td class="px-6">{{$worker.Uptime}}</td>
-                                            <td x-data class="px-6">
+                                            <td class="px-6 text-center" style="width: 10%;">{{$worker.Uptime}}</td>
+                                            <td class="px-6 text-center whitespace-nowrap" style="width: 10%;">
+                                                {{if $worker.Shared}}
+                                                    <i class="fas fa-check"></i>
+                                                {{else}}
+                                                    <i class="fas fa-x"></i>
+                                                {{end}}
+                                            </td>
+                                            <td x-data class="px-6 text-center" style="width: 10%;">
                                                 <button @click="admin.deleteWorker('{{$worker.WorkerID}}').then(() => window.location.reload())"
                                                     class="text-5 hover:text-1 items-center justify-center"
                                                     type="button"

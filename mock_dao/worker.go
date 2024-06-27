@@ -93,18 +93,18 @@ func (mr *MockWorkerDaoMockRecorder) GetAllWorkers(arg0 interface{}) *gomock.Cal
 }
 
 // GetWorkerByHostname mocks base method.
-func (m *MockWorkerDao) GetWorkerByHostname(ctx context.Context, hostname string) (model.Worker, error) {
+func (m *MockWorkerDao) GetWorkerByHostname(ctx context.Context, address, hostname string) (model.Worker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWorkerByHostname", ctx, hostname)
+	ret := m.ctrl.Call(m, "GetWorkerByHostname", ctx, address, hostname)
 	ret0, _ := ret[0].(model.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetWorkerByHostname indicates an expected call of GetWorkerByHostname.
-func (mr *MockWorkerDaoMockRecorder) GetWorkerByHostname(ctx, hostname interface{}) *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) GetWorkerByHostname(ctx, address, hostname interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkerByHostname", reflect.TypeOf((*MockWorkerDao)(nil).GetWorkerByHostname), ctx, hostname)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkerByHostname", reflect.TypeOf((*MockWorkerDao)(nil).GetWorkerByHostname), ctx, address, hostname)
 }
 
 // GetWorkerByID mocks base method.

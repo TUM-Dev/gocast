@@ -16,15 +16,6 @@ import (
 func configGinSchoolsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := schoolsRoutes{daoWrapper}
 
-	resources := router.Group("/api/schools/:id/resources")
-	resources.Use(tools.AdminOrMaintainer)
-
-	{
-		resources.GET("/:resource_id", routes.getResourceForSchool)
-		resources.POST("/resource", routes.postResource)
-		resources.PATCH("/:resource_id", routes.updateResource)
-		resources.DELETE("/resource", routes.deleteResource)
-	}
 	schools := router.Group("/api/schools")
 	schools.Use(tools.AdminOrMaintainer)
 	{
@@ -47,22 +38,6 @@ func configGinSchoolsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	}
 
 	router.GET("/api/schools/all", tools.AtLeastLecturer, routes.SearchAllSchools)
-}
-
-func (s *schoolsRoutes) getResourceForSchool(c *gin.Context) {
-	// TODO: Implement this function
-}
-
-func (s *schoolsRoutes) postResource(c *gin.Context) {
-	// TODO: Implement this function
-}
-
-func (s *schoolsRoutes) updateResource(c *gin.Context) {
-	// TODO: Implement this function
-}
-
-func (s *schoolsRoutes) deleteResource(c *gin.Context) {
-	// TODO: Implement this function
 }
 
 type JWTSchoolClaims struct {
@@ -99,9 +74,8 @@ func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
 	}
 
 	school := model.School{
-		Name:                   req.Name,
-		University:             req.University,
-		SharedResourcesAllowed: req.SharedResourcesAllowed,
+		Name:       req.Name,
+		University: req.University,
 	}
 
 	if err := s.SchoolsDao.Create(c, &school); err != nil {
@@ -175,21 +149,25 @@ func (s *schoolsRoutes) SearchSchool(c *gin.Context) {
 	}
 
 	type relevantSchoolInfo struct {
-		ID                     uint         `json:"id"`
-		Name                   string       `json:"name"`
-		University             string       `json:"university"`
-		SharedResourcesAllowed bool         `json:"shared_resources_allowed"`
-		Admins                 []model.User `json:"admins"`
+		ID         uint         `json:"id"`
+		Name       string       `json:"name"`
+		OrgId      string       `json:"org_id"`
+		OrgType    string       `json:"org_type"`
+		OrgSlug    string       `json:"org_slug"`
+		University string       `json:"university"`
+		Admins     []model.User `json:"admins"`
 	}
 
 	res := make([]relevantSchoolInfo, len(schools))
 	for i, school := range schools {
 		res[i] = relevantSchoolInfo{
-			ID:                     school.ID,
-			Name:                   school.Name,
-			University:             school.University,
-			SharedResourcesAllowed: school.SharedResourcesAllowed,
-			Admins:                 school.Admins,
+			ID:         school.ID,
+			Name:       school.Name,
+			OrgId:      school.OrgId,
+			OrgType:    school.OrgType,
+			OrgSlug:    school.OrgSlug,
+			University: school.University,
+			Admins:     school.Admins,
 		}
 	}
 	c.JSON(http.StatusOK, res)
@@ -233,10 +211,9 @@ func (s *schoolsRoutes) updateSchool(c *gin.Context) {
 	}
 
 	school := model.School{
-		Model:                  gorm.Model{ID: req.Id},
-		Name:                   req.Name,
-		University:             req.University,
-		SharedResourcesAllowed: req.SharedResourcesAllowed,
+		Model:      gorm.Model{ID: req.Id},
+		Name:       req.Name,
+		University: req.University,
 	}
 
 	if err := s.SchoolsDao.Update(c, &school); err != nil {
@@ -401,15 +378,13 @@ type schoolsRoutes struct {
 }
 
 type updateSchoolRequest struct {
-	Id                     uint   `json:"id"`
-	Name                   string `json:"name"`
-	University             string `json:"university"`
-	SharedResourcesAllowed bool   `json:"shared_resources_allowed"`
+	Id         uint   `json:"id"`
+	Name       string `json:"name"`
+	University string `json:"university"`
 }
 
 type createSchoolRequest struct {
-	AdminEmail             string `json:"admin_email"`
-	Name                   string `json:"name"`
-	University             string `json:"university"`
-	SharedResourcesAllowed bool   `json:"shared_resources_allowed"`
+	AdminEmail string `json:"admin_email"`
+	Name       string `json:"name"`
+	University string `json:"university"`
 }

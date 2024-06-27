@@ -56,6 +56,9 @@ type SchoolsDao interface {
 	// Get all Admins for a School
 	GetAdminsBySchoolAndUniversity(context.Context, string, string) ([]model.User, error)
 
+	/* ==> CRON JOBS <== */
+	ImportSchool(string, string, string, string)
+
 	/* ==> RESOURCE FUNCTIONS <== */
 
 	// Get all Resources for a School
@@ -187,3 +190,18 @@ func (d schoolDao) RemoveResource(c context.Context, schoolID, resourceID uint) 
 	return d.db.WithContext(c).Model(&model.School{Model: gorm.Model{ID: schoolID}}).Association("Resources").Delete(&model.Resource{Model: gorm.Model{ID: resourceID}})
 }
 */
+
+func (d schoolDao) ImportSchool(nr, kennung, orgTypName, nameEn string) {
+	school := model.School{}
+	d.db.FirstOrCreate(&school, model.School{
+		OrgId:   nr,
+		OrgSlug: kennung,
+		OrgType: orgTypName,
+	})
+
+	school.Name = nameEn
+	school.University = "TUM"
+
+	d.db.Save(&school)
+	d.db.Create(school)
+}
