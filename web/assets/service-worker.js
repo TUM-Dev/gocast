@@ -15,6 +15,7 @@ const PREFETCH_CACHE_FILES = [
     "/static/assets/ts-dist/admin.bundle.js",
     "/static/node_modules/@alpinejs/persist/dist/cdn.min.js",
     "/static/node_modules/alpinejs/dist/cdn.js",
+    "/offline",
 ];
 const CACHE_REQUEST_METHOD_ALLOWLIST = ["GET"];
 const CACHE_REQUEST_HOST_ALLOWLIST = [self.location.host];
