@@ -240,15 +240,15 @@ func main() {
 func initCron() {
 	daoWrapper := dao.NewDaoWrapper()
 	tools.InitCronService()
-	// Fetch students every 12 hours
+	// Fetch students
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
-	// Update or create orgs from TUMOnline every week
-	_ = tools.Cron.AddFunc("fetchSchools", tum.LoadTUMOnlineOrgs(daoWrapper), "0 0 * * 0")
-	// Fetch courses for every TUM school every 12 hours
-	_ = tools.Cron.AddFunc("fetchSchoolCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
-	// Collect livestream stats (viewers) every minute
+	// Update or create orgs from TUMOnline
+	_ = tools.Cron.AddFunc("fetchSchools", tum.LoadTUMOnlineOrgs(daoWrapper, tools.Cfg.Campus.Tokens[0]), "0 0 * * 0")
+	// Fetch courses for every TUM school
+	_ = tools.Cron.AddFunc("prefetchAllCourses", tum.PrefetchAllCourses(daoWrapper), "30 3 * * *")
+	// Collect livestream stats (viewers)
 	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")
-	// Flush stale sentry exceptions and transactions every 5 minutes
+	// Flush stale sentry exceptions and transactions
 	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
 	// Look for due streams and notify workers about them
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")

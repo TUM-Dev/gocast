@@ -217,11 +217,7 @@ export async function deleteLectureHall(lectureHallID: number) {
     }
 }
 
-export async function createSchool(
-    name: string,
-    university: string,
-    admin_email: string,
-) {
+export async function createSchool(name: string, university: string, admin_email: string) {
     const response = await postData("/api/schools", { name, university, admin_email });
 
     if (response.status === StatusCodes.OK) {
@@ -252,16 +248,22 @@ export async function createTokenForSchool(schoolID: number) {
     }
 }
 
-export async function updateSchool(
-    schoolID: number,
-    name: string,
-    university: string,
-) {
+export async function updateSchool(schoolID: number, name: string, university: string) {
     return patchData(`/api/schools/${schoolID}`, { name, university }).then((e) => {
         if (e.status === StatusCodes.OK) {
             showMessage("School was updated successfully. Reload to see changes.");
         } else {
             showMessage("There was an error updating the school: " + e.body);
+        }
+    });
+}
+
+export async function toggleSharedStatus(workerID) {
+    return postData(`/api/workers/${workerID}/toggleShared`, { workerID }).then((e) => {
+        if (e.status === StatusCodes.OK) {
+            showMessage("Worker was updated successfully.");
+        } else {
+            showMessage("There was an error updating the worker.");
         }
     });
 }

@@ -1,12 +1,10 @@
 package tum
 
 import (
-	"encoding/xml"
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/antchfx/xmlquery"
 )
 
 type Row struct {
@@ -26,28 +24,29 @@ type Data struct {
 	Rows []Row `xml:"row"`
 }
 
-func LoadTUMOnlineOrgs(daoWrapper dao.DaoWrapper) func() {
-	// Read TUMOnline XML tree (Reference: https://collab.dvb.bayern/display/tumonlineappdevndoc/orgBaum)
+// Load TUMOnline XML tree (Reference: https://collab.dvb.bayern/display/tumonlineappdevndoc/orgBaum)
+func LoadTUMOnlineOrgs(daoWrapper dao.DaoWrapper, token string) func() {
 	return func() {
-		xmlFile, err := os.Open("./tools/tum/orgBaum.xml")
+		// tree, err := xmlquery.LoadURL(fmt.Sprintf("%v/cdm/tree?token=%v", tools.Cfg.Campus.Base, token))
+		tree, err := xmlquery.LoadURL(fmt.Sprintf("https://campus.tum.de/tumonline/wbservicesbasic.orgBaum?pToken=%v", token))
 		if err != nil {
-			logger.Error("Error opening orgBaum.xml file:", "err", err)
+			logger.Error("Error loading XML from URL:", "err", err)
 			return
 		}
-		defer xmlFile.Close()
 
-		byteValue, _ := io.ReadAll(xmlFile)
+		orgNodes := xmlquery.Find(tree, "//row[org_typ_name='TUM School']")
 
-		var data Data
-		xml.Unmarshal(byteValue, &data)
+		for _, node := range orgNodes {
+			kennung := xmlquery.FindOne(node, "kennung").InnerText()
+			nameEn := xmlquery.FindOne(node, "name_en").InnerText()
+			nr := xmlquery.FindOne(node, "nr").InnerText()
+			orgTypName := xmlquery.FindOne(node, "org_typ_name").InnerText()
 
-		// Process each row and update/create School records
-		for _, row := range data.Rows {
-			if row.OrgTypName == "TUM School" {
-				daoWrapper.SchoolsDao.ImportSchool(fmt.Sprintf("%d", row.Nr), row.Kennung, row.OrgTypName, row.NameEn)
+			if orgTypName == "TUM School" {
+				logger.Info("Loading school", nr, kennung, orgTypName, nameEn)
+				daoWrapper.SchoolsDao.ImportSchool(nr, kennung, orgTypName, nameEn)
 			}
 		}
-
-		logger.Info("TUMOnline orgs loaded.")
+		logger.Info("TUMOnline orgs loaded from URL.")
 	}
 }

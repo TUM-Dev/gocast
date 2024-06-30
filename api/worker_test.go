@@ -28,9 +28,12 @@ func TestWorker(t *testing.T) {
 							workerDaoMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
 							workerDaoMock.
 								EXPECT().
+								GetWorkerByID(gomock.Any(), testutils.Worker1.WorkerID).
+								Return(testutils.Worker1, nil).AnyTimes()
+							workerDaoMock.
+								EXPECT().
 								DeleteWorker(testutils.Worker1.WorkerID).
-								Return(errors.New("")).
-								AnyTimes()
+								Return(errors.New("internal error")).AnyTimes()
 							return workerDaoMock
 						}(),
 					}
@@ -44,6 +47,10 @@ func TestWorker(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						WorkerDao: func() dao.WorkerDao {
 							workerDaoMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
+							workerDaoMock.
+								EXPECT().
+								GetWorkerByID(gomock.Any(), testutils.Worker1.WorkerID).
+								Return(testutils.Worker1, nil).AnyTimes()
 							workerDaoMock.
 								EXPECT().
 								DeleteWorker(testutils.Worker1.WorkerID).

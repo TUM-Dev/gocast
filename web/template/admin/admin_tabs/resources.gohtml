@@ -156,6 +156,22 @@
                                                 {{end}}
                                             </td>
                                             <td x-data class="px-6 text-center" style="width: 10%;">
+                                                <template x-if="!{{$worker.Shared}}">
+                                                    <button @click="admin.toggleSharedStatus('{{$worker.WorkerID}}').then(() => window.location.reload())"
+                                                        class="text-5 hover:text-1 items-center justify-center mr-4"
+                                                        type="button"
+                                                        title="Allow worker to share resources with other schools">
+                                                        <i class="fas fa-globe"></i>
+                                                    </button>
+                                                </template>
+                                                <template x-if="{{$worker.Shared}}">
+                                                    <button @click="admin.toggleSharedStatus('{{$worker.WorkerID}}').then(() => window.location.reload())"
+                                                        class="text-5 hover:text-1 items-center justify-center mr-4"
+                                                        type="button"
+                                                        title="Disable shared resources for this worker">
+                                                        <i class="fas fa-times-circle"></i>
+                                                    </button>
+                                                </template>
                                                 <button @click="admin.deleteWorker('{{$worker.WorkerID}}').then(() => window.location.reload())"
                                                     class="text-5 hover:text-1 items-center justify-center"
                                                     type="button"

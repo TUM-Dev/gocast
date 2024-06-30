@@ -453,3 +453,16 @@ func (u *User) IsMaintainerOfCourse(course Course) bool {
 	logger.Error("User is not maintainer of course", "user", u.ID, "course", course.ID)
 	return false
 }
+
+// IsAdminOfSchool checks if the user is an admin of the school
+func (u *User) IsAdminOfSchool(schoolId uint) bool {
+	if u == nil {
+		return false
+	}
+	for _, s := range u.AdministeredSchools {
+		if s.ID == schoolId {
+			return true
+		}
+	}
+	return u.Role == AdminType
+}
