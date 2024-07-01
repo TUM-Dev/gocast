@@ -1,6 +1,6 @@
 # GoCast docs
 
-Source code for GoCast's docs and changelogs from [docs.tum.live](https://docs.tum.live).
+Source code for GoCast's docs and changelogs from [https://tumlive-docs.pages.dev](https://tumlive-docs.pages.dev).
 
 ## Getting started
 
