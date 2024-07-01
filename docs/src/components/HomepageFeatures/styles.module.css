@@ -1,0 +1,30 @@
+.features {
+  padding: 2rem 0;
+  text-align: center;
+  background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgb(47, 68, 139) 35%, rgb(80, 162, 255) 100%);
+  color: white;
+}
+
+.featureSvg {
+  height: 120px;
+  width: 120px;
+}
+
+.getStarted {
+  margin-top: 4rem;
+  text-align: left;
+  display: flex;
+  width: 60%; /* This will apply to larger screens */
+  flex-direction: row;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .getStarted {
+    width: 100%; /* This will apply to screens that are 768px wide or smaller */
+  }
+}
+
+.narrowMargin {
+  margin: 0rem 1rem;
+}

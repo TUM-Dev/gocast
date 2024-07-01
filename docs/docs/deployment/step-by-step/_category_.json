@@ -1,0 +1,9 @@
+{
+    "label": "Step-by-Step Guide",
+    "position": 4,
+    "link": {
+      "type": "generated-index",
+      "description": "Deploy gocast to your server or cloud provider. This guide will walk you through the process step-by-step."
+    }
+}
+  

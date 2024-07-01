@@ -1,0 +1,9 @@
+{
+    "label": "Selfhosting",
+    "position": 4,
+    "link": {
+      "type": "generated-index",
+      "description": "Selfhost GoCast on your network."
+    }
+  }
+  

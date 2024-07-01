@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+ :root {
+  --ifm-font-family-base: 'Lexend', sans-serif;
+  --ifm-color-primary: #0063ba; /* 3070b3 */ 
+  --ifm-color-primary-dark: #4f46e5; 
+  --ifm-color-primary-darker: #888e90; 
+  --ifm-color-primary-darkest: #747474; 
+  --ifm-color-primary-light: #e7e7f3; 
+  --ifm-color-primary-lighter: #446c76; 
+  --ifm-color-primary-lightest: #74adbc; 
+  --ifm-code-font-size: 85%;
+  --ifm-background-surface-color: white;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --hero-banner-color-dark: white;
+  --hero-banner-bg-color-dark: #161b22;
+  --hero-banner-color-light: #242526;
+  --hero-banner-bg-color-light: white;
+  --hero-button-color-dark: white;
+  --hero-button-color-light: #242526;
+}
+
+[data-theme='dark'] {
+    --ifm-color-primary:#56a4f8;
+    --ifm-color-primary-dark: #4438ca;
+    --ifm-color-primary-darker: #353d47;
+    --ifm-color-primary-darkest: #1f2937;
+    --ifm-color-primary-light: #232a35;
+    --ifm-color-primary-lighter: #4f46e5;
+    --ifm-color-primary-lightest: #4f46e5;
+    --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme='dark'] {
+  --ifm-background-color: #272f3b;
+   /*#161b22*/;
+  --ifm-background-surface-color: #1f2937;
+}
+
+.card-light {
+  background-color: #fff;
+  color: #1d1d1f;
+}
+
+.card-dark {
+  background-color: #1d1d1f;
+  color: #fff;
+}
+
+.card-light .button {
+  background-color: #f6f8fa;
+  color: #393A34;
+}
+
+.card-dark .button {
+  background-color: #282A36;
+  color: #fff;
+}
+
+footer .footer__logo {
+  max-width: 350px; /* Adjust as needed */
+}
