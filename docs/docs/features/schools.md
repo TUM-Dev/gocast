@@ -8,7 +8,7 @@ description: "Basic terminology."
 
 _The idea is the following_: To avoid one entity having to manage and process all streaming data for the entire university (or multiple universities), GoCast is distributed to multiple entities. Each entity (aka GoCast 'school') has so-called maintainers (users with the `maintainer` user role) that are allowed to manage the school's resources such as Workers/Runners, VoD Services, etc.
 
-Maintainers also have some basic administrative functionality which is limited to their schools' scope (e.g., create, update and delete courses and streams only for those schools which are administered by that maintainer). For an overview of your administered schools, go to the ["schools"-tab](http://live.carlobortolan.com:8081/admins/schools) in the admin dashboard.
+Maintainers also have some basic administrative functionality which is limited to their schools' scope (e.g., create, update and delete courses and streams only for those schools which are administered by that maintainer). For an overview of your administered schools, go to the ["schools"-tab](http://live.carlobortolan.com/admins/schools) in the admin dashboard.
 
 :::info
 One maintainer can maintain multiple schools.

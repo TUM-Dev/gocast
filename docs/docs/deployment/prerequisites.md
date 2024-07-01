@@ -17,7 +17,7 @@ You will need the following hardware configuration:
    - **At least 1 Worker or Runner VM**. This server produces the stream, transcodes the VoD and much more. CPU performance is important here. As you start streaming more, you can spin up more of these.
    - _Optional_: At least 1 NVIDIA CUDA equipped Server that transcribes streams using the Whisper LLM.
 
-2. **Verify that you're authorized to create new resources** for a school by going to the ["schools"-tab](http://live.carlobortolan.com:8081/admins/schools) in the admin dashboard and checking that you're a maintainer of a school. If not, contact your school's IT team or the RBG.
+2. **Verify that you're authorized to create new resources** for a school by going to the ["schools"-tab](http://live.carlobortolan.com/admins/schools) in the admin dashboard and checking that you're a maintainer of a school. If not, contact your school's IT team or the RBG.
 
 3. **Fetch a new school token** by clicking on the key-icon of the relevant school. The token expires after 7 hours.
    :::danger
