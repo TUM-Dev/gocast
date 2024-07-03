@@ -23,7 +23,7 @@ type Course struct {
 	TeachingTerm            string `gorm:"not null"` // eg. Summer/Winter
 	TUMOnlineIdentifier     string
 	VODEnabled              bool `gorm:"default:true"`
-	DownloadsEnabled        bool `gorm:"default:false"`
+	DownloadsEnabled        bool `gorm:"default:true"`
 	ChatEnabled             bool `gorm:"default:false"`
 	AnonymousChatEnabled    bool `gorm:"not null;default:true"`
 	ModeratedChatEnabled    bool `gorm:"not null;default:false"`

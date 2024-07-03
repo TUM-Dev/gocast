@@ -1,4 +1,4 @@
-import effects from "chart.js/dist/helpers/helpers.easing";
+import {getPlayers} from "../TUMLiveVjs";
 
 let db: IDBDatabase;
 let openOrCreateDB : IDBOpenDBRequest;
@@ -17,7 +17,7 @@ export function initIndexDB() {
             console.error("Error loading IndexedDB database");
         }
 
-        db.createObjectStore("videos", { keyPath: "id"});
+        db.createObjectStore("videos");
     });
 }
 
@@ -35,5 +35,36 @@ export function storeVideoOffline(title: string, url: string, date: Date, durati
     transaction.addEventListener("error", () => {
         console.error("Error storing video offline");
     });
+
+}
+
+export function testStoreOffline() {
+    let xhr = new XMLHttpRequest(), blob;
+
+    xhr.open("GET", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", true);
+    xhr.responseType = "blob";
+
+    xhr.addEventListener("load", () => {
+        if (xhr.status === 200) {
+            console.log("Video loaded");
+            blob = xhr.response as Blob;
+            console.log("Blob loaded" + blob);
+
+            let transaction = db.transaction(["videos"], "readwrite");
+            transaction.objectStore("videos").put(blob, "video");
+            transaction.objectStore("videos").get("video").onsuccess = async (event) => {
+                let vdFile = (event.target as any).result;
+                console.log("Got video from db" + (vdFile as Blob));
+
+                let URL = window.URL || window.webkitURL;
+                let videoFileUrl = URL.createObjectURL(vdFile);
+
+                document.getElementById("offlineVideo").setAttribute("src", videoFileUrl);
+
+            }
+        }
+    });
+
+    xhr.send();
 
 }

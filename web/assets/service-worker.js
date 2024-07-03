@@ -57,6 +57,12 @@ self.addEventListener("fetch", (e) => {
         return;
     }
 
+    if (e.request.method === "GET") {
+        let path = e.request.url.match("http[s]?:\\/\\/[^\\/]+(.+)")[1];
+        if (path.startsWith(""))
+        console.log("[ServiceWorker] Fetching", path)
+
+    }
     const fromNetwork = (request, timeout) =>
         new Promise((fulfill, reject) => {
             const timeoutId = setTimeout(reject, timeout);
