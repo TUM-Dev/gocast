@@ -52,17 +52,19 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("fetch", (e) => {
+    if (e.request.method === "GET") {
+        let matches = e.request.url.match("http[s]?:\\/\\/([^\\/]+)\\/vod\\/([^\\/]+).*"); // Regex Group 1: Host, Group 2: VOD ID
+        if (matches[1] === "edge.live.rbg.tum.de") {
+            console.log("[ServiceWorker] Fetching", matches[2])
+            // TODO: Check, if VOD is in cache, else load from network
+        }
+    }
+
     if (!shouldCacheReq(e.request)) {
         //console.debug("Cache exception");
         return;
     }
 
-    if (e.request.method === "GET") {
-        let path = e.request.url.match("http[s]?:\\/\\/[^\\/]+(.+)")[1];
-        if (path.startsWith(""))
-        console.log("[ServiceWorker] Fetching", path)
-
-    }
     const fromNetwork = (request, timeout) =>
         new Promise((fulfill, reject) => {
             const timeoutId = setTimeout(reject, timeout);
