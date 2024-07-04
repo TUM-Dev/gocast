@@ -2,10 +2,14 @@ import {getPlayers} from "../TUMLiveVjs";
 
 let db: IDBDatabase;
 let openOrCreateDB : IDBOpenDBRequest;
+let dbOpen = false;
 
 export function initIndexDB() {
     openOrCreateDB = window.indexedDB.open("offline-videos", 1);
-    openOrCreateDB.addEventListener("error", () => console.error("Error opening IndexedDB database"));
+    openOrCreateDB.addEventListener("error", () => {
+        console.error("Error opening IndexedDB database");
+        dbOpen = false;
+    });
     openOrCreateDB.addEventListener("success", () => {
         console.log("Successfully opened IndexedDB database");
         db = openOrCreateDB.result;
@@ -15,6 +19,7 @@ export function initIndexDB() {
 
         db.onerror = () => {
             console.error("Error loading IndexedDB database");
+
         }
 
         db.createObjectStore("videos");
@@ -60,11 +65,21 @@ export function testStoreOffline() {
                 let videoFileUrl = URL.createObjectURL(vdFile);
 
                 document.getElementById("offlineVideo").setAttribute("src", videoFileUrl);
-
             }
         }
     });
 
     xhr.send();
 
+}
+
+export function getDownloads() : string[] {
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", "/getDownloads", true);
+    xhr.responseType = "json";
+    xhr.onload = function() {
+        return xhr.response.downloads;
+    }
+    xhr.send()
+    return [];
 }

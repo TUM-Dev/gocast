@@ -20,11 +20,55 @@ const PREFETCH_CACHE_FILES = [
 const CACHE_REQUEST_METHOD_ALLOWLIST = ["GET"];
 const CACHE_REQUEST_HOST_ALLOWLIST = [self.location.host];
 
+var db, openOrCreateDB;
+
+initIndexDB();
+
+function initIndexDB() {
+    openOrCreateDB = indexedDB.open("offline-videos", 1);
+    openOrCreateDB.addEventListener("error", () => {
+        console.error("[ServiceWorker] Error opening IndexedDB database");
+        dbOpen = false;
+    });
+    openOrCreateDB.addEventListener("success", () => {
+        console.log("[ServiceWorker] Successfully opened IndexedDB database");
+        db = openOrCreateDB.result;
+    });
+    openOrCreateDB.addEventListener("upgradeneeded", init => {
+        db = init.target.result;
+
+        db.onerror = () => {
+            console.error("[ServiceWorker] Error loading IndexedDB database");
+
+        }
+
+        db.createObjectStore("videos");
+    });
+}
+
 const shouldCacheReq = (req) => {
     // eslint-disable-next-line no-undef
     const urlHost = new URL(req.url).host;
     return CACHE_REQUEST_METHOD_ALLOWLIST.includes(req.method) && CACHE_REQUEST_HOST_ALLOWLIST.includes(urlHost);
 };
+
+function getDownloads() {
+    return new Promise(function(resolve) {
+        console.log("[ServiceWorker] Fetching downloads from IndexedDB")
+        let transaction = db.transaction(["videos"], "readonly");
+        let store = transaction.objectStore("videos");
+        let request = store.getAll();
+        request.onsuccess = () => {
+            console.log("[ServiceWorker] Results: " + request.result)
+            return resolve(request.result);
+        }
+        request.onerror = () => {
+            console.error("[ServiceWorker] Error fetching downloads from IndexedDB");
+            return resolve();
+        }
+        console.log("[ServiceWorker] No downloads found in IndexedDB")
+    })
+}
 
 self.addEventListener("install", function (e) {
     //console.log("[ServiceWorker] Installed");
@@ -51,12 +95,29 @@ self.addEventListener("activate", function (e) {
     );
 });
 
-self.addEventListener("fetch", (e) => {
+self.addEventListener("fetch", async (e) =>  {
     if (e.request.method === "GET") {
         let matches = e.request.url.match("http[s]?:\\/\\/([^\\/]+)\\/vod\\/([^\\/]+).*"); // Regex Group 1: Host, Group 2: VOD ID
-        if (matches[1] === "edge.live.rbg.tum.de") {
-            console.log("[ServiceWorker] Fetching", matches[2])
-            // TODO: Check, if VOD is in cache, else load from network
+        if (matches != null && matches.length >= 2) {
+            if (matches[1] === "edge.live.rbg.tum.de") {
+                console.log("[ServiceWorker] Fetching", matches[2])
+                // TODO: Check, if VOD is in cache, else load from network
+            }
+        }
+
+        matches = e.request.url.match("http[s]?:\\/\\/([^\\/]+)\\/(.+)"); // Regex Group 1: Host, Group 2: api call
+        if (matches != null && matches.length >= 2) {
+            if (matches[2].startsWith("storeOffline")) {
+                console.log("[ServiceWorker] Storing offline", matches[2])
+            } else if (matches[2].startsWith("removeOffline")) {
+                console.log("[ServiceWorker] Removing offline", matches[2])
+            } else if (matches[2].startsWith("getDownloads")) {
+                console.log("[ServiceWorker] Fetching downloads")
+                let downloads = await getDownloads(e)
+                e.respondWith(new Response(JSON.stringify(downloads), { headers: { "Content-Type": "application/json" }}));
+            } else {
+
+            }
         }
     }
 

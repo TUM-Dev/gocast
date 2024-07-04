@@ -15,6 +15,7 @@
                        role="menuitem" tabindex="-1" id="menu-item-0">
                             <i class="fa-solid fa-file-video text-xs mr-2 text-gray-500 dark:text-gray-200 my-auto"></i>
                             <span class="font-semibold text-3 text-xs my-auto ml-auto">{{$dl.FriendlyName}}</span>
+                            <i class="fa-solid text-xs mr-2 ml-2 text-gray-500 dark:test-gray-200 my-auto" :class="watch.getDownloads().includes('') ? 'fa-check' : 'fa-xmark'"></i>
                         </a>
                 {{end}}
         </span>
