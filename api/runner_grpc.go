@@ -106,7 +106,7 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream,
 	if source == "" {
 		return
 	}
-	server, err := dao.IngestServerDao.GetBestIngestServer()
+	server, err := dao.IngestServerDao.GetBestIngestServer(course.SchoolID)
 	if err != nil {
 		logger.Error("can't find ingest server", "err", err)
 		return
@@ -193,7 +193,7 @@ func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protob
 		log.WithFields(log.Fields{"streamId": stream.ID}).Warn("Stream rejected, time out of bounds")
 		return nil, errors.New("stream rejected")
 	}
-	ingestServer, err := g.IngestServerDao.GetBestIngestServer()
+	ingestServer, err := g.IngestServerDao.GetBestIngestServer(course.SchoolID)
 	if err != nil {
 		return nil, err
 	}

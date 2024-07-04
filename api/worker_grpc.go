@@ -166,7 +166,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)
 		return nil, errors.New("stream rejected")
 	}
-	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer()
+	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer(course.SchoolID)
 	if err != nil {
 		return nil, err
 	}
@@ -703,7 +703,7 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 	if source == "" {
 		return
 	}
-	server, err := daoWrapper.IngestServerDao.GetBestIngestServer()
+	server, err := daoWrapper.IngestServerDao.GetBestIngestServer(course.SchoolID)
 	if err != nil {
 		logger.Error("Can't find ingest server", "err", err)
 		return
@@ -834,7 +834,7 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper, schoolID uint) {
 		}
 		workerIndex := getWorkerWithLeastWorkload(workers)
 		workers[workerIndex].Workload += 3
-		ingestServer, err := daoWrapper.IngestServerDao.GetBestIngestServer()
+		ingestServer, err := daoWrapper.IngestServerDao.GetBestIngestServer(schoolID)
 		if err != nil {
 			logger.Error("Can't find ingest server", "err", err)
 			continue

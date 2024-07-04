@@ -40,9 +40,11 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	workers := []model.Worker{}
 	runners := []model.Runner{}
+	ingestServers := []model.IngestServer{}
 	for _, school := range schools {
 		workers = append(workers, school.Workers...)
 		runners = append(runners, school.Runners...)
+		ingestServers = append(ingestServers, school.IngestServers...)
 	}
 
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
@@ -161,11 +163,12 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Notifications:       notifications,
 			Runners:             RunnersData{Runners: runners},
 			Resources: Resources{
-				Workers:     workers,
-				Runners:     runners,
-				VODServices: runners,
-				Schools:     schools,
-				Query:       uint(query),
+				Workers:       workers,
+				Runners:       runners,
+				VODServices:   runners,
+				IngestServers: ingestServers,
+				Schools:       schools,
+				Query:         uint(query),
 			},
 		})
 	if err != nil {
@@ -179,11 +182,12 @@ type WorkersData struct {
 }
 
 type Resources struct {
-	Workers     []model.Worker
-	Runners     []model.Runner
-	VODServices []model.Runner
-	Schools     []model.School
-	Query       uint
+	Workers       []model.Worker
+	Runners       []model.Runner
+	VODServices   []model.Runner
+	IngestServers []model.IngestServer
+	Schools       []model.School
+	Query         uint
 }
 
 type RunnersData struct {

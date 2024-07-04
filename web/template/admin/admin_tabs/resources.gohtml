@@ -28,7 +28,6 @@
                     </tr>
                 </thead>
                 <tbody class="text-3">
-                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
                     {{range $school := .Schools}}
                         {{ if or (not $.Query) (eq $school.ID $.Query) }}
                         {{$found := false}}
@@ -111,7 +110,6 @@
                 </tr>
                 </thead>
                 <tbody class="text-3">
-                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
                     {{range $school := .Schools}}
                         {{ if or (not $.Query) (eq $school.ID $.Query) }}
                         {{$found := false}}
@@ -195,6 +193,86 @@
             </table>
         </div>
     </div>
+
+    <div class="form-container">
+        <h1 class="form-container-title">Ingest Servers</h1>
+        <div class="form-container-body grid grid-cols-2 gap-3">
+            <table class="table-auto w-full col-span-full">
+                <thead>
+                <tr class="text-2 text-left">
+                    <th class="px-6 text-left" style="width: 30%;">
+                        <div class="inline-flex items-center text-center">
+                            URL
+                            <help-icon class="transform -translate-x-0.5" text="This is the URL on which the ingest server will be reachable for incoming stream requests."/> 
+                        </div>
+                    </th>
+                    <th class="px-6 text-center" style="width: 50%;">
+                        <div class="inline-flex items-center">
+                            OUT-URL
+                            <help-icon class="transform -translate-x-0.5" text="This is the URL template that will be used to serve the stream while being live."/>
+                        </div>
+                    </th>
+                    <th class="px-6 text-center" style="width: 10%;">WORKLOAD</th>
+                    <th class="px-6 text-center" style="width: 10%;">
+                        <div class="inline-flex items-center">
+                            SHARED
+                            <help-icon class="transform -translate-x-0.5" text="Share resource with other schools. Read more at https://tumlive-docs.pages.dev/docs/deployment/step-by-step/add-ingest-server"/>
+                        </div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody class="text-3">
+                    {{range $school := .Schools}}
+                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
+                        {{$found := false}}
+                        <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
+                                <thead>
+                                <tr>
+                                    <td colspan="5" class="text-left">
+                                        <h2 class="form-container-title">
+                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.OrgType}}: {{$school.Name}}</a>
+                                        </h2>
+                                    </td>
+                                </tr>
+                                </thead>
+                                <tbody class="text-3">
+                                    {{range $ingestServer := $.IngestServers}}
+                                        {{if eq $ingestServer.SchoolID $school.ID}}
+                                        {{$found = true}}
+                                        <tr class="border-gray-500">
+                                            <td class="pb-3 px-6 text-left font-semibold text-4 whitespace-nowrap" style="width: 30%;">
+                                                {{$ingestServer.Url}}
+                                            </td>
+                                            <td class="pb-3 px-6 text-left font-semibold text-4 whitespace-nowrap" style="width: 50%;">
+                                                {{$ingestServer.OutUrl}}
+                                            </td>
+                                            <td class="pb-3 px-6 text-left whitespace-nowrap" style="width: 10%;">
+                                                {{$ingestServer.Workload}}
+                                            </td>
+                                            <td class="pb-3 px-6 text-center whitespace-nowrap" style="width: 10%;">
+                                                {{if $ingestServer.Shared}}
+                                                    <i class="fas fa-check"></i>
+                                                {{else}}
+                                                    <i class="fas fa-x"></i>
+                                                {{end}}
+                                            </td>
+                                        </tr>
+                                    {{end}}
+                                    {{end}}
+                                    {{if not $found}}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No ingest servers found for this school.</td>
+                                        </tr>
+                                    {{end}}
+                                </tbody>
+                        </table>
+                    {{end}}
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 
     <div class="p-5">
         <h3 class="text-3">How to add a RUNNER</h3>

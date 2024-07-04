@@ -13,7 +13,7 @@ type IngestServerDao interface {
 	SaveSlot(slot model.StreamName)
 	SaveIngestServer(server model.IngestServer)
 
-	GetBestIngestServer() (server model.IngestServer, err error)
+	GetBestIngestServer(schoolID uint) (server model.IngestServer, err error)
 	GetTranscodedStreamSlot(ingestServerID uint) (sn model.StreamName, err error)
 	GetStreamSlot(ingestServerID uint) (sn model.StreamName, err error)
 
@@ -37,15 +37,16 @@ func (d ingestServerDao) SaveIngestServer(server model.IngestServer) {
 }
 
 // GetBestIngestServer returns the IngestServer with the least streams assigned to it
-func (d ingestServerDao) GetBestIngestServer() (server model.IngestServer, err error) {
-	if err = DB.Raw("SELECT i.* FROM stream_names" +
-		" JOIN ingest_servers i ON i.id = stream_names.ingest_server_id" +
-		" WHERE stream_id IS NULL" +
-		" GROUP BY ingest_server_id" +
-		" ORDER BY COUNT(ingest_server_id) DESC").Scan(&server).Error; err != nil {
+// TODO: Include available ingest servers of parent schools
+func (d ingestServerDao) GetBestIngestServer(schoolID uint) (server model.IngestServer, err error) {
+	if err = DB.Raw(`SELECT i.* FROM stream_names
+        JOIN ingest_servers i ON i.id = stream_names.ingest_server_id
+        WHERE (stream_id IS NULL AND (i.school_id = ? OR i.shared = true))
+        GROUP BY ingest_server_id
+        ORDER BY COUNT(ingest_server_id) DESC`, schoolID).Scan(&server).Error; err != nil {
 		return
 	}
-	if err = DB.Order("workload").First(&server).Error; err != nil {
+	if err = DB.Where("school_id = ? OR shared = true", schoolID).Order("workload").First(&server).Error; err != nil {
 		return
 	}
 	return

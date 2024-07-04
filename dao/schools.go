@@ -147,9 +147,9 @@ func (d schoolDao) RemoveAdmin(c context.Context, schoolID, adminID uint) error 
 
 func (d schoolDao) GetAdministeredSchoolsByUser(c context.Context, user *model.User) (res []model.School, err error) {
 	if user.Role == model.AdminType {
-		return res, d.db.WithContext(c).Preload("Admins").Preload("Workers").Preload("Runners").Find(&res).Error
+		return res, d.db.WithContext(c).Preload("Admins").Preload("Workers").Preload("Runners").Preload("IngestServers").Find(&res).Error
 	} else {
-		return res, d.db.WithContext(c).Preload("Admins").Preload("Workers").Preload("Runners").Model(&model.User{Model: gorm.Model{ID: user.ID}}).Association("AdministeredSchools").Find(&res)
+		return res, d.db.WithContext(c).Preload("Admins").Preload("Workers").Preload("Runners").Preload("IngestServers").Model(&model.User{Model: gorm.Model{ID: user.ID}}).Association("AdministeredSchools").Find(&res)
 	}
 }
 

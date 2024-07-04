@@ -31,9 +31,9 @@
                     <td class="py-3 px-6 text-left whitespace-nowrap" x-text="school.name"></td>
                     <template x-if="schoollist.showSearchResults">
                         <td class="text-center cursor-pointer" @click="school.changing=true">
-                            <span x-show="school.orgType.startsWith('TUM')'"
+                            <span x-show="school.orgType.startsWith('TUM')"
                                   class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
-                            <span x-show="school.orgType.startsWith('LMU')'"
+                            <span x-show="school.orgType.startsWith('LMU')"
                                   class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
                             <span x-show="school.orgType==='service'"
                                 class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
@@ -42,7 +42,7 @@
                                     <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
                                 </div>
                             </span>
-                            <span x-show="school.orgType!=='TUM' && school.orgType!=='LMU' && school.orgType!=='service'" x-text="school.orgType"
+                            <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
                                   class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
                         </td>
                     </template>
