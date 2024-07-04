@@ -57,7 +57,20 @@ func getSchoolIDs(schools []model.School) []uint {
 // GetAliveWorkers returns all workers that were active within the last 5 minutes
 func (d workerDao) GetAliveWorkers(schoolID uint) []model.Worker {
 	var workers []model.Worker
-	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE) AND (school_id = ? OR shared = true)", schoolID).Scan(&workers)
+
+	rawSQL :=
+		`
+WITH RECURSIVE school_hierarchy AS (
+	SELECT id, parent_id FROM schools WHERE id = ?
+	UNION ALL
+	SELECT s.id, s.parent_id FROM schools s
+	INNER JOIN school_hierarchy sh ON s.id = sh.parent_id
+)
+SELECT w.* FROM workers w
+INNER JOIN school_hierarchy sh ON sh.id = w.school_id
+WHERE w.last_seen > NOW() - INTERVAL 5 MINUTE OR w.shared = true
+`
+	DB.Raw(rawSQL, schoolID).Scan(&workers)
 	return workers
 }
 

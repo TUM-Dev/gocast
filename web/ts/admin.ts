@@ -217,8 +217,14 @@ export async function deleteLectureHall(lectureHallID: number) {
     }
 }
 
-export async function createSchool(name: string, university: string, admin_email: string) {
-    const response = await postData("/api/schools", { name, university, admin_email });
+export async function createSchool(name: string, org_type: string, admin_email: string, parent_id: number = null) {
+    console.log("Creating school", name, org_type, admin_email, parent_id);
+    const response = await postData("/api/schools", {
+        name: name,
+        org_type: org_type,
+        admin_email: admin_email,
+        parent_id: parent_id,
+    });
 
     if (response.status === StatusCodes.OK) {
         showMessage("School was created successfully. Reload to see changes.");
@@ -248,8 +254,8 @@ export async function createTokenForSchool(schoolID: number) {
     }
 }
 
-export async function updateSchool(schoolID: number, name: string, university: string) {
-    return patchData(`/api/schools/${schoolID}`, { name, university }).then((e) => {
+export async function updateSchool(schoolID: number, name: string) {
+    return patchData(`/api/schools/${schoolID}`, { name }).then((e) => {
         if (e.status === StatusCodes.OK) {
             showMessage("School was updated successfully. Reload to see changes.");
         } else {

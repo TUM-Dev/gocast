@@ -5,7 +5,7 @@
                 <div class="container">
                     <div id="alertBox" class="text-center">
                         <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex" role="alert">
-                            <span id="alertText" class="font-semibold mx-2 text-left flex-auto">Currently only showing resources for {{$school.University}}-{{$school.Name}}</span>
+                            <span id="alertText" class="font-semibold mx-2 text-left flex-auto">Currently only showing resources for {{$school.OrgType}}: {{$school.Name}}</span>
                             <span id="alertOk" onclick="window.location.replace('/admin/resources')" class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">View all resources for your schools</span>
                         </div>
                     </div>
@@ -37,7 +37,7 @@
                                 <tr>
                                     <td colspan="5" class="text-left">
                                         <h2 class="form-container-title">
-                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.University}}-{{$school.Name}}</a>
+                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.OrgType}}: {{$school.Name}}</a>
                                         </h2>
                                     </td>
                                 </tr>
@@ -120,7 +120,7 @@
                                 <tr>
                                     <td colspan="5" class="text-left">
                                         <h2 class="form-container-title">
-                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.University}}-{{$school.Name}}</a>
+                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.OrgType}}: {{$school.Name}}</a>
                                         </h2>
                                     </td>
                                 </tr>

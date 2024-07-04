@@ -13,9 +13,11 @@
         <table>
             <thead>
             <tr class="p-4 bg-gray-200 dark:bg-secondary-light text-3 uppercase text-sm leading-normal">
-                <th class="rounded-tl-lg text-left pl-6 py-3">Name</th>
-                <th>University</th>
+                <th class="rounded-tl-lg text-left pl-6 py-3">Id</th>
+                <th class="rounded-tl-lg">Name</th>
+                <th class="rounded-tl-lg">University</th>
                 <th class="rounded-tl-lg">OrgId-OrgName (OrgType)</th>
+                <th class="rounded-tl-lg">ParentId</th>
                 <th>Maintainers</th>
                 <th class="rounded-tr-lg">Actions</th>
             </tr>
@@ -25,42 +27,43 @@
                 <tr :id="`school-${i}`"
                     class="w-full bg-white dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent"
                     :data-schoollist-index="i">
-                    <td class="pl-6 py-3 text-left whitespace-nowrap" x-text="school.name"></td>
+                    <td class="pl-6 py-3 text-left whitespace-nowrap" x-text="school.id"></td>
+                    <td class="py-3 px-6 text-left whitespace-nowrap" x-text="school.name"></td>
                     <template x-if="schoollist.showSearchResults">
                         <td class="text-center cursor-pointer" @click="school.changing=true">
-                            <span x-show="school.university==='TUM'"
+                            <span x-show="school.orgType.startsWith('TUM')'"
                                   class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
-                            <span x-show="school.university==='LMU'"
+                            <span x-show="school.orgType.startsWith('LMU')'"
                                   class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
-                            <span x-show="school.university==='service'"
+                            <span x-show="school.orgType==='service'"
                                 class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
                                  <div class="flex flex-row">
                                     Service
                                     <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
                                 </div>
                             </span>
-                            <span x-show="school.university!=='TUM' && school.university!=='LMU' && school.university!=='service'" x-text="school.university"
-                                  class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
+                            <span x-show="school.orgType!=='TUM' && school.orgType!=='LMU' && school.orgType!=='service'" x-text="school.orgType"
+                                  class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
                         </td>
                     </template>
                     <template x-if="!schoollist.showSearchResults">
                         <td class="text-center">
-                            <span x-show="school.university==='TUM'"
-                                  class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
-                            <span x-show="school.university==='LMU'"
+                            <span x-show="school.orgType.startsWith('TUM')"
+                                class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
+                            <span x-show="school.orgType.startsWith('LMU')"
                                   class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
-                            <span x-show="school.university==='service'"
+                            <span x-show="school.orgType==='service'"
                                 class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
                                  <div class="flex flex-row">
                                     Service
                                     <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
                                 </div>
                             </span>
-                            <span x-show="school.university!=='TUM' && school.university!=='LMU' && school.university!=='service'" x-text="school.university"
-                                class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
+                            <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
+                                class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
                         </td>
                     </template>
-                    <td class="py-3 px-6 text-center" x-text="school.orgId + '-' + school.orgSlug + ' (' + school.orgType + ')'"></td>
+<td class="py-3 px-6 text-center" x-text="(school.orgId && school.orgSlug) ? school.orgId + '-' + school.orgSlug + ' (' + school.orgType + ')' : school.orgType"></td>                    <td class="py-3 px-6 text-center whitespace-nowrap" x-text="school.parent_id == 0 ? '-' : school.parent_id"></td>
                     <td class="py-3 px-6 text-center">
                         <p class="font-bold cursor-pointer" x-text="school.admins.length + ' maintainer(s)'" @click="openMaintainerModal(school, i)" @mouseover="event.target.style.color = 'grey'" @mouseleave="event.target.style.color = ''"></p>                        <!-- Admin Modal -->
                         <div class="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center" style="display: none;" x-bind:id="'adminModal-' + i">
@@ -89,7 +92,7 @@
                                             </h3>
                                             <form x-data="{ maintainerEmail: '', maintainerId: '', maintainerLrzId: ''}">
                                                 <div class="flex flex-row mb-1">
-                                                    <h2 class="italic" x-text="'Add a Maintainer for ' + school.name + ' (' + school.university + ')'"></h2>
+                                                    <h2 class="italic" x-text="'Add a Maintainer for ' + school.name + ' (' + school.orgType + ')'"></h2>
                                                     <help-icon class="transform -translate-x-0.5" text="Add either using Email, ID or LRZ ID."/>
                                                 </div>
                                                 <div class="flex flex-wrap">
@@ -151,7 +154,7 @@
                                     class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
                                 <i @click="admin.createTokenForSchool(school.id)" class="fas fa-key"></i>
                             </button>
-                            <template x-if="school.university !== 'service' && school.name != 'master'">
+                            <template x-if="school.name != 'master'">
                                 <button title="Delete School"
                                         class="w-4 transform hover:text-purple-500 hover:scale-110">
                                     <i @click="admin.deleteSchool(school.id)" class="fas fa-trash"></i>
@@ -181,22 +184,21 @@
         </template>
     </div>
 </section>
-
-<section class="form-container" x-data="{ university: '', name: '', adminEmail: '' }" x-show="role == 1" x-init="role = {{.Role}}">
+<section class="form-container" x-data="{ schoollist: new admin.SchoolsList({{.Data}}), name: '', adminEmail: '', parentId: '', orgType: 'sub-school'}">
     <h1 class="form-container-title">New School</h1>
-        <div class="form-container-body">
+    <div class="form-container-body">
         <form>
             <div class="flex flex-row mt-3">
                 <h2 class="italic">General Information (required)</h2>
-                <help-icon class="transform -translate-x-0.5" text="You will be able to edit this information afterwards. Combinations of university- and schoolnames need to be unique."/>
+                <help-icon class="transform -translate-x-0.5" text="You won't be able to edit this information afterwards. You can select a parent school which is managed by you to create a sub-school. Otherwise, leave it empty to create a new school."/>
             </div>
             <div class="flex flex-wrap">
                 <div class="w-full md:w-1/2">
-                    <select class="tl-input mt-3 md:mt-0" id="universityInput" name="universityInput" required x-model="university">
-                        <option value="">Select University</option>
-                        <option value="TUM">TUM</option>
-                        <option value="LMU">LMU</option>
-                        <option value="other">other</option>
+                    <select class="tl-input mt-3 md:mt-0" id="parentInput" name="parentInput" required x-model="parentId">
+                        <option value="">Select Parent School</option>
+                        <template x-for="(school, index) in schoollist.list" :key="index">
+                            <option :id="`parent-${index}`" :value="school.id" x-text="school.name"></option>
+                        </template>
                     </select>
                 </div>
                 <div class="w-full md:w-1/2 mb-6 md:mb-0 pl-3">
@@ -213,8 +215,8 @@
                 </div>
             </div>
             <button id="createSchool" title="Create School" class="btn primary mt-3 w-full" 
-                @click.prevent="admin.createSchool(name, university, adminEmail)" 
-                :disabled="university === '' || name === ''">
+                @click.prevent="admin.createSchool(name, orgType, adminEmail, parentId)" 
+                :disabled="name === ''">
                 Create School
             </button>
         </form>

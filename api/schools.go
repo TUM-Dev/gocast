@@ -56,26 +56,46 @@ func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
 	// Check if user is admin
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	// Check if the school name is reserved
-	if req.Name == "master" || req.University == "service" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "reserved school name or university"})
+	// Check if user is maintainer of parent school if parent school is set, otherwise check if user is admin
+	var parentIdUint uint
+	if req.ParentId != "" {
+		parentId, err := strconv.ParseUint(req.ParentId, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid parent_id format"})
+			return
+		}
+		parentIdUint = uint(parentId)
+
+		if !s.isAdminOfSchool(c, parentIdUint) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
+			return
+		}
+	} else if ctx.User.Role != model.AdminType {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only admins can create schools without parent"})
 		return
 	}
 
-	// Check if a school with the same name and university already exists
-	if existingSchool, err := s.SchoolsDao.GetByNameAndUniversity(c, req.Name, req.University); err != nil {
+	// Check if a school with the same name already exists
+	if existingSchool, err := s.SchoolsDao.GetByName(c, req.Name); err != nil {
 		if err != gorm.ErrRecordNotFound {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not check for existing school"})
 			return
 		}
 	} else if existingSchool.ID != 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "a school with this name and university already exists"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "a school with this name already exists"})
 		return
 	}
 
+	// parentSchool, err := s.SchoolsDao.Get(c, parentIdUint)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get parent school"})
+	// 	return
+	// }
+
 	school := model.School{
-		Name:       req.Name,
-		University: req.University,
+		Name:     req.Name,
+		OrgType:  req.OrgType,
+		ParentID: parentIdUint,
 	}
 
 	if err := s.SchoolsDao.Create(c, &school); err != nil {
@@ -149,25 +169,25 @@ func (s *schoolsRoutes) SearchSchool(c *gin.Context) {
 	}
 
 	type relevantSchoolInfo struct {
-		ID         uint         `json:"id"`
-		Name       string       `json:"name"`
-		OrgId      string       `json:"org_id"`
-		OrgType    string       `json:"org_type"`
-		OrgSlug    string       `json:"org_slug"`
-		University string       `json:"university"`
-		Admins     []model.User `json:"admins"`
+		ID       uint         `json:"id"`
+		Name     string       `json:"name"`
+		OrgId    string       `json:"org_id"`
+		OrgType  string       `json:"orgType"`
+		OrgSlug  string       `json:"org_slug"`
+		Admins   []model.User `json:"admins"`
+		ParentID uint         `json:"parent_id"`
 	}
 
 	res := make([]relevantSchoolInfo, len(schools))
 	for i, school := range schools {
 		res[i] = relevantSchoolInfo{
-			ID:         school.ID,
-			Name:       school.Name,
-			OrgId:      school.OrgId,
-			OrgType:    school.OrgType,
-			OrgSlug:    school.OrgSlug,
-			University: school.University,
-			Admins:     school.Admins,
+			ID:       school.ID,
+			Name:     school.Name,
+			OrgId:    school.OrgId,
+			OrgType:  school.OrgType,
+			OrgSlug:  school.OrgSlug,
+			Admins:   school.Admins,
+			ParentID: school.ParentID,
 		}
 	}
 	c.JSON(http.StatusOK, res)
@@ -182,17 +202,17 @@ func (s schoolsRoutes) SearchAllSchools(c *gin.Context) {
 	}
 
 	type relevantSchoolInfo struct {
-		ID         uint   `json:"id"`
-		Name       string `json:"name"`
-		University string `json:"university"`
+		ID      uint   `json:"id"`
+		Name    string `json:"name"`
+		OrgType string `json:"org_type"`
 	}
 
 	res := make([]relevantSchoolInfo, len(schools))
 	for i, school := range schools {
 		res[i] = relevantSchoolInfo{
-			ID:         school.ID,
-			Name:       school.Name,
-			University: school.University,
+			ID:      school.ID,
+			Name:    school.Name,
+			OrgType: school.OrgType,
 		}
 	}
 	c.JSON(http.StatusOK, res)
@@ -211,9 +231,9 @@ func (s *schoolsRoutes) updateSchool(c *gin.Context) {
 	}
 
 	school := model.School{
-		Model:      gorm.Model{ID: req.Id},
-		Name:       req.Name,
-		University: req.University,
+		Model:   gorm.Model{ID: req.Id},
+		Name:    req.Name,
+		OrgType: req.OrgType,
 	}
 
 	if err := s.SchoolsDao.Update(c, &school); err != nil {
@@ -378,13 +398,14 @@ type schoolsRoutes struct {
 }
 
 type updateSchoolRequest struct {
-	Id         uint   `json:"id"`
-	Name       string `json:"name"`
-	University string `json:"university"`
+	Id      uint   `json:"id"`
+	Name    string `json:"name"`
+	OrgType string `json:"org_type"`
 }
 
 type createSchoolRequest struct {
 	AdminEmail string `json:"admin_email"`
 	Name       string `json:"name"`
-	University string `json:"university"`
+	OrgType    string `json:"org_type"`
+	ParentId   string `json:"parent_id"`
 }

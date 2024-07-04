@@ -137,21 +137,6 @@ func (mr *MockSchoolsDaoMockRecorder) GetAdmins(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdmins", reflect.TypeOf((*MockSchoolsDao)(nil).GetAdmins), arg0, arg1)
 }
 
-// GetAdminsBySchoolAndUniversity mocks base method.
-func (m *MockSchoolsDao) GetAdminsBySchoolAndUniversity(arg0 context.Context, arg1, arg2 string) ([]model.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdminsBySchoolAndUniversity", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]model.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAdminsBySchoolAndUniversity indicates an expected call of GetAdminsBySchoolAndUniversity.
-func (mr *MockSchoolsDaoMockRecorder) GetAdminsBySchoolAndUniversity(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminsBySchoolAndUniversity", reflect.TypeOf((*MockSchoolsDao)(nil).GetAdminsBySchoolAndUniversity), arg0, arg1, arg2)
-}
-
 // GetAll mocks base method.
 func (m *MockSchoolsDao) GetAll() []model.School {
 	m.ctrl.T.Helper()
@@ -166,19 +151,31 @@ func (mr *MockSchoolsDaoMockRecorder) GetAll() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockSchoolsDao)(nil).GetAll))
 }
 
-// GetByNameAndUniversity mocks base method.
-func (m *MockSchoolsDao) GetByNameAndUniversity(arg0 context.Context, arg1, arg2 string) (model.School, error) {
+// GetByName mocks base method.
+func (m *MockSchoolsDao) GetByName(arg0 context.Context, arg1 string) (model.School, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByNameAndUniversity", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetByName", arg0, arg1)
 	ret0, _ := ret[0].(model.School)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByNameAndUniversity indicates an expected call of GetByNameAndUniversity.
-func (mr *MockSchoolsDaoMockRecorder) GetByNameAndUniversity(arg0, arg1, arg2 interface{}) *gomock.Call {
+// GetByName indicates an expected call of GetByName.
+func (mr *MockSchoolsDaoMockRecorder) GetByName(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByNameAndUniversity", reflect.TypeOf((*MockSchoolsDao)(nil).GetByNameAndUniversity), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockSchoolsDao)(nil).GetByName), arg0, arg1)
+}
+
+// ImportSchool mocks base method.
+func (m *MockSchoolsDao) ImportSchool(arg0, arg1, arg2, arg3 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ImportSchool", arg0, arg1, arg2, arg3)
+}
+
+// ImportSchool indicates an expected call of ImportSchool.
+func (mr *MockSchoolsDaoMockRecorder) ImportSchool(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImportSchool", reflect.TypeOf((*MockSchoolsDao)(nil).ImportSchool), arg0, arg1, arg2, arg3)
 }
 
 // Query mocks base method.

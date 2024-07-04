@@ -27,8 +27,8 @@ type SchoolsDao interface {
 	// Get all Schools administered by a User
 	GetAdministeredSchoolsByUser(context.Context, *model.User) ([]model.School, error)
 
-	// Get by name and university
-	GetByNameAndUniversity(context.Context, string, string) (model.School, error)
+	// Get by name
+	GetByName(context.Context, string) (model.School, error)
 
 	// Create a new School for the database
 	Create(context.Context, *model.School) error
@@ -52,9 +52,6 @@ type SchoolsDao interface {
 
 	// Get admin count
 	GetAdminCount(context.Context, uint) (int, error)
-
-	// Get all Admins for a School
-	GetAdminsBySchoolAndUniversity(context.Context, string, string) ([]model.User, error)
 
 	/* ==> CRON JOBS <== */
 	ImportSchool(string, string, string, string)
@@ -122,18 +119,18 @@ func (d schoolDao) Update(c context.Context, it *model.School) error {
 
 func (d schoolDao) QueryAdministerdSchools(c context.Context, user *model.User, query string) (res []model.School, err error) {
 	if user.Role == model.AdminType {
-		return res, d.db.WithContext(c).Where("name LIKE ? OR university LIKE ?", "%"+query+"%", "%"+query+"%").Find(&res).Error
+		return res, d.db.WithContext(c).Where("name LIKE ? OR org_type LIKE ?", "%"+query+"%", "%"+query+"%").Find(&res).Error
 	} else {
 		return res, d.db.WithContext(c).
 			Joins("JOIN school_admins ON school_admins.school_id = schools.id").
 			Preload("Admins").
-			Where("(schools.name LIKE ? OR schools.university LIKE ?) AND school_admins.user_id = ?", "%"+query+"%", "%"+query+"%", user.ID).
+			Where("(schools.name LIKE ? OR schools.org_type LIKE ?) AND school_admins.user_id = ?", "%"+query+"%", "%"+query+"%", user.ID).
 			Find(&res).Error
 	}
 }
 
 func (d schoolDao) Query(c context.Context, query string) (res []model.School, err error) {
-	return res, d.db.WithContext(c).Where("name LIKE ? OR university LIKE ?", "%"+query+"%", "%"+query+"%").Find(&res).Error
+	return res, d.db.WithContext(c).Where("name LIKE ? OR org_type LIKE ?", "%"+query+"%", "%"+query+"%").Find(&res).Error
 }
 
 func (d schoolDao) GetAdmins(c context.Context, id uint) (res []model.User, err error) {
@@ -156,8 +153,8 @@ func (d schoolDao) GetAdministeredSchoolsByUser(c context.Context, user *model.U
 	}
 }
 
-func (d schoolDao) GetByNameAndUniversity(c context.Context, name, university string) (res model.School, err error) {
-	return res, d.db.WithContext(c).Where("name = ? AND university = ?", name, university).First(&res).Error
+func (d schoolDao) GetByName(c context.Context, name string) (res model.School, err error) {
+	return res, d.db.WithContext(c).Where("name = ?", name).First(&res).Error
 }
 
 func (d schoolDao) GetAdminCount(c context.Context, id uint) (int, error) {
@@ -167,14 +164,6 @@ func (d schoolDao) GetAdminCount(c context.Context, id uint) (int, error) {
 	}
 	count := d.db.Model(&school).Association("Admins").Count()
 	return int(count), nil
-}
-
-func (d schoolDao) GetAdminsBySchoolAndUniversity(c context.Context, name, university string) (res []model.User, err error) {
-	return res, d.db.WithContext(c).
-		Joins("JOIN school_admins ON school_admins.user_id = users.id").
-		Joins("JOIN schools ON schools.id = school_admins.school_id").
-		Where("schools.name = ? AND schools.university = ?", name, university).
-		Find(&res).Error
 }
 
 /* TODO: For later use when resources are implemented:
@@ -200,7 +189,6 @@ func (d schoolDao) ImportSchool(nr, kennung, orgTypName, nameEn string) {
 	})
 
 	school.Name = nameEn
-	school.University = "TUM"
 
 	d.db.Save(&school)
 	d.db.Create(school)

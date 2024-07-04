@@ -49,8 +49,8 @@
                             <template x-for="school in schoolResults" :key="school.id">
                                 <li role="option" aria-selected="false"
                                     class="hover:bg-gray-500 dark:hover:bg-gray-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md m-2 p-2"
-                                    @click="isSchoolResultVisible = false;schoolQuery = school.university+'-'+school.name;schoolId=school.id;schoolResults=[];isQueryVisible=false">
-                                    <p x-text="school.university+'-'+school.name"></p>
+                                    @click="isSchoolResultVisible = false;schoolQuery = school.name+' '+'('+school.org_type+')';schoolId=school.id;schoolResults=[];isQueryVisible=false">
+                                    <p x-text="school.name+' '+'('+school.org_type+')'"></p>
                                 </li>
                             </template>
                         </ul>
