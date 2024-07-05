@@ -351,3 +351,13 @@ func (mr *MockCoursesDaoMockRecorder) UpdateCourseMetadata(ctx, course interface
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCourseMetadata", reflect.TypeOf((*MockCoursesDao)(nil).UpdateCourseMetadata), ctx, course)
 }
+
+// GetSubscribedDevices indicates an expected call of UpdateCourseMetadata.
+func (m *MockCoursesDao) GetSubscribedDevices(streamID uint) ([]string, error) {
+	// Replace with your actual mock implementation
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSubscribedDevices", streamID)
+	err, _ := ret[0].(error)
+	device_tokens, _ := ret[1].([]string)
+	return device_tokens, err
+}

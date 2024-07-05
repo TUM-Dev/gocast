@@ -8,6 +8,7 @@ services:
     build: .
     ports:
       - "8081:8081"
+      - "12544:12544"
     volumes:
       - ./config.yaml:/etc/TUM-Live/config.yaml
       - ./branding/branding.yaml:/etc/TUM-Live/branding.yaml

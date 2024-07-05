@@ -17,7 +17,7 @@ main
 bin
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # ---> JetBrains
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
@@ -73,6 +73,8 @@ cmake-build-*/
 # IntelliJ
 out/
 
+tumlive
+
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 
@@ -112,3 +114,4 @@ tumlive.service
 
 # osx
 .DS_Store
+tumlive

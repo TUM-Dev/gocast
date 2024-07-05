@@ -1,0 +1,19 @@
+version: v1
+plugins:
+  - name: go
+    out: protobuf
+    opt:
+      - paths=source_relative
+  - name: go-grpc
+    out: protobuf
+    opt:
+      - paths=source_relative
+  - name: grpc-gateway
+    out: protobuf
+    opt:
+      - paths=source_relative
+      - allow_repeated_fields_in_body=true
+  - name: openapiv2
+    out: docs
+    opt:
+      - allow_repeated_fields_in_body=true
