@@ -51,6 +51,13 @@
                         </li>
                         <li>
                             <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "runners"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/workers">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Workers</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "runners"}}text-1{{else}}text-5{{end}} relative block"
                                href="/admin/runners">
                                 <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
                                 <span class="relative">Runners</span>
@@ -117,6 +124,108 @@
                                href="/admin/maintenance"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                         class="relative">Maintenance</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            {{end}}
+            {{if eq $curUser.Role 2}}
+                <li class="mt-8"><h5
+                            class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
+                        Administration</h5>
+                    <ul>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/users"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Users</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/schools"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Schools</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "lectureHalls"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/lectureHalls"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Lecture Halls</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "runners"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/workers">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Workers</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "runners"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/runners">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Runners</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "resources"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/resources"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Resources</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "notifications"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/notifications"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">User Notifications</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "courseImport"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/course-import"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Course Import</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "token"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/token"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Token Management</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            {{end}}
+            {{if eq $curUser.Role 3}}
+                <li class="mt-8"><h5
+                            class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
+                        Streaming</h5>
+                    <ul>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                                href="/admin/token"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Token Management</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                                href="https://tumlive-docs.pages.dev/docs/usage/user-guide/" target="_blank" rel="noopener noreferrer">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Self-Streaming Guide</span>
+                                <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                                href="https://tumlive-docs.pages.dev/docs/usage/user-guide/" target="_blank" rel="noopener noreferrer">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Need Help?</span>
+                                <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </a>
                         </li>
                     </ul>
@@ -352,6 +461,38 @@
                         </li>
                     {{end}}
 
+                    {{if eq $curUser.Role 3}}
+                        <li class="mt-8"><h5
+                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
+                                Streaming</h5>
+                            <ul>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "token"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/token"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Token Management</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 text-5 relative block"
+                                    href="https://tumlive-docs.pages.dev/docs/usage/self-streaming/" target="_blank" rel="noopener noreferrer">
+                                        <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                        <span class="relative">Self-Streaming Guide</span>
+                                        <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 text-5 relative block"
+                                    href="https://tumlive-docs.pages.dev/docs/usage/user-guide/" target="_blank" rel="noopener noreferrer">
+                                        <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                        <span class="relative">Need Help?</span>
+                                        <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {{end}}
+
                     <li class="mt-8"><span
                                 class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
                             <span class="grow">Courses</span><a title="Create Course" href="/admin/create-course"><i
@@ -423,8 +564,8 @@
                     {{template "create-course" .IndexData.VersionTag}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "courseImport")}}
                     {{template "course-import" .}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "token")}}
-                    {{template "token" .Tokens}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2) (eq $curUser.Role 3)) (eq .Page "token")}}
+                    {{template "token" dict "Tokens" .Tokens "Role" $curUser.Role}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "info-pages")}}
                     {{template "info-pages" .InfoPages}}
                 {{else if and ( or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "notifications")}}

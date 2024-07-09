@@ -60,6 +60,8 @@ type StreamsDao interface {
 	DeleteLectureSeries(string) error
 
 	SetStreamRequested(stream model.Stream) error
+
+	GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (string, string, error)
 }
 
 type streamsDao struct {
@@ -468,4 +470,40 @@ func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {
 		}
 		return nil
 	})
+}
+
+func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (string, string, error) {
+	var result struct {
+		StreamKey string
+		ID        string
+		Slug      string
+	}
+	now := time.Now()
+
+	query := DB.Table("streams").
+		Select("streams.stream_key, streams.id, courses.slug").
+		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
+		Joins("JOIN courses ON courses.id = course_admins.course_id").
+		Where("streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", userID, now.Add(30*time.Minute), now). // Streams starting in the next 30 minutes or currently running
+		Or("streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", userID, now.Add(-15*time.Minute), now).     // Streams that just finished in the last 15 minutes
+		Order("streams.start ASC")
+
+	if slug != "" {
+		query = query.Where("courses.slug = ?", slug)
+	}
+
+	if year != 0 {
+		query = query.Where("courses.year = ?", year)
+	}
+	if term != "" {
+		query = query.Where("courses.teaching_term = ?", term)
+	}
+
+	err := query.Limit(1).Scan(&result).Error
+
+	if err != nil {
+		return "", "", err
+	}
+
+	return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
 }
