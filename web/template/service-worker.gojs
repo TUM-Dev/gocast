@@ -22,7 +22,6 @@ const CACHE_REQUEST_HOST_ALLOWLIST = [self.location.host];
 
 var db, openOrCreateDB;
 
-initIndexDB();
 
 function initIndexDB() {
     openOrCreateDB = indexedDB.open("offline-videos", 1);
@@ -96,10 +95,11 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("fetch", async (e) =>  {
+    //{{if ne .edgeURL ""}}
     if (e.request.method === "GET") {
         let matches = e.request.url.match("http[s]?:\\/\\/([^\\/]+)\\/vod\\/([^\\/]+).*"); // Regex Group 1: Host, Group 2: VOD ID
         if (matches != null && matches.length >= 2) {
-            if (matches[1] === "edge.live.rbg.tum.de") {
+            if (matches[1] === "{{.edgeURL}}") {
                 console.log("[ServiceWorker] Fetching", matches[2])
                 // TODO: Check, if VOD is in cache, else load from network
             }
@@ -120,6 +120,7 @@ self.addEventListener("fetch", async (e) =>  {
             }
         }
     }
+    //{{end}}
 
     if (!shouldCacheReq(e.request)) {
         //console.debug("Cache exception");

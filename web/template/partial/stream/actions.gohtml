@@ -18,7 +18,9 @@
         {{end}}
         {{/* VoD download button */}}
         {{if and (or ($user.IsAdminOfCourse $course) (and $course.DownloadsEnabled $user)) $stream.IsDownloadable}}
-            {{template "downloadBtn" $stream.GetVodFiles}}
+            {{if .IndexData.ProvideDownloads}}
+                {{template "downloadBtn" $stream.GetVodFiles}}
+            {{end}}
         {{end}}
         {{if or $stream.PlaylistUrlCAM $stream.PlaylistUrl $stream.PlaylistUrlPRES}}
             <div class="relative inline-block" x-data="{showSrcMenu: false}">

@@ -95,13 +95,15 @@ type IndexData struct {
 	ServerNotifications []model.ServerNotification
 	CanonicalURL        tools.CanonicalURL
 	Branding            tools.Branding
+	ProvideDownloads    bool
 }
 
 func NewIndexData() IndexData {
 	return IndexData{
-		VersionTag:   VersionTag,
-		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
-		Branding:     tools.BrandingCfg,
+		VersionTag:       VersionTag,
+		CanonicalURL:     tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
+		Branding:         tools.BrandingCfg,
+		ProvideDownloads: tools.Cfg.EdgeURL != "",
 	}
 }
 

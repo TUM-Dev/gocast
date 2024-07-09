@@ -27,6 +27,7 @@ var staticFS embed.FS
 
 var templatePaths = []string{
 	"template/*.gohtml",
+	"template/service-worker.gojs",
 	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
 	"template/admin/admin_tabs/*.gohtml",
@@ -72,8 +73,17 @@ func configGinStaticRouter(router *gin.Engine) {
 		router.GET("/"+file.Name, getFileHandler(file))
 	}
 
+	//router.GET("/service-worker.js", func(c *gin.Context) {
+	//	c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
+	//})
 	router.GET("/service-worker.js", func(c *gin.Context) {
-		c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
+		err := templateExecutor.ExecuteTemplate(c.Writer, "service-worker.gojs", map[string]string{
+			"edgeURL": tools.Cfg.EdgeURL,
+		})
+		if err != nil {
+			logger.Error("Could not execute template: 'service-worker.gojs'", "err", err)
+		}
+		//c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
 	})
 }
 

@@ -88,6 +88,9 @@ func initConfig() {
 		}
 		jwtKey = key
 	}
+	if Cfg.EdgeURL == "" {
+		logger.Info("No edge URL provided, offline functionality not available")
+	}
 	// allow overwriting database host with env var, mainly for testing with docker-compose
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
@@ -170,6 +173,7 @@ type Config struct {
 	} `yaml:"meili"`
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
+	EdgeURL        string `yaml:"edgeURL"`
 }
 
 type MailConfig struct {
