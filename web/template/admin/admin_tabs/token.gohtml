@@ -2,26 +2,26 @@
 <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
 <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
-<form class="form-container" x-data="{expires: '', scope: 'admin', generatedToken:null}"
+<form class="form-container" x-data="{expires: '', scope: 'lecturer', generatedToken:null}"
       @submit.prevent="admin.createToken(expires, scope).then(r=>r.json()).then(r => generatedToken=r.token)">
 
     <h1 class="form-container-title">Token Management</h1>
     <div class="form-container-body grid grid-cols-2 gap-3">
         <table class="table-auto w-full col-span-full">
             <thead>
-            <tr class="text-2 uppercase text-left">
-                <th>User</th>
+            <tr class="text-2 uppercase text-center">
+                <th class="px-4 text-left">User</th>
                 <th>Scope</th>
                 <th>Last Used</th>
                 <th>Expires</th>
                 <th>Actions</th>
             </tr>
             </thead>
-            <tbody class="text-3">
-            {{range .}}
-                {{- /*gotype: github.com/TUM-Dev/gocast/dao.AllTokensDto*/ -}}
+            <tbody class="text-3 text-center">
+            {{range .Tokens.Tokens}}
+                {{- /*gotype: github.com/TUM-Dev/gocast/web.TokensData*/ -}}
                 <tr x-data="{id: {{.Token.Model.ID}}, show:true}" x-show="show">
-                    <td class="p-4">{{if .UserMail}}{{.UserMail}}{{else}}{{.UserName}} {{.UserLrzID}}{{end}}</td>
+                    <td class="p-4 text-left">{{if .UserMail}}{{.UserMail}}{{else}}{{.UserName}} {{.UserLrzID}}{{end}}</td>
                     <td>{{.Scope}}</td>
                     <td>{{if .Token.LastUse.Valid}}{{.Token.LastUse.Time.Format "02 Jan 06 15:04:05"}}{{else}}never
                         used{{end}}</td>
@@ -41,16 +41,28 @@
         </label>
         <select x-model="scope" class="tl-select">
             <option value="admin" class="text-4">
+                Scope: lecturer
+            </option>
+            <option value="admin" class="text-4" x-show="role == 1" x-init="role = {{.Role}}">
                 Scope: admin
             </option>
         </select>
-        <p x-show="generatedToken !== null" class="text-2">
-            This is your token. Write it down and keep it safe:
-            <span class="font-bold" x-text="generatedToken"></span>
-        </p>
         <button type="submit" class="btn primary col-span-full">
             <i class="fas fa-plus mr-1"></i>Create
         </button>
+    </div>
+    <div x-show="generatedToken !== null" class="rounded-lg p-6 mb-4 text-1">
+        <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold mb-2">Your Generated Token</h3>
+        <code @click="global.copyToClipboard(generatedToken)" class="block p-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer"><span x-text="generatedToken"></span></code>
+        </div>
+        <p class="mb-4">This is your generated token. Please <span @click="global.copyToClipboard(generatedToken)" class="btn primary hover:bg-blue-700 text-white font-bold py-1 px-4 rounded cursor-pointer" x-init="generatedToken=generatedToken">Copy</span> it and store it securely. It will not be shown again.</p>
+        <p class="border-t border-gray-100 dark:border-gray-500 my-4"></span>
+        <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+            <p class="mb-2">To use this token for self-streaming, <span @click="global.copyToClipboard(`{{.Tokens.IngestBase}}stream?token=`+generatedToken)" class="btn primary hover:bg-blue-700 text-white font-bold py-1 px-4 rounded cursor-pointer" x-init="generatedToken=generatedToken">Copy</span> and paste the following URL into your streaming software:</p>
+            <code @click="global.copyToClipboard(`{{.Tokens.IngestBase}}stream?token=`+generatedToken)" class="block p-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">{{.Tokens.IngestBase}}/stream?token=<span x-text="generatedToken"></span></code>
+            <p class="mt-4 italic">For more information, please refer to the <a href="https://tumlive-docs.pages.dev/docs/usage/self-streaming/" target="_blank" rel="noopener noreferrer" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 underline">self-streaming guide</a>.</p>
+        </div>
     </div>
 </form>
 {{end}}

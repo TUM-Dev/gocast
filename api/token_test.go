@@ -88,6 +88,7 @@ func TestToken(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						TokenDao: func() dao.TokenDao {
 							tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
+							tokenMock.EXPECT().GetTokenByID("1").Return(model.Token{}, nil).AnyTimes()
 							tokenMock.EXPECT().DeleteToken("1").Return(errors.New("")).AnyTimes()
 							return tokenMock
 						}(),
@@ -102,6 +103,7 @@ func TestToken(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						TokenDao: func() dao.TokenDao {
 							tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
+							tokenMock.EXPECT().GetTokenByID("1").Return(model.Token{}, nil).AnyTimes()
 							tokenMock.EXPECT().DeleteToken("1").Return(nil).AnyTimes()
 							return tokenMock
 						}(),

@@ -103,7 +103,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	var tokens []dao.AllTokensDto
 	if c.Request.URL.Path == "/admin/token" {
 		page = "token"
-		tokens, err = r.TokenDao.GetAllTokens()
+		tokens, err = r.TokenDao.GetAllTokens(tumLiveContext.User)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("couldn't query tokens", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -157,7 +157,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
-			Tokens:              tokens,
+			Tokens:              TokensData{Tokens: tokens, IngestBase: tools.Cfg.IngestBase},
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
@@ -179,6 +179,11 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
+}
+
+type TokensData struct {
+	Tokens     []dao.AllTokensDto
+	IngestBase string
 }
 
 type Resources struct {
@@ -350,7 +355,7 @@ type AdminPageData struct {
 	CurT                string
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
-	Tokens              []dao.AllTokensDto
+	Tokens              TokensData
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 	Runners             RunnersData
