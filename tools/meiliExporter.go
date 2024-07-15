@@ -29,6 +29,15 @@ type MeiliSubtitles struct {
 	TextNext  string `json:"textNext"` // the next subtitle line
 }
 
+type MeiliCourse struct {
+	ID           uint   `json:"ID"`
+	Name         string `json:"name"`
+	Slug         string `json:"slug"`
+	Year         int    `json:"year"`
+	TeachingTerm string `json:"teachingTerm"`
+	Visibility   string `json:"visibility"`
+}
+
 type MeiliExporter struct {
 	c *meilisearch.Client
 	d dao.DaoWrapper
@@ -106,6 +115,31 @@ func (m *MeiliExporter) Export() {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
 	})
+
+	coursesIndex := m.c.Index("COURSES")
+	_, err = coursesIndex.DeleteAllDocuments()
+	if err != nil {
+		logger.Warn("could not delete all old courses", "err", err)
+	}
+
+	m.d.CoursesDao.ExecAllCourses(func(courses []dao.Course) {
+		meilicourses := make([]MeiliCourse, len(courses))
+		courseIDs := make([]uint, len(courses))
+		for i, course := range courses {
+			courseIDs[i] = course.ID
+			meilicourses[i] = MeiliCourse{
+				ID:           course.ID,
+				Name:         course.Name,
+				Slug:         course.Slug,
+				Year:         course.Year,
+				TeachingTerm: course.TeachingTerm,
+			}
+		}
+		_, err := coursesIndex.AddDocuments(&meilicourses, "ID")
+		if err != nil {
+			logger.Error("issue adding courses to meili", "err", err)
+		}
+	})
 }
 
 func (m *MeiliExporter) SetIndexSettings() {
@@ -129,5 +163,14 @@ func (m *MeiliExporter) SetIndexSettings() {
 	})
 	if err != nil {
 		logger.Warn("could not set settings for meili index SUBTITLES", "err", err)
+	}
+
+	_, err = m.c.Index("COURSES").UpdateSettings(&meilisearch.Settings{
+		FilterableAttributes: []string{"ID", "visibility", "year", "teachingTerm"},
+		SearchableAttributes: []string{"slug", "name"},
+		SortableAttributes:   []string{"year", "teachingTerm"},
+	})
+	if err != nil {
+		logger.Warn("could not set settings for meili index COURSES", "err", err)
 	}
 }

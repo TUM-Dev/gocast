@@ -35,6 +35,7 @@ type CoursesDao interface {
 	GetAvailableSemesters(c context.Context) []Semester
 	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
+	ExecAllCourses(f func([]Course))
 
 	UpdateCourse(ctx context.Context, course model.Course) error
 	UpdateCourseMetadata(ctx context.Context, course model.Course)
@@ -279,6 +280,32 @@ func (d coursesDao) GetCourseAdmins(courseID uint) ([]model.User, error) {
 		return admins, nil
 	}
 	return admins, err
+}
+
+type Course struct {
+	Name, Slug, TeachingTerm string
+	ID                       uint
+	Year                     int
+}
+
+// ExecAllCourses executes f on all courses.
+func (d coursesDao) ExecAllCourses(f func([]Course)) {
+	var res []Course
+	batchNum := 0
+	batchSize := 100
+	var numCourses int64
+	DB.Model(&model.Course{}).Count(&numCourses)
+	for batchSize*batchNum < int(numCourses) {
+		err := DB.Raw(`SELECT id, name, slug, year, teaching_term, visibility
+							FROM courses 
+							WHERE deleted_at IS NULL
+							LIMIT ? OFFSET ?`, batchSize, batchNum*batchSize).Scan(&res).Error
+		if err != nil {
+			fmt.Println(err)
+		}
+		f(res)
+		batchNum++
+	}
 }
 
 func (d coursesDao) UpdateCourse(ctx context.Context, course model.Course) error {
