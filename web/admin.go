@@ -157,7 +157,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
-			Tokens:              TokensData{Tokens: tokens, IngestBase: tools.Cfg.IngestBase},
+			Tokens:              TokensData{Tokens: tokens, IngestBase: tools.Cfg.IngestBase, User: tumLiveContext.User},
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
@@ -184,6 +184,7 @@ type WorkersData struct {
 type TokensData struct {
 	Tokens     []dao.AllTokensDto
 	IngestBase string
+	User       *model.User
 }
 
 type Resources struct {

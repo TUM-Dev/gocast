@@ -46,7 +46,7 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 		// all good, client is reading
 		return
 	}
-	streamKey, slug, err := mustGetStreamInfo(req)
+	streamKey, slug, path, err := mustGetStreamInfo(req)
 	if err != nil {
 		log.WithFields(log.Fields{"request": r.Form}).WithError(err).Warn("onPublish: bad request")
 		http.Error(w, "Could not retrieve stream info", http.StatusBadRequest)
@@ -84,7 +84,8 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 
 		// todo is this right?
 		// register stream in local map
-		streamContext := worker.HandleSelfStream(resp, slug)
+		streamContext := worker.HandleSelfStream(resp, path) // <-- new 'user'-based channel
+		// streamContext := worker.HandleSelfStream(resp, slug) // <-- old 'course'-based channel
 
 		s.mutex.Lock()
 		s.streams[streamKey] = streamContext // todo this is only added after the stream has ended

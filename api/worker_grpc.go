@@ -166,16 +166,21 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)
 		return nil, errors.New("stream rejected")
 	}
+	ingestServerUrl, outUrl, streamName := "", "", ""
+
+	// Only use dedicated ingest server if the course's school has one, otherwise stream directly to ingest worker
 	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer(course.SchoolID)
-	if err != nil {
-		return nil, err
+	if err == nil {
+		ingestServerUrl = ingestServer.Url
+		outUrl = ingestServer.OutUrl
+		slot, err := s.DaoWrapper.IngestServerDao.GetStreamSlot(ingestServer.ID)
+		if err != nil {
+			return nil, err
+		}
+		streamName = slot.StreamName
+		slot.StreamID = stream.ID
+		s.DaoWrapper.IngestServerDao.SaveSlot(slot)
 	}
-	slot, err := s.DaoWrapper.IngestServerDao.GetStreamSlot(ingestServer.ID)
-	if err != nil {
-		return nil, err
-	}
-	slot.StreamID = stream.ID
-	s.DaoWrapper.IngestServerDao.SaveSlot(slot)
 
 	return &pb.SelfStreamResponse{
 		StreamID:     uint32(stream.ID),
@@ -184,9 +189,9 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		StreamStart:  timestamppb.New(stream.Start),
 		CourseTerm:   course.TeachingTerm,
 		UploadVoD:    course.VODEnabled,
-		IngestServer: ingestServer.Url,
-		StreamName:   slot.StreamName,
-		OutUrl:       ingestServer.OutUrl,
+		IngestServer: ingestServerUrl,
+		StreamName:   streamName,
+		OutUrl:       outUrl,
 	}, nil
 }
 
@@ -703,24 +708,30 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 	if source == "" {
 		return
 	}
+	streamName, ingestServerUrl, outUrl := "", "", ""
+
+	// Only use dedicated ingest server if the course's school has one, otherwise stream directly to ingest worker
 	server, err := daoWrapper.IngestServerDao.GetBestIngestServer(course.SchoolID)
-	if err != nil {
-		logger.Error("Can't find ingest server", "err", err)
-		return
-	}
-	var slot model.StreamName
-	if sourceType == "COMB" { // try to find a transcoding slot for comb view:
-		slot, err = daoWrapper.IngestServerDao.GetTranscodedStreamSlot(server.ID)
-	}
-	if sourceType != "COMB" || err != nil {
-		slot, err = daoWrapper.IngestServerDao.GetStreamSlot(server.ID)
-		if err != nil {
-			logger.Error("No free stream slot", "err", err)
-			return
+	if err == nil {
+		ingestServerUrl = server.Url
+		outUrl = server.OutUrl
+
+		var slot model.StreamName
+		if sourceType == "COMB" { // try to find a transcoding slot for comb view:
+			slot, err = daoWrapper.IngestServerDao.GetTranscodedStreamSlot(server.ID)
 		}
+		if sourceType != "COMB" || err != nil {
+			slot, err = daoWrapper.IngestServerDao.GetStreamSlot(server.ID)
+			if err != nil {
+				logger.Error("	", "err", err)
+				return
+			}
+		}
+		streamName = slot.StreamName
+		slot.StreamID = stream.ID
+		daoWrapper.IngestServerDao.SaveSlot(slot)
 	}
-	slot.StreamID = stream.ID
-	daoWrapper.IngestServerDao.SaveSlot(slot)
+
 	req := pb.StreamRequest{
 		SourceType:   sourceType,
 		SourceUrl:    source,
@@ -731,11 +742,12 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 		StreamID:     uint32(stream.ID),
 		CourseTerm:   course.TeachingTerm,
 		CourseYear:   uint32(course.Year),
-		StreamName:   slot.StreamName,
-		IngestServer: server.Url,
-		OutUrl:       server.OutUrl,
+		StreamName:   streamName,
+		IngestServer: ingestServerUrl,
+		OutUrl:       outUrl,
 	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
+
 	workers[workerIndex].Workload += 3
 	err = daoWrapper.StreamsDao.SaveWorkerForStream(stream, workers[workerIndex])
 	if err != nil {

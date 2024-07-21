@@ -7,6 +7,7 @@ type Worker struct {
 	Host     string // Hostname (e.g., "itovm01")
 	Address  string // IP address or FQDN (e.g., worker01.school.example.com)
 	Shared   bool   // Whether the worker can be shared with other schools
+	Ingest   bool   // Whether the worker acts as an ingest worker/server
 	Status   string
 	Workload uint // How much the worker has to do. +1 per silence detection job, +2 per converting job, +3 per streaming job
 	LastSeen time.Time

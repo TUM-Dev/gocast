@@ -59,8 +59,10 @@
         <p class="mb-4">This is your generated token. Please <span @click="global.copyToClipboard(generatedToken)" class="btn primary hover:bg-blue-700 text-white font-bold py-1 px-4 rounded cursor-pointer" x-init="generatedToken=generatedToken">Copy</span> it and store it securely. It will not be shown again.</p>
         <p class="border-t border-gray-100 dark:border-gray-500 my-4"></span>
         <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-            <p class="mb-2">To use this token for self-streaming, <span @click="global.copyToClipboard(`{{.Tokens.IngestBase}}stream?token=`+generatedToken)" class="btn primary hover:bg-blue-700 text-white font-bold py-1 px-4 rounded cursor-pointer" x-init="generatedToken=generatedToken">Copy</span> and paste the following URL into your streaming software:</p>
-            <code @click="global.copyToClipboard(`{{.Tokens.IngestBase}}stream?token=`+generatedToken)" class="block p-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">{{.Tokens.IngestBase}}/stream?token=<span x-text="generatedToken"></span></code>
+                <div class="mb-4">
+                    <p class="mb-2">To use this token for self-streaming, <span @click="global.copyToClipboard(`{{.Tokens.IngestBase}}/{{.Tokens.User.ID}}?token=`+generatedToken)" class="btn primary hover:bg-blue-700 text-white font-bold py-1 px-4 rounded cursor-pointer" x-init="generatedToken=generatedToken">Copy</span> and paste the following URL into your streaming software:</p>
+                    <code @click="global.copyToClipboard(`{{.Tokens.IngestBase}}/{{.Tokens.User.ID}}?token=`+generatedToken)" class="block p-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">{{.Tokens.IngestBase}}/{{.Tokens.User.ID}}?token=<span x-text="generatedToken"></span></code>
+                </div>
             <p class="mt-4 italic">For more information, please refer to the <a href="https://tumlive-docs.pages.dev/docs/usage/self-streaming/" target="_blank" rel="noopener noreferrer" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 underline">self-streaming guide</a>.</p>
         </div>
     </div>

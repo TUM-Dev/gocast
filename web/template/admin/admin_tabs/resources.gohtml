@@ -116,7 +116,7 @@
                         <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
                                 <thead>
                                 <tr>
-                                    <td colspan="5" class="text-left">
+                                    <td colspan="6" class="text-left">
                                         <h2 class="form-container-title">
                                             <a href="/admin/resources?id={{$school.ID}}">{{$school.OrgType}}: {{$school.Name}}</a>
                                         </h2>
@@ -128,9 +128,16 @@
                                         {{if eq $worker.SchoolID $school.ID}}
                                         {{$found = true}}
                                         <tr class="border-gray-500">
-                                            <td class="pb-3 px-6 text-left" style="width: 50%;">
+                                            <td class="py-2 px-6 text-left" style="width: 50%;">
                                                 <div class="font-semibold text-1">
-                                                    <span class="font-normal text-4">{{$worker.Address}} (Host: <strong>{{$worker.Host}}</strong>@{{$worker.Version}})</span>
+                                                    {{if $worker.Ingest}}
+                                                        <div class="inline-flex items-center">
+                                                            <span class="font-normal text-yellow-400">{{$worker.Address}} (Host: <strong>{{$worker.Host}}</strong>@{{$worker.Version}})</span>
+                                                            <help-icon class="text-2 text-center transform -translate-x-0.5" text="This worker acts as an ingest server. It is used to proccess self-streams. Read more at https://tumlive-docs.pages.dev/docs/deployment/step-by-step/add-worker"/>.
+                                                        </div>
+                                                    {{else}}
+                                                        <span class="font-normal text-4">{{$worker.Address}} (Host: <strong>{{$worker.Host}}</strong>@{{$worker.Version}})</span>
+                                                    {{end}}
                                                 </div>
                                                 <div class="pl-1 text-2 italic font-light">
                                                     <span class="mr-4">CPU: {{$worker.CPU}}</span>
@@ -195,7 +202,7 @@
     </div>
 
     <div class="form-container">
-        <h1 class="form-container-title">Ingest Servers</h1>
+        <h1 class="form-container-title">Dedicated Ingest Servers</h1>
         <div class="form-container-body grid grid-cols-2 gap-3">
             <table class="table-auto w-full col-span-full">
                 <thead>
@@ -261,7 +268,7 @@
                                     {{end}}
                                     {{if not $found}}
                                         <tr>
-                                            <td colspan="5" class="text-center py-3 text-6 text-left">No ingest servers found for this school.</td>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No dedicated ingest servers found for this school.</td>
                                         </tr>
                                     {{end}}
                                 </tbody>
