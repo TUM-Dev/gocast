@@ -52,7 +52,7 @@ export function initStatsPage() {
     });
 }
 
-export function initLectureStatsPage(lectureID : string) {
+export function initLectureStatsPage(lectureID: string) {
     const dates = ["numStudents", "vodViews", "liveViews"];
     dates.forEach((endpoint) => {
         getAsync(
