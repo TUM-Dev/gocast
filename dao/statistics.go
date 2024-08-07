@@ -19,8 +19,10 @@ type StatisticsDao interface {
 	GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error)
 	GetCourseStatsWeekdays(courseID uint) ([]Stat, error)
 	GetCourseStatsHourly(courseID uint) ([]Stat, error)
+	GetLectureStatsFromLectureStart(courseID uint) ([]Stat, error)
 	GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error)
 	GetStreamNumLiveViews(streamID uint) (int, error)
+	GetLectureLiveStats(streamID uint) ([]model.Stat, error)
 }
 
 type statisticsDao struct {
@@ -102,6 +104,21 @@ func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 	return res, err
 }
 
+func (d statisticsDao) GetLectureStatsFromLectureStart(courseID uint) ([]Stat, error) {
+	var res []Stat
+	err := DB.Raw(`SELECT Date_FORMAT(stats.time, "%H:%i") AS x, stats.viewers AS y
+		FROM stats
+			JOIN streams s ON s.id = stats.stream_id
+		WHERE s.course_id = ? AND stats.live = 1
+		ORDER BY x;`, courseID).Scan(&res).Error
+	//err := DB.Raw(`SELECT TIMESTAMPDIFF(MINUTE, s.start, stats.time) AS x, stats.viewers AS y
+	//	FROM stats
+	//		JOIN streams s ON s.id = stats.stream_id
+	//	WHERE s.course_id = ? AND stats.live = 1
+	//	ORDER BY x;`, courseID).Scan(&res).Error
+	return res, err
+}
+
 // GetStreamNumLiveViews returns the number of viewers currently watching a live stream.
 func (d statisticsDao) GetStreamNumLiveViews(streamID uint) (int, error) {
 	var res int
@@ -153,6 +170,13 @@ func (d statisticsDao) GetStudentActivityCourseStats(courseID uint, live bool) (
 		lastYear = week.Year
 	}
 	return retVal, err
+}
+
+func (d statisticsDao) GetLectureLiveStats(streamID uint) ([]model.Stat, error) {
+	var res []model.Stat
+	err := DB.Raw("SELECT * FROM stats WHERE stream_id = ? AND live = 1", streamID).Scan(&res).Error
+
+	return res, err
 }
 
 // Stat key value struct that is parsable by Chart.js without further modifications.

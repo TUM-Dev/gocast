@@ -460,6 +460,13 @@
                     <div class="justify-center space-x-2 text-lg text-4 flex shrink-0">
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
                             <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                               href="/admin/stats/{{$course.Model.ID}}/{{$stream.Model.ID}}"
+                               :title="'Watch lecture stats'">
+                                <i class="fa-solid fa-chart-bar text-4"></i>
+                            </a>
+                        {{end}}
+                        {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+                            <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
                                :title="'Edit course settings'">
                                 <i class="fa-solid fa-pen text-4"></i>

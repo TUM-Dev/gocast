@@ -87,6 +87,25 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Label = "Sum(viewers)"
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
+	case "lecture":
+		res, err := r.StatisticsDao.GetLectureStatsFromLectureStart(cid)
+		if err != nil {
+			logger.Warn("GetCourseStatsHourly failed", "err", err, "courseId", cid)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get course stats hourly",
+				Err:           err,
+			})
+			return
+		}
+		resp := chartJs{
+			ChartType: "bar",
+			Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+			Options:   newChartJsOptions(),
+		}
+		resp.Data.Datasets[0].Label = "View Count"
+		resp.Data.Datasets[0].Data = res
+		c.JSON(http.StatusOK, resp)
 	case "activity-live":
 		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
 		if err != nil {
