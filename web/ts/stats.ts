@@ -23,6 +23,20 @@ export function loadStats(endpoint: string, targetEl: string) {
     });
 }
 
+export function loadLectureStats(endpoint: string, targetEl: string, streamID: string) {
+    const canvas = <HTMLCanvasElement>document.getElementById(targetEl);
+    const ctx = canvas.getContext("2d");
+    getAsync(
+        `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}&lecture=${streamID}`,
+    ).then((res) => {
+        if (res.status === StatusCodes.OK) {
+            res.text().then((value) => {
+                new Chart(ctx, JSON.parse(value));
+            });
+        }
+    });
+}
+
 export function initStatsPage() {
     const dates = ["numStudents", "vodViews", "liveViews"];
     dates.forEach((endpoint) => {
@@ -38,11 +52,11 @@ export function initStatsPage() {
     });
 }
 
-export function initLectureStatsPage() {
+export function initLectureStatsPage(lectureID : string) {
     const dates = ["numStudents", "vodViews", "liveViews"];
     dates.forEach((endpoint) => {
         getAsync(
-            `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`,
+            `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}&lecture=${lectureID}`,
         ).then((res) => {
             if (res.status === StatusCodes.OK) {
                 res.text().then((value) => {

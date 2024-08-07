@@ -16,13 +16,17 @@ type StatisticsDao interface {
 	GetCourseNumStudents(courseID uint) (int64, error)
 	GetCourseNumVodViews(courseID uint) (int, error)
 	GetCourseNumLiveViews(courseID uint) (int, error)
+	GetLectureNumVodViews(streamID uint) (int, error)
+	GetLectureNumLiveViews(streamID uint) (int, error)
 	GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error)
+	GetLectureNumVodViewsPerDay(streamID uint) ([]Stat, error)
 	GetCourseStatsWeekdays(courseID uint) ([]Stat, error)
 	GetCourseStatsHourly(courseID uint) ([]Stat, error)
-	GetLectureStatsFromLectureStart(courseID uint) ([]Stat, error)
+	GetLectureStatsWeekdays(courseID uint, streamID uint) ([]Stat, error)
+	GetLectureStatsHourly(courseID uint, streamID uint) ([]Stat, error)
+	GetLectureStats(courseID uint, lectureID uint) ([]Stat, error)
 	GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error)
 	GetStreamNumLiveViews(streamID uint) (int, error)
-	GetLectureLiveStats(streamID uint) ([]model.Stat, error)
 }
 
 type statisticsDao struct {
@@ -68,6 +72,21 @@ func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
 	return res, err
 }
 
+// GetLectureNumVodViews returns the sum of vod views of a lecture
+func (d statisticsDao) GetLectureNumVodViews(streamID uint) (int, error) {
+	var res int
+	err := DB.Raw(`SELECT IFNULL(SUM(viewers), 0) FROM stats
+		WHERE live = 0 AND stream_id = ?`, streamID).Scan(&res).Error
+	return res, err
+}
+
+// GetLectureNumLiveViews returns the sum of live views of a lecture
+func (d statisticsDao) GetLectureNumLiveViews(streamID uint) (int, error) {
+	var res int
+	err := DB.Raw(`SELECT MAX(viewers) from stats where stream_id = ?`, streamID).Scan(&res).Error
+	return res, err
+}
+
 // GetCourseNumVodViewsPerDay returns the daily amount of vod views for each day
 func (d statisticsDao) GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error) {
 	var res []Stat
@@ -77,6 +96,17 @@ func (d statisticsDao) GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error)
 		WHERE (s.course_id = ? OR ? = 0) AND live = 0
 		GROUP BY DATE(stats.time);`,
 		courseID, courseID).Scan(&res).Error
+	return res, err
+}
+
+// GetLectureNumVodViewsPerDay returns the daily amount of vod views for each day
+func (d statisticsDao) GetLectureNumVodViewsPerDay(streamID uint) ([]Stat, error) {
+	var res []Stat
+	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, GET_FORMAT(DATE, 'EUR')) AS x, sum(viewers) AS y
+		FROM stats
+		WHERE stream_id = ? AND live = 0
+		GROUP BY DATE(stats.time);`,
+		streamID).Scan(&res).Error
 	return res, err
 }
 
@@ -104,13 +134,37 @@ func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 	return res, err
 }
 
-func (d statisticsDao) GetLectureStatsFromLectureStart(courseID uint) ([]Stat, error) {
+// GetCourseStatsWeekdays returns the days and their sum of vod views of a course
+func (d statisticsDao) GetLectureStatsWeekdays(courseID uint, streamID uint) ([]Stat, error) {
+	var res []Stat
+	err := DB.Raw(`SELECT DAYNAME(stats.time) AS x, SUM(stats.viewers) as y
+		FROM stats
+			JOIN streams s ON s.id = stats.stream_id
+		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0 AND stats.stream_id = ?
+		GROUP BY DAYOFWEEK(stats.time);`,
+		courseID, courseID, streamID).Scan(&res).Error
+	return res, err
+}
+
+// GetCourseStatsHourly returns the hours with most vod viewing activity of a course
+func (d statisticsDao) GetLectureStatsHourly(courseID uint, streamID uint) ([]Stat, error) {
+	var res []Stat
+	err := DB.Raw(`SELECT HOUR(stats.time) AS x, SUM(stats.viewers) as y
+		FROM stats
+			JOIN streams s ON s.id = stats.stream_id
+		WHERE (s.course_id = ? or ? = 0) AND stats.live = 0 AND stats.stream_id = ?
+		GROUP BY HOUR(stats.time);`,
+		courseID, courseID, streamID).Scan(&res).Error
+	return res, err
+}
+
+func (d statisticsDao) GetLectureStats(courseID uint, streamID uint) ([]Stat, error) {
 	var res []Stat
 	err := DB.Raw(`SELECT Date_FORMAT(stats.time, "%H:%i") AS x, stats.viewers AS y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
-		WHERE s.course_id = ? AND stats.live = 1
-		ORDER BY x;`, courseID).Scan(&res).Error
+		WHERE s.course_id = ? AND s.id = ? AND stats.live = 1
+		ORDER BY x;`, courseID, streamID).Scan(&res).Error
 	//err := DB.Raw(`SELECT TIMESTAMPDIFF(MINUTE, s.start, stats.time) AS x, stats.viewers AS y
 	//	FROM stats
 	//		JOIN streams s ON s.id = stats.stream_id

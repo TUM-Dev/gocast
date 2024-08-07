@@ -61,6 +61,18 @@
                                 role="img"></canvas>
                     </div>
                 </div>
+                <div>
+                    <h2>VoD activity per day of week</h2>
+                    <div class="w-full m-auto" style="min-height: 200px">
+                        <canvas id="weekdays" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h2>VoD activity per day</h2>
+                    <div class="w-full m-auto" style="min-height: 200px">
+                        <canvas id="allDays" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
+                    </div>
+                </div>
                 <!--<a :href="admin.getStatsDownloadLink('json')" x-on:click="close($refs.button);" class="btn block" download>
                     Export as JSON
                 </a>
@@ -73,8 +85,10 @@
             from June 28th 2021
             onwards.</p>-->
         <script>
-            admin.loadStats("lecture", "lectureLiveStats");
-            admin.initLectureStatsPage();
+            admin.loadLectureStats("lecture", "lectureLiveStats", "{{.Lecture.Model.ID}}");
+            admin.loadLectureStats("day", "weekdays", "{{.Lecture.Model.ID}}");
+            admin.loadLectureStats("allDays", "allDays", "{{.Lecture.Model.ID}}");
+            admin.initLectureStatsPage("{{.Lecture.Model.ID}}");
         </script>
     </div>
 
