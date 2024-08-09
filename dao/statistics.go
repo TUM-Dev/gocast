@@ -165,7 +165,7 @@ func (d statisticsDao) GetLectureStats(courseID uint, streamID uint) ([]Stat, er
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE s.course_id = ? AND s.id = ? AND stats.live = 1
 		ORDER BY x;`, courseID, streamID).Scan(&res).Error
-	//err := DB.Raw(`SELECT TIMESTAMPDIFF(MINUTE, s.start, stats.time) AS x, stats.viewers AS y
+	// err := DB.Raw(`SELECT TIMESTAMPDIFF(MINUTE, s.start, stats.time) AS x, stats.viewers AS y
 	//	FROM stats
 	//		JOIN streams s ON s.id = stats.stream_id
 	//	WHERE s.course_id = ? AND stats.live = 1
