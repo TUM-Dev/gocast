@@ -2,7 +2,12 @@
 
     {{- /*gotype: github.com/TUM-Dev/gocast/web.EditCourseData*/ -}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <span class="text-sm text-5 pl-2">Options</span>
+    <div class="flex flex-row">
+        <span class="text-sm text-5 pl-2">Options</span>
+        {{if .IndexData.WikiURL}}
+        <help-icon text="Press here for more information in the wiki" @click="window.open('{{.IndexData.WikiURL}}', '_blank');"/>
+        {{end}}
+    </div>
     <div class="col-span-full flex gap-3 px-2 py-2">
         <label x-show="{{if $course.ChatEnabled}}true{{else}}false{{end}}">
             <input type="checkbox" x-model="formData.isChatEnabled"
