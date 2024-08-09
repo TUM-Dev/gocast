@@ -10,11 +10,11 @@
 package mock_dao
 
 import (
+	"github.com/golang/mock/gomock"
 	reflect "reflect"
 
 	dao "github.com/TUM-Dev/gocast/dao"
 	model "github.com/TUM-Dev/gocast/model"
-	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStatisticsDao is a mock of StatisticsDao interface.
