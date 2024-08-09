@@ -41,7 +41,9 @@ export function initStatsPage() {
     const dates = ["numStudents", "vodViews", "liveViews"];
     dates.forEach((endpoint) => {
         getAsync(
-            `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`,
+            `/api/course/${
+                (document.getElementById("courseID") as HTMLInputElement).value
+            }/stats?interval=${endpoint}`,
         ).then((res) => {
             if (res.status === StatusCodes.OK) {
                 res.text().then((value) => {
@@ -56,7 +58,9 @@ export function initLectureStatsPage(lectureID: string) {
     const dates = ["numStudents", "vodViews", "liveViews"];
     dates.forEach((endpoint) => {
         getAsync(
-            `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}&lecture=${lectureID}`,
+            `/api/course/${
+                (document.getElementById("courseID") as HTMLInputElement).value
+            }/stats?interval=${endpoint}&lecture=${lectureID}`,
         ).then((res) => {
             if (res.status === StatusCodes.OK) {
                 res.text().then((value) => {
