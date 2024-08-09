@@ -5,7 +5,6 @@
 package mock_dao
 
 import (
-	"github.com/crewjam/httperr"
 	reflect "reflect"
 
 	dao "github.com/TUM-Dev/gocast/dao"
@@ -168,23 +167,4 @@ func (m *MockStatisticsDao) GetStudentActivityCourseStats(courseID uint, live bo
 func (mr *MockStatisticsDaoMockRecorder) GetStudentActivityCourseStats(courseID, live interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStudentActivityCourseStats", reflect.TypeOf((*MockStatisticsDao)(nil).GetStudentActivityCourseStats), courseID, live)
-}
-
-func (mr *MockStatisticsDaoMockRecorder) GetLectureNumVodViews(streamID uint) (int, error) {
-	panic(httperr.NotImplemented)
-}
-func (mr *MockStatisticsDaoMockRecorder) GetLectureNumLiveViews(streamID uint) (int, error) {
-	panic(httperr.NotImplemented)
-}
-func (mr *MockStatisticsDaoMockRecorder) GetLectureNumVodViewsPerDay(streamID uint) ([]dao.Stat, error) {
-	panic(httperr.NotImplemented)
-}
-func (mr *MockStatisticsDaoMockRecorder) GetLectureStatsWeekdays(courseID uint, streamID uint) ([]dao.Stat, error) {
-	panic(httperr.NotImplemented)
-}
-func (mr *MockStatisticsDaoMockRecorder) GetLectureStatsHourly(courseID uint, streamID uint) ([]dao.Stat, error) {
-	panic(httperr.NotImplemented)
-}
-func (mr *MockStatisticsDaoMockRecorder) GetLectureStats(courseID uint, lectureID uint) ([]dao.Stat, error) {
-	panic(httperr.NotImplemented)
 }
