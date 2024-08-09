@@ -27,7 +27,9 @@ export function loadLectureStats(endpoint: string, targetEl: string, streamID: s
     const canvas = <HTMLCanvasElement>document.getElementById(targetEl);
     const ctx = canvas.getContext("2d");
     getAsync(
-        `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}&lecture=${streamID}`,
+        `/api/course/${
+            (document.getElementById("courseID") as HTMLInputElement).value
+        }/stats?interval=${endpoint}&lecture=${streamID}`,
     ).then((res) => {
         if (res.status === StatusCodes.OK) {
             res.text().then((value) => {
@@ -41,9 +43,7 @@ export function initStatsPage() {
     const dates = ["numStudents", "vodViews", "liveViews"];
     dates.forEach((endpoint) => {
         getAsync(
-            `/api/course/${
-                (document.getElementById("courseID") as HTMLInputElement).value
-            }/stats?interval=${endpoint}`,
+            `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`,
         ).then((res) => {
             if (res.status === StatusCodes.OK) {
                 res.text().then((value) => {
