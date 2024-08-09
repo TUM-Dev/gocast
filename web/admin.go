@@ -12,6 +12,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"net/http"
+	"regexp"
 )
 
 // AdminPage serves all administration pages. todo: refactor into multiple methods
