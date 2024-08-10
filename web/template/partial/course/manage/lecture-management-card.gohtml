@@ -345,6 +345,24 @@
                 {{template "editvideosections"}}
             </template>
 
+            <template x-if="uiEditMode > 0">
+                <article class="grid gap-y-3">
+                    <header class="flex justify-between items-center border-b dark:border-gray-600">
+                        <div class="flex items-center">
+                            <h6 class="text-sm text-5 font-light">Subtitles</h6>
+                            <help-icon text='Adding subtitles to your videos makes lectures more rewatchable.
+                                        For detailed information visit: <a
+                                                class="underline hover:text-white dark:hover:text-black"
+                href="https://docs.live.mm.rbg.tum.de">https://docs.live.mm.rbg.tum.de</a>'/>
+                        </div>
+                    </header>
+                    <div class="flex flex-row justify-between items-center">
+                        <span>Subtitles: <span x-text="subtitlesPresent ? 'disabled' : 'enabled'"></span></span>
+                        <button class="px-8 py-2 text-2 text-white rounded bg-gray-500 hover:bg-gray-600 dark:bg-gray-500 disabled:opacity-20 dark:hover:bg-gray-500 mr-4">Upload subtitles</button>
+                    </div>
+                </article>
+            </template>
+
             <span x-show="lectureData.isRecording" class="absolute left-0 bottom-0 p-4">
                 <!-- buttons go here -->
             </span>

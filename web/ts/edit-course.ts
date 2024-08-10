@@ -116,6 +116,9 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         changeSet: null as ChangeSet<Lecture> | null,
         lectureData: null as Lecture | null,
 
+        // Subtitles
+        subtitlesPresent: false as boolean,
+
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
@@ -153,6 +156,12 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 if (update) {
                     this.changeSet.updateState(update);
                 }
+            });
+
+            DataStore.subtitles.subscribe(lecture.lectureId, (subtitles) => {
+                this.subtitles = subtitles;
+                console.log("Subtitles:")
+                console.log(this.subtitles);
             });
         },
 
