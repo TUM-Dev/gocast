@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm/clause"
 
 	"github.com/TUM-Dev/gocast/model"
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -479,7 +481,6 @@ func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int
 		Slug      string
 	}
 	now := time.Now()
-
 	query := DB.Table("streams").
 		Select("streams.stream_key, streams.id, courses.slug").
 		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
@@ -501,9 +502,69 @@ func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int
 
 	err := query.Limit(1).Scan(&result).Error
 
+	if err == gorm.ErrRecordNotFound || result.StreamKey == "" || result.ID == "" || result.Slug == "" {
+		stream, course, err := d.CreateOrGetTestStreamAndCourse(userID)
+		if err != nil {
+			return "", "", err
+		}
+		return stream.StreamKey, fmt.Sprintf("%s-%d", course.Slug, stream.ID), nil
+	}
+
 	if err != nil {
+		logger.Error("Error getting soon starting stream: %v", err)
 		return "", "", err
 	}
 
 	return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
+}
+
+func (d streamsDao) CreateOrGetTestStreamAndCourse(userID uint) (model.Stream, model.Course, error) {
+	course, err := d.CreateOrGetTestCourse(userID)
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	var stream model.Stream
+	err = DB.FirstOrCreate(&stream, model.Stream{
+		CourseID:      course.ID,
+		Name:          "Test Stream",
+		Description:   "This is a test stream",
+		LectureHallID: 0,
+	}).Error
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	stream.Start = time.Now().Add(5 * time.Minute)
+	stream.End = time.Now().Add(1 * time.Hour)
+	stream.LiveNow = true
+	stream.Recording = true
+	stream.LiveNowTimestamp = time.Now().Add(5 * time.Minute)
+	stream.Private = true
+	streamKey := uuid.NewV4().String()
+	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
+	err = DB.Save(&stream).Error
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	return stream, course, err
+}
+
+func (d streamsDao) CreateOrGetTestCourse(userID uint) (model.Course, error) {
+	var course model.Course
+	err := DB.FirstOrCreate(&course, model.Course{
+		Name:         "Test Course",
+		TeachingTerm: "W",
+		Slug:         "TESTCOURSE",
+		Year:         2021,
+		SchoolID:     1,
+		Visibility:   "hidden",
+	}).Error
+	if err != nil {
+		return model.Course{}, err
+	}
+
+	CoursesDao.AddAdminToCourse(NewDaoWrapper().CoursesDao, userID, course.ID)
+	return course, nil
 }
