@@ -293,6 +293,40 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 	return cRes
 }
 
+func (u *User) CoursesForSemesters(firstYear int, firstTerm string, lastYear int, lastTerm string, context context.Context) []Course {
+	type Semester struct {
+		TeachingTerm string
+		Year         int
+	}
+	inRangeOfSemesters := func(s Semester, firstSemester Semester, lastSemester Semester) bool {
+		return !(s.Year < firstSemester.Year || s.Year > lastSemester.Year ||
+			(s.Year == firstSemester.Year && s.TeachingTerm == "S" && firstSemester.TeachingTerm == "W") ||
+			(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))
+	}
+
+	firstSemester := Semester{firstTerm, firstYear}
+	lastSemester := Semester{lastTerm, lastYear}
+	cMap := make(map[uint]Course)
+	var semester Semester
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if inRangeOfSemesters(semester, firstSemester, lastSemester) {
+			cMap[c.ID] = c
+		}
+	}
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if inRangeOfSemesters(semester, firstSemester, lastSemester) {
+			cMap[c.ID] = c
+		}
+	}
+	var cRes []Course
+	for _, c := range cMap {
+		cRes = append(cRes, c)
+	}
+	return cRes
+}
+
 var (
 	ErrInvalidHash         = errors.New("the encoded hash is not in the correct format")
 	ErrIncompatibleVersion = errors.New("incompatible version of argon2")

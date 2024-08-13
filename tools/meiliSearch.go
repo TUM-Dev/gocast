@@ -3,8 +3,6 @@ package tools
 import (
 	"fmt"
 	"github.com/meilisearch/meilisearch-go"
-	"strconv"
-	"strings"
 )
 
 func SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
@@ -23,16 +21,33 @@ func SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
 	return response
 }
 
-func SearchCourses(q string, year int, t string, searchableCourseIDs *[]uint) *meilisearch.SearchResponse {
+/*
+func Search(q string, searchType int, filter string) *meilisearch.SearchResponse {
+
+	bit_operator := 1
+	var _ []meilisearch.SearchRequest
+
+	for i := 0; i < 4; i++ {
+		switch searchType & bit_operator {
+		case 0:
+			continue
+		case 1:
+			// add Subtitles Request
+		case 2:
+			// add Other request
+		}
+		bit_operator <<= 1
+	}
+
+	//multisearch request
+}*/
+
+func SearchCourses(q string, year int, t string, courseIdFilter string) *meilisearch.SearchResponse {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {
 		return nil
 	}
-	if t != "W" && t != "S" {
-		return nil
-	}
 
-	courseIdFilter := courseIdFilter(searchableCourseIDs)
 	response, err := c.Index("COURSES").Search(q, &meilisearch.SearchRequest{
 		Filter: fmt.Sprintf("year = %d AND teachingTerm = %s AND ID IN %s", year, t, courseIdFilter),
 		Limit:  10,
@@ -43,15 +58,4 @@ func SearchCourses(q string, year int, t string, searchableCourseIDs *[]uint) *m
 		return nil
 	}
 	return response
-}
-
-// returns a string conforming to Meili Search Filters Format containing each courseId passed onto the function
-func courseIdFilter(searchableCourseIDs *[]uint) string {
-	var courseIDsAsStringArray []string
-	courseIDsAsStringArray = make([]string, len(*searchableCourseIDs))
-	for i, courseID := range *searchableCourseIDs {
-		courseIDsAsStringArray[i] = strconv.FormatUint(uint64(courseID), 10)
-	}
-	courseIdFilter := "[" + strings.Join(courseIDsAsStringArray, ", ") + "]"
-	return courseIdFilter
 }

@@ -151,7 +151,14 @@ func (m *MeiliExporter) SetIndexSettings() {
 		"W": {"Wintersemester", "Winter", "WS", "WiSe"},
 		"S": {"Sommersemester", "Sommer", "SS", "SoSe", "Summer"},
 	}
-	_, err := index.UpdateSynonyms(&synonyms)
+	_, err := m.c.Index("STREAMS").UpdateSettings(&meilisearch.Settings{
+		FilterableAttributes: []string{"courseID", "year", "semester"},
+		SearchableAttributes: []string{"name", "description"},
+	})
+	if err != nil {
+		logger.Warn("could not set settings for meili index STREAMS", "err", err)
+	}
+	_, err = index.UpdateSynonyms(&synonyms)
 	if err != nil {
 		logger.Error("could not set synonyms for meili index STREAMS", "err", err)
 	}
