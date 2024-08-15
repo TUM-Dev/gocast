@@ -1,7 +1,7 @@
 import { del, get, post, put } from "../utilities/fetch-wrappers";
 
 export type Subtitle = {
-    ID?: number;
+    ID: number;
     content: string;
 };
 
@@ -9,7 +9,13 @@ export type Subtitle = {
  * REST API Wrapper for /api/stream/:id/sections
  */
 export const SubtitleAPI = {
-    getPresent: async function (streamId: number): Promise<boolean> {
-        return get(`/api/stream/${streamId}/subtitles/de`).then((res) => res.ok);
+    get: async function (streamId: number): Promise<Subtitle> {
+        let str = await fetch(`/api/stream/${streamId}/subtitles/de`);
+        console.log(str)
+        if(str.ok && str.text.startsWith("{")) {
+            return null;
+        } else {
+            return {ID: 0, content: str}
+        }
     },
 };

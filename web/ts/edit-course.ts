@@ -18,6 +18,7 @@ import {
 import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 import { uploadFile } from "./utilities/fetch-wrappers";
+import {Subtitle} from "./api/subtitles";
 
 export enum UIEditMode {
     none,
@@ -117,7 +118,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         lectureData: null as Lecture | null,
 
         // Subtitles
-        subtitlesPresent: false as boolean,
+        subtitle: null as Subtitle,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -160,8 +161,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
             DataStore.subtitles.subscribe(lecture.lectureId, (subtitles) => {
                 this.subtitles = subtitles;
-                console.log("Subtitles:")
-                console.log(this.subtitles);
+                //console.log("Subtitles:")
+                //console.log(this.subtitles);
             });
         },
 
