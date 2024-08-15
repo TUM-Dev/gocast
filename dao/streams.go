@@ -212,9 +212,9 @@ func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 }
 
 type StreamWithCourseAndSubtitles struct {
-	Name, Description, TeachingTerm, CourseName, Subtitles string
-	ID, CourseID                                           uint
-	Year                                                   int
+	Name, Description, TeachingTerm, CourseName, Subtitles, Visibility string
+	ID, CourseID, Private                                              uint
+	Year                                                               int
 }
 
 // ExecAllStreamsWithCoursesAndSubtitles executes f on all streams with their courses and subtitles preloaded.
@@ -229,10 +229,12 @@ func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCou
 				SELECT streams.id,
                     streams.name,
                     streams.description,
+					streams.private as private,
                     c.id as course_id,
                     c.name as course_name,
                     c.teaching_term,
                     c.year,
+					c.visibility as visibility,
                     s.content as subtitles,
                     IFNULL(s.stream_id, streams.id) as sid
              	FROM streams

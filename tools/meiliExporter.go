@@ -18,6 +18,8 @@ type MeiliStream struct {
 	Year         int    `json:"year"`
 	TeachingTerm string `json:"semester"`
 	CourseID     uint   `json:"courseID"`
+	Private      uint   `json:"private"`
+	Visibility   string `json:"visibility"` //corresponds to the visibility of the course
 }
 
 type MeiliSubtitles struct {
@@ -78,6 +80,8 @@ func (m *MeiliExporter) Export() {
 				CourseName:   stream.CourseName,
 				Year:         stream.Year,
 				TeachingTerm: stream.TeachingTerm,
+				Visibility:   stream.Visibility,
+				Private:      stream.Private,
 			}
 			if stream.Subtitles != "" {
 				meiliSubtitles := make([]MeiliSubtitles, 0)
