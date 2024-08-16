@@ -296,7 +296,51 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 	return cRes
 }
 
-func (u *User) CoursesForSemesters(firstYear int, firstTerm string, lastYear int, lastTerm string, context context.Context) []Course {
+func (u *User) AdministeredCoursesForSemester(year int, term string, context context.Context) []Course {
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		if c.Year == year && c.TeachingTerm == term {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+func (u *User) AdministeredCoursesForSemesters(firstYear int, firstTerm string, lastYear int, lastTerm string, context context.Context) []Course {
+	type Semester struct {
+		TeachingTerm string
+		Year         int
+	}
+	inRangeOfSemesters := func(s Semester, firstSemester Semester, lastSemester Semester) bool {
+		return !(s.Year < firstSemester.Year || s.Year > lastSemester.Year ||
+			(s.Year == firstSemester.Year && s.TeachingTerm == "S" && firstSemester.TeachingTerm == "W") ||
+			(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))
+	}
+	var semester Semester
+	firstSemester := Semester{firstTerm, firstYear}
+	lastSemester := Semester{lastTerm, lastYear}
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if inRangeOfSemesters(semester, firstSemester, lastSemester) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+
+}
+
+func (u *User) CoursesForSemesterWithoutAdministeredCourses(year int, term string, context context.Context) []Course {
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		if c.Year == year && c.TeachingTerm == term && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
+}
+
+func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstYear int, firstTerm string, lastYear int, lastTerm string, context context.Context) []Course {
 	type Semester struct {
 		TeachingTerm string
 		Year         int
@@ -307,27 +351,17 @@ func (u *User) CoursesForSemesters(firstYear int, firstTerm string, lastYear int
 			(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))
 	}
 
+	var semester Semester
 	firstSemester := Semester{firstTerm, firstYear}
 	lastSemester := Semester{lastTerm, lastYear}
-	cMap := make(map[uint]Course)
-	var semester Semester
+	courses := make([]Course, 0)
 	for _, c := range u.Courses {
 		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
-		if inRangeOfSemesters(semester, firstSemester, lastSemester) {
-			cMap[c.ID] = c
+		if inRangeOfSemesters(semester, firstSemester, lastSemester) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
 		}
 	}
-	for _, c := range u.AdministeredCourses {
-		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
-		if inRangeOfSemesters(semester, firstSemester, lastSemester) {
-			cMap[c.ID] = c
-		}
-	}
-	var cRes []Course
-	for _, c := range cMap {
-		cRes = append(cRes, c)
-	}
-	return cRes
+	return courses
 }
 
 var (

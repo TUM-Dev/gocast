@@ -61,8 +61,7 @@ func (r searchRoutes) search(c *gin.Context) {
 	query := c.Query("q")
 	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+		limit = 10
 	}
 
 	if courseIDParam := c.Query("courseID"); courseIDParam != "" {
@@ -76,22 +75,42 @@ func (r searchRoutes) search(c *gin.Context) {
 		}
 	}
 
-	if semestersParam := c.Query("semester"); semestersParam != "" {
+	firstSemesterParam := c.Query("firstSemester")
+	lastSemesterParam := c.Query("lastSemester")
+	if firstSemesterParam != "" && lastSemesterParam != "" {
+		semesters1, err1 := parseSemesters(firstSemesterParam)
+		semesters2, err2 := parseSemesters(lastSemesterParam)
+		if err1 != nil || err2 != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		firstSemester := semesters1[0]
+		lastSemester := semesters2[0]
+		res := tools.Search(query, int64(limit), 4, courseFilter(c, user, firstSemester, lastSemester), "")
+		//TODO response check
+
+		return
+	}
+
+	semestersParam := c.Query("semester")
+	if semestersParam != "" {
 		if semesters, err := parseSemesters(semestersParam); err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		} else {
-			if len(*semesters) == 1 {
+			if len(semesters) == 1 {
 				// one semester search
+				res := tools.Search(query, int64(limit), 6, courseFilter(c, user, semesters[0], semesters[0]), streamFilter(c, user, semesters[0]))
 			} else {
 				// multiple semesters search
+				res := tools.Search(query, int64(limit), 4, courseFilter(c, user, semesters[0], semesters[1]), "")
 			}
 		}
 	}
 	c.JSON(http.StatusOK, fmt.Sprintf("%s%s%d", user.Name, query, limit)) //dummy
 }
 
-func parseSemesters(semestersParam string) (*[]dao.Semester, error) {
+func parseSemesters(semestersParam string) ([]dao.Semester, error) {
 	semesterStrings := strings.Split(semestersParam, ",")
 
 	regex, err := regexp.Compile("[0-9]{4}[WS]")
@@ -110,7 +129,7 @@ func parseSemesters(semestersParam string) (*[]dao.Semester, error) {
 			return nil, err
 		}
 	}
-	return &semesters, nil
+	return semesters, nil
 }
 
 func subtitleFilter(user *model.User, courses []model.Course) string {
@@ -128,7 +147,7 @@ func subtitleFilter(user *model.User, courses []model.Course) string {
 			}
 		}
 	}
-	return uintArrayToString(&streamIDs)
+	return uintSliceToString(streamIDs)
 }
 
 func streamFilter(c *gin.Context, user *model.User, semester dao.Semester) string {
@@ -147,14 +166,25 @@ func streamPermissionFilter(c *gin.Context, user *model.User, semester dao.Semes
 	if user == nil {
 		return "(visibility = public AND private = 0)"
 	} else if user.Role != model.AdminType {
-		return fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0)", courseIdFilter(c, user, semester, semester))
+		if len(user.AdministeredCourses) == 0 {
+			return fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0)", courseIdFilter(c, user, semester, semester))
+		} else {
+			administeredCourses := user.AdministeredCoursesForSemester(semester.Year, semester.TeachingTerm, c)
+			var administeredCourseIDs []uint
+			for _, course := range administeredCourses {
+				administeredCourseIDs = append(administeredCourseIDs, course.ID)
+			}
+			administeredCoursesFilter := uintSliceToString(administeredCourseIDs)
+			return fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0 OR courseID IN %s)", courseIdFilter(c, user, semester, semester), administeredCoursesFilter)
+
+		}
 	} else {
 		return ""
 	}
 }
 
 func courseFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, lastSemester dao.Semester) string {
-	semesterFilter := semesterFilter(firstSemester, lastSemester)
+	semesterFilter := meiliSemesterFilterInRange(firstSemester, lastSemester)
 	if user == nil || user.Role != model.AdminType {
 		permissionFilter := coursePermissionFilter(c, user, firstSemester, lastSemester)
 		return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
@@ -163,7 +193,7 @@ func courseFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, 
 	}
 }
 
-func semesterFilter(firstSemester dao.Semester, lastSemester dao.Semester) string {
+func meiliSemesterFilterInRange(firstSemester dao.Semester, lastSemester dao.Semester) string {
 	if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 		return fmt.Sprintf("(year = %d AND teachingTerm = %s)", firstSemester.Year, firstSemester.TeachingTerm)
 	} else {
@@ -191,7 +221,17 @@ func coursePermissionFilter(c *gin.Context, user *model.User, firstSemester dao.
 	if user == nil {
 		return "(visibility = public)"
 	} else if user.Role != model.AdminType {
-		return fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s))", courseIdFilter(c, user, firstSemester, lastSemester))
+		if len(user.AdministeredCourses) == 0 {
+			return fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s))", courseIdFilter(c, user, firstSemester, lastSemester))
+		} else {
+			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester.Year, firstSemester.TeachingTerm, lastSemester.Year, lastSemester.TeachingTerm, c)
+			var administeredCourseIDs []uint
+			for _, course := range administeredCourses {
+				administeredCourseIDs = append(administeredCourseIDs, course.ID)
+			}
+			administeredCoursesFilter := uintSliceToString(administeredCourseIDs)
+			return fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s) OR ID in %s)", courseIdFilter(c, user, firstSemester, lastSemester), administeredCoursesFilter)
+		}
 	} else {
 		return ""
 	}
@@ -200,19 +240,18 @@ func coursePermissionFilter(c *gin.Context, user *model.User, firstSemester dao.
 // returns a string conforming to MeiliSearch filter format containing each courseId passed onto the function
 func courseIdFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, lastSemester dao.Semester) string {
 	courses := make([]model.Course, 0)
+	courseIDs := make([]uint, 0)
 	if user != nil {
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
-			courses = user.CoursesForSemester(firstSemester.Year, firstSemester.TeachingTerm, c)
+			courses = user.CoursesForSemesterWithoutAdministeredCourses(firstSemester.Year, firstSemester.TeachingTerm, c)
 		} else {
-			courses = user.CoursesForSemesters(firstSemester.Year, firstSemester.TeachingTerm, lastSemester.Year, lastSemester.TeachingTerm, c)
+			courses = user.CoursesForSemestersWithoutAdministeredCourses(firstSemester.Year, firstSemester.TeachingTerm, lastSemester.Year, lastSemester.TeachingTerm, c)
+		}
+		for _, c := range courses {
+			courseIDs = append(courseIDs, c.ID)
 		}
 	}
-	courseIDs := make([]uint, 0)
-	for _, course := range courses {
-		courseIDs = append(courseIDs, course.ID)
-	}
-
-	return uintArrayToString(&courseIDs)
+	return uintSliceToString(courseIDs)
 }
 
 // TODO refactor to match function search
@@ -226,21 +265,15 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 	}
 
 	courseIDs := r.getSearchableCoursesOfUserForOneSemester(c, user, y, t)
-	var courseIDsAsStringArray []string
-	courseIDsAsStringArray = make([]string, len(*courseIDs))
-	for i, courseID := range *courseIDs {
-		courseIDsAsStringArray[i] = strconv.FormatUint(uint64(courseID), 10)
-	}
-	courses := "[" + strings.Join(courseIDsAsStringArray, ", ") + "]"
 	sem := dao.Semester{
 		TeachingTerm: t,
 		Year:         int(y),
 	}
-	filter := fmt.Sprintf("%s AND ID IN %s", semesterFilter(sem, sem), courses)
+	filter := fmt.Sprintf("%s AND ID IN %s", meiliSemesterFilterInRange(sem, sem), uintSliceToString(courseIDs))
 	c.JSON(http.StatusOK, tools.SearchCourses(q, filter))
 }
 
-func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, user *model.User, y int64, t string) *[]uint {
+func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, user *model.User, y int64, t string) []uint {
 	var courses []model.Course
 	if user != nil {
 		switch user.Role {
@@ -263,16 +296,16 @@ func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, u
 			distinctCourseIDs[course.ID] = true
 		}
 	}
-	return &courseIDs
+	return courseIDs
 }
 
-func uintArrayToString(ids *[]uint) string {
-	if len(*ids) == 0 {
-		return ""
+func uintSliceToString(ids []uint) string {
+	if ids == nil || len(ids) == 0 {
+		return "[]"
 	}
 	var idsAsStringArray []string
-	idsAsStringArray = make([]string, len(*ids))
-	for i, id := range *ids {
+	idsAsStringArray = make([]string, len(ids))
+	for i, id := range ids {
 		idsAsStringArray[i] = strconv.FormatUint(uint64(id), 10)
 	}
 	filter := "[" + strings.Join(idsAsStringArray, ", ") + "]"

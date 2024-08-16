@@ -21,37 +21,40 @@ func SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
 	return response
 }
 
-func getCourseWideSubtitleSearchRequest(q string, limit int, streamFilter string) meilisearch.SearchRequest {
+func getCourseWideSubtitleSearchRequest(q string, limit int64, streamFilter string) meilisearch.SearchRequest {
 	req := meilisearch.SearchRequest{
-		IndexUID: "SUBTITLES",
-		Query:    q,
-		Limit:    int64(limit) + 2,
-		Filter:   streamFilter,
+		IndexUID:             "SUBTITLES",
+		Query:                q,
+		Limit:                limit + 2,
+		Filter:               streamFilter,
+		AttributesToRetrieve: []string{"streamID", "timestamp", "textPrev", "text", "textNext"},
 	}
 	return req
 }
 
-func getStreamsSearchRequest(q string, limit int, streamFilter string) meilisearch.SearchRequest {
+func getStreamsSearchRequest(q string, limit int64, streamFilter string) meilisearch.SearchRequest {
 	req := meilisearch.SearchRequest{
-		IndexUID: "STREAMS",
-		Query:    q,
-		Limit:    int64(limit) + 2,
-		Filter:   streamFilter,
+		IndexUID:             "STREAMS",
+		Query:                q,
+		Limit:                limit + 2,
+		Filter:               streamFilter,
+		AttributesToRetrieve: []string{"ID", "name", "description", "courseName", "year", "teachingTerm"},
 	}
 	return req
 }
 
-func getCoursesSearchRequest(q string, limit int, courseFilter string) meilisearch.SearchRequest {
+func getCoursesSearchRequest(q string, limit int64, courseFilter string) meilisearch.SearchRequest {
 	req := meilisearch.SearchRequest{
-		IndexUID: "COURSES",
-		Query:    q,
-		Limit:    int64(limit) + 2,
-		Filter:   courseFilter,
+		IndexUID:             "COURSES",
+		Query:                q,
+		Limit:                limit + 2,
+		Filter:               courseFilter,
+		AttributesToRetrieve: []string{"name", "slug", "year", "teachingTerm"},
 	}
 	return req
 }
 
-func Search(q string, limit int, searchType int, courseFilter string, streamFilter string) *meilisearch.MultiSearchResponse {
+func Search(q string, limit int64, searchType int, courseFilter string, streamFilter string) *meilisearch.MultiSearchResponse {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {
 		return nil
