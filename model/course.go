@@ -341,3 +341,8 @@ func (c Course) AdminJson(lhs []LectureHall) []gin.H {
 	}
 	return res
 }
+
+type Semester struct {
+	TeachingTerm string
+	Year         int
+}

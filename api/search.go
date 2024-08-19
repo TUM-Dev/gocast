@@ -121,7 +121,7 @@ func subtitleFilter(user *model.User, courses []model.Course) string {
 	return uintSliceToString(streamIDs)
 }
 
-func streamFilter(c *gin.Context, user *model.User, semester dao.Semester) string {
+func streamFilter(c *gin.Context, user *model.User, semester model.Semester) string {
 	semesterFilter := fmt.Sprintf("(year = %d AND semester = %s)", semester.Year, semester.TeachingTerm)
 	if user == nil || user.Role != model.AdminType {
 		permissionFilter := streamPermissionFilter(c, user, semester)
@@ -133,7 +133,7 @@ func streamFilter(c *gin.Context, user *model.User, semester dao.Semester) strin
 
 // TODO private streams searchable for course admins
 // TODO mit coursePermissionFilter zusammenlegen
-func streamPermissionFilter(c *gin.Context, user *model.User, semester dao.Semester) string {
+func streamPermissionFilter(c *gin.Context, user *model.User, semester model.Semester) string {
 	if user == nil {
 		return "(visibility = public AND private = 0)"
 	} else if user.Role != model.AdminType {
@@ -150,7 +150,7 @@ func streamPermissionFilter(c *gin.Context, user *model.User, semester dao.Semes
 	}
 }
 
-func courseFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, lastSemester dao.Semester) string {
+func courseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester) string {
 	semesterFilter := meiliSemesterFilterInRange(firstSemester, lastSemester)
 	if user == nil || user.Role != model.AdminType {
 		permissionFilter := coursePermissionFilter(c, user, firstSemester, lastSemester)
@@ -160,7 +160,7 @@ func courseFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, 
 	}
 }
 
-func meiliSemesterFilterInRange(firstSemester dao.Semester, lastSemester dao.Semester) string {
+func meiliSemesterFilterInRange(firstSemester model.Semester, lastSemester model.Semester) string {
 	if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 		return fmt.Sprintf("(year = %d AND semester = %s)", firstSemester.Year, firstSemester.TeachingTerm)
 	} else {
@@ -183,7 +183,7 @@ func meiliSemesterFilterInRange(firstSemester dao.Semester, lastSemester dao.Sem
 	}
 }
 
-func coursePermissionFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, lastSemester dao.Semester) string {
+func coursePermissionFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester) string {
 	if user == nil {
 		return "(visibility = public)"
 	} else if user.Role != model.AdminType {
@@ -200,7 +200,7 @@ func coursePermissionFilter(c *gin.Context, user *model.User, firstSemester dao.
 }
 
 // returns a string conforming to MeiliSearch filter format containing each courseId passed onto the function
-func courseIdFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, lastSemester dao.Semester) string {
+func courseIdFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester) string {
 	courses := make([]model.Course, 0)
 	if user != nil {
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
@@ -225,7 +225,7 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 	}
 
 	courseIDs := r.getSearchableCoursesOfUserForOneSemester(c, user, y, t)
-	sem := dao.Semester{
+	sem := model.Semester{
 		TeachingTerm: t,
 		Year:         int(y),
 	}
@@ -261,7 +261,7 @@ func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, u
 
 // Utility functions
 
-func parseSemesters(semestersParam string) ([]dao.Semester, error) {
+func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	semesterStrings := strings.Split(semestersParam, ",")
 
 	regex, err := regexp.Compile("[0-9]{4}[WS]")
@@ -269,10 +269,10 @@ func parseSemesters(semestersParam string) ([]dao.Semester, error) {
 		return nil, err
 	}
 
-	semesters := make([]dao.Semester, len(semesterStrings))
+	semesters := make([]model.Semester, len(semesterStrings))
 	for _, semester := range semesterStrings {
 		if year, err := strconv.Atoi(semester[:4]); regex.MatchString(semestersParam) && err == nil {
-			semesters = append(semesters, dao.Semester{
+			semesters = append(semesters, model.Semester{
 				TeachingTerm: semester[4:],
 				Year:         year,
 			})

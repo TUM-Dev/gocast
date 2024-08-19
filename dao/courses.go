@@ -32,7 +32,7 @@ type CoursesDao interface {
 	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
 	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
 	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
-	GetAvailableSemesters(c context.Context) []Semester
+	GetAvailableSemesters(c context.Context) []model.Semester
 	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
 	ExecAllCourses(f func([]Course))
@@ -244,11 +244,11 @@ func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year
 	return foundCourses, err
 }
 
-func (d coursesDao) GetAvailableSemesters(c context.Context) []Semester {
+func (d coursesDao) GetAvailableSemesters(c context.Context) []model.Semester {
 	if cached, found := Cache.Get("getAllSemesters"); found {
-		return cached.([]Semester)
+		return cached.([]model.Semester)
 	} else {
-		var semesters []Semester
+		var semesters []model.Semester
 		DB.Raw("SELECT year, teaching_term from courses " +
 			"group by year, teaching_term " +
 			"order by year desc, teaching_term desc").Scan(&semesters)
@@ -342,9 +342,4 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	if err != nil {
 		logger.Error("Can't delete course", "err", err)
 	}
-}
-
-type Semester struct {
-	TeachingTerm string
-	Year         int
 }
