@@ -365,7 +365,7 @@
                                                 <template x-if="livestream.InLectureHall()">
                                                     <a class="tum-live-badge bg-black"
                                                        target="_blank"
-                                                       :href="livestream.LectureHall.ExternalURL">
+                                                       :href="livestream.LectureHall.ExternalURL">s.
                                                         <i class="fas fa-location-pin"></i>
                                                         <span x-text="livestream.LectureHall.Name"></span>
                                                     </a>
@@ -590,6 +590,7 @@
                                                         <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
                                                     </div>
                                                     <h4 x-text="s.Name" class="font-semibold text-1"></h4>
+                                                    	<a :href="`https://nav.tum.de/room/${s.LectureHall}`" class="no-underline" x-text="s.LectureHall"></a>
                                                 </div>
                                             </div>
                                         </article>

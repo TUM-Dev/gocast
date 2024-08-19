@@ -385,10 +385,12 @@ type StreamDTO struct {
 	Start       time.Time
 	End         time.Time
 	Duration    int32
+	LectureHall string
 }
 
 func (s Stream) ToDTO() StreamDTO {
 	downloads := []DownloadableVod{}
+	s.RoomCode = "5602.EG.001"
 	if s.IsDownloadable() {
 		downloads = s.GetVodFiles()
 	}
@@ -408,6 +410,7 @@ func (s Stream) ToDTO() StreamDTO {
 		Start:       s.Start,
 		End:         s.End,
 		Duration:    duration,
+		LectureHall: s.RoomCode,
 	}
 }
 
