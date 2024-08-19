@@ -36,7 +36,7 @@ type MeiliCourse struct {
 	Name         string `json:"name"`
 	Slug         string `json:"slug"`
 	Year         int    `json:"year"`
-	TeachingTerm string `json:"teachingTerm"`
+	TeachingTerm string `json:"semester"`
 	Visibility   string `json:"visibility"`
 }
 
@@ -177,9 +177,9 @@ func (m *MeiliExporter) SetIndexSettings() {
 	}
 
 	_, err = m.c.Index("COURSES").UpdateSettings(&meilisearch.Settings{
-		FilterableAttributes: []string{"ID", "visibility", "year", "teachingTerm"},
+		FilterableAttributes: []string{"ID", "visibility", "year", "semester"},
 		SearchableAttributes: []string{"slug", "name"},
-		SortableAttributes:   []string{"year", "teachingTerm"},
+		SortableAttributes:   []string{"year", "semester"},
 	})
 	if err != nil {
 		logger.Warn("could not set settings for meili index COURSES", "err", err)

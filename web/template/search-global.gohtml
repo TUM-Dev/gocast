@@ -15,8 +15,8 @@
                     <template x-for="course in searcher.hits">
                         <li role="option" aria-selected="false">
                             <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
-                               :href="'?year='+ course.year + '&term=' + course.teachingTerm + '&slug=' + course.slug + '&view=3'"
-                               @mousedown="showCourse(course.slug, course.year, course.teachingTerm);
+                               :href="'?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
+                               @mousedown="showCourse(course.slug, course.year, course.semester);
                                document.getElementById('search-courses').value = '';searcher.searchInput='';searcher.open = false;"
                                x-text="course.name">
                             </a>

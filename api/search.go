@@ -7,6 +7,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
+	"github.com/meilisearch/meilisearch-go"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -63,6 +64,7 @@ func (r searchRoutes) search(c *gin.Context) {
 	if err != nil {
 		limit = 10
 	}
+	var res *meilisearch.MultiSearchResponse
 
 	if courseIDParam := c.Query("courseID"); courseIDParam != "" {
 		if courseID, err := strconv.Atoi(courseIDParam); err != nil {
@@ -86,28 +88,17 @@ func (r searchRoutes) search(c *gin.Context) {
 		}
 		firstSemester := semesters1[0]
 		lastSemester := semesters2[0]
-		res := tools.Search(query, int64(limit), 4, courseFilter(c, user, firstSemester, lastSemester), "")
-		//TODO response check
 
-		return
-	}
-
-	semestersParam := c.Query("semester")
-	if semestersParam != "" {
-		if semesters, err := parseSemesters(semestersParam); err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
+		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
+			// single semester search
+			res = tools.Search(query, int64(limit), 6, courseFilter(c, user, firstSemester, firstSemester), streamFilter(c, user, firstSemester))
 		} else {
-			if len(semesters) == 1 {
-				// one semester search
-				res := tools.Search(query, int64(limit), 6, courseFilter(c, user, semesters[0], semesters[0]), streamFilter(c, user, semesters[0]))
-			} else {
-				// multiple semesters search
-				res := tools.Search(query, int64(limit), 4, courseFilter(c, user, semesters[0], semesters[1]), "")
-			}
+			// multiple semester search
+			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, firstSemester, lastSemester), "")
 		}
+		//TODO response check
+		c.JSON(http.StatusOK, res)
 	}
-	c.JSON(http.StatusOK, fmt.Sprintf("%s%s%d", user.Name, query, limit)) //dummy
 }
 
 func parseSemesters(semestersParam string) ([]dao.Semester, error) {
@@ -151,7 +142,7 @@ func subtitleFilter(user *model.User, courses []model.Course) string {
 }
 
 func streamFilter(c *gin.Context, user *model.User, semester dao.Semester) string {
-	semesterFilter := fmt.Sprintf("(year = %d AND teachingTerm = %s)", semester.Year, semester.TeachingTerm)
+	semesterFilter := fmt.Sprintf("(year = %d AND semester = %s)", semester.Year, semester.TeachingTerm)
 	if user == nil || user.Role != model.AdminType {
 		permissionFilter := streamPermissionFilter(c, user, semester)
 		return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
@@ -191,16 +182,16 @@ func courseFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, 
 
 func meiliSemesterFilterInRange(firstSemester dao.Semester, lastSemester dao.Semester) string {
 	if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
-		return fmt.Sprintf("(year = %d AND teachingTerm = %s)", firstSemester.Year, firstSemester.TeachingTerm)
+		return fmt.Sprintf("(year = %d AND semester = %s)", firstSemester.Year, firstSemester.TeachingTerm)
 	} else {
 		var constraint1, constraint2 string
 		if firstSemester.TeachingTerm == "W" {
-			constraint1 = fmt.Sprintf("(year = %d AND teachingTerm = %s)", firstSemester.Year, firstSemester.TeachingTerm)
+			constraint1 = fmt.Sprintf("(year = %d AND semester = %s)", firstSemester.Year, firstSemester.TeachingTerm)
 		} else {
 			constraint1 = fmt.Sprintf("year = %d", firstSemester.Year)
 		}
 		if lastSemester.TeachingTerm == "S" {
-			constraint2 = fmt.Sprintf("(year = %d AND teachingTerm = %s)", lastSemester.Year, lastSemester.TeachingTerm)
+			constraint2 = fmt.Sprintf("(year = %d AND semester = %s)", lastSemester.Year, lastSemester.TeachingTerm)
 		} else {
 			constraint2 = fmt.Sprintf("year = %d", lastSemester.Year)
 		}

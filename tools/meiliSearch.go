@@ -38,7 +38,7 @@ func getStreamsSearchRequest(q string, limit int64, streamFilter string) meilise
 		Query:                q,
 		Limit:                limit + 2,
 		Filter:               streamFilter,
-		AttributesToRetrieve: []string{"ID", "name", "description", "courseName", "year", "teachingTerm"},
+		AttributesToRetrieve: []string{"ID", "name", "description", "courseName", "year", "semester"},
 	}
 	return req
 }
@@ -49,7 +49,7 @@ func getCoursesSearchRequest(q string, limit int64, courseFilter string) meilise
 		Query:                q,
 		Limit:                limit + 2,
 		Filter:               courseFilter,
-		AttributesToRetrieve: []string{"name", "slug", "year", "teachingTerm"},
+		AttributesToRetrieve: []string{"name", "slug", "year", "semester"},
 	}
 	return req
 }
@@ -94,14 +94,14 @@ func SearchCourses(q string, filter string) *meilisearch.SearchResponse {
 	}
 
 	response, err := c.Index("COURSES").Search(q, &meilisearch.SearchRequest{
-		Filter: filter,
-		Limit:  10,
+		Filter:               filter,
+		Limit:                10,
+		AttributesToRetrieve: []string{"name", "slug", "year", "semester"},
 	})
 
 	if err != nil {
 		logger.Error("could not search courses in meili", "err", err)
 		return nil
 	}
-	print(response.ProcessingTimeMs)
 	return response
 }
