@@ -101,27 +101,7 @@ func (r searchRoutes) search(c *gin.Context) {
 	}
 }
 
-func parseSemesters(semestersParam string) ([]dao.Semester, error) {
-	semesterStrings := strings.Split(semestersParam, ",")
-
-	regex, err := regexp.Compile("[0-9]{4}[WS]")
-	if err != nil {
-		return nil, err
-	}
-
-	semesters := make([]dao.Semester, len(semesterStrings))
-	for _, semester := range semesterStrings {
-		if year, err := strconv.Atoi(semester[:4]); regex.MatchString(semestersParam) && err == nil {
-			semesters = append(semesters, dao.Semester{
-				TeachingTerm: semester[4:],
-				Year:         year,
-			})
-		} else {
-			return nil, err
-		}
-	}
-	return semesters, nil
-}
+// meilisearch filter
 
 func subtitleFilter(user *model.User, courses []model.Course) string {
 	if len(courses) == 0 {
@@ -203,7 +183,6 @@ func meiliSemesterFilterInRange(firstSemester dao.Semester, lastSemester dao.Sem
 	}
 }
 
-// TODO OR ID in [administeredcourses]
 func coursePermissionFilter(c *gin.Context, user *model.User, firstSemester dao.Semester, lastSemester dao.Semester) string {
 	if user == nil {
 		return "(visibility = public)"
@@ -232,6 +211,8 @@ func courseIdFilter(c *gin.Context, user *model.User, firstSemester dao.Semester
 	}
 	return courseSliceToString(courses)
 }
+
+// Old searchCourses route
 
 // TODO refactor to match function search
 func (r searchRoutes) searchCourses(c *gin.Context) {
@@ -276,6 +257,30 @@ func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, u
 		}
 	}
 	return courseIDs
+}
+
+// Utility functions
+
+func parseSemesters(semestersParam string) ([]dao.Semester, error) {
+	semesterStrings := strings.Split(semestersParam, ",")
+
+	regex, err := regexp.Compile("[0-9]{4}[WS]")
+	if err != nil {
+		return nil, err
+	}
+
+	semesters := make([]dao.Semester, len(semesterStrings))
+	for _, semester := range semesterStrings {
+		if year, err := strconv.Atoi(semester[:4]); regex.MatchString(semestersParam) && err == nil {
+			semesters = append(semesters, dao.Semester{
+				TeachingTerm: semester[4:],
+				Year:         year,
+			})
+		} else {
+			return nil, err
+		}
+	}
+	return semesters, nil
 }
 
 func courseSliceToString(courses []model.Course) string {
