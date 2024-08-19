@@ -306,28 +306,34 @@ func (u *User) AdministeredCoursesForSemester(year int, term string, context con
 	return administeredCourses
 }
 
-func (u *User) AdministeredCoursesForSemesters(firstYear int, firstTerm string, lastYear int, lastTerm string, context context.Context) []Course {
-	type Semester struct {
-		TeachingTerm string
-		Year         int
+func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemester Semester, semesters []Semester, context context.Context) []Course {
+	var inRangeOfSemesters func(s Semester, firstSemester Semester, lastSemester Semester, semesters []Semester) bool
+	if semesters == nil {
+		inRangeOfSemesters = func(s Semester, firstSemester Semester, lastSemester Semester, semesters []Semester) bool {
+			return !(s.Year < firstSemester.Year || s.Year > lastSemester.Year ||
+				(s.Year == firstSemester.Year && s.TeachingTerm == "S" && firstSemester.TeachingTerm == "W") ||
+				(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))
+		}
+	} else {
+		inRangeOfSemesters = func(s Semester, firstSemester Semester, secondSemester Semester, semesters []Semester) bool {
+			for _, semester := range semesters {
+				if s.Year == semester.Year && s.TeachingTerm == semester.TeachingTerm {
+					return true
+				}
+			}
+			return false
+		}
 	}
-	inRangeOfSemesters := func(s Semester, firstSemester Semester, lastSemester Semester) bool {
-		return !(s.Year < firstSemester.Year || s.Year > lastSemester.Year ||
-			(s.Year == firstSemester.Year && s.TeachingTerm == "S" && firstSemester.TeachingTerm == "W") ||
-			(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))
-	}
+
 	var semester Semester
-	firstSemester := Semester{firstTerm, firstYear}
-	lastSemester := Semester{lastTerm, lastYear}
 	administeredCourses := make([]Course, 0)
 	for _, c := range u.AdministeredCourses {
 		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
-		if inRangeOfSemesters(semester, firstSemester, lastSemester) {
+		if inRangeOfSemesters(semester, firstSemester, lastSemester, semesters) {
 			administeredCourses = append(administeredCourses, c)
 		}
 	}
 	return administeredCourses
-
 }
 
 func (u *User) CoursesForSemesterWithoutAdministeredCourses(year int, term string, context context.Context) []Course {
@@ -340,24 +346,30 @@ func (u *User) CoursesForSemesterWithoutAdministeredCourses(year int, term strin
 	return courses
 }
 
-func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstYear int, firstTerm string, lastYear int, lastTerm string, context context.Context) []Course {
-	type Semester struct {
-		TeachingTerm string
-		Year         int
-	}
-	inRangeOfSemesters := func(s Semester, firstSemester Semester, lastSemester Semester) bool {
-		return !(s.Year < firstSemester.Year || s.Year > lastSemester.Year ||
-			(s.Year == firstSemester.Year && s.TeachingTerm == "S" && firstSemester.TeachingTerm == "W") ||
-			(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))
+func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester, semesters []Semester, context context.Context) []Course {
+	var inRangeOfSemesters func(s Semester, firstSemester Semester, lastSemester Semester, semesters []Semester) bool
+	if semesters == nil {
+		inRangeOfSemesters = func(s Semester, firstSemester Semester, lastSemester Semester, semesters []Semester) bool {
+			return !(s.Year < firstSemester.Year || s.Year > lastSemester.Year ||
+				(s.Year == firstSemester.Year && s.TeachingTerm == "S" && firstSemester.TeachingTerm == "W") ||
+				(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))
+		}
+	} else {
+		inRangeOfSemesters = func(s Semester, firstSemester Semester, secondSemester Semester, semesters []Semester) bool {
+			for _, semester := range semesters {
+				if s.Year == semester.Year && s.TeachingTerm == semester.TeachingTerm {
+					return true
+				}
+			}
+			return false
+		}
 	}
 
 	var semester Semester
-	firstSemester := Semester{firstTerm, firstYear}
-	lastSemester := Semester{lastTerm, lastYear}
 	courses := make([]Course, 0)
 	for _, c := range u.Courses {
 		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
-		if inRangeOfSemesters(semester, firstSemester, lastSemester) && !u.IsAdminOfCourse(c) {
+		if inRangeOfSemesters(semester, firstSemester, lastSemester, semesters) && !u.IsAdminOfCourse(c) {
 			courses = append(courses, c)
 		}
 	}
