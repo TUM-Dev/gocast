@@ -44,15 +44,18 @@ für alle:
 q=...&limit=...
 
 Format für Semester:2024W
+Format für Kurs:<Slug><Semester>
+Einzelnes Semester:
 semester=...
 firstSemester=1234X&lastSemester=1234X
 
+Mehrere Semester:
 firstSemester=...&lastSemester=...
-semester=...,...,
+semester=...,..., max. 8
 
-Format für Kurs:<Slug><Semester>
+Einzelner oder Mehrere Kurse:
 course=...
-course=...,...
+course=...,... max. 2
 
 
 
@@ -74,7 +77,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		if errorCode == 2 {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
-		} else if errorCode != 0 {
+		} else if errorCode != 0 || len(courses) > 5 {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -84,7 +87,9 @@ func (r searchRoutes) search(c *gin.Context) {
 				return
 			}
 		}
+		//TODO response check
 		c.JSON(http.StatusOK, tools.Search(query, int64(limit), 3, "", streamFilter(c, user, model.Semester{}, courses), subtitleFilter(user, courses)))
+		return
 	}
 
 	firstSemesterParam := c.Query("firstSemester")
@@ -108,7 +113,26 @@ func (r searchRoutes) search(c *gin.Context) {
 		}
 		//TODO response check
 		c.JSON(http.StatusOK, res)
+		return
 	}
+
+	semesterParam := c.Query("semester")
+	if semesterParam != "" {
+		semesters, err := parseSemesters(semesterParam)
+		if err != nil || len(semesters) > 5 {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		if len(semesters) == 1 {
+			res = tools.Search(query, int64(limit), 6, courseFilter(c, user, model.Semester{}, model.Semester{}, semesters), streamFilter(c, user, semesters[0], nil), "")
+		} else {
+			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, model.Semester{}, model.Semester{}, semesters), "", "")
+		}
+		//TODO response check
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
 }
 
 // meilisearch filter
