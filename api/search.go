@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -61,8 +62,6 @@ course=...,... max. 2
 
 */
 
-// TODO param check?
-// TODO after search eligibility check
 func (r searchRoutes) search(c *gin.Context) {
 	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	query := c.Query("q")
@@ -87,7 +86,7 @@ func (r searchRoutes) search(c *gin.Context) {
 				return
 			}
 		}
-		//TODO response check
+		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
 		c.JSON(http.StatusOK, tools.Search(query, int64(limit), 3, "", streamFilter(c, user, model.Semester{}, courses), subtitleFilter(user, courses)))
 		return
 	}
@@ -111,7 +110,7 @@ func (r searchRoutes) search(c *gin.Context) {
 			// multiple semester search
 			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, firstSemester, lastSemester, nil), "", "")
 		}
-		//TODO response check
+		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
 		c.JSON(http.StatusOK, res)
 		return
 	}
@@ -128,11 +127,89 @@ func (r searchRoutes) search(c *gin.Context) {
 		} else {
 			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, model.Semester{}, model.Semester{}, semesters), "", "")
 		}
-		//TODO response check
+		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
 		c.JSON(http.StatusOK, res)
 		return
 	}
+}
 
+func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse) {
+	type MeiliResponseCourse struct {
+		Name         string `json:"name"`
+		Slug         string `json:"slug"`
+		Year         int    `json:"year"`
+		TeachingTerm string `json:"semester"`
+	}
+	type MeiliResponseStream struct {
+		ID           uint   `json:"ID"`
+		Name         string `json:"name"`
+		Description  string `json:"description"`
+		CourseName   string `json:"courseName"`
+		Year         int    `json:"year"`
+		TeachingTerm string `json:"semester"`
+	}
+
+	for _, res := range response.Results {
+		switch res.IndexUID {
+		case "STREAMS":
+			var meiliStreams []MeiliResponseStream
+			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
+			if err != nil {                     //shouldn't happen
+				res.Hits = make([]interface{}, 0)
+				continue
+			}
+			err = json.Unmarshal(temp, &meiliStreams)
+			if err != nil { // shouldn't happen
+				res.Hits = make([]interface{}, 0)
+				continue
+			}
+
+			res.Hits = []interface{}{}
+			for _, meiliStream := range meiliStreams {
+				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.Itoa(int(meiliStream.ID))) //TODO kann deleted streams returnen
+				if err != nil {
+					continue
+				}
+				course, err := daoWrapper.CoursesDao.GetCourseById(c, stream.CourseID)
+				if err != nil {
+					continue
+				}
+				if user.IsEligibleToWatchCourse(course) && !stream.Private || user.IsAdminOfCourse(course) {
+					res.Hits = append(res.Hits, meiliStream)
+				}
+
+				if len(res.Hits) >= int(limit) {
+					break
+				}
+			}
+
+		case "COURSES":
+			var meiliCourses []MeiliResponseCourse
+			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
+			if err != nil {                     //shouldn't happen
+				res.Hits = make([]interface{}, 0)
+				continue
+			}
+			err = json.Unmarshal(temp, &meiliCourses)
+			if err != nil { // shouldn't happen
+				res.Hits = make([]interface{}, 0)
+				continue
+			}
+
+			res.Hits = []interface{}{}
+			for _, meiliCourse := range meiliCourses {
+				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year) //TODO kann deleted courses returnen
+				if err == nil && user.IsEligibleToWatchCourse(course) {
+					res.Hits = append(res.Hits, meiliCourse)
+				}
+				if len(res.Hits) >= int(limit) {
+					break
+				}
+			}
+		default:
+			continue
+		}
+	}
 }
 
 // meilisearch filter
@@ -283,7 +360,34 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 		Year:         int(y),
 	}
 	filter := fmt.Sprintf("%s AND ID IN %s", meiliSemesterFilter(sem, sem, nil), uintSliceToString(courseIDs))
-	c.JSON(http.StatusOK, tools.SearchCourses(q, filter))
+
+	type MeiliResponseCourse struct {
+		Name         string `json:"name"`
+		Slug         string `json:"slug"`
+		Year         int    `json:"year"`
+		TeachingTerm string `json:"semester"`
+	}
+	var _ MeiliResponseCourse
+	res := tools.SearchCourses(q, filter)
+	z, _ := json.Marshal(res.Hits)
+	println(string(z))
+	for _, hit := range res.Hits {
+		switch hit.(type) {
+		case map[string]interface{}:
+			// println("yippiee")
+			var _ map[int]interface{}
+			//res.Hits[0] = sdf
+		}
+		var m []MeiliResponseCourse
+		x, _ := json.Marshal(res.Hits)
+		_ = json.Unmarshal(x, &m)
+		//println(m[0].Name)
+		res.Hits[0] = m[0]
+	}
+	z, _ = json.Marshal(res.Hits)
+	println(string(z))
+
+	c.JSON(http.StatusOK, res)
 }
 
 func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, user *model.User, y int64, t string) []uint {
