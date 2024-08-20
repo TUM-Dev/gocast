@@ -123,49 +123,55 @@ func subtitleFilter(user *model.User, courses []model.Course) string {
 
 func streamFilter(c *gin.Context, user *model.User, semester model.Semester) string {
 	semesterFilter := fmt.Sprintf("(year = %d AND semester = %s)", semester.Year, semester.TeachingTerm)
-	if user == nil || user.Role != model.AdminType {
-		permissionFilter := streamPermissionFilter(c, user, semester)
-		if permissionFilter == "" {
-			return semesterFilter
-		} else {
-			return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
-		}
-	} else {
+	if user != nil && user.Role == model.AdminType {
 		return semesterFilter
 	}
-}
 
-// TODO private streams searchable for course admins
-// TODO mit meiliCoursePermissionFilter zusammenlegen
-func streamPermissionFilter(c *gin.Context, user *model.User, semester model.Semester) string {
+	var permissionFilter string
 	if user == nil {
-		return "(visibility = public AND private = 0)"
-	} else if user.Role == model.AdminType {
-		return ""
+		permissionFilter = "(visibility = public AND private = 0)"
 	} else {
+		filter := courseIdFilter(c, user, semester, semester, nil)
 		if len(user.AdministeredCourses) == 0 {
-			return fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0)", courseIdFilter(c, user, semester, semester, nil))
+			permissionFilter = fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0)", filter)
 		} else {
 			administeredCourses := user.AdministeredCoursesForSemester(semester.Year, semester.TeachingTerm, c)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
-			return fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0 OR courseID IN %s)", courseIdFilter(c, user, semester, semester, nil), administeredCoursesFilter)
+			permissionFilter = fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0 OR courseID IN %s)", filter, administeredCoursesFilter)
 		}
+	}
+
+	if permissionFilter == "" {
+		return semesterFilter
+	} else {
+		return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 	}
 }
 
 func courseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	semesterFilter := meiliSemesterFilter(firstSemester, lastSemester, semesters)
-	if user == nil || user.Role != model.AdminType {
-		permissionFilter := meiliCoursePermissionFilter(c, user, firstSemester, lastSemester, semesters)
-		if semesterFilter == "" {
-			return permissionFilter
-		} else if permissionFilter == "" {
-			return semesterFilter
-		} else {
-			return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
-		}
-	} else {
+	if user != nil && user.Role == model.AdminType {
 		return semesterFilter
+	}
+
+	var permissionFilter string
+	if user == nil {
+		permissionFilter = "(visibility = public)"
+	} else {
+		filter := courseIdFilter(c, user, firstSemester, lastSemester, semesters)
+		if len(user.AdministeredCourses) == 0 {
+			permissionFilter = fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s))", filter)
+		} else {
+			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester, lastSemester, semesters, c)
+			administeredCoursesFilter := courseSliceToString(administeredCourses)
+			permissionFilter = fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s) OR ID in %s)", filter, administeredCoursesFilter)
+		}
+	}
+
+	if semesterFilter == "" || permissionFilter == "" {
+		return permissionFilter + semesterFilter
+	} else {
+		return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 	}
 }
 
@@ -206,25 +212,7 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 	}
 }
 
-func meiliCoursePermissionFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
-	if user == nil {
-		return "(visibility = public)"
-	} else if user.Role == model.AdminType {
-		return ""
-	} else {
-		if len(user.AdministeredCourses) == 0 {
-			return fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s))", courseIdFilter(c, user, firstSemester, lastSemester, semesters))
-		} else {
-			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester, lastSemester, semesters, c)
-			administeredCoursesFilter := courseSliceToString(administeredCourses)
-			return fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s) OR ID in %s)", courseIdFilter(c, user, firstSemester, lastSemester, semesters), administeredCoursesFilter)
-		}
-	}
-}
-
-// returns a string conforming to MeiliSearch filter format containing each courseId passed onto the function
-// inRange selects whether the range of firstSemester to lastSemester is used to filter or multiple single semesters
-// params that are not used may be nil
+// params that are not used may be of corresponding zero value
 // returns a meili array representation of all courseIDs the user is allowed to search for
 func courseIdFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	courses := make([]model.Course, 0)
@@ -320,7 +308,7 @@ func courseSliceToString(courses []model.Course) string {
 	for i, c := range courses {
 		idsStringSlice[i] = strconv.FormatUint(uint64(c.ID), 10)
 	}
-	filter := "[" + strings.Join(idsStringSlice, ", ") + "]"
+	filter := "[" + strings.Join(idsStringSlice, ",") + "]"
 	return filter
 }
 
@@ -333,6 +321,6 @@ func uintSliceToString(ids []uint) string {
 	for i, id := range ids {
 		idsStringSlice[i] = strconv.FormatUint(uint64(id), 10)
 	}
-	filter := "[" + strings.Join(idsStringSlice, ", ") + "]"
+	filter := "[" + strings.Join(idsStringSlice, ",") + "]"
 	return filter
 }
