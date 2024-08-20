@@ -140,17 +140,16 @@ func streamFilter(c *gin.Context, user *model.User, semester model.Semester) str
 func streamPermissionFilter(c *gin.Context, user *model.User, semester model.Semester) string {
 	if user == nil {
 		return "(visibility = public AND private = 0)"
-	} else if user.Role != model.AdminType {
+	} else if user.Role == model.AdminType {
+		return ""
+	} else {
 		if len(user.AdministeredCourses) == 0 {
 			return fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0)", courseIdFilter(c, user, semester, semester, nil))
 		} else {
 			administeredCourses := user.AdministeredCoursesForSemester(semester.Year, semester.TeachingTerm, c)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
 			return fmt.Sprintf("((visibility = loggedin OR visibility = public OR (visibility = enrolled AND courseID in %s)) AND private = 0 OR courseID IN %s)", courseIdFilter(c, user, semester, semester, nil), administeredCoursesFilter)
-
 		}
-	} else {
-		return ""
 	}
 }
 
@@ -174,6 +173,8 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 	if semesters == nil {
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 			return fmt.Sprintf("(year = %d AND semester = %s)", firstSemester.Year, firstSemester.TeachingTerm)
+		} else if len(semesters) == 1 {
+			return fmt.Sprintf("(year = %d AND semester = %s)", semesters[0].Year, semesters[0].TeachingTerm)
 		} else {
 			var constraint1, constraint2 string
 			if firstSemester.TeachingTerm == "W" {
@@ -208,7 +209,9 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 func meiliCoursePermissionFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	if user == nil {
 		return "(visibility = public)"
-	} else if user.Role != model.AdminType {
+	} else if user.Role == model.AdminType {
+		return ""
+	} else {
 		if len(user.AdministeredCourses) == 0 {
 			return fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s))", courseIdFilter(c, user, firstSemester, lastSemester, semesters))
 		} else {
@@ -216,20 +219,20 @@ func meiliCoursePermissionFilter(c *gin.Context, user *model.User, firstSemester
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
 			return fmt.Sprintf("(visibility = loggedin OR visibility = public OR (visibility = enrolled AND ID IN %s) OR ID in %s)", courseIdFilter(c, user, firstSemester, lastSemester, semesters), administeredCoursesFilter)
 		}
-	} else {
-		return ""
 	}
 }
 
 // returns a string conforming to MeiliSearch filter format containing each courseId passed onto the function
 // inRange selects whether the range of firstSemester to lastSemester is used to filter or multiple single semesters
 // params that are not used may be nil
-// returns a meili array representation of all courseIds the user is allowed to search for
+// returns a meili array representation of all courseIDs the user is allowed to search for
 func courseIdFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	courses := make([]model.Course, 0)
 	if user != nil {
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 			courses = user.CoursesForSemesterWithoutAdministeredCourses(firstSemester.Year, firstSemester.TeachingTerm, c)
+		} else if len(semesters) == 1 {
+			courses = user.CoursesForSemesterWithoutAdministeredCourses(semesters[0].Year, semesters[0].TeachingTerm, c)
 		} else {
 			courses = user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters, c)
 		}
