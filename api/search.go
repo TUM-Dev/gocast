@@ -45,11 +45,14 @@ q=...&limit=...
 
 Format für Semester:2024W
 semester=...
+firstSemester=1234X&lastSemester=1234X
 
 firstSemester=...&lastSemester=...
 semester=...,...,
 
-courseID=...
+Format für Kurs:<Slug><Semester>
+course=...
+course=...,...
 
 
 
@@ -66,15 +69,22 @@ func (r searchRoutes) search(c *gin.Context) {
 	}
 	var res *meilisearch.MultiSearchResponse
 
-	if courseIDParam := c.Query("courseID"); courseIDParam != "" {
-		if courseID, err := strconv.Atoi(courseIDParam); err != nil {
+	if courseParam := c.Query("course"); courseParam != "" {
+		courses, errorCode := parseCourses(c, r.DaoWrapper, courseParam)
+		if errorCode == 2 {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		} else if errorCode != 0 {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
-		} else {
-			// course search
-			c.JSON(http.StatusOK, &courseID) //dummy
-
 		}
+		for _, course := range courses {
+			if !user.IsEligibleToWatchCourse(course) {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+		}
+		c.JSON(http.StatusOK, tools.Search(query, int64(limit), 3, "", streamFilter(c, user, model.Semester{}, courses), subtitleFilter(user, courses)))
 	}
 
 	firstSemesterParam := c.Query("firstSemester")
@@ -91,10 +101,10 @@ func (r searchRoutes) search(c *gin.Context) {
 
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 			// single semester search
-			res = tools.Search(query, int64(limit), 6, courseFilter(c, user, firstSemester, firstSemester, nil), streamFilter(c, user, firstSemester))
+			res = tools.Search(query, int64(limit), 6, courseFilter(c, user, firstSemester, firstSemester, nil), streamFilter(c, user, firstSemester, nil), "")
 		} else {
 			// multiple semester search
-			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, firstSemester, lastSemester, nil), "")
+			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, firstSemester, lastSemester, nil), "", "")
 		}
 		//TODO response check
 		c.JSON(http.StatusOK, res)
@@ -110,18 +120,21 @@ func subtitleFilter(user *model.User, courses []model.Course) string {
 
 	var streamIDs []uint
 	for _, course := range courses {
-		if user.IsEligibleToWatchCourse(course) {
-			for _, stream := range course.Streams {
-				if !stream.Private || user.IsAdminOfCourse(course) {
-					streamIDs = append(streamIDs, stream.ID)
-				}
+		admin := user.IsAdminOfCourse(course)
+		for _, stream := range course.Streams {
+			if !stream.Private || admin {
+				streamIDs = append(streamIDs, stream.ID)
 			}
 		}
 	}
-	return uintSliceToString(streamIDs)
+	return fmt.Sprintf("streamID IN %s", uintSliceToString(streamIDs))
 }
 
-func streamFilter(c *gin.Context, user *model.User, semester model.Semester) string {
+func streamFilter(c *gin.Context, user *model.User, semester model.Semester, courses []model.Course) string {
+	if courses != nil {
+		return fmt.Sprintf("courseID IN %s", courseSliceToString(courses))
+	}
+
 	semesterFilter := fmt.Sprintf("(year = %d AND semester = %s)", semester.Year, semester.TeachingTerm)
 	if user != nil && user.Role == model.AdminType {
 		return semesterFilter
@@ -280,7 +293,7 @@ func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, u
 func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	semesterStrings := strings.Split(semestersParam, ",")
 
-	regex, err := regexp.Compile("[0-9]{4}[WS]")
+	regex, err := regexp.Compile(`^[0-9]{4}[WS]$`)
 	if err != nil {
 		return nil, err
 	}
@@ -299,14 +312,37 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	return semesters, nil
 }
 
+func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, coursesParam string) ([]model.Course, uint) {
+	coursesStrings := strings.Split(coursesParam, ",")
+
+	regex, err := regexp.Compile(`^.+[0-9]{4}[WS]$`)
+	if err != nil {
+		return nil, 2
+	}
+
+	courses := make([]model.Course, len(coursesStrings))
+	for i, courseString := range coursesStrings {
+		if !regex.MatchString(coursesParam) {
+			return nil, 1
+		}
+		length := len(courseString)
+		year, _ := strconv.Atoi(courseString[length-5 : length-1])
+		course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, courseString[:length-5], courseString[length-1:], year)
+		if err != nil {
+			return nil, 1
+		}
+		courses[i] = course
+	}
+	return courses, 0
+}
+
 func courseSliceToString(courses []model.Course) string {
 	if courses == nil || len(courses) == 0 {
 		return "[]"
 	}
-	var idsStringSlice []string
-	idsStringSlice = make([]string, len(courses))
+	idsStringSlice := make([]string, len(courses))
 	for i, c := range courses {
-		idsStringSlice[i] = strconv.FormatUint(uint64(c.ID), 10)
+		idsStringSlice[i] = strconv.Itoa(int(c.ID))
 	}
 	filter := "[" + strings.Join(idsStringSlice, ",") + "]"
 	return filter
@@ -316,8 +352,7 @@ func uintSliceToString(ids []uint) string {
 	if ids == nil || len(ids) == 0 {
 		return "[]"
 	}
-	var idsStringSlice []string
-	idsStringSlice = make([]string, len(ids))
+	idsStringSlice := make([]string, len(ids))
 	for i, id := range ids {
 		idsStringSlice[i] = strconv.FormatUint(uint64(id), 10)
 	}

@@ -54,7 +54,7 @@ func getCoursesSearchRequest(q string, limit int64, courseFilter string) meilise
 	return req
 }
 
-func Search(q string, limit int64, searchType int, courseFilter string, streamFilter string) *meilisearch.MultiSearchResponse {
+func Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {
 		return nil
@@ -68,8 +68,7 @@ func Search(q string, limit int64, searchType int, courseFilter string, streamFi
 		case 0:
 			continue
 		case 1:
-			// add Subtitles Request
-			reqs = append(reqs, getCourseWideSubtitleSearchRequest(q, limit, streamFilter))
+			reqs = append(reqs, getCourseWideSubtitleSearchRequest(q, limit, subtitleFilter))
 		case 2:
 			reqs = append(reqs, getStreamsSearchRequest(q, limit, streamFilter))
 		case 4:
