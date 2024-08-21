@@ -181,7 +181,7 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 		CourseSlug   string `json:"courseSlug"`
 	}
 
-	for _, res := range response.Results {
+	for i, res := range response.Results {
 		switch res.IndexUID {
 		case "STREAMS":
 			var meiliStreams []MeiliStreamResponse
@@ -215,7 +215,7 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 					break
 				}
 			}
-
+			response.Results[i] = res
 		case "COURSES":
 			var meiliCourses []MeiliCourseResponse
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
@@ -239,6 +239,7 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 					break
 				}
 			}
+			response.Results[i] = res
 		case "SUBTITLES":
 			continue
 		default:
