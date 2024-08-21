@@ -145,7 +145,7 @@
 </header>
 <main id="content" class="flex grow h-full overflow-y-scroll">
     <!-- side nav -->
-    <section id="side-navigation" class="tum-live-side-navigation lg:w-80 md:w-56 md:block"
+    <!--<section id="side-navigation" class="tum-live-side-navigation lg:w-80 md:w-56 md:block"
              :class="navigation.value ? 'flex w-full' : 'hidden'">
         <article class="tum-live-side-navigation-group">
             <header>
@@ -178,7 +178,7 @@
                 </header>
                 <template x-for="course in pinnedCourses" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item hover"
-                       :href="course.URL()"
+                       :href="'/' + course.URL()"
                        @click.prevent="showCourse(course.Slug, course.Year, course.TeachingTerm)"
                        x-text="course.Name">
                     </a>
@@ -193,7 +193,7 @@
                 </header>
                 <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item hover"
-                       :href="course.URL()"
+                       :href="'/' + course.URL()"
                        @click.prevent="showCourse(course.Slug)"
                        x-text="course.Name">
                     </a>
@@ -228,7 +228,7 @@
             </template>
         </article>
         {{template "mobile_footer" .VersionTag}}
-    </section>
+    </section>-->
     <section class="w-full">
         <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searchableCourses: [], searcher: home.globalSearch()}">
             <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
