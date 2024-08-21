@@ -36,8 +36,8 @@ type searchRoutes struct {
 }
 
 const (
-	FilterMaxSemesterCount = 5
-	FilterMaxCoursesCount  = 5
+	FilterMaxSemesterCount = 8
+	FilterMaxCoursesCount  = 2
 	DefaultLimit           = 10
 )
 
@@ -98,54 +98,14 @@ func (r searchRoutes) search(c *gin.Context) {
 		return
 	}
 
-	firstSemesterParam := c.Query("firstSemester")
-	lastSemesterParam := c.Query("lastSemester")
-	semestersParam := c.Query("semester")
-	if firstSemesterParam != "" && lastSemesterParam != "" || semestersParam != "" {
-		var firstSemester, lastSemester model.Semester
-		semesters1, err1 := parseSemesters(firstSemesterParam)
-		semesters2, err2 := parseSemesters(lastSemesterParam)
-		semesters, err3 := parseSemesters(semestersParam)
-		if (err1 != nil || err2 != nil || len(semesters1) > 1 || len(semesters2) > 1) && err3 != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-		rangeSearch := false
-		if len(semesters1) > 0 && len(semesters2) > 0 {
-			firstSemester = semesters1[0]
-			lastSemester = semesters2[0]
-			rangeSearch = true
-		}
-
-		if rangeSearch && firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm || len(semesters) == 1 {
-			// single semester search
-			res = tools.Search(query, int64(limit), 6, meiliCourseFilter(c, user, firstSemester, firstSemester, semesters), meiliStreamFilter(c, user, firstSemester, nil), "")
-		} else {
-			// multiple semester search
-			res = tools.Search(query, int64(limit), 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
-		}
-		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
-		c.JSON(http.StatusOK, res)
+	res, err = semesterSearchHelper(c, query, int64(limit), user)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-
-	//TODO delete
-	semesterParam := c.Query("semester")
-	if semesterParam != "" {
-		semesters, err := parseSemesters(semesterParam)
-		if err != nil || len(semesters) > 5 {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-		if len(semesters) == 1 {
-			res = tools.Search(query, int64(limit), 6, meiliCourseFilter(c, user, model.Semester{}, model.Semester{}, semesters), meiliStreamFilter(c, user, semesters[0], nil), "")
-		} else {
-			res = tools.Search(query, int64(limit), 4, meiliCourseFilter(c, user, model.Semester{}, model.Semester{}, semesters), "", "")
-		}
-		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
-		c.JSON(http.StatusOK, res)
-		return
-	}
+	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
+	c.JSON(http.StatusOK, res)
+	return
 }
 
 func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model.User) (*meilisearch.MultiSearchResponse, error) {
