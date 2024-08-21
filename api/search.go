@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -33,6 +34,12 @@ func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 type searchRoutes struct {
 	dao.DaoWrapper
 }
+
+const (
+	FilterMaxSemesterCount = 5
+	FilterMaxCoursesCount  = 5
+	DefaultLimit           = 10
+)
 
 func (r searchRoutes) searchSubtitles(c *gin.Context) {
 	s := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
@@ -67,7 +74,7 @@ func (r searchRoutes) search(c *gin.Context) {
 	query := c.Query("q")
 	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
 	if err != nil {
-		limit = 10
+		limit = DefaultLimit
 	}
 	var res *meilisearch.MultiSearchResponse
 
@@ -76,7 +83,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		if errorCode == 2 {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
-		} else if errorCode != 0 || len(courses) > 5 {
+		} else if errorCode != 0 || len(courses) > FilterMaxCoursesCount {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -87,34 +94,42 @@ func (r searchRoutes) search(c *gin.Context) {
 			}
 		}
 		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
-		c.JSON(http.StatusOK, tools.Search(query, int64(limit), 3, "", streamFilter(c, user, model.Semester{}, courses), subtitleFilter(user, courses)))
+		c.JSON(http.StatusOK, tools.Search(query, int64(limit), 3, "", meiliStreamFilter(c, user, model.Semester{}, courses), meiliSubtitleFilter(user, courses)))
 		return
 	}
 
 	firstSemesterParam := c.Query("firstSemester")
 	lastSemesterParam := c.Query("lastSemester")
-	if firstSemesterParam != "" && lastSemesterParam != "" {
+	semestersParam := c.Query("semester")
+	if firstSemesterParam != "" && lastSemesterParam != "" || semestersParam != "" {
+		var firstSemester, lastSemester model.Semester
 		semesters1, err1 := parseSemesters(firstSemesterParam)
 		semesters2, err2 := parseSemesters(lastSemesterParam)
-		if err1 != nil || err2 != nil {
+		semesters, err3 := parseSemesters(semestersParam)
+		if (err1 != nil || err2 != nil || len(semesters1) > 1 || len(semesters2) > 1) && err3 != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		firstSemester := semesters1[0]
-		lastSemester := semesters2[0]
+		rangeSearch := false
+		if len(semesters1) > 0 && len(semesters2) > 0 {
+			firstSemester = semesters1[0]
+			lastSemester = semesters2[0]
+			rangeSearch = true
+		}
 
-		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
+		if rangeSearch && firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm || len(semesters) == 1 {
 			// single semester search
-			res = tools.Search(query, int64(limit), 6, courseFilter(c, user, firstSemester, firstSemester, nil), streamFilter(c, user, firstSemester, nil), "")
+			res = tools.Search(query, int64(limit), 6, meiliCourseFilter(c, user, firstSemester, firstSemester, semesters), meiliStreamFilter(c, user, firstSemester, nil), "")
 		} else {
 			// multiple semester search
-			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, firstSemester, lastSemester, nil), "", "")
+			res = tools.Search(query, int64(limit), 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
 		}
 		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
 		c.JSON(http.StatusOK, res)
 		return
 	}
 
+	//TODO delete
 	semesterParam := c.Query("semester")
 	if semesterParam != "" {
 		semesters, err := parseSemesters(semesterParam)
@@ -123,9 +138,9 @@ func (r searchRoutes) search(c *gin.Context) {
 			return
 		}
 		if len(semesters) == 1 {
-			res = tools.Search(query, int64(limit), 6, courseFilter(c, user, model.Semester{}, model.Semester{}, semesters), streamFilter(c, user, semesters[0], nil), "")
+			res = tools.Search(query, int64(limit), 6, meiliCourseFilter(c, user, model.Semester{}, model.Semester{}, semesters), meiliStreamFilter(c, user, semesters[0], nil), "")
 		} else {
-			res = tools.Search(query, int64(limit), 4, courseFilter(c, user, model.Semester{}, model.Semester{}, semesters), "", "")
+			res = tools.Search(query, int64(limit), 4, meiliCourseFilter(c, user, model.Semester{}, model.Semester{}, semesters), "", "")
 		}
 		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
 		c.JSON(http.StatusOK, res)
@@ -133,40 +148,76 @@ func (r searchRoutes) search(c *gin.Context) {
 	}
 }
 
+func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model.User) (*meilisearch.MultiSearchResponse, error) {
+	var res *meilisearch.MultiSearchResponse
+	firstSemesterParam := c.Query("firstSemester")
+	lastSemesterParam := c.Query("lastSemester")
+	semestersParam := c.Query("semester")
+	if firstSemesterParam != "" && lastSemesterParam != "" || semestersParam != "" {
+		var firstSemester, lastSemester model.Semester
+		semesters1, err1 := parseSemesters(firstSemesterParam)
+		semesters2, err2 := parseSemesters(lastSemesterParam)
+		semesters, err3 := parseSemesters(semestersParam)
+		if (err1 != nil || err2 != nil || len(semesters1) > 1 || len(semesters2) > 1) && (err3 != nil || len(semesters) > FilterMaxSemesterCount) {
+			return nil, errors.New("wrong parameters")
+		}
+		rangeSearch := false
+		if len(semesters1) > 0 && len(semesters2) > 0 {
+			firstSemester = semesters1[0]
+			lastSemester = semesters2[0]
+			rangeSearch = true
+		}
+
+		if rangeSearch && firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm || len(semesters) == 1 {
+			// single semester search
+			res = tools.Search(query, limit, 6, meiliCourseFilter(c, user, firstSemester, firstSemester, semesters), meiliStreamFilter(c, user, firstSemester, nil), "")
+		} else {
+			// multiple semester search
+			res = tools.Search(query, limit, 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
+		}
+		return res, nil
+	}
+
+	sem1 := model.Semester{TeachingTerm: "S"}
+	sem2 := model.Semester{TeachingTerm: "W", Year: 3000}
+	return tools.Search(query, limit, 4, meiliCourseFilter(c, user, sem1, sem2, nil), "", ""), nil
+}
+
 func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse) {
-	type MeiliResponseCourse struct {
+	type MeiliCourseResponse struct {
 		Name         string `json:"name"`
 		Slug         string `json:"slug"`
 		Year         int    `json:"year"`
 		TeachingTerm string `json:"semester"`
 	}
-	type MeiliResponseStream struct {
+	type MeiliStreamResponse struct {
 		ID           uint   `json:"ID"`
 		Name         string `json:"name"`
 		Description  string `json:"description"`
 		CourseName   string `json:"courseName"`
 		Year         int    `json:"year"`
 		TeachingTerm string `json:"semester"`
+		CourseSlug   string `json:"courseSlug"`
 	}
 
 	for _, res := range response.Results {
 		switch res.IndexUID {
 		case "STREAMS":
-			var meiliStreams []MeiliResponseStream
+			var meiliStreams []MeiliStreamResponse
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
 			if err != nil {                     //shouldn't happen
-				res.Hits = make([]interface{}, 0)
+				res.Hits = make([]interface{}, 0) // empty response
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliStreams)
 			if err != nil { // shouldn't happen
-				res.Hits = make([]interface{}, 0)
+				res.Hits = make([]interface{}, 0) // empty response
 				continue
 			}
 
 			res.Hits = []interface{}{}
 			for _, meiliStream := range meiliStreams {
-				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.Itoa(int(meiliStream.ID))) //TODO kann deleted streams returnen
+				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.Itoa(int(meiliStream.ID)))
 				if err != nil {
 					continue
 				}
@@ -174,6 +225,7 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 				if err != nil {
 					continue
 				}
+				meiliStream.CourseSlug = course.Slug
 				if user.IsEligibleToWatchCourse(course) && !stream.Private || user.IsAdminOfCourse(course) {
 					res.Hits = append(res.Hits, meiliStream)
 				}
@@ -184,10 +236,10 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 			}
 
 		case "COURSES":
-			var meiliCourses []MeiliResponseCourse
+			var meiliCourses []MeiliCourseResponse
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
 			if err != nil {                     //shouldn't happen
-				res.Hits = make([]interface{}, 0)
+				res.Hits = make([]interface{}, 0) // empty response
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliCourses)
@@ -198,7 +250,7 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 
 			res.Hits = []interface{}{}
 			for _, meiliCourse := range meiliCourses {
-				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year) //TODO kann deleted courses returnen
+				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year)
 				if err == nil && user.IsEligibleToWatchCourse(course) {
 					res.Hits = append(res.Hits, meiliCourse)
 				}
@@ -214,7 +266,7 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 
 // meilisearch filter
 
-func subtitleFilter(user *model.User, courses []model.Course) string {
+func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 	if len(courses) == 0 {
 		return ""
 	}
@@ -231,7 +283,7 @@ func subtitleFilter(user *model.User, courses []model.Course) string {
 	return fmt.Sprintf("streamID IN %s", uintSliceToString(streamIDs))
 }
 
-func streamFilter(c *gin.Context, user *model.User, semester model.Semester, courses []model.Course) string {
+func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester, courses []model.Course) string {
 	if courses != nil {
 		return fmt.Sprintf("courseID IN %s", courseSliceToString(courses))
 	}
@@ -262,7 +314,7 @@ func streamFilter(c *gin.Context, user *model.User, semester model.Semester, cou
 	}
 }
 
-func courseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
+func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	semesterFilter := meiliSemesterFilter(firstSemester, lastSemester, semesters)
 	if user != nil && user.Role == model.AdminType {
 		return semesterFilter
@@ -290,6 +342,10 @@ func courseFilter(c *gin.Context, user *model.User, firstSemester model.Semester
 }
 
 func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
+	if len(semesters) == 0 && firstSemester.Year < 1900 && lastSemester.Year > 2800 {
+		return ""
+	}
+
 	if semesters == nil {
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 			return fmt.Sprintf("(year = %d AND semester = %s)", firstSemester.Year, firstSemester.TeachingTerm)
@@ -314,9 +370,6 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 			}
 		}
 	} else {
-		if len(semesters) == 0 {
-			return ""
-		}
 		semesterStringsSlice := make([]string, len(semesters))
 		for i, semester := range semesters {
 			semesterStringsSlice[i] = fmt.Sprintf("(year = %d AND semester = %s)", semester.Year, semester.TeachingTerm)
@@ -344,6 +397,22 @@ func courseIdFilter(c *gin.Context, user *model.User, firstSemester model.Semest
 
 // Old searchCourses route
 
+func (r searchRoutes) newSearchCourses(c *gin.Context) {
+	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	query := c.Query("q")
+	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
+	if err != nil {
+		limit = DefaultLimit
+	}
+	res, err := semesterSearchHelper(c, query, int64(limit), user)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
+	c.JSON(http.StatusOK, res)
+}
+
 // TODO refactor to match function search
 func (r searchRoutes) searchCourses(c *gin.Context) {
 	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
@@ -360,33 +429,7 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 		Year:         int(y),
 	}
 	filter := fmt.Sprintf("%s AND ID IN %s", meiliSemesterFilter(sem, sem, nil), uintSliceToString(courseIDs))
-
-	type MeiliResponseCourse struct {
-		Name         string `json:"name"`
-		Slug         string `json:"slug"`
-		Year         int    `json:"year"`
-		TeachingTerm string `json:"semester"`
-	}
-	var _ MeiliResponseCourse
 	res := tools.SearchCourses(q, filter)
-	z, _ := json.Marshal(res.Hits)
-	println(string(z))
-	for _, hit := range res.Hits {
-		switch hit.(type) {
-		case map[string]interface{}:
-			// println("yippiee")
-			var _ map[int]interface{}
-			//res.Hits[0] = sdf
-		}
-		var m []MeiliResponseCourse
-		x, _ := json.Marshal(res.Hits)
-		_ = json.Unmarshal(x, &m)
-		//println(m[0].Name)
-		res.Hits[0] = m[0]
-	}
-	z, _ = json.Marshal(res.Hits)
-	println(string(z))
-
 	c.JSON(http.StatusOK, res)
 }
 
@@ -413,12 +456,16 @@ func (r searchRoutes) getSearchableCoursesOfUserForOneSemester(c *gin.Context, u
 			distinctCourseIDs[course.ID] = true
 		}
 	}
+	courseIDs = append(courseIDs, 1049)
 	return courseIDs
 }
 
 // Utility functions
 
 func parseSemesters(semestersParam string) ([]model.Semester, error) {
+	if semestersParam == "" {
+		return nil, errors.New("empty semestersParam")
+	}
 	semesterStrings := strings.Split(semestersParam, ",")
 
 	regex, err := regexp.Compile(`^[0-9]{4}[WS]$`)
@@ -428,13 +475,14 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 
 	semesters := make([]model.Semester, len(semesterStrings))
 	for _, semester := range semesterStrings {
-		if year, err := strconv.Atoi(semester[:4]); regex.MatchString(semestersParam) && err == nil {
+		if regex.MatchString(semestersParam) {
+			year, _ := strconv.Atoi(semester[:4])
 			semesters = append(semesters, model.Semester{
 				TeachingTerm: semester[4:],
 				Year:         year,
 			})
 		} else {
-			return nil, err
+			return nil, errors.New(fmt.Sprintf("semester %s is not valid", semester))
 		}
 	}
 	return semesters, nil
