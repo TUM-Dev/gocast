@@ -253,19 +253,19 @@
                     <template x-for="subtitle in searcher.hits.SUBTITLES">
                         <li role="option" aria-selected="false">
                             <a class="tum-live-search-result-main"
-                               :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
-                               @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
                                x-text="subtitle.text">
                             </a>
                         </li>
                     </template>
-                    <!--<template x-if="searcher.hits.length == 0">
-                        <li role="listitem" aria-selected="false">
-                            <a class="flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1"
-                               x-text="'No Course found'">
+                    <template x-for="stream in searcher.hits.STREAMS">
+                        <li role="option" aria-selected="false">
+                            <a class="tum-live-search-result-main grid grid-cols-2 grid-rows-2"
+                                :href="'/w/' + stream.courseSlug + '/' + stream.ID">
+                                <p x-text="stream.courseName"></p>
+                                <p x-text="stream.name"></p>
                             </a>
                         </li>
-                    </template>-->
+                    </template>
                 </ul>
             </template>
         </div>

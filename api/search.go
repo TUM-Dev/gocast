@@ -120,7 +120,7 @@ func (r searchRoutes) search(c *gin.Context) {
 }
 
 func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
-	var msm MeiliSearchMap
+	msm := make(MeiliSearchMap)
 	if res == nil {
 		return msm
 	}

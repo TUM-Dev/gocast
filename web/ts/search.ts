@@ -44,12 +44,9 @@ export function globalSearch() {
                 //fetch(`/api/search/courses?q=${this.searchInput}`).then((res) => {
                     if (res.ok) {
                         res.json().then((data) => {
-                            for (let i = 0; i < data.results.length; i++) {
-                                this.hits[data.results[i].indexUid] = data.results[i].hits;
-                            }
-                            //this.hits = data.results.hits;
+                            this.hits = data;
                             this.open = true;
-                            console.log(this.hits.SUBTITLES)
+                            console.log(this.hits)
                         });
                     }
                 });
