@@ -5,10 +5,10 @@ export function coursesSearch() {
         searchInput: "",
         search: function (year: number, teachingTerm: string) {
             if (this.searchInput.length > 2) {
-                fetch(`/api/search/courses?q=${this.searchInput}&year=${year}&term=${teachingTerm}`).then((res) => {
+                fetch(`/api/search/courses?q=${this.searchInput}&semester=${year}${teachingTerm}`).then((res) => {
                     if (res.ok) {
                         res.json().then((data) => {
-                            this.hits = data.hits;
+                            this.hits = data.results[0].hits;
                             this.open = true;
                         });
                     }
