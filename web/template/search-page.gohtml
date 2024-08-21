@@ -230,7 +230,7 @@
         {{template "mobile_footer" .VersionTag}}
     </section>-->
     <section class="w-full">
-        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searchableCourses: [], searcher: home.globalSearch()}">
+        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.globalSearch()}">
             <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
                 <i class="fa-solid fa-search pl-3 text-xs text-7 text-black dark:text-gray-300"></i>
                 <input class="px-3 outline-none border-none bg-transparent h-full w-full grow text-black dark:text-gray-300" id="search-bar" type="text"
@@ -241,25 +241,23 @@
             </div>
             <template x-if="searcher != undefined" class="h-full w-1/2" >
                 <ul class="center rounded-lg grid py-1 px-1 mt-1" style="width: 60%;" role="listbox">
-                    <template x-if="searcher.hits.length > 0">
-                        <template x-for="course in searcher.hits">
-                            <li role="option" aria-selected="false">
-                                <a class="tum-live-search-result-main"
-                                   :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
-                                   @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
-                                   x-text="course.name">
-                                </a>
-                            </li>
-                        </template>
-                        <template x-for="subtitles in searcher.hits">
-                            <li role="option" aria-selected="false">
-                                <a class="tum-live-search-result-main"
-                                   :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
-                                   @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
-                                   x-text="course.name">
-                                </a>
-                            </li>
-                        </template>
+                    <template x-for="course in searcher.hits.COURSES">
+                        <li role="option" aria-selected="false">
+                            <a class="tum-live-search-result-main"
+                               :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
+                               @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
+                               x-text="course.name">
+                            </a>
+                        </li>
+                    </template>
+                    <template x-for="subtitle in searcher.hits.SUBTITLES">
+                        <li role="option" aria-selected="false">
+                            <a class="tum-live-search-result-main"
+                               :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
+                               @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
+                               x-text="subtitle.text">
+                            </a>
+                        </li>
                     </template>
                     <!--<template x-if="searcher.hits.length == 0">
                         <li role="listitem" aria-selected="false">
