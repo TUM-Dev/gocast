@@ -40,7 +40,7 @@ export function globalSearch() {
         searchInput: "",
         search: function (year: number, teachingTerm: string) {
             if (this.searchInput.length > 2) {
-                fetch(`/api/search/?q=${this.searchInput}&year=${year}&term=${teachingTerm}`).then((res) => {
+                fetch(`/api/search?q=${this.searchInput}&semester=${year}${teachingTerm}`).then((res) => {
                     if (res.ok) {
                         res.json().then((data) => {
                             this.hits = data.hits;

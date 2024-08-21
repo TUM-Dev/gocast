@@ -230,22 +230,21 @@
         {{template "mobile_footer" .VersionTag}}
     </section>
     <section class="w-full">
-        <div id="search" class="h-10 w-full flex justify-center" x-data="{searchableCourses: [], searcher: undefined}">
-            <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-full dark:bg-gray-800" style="width: 50%;">
+        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searchableCourses: [], searcher: home.globalSearch()}">
+            <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
                 <i class="fa-solid fa-search pl-3 text-xs text-7 text-black dark:text-gray-300"></i>
                 <input class="px-3 outline-none border-none bg-transparent h-full w-full grow text-black dark:text-gray-300" id="search-bar" type="text"
                        placeholder="Search"
                        @blur="searcher.open = false;"
-                       @focus="searcher = home.globalSearch();"
                        @keyup="searcher.searchInput = document.getElementById('search-bar').value;
-                   selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm):searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
+                   selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm) : searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
             </div>
-            <template x-if="searcher != undefined && searcher.open" class="h-10 w-1/2" >
-                <ul class="center rounded-lg grid py-1 px-1 bg-gray-800 mt-1" role="listbox">
+            <template x-if="searcher != undefined" class="h-full w-1/2" >
+                <ul class="center rounded-lg grid py-1 px-1 mt-1" role="listbox">
                     <template x-if="searcher.hits.length > 0">
                         <template x-for="course in searcher.hits">
                             <li role="option" aria-selected="false">
-                                <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+                                <a class="flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1"
                                    :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
                                    @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
                                    x-text="course.name">
@@ -254,7 +253,7 @@
                         </template>
                         <template x-for="subtitles in searcher.hits">
                             <li role="option" aria-selected="false">
-                                <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+                                <a class="flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1"
                                    :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
                                    @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
                                    x-text="course.name">
@@ -262,13 +261,13 @@
                             </li>
                         </template>
                     </template>
-                    <template x-if="searcher.hits.length == 0">
+                    <!--<template x-if="searcher.hits.length == 0">
                         <li role="listitem" aria-selected="false">
-                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+                            <a class="flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1"
                                x-text="'No Course found'">
                             </a>
                         </li>
-                    </template>
+                    </template>-->
                 </ul>
             </template>
         </div>
