@@ -40,6 +40,8 @@ const (
 	DefaultLimit           = 10
 )
 
+type MeiliSearchMap map[string]interface{}
+
 func (r searchRoutes) searchSubtitles(c *gin.Context) {
 	s := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
 	q := c.Query("q")
@@ -98,7 +100,7 @@ func (r searchRoutes) search(c *gin.Context) {
 			return
 		}
 		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
-		c.JSON(http.StatusOK, res)
+		c.JSON(http.StatusOK, responseToMap(res))
 		return
 	}
 
@@ -112,8 +114,19 @@ func (r searchRoutes) search(c *gin.Context) {
 		return
 	}
 	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, responseToMap(res))
 	return
+}
+
+func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
+	var msm MeiliSearchMap
+	if res == nil {
+		return msm
+	}
+	for _, r := range res.Results {
+		msm[r.IndexUID] = r.Hits
+	}
+	return msm
 }
 
 func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model.User, courseSearchOnly bool) (*meilisearch.MultiSearchResponse, error) {
@@ -384,7 +397,7 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 		return
 	}
 	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, responseToMap(res))
 }
 
 // Utility functions
