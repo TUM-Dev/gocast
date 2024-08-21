@@ -32,3 +32,26 @@ export function coursesSearch() {
         },*/
     };
 }
+
+export function globalSearch() {
+    return {
+        hits: [],
+        open: false,
+        searchInput: "",
+        search: function (year: number, teachingTerm: string) {
+            if (this.searchInput.length > 2) {
+                fetch(`/api/search/?q=${this.searchInput}&year=${year}&term=${teachingTerm}`).then((res) => {
+                    if (res.ok) {
+                        res.json().then((data) => {
+                            this.hits = data.hits;
+                            this.open = true;
+                        });
+                    }
+                });
+            } else {
+                this.hits = [];
+                this.open = false;
+            }
+        },
+    };
+}

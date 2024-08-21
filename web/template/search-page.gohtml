@@ -1,0 +1,280 @@
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IndexData*/ -}}
+{{$user := .TUMLiveContext.User}}
+{{$userID := 0}}
+{{if $user}}{{$userID = $user.ID}}{{end}}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
+
+    <title>{{.Branding.Title}}</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+
+    <script src="static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/home.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+
+    <link rel="manifest" href="/static/assets/manifest.json">
+    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
+    <script defer type='text/javascript'>
+        const link = !!document.querySelector("link[rel='canonical']") ? document.querySelector("link[rel='canonical']") : document.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        link.setAttribute('href', location.href);
+        document.head.appendChild(link);
+    </script>
+</head>
+<body x-data="home.skeleton()"
+      @popstate.window="onPopState"
+      class="h-screen flex flex-col items-stretch tum-live-bg">
+<header x-data="home.header()"
+        class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
+        <button type="button" id="open-sidenav" title="Open Sidenav" @click="navigation.toggle()"
+                class="tum-live-icon-button p-3 text-lg md:hidden">
+            <i class="fa-solid fa-bars" :class="{'rotate-90': navigation.value}"></i>
+        </button>
+        <button class="mx-3" type="button" id="logo" title="Start" @click="showMain()">
+            <img src="/logo.svg" width="64" alt="TUM-Live Logo">
+        </button>
+    </div>
+    <div id="user-context" class="flex items-center ms-auto">
+        {{template "notifications"}}
+        {{if not $user}}
+            <a href="/login" class="tum-live-button tum-live-button-primary mx-3">Login</a>
+        {{else}}
+            <div>
+                <button type="button" @click="userContext.toggle(true)"
+                        class="border-2 tum-live-border-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
+                    <i class="fa-solid fa-user tum-live-font-primary"></i>
+                </button>
+                <div class="relative">
+                    <article x-cloak x-show="userContext.value"
+                             @click.outside="userContext.toggle();"
+                             class="tum-live-menu absolute top-full right-[50%] mt-2 h-fit overflow-hidden w-56">
+                        <header>
+                            <p class="font-semibold">Signed in as</p>
+                            <span>@{{$user.Name}}</span>
+                        </header>
+                        <nav class="d-grid gap-3 font-light">
+                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                                <a href="/admin"
+                                   class="tum-live-menu-item">
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-solid fa-hammer"></i>
+                                    </div>
+                                    <p>Admin</p>
+                                </a>
+                                <div class="border-b dark:border-gray-800"></div>
+                            {{end}}
+                            <div>
+                                <button type="button"
+                                        class="tum-live-menu-item"
+                                        @click="userContext.getChild('themePicker').toggle()">
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-regular fa-moon"></i>
+                                    </div>
+                                    <span>Theme</span>
+                                    <i class="fa-solid ml-auto"
+                                       :class="userContext.getChild('themePicker').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                </button>
+                                <div x-cloak x-show="userContext.getChild('themePicker').value" class="grid gap-1">
+                                    <template x-for="[modeId, mode] of Object.entries($store.theme.modes)"
+                                              :key="modeId">
+                                        <button type="button" tabindex="0"
+                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-1 px-10"
+                                                :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
+                                                @click="$store.theme.setTheme(modeId)"
+                                                x-text="mode.name">
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            <a href="/settings"
+                               class="tum-live-menu-item">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-gear"></i>
+                                </div>
+                                <p>Settings</p>
+                            </a>
+                            <div class="border-b dark:border-gray-800"></div>
+                            <a href="https://github.com/TUM-Dev/gocast"
+                               target="_blank"
+                               class="tum-live-menu-item">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-regular fa-comment"></i>
+                                </div>
+                                <p>Send Feedback</p>
+                            </a>
+                            <a href="https://github.com/TUM-Dev/gocast/issues/new?assignees=&labels=&template=bug_report.md&title="
+                               class="tum-live-menu-item"
+                               target="_blank">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-brands fa-github"></i>
+                                </div>
+                                <p>Report problem</p>
+                            </a>
+                            <div class="border-b dark:border-gray-800"></div>
+                            <a href="/logout"
+                               class="tum-live-menu-item">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-sign-out"></i>
+                                </div>
+                                <p>Logout</p>
+                            </a>
+                        </nav>
+                    </article>
+                </div>
+            </div>
+        {{end}}
+    </div>
+</header>
+<main id="content" class="flex grow h-full overflow-y-scroll">
+    <!-- side nav -->
+    <section id="side-navigation" class="tum-live-side-navigation lg:w-80 md:w-56 md:block"
+             :class="navigation.value ? 'flex w-full' : 'hidden'">
+        <article class="tum-live-side-navigation-group">
+            <header>
+                <i class="fa-solid fa-calendar"></i>
+                Semesters
+            </header>
+            <span class="tum-live-side-navigation-group-item mb-4 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
+                  x-text="semesters[selectedSemesterIndex]?.FriendlyString()"
+                  x-show="!navigation.getChild('allSemesters').value"></span>
+            <template x-if="navigation.getChild('allSemesters').value">
+                <template x-for="(s, i) in semesters">
+                    <button type="button" @click="switchSemester(s.Year, s.TeachingTerm)"
+                            :class="{'border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50': i == selectedSemesterIndex }"
+                            class="tum-live-side-navigation-group-item hover"
+                            x-text="s.FriendlyString()"></button>
+                </template>
+            </template>
+            <button @click="navigation.getChild('allSemesters').toggle()"
+                    class="tum-live-side-navigation-group-item hover">
+                <i class="fa-solid"
+                   :class="navigation.getChild('allSemesters').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                <span x-text="navigation.getChild('allSemesters').value ? 'Show less' : 'Show all'"></span>
+            </button>
+        </article>
+        <template x-if="pinnedCourses.length > 0">
+            <article class="tum-live-side-navigation-group">
+                <header>
+                    <i class="fa-solid fa-thumbtack"></i>
+                    Pinned Courses
+                </header>
+                <template x-for="course in pinnedCourses" :key="course.ID">
+                    <a class="tum-live-side-navigation-group-item hover"
+                       :href="course.URL()"
+                       @click.prevent="showCourse(course.Slug, course.Year, course.TeachingTerm)"
+                       x-text="course.Name">
+                    </a>
+                </template>
+            </article>
+        </template>
+        <template x-if="userCourses.length > 0">
+            <article class="tum-live-side-navigation-group">
+                <header>
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    My Courses
+                </header>
+                <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
+                    <a class="tum-live-side-navigation-group-item hover"
+                       :href="course.URL()"
+                       @click.prevent="showCourse(course.Slug)"
+                       x-text="course.Name">
+                    </a>
+                </template>
+                <template x-if="userCourses.length > 8 && !state.isUserCourses()">
+                    <button @click="showUserCourses()"
+                            class="tum-live-side-navigation-group-item hover">
+                        <i class="fa-solid fa-chevron-right"></i>
+                        Show all my courses
+                    </button>
+                </template>
+            </article>
+        </template>
+        <article class="tum-live-side-navigation-group grow">
+            <header>
+                <i class="fa-solid fa-chalkboard"></i>
+                Public Courses
+            </header>
+            <template x-for="course in publicCourses.slice(0, 5)" :key="course.ID">
+                <a class="tum-live-side-navigation-group-item hover"
+                   :href="course.URL()"
+                   @click.prevent="showCourse(course.Slug)"
+                   x-text="course.Name">
+                </a>
+            </template>
+            <template x-if="publicCourses.length > 5 && !state.isPublicCourses()">
+                <button @click="showPublicCourses()"
+                        class="tum-live-side-navigation-group-item hover">
+                    <i class="fa-solid fa-chevron-right"></i>
+                    Show all public courses
+                </button>
+            </template>
+        </article>
+        {{template "mobile_footer" .VersionTag}}
+    </section>
+    <section class="w-full">
+        <div id="search" class="h-10 w-full flex justify-center" x-data="{searchableCourses: [], searcher: undefined}">
+            <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-full dark:bg-gray-800" style="width: 50%;">
+                <i class="fa-solid fa-search pl-3 text-xs text-7 text-black dark:text-gray-300"></i>
+                <input class="px-3 outline-none border-none bg-transparent h-full w-full grow text-black dark:text-gray-300" id="search-bar" type="text"
+                       placeholder="Search"
+                       @blur="searcher.open = false;"
+                       @focus="searcher = home.globalSearch();"
+                       @keyup="searcher.searchInput = document.getElementById('search-bar').value;
+                   selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm):searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
+            </div>
+            <template x-if="searcher != undefined && searcher.open" class="h-10 w-1/2" >
+                <ul class="center rounded-lg grid py-1 px-1 bg-gray-800 mt-1" role="listbox">
+                    <template x-if="searcher.hits.length > 0">
+                        <template x-for="course in searcher.hits">
+                            <li role="option" aria-selected="false">
+                                <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+                                   :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
+                                   @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
+                                   x-text="course.name">
+                                </a>
+                            </li>
+                        </template>
+                        <template x-for="subtitles in searcher.hits">
+                            <li role="option" aria-selected="false">
+                                <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+                                   :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
+                                   @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';"
+                                   x-text="course.name">
+                                </a>
+                            </li>
+                        </template>
+                    </template>
+                    <template x-if="searcher.hits.length == 0">
+                        <li role="listitem" aria-selected="false">
+                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+                               x-text="'No Course found'">
+                            </a>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+        </div>
+    </section>
+
+</main>
+{{template "footer" .VersionTag}}
+</body>
+</html>
