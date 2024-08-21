@@ -25,7 +25,7 @@ func getCourseWideSubtitleSearchRequest(q string, limit int64, streamFilter stri
 	req := meilisearch.SearchRequest{
 		IndexUID:             "SUBTITLES",
 		Query:                q,
-		Limit:                limit + 2,
+		Limit:                limit,
 		Filter:               streamFilter,
 		AttributesToRetrieve: []string{"streamID", "timestamp", "textPrev", "text", "textNext"},
 	}
@@ -66,7 +66,7 @@ func Search(q string, limit int64, searchType int, courseFilter string, streamFi
 	for i := 0; i < 4; i++ {
 		switch searchType & bitOperator {
 		case 0:
-			continue
+			break
 		case 1:
 			reqs = append(reqs, getCourseWideSubtitleSearchRequest(q, limit, subtitleFilter))
 		case 2:
