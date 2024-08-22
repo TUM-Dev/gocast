@@ -296,17 +296,10 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 	return cRes
 }
 
-func (u *User) AdministeredCoursesForSemester(year int, term string, context context.Context) []Course {
-	administeredCourses := make([]Course, 0)
-	for _, c := range u.AdministeredCourses {
-		if c.Year == year && c.TeachingTerm == term {
-			administeredCourses = append(administeredCourses, c)
-		}
-	}
-	return administeredCourses
-}
-
 func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemester Semester, semesters []Semester, context context.Context) []Course {
+	if u == nil {
+		return make([]Course, 0)
+	}
 	var semester Semester
 	administeredCourses := make([]Course, 0)
 	for _, c := range u.AdministeredCourses {
@@ -318,17 +311,10 @@ func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemes
 	return administeredCourses
 }
 
-func (u *User) CoursesForSemesterWithoutAdministeredCourses(year int, term string, context context.Context) []Course {
-	courses := make([]Course, 0)
-	for _, c := range u.Courses {
-		if c.Year == year && c.TeachingTerm == term && !u.IsAdminOfCourse(c) {
-			courses = append(courses, c)
-		}
-	}
-	return courses
-}
-
 func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester, semesters []Semester, context context.Context) []Course {
+	if u == nil {
+		return make([]Course, 0)
+	}
 	var semester Semester
 	courses := make([]Course, 0)
 	for _, c := range u.Courses {
