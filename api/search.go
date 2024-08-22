@@ -84,7 +84,7 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
+	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res)
 	c.JSON(http.StatusOK, responseToMap(res))
 }
 
@@ -117,7 +117,7 @@ func (r searchRoutes) search(c *gin.Context) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		checkResponse(c, user, int64(limit), r.DaoWrapper, res)
+		checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res)
 		c.JSON(http.StatusOK, responseToMap(res))
 		return
 	}
@@ -131,7 +131,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
+	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res)
 	c.JSON(http.StatusOK, responseToMap(res))
 	return
 }
@@ -182,35 +182,48 @@ func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model
 	return tools.Search(query, limit, 4, meiliCourseFilter(c, user, sem1, sem2, nil), "", ""), nil
 }
 
-func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse) {
-	type MeiliCourseResponse struct {
-		Name         string `json:"name"`
-		Slug         string `json:"slug"`
-		Year         int    `json:"year"`
-		TeachingTerm string `json:"semester"`
-	}
-	type MeiliStreamResponse struct {
-		ID           uint   `json:"ID"`
-		Name         string `json:"name"`
-		Description  string `json:"description"`
-		CourseName   string `json:"courseName"`
-		Year         int    `json:"year"`
-		TeachingTerm string `json:"semester"`
-		CourseSlug   string `json:"courseSlug"`
-	}
+type MeiliCourseResponse struct {
+	Name         string `json:"name"`
+	Slug         string `json:"slug"`
+	Year         int    `json:"year"`
+	TeachingTerm string `json:"semester"`
+}
 
+type MeiliStreamResponse struct {
+	ID           uint   `json:"ID"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	CourseName   string `json:"courseName"`
+	Year         int    `json:"year"`
+	TeachingTerm string `json:"semester"`
+	CourseSlug   string `json:"courseSlug"`
+}
+
+type MeiliResponseSubtitles struct {
+	StreamID           uint   `json:"streamID"`
+	Timestamp          int64  `json:"timestamp"`
+	TextPrev           string `json:"textPrev"` // the previous subtitle line
+	Text               string `json:"text"`
+	TextNext           string `json:"textNext"` // the next subtitle line
+	CourseName         string `json:"courseName"`
+	CourseSlug         string `json:"slug"`
+	CourseYear         int    `json:"year"`
+	CourseTeachingTerm string `json:"semester"`
+}
+
+func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse) {
 	for i, res := range response.Results {
 		switch res.IndexUID {
 		case "STREAMS":
+			res.Hits = []interface{}{}
+
 			var meiliStreams []MeiliStreamResponse
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
 			if err != nil {                     //shouldn't happen
-				res.Hits = make([]interface{}, 0) // empty response
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliStreams)
 			if err != nil { // shouldn't happen
-				res.Hits = make([]interface{}, 0) // empty response
 				continue
 			}
 
@@ -224,6 +237,7 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 				if err != nil {
 					continue
 				}
+
 				meiliStream.CourseSlug = course.Slug
 				if user.IsEligibleToWatchCourse(course) && !stream.Private || user.IsAdminOfCourse(course) {
 					res.Hits = append(res.Hits, meiliStream)
@@ -235,31 +249,64 @@ func checkResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao
 			}
 			response.Results[i] = res
 		case "COURSES":
+			res.Hits = []interface{}{}
+
 			var meiliCourses []MeiliCourseResponse
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
 			if err != nil {                     //shouldn't happen
-				res.Hits = make([]interface{}, 0) // empty response
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliCourses)
 			if err != nil { // shouldn't happen
-				res.Hits = make([]interface{}, 0)
 				continue
 			}
 
-			res.Hits = []interface{}{}
 			for _, meiliCourse := range meiliCourses {
 				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year)
 				if err == nil && user.IsEligibleToWatchCourse(course) {
 					res.Hits = append(res.Hits, meiliCourse)
 				}
+
 				if len(res.Hits) >= int(limit) {
 					break
 				}
 			}
 			response.Results[i] = res
 		case "SUBTITLES":
-			continue
+			res.Hits = []interface{}{}
+
+			var meiliSubtitles []MeiliResponseSubtitles
+			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
+			if err != nil {                     //shouldn't happen
+				continue
+			}
+			err = json.Unmarshal(temp, &meiliSubtitles)
+			if err != nil { // shouldn't happen
+				continue
+			}
+
+			for _, meiliSubtitle := range meiliSubtitles {
+				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.Itoa(int(meiliSubtitle.StreamID)))
+				if err != nil {
+					continue
+				}
+				course, err := daoWrapper.CoursesDao.GetCourseById(c, stream.CourseID)
+				if err != nil {
+					continue
+				}
+
+				meiliSubtitle.CourseSlug = course.Slug
+				meiliSubtitle.CourseName = course.Name
+				meiliSubtitle.CourseYear = course.Year
+				meiliSubtitle.CourseTeachingTerm = course.TeachingTerm
+				if user.IsEligibleToWatchCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
+					res.Hits = append(res.Hits, meiliSubtitle)
+				}
+
+				if len(res.Hits) >= int(limit) {
+					break
+				}
+			}
 		default:
 			continue
 		}
