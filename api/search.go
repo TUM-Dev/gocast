@@ -69,12 +69,8 @@ course=...,... max. 2
 */
 
 func (r searchRoutes) searchCourses(c *gin.Context) {
-	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	query := c.Query("q")
-	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
-	if err != nil {
-		limit = DefaultLimit
-	}
+	user, query, limit := getDefaultParameters(c)
+
 	res, err := semesterSearchHelper(c, query, int64(limit), user, true)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -88,15 +84,20 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 	c.JSON(http.StatusOK, responseToMap(res))
 }
 
-func (r searchRoutes) search(c *gin.Context) {
+func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
 	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	query := c.Query("q")
 	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
 	if err != nil {
 		limit = DefaultLimit
 	}
-	var res *meilisearch.MultiSearchResponse
+	return user, query, limit
+}
 
+func (r searchRoutes) search(c *gin.Context) {
+	user, query, limit := getDefaultParameters(c)
+
+	var res *meilisearch.MultiSearchResponse
 	if courseParam := c.Query("course"); courseParam != "" {
 		courses, errorCode := parseCourses(c, r.DaoWrapper, courseParam)
 		if errorCode == 2 {
@@ -122,7 +123,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		return
 	}
 
-	res, err = semesterSearchHelper(c, query, int64(limit), user, false)
+	res, err := semesterSearchHelper(c, query, int64(limit), user, false)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -347,7 +348,8 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 	if user == nil {
 		permissionFilter = "(visibility = \"public\" AND private = 0)"
 	} else {
-		enrolledCoursesFilter := enrolledCoursesIdFilter(c, user, semester, semester, nil)
+		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(semester, semester, nil, c)
+		enrolledCoursesFilter := courseSliceToString(enrolledCourses)
 		if len(user.AdministeredCourses) == 0 {
 			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID in %s)) AND private = 0)", enrolledCoursesFilter)
 		} else {
@@ -374,13 +376,14 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 	if user == nil {
 		permissionFilter = "(visibility = \"public\")"
 	} else {
-		filter := enrolledCoursesIdFilter(c, user, firstSemester, lastSemester, semesters)
+		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters, c)
+		enrolledCoursesFilter := courseSliceToString(enrolledCourses)
 		if len(user.AdministeredCourses) == 0 {
-			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s))", filter)
+			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s))", enrolledCoursesFilter)
 		} else {
 			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester, lastSemester, semesters, c)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
-			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s) OR ID in %s)", filter, administeredCoursesFilter)
+			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s) OR ID in %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
 	}
 
@@ -429,13 +432,6 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 		filter := "(" + strings.Join(semesterStringsSlice, " OR ") + ")"
 		return filter
 	}
-}
-
-// params that are not used may be of corresponding zero value
-// returns a meili array representation of all courseIDs the user is allowed to search for
-func enrolledCoursesIdFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
-	courses := user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters, c)
-	return courseSliceToString(courses)
 }
 
 // Utility functions
