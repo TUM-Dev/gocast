@@ -66,10 +66,27 @@ semester=...,..., max. 8
 Einzelner oder Mehrere Kurse:
 course=...
 course=...,... max. 2
-
-
-
 */
+
+func (r searchRoutes) searchCourses(c *gin.Context) {
+	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	query := c.Query("q")
+	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
+	if err != nil {
+		limit = DefaultLimit
+	}
+	res, err := semesterSearchHelper(c, query, int64(limit), user, true)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	if res == nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
+	c.JSON(http.StatusOK, responseToMap(res))
+}
 
 func (r searchRoutes) search(c *gin.Context) {
 	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
@@ -258,9 +275,10 @@ func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 
 	var streamIDs []uint
 	for _, course := range courses {
+		eligibleToWatch := user.IsEligibleToWatchCourse(course)
 		admin := user.IsAdminOfCourse(course)
 		for _, stream := range course.Streams {
-			if !stream.Private || admin {
+			if eligibleToWatch && (!stream.Private || admin) {
 				streamIDs = append(streamIDs, stream.ID)
 			}
 		}
@@ -282,13 +300,13 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 	if user == nil {
 		permissionFilter = "(visibility = \"public\" AND private = 0)"
 	} else {
-		filter := courseIdFilter(c, user, semester, semester, nil)
+		enrolledCoursesFilter := enrolledCoursesIdFilter(c, user, semester, semester, nil)
 		if len(user.AdministeredCourses) == 0 {
-			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID in %s)) AND private = 0)", filter)
+			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID in %s)) AND private = 0)", enrolledCoursesFilter)
 		} else {
-			administeredCourses := user.AdministeredCoursesForSemester(semester.Year, semester.TeachingTerm, c)
+			administeredCourses := user.AdministeredCoursesForSemesters(semester, semester, nil, c)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
-			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID in %s)) AND private = 0 OR courseID IN %s)", filter, administeredCoursesFilter)
+			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID in %s)) AND private = 0 OR courseID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
 	}
 
@@ -309,7 +327,7 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 	if user == nil {
 		permissionFilter = "(visibility = \"public\")"
 	} else {
-		filter := courseIdFilter(c, user, firstSemester, lastSemester, semesters)
+		filter := enrolledCoursesIdFilter(c, user, firstSemester, lastSemester, semesters)
 		if len(user.AdministeredCourses) == 0 {
 			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s))", filter)
 		} else {
@@ -332,27 +350,29 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 	}
 
 	if semesters == nil {
+		//single semester
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 			return fmt.Sprintf("(year = %d AND semester = \"%s\")", firstSemester.Year, firstSemester.TeachingTerm)
 		} else if len(semesters) == 1 {
 			return fmt.Sprintf("(year = %d AND semester = \"%s\")", semesters[0].Year, semesters[0].TeachingTerm)
+		}
+
+		//multiple semesters
+		var constraint1, constraint2 string
+		if firstSemester.TeachingTerm == "W" {
+			constraint1 = fmt.Sprintf("(year = %d AND semester = \"%s\")", firstSemester.Year, firstSemester.TeachingTerm)
 		} else {
-			var constraint1, constraint2 string
-			if firstSemester.TeachingTerm == "W" {
-				constraint1 = fmt.Sprintf("(year = %d AND semester = \"%s\")", firstSemester.Year, firstSemester.TeachingTerm)
-			} else {
-				constraint1 = fmt.Sprintf("year = %d", firstSemester.Year)
-			}
-			if lastSemester.TeachingTerm == "S" {
-				constraint2 = fmt.Sprintf("(year = %d AND semester = \"%s\")", lastSemester.Year, lastSemester.TeachingTerm)
-			} else {
-				constraint2 = fmt.Sprintf("year = %d", lastSemester.Year)
-			}
-			if firstSemester.Year+1 < lastSemester.Year {
-				return fmt.Sprintf("(%s OR (year > %d AND year < %d) OR %s)", constraint1, firstSemester.Year, lastSemester.Year, constraint2)
-			} else {
-				return fmt.Sprintf("(%s OR %s)", constraint1, constraint2)
-			}
+			constraint1 = fmt.Sprintf("year = %d", firstSemester.Year)
+		}
+		if lastSemester.TeachingTerm == "S" {
+			constraint2 = fmt.Sprintf("(year = %d AND semester = \"%s\")", lastSemester.Year, lastSemester.TeachingTerm)
+		} else {
+			constraint2 = fmt.Sprintf("year = %d", lastSemester.Year)
+		}
+		if firstSemester.Year+1 < lastSemester.Year {
+			return fmt.Sprintf("(%s OR (year > %d AND year < %d) OR %s)", constraint1, firstSemester.Year, lastSemester.Year, constraint2)
+		} else {
+			return fmt.Sprintf("(%s OR %s)", constraint1, constraint2)
 		}
 	} else {
 		semesterStringsSlice := make([]string, len(semesters))
@@ -366,40 +386,9 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 
 // params that are not used may be of corresponding zero value
 // returns a meili array representation of all courseIDs the user is allowed to search for
-func courseIdFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
-	courses := make([]model.Course, 0)
-	if user != nil {
-		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
-			courses = user.CoursesForSemesterWithoutAdministeredCourses(firstSemester.Year, firstSemester.TeachingTerm, c)
-		} else if len(semesters) == 1 {
-			courses = user.CoursesForSemesterWithoutAdministeredCourses(semesters[0].Year, semesters[0].TeachingTerm, c)
-		} else {
-			courses = user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters, c)
-		}
-	}
+func enrolledCoursesIdFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
+	courses := user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters, c)
 	return courseSliceToString(courses)
-}
-
-// Old searchCourses route
-
-func (r searchRoutes) searchCourses(c *gin.Context) {
-	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	query := c.Query("q")
-	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
-	if err != nil {
-		limit = DefaultLimit
-	}
-	res, err := semesterSearchHelper(c, query, int64(limit), user, true)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	if res == nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	checkResponse(c, user, int64(limit), r.DaoWrapper, res)
-	c.JSON(http.StatusOK, responseToMap(res))
 }
 
 // Utility functions
@@ -430,8 +419,9 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	return semesters, nil
 }
 
-func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, coursesParam string) ([]model.Course, uint) {
-	coursesStrings := strings.Split(coursesParam, ",")
+// parses the URL Parameter course (urlParamCourse) and returns a slice containing every course in the parameter or an error code
+func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse string) ([]model.Course, uint) {
+	coursesStrings := strings.Split(urlParamCourse, ",")
 
 	regex, err := regexp.Compile(`^.+[0-9]{4}[WS]$`)
 	if err != nil {
@@ -440,7 +430,7 @@ func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, coursesParam string
 
 	courses := make([]model.Course, len(coursesStrings))
 	for i, courseString := range coursesStrings {
-		if !regex.MatchString(coursesParam) {
+		if !regex.MatchString(urlParamCourse) {
 			return nil, 1
 		}
 		length := len(courseString)
