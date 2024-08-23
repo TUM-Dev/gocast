@@ -14,32 +14,10 @@
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
             <ul class="center rounded-lg grid px-1 pb-1 bg-gray-100 border-gray-400 dark:border-none dark:bg-gray-800 mt-1 space-y-1" role="listbox">
                 <template x-if="!home.isInCourse()">
-                    <template x-if="searcher.hits.COURSES && searcher.hits.COURSES.length > 0">
-                        <template x-for="course in searcher.hits.COURSES">
-                            {{template "course-search-card"}}
-                        </template>
-                    </template>
-                    <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length == 0">
-                        <li role="listitem" aria-selected="false">
-                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
-                               x-text="'No Course found'">
-                            </a>
-                        </li>
-                    </template>
+                    {{template "home-search-results"}}
                 </template>
                 <template x-if="home.isInCourse()">
-                    <template x-if="searcher.hits.STREAMS && searcher.hits.STREAMS.length > 0">
-                        <template x-for="stream in searcher.hits.STREAMS">
-                            {{template "stream-search-card"}}
-                        </template>
-                    </template>
-                    <template x-if="!searcher.hits.STREAMS || searcher.hits.STREAMS.length == 0">
-                        <li role="listitem" aria-selected="false">
-                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
-                                No Stream found
-                            </a>
-                        </li>
-                    </template>
+                    {{template "course-search-results"}}
                 </template>
             </ul>
         </template>
@@ -70,4 +48,34 @@
             <p x-text="stream.name"></p>
         </a>
     </li>
+{{end}}
+
+{{define "course-search-results"}}
+<template x-if="searcher.hits.STREAMS && searcher.hits.STREAMS.length > 0">
+    <template x-for="stream in searcher.hits.STREAMS">
+        {{template "stream-search-card"}}
+    </template>
+</template>
+<template x-if="!searcher.hits.STREAMS || searcher.hits.STREAMS.length == 0">
+    <li role="listitem" aria-selected="false">
+        <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+            No Stream found
+        </a>
+    </li>
+</template>
+{{end}}
+
+{{define "home-search-results"}}
+<template x-if="searcher.hits.COURSES && searcher.hits.COURSES.length > 0">
+    <template x-for="course in searcher.hits.COURSES">
+        {{template "course-search-card"}}
+    </template>
+</template>
+<template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length == 0">
+    <li role="listitem" aria-selected="false">
+        <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+           x-text="'No Course found'">
+        </a>
+    </li>
+</template>
 {{end}}

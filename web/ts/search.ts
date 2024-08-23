@@ -64,7 +64,6 @@ export function globalSearch() {
                             res.json().then((data) => {
                                 this.hits = data;
                                 this.open = true;
-                                console.log(this.hits)
                             });
                         }
                     });
@@ -75,7 +74,6 @@ export function globalSearch() {
                             res.json().then((data) => {
                                 this.hits = data;
                                 this.open = true;
-                                console.log(this.hits)
                             });
                         }
                     });
@@ -85,7 +83,6 @@ export function globalSearch() {
                             res.json().then((data) => {
                                 this.hits = data;
                                 this.open = true;
-                                console.log(this.hits)
                             });
                         }
                     });
@@ -94,6 +91,7 @@ export function globalSearch() {
                 this.hits = [];
                 this.open = false;
             }
+            console.log(this.hits)
         },
     };
 }
