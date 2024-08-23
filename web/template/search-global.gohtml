@@ -1,18 +1,20 @@
 {{define "search-global"}}
-    <div id="search" class="h-10 w-96" x-data="{searchableCourses: [], searcher: undefined}">
-        <label class="flex items-center rounded-full bg-gray-100 dark:bg-gray-800 text-sm py-1 h-full">
+    <div id="search" class="h-10 w-60 bg-gray-100 dark:bg-gray-800 sm:w-10 sm:hover:w-96 sm:focus-within:w-96 transition-all
+        ease-in-out rounded-full sm:bg-transparent sm:dark:bg-transparent sm:hover:bg-gray-100 sm:dark:hover:bg-gray-800 sm:focus-within:bg-gray-100
+        sm:dark:focus-within:bg-gray-800" x-data="{searchableCourses: [], searcher: undefined}">
+        <label class="flex items-center text-sm py-1 h-full">
             <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
             <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" id="search-courses" type="text"
                    placeholder="Search in courses"
                    @blur="searcher.open = false;"
-                   @focus="searcher = home.coursesSearch();"
+                   @focus="searcher = home.globalSearch();"
                    @keyup="searcher.searchInput = document.getElementById('search-courses').value;
                    selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm):searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
         </label>
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
             <ul class="center rounded-lg grid py-1 px-1 bg-gray-800 mt-1" role="listbox">
-                <template x-if="searcher.hits.length > 0">
-                    <template x-for="course in searcher.hits">
+                <template x-if="searcher.hits.COURSES && searcher.hits.COURSES.length > 0">
+                    <template x-for="course in searcher.hits.COURSES">
                         <li role="option" aria-selected="false">
                             <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
                                :href="'?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
@@ -23,7 +25,7 @@
                         </li>
                     </template>
                 </template>
-                <template x-if="searcher.hits.length == 0">
+                <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length == 0">
                     <li role="listitem" aria-selected="false">
                         <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
                            x-text="'No Course found'">

@@ -40,8 +40,7 @@ export function globalSearch() {
         searchInput: "",
         search: function (year: number, teachingTerm: string) {
             if (this.searchInput.length > 2) {
-                fetch(`/api/search?q=${this.searchInput}&course=brauereiwesen2022S`).then((res) => {
-                //fetch(`/api/search/courses?q=${this.searchInput}`).then((res) => {
+                fetch(`/api/search?q=${this.searchInput}`).then((res) => {
                     if (res.ok) {
                         res.json().then((data) => {
                             this.hits = data;
