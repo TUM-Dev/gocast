@@ -5,24 +5,17 @@
         <label class="flex items-center text-sm py-1 h-full">
             <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
             <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" id="search-courses" type="text"
-                   placeholder="Search in courses"
+                   placeholder="Search for course"
                    @blur="searcher.open = false;"
                    @focus="searcher = home.globalSearch();"
                    @keyup="searcher.searchInput = document.getElementById('search-courses').value;
                    selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm):searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
         </label>
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
-            <ul class="center rounded-lg grid py-1 px-1 bg-gray-800 mt-1" role="listbox">
+            <ul class="center rounded-lg grid px-1 pb-1 bg-gray-100 border-gray-400 dark:border-none dark:bg-gray-800 mt-1 space-y-1" role="listbox">
                 <template x-if="searcher.hits.COURSES && searcher.hits.COURSES.length > 0">
                     <template x-for="course in searcher.hits.COURSES">
-                        <li role="option" aria-selected="false">
-                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
-                               :href="'?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
-                               @mousedown="showCourse(course.slug, course.year, course.semester);
-                               document.getElementById('search-courses').value = '';searcher.searchInput='';searcher.open = false;"
-                               x-text="course.name">
-                            </a>
-                        </li>
+                        {{template "course-search-card"}}
                     </template>
                 </template>
                 <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length == 0">
@@ -35,4 +28,17 @@
             </ul>
         </template>
     </div>
+{{end}}
+
+{{define "course-search-card"}}
+    <!--Course is inserted from template before-->
+    <li role="option" aria-selected="false" class="">
+        <a class="flex text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2"
+           :href="'?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
+           @mousedown="showCourse(course.slug, course.year, course.semester);
+                               document.getElementById('search-courses').value = '';searcher.searchInput='';searcher.open = false;"
+           >
+            <p x-text="course.name"></p>
+        </a>
+    </li>
 {{end}}
