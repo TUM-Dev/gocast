@@ -33,26 +33,75 @@ export function coursesSearch() {
     };
 }
 
+export function isInCourse() {
+    let url = new URL(document.location.href);
+    let params = new URLSearchParams(url.search);
+    if (params.has("slug") && params.has("year") && params.has("term")) {
+        return true;
+    }
+    return false;
+}
+
+export function searchPlaceholder() {
+    if (isInCourse()) {
+        return "Search in course";
+    }
+    return "Search for course";
+}
+
 export function globalSearch() {
     return {
         hits: {},
         open: false,
         searchInput: "",
-        search: function (year: number, teachingTerm: string) {
+        search: function (year: number = -1, teachingTerm: string = "", limit: number = 10) {
             if (this.searchInput.length > 2) {
-                fetch(`/api/search?q=${this.searchInput}`).then((res) => {
-                    if (res.ok) {
-                        res.json().then((data) => {
-                            this.hits = data;
-                            this.open = true;
-                            console.log(this.hits)
-                        });
-                    }
-                });
+                let url = new URL(document.location.href);
+                let params = new URLSearchParams(url.search);
+                if (params.has("slug") && params.has("year") && params.has("term")) {
+                    fetch(`/api/search?q=${this.searchInput}&course=${params.get("slug")}${params.get("year")}${params.get("term")}`).then((res) => {
+                        if (res.ok) {
+                            res.json().then((data) => {
+                                this.hits = data;
+                                this.open = true;
+                                console.log(this.hits)
+                            });
+                        }
+                    });
+                }
+                else if(year != -1 && teachingTerm != "") {
+                    fetch(`/api/search?q=${this.searchInput}&limit=${limit}&semester=${year}${teachingTerm}`).then((res) => {
+                        if (res.ok) {
+                            res.json().then((data) => {
+                                this.hits = data;
+                                this.open = true;
+                                console.log(this.hits)
+                            });
+                        }
+                    });
+                } else {
+                    fetch(`/api/search?q=${this.searchInput}&limit=${limit}`).then((res) => {
+                        if (res.ok) {
+                            res.json().then((data) => {
+                                this.hits = data;
+                                this.open = true;
+                                console.log(this.hits)
+                            });
+                        }
+                    });
+                }
             } else {
                 this.hits = [];
                 this.open = false;
             }
         },
     };
+}
+
+export function initPopstateSearchBarListener() {
+    console.log("Initialized popstate listener")
+    document.body.addEventListener("click", (event) => {
+        setTimeout(() => {}, 50);
+        (document.getElementById("search-courses") as HTMLInputElement).placeholder = searchPlaceholder();
+    })
 }

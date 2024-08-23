@@ -1,29 +1,45 @@
 {{define "search-global"}}
     <div id="search" class="h-10 w-60 bg-gray-100 dark:bg-gray-800 sm:w-10 sm:hover:w-96 sm:focus-within:w-96 transition-all
         ease-in-out rounded-full sm:bg-transparent sm:dark:bg-transparent sm:hover:bg-gray-100 sm:dark:hover:bg-gray-800 sm:focus-within:bg-gray-100
-        sm:dark:focus-within:bg-gray-800" x-data="{searchableCourses: [], searcher: undefined}">
+        sm:dark:focus-within:bg-gray-800" x-data="{searcher: undefined}" x-init="home.initPopstateSearchBarListener()">
         <label class="flex items-center text-sm py-1 h-full">
             <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
             <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" id="search-courses" type="text"
-                   placeholder="Search for course"
+                   :placeholder="home.searchPlaceholder()"
                    @blur="searcher.open = false;"
                    @focus="searcher = home.globalSearch();"
                    @keyup="searcher.searchInput = document.getElementById('search-courses').value;
-                   selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm):searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
+                   selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm) : searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
         </label>
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
             <ul class="center rounded-lg grid px-1 pb-1 bg-gray-100 border-gray-400 dark:border-none dark:bg-gray-800 mt-1 space-y-1" role="listbox">
-                <template x-if="searcher.hits.COURSES && searcher.hits.COURSES.length > 0">
-                    <template x-for="course in searcher.hits.COURSES">
-                        {{template "course-search-card"}}
+                <template x-if="!home.isInCourse()">
+                    <template x-if="searcher.hits.COURSES && searcher.hits.COURSES.length > 0">
+                        <template x-for="course in searcher.hits.COURSES">
+                            {{template "course-search-card"}}
+                        </template>
+                    </template>
+                    <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length == 0">
+                        <li role="listitem" aria-selected="false">
+                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
+                               x-text="'No Course found'">
+                            </a>
+                        </li>
                     </template>
                 </template>
-                <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length == 0">
-                    <li role="listitem" aria-selected="false">
-                        <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
-                           x-text="'No Course found'">
-                        </a>
-                    </li>
+                <template x-if="home.isInCourse()">
+                    <template x-if="searcher.hits.STREAMS && searcher.hits.STREAMS.length > 0">
+                        <template x-for="stream in searcher.hits.STREAMS">
+                            {{template "stream-search-card"}}
+                        </template>
+                    </template>
+                    <template x-if="!searcher.hits.STREAMS || searcher.hits.STREAMS.length == 0">
+                        <li role="listitem" aria-selected="false">
+                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                No Stream found
+                            </a>
+                        </li>
+                    </template>
                 </template>
             </ul>
         </template>
@@ -33,12 +49,25 @@
 {{define "course-search-card"}}
     <!--Course is inserted from template before-->
     <li role="option" aria-selected="false" class="">
-        <a class="flex text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2"
+        <a class="flex flex-col text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2"
            :href="'?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
            @mousedown="showCourse(course.slug, course.year, course.semester);
                                document.getElementById('search-courses').value = '';searcher.searchInput='';searcher.open = false;"
            >
             <p x-text="course.name"></p>
+            <p x-text="course.year + ' ' + course.semester"></p>
+        </a>
+    </li>
+{{end}}
+
+{{define "stream-search-card"}}
+    <!--Stream is inserted from template before-->
+    <li role="option" aria-selected="false" class="">
+        <a class="flex flex-col text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2"
+           :href="'/w/' + stream.courseSlug + '/' + stream.ID"
+           @mousedown="document.getElementById('search-courses').value = '';searcher.searchInput='';searcher.open = false;
+             document.location.href = '/w/' + stream.courseSlug + '/' + stream.ID;">
+            <p x-text="stream.name"></p>
         </a>
     </li>
 {{end}}
