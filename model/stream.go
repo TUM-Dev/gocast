@@ -390,7 +390,6 @@ type StreamDTO struct {
 
 func (s Stream) ToDTO() StreamDTO {
 	downloads := []DownloadableVod{}
-	s.RoomCode = "5602.EG.001"
 	if s.IsDownloadable() {
 		downloads = s.GetVodFiles()
 	}
