@@ -12,6 +12,7 @@
                    selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm) : searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
         </label>
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
+            <!--<p x-text="searcher.hits['COURSES'].length"></p>-->
             <ul class="center rounded-lg grid px-1 pb-1 bg-gray-100 border-gray-400 dark:border-none dark:bg-gray-800 mt-1 space-y-1" role="listbox">
                 <template x-if="!home.isInCourse()">
                     {{template "home-search-results"}}
@@ -51,12 +52,12 @@
 {{end}}
 
 {{define "course-search-results"}}
-<template x-if="searcher.hits.STREAMS && searcher.hits.STREAMS.length > 0">
-    <template x-for="stream in searcher.hits.STREAMS">
+<template x-if="searcher.hits['STREAMS'] && searcher.hits['STREAMS'].length > 0">
+    <template x-for="stream in searcher.hits['STREAMS']">
         {{template "stream-search-card"}}
     </template>
 </template>
-<template x-if="!searcher.hits.STREAMS || searcher.hits.STREAMS.length == 0">
+<template x-if="!searcher.hits['STREAMS'] || searcher.hits['STREAMS'].length == 0">
     <li role="listitem" aria-selected="false">
         <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
             No Stream found
@@ -66,15 +67,15 @@
 {{end}}
 
 {{define "home-search-results"}}
-<template x-if="searcher.hits.COURSES && searcher.hits.COURSES.length > 0">
-    <template x-for="course in searcher.hits.COURSES">
+<template x-if="searcher.hits['COURSES'] && searcher.hits['COURSES'].length > 0">
+    <template x-for="course in searcher.hits['COURSES']">
         {{template "course-search-card"}}
     </template>
 </template>
-<template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length == 0">
+<template x-if="!searcher.hits['COURSES'] || searcher.hits['COURSES'].length == 0">
     <li role="listitem" aria-selected="false">
-        <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1"
-           x-text="'No Course found'">
+        <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+            No Course found
         </a>
     </li>
 </template>
