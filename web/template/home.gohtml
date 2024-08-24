@@ -567,7 +567,9 @@
                         </section>
                     </template>
                     <template x-if="plannedStreams.hasElements()">
-                        <section class="tum-live-course-view-item px-3">
+                        <section x-data="{isLectureHallValid(lectureHall) {const regex = /^\d{4}\.[A-Za-z0-9]{2}\.[A-Za-z0-9]{3,4}$/;
+                            return regex.test(lectureHall);}}"
+                                 class="tum-live-course-view-item px-3">
                             <header>
                                 <h3>Scheduled</h3>
                             </header>
@@ -590,7 +592,9 @@
                                                         <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
                                                     </div>
                                                     <h4 x-text="s.Name" class="font-semibold text-1"></h4>
-                                                    	<a :href="`https://nav.tum.de/room/${s.LectureHall}`" class="no-underline" x-text="s.LectureHall"></a>
+                                                    <template x-if="isLectureHallValid(s.LectureHall)">
+                                                        <a :href="`https://nav.tum.de/room/${s.LectureHall}`" class="no-underline" x-text="s.LectureHall"></a>
+                                                    </template>
                                                 </div>
                                             </div>
                                         </article>
