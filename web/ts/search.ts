@@ -1,5 +1,3 @@
-export var test = {};
-
 export function coursesSearch() {
     return {
         hits: [],
@@ -93,8 +91,6 @@ export function globalSearch() {
                 this.hits = {};
                 this.open = false;
             }
-            console.log(this.hits)
-            test = this.hits;
         },
     };
 }

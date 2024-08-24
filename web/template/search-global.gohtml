@@ -62,13 +62,14 @@
         {{template "stream-search-card"}}
     </template>
 </template>
-<template x-if="!searcher.hits['STREAMS'] || searcher.hits['STREAMS'].length <= 0">
+<!-- Next template not working yet, still TODO-->
+<!--<template x-if="!searcher.hits['STREAMS'] || searcher.hits['STREAMS'].length <= 0">
     <li role="listitem" aria-selected="false">
         <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
             No Stream found
         </a>
     </li>
-</template>
+</template>-->
 {{end}}
 
 {{define "home-search-results"}}
@@ -77,11 +78,12 @@
         {{template "course-search-card"}}
     </template>
 </template>
-<template x-if="!searcher.hits['COURSES'] || searcher.hits['COURSES'].length <= 0">
+<!-- Next template not working yet, still TODO-->
+<!--<template x-if="!searcher.hits['COURSES'] || searcher.hits['COURSES'].length <= 0">
     <li role="listitem" aria-selected="false">
         <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
             No Course found
         </a>
     </li>
-</template>
+</template>-->
 {{end}}
