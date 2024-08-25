@@ -48,7 +48,7 @@
                 class="tum-live-icon-button p-3 text-lg md:hidden">
             <i class="fa-solid fa-bars" :class="{'rotate-90': navigation.value}"></i>
         </button>
-        <button class="mx-3" type="button" id="logo" title="Start" @click="showMain()">
+        <button class="mx-3" type="button" id="logo" title="Start" @click="window.location.href = '/'">
             <img src="/logo.svg" width="64" alt="TUM-Live Logo">
         </button>
     </div>
@@ -145,21 +145,23 @@
 </header>
 <main id="content" class="flex grow h-full overflow-y-scroll">
     <section class="w-full">
-        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: []}">
+        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: [], query: home.getSearchQueryFromParam()}">
             <!--Search Bar-->
             <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
                 <i class="fa-solid fa-search pl-3 text-xs text-7 text-black dark:text-gray-300"></i>
                 <input class="px-3 outline-none border-none bg-transparent h-full w-full grow text-black dark:text-gray-300" id="search-bar" type="text"
+                       x-model="query"
                        placeholder="Search"
                        @blur="searcher.open = false;"
-                       @keyup="searcher.searchInput = document.getElementById('search-bar').value;
+                       @keyup="searcher.searchInput = query;
                             searcher.searchWithDataFromPage(semesters, filterSemesters)">
             </div>
 
             <div class="flex flex-col justify-center">
                 <!--Search Filters-->
                 <div class="flex items-center justify-center space-x-2 space-y-1 mt-2 max-w-xl flex-wrap">
-                    <!--Dropdown checkboxes-->
+
+                    <!--Semester Filter-->
                     <div class="relative" x-data="{open: false}">
                         <button @click="open = !open" class="flex items-center justify-center rounded-full bg-gray-100 text-sm py-1 h-8 w-fit px-2 dark:bg-gray-800">
                             <span class="text-black dark:text-gray-300">Semester</span>
@@ -168,7 +170,7 @@
                         <div x-show="open" @click.outside="open = false" class="flex flex-col absolute top-full bg-gray-100 dark:bg-gray-800 border border-gray-400 dark:border-none rounded-lg mt-1 w-fit pr-4 pl-1">
                             <template x-for="(semester, index) in semesters" :key="index">
                                 <label class="flex items-center text-sm py-1 h-full">
-                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterSemesters">
+                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterSemesters" :disabled="filterSemesters.length >= 5 && !filterSemesters.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters)">
                                     <span class="text-black dark:text-gray-300 text-sm" x-text="semester.Year + ' ' + semester.TeachingTerm"></span>
                                 </label>
                             </template>

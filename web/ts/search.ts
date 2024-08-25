@@ -85,8 +85,8 @@ export function filteredSearch() {
             let courses = [];
 
             for (let i = 0; i < selectedSemesters.length; i++) {
-                years.push(semesters[i].Year);
-                teachingTerms.push(semesters[i].TeachingTerm);
+                years.push(semesters[selectedSemesters[i]].Year);
+                teachingTerms.push(semesters[selectedSemesters[i]].TeachingTerm);
             }
             this.search(years, teachingTerms, courses);
         }
@@ -143,6 +143,16 @@ export function initPopstateSearchBarListener() {
     console.log("Initialized popstate listener")
     document.body.addEventListener("click", (event) => {
         setTimeout(() => {}, 50);
-        (document.getElementById("search-courses") as HTMLInputElement).placeholder = searchPlaceholder();
+        updateSearchBarPlaceholder();
     })
+}
+
+export function updateSearchBarPlaceholder() {
+    (document.getElementById("search-courses") as HTMLInputElement).placeholder = searchPlaceholder();
+}
+
+export function getSearchQueryFromParam() {
+    let url = new URL(document.location.href);
+    let params = new URLSearchParams(url.search);
+    return params.get("q");
 }
