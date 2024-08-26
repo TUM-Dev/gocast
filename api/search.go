@@ -216,8 +216,6 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 	for i, res := range response.Results {
 		switch res.IndexUID {
 		case "STREAMS":
-			res.Hits = []interface{}{}
-
 			var meiliStreams []MeiliStreamResponse
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
 			if err != nil {                     //shouldn't happen
@@ -250,8 +248,6 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			}
 			response.Results[i] = res
 		case "COURSES":
-			res.Hits = []interface{}{}
-
 			var meiliCourses []MeiliCourseResponse
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
 			if err != nil {                     //shouldn't happen
@@ -262,6 +258,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				continue
 			}
 
+			res.Hits = []interface{}{}
 			for _, meiliCourse := range meiliCourses {
 				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year)
 				if err == nil && user.IsEligibleToWatchCourse(course) {
@@ -274,8 +271,6 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			}
 			response.Results[i] = res
 		case "SUBTITLES":
-			res.Hits = []interface{}{}
-
 			var meiliSubtitles []MeiliResponseSubtitles
 			temp, err := json.Marshal(res.Hits) //TODO use res.MarshalJSON ?
 			if err != nil {                     //shouldn't happen
@@ -286,6 +281,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				continue
 			}
 
+			res.Hits = []interface{}{}
 			for _, meiliSubtitle := range meiliSubtitles {
 				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.Itoa(int(meiliSubtitle.StreamID)))
 				if err != nil {
