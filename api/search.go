@@ -443,7 +443,7 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 
 	semesters := make([]model.Semester, len(semesterStrings))
 	for i, semester := range semesterStrings {
-		if regex.MatchString(semestersParam) {
+		if regex.MatchString(semester) {
 			year, _ := strconv.Atoi(semester[:4])
 			semesters[i] = model.Semester{
 				TeachingTerm: semester[4:],
@@ -467,7 +467,7 @@ func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse stri
 
 	courses := make([]model.Course, len(coursesStrings))
 	for i, courseString := range coursesStrings {
-		if !regex.MatchString(urlParamCourse) {
+		if !regex.MatchString(courseString) {
 			return nil, 1
 		}
 		length := len(courseString)
