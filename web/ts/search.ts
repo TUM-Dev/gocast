@@ -61,7 +61,7 @@ export function filteredSearch() {
         search: function (years: number[], teachingTerms: string[], courses: string[], limit: number = 10) {
             if (this.searchInput.length > 2) {
                 if (years.length < 8 && teachingTerms.length < 8 && teachingTerms.length == years.length && courses.length < 2) {
-                    fetch(`/api/search?q=${this.searchInput}${years.length > 0 ? encodeURIComponent('&semester=' + getSemestersString(years, teachingTerms)) : ""}${courses.length > 0 ? encodeURIComponent('&courses=' + courses.join(",")) : ""}&limit=${limit}`)
+                    fetch(`/api/search?q=${this.searchInput}${years.length > 0 ? "'&semester='" + encodeURIComponent(getSemestersString(years, teachingTerms)) : ""}${courses.length > 0 ? '&courses=' + encodeURIComponent(courses.join(",")) : ""}&limit=${limit}`)
                         .then((res) => {
                                 if (res.ok) {
                                     res.json().then((data) => {
@@ -79,7 +79,6 @@ export function filteredSearch() {
 
         },
         searchWithDataFromPage: function (semesters: Semester[], selectedSemesters: number[]) {
-            // TODO: Filter semesters with selected semesters
             let years = [];
             let teachingTerms = [];
             let courses = [];
