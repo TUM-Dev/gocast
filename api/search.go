@@ -206,7 +206,7 @@ type MeiliResponseSubtitles struct {
 	Text               string `json:"text"`
 	TextNext           string `json:"textNext"` // the next subtitle line
 	CourseName         string `json:"courseName"`
-	CourseSlug         string `json:"slug"`
+	CourseSlug         string `json:"courseSlug"`
 	CourseYear         int    `json:"year"`
 	CourseTeachingTerm string `json:"semester"`
 }
