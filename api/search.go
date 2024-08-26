@@ -403,8 +403,6 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 		//single semester
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 			return fmt.Sprintf("(year = %d AND semester = \"%s\")", firstSemester.Year, firstSemester.TeachingTerm)
-		} else if len(semesters) == 1 {
-			return fmt.Sprintf("(year = %d AND semester = \"%s\")", semesters[0].Year, semesters[0].TeachingTerm)
 		}
 
 		//multiple semesters
