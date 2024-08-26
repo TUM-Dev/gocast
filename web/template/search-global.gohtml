@@ -69,7 +69,7 @@
                 searcher.searchInput='';
                 searcher.open = false;
                 document.location.href = '/w/' + subtitle.courseSlug.courseSlug + '/' + subtitle.streamID + '/?t=' + subtitle.timestamp;">
-            <!--<p x-text="subtitle.streamName"></p>-->
+            <p x-text="subtitle.streamName"></p>
             <p x-text="subtitle.text"></p>
         </a>
     </li>
@@ -87,7 +87,6 @@
             </template>
         </div>
     </template>
-    <!-- Next template not working yet, still TODO-->
     <template x-if="!searcher.hits['STREAMS'] || searcher.hits['STREAMS'].length <= 0">
         <li role="listitem" aria-selected="false">
             <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
@@ -111,7 +110,6 @@
         </div>
 
     </template>
-    <!-- Next template not working yet, still TODO-->
     <template x-if="!searcher.hits['COURSES'] || searcher.hits['COURSES'].length <= 0">
         <li role="listitem" aria-selected="false">
             <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
@@ -135,7 +133,6 @@
             </div>
 
         </template>
-        <!-- Next template not working yet, still TODO-->
         <template x-if="!searcher.hits['SUBTITLES'] || searcher.hits['SUBTITLES'].length <= 0">
             <li role="listitem" aria-selected="false">
                 <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
