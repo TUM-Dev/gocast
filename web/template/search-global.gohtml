@@ -68,7 +68,7 @@
                 document.getElementById('search-courses').value = '';
                 searcher.searchInput='';
                 searcher.open = false;
-                document.location.href = '/w/' + subtitle.courseSlug + '/' + subtitle.streamID + '/?t=' + subtitle.timestamp;">
+                document.location.href = '/w/' + subtitle.courseSlug + '/' + subtitle.streamID + '/?t=' + (subtitle.timestamp / 1000);">
             <p x-text="subtitle.streamName"></p>
             <p x-text="subtitle.text"></p>
         </a>
