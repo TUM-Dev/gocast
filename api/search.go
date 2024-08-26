@@ -35,9 +35,8 @@ type searchRoutes struct {
 }
 
 const (
-	FilterMaxSemesterCount = 8
-	FilterMaxCoursesCount  = 2
-	DefaultLimit           = 10
+	FilterMaxCoursesCount = 2
+	DefaultLimit          = 10
 )
 
 type MeiliSearchMap map[string]interface{}
@@ -157,7 +156,7 @@ func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model
 		semesters1, err1 := parseSemesters(firstSemesterParam)
 		semesters2, err2 := parseSemesters(lastSemesterParam)
 		semesters, err3 := parseSemesters(semestersParam)
-		if (err1 != nil || err2 != nil || len(semesters1) > 1 || len(semesters2) > 1) && (err3 != nil || len(semesters) > FilterMaxSemesterCount) {
+		if (err1 != nil || err2 != nil || len(semesters1) > 1 || len(semesters2) > 1) && err3 != nil {
 			return nil, errors.New("wrong parameters")
 		}
 		rangeSearch := false
@@ -219,8 +218,8 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			res.Hits = []interface{}{}
 
 			var meiliStreams []MeiliStreamResponse
-			temp, err := json.Marshal(hits) //TODO use res.MarshalJSON ?
-			if err != nil {                 //shouldn't happen
+			temp, err := json.Marshal(hits)
+			if err != nil { //shouldn't happen
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliStreams)
@@ -253,8 +252,8 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			res.Hits = []interface{}{}
 
 			var meiliCourses []MeiliCourseResponse
-			temp, err := json.Marshal(hits) //TODO use res.MarshalJSON ?
-			if err != nil {                 //shouldn't happen
+			temp, err := json.Marshal(hits)
+			if err != nil { //shouldn't happen
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliCourses)
@@ -278,8 +277,8 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			res.Hits = []interface{}{}
 
 			var meiliSubtitles []MeiliResponseSubtitles
-			temp, err := json.Marshal(hits) //TODO use res.MarshalJSON ?
-			if err != nil {                 //shouldn't happen
+			temp, err := json.Marshal(hits)
+			if err != nil { //shouldn't happen
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliSubtitles)
