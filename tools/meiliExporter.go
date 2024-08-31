@@ -156,7 +156,7 @@ func (m *MeiliExporter) SetIndexSettings() {
 		"S": {"Sommersemester", "Sommer", "SS", "SoSe", "Summer"},
 	}
 	_, err := m.c.Index("STREAMS").UpdateSettings(&meilisearch.Settings{
-		FilterableAttributes: []string{"courseID", "year", "semester", "visibility", "private"},
+		FilterableAttributes: []string{"courseID", "year", "semester", "visibility"},
 		SearchableAttributes: []string{"name", "description"},
 	})
 	if err != nil {
