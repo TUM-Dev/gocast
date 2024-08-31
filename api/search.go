@@ -40,7 +40,7 @@ const (
 	DefaultLimit          = 10
 )
 
-type MeiliSearchMap map[string]interface{}
+type MeiliSearchMap map[string]any
 
 func (r searchRoutes) searchSubtitles(c *gin.Context) {
 	s := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
@@ -216,7 +216,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 		switch res.IndexUID {
 		case "STREAMS":
 			hits := res.Hits
-			res.Hits = []interface{}{}
+			res.Hits = []any{}
 
 			var meiliStreams []MeiliStreamResponse
 			temp, err := json.Marshal(hits)
@@ -250,7 +250,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			response.Results[i] = res
 		case "COURSES":
 			hits := res.Hits
-			res.Hits = []interface{}{}
+			res.Hits = []any{}
 
 			var meiliCourses []MeiliCourseResponse
 			temp, err := json.Marshal(hits)
@@ -275,7 +275,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			response.Results[i] = res
 		case "SUBTITLES":
 			hits := res.Hits
-			res.Hits = []interface{}{}
+			res.Hits = []any{}
 
 			var meiliSubtitles []MeiliResponseSubtitles
 			temp, err := json.Marshal(hits)
@@ -309,6 +309,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 					break
 				}
 			}
+			response.Results[i] = res
 		default:
 			continue
 		}
