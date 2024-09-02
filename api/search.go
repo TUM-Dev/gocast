@@ -168,7 +168,13 @@ func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model
 
 		if !courseSearchOnly && (rangeSearch && firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm || len(semesters) == 1) {
 			// single semester search
-			res = tools.Search(query, limit, 6, meiliCourseFilter(c, user, firstSemester, firstSemester, semesters), meiliStreamFilter(c, user, firstSemester, nil), "")
+			var semester model.Semester
+			if rangeSearch {
+				semester = firstSemester
+			} else {
+				semester = semesters[0]
+			}
+			res = tools.Search(query, limit, 6, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), meiliStreamFilter(c, user, semester, nil), "")
 		} else {
 			// multiple semester search
 			res = tools.Search(query, limit, 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
