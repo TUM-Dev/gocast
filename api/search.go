@@ -359,11 +359,11 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(semester, semester, nil, c)
 		enrolledCoursesFilter := courseSliceToString(enrolledCourses)
 		if len(user.AdministeredCourses) == 0 {
-			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID in %s)) AND private = 0)", enrolledCoursesFilter)
+			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID IN %s)) AND private = 0)", enrolledCoursesFilter)
 		} else {
 			administeredCourses := user.AdministeredCoursesForSemesters(semester, semester, nil, c)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
-			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID in %s)) AND private = 0 OR courseID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
+			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID IN %s)) AND private = 0 OR courseID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
 	}
 
@@ -391,7 +391,7 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 		} else {
 			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester, lastSemester, semesters, c)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
-			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s) OR ID in %s)", enrolledCoursesFilter, administeredCoursesFilter)
+			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s) OR ID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
 	}
 
