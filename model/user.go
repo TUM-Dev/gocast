@@ -277,6 +277,10 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	return u.IsAdminOfCourse(course)
 }
 
+func (u *User) IsEligibleToSearchForCourse(course Course) bool {
+	return u.IsEligibleToWatchCourse(course) && course.Visibility != "hidden" || u.IsAdminOfCourse(course)
+}
+
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
 	cMap := make(map[uint]Course)
 	for _, c := range u.Courses {

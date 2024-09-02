@@ -245,7 +245,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				}
 
 				meiliStream.CourseSlug = course.Slug
-				if user.IsEligibleToWatchCourse(course) && !stream.Private || user.IsAdminOfCourse(course) {
+				if user.IsEligibleToSearchForCourse(course) && !stream.Private || user.IsAdminOfCourse(course) {
 					res.Hits = append(res.Hits, meiliStream)
 				}
 
@@ -270,7 +270,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 
 			for _, meiliCourse := range meiliCourses {
 				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year)
-				if err == nil && user.IsEligibleToWatchCourse(course) {
+				if err == nil && user.IsEligibleToSearchForCourse(course) {
 					res.Hits = append(res.Hits, meiliCourse)
 				}
 
