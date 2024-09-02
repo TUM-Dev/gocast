@@ -8,7 +8,12 @@
                    :placeholder="home.searchPlaceholder()"
                    @blur="searcher.open = false;"
                    @focus="searcher = home.globalSearch();"
-                   @keyup="searcher.searchInput = document.getElementById('search-courses').value;
+                   @keyup="
+                   if ($event.code == 'Enter') {
+                        window.location.href = '/search?q=' + encodeURIComponent(document.getElementById('search-courses').value);
+                        return;
+                   }
+                   searcher.searchInput = document.getElementById('search-courses').value;
                    selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm) : searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
         </label>
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
