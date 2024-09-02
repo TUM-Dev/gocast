@@ -78,16 +78,17 @@ func (r *Runner) ReadDiagnostics(retries int) {
 	}
 
 	_, err = con.Heartbeat(context.Background(), &protobuf.HeartbeatRequest{
-		Hostname: r.cfg.Hostname,
-		Port:     int32(r.cfg.Port),
-		LastSeen: timestamppb.New(time.Now()),
-		Status:   "Alive",
-		Workload: uint32(len(r.jobs)),
-		CPU:      cpu,
-		Memory:   memory,
-		Disk:     disk,
-		Uptime:   uptime,
-		Version:  r.cfg.Version,
+		Hostname:      r.cfg.Hostname,
+		Port:          int32(r.cfg.Port),
+		LastSeen:      timestamppb.New(time.Now()),
+		Status:        "Alive",
+		Workload:      uint32(len(r.jobs)),
+		CPU:           cpu,
+		Memory:        memory,
+		Disk:          disk,
+		Uptime:        uptime,
+		Version:       r.cfg.Version,
+		CurrentAction: "none",
 	})
 	if err != nil {
 		r.log.Warn("Error sending the heartbeat", "error", err, "sleeping(s)", 5-retries)

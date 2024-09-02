@@ -67,5 +67,7 @@ func NewDaoWrapper() DaoWrapper {
 		TranscodingFailureDao: NewTranscodingFailureDao(),
 		EmailDao:              NewEmailDao(),
 		RunnerDao:             NewRunnerDao(),
+		JobDao:                NewJobDao(),
+		ActionDao:             NewActionDao(),
 	}
 }

@@ -2,17 +2,18 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"gorm.io/gorm"
 	"time"
 )
 
-// Runner represents a runner that creates, converts and postprocesses streams and does other heavy lifting.
+// Runner represents a runner that creates, converts and postprocessing streams and does other heavy lifting.
 type Runner struct {
+	gorm.Model
+
 	Hostname string `gorm:"primaryKey"`
 	Port     int
-	LastSeen sql.NullTime
+	LastSeen time.Time
 
 	Status   string
 	Workload uint
@@ -21,6 +22,8 @@ type Runner struct {
 	Disk     string
 	Uptime   string
 	Version  string
+
+	Action *Action `gorm:"foreignKey:Hostname"`
 }
 
 // BeforeCreate returns errors if hostnames and ports of workers are invalid.
@@ -34,16 +37,17 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// SendHeartbeat updates the last seen time of the runner and gives runner stats
+// UpdateStats SendHeartbeat updates the last seen time of the runner and gives runner stats
 func (r *Runner) UpdateStats(tx *gorm.DB, ctx context.Context) (bool, error) {
 	newStats := ctx.Value("newStats").(Runner)
 	err := tx.WithContext(ctx).Model(&r).Updates(newStats).Error
 	if err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
 func (r *Runner) IsAlive() bool {
-	return r.LastSeen.Time.After(time.Now().Add(time.Minute * -6))
+	return r.LastSeen.After(time.Now().Add(time.Minute * -6))
 }

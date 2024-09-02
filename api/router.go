@@ -48,4 +48,5 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinBookmarksRouter(router, daoWrapper)
 	configMaintenanceRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
+	configActionRouter(router, daoWrapper)
 }

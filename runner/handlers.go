@@ -25,6 +25,8 @@ func contextFromTranscodingReq(req *protobuf.TranscodingRequest, ctx context.Con
 
 func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
 	r.ReadDiagnostics(5)
+	//TODO: Assign Runner to the action that needs to be passed with the request
+
 	// don't reuse context from grpc, it will be canceled when the request is done.
 	ctx = context.Background()
 	ctx = contextFromStreamReq(req, ctx)

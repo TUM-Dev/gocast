@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/TUM-Dev/gocast/dao"
@@ -35,7 +34,7 @@ func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.Regist
 	runner := model.Runner{
 		Hostname: request.Hostname,
 		Port:     int(request.Port),
-		LastSeen: sql.NullTime{Valid: true, Time: time.Now()},
+		LastSeen: time.Now(),
 		Status:   "Alive",
 		Workload: 0,
 	}
@@ -57,11 +56,12 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 		log.WithError(err).Error("Failed to get runner")
 		return &protobuf.HeartbeatResponse{Ok: false}, err
 	}
+	tempAction, err := g.ActionDao.GetActionByID(ctx, request.CurrentAction)
 
 	newStats := model.Runner{
 		Hostname: request.Hostname,
 		Port:     int(request.Port),
-		LastSeen: sql.NullTime{Valid: true, Time: time.Now()},
+		LastSeen: time.Now(),
 		Status:   "Alive",
 		Workload: uint(request.Workload),
 		CPU:      request.CPU,
@@ -69,6 +69,7 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 		Disk:     request.Disk,
 		Uptime:   request.Uptime,
 		Version:  request.Version,
+		Action:   &tempAction,
 	}
 	ctx = context.WithValue(ctx, "newStats", newStats)
 	log.Info("Updating runner stats ", "runner", r)
@@ -412,10 +413,12 @@ func NotifyRunners(dao dao.DaoWrapper) func() {
 			}
 
 			switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
-			case 1: //presentation
+			case 1:
+				CreateJob(dao, streams[i], courseForStream, lectureHallForStream.PresIP, "PRES", streams[i].End) //presentation
 				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
 				break
 			case 2: //camera
+				CreateJob(dao, streams[i], courseForStream, lectureHallForStream.CamIP, "CAM", streams[i].End)
 				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
 				break
 			default: //combined
@@ -425,11 +428,50 @@ func NotifyRunners(dao dao.DaoWrapper) func() {
 				break
 			}
 
-			//this part until now was the old system for testing but we will be creating the job tables from here
+			//TODO: create proper rundown of job/Actions
+			ctx := context.Background()
+			AllOpenJobs, err := dao.JobDao.GetAllOpenJobs(ctx)
+			if err != nil {
+				logger.Error("Can't get all open jobs", err)
+				return
+			}
+			for _, job := range AllOpenJobs {
+				lastString := 3
+			actionLoop:
+				for _, action := range job.Actions {
+					switch action.Status {
+					case 0:
+						lastString = 0
+						continue actionLoop
+					case 1:
+						break actionLoop
+					case 2:
+						lastString = 2
+						break
+					case 3:
+						if lastString == 0 {
+							runner, err := getRunnerWithLeastWorkloadForJob(runners, action.Type)
+							if err != nil {
+								logger.Error("No runners available", err)
+								return
+							}
+							AssignRunnerAction(dao, runner, action)
+						}
+					}
 
+				}
+			}
 		}
 
 	}
+}
+
+func AssignRunnerAction(dao dao.DaoWrapper, runner model.Runner, action *model.Action) error {
+	panic("implement me")
+}
+
+func CreateJob(dao dao.DaoWrapper, stream model.Stream, course model.Course, ip string, version string, end time.Time) error {
+	panic("implement me")
 }
 
 func (g GrpcRunnerServer) mustEmbedUnimplementedFromRunnerServer() {

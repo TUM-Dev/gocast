@@ -218,6 +218,7 @@ message HeartbeatRequest {
   string Disk = 8;
   string Uptime = 9;
   string Version = 10;
+  string CurrentAction = 11;
 }
 
 message HeartbeatResponse {

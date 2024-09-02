@@ -194,6 +194,8 @@ func main() {
 		&model.TranscodingFailure{},
 		&model.Email{},
 		&model.Runner{},
+		&model.Action{},
+		&model.Job{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

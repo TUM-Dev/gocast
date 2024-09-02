@@ -10,7 +10,7 @@ import (
 )
 
 func configRunnerRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
-	g := r.Group("/api/runner")
+	g := r.Group("/api/runners")
 	g.Use(tools.Admin)
 
 	routes := runnerRoutes{dao: daoWrapper.RunnerDao}
