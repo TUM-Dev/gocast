@@ -330,10 +330,10 @@ func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 
 	var streamIDs []uint
 	for _, course := range courses {
-		eligibleToWatch := user.IsEligibleToWatchCourse(course)
+		eligibleToSearch := user.IsEligibleToSearchForCourse(course)
 		admin := user.IsAdminOfCourse(course)
 		for _, stream := range course.Streams {
-			if eligibleToWatch && (!stream.Private || admin) {
+			if eligibleToSearch && !stream.Private || admin {
 				streamIDs = append(streamIDs, stream.ID)
 			}
 		}
