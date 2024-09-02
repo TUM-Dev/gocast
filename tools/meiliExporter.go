@@ -137,6 +137,7 @@ func (m *MeiliExporter) Export() {
 				Slug:         course.Slug,
 				Year:         course.Year,
 				TeachingTerm: course.TeachingTerm,
+				Visibility:   course.Visibility,
 			}
 		}
 		_, err := coursesIndex.AddDocuments(&meilicourses, "ID")

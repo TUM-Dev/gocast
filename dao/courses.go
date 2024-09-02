@@ -283,9 +283,9 @@ func (d coursesDao) GetCourseAdmins(courseID uint) ([]model.User, error) {
 }
 
 type Course struct {
-	Name, Slug, TeachingTerm string
-	ID                       uint
-	Year                     int
+	Name, Slug, TeachingTerm, Visibility string
+	ID                                   uint
+	Year                                 int
 }
 
 // ExecAllCourses executes f on all courses.
