@@ -9,7 +9,7 @@
                    @blur="searcher.open = false;"
                    @focus="searcher = home.globalSearch();"
                    @keyup="
-                   if ($event.code == 'Enter') {
+                   if ($event.key == 'Enter') {
                         window.location.href = '/search?q=' + encodeURIComponent(document.getElementById('search-courses').value);
                         return;
                    }
