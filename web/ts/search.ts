@@ -155,3 +155,33 @@ export function getSearchQueryFromParam() {
     let params = new URLSearchParams(url.search);
     return params.get("q");
 }
+
+export function initSearchBarArrowKeysListener() {
+    document.addEventListener("keydown", (event) => {
+        let searchResults = document.getElementById("search-results").querySelectorAll("li")
+
+        console.log("Keydown")
+        let activeElement = document.activeElement as HTMLLIElement;
+        if (event.key == "ArrowDown") {
+            let currentIndex = Array.from(searchResults).indexOf(activeElement);
+            let nextIndex = currentIndex + 1;
+            if (nextIndex < searchResults.length) {
+                console.log("Next index " + nextIndex);
+                searchResults[nextIndex].focus();
+            }
+        } else if (event.key == "ArrowUp") {
+            let currentIndex = Array.from(searchResults).indexOf(activeElement);
+            let nextIndex = currentIndex - 1;
+            if (nextIndex >= 0) {
+                console.log("Next index " + nextIndex);
+                searchResults[nextIndex].focus();
+            }
+        } else if (event.key == "Enter") {
+            let currentIndex = Array.from(searchResults).indexOf(activeElement);
+            if (currentIndex >= 0 && currentIndex < searchResults.length) {
+                let curObj = searchResults[currentIndex];
+                curObj.getElementsByTagName("a")[0].click();
+            }
+        }
+    });
+}

@@ -145,7 +145,8 @@
 </header>
 <main id="content" class="flex grow h-full overflow-y-scroll">
     <section class="w-full">
-        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: [], query: home.getSearchQueryFromParam()}" >
+        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: [], query: home.getSearchQueryFromParam()}"
+            x-init="home.initSearchBarArrowKeysListener()">
             <!--Search Bar-->
             <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
                 <i class="fa-solid fa-search pl-3 text-xs text-7 text-black dark:text-gray-300"></i>
@@ -188,8 +189,8 @@
             </div>
 
             <!--Search Results-->
-            <template x-if="searcher != undefined" class="h-full w-1/2" >
-                <ul class="center rounded-lg grid py-1 px-1 mt-1" style="width: 60%;" role="listbox">
+            <template x-if="searcher != undefined" class="h-full w-1/2">
+                <ul class="center rounded-lg grid py-1 px-1 mt-1" style="width: 60%;" role="listbox" id="search-results">
 
                     <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length <= 0">
                         <li role="listitem" aria-selected="false">
@@ -199,7 +200,7 @@
                         </li>
                     </template>
                     <template x-for="course in searcher.hits.COURSES">
-                        <li role="option" aria-selected="false">
+                        <li role="option" aria-selected="false" tabindex="-1">
                             <a class="tum-live-search-result-main flex flex-col"
                                :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
                                @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';">
@@ -217,7 +218,7 @@
                         </li>
                     </template>
                     <template x-for="subtitle in searcher.hits.SUBTITLES">
-                        <li role="option" aria-selected="false">
+                        <li role="option" aria-selected="false" tabindex="-1">
                             <a class="tum-live-search-result-main"
                                x-text="subtitle.text">
                             </a>
@@ -232,7 +233,7 @@
                         </li>
                     </template>
                     <template x-for="stream in searcher.hits.STREAMS">
-                        <li role="option" aria-selected="false">
+                        <li role="option" aria-selected="false" tabindex="-1">
                             <a class="tum-live-search-result-main"
                                 :href="'/w/' + stream.courseSlug + '/' + stream.ID">
                                 <p x-text="stream.courseName"></p>
