@@ -35,8 +35,8 @@ require (
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/u2takey/go-utils v0.3.1
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
 
