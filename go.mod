@@ -29,7 +29,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	golang.org/x/crypto v0.21.0
 	google.golang.org/grpc v1.60.1
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.33.0
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gorm v1.25.5
 	mvdan.cc/xurls/v2 v2.5.0
