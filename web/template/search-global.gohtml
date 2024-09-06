@@ -1,13 +1,14 @@
 {{define "search-global"}}
     <div id="search" class="h-10 w-60 bg-gray-100 dark:bg-gray-800 sm:w-10 sm:hover:w-96 sm:focus-within:w-96 transition-all
         ease-in-out rounded-full sm:bg-transparent sm:dark:bg-transparent sm:hover:bg-gray-100 sm:dark:hover:bg-gray-800 sm:focus-within:bg-gray-100
-        sm:dark:focus-within:bg-gray-800" x-data="{searcher: home.globalSearch() }" x-init="home.initPopstateSearchBarListener()">
+        sm:dark:focus-within:bg-gray-800" x-data="{searcher: home.globalSearch() }" x-init="home.initPopstateSearchBarListener(); home.initSearchBarArrowKeysListener();">
         <label class="flex items-center text-sm py-1 h-full">
             <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
             <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" id="search-courses" type="text"
                    :placeholder="home.searchPlaceholder()"
-                   @blur="searcher.open = false;"
-                   @focus="searcher = home.globalSearch();"
+                   @click.outside="searcher.open = false;"
+                   @focus="searcher = home.globalSearch(); searcher.searchInput = document.getElementById('search-courses').value; searcher.open = true;
+                    selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm) : searcher.search(semesters[0].Year, semesters[0].TeachingTerm);"
                    @keyup="
                    if ($event.key == 'Enter') {
                         window.location.href = '/search?q=' + encodeURIComponent(document.getElementById('search-courses').value);
@@ -17,7 +18,8 @@
                    selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm) : searcher.search(semesters[0].Year, semesters[0].TeachingTerm);">
         </label>
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
-            <ul class="center rounded-lg grid px-1 pb-1 bg-gray-100 border-gray-400 dark:border-none dark:bg-gray-800 mt-1 space-y-1" role="listbox" id="search-results">
+            <ul class="center rounded-lg grid px-1 pb-1 bg-gray-100 border-gray-400 dark:border-none dark:bg-gray-800 mt-1 space-y-1 transition-none
+                w-96 sm:w-96 sm:focus-within:w-96 h-[60vh]" role="listbox" id="search-results">
                 <template x-if="!home.isInCourse()">
                     {{template "course-search-results"}}
                 </template>
@@ -34,7 +36,7 @@
 
 {{define "course-search-card"}}
     <!--Course is inserted from template before-->
-    <li role="option" aria-selected="false" class="">
+    <li role="option" aria-selected="false" class="" tabindex="-1">
         <a class="flex flex-col text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2 mt-1"
            :href="'?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
            @mousedown="
@@ -51,7 +53,7 @@
 
 {{define "stream-search-card"}}
     <!--Stream is inserted from template before-->
-    <li role="option" aria-selected="false" class="">
+    <li role="option" aria-selected="false" class="" tabindex="-1">
         <a class="flex flex-col text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2 mt-1"
            :href="'/w/' + stream.courseSlug + '/' + stream.ID"
            @mousedown="
@@ -66,7 +68,7 @@
 
 {{define "subtitle-search-card"}}
     <!--Stream is inserted from template before-->
-    <li role="option" aria-selected="false" class="">
+    <li role="option" aria-selected="false" class="" tabindex="-1">
         <a class="flex flex-col text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2 mt-1"
            :href="'/w/' + subtitle.courseSlug + '/' + subtitle.streamID + '/?t=' + subtitle.timestamp"
            @mousedown="
@@ -84,7 +86,7 @@
 <div>
     <template x-if="searcher.hits['STREAMS'] && searcher.hits['STREAMS'].length > 0">
         <div>
-            <li role="option" aria-selected="false" class="pt-1">
+            <li role="listitem" aria-selected="false" class="pt-1">
                 <p>Streams</p>
             </li>
             <template x-for="stream in searcher.hits['STREAMS']" :key="stream.ID">
@@ -106,7 +108,7 @@
 <div>
     <template x-if="searcher.hits['COURSES'] && searcher.hits['COURSES'].length > 0">
         <div>
-            <li role="option" aria-selected="false" class="pt-1">
+            <li role="listitem" aria-selected="false" class="pt-1">
                 <p>Courses</p>
             </li>
             <template x-for="course in searcher.hits['COURSES']">
@@ -129,7 +131,7 @@
     <div>
         <template x-if="searcher.hits['SUBTITLES'] && searcher.hits['SUBTITLES'].length > 0">
             <div>
-                <li role="option" aria-selected="false" class="pt-1">
+                <li role="listitem" aria-selected="false" class="pt-1">
                     <p>Subtitles</p>
                 </li>
                 <template x-for="subtitle in searcher.hits['SUBTITLES']">

@@ -158,7 +158,11 @@ export function getSearchQueryFromParam() {
 
 export function initSearchBarArrowKeysListener() {
     document.addEventListener("keydown", (event) => {
-        let searchResults = document.getElementById("search-results").querySelectorAll("li")
+        if (document.getElementById("search-results") == null) {
+            return;
+        }
+        let searchResults = document.getElementById("search-results").querySelectorAll("li[role='option']");
+        console.log(searchResults);
 
         console.log("Keydown")
         let activeElement = document.activeElement as HTMLLIElement;
@@ -167,14 +171,14 @@ export function initSearchBarArrowKeysListener() {
             let nextIndex = currentIndex + 1;
             if (nextIndex < searchResults.length) {
                 console.log("Next index " + nextIndex);
-                searchResults[nextIndex].focus();
+                (searchResults[nextIndex] as HTMLLIElement).focus();
             }
         } else if (event.key == "ArrowUp") {
             let currentIndex = Array.from(searchResults).indexOf(activeElement);
             let nextIndex = currentIndex - 1;
             if (nextIndex >= 0) {
                 console.log("Next index " + nextIndex);
-                searchResults[nextIndex].focus();
+                (searchResults[nextIndex] as HTMLLIElement).focus();
             }
         } else if (event.key == "Enter") {
             let currentIndex = Array.from(searchResults).indexOf(activeElement);
