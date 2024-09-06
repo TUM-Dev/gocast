@@ -58,7 +58,7 @@ export function filteredSearch() {
         hits: {},
         open: false,
         searchInput: "",
-        search: function (years: number[], teachingTerms: string[], courses: string[], limit: number = 10) {
+        search: function (years: number[], teachingTerms: string[], courses: string[], limit: number = 20) {
             if (this.searchInput.length > 2) {
                 if (years.length < 8 && teachingTerms.length < 8 && teachingTerms.length == years.length && courses.length < 2) {
                     fetch(`/api/search?q=${this.searchInput}&semester=${years.length > 0 ? encodeURIComponent(getSemestersString(years, teachingTerms)) : ""}&course=${courses.length > 0 ? encodeURIComponent(courses.join(",")) : ""}&limit=${limit}`)

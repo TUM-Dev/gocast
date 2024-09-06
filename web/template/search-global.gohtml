@@ -19,7 +19,7 @@
         </label>
         <template x-if="searcher != undefined && searcher.open" class="h-10 w-96" >
             <ul class="center rounded-lg grid px-1 pb-1 bg-gray-100 border-gray-400 dark:border-none dark:bg-gray-800 mt-1 space-y-1 transition-none
-                w-96 sm:w-96 sm:focus-within:w-96 h-[60vh]" role="listbox" id="search-results">
+                w-96 sm:w-96 sm:focus-within:w-96" style="max-height: 70vh; overflow-y: auto;" role="listbox" id="search-results">
                 <template x-if="!home.isInCourse()">
                     {{template "course-search-results"}}
                 </template>
