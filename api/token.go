@@ -8,7 +8,6 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 )
@@ -16,7 +15,6 @@ import (
 func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := tokenRoutes{daoWrapper}
 	g := r.Group("/api/token")
-	g.POST("/streamKey", routes.fetchStreamKey)
 
 	g.Use(tools.AtLeastLecturer)
 	g.POST("/create", routes.createToken)
@@ -127,53 +125,5 @@ func (r tokenRoutes) createToken(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"token": tokenStr,
-	})
-}
-
-func (r tokenRoutes) fetchStreamKey(c *gin.Context) {
-	t, _, ok := c.Request.BasicAuth()
-	if !ok || t == "" {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "no basic auth or token provided",
-		})
-		return
-	}
-
-	// Optional slug parameter to get the stream key of a specific course (in case the lecturer is streaming multiple courses simultaneously)
-	slug := c.Query("slug")
-
-	token, err := r.TokenDao.GetToken(t)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid token",
-		})
-		return
-	}
-
-	if token.Scope != model.TokenScopeLecturer {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusUnauthorized,
-			CustomMessage: "invalid scope",
-		})
-		return
-	}
-
-	// Find nearest stream of which the user is a lecturer
-	year, term := tum.GetCurrentSemester()
-	streamKey, courseSlug, err := r.StreamsDao.GetSoonStartingStreamInfo(token.UserID, slug, year, term)
-	if err != nil || streamKey == "" || courseSlug == "" {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "no stream found",
-			Err:           err,
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"stream_key":  streamKey,
-		"stream_slug": courseSlug,
 	})
 }

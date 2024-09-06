@@ -244,13 +244,14 @@ func (mr *MockStreamsDaoMockRecorder) GetLiveStreamsInLectureHall(lectureHallId 
 }
 
 // GetSoonStartingStreamInfo mocks base method.
-func (m *MockStreamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (string, string, error) {
+func (m *MockStreamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (uint, string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSoonStartingStreamInfo", userID, slug, year, term)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(uint)
 	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(string)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // GetSoonStartingStreamInfo indicates an expected call of GetSoonStartingStreamInfo.

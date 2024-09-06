@@ -170,6 +170,20 @@ label:has(~ .tl-input), label:has(~.tl-textarea) {
    @apply mt-4;
 }
 
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table-container table {
+    width: 100%;
+    border-collapse: collapse; /* Optional: Ensures borders are collapsed */
+}
+
+.table-container th, .table-container td {
+    @apply border border-gray-300 dark:border-gray-600 p-2; 
+}
+
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 

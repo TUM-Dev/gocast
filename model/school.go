@@ -8,17 +8,18 @@ import (
 type School struct {
 	gorm.Model
 
-	Name          string         `gorm:"column:name;type:text;not null"` // e.g., Computation, Information and Technology
-	Privileges    string         `gorm:"column:privileges;type:text;not null;default:''"`
-	Admins        []User         `gorm:"many2many:school_admins"`
-	Courses       []Course       `gorm:"foreignkey:SchoolID"`
-	Workers       []Worker       `gorm:"foreignkey:SchoolID"`
-	Runners       []Runner       `gorm:"foreignkey:SchoolID"`
-	IngestServers []IngestServer `gorm:"foreignkey:SchoolID"`
-	OrgId         string         `gorm:"column:org_id;type:text;not null;default:''"`             // e.g., 51897
-	OrgType       string         `gorm:"column:org_type;type:text;not null;default:'sub-school'"` // e.g., TUM School
-	OrgSlug       string         `gorm:"column:org_slug;type:text;not null;default:''"`           // e.g., TUS1000
-	ParentID      uint           `gorm:"column:parent_id;type:integer;not null;default:0"`
+	Name            string         `gorm:"column:name;type:text;not null"` // e.g., Computation, Information and Technology
+	Privileges      string         `gorm:"column:privileges;type:text;not null;default:''"`
+	Admins          []User         `gorm:"many2many:school_admins"`
+	Courses         []Course       `gorm:"foreignkey:SchoolID"`
+	Workers         []Worker       `gorm:"foreignkey:SchoolID"`
+	Runners         []Runner       `gorm:"foreignkey:SchoolID"`
+	IngestServers   []IngestServer `gorm:"foreignkey:SchoolID"`
+	OrgId           string         `gorm:"column:org_id;type:text;not null;default:''"`             // e.g., 51897
+	OrgType         string         `gorm:"column:org_type;type:text;not null;default:'sub-school'"` // e.g., TUM School
+	OrgSlug         string         `gorm:"column:org_slug;type:text;not null;default:''"`           // e.g., TUS1000
+	ParentID        uint           `gorm:"column:parent_id;type:integer;not null;default:0"`
+	IngestServerURL string         `gorm:"column:ingest_server_url;type:text;default:''"`
 }
 
 // Resources              []Resource `gorm:"many2many:resources"` // TODO: Contains workers etc.

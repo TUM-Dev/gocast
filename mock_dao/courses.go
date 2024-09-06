@@ -50,6 +50,20 @@ func (mr *MockCoursesDaoMockRecorder) AddAdminToCourse(userID, courseID interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAdminToCourse", reflect.TypeOf((*MockCoursesDao)(nil).AddAdminToCourse), userID, courseID)
 }
 
+// AddOrUpdateAdminToCourse mocks base method.
+func (m *MockCoursesDao) AddOrUpdateAdminToCourse(userID, courseID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddOrUpdateAdminToCourse", userID, courseID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddOrUpdateAdminToCourse indicates an expected call of AddOrUpdateAdminToCourse.
+func (mr *MockCoursesDaoMockRecorder) AddOrUpdateAdminToCourse(userID, courseID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrUpdateAdminToCourse", reflect.TypeOf((*MockCoursesDao)(nil).AddOrUpdateAdminToCourse), userID, courseID)
+}
+
 // CreateCourse mocks base method.
 func (m *MockCoursesDao) CreateCourse(ctx context.Context, course *model.Course, keep bool) error {
 	m.ctrl.T.Helper()

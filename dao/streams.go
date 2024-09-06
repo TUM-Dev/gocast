@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -63,7 +64,7 @@ type StreamsDao interface {
 
 	SetStreamRequested(stream model.Stream) error
 
-	GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (string, string, error)
+	GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (uint, string, string, error)
 }
 
 type streamsDao struct {
@@ -474,15 +475,16 @@ func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {
 	})
 }
 
-func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (string, string, error) {
+func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (uint, string, string, error) {
 	var result struct {
+		CourseID  uint
 		StreamKey string
 		ID        string
 		Slug      string
 	}
 	now := time.Now()
 	query := DB.Table("streams").
-		Select("streams.stream_key, streams.id, courses.slug").
+		Select("streams.course_id, streams.stream_key, streams.id, courses.slug").
 		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
 		Joins("JOIN courses ON courses.id = course_admins.course_id").
 		Where("streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", userID, now.Add(30*time.Minute), now). // Streams starting in the next 30 minutes or currently running
@@ -505,17 +507,17 @@ func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int
 	if err == gorm.ErrRecordNotFound || result.StreamKey == "" || result.ID == "" || result.Slug == "" {
 		stream, course, err := d.CreateOrGetTestStreamAndCourse(userID)
 		if err != nil {
-			return "", "", err
+			return 0, "", "", err
 		}
-		return stream.StreamKey, fmt.Sprintf("%s-%d", course.Slug, stream.ID), nil
+		return stream.CourseID, stream.StreamKey, fmt.Sprintf("%s-%d", course.Slug, stream.ID), nil
 	}
 
 	if err != nil {
-		logger.Error("Error getting soon starting stream: %v", err)
-		return "", "", err
+		logger.Error("Error getting soon starting stream: %v", slog.String("err", err.Error()))
+		return 0, "", "", err
 	}
 
-	return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
+	return result.CourseID, result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
 }
 
 func (d streamsDao) CreateOrGetTestStreamAndCourse(userID uint) (model.Stream, model.Course, error) {
@@ -543,6 +545,7 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(userID uint) (model.Stream, m
 	stream.Private = true
 	streamKey := uuid.NewV4().String()
 	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
+	stream.LectureHallID = 1
 	err = DB.Save(&stream).Error
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
@@ -560,11 +563,13 @@ func (d streamsDao) CreateOrGetTestCourse(userID uint) (model.Course, error) {
 		Year:         2021,
 		SchoolID:     1,
 		Visibility:   "hidden",
+		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary (?),
 	}).Error
 	if err != nil {
 		return model.Course{}, err
 	}
 
-	CoursesDao.AddAdminToCourse(NewDaoWrapper().CoursesDao, userID, course.ID)
+	CoursesDao.AddOrUpdateAdminToCourse(NewDaoWrapper().CoursesDao, userID, course.ID)
+
 	return course, nil
 }

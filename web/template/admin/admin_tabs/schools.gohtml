@@ -10,162 +10,164 @@
         <div class="w-4 m-auto">
             <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="schoollist.searchLoading"></i>
         </div>
-        <table>
-            <thead>
-            <tr class="p-4 bg-gray-200 dark:bg-secondary-light text-3 uppercase text-sm leading-normal">
-                <th class="rounded-tl-lg text-left pl-6 py-3">Id</th>
-                <th class="rounded-tl-lg">Name</th>
-                <th class="rounded-tl-lg">University</th>
-                <th class="rounded-tl-lg">OrgId-OrgName (OrgType)</th>
-                <th class="rounded-tl-lg">ParentId</th>
-                <th>Maintainers</th>
-                <th class="rounded-tr-lg">Actions</th>
-            </tr>
-            </thead>
-            <tbody id="admin-school-list" class="w-full bg-transparent text-4">
-            <template x-for="(school, i) in schoollist.currentPage">
-                <tr :id="`school-${i}`"
-                    class="w-full bg-white dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent"
-                    :data-schoollist-index="i">
-                    <td class="pl-6 py-3 text-left whitespace-nowrap" x-text="school.id"></td>
-                    <td class="py-3 px-6 text-left whitespace-nowrap" x-text="school.name"></td>
-                    <template x-if="schoollist.showSearchResults">
-                        <td class="text-center cursor-pointer" @click="school.changing=true">
-                            <span x-show="school.orgType.startsWith('TUM')"
-                                  class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
-                            <span x-show="school.orgType.startsWith('LMU')"
-                                  class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
-                            <span x-show="school.orgType==='service'"
-                                class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
-                                 <div class="flex flex-row">
-                                    Service
-                                    <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
-                                </div>
-                            </span>
-                            <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
-                                  class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
-                        </td>
-                    </template>
-                    <template x-if="!schoollist.showSearchResults">
-                        <td class="text-center">
-                            <span x-show="school.orgType.startsWith('TUM')"
-                                class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
-                            <span x-show="school.orgType.startsWith('LMU')"
-                                  class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
-                            <span x-show="school.orgType==='service'"
-                                class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
-                                 <div class="flex flex-row">
-                                    Service
-                                    <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
-                                </div>
-                            </span>
-                            <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
-                                class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
-                        </td>
-                    </template>
-<td class="py-3 px-6 text-center" x-text="(school.orgId && school.orgSlug) ? school.orgId + '-' + school.orgSlug + ' (' + school.orgType + ')' : school.orgType"></td>                    <td class="py-3 px-6 text-center whitespace-nowrap" x-text="school.parent_id == 0 ? '-' : school.parent_id"></td>
-                    <td class="py-3 px-6 text-center">
-                        <p class="font-bold cursor-pointer" x-text="school.admins.length + ' maintainer(s)'" @click="openMaintainerModal(school, i)" @mouseover="event.target.style.color = 'grey'" @mouseleave="event.target.style.color = ''"></p>                        <!-- Admin Modal -->
-                        <div class="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center" style="display: none;" x-bind:id="'adminModal-' + i">
-                            <div class="fixed inset-0 opacity-100 backdrop-blur-sm"></div>
-                            <!-- Backdrop -->
+        <div class="table-container">
+            <table class="">
+                <thead>
+                <tr class="p-4 bg-gray-200 dark:bg-secondary-light text-3 uppercase text-sm leading-normal">
+                    <th class="rounded-tl-lg text-left pl-6 py-3">Id</th>
+                    <th class="rounded-tl-lg">Name</th>
+                    <th class="rounded-tl-lg">University</th>
+                    <th class="rounded-tl-lg">OrgId-OrgName (OrgType)</th>
+                    <th class="rounded-tl-lg">ParentId</th>
+                    <th>Maintainers</th>
+                    <th class="rounded-tr-lg">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="admin-school-list" class="w-full bg-transparent text-4">
+                <template x-for="(school, i) in schoollist.currentPage">
+                    <tr :id="`school-${i}`"
+                        class="w-full bg-white dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent"
+                        :data-schoollist-index="i">
+                        <td class="pl-6 py-3 text-left whitespace-nowrap" x-text="school.id"></td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap" x-text="school.name"></td>
+                        <template x-if="schoollist.showSearchResults">
+                            <td class="text-center cursor-pointer" @click="school.changing=true">
+                                <span x-show="school.orgType.startsWith('TUM')"
+                                    class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
+                                <span x-show="school.orgType.startsWith('LMU')"
+                                    class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
+                                <span x-show="school.orgType==='service'"
+                                    class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
+                                    <div class="flex flex-row">
+                                        Service
+                                        <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
+                                    </div>
+                                </span>
+                                <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
+                                    class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
+                            </td>
+                        </template>
+                        <template x-if="!schoollist.showSearchResults">
+                            <td class="text-center">
+                                <span x-show="school.orgType.startsWith('TUM')"
+                                    class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
+                                <span x-show="school.orgType.startsWith('LMU')"
+                                    class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
+                                <span x-show="school.orgType==='service'"
+                                    class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
+                                    <div class="flex flex-row">
+                                        Service
+                                        <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
+                                    </div>
+                                </span>
+                                <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
+                                    class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
+                            </td>
+                        </template>
+                        <td class="py-3 px-6 text-center" x-text="(school.orgId && school.orgSlug) ? school.orgId + '-' + school.orgSlug + ' (' + school.orgType + ')' : school.orgType"></td>                    <td class="py-3 px-6 text-center whitespace-nowrap" x-text="school.parent_id == 0 ? '-' : school.parent_id"></td>
+                        <td class="py-3 px-6 text-center">
+                            <p class="font-bold cursor-pointer" x-text="school.admins.length + ' maintainer(s)'" @click="openMaintainerModal(school, i)" @mouseover="event.target.style.color = 'grey'" @mouseleave="event.target.style.color = ''"></p>                        <!-- Admin Modal -->
+                            <div class="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center" style="display: none;" x-bind:id="'adminModal-' + i">
+                                <div class="fixed inset-0 opacity-100 backdrop-blur-sm"></div>
+                                <!-- Backdrop -->
 
-                            <div class="fixed inset-0 flex items-center justify-center">
-                                <div class="rounded-lg px-2 pt-5 pb-4 text-center overflow-hidden transform transition-all sm:max-w-lg sm:w-full">
-                                    <!-- Modal Content -->
-                                    <div class="inline-block align-middle bg-gray-100 dark:bg-secondary rounded-lg text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                        <button id="'closeModal" class="absolute top-0 right-0 m-2" type="button" @click="closeModal(i)">
-                                            <i class="fas fa-x absolute top-0 right-0 m-2"></i>
-                                        </button>
+                                <div class="fixed inset-0 flex items-center justify-center">
+                                    <div class="rounded-lg px-2 pt-5 pb-4 text-center overflow-hidden transform transition-all sm:max-w-lg sm:w-full">
+                                        <!-- Modal Content -->
+                                        <div class="inline-block align-middle bg-gray-100 dark:bg-secondary rounded-lg text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                            <button id="'closeModal" class="absolute top-0 right-0 m-2" type="button" @click="closeModal(i)">
+                                                <i class="fas fa-x absolute top-0 right-0 m-2"></i>
+                                            </button>
 
-                                        <div class="px-2 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                            <h3 class="text-lg leading-6 font-medium text-3" id="modal-title">
-                                                Manage Maintainers
-                                            </h3>
-                                            <div class="mt-2 w-full" x-bind:id="'maintainerList-' + i">
+                                            <div class="px-2 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                                <h3 class="text-lg leading-6 font-medium text-3" id="modal-title">
+                                                    Manage Maintainers
+                                                </h3>
+                                                <div class="mt-2 w-full" x-bind:id="'maintainerList-' + i">
+                                                </div>
                                             </div>
+                                            
+                                            <div class="px-2 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                                <h3 class="text-lg leading-6 font-medium text-3" id="modal-title">
+                                                    Add Maintainers
+                                                </h3>
+                                                <form x-data="{ maintainerEmail: '', maintainerId: '', maintainerLrzId: ''}">
+                                                    <div class="flex flex-row mb-1">
+                                                        <h2 class="italic" x-text="'Add a Maintainer for ' + school.name + ' (' + school.orgType + ')'"></h2>
+                                                        <help-icon class="transform -translate-x-0.5" text="Add either using Email, ID or LRZ ID."/>
+                                                    </div>
+                                                    <div class="flex flex-wrap">
+                                                        <div class="text-xs w-full">
+                                                            <input class="tl-input" id="newmaintainerEmail" name="newmaintainerEmail" type="text" required="false" placeholder="Enter email (e.g., max.mustermann@tum.de)" autocomplete="off" x-model="maintainerEmail"/>
+                                                        </div>
+                                                        <div class="text-xs w-full mt-1">
+                                                            <input class="tl-input" disabled id="newmaintainerId" name="newmaintainerId" type="text" required="false" placeholder="Enter internal user ID (e.g., 1234)" autocomplete="off" x-model="maintainerId"/>
+                                                        </div>
+                                                        <div class="text-xs w-full mt-1">
+                                                            <input class="tl-input" disabled id="newmaintainerLrzId" name="newmaintainerLrzId" type="text" required="false" placeholder="Enter LRZ ID (e.g., ge42dip)" autocomplete="off" x-model="maintainerLrzId"/>
+                                                        </div>
+                                                    </div>
+                                                    <button id="createAdmin" title="Create Admin" class="btn primary mt-3 w-full" 
+                                                        @click.prevent="admin.addSchoolAdmin(school.id, maintainerEmail, maintainerId, maintainerLrzId)" 
+                                                        :disabled="maintainerEmail === '' && maintainerId === '' && maintainerLrzId === ''">
+                                                        Create Maintainer
+                                                    </button>
+                                                </form>
+                                            <div>
                                         </div>
-                                        
-                                        <div class="px-2 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                            <h3 class="text-lg leading-6 font-medium text-3" id="modal-title">
-                                                Add Maintainers
-                                            </h3>
-                                            <form x-data="{ maintainerEmail: '', maintainerId: '', maintainerLrzId: ''}">
-                                                <div class="flex flex-row mb-1">
-                                                    <h2 class="italic" x-text="'Add a Maintainer for ' + school.name + ' (' + school.orgType + ')'"></h2>
-                                                    <help-icon class="transform -translate-x-0.5" text="Add either using Email, ID or LRZ ID."/>
-                                                </div>
-                                                <div class="flex flex-wrap">
-                                                    <div class="text-xs w-full">
-                                                        <input class="tl-input" id="newmaintainerEmail" name="newmaintainerEmail" type="text" required="false" placeholder="Enter email (e.g., max.mustermann@tum.de)" autocomplete="off" x-model="maintainerEmail"/>
-                                                    </div>
-                                                    <div class="text-xs w-full mt-1">
-                                                        <input class="tl-input" disabled id="newmaintainerId" name="newmaintainerId" type="text" required="false" placeholder="Enter internal user ID (e.g., 1234)" autocomplete="off" x-model="maintainerId"/>
-                                                    </div>
-                                                    <div class="text-xs w-full mt-1">
-                                                        <input class="tl-input" disabled id="newmaintainerLrzId" name="newmaintainerLrzId" type="text" required="false" placeholder="Enter LRZ ID (e.g., ge42dip)" autocomplete="off" x-model="maintainerLrzId"/>
-                                                    </div>
-                                                </div>
-                                                <button id="createAdmin" title="Create Admin" class="btn primary mt-3 w-full" 
-                                                    @click.prevent="admin.addSchoolAdmin(school.id, maintainerEmail, maintainerId, maintainerLrzId)" 
-                                                    :disabled="maintainerEmail === '' && maintainerId === '' && maintainerLrzId === ''">
-                                                    Create Maintainer
-                                                </button>
-                                            </form>
-                                        <div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    <script>
-                        function openMaintainerModal(school, id) {
-                            var maintainerList = '';
-                            for (var i = 0; i < school.admins.length; i++) {
-                                maintainerList += '<div class="admin flex flex-row items-center justify-between text-sm mb-3">' +
-                                    '<p class="mr-1">' + school.admins[i].name + '</p>' +
-                                    '<div>' +
-                                        '<button type="button" x-bind-show="role == 1" class="btn text-xs mr-1 py-1 px-2" onclick="admin.deleteUser(' + school.admins[i].id + ')">Delete User</button>' +
-                                        '<button type="button" class="btn text-xs py-1 px-2" onclick="admin.deleteSchoolAdmin(' + school.id + ',' + school.admins[i].ID + ')">Revoke Admin Role for this school</button>' +
-                                    '</div>' +
-                                '</div>';
+                        <script>
+                            function openMaintainerModal(school, id) {
+                                var maintainerList = '';
+                                for (var i = 0; i < school.admins.length; i++) {
+                                    maintainerList += '<div class="admin flex flex-row items-center justify-between text-sm mb-3">' +
+                                        '<p class="mr-1">' + school.admins[i].name + '</p>' +
+                                        '<div>' +
+                                            '<button type="button" x-bind-show="role == 1" class="btn text-xs mr-1 py-1 px-2" onclick="admin.deleteUser(' + school.admins[i].id + ')">Delete User</button>' +
+                                            '<button type="button" class="btn text-xs py-1 px-2" onclick="admin.deleteSchoolAdmin(' + school.id + ',' + school.admins[i].ID + ')">Revoke Admin Role for this school</button>' +
+                                        '</div>' +
+                                    '</div>';
+                                }
+                                document.getElementById('maintainerList-' + id).innerHTML = maintainerList;
+                                document.getElementById('adminModal-' + id).style.display = 'block';
                             }
-                            document.getElementById('maintainerList-' + id).innerHTML = maintainerList;
-                            document.getElementById('adminModal-' + id).style.display = 'block';
-                        }
 
-                        function closeModal(id) {
-                            document.getElementById('adminModal-' + id).style.display = 'none';
-                        }
-                    </script>
-                    </td>
-                    <td class="py-3 px-6 text-center">
-                        <div class="flex item-center justify-center">
-                            <button title="Manage Maintainers"
-                                    class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
-                                <i @click="openMaintainerModal(school, i)"
-                                   class="fas fa-address-card"></i>
-                            </button>
-                            <button title="View Resources"
-                                    class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
-                                <i @click="window.location.replace('/admin/resources?id=' + school.id)"
-                                class="fas fa-server"></i>
-                            </button>
-                            <button title="Create Token for School"
-                                    class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
-                                <i @click="admin.createTokenForSchool(school.id)" class="fas fa-key"></i>
-                            </button>
-                            <template x-if="school.name != 'master'">
-                                <button title="Delete School"
-                                        class="w-4 transform hover:text-purple-500 hover:scale-110">
-                                    <i @click="admin.deleteSchool(school.id)" class="fas fa-trash"></i>
+                            function closeModal(id) {
+                                document.getElementById('adminModal-' + id).style.display = 'none';
+                            }
+                        </script>
+                        </td>
+                        <td class="py-3 px-6 text-center">
+                            <div class="flex item-center justify-center">
+                                <button title="Manage Maintainers"
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                    <i @click="openMaintainerModal(school, i)"
+                                    class="fas fa-address-card"></i>
                                 </button>
-                            </template>
-                        </div>
-                    </td>
-                </tr>
-            </template>
-            </tbody>
-        </table>
+                                <button title="View Resources"
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                    <i @click="window.location.replace('/admin/resources?id=' + school.id)"
+                                    class="fas fa-server"></i>
+                                </button>
+                                <button title="Create Token for School"
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                    <i @click="admin.createTokenForSchool(school.id)" class="fas fa-key"></i>
+                                </button>
+                                <template x-if="school.name != 'master'">
+                                    <button title="Delete School"
+                                            class="w-4 transform hover:text-purple-500 hover:scale-110">
+                                        <i @click="admin.deleteSchool(school.id)" class="fas fa-trash"></i>
+                                    </button>
+                                </template>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+        </div>
         <template x-if="!schoollist.showSearchResults">
             <div class="flex justify-center text-3">
                 <button title="Previous Page"

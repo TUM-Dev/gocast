@@ -8,6 +8,7 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
@@ -16,6 +17,7 @@ import (
 func configGinSchoolsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := schoolsRoutes{daoWrapper}
 
+	router.POST("/api/schools/proxy/:token", routes.fetchStreamKey)
 	schools := router.Group("/api/schools")
 	schools.Use(tools.AdminOrMaintainer)
 	{
@@ -366,6 +368,63 @@ func (s *schoolsRoutes) GetSchoolById(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, school)
+}
+
+// This is used by the proxy to get the stream key of the next stream of the lecturer given a lecturer token
+//
+//	Proxy receives: rtmp://proxy.example.com/<lecturer-token>
+//				or: rtmp://proxy.example.com/<lecturer-token>?slug=ABC-123 <-- optional slug parameter in case the lecturer is streaming multiple courses simultaneously
+//
+//	Proxy returns:  rtmp://ingest.example.com/ABC-123?secret=610f609e4a2c43ac8a6d648177472b17
+func (s *schoolsRoutes) fetchStreamKey(c *gin.Context) {
+	// Optional slug parameter to get the stream key of a specific course (in case the lecturer is streaming multiple courses simultaneously)
+	slug := c.Query("slug")
+	t := c.Param("token")
+
+	// Get user from token
+	token, err := s.TokenDao.GetToken(t)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid token",
+		})
+		return
+	}
+
+	// Only tokens of type lecturer are allowed to start streaming
+	if token.Scope != model.TokenScopeLecturer {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "invalid scope",
+		})
+		return
+	}
+
+	// Find current/next stream and course of which the user is a lecturer
+	year, term := tum.GetCurrentSemester()
+	courseID, streamKey, courseSlug, err := s.StreamsDao.GetSoonStartingStreamInfo(token.UserID, slug, year, term)
+	if err != nil || streamKey == "" || courseSlug == "" {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "no stream found",
+			Err:           err,
+		})
+		return
+	}
+	course, err := s.CoursesDao.GetCourseById(c, courseID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get course"})
+		return
+	}
+
+	// Get school to redirect to the dedicated ingest server of the school
+	school, err := s.SchoolsDao.Get(c, course.SchoolID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get school"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": "" + school.IngestServerURL + "/" + courseSlug + "?secret=" + streamKey + "/" + courseSlug})
 }
 
 func (s *schoolsRoutes) createTokenForSchool(c *gin.Context) {
