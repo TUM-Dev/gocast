@@ -247,9 +247,16 @@
                             <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
                                href="#" @click="expanded=!expanded">
                                 <i class="fas fa-chevron-right mr-1 transform" :class="expanded?'rotate-90':''"></i>
+                                <span class="rounded-md absolute bg-cyan-50 opacity-0"></span>
                                 <span
-                                        class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                        class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
+                                    class="relative">
+                                    {{if eq $semester.TeachingTerm "Test"}}
+                                        Test Course
+                                    {{else}}
+                                        {{$semester.Year}} - {{$semester.TeachingTerm}}
+                                    {{end}}
+                                </span>
+                            </a>
                             <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
                                 class="semesterCourses pl-4"
                                 x-show="expanded">
@@ -511,18 +518,24 @@
                                         <i class="fas fa-chevron-right mr-1 transform"
                                            :class="expanded?'rotate-90':''"></i>
                                         <span
-                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
-                                    <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
-                                        class="semesterCourses pl-4"
-                                        x-show="expanded">
-                                        {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
-                                            <li>
-                                                <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
-                                                   href="/admin/course/{{$course.Model.ID}}"><span
-                                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                            class="relative">{{$course.Name}}</span></a></li>
-                                        {{end}}
+                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span 
+                                            class="relative">
+                                            {{if eq $semester.TeachingTerm "Test"}}
+                                                Test Courses
+                                            {{else}}
+                                                {{$semester.Year}} - {{$semester.TeachingTerm}}
+                                            {{end}}
+                                        </span></a>
+                                        <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
+                                            class="semesterCourses pl-4"
+                                            x-show="expanded">
+                                            {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
+                                                <li>
+                                                    <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
+                                                    href="/admin/course/{{$course.Model.ID}}"><span
+                                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
+                                                                class="relative">{{$course.Name}}</span></a></li>
+                                            {{end}}
                                         {{end}}
                                     </ul>
                                 </li>

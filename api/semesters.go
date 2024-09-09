@@ -19,7 +19,9 @@ type semesterRoutes struct {
 }
 
 func (s semesterRoutes) getSemesters(c *gin.Context) {
-	semesters := s.GetAvailableSemesters(context.Background())
+	includeTestSemester := c.Query("includeTestSemester")
+
+	semesters := s.GetAvailableSemesters(context.Background(), includeTestSemester == "1")
 	year, term := tum.GetCurrentSemester()
 	c.JSON(http.StatusOK, gin.H{
 		"Current": gin.H{

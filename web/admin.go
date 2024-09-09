@@ -140,7 +140,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			logger.Warn("could not get all server notifications", "err", err)
 		}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	y, t := tum.GetCurrentSemester()
 
 	query, _ := strconv.ParseUint(c.Request.URL.Query().Get("id"), 10, 32)
@@ -157,7 +157,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
-			Tokens:              TokensData{Tokens: tokens, RtmpProxy: tools.Cfg.RtmpProxy, User: tumLiveContext.User},
+			Tokens:              TokensData{Tokens: tokens, RtmpProxyURL: tools.Cfg.RtmpProxyURL, User: tumLiveContext.User},
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
@@ -182,9 +182,9 @@ type WorkersData struct {
 }
 
 type TokensData struct {
-	Tokens    []dao.AllTokensDto
-	RtmpProxy string
-	User      *model.User
+	Tokens       []dao.AllTokensDto
+	RtmpProxyURL string
+	User         *model.User
 }
 
 type Resources struct {
@@ -247,7 +247,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
@@ -281,7 +281,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	for i := range tumLiveContext.Course.Streams {
 		err := tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, true)
 		if err != nil {

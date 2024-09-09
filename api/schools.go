@@ -400,9 +400,28 @@ func (s *schoolsRoutes) fetchStreamKey(c *gin.Context) {
 		return
 	}
 
+	// Get user and check if he has the right to start a stream
+	user, err := s.UsersDao.GetUserByID(c, token.UserID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not get user",
+			Err:           err,
+		})
+		return
+
+	}
+	if user.Role != model.LecturerType && user.Role != model.AdminType && user.Role != model.MaintainerType {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "user is not a lecturer, maintainer or admin",
+		})
+		return
+	}
+
 	// Find current/next stream and course of which the user is a lecturer
 	year, term := tum.GetCurrentSemester()
-	courseID, streamKey, courseSlug, err := s.StreamsDao.GetSoonStartingStreamInfo(token.UserID, slug, year, term)
+	courseID, streamKey, courseSlug, err := s.StreamsDao.GetSoonStartingStreamInfo(&user, slug, year, term)
 	if err != nil || streamKey == "" || courseSlug == "" {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,

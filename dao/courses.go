@@ -34,7 +34,7 @@ type CoursesDao interface {
 	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
 	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
 	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
-	GetAvailableSemesters(c context.Context) []Semester
+	GetAvailableSemesters(c context.Context, includeTestSemester bool) []Semester
 	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
 
@@ -287,17 +287,29 @@ func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year
 	return foundCourses, err
 }
 
-func (d coursesDao) GetAvailableSemesters(c context.Context) []Semester {
+func (d coursesDao) GetAvailableSemesters(c context.Context, includeTestSemester bool) []Semester {
+	var semesters []Semester
+
 	if cached, found := Cache.Get("getAllSemesters"); found {
-		return cached.([]Semester)
+		semesters = cached.([]Semester)
 	} else {
-		var semesters []Semester
 		DB.Raw("SELECT year, teaching_term from courses " +
-			"group by year, teaching_term " +
-			"order by year desc, teaching_term desc").Scan(&semesters)
+			"GROUP BY year, teaching_term " +
+			"ORDER BY year desc, teaching_term desc").Scan(&semesters)
 		Cache.SetWithTTL("getAllSemesters", semesters, 1, time.Hour)
-		return semesters
 	}
+	if includeTestSemester {
+		return semesters // returns all semesters including test -> e.g., for courses tab in 'https://live.tum/admin'
+	}
+	var filtered []Semester
+	for _, semester := range semesters {
+		if semester.TeachingTerm != "Test" {
+			filtered = append(filtered, semester)
+		}
+	}
+
+	// returns actual semesters excluding test -> e.g., for semesters tab in 'https://live.tum/'
+	return filtered
 }
 
 // GetCourseByShortLink returns the course associated with the given short link (e.g. EIDI2022)

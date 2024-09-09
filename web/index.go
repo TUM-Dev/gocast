@@ -167,7 +167,7 @@ func (d *IndexData) SetYearAndTerm(c *gin.Context) {
 
 // LoadSemesters Load available Semesters from the database into the IndexData object
 func (d *IndexData) LoadSemesters(spanMain *sentry.Span, coursesDao dao.CoursesDao) {
-	d.Semesters = coursesDao.GetAvailableSemesters(spanMain.Context())
+	d.Semesters = coursesDao.GetAvailableSemesters(spanMain.Context(), false)
 }
 
 // LoadLivestreams Load non-hidden, currently live streams into the IndexData object.

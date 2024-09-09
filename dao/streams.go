@@ -64,7 +64,7 @@ type StreamsDao interface {
 
 	SetStreamRequested(stream model.Stream) error
 
-	GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (uint, string, string, error)
+	GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (uint, string, string, error)
 }
 
 type streamsDao struct {
@@ -475,7 +475,7 @@ func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {
 	})
 }
 
-func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int, term string) (uint, string, string, error) {
+func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (uint, string, string, error) {
 	var result struct {
 		CourseID  uint
 		StreamKey string
@@ -487,8 +487,8 @@ func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int
 		Select("streams.course_id, streams.stream_key, streams.id, courses.slug").
 		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
 		Joins("JOIN courses ON courses.id = course_admins.course_id").
-		Where("streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", userID, now.Add(30*time.Minute), now). // Streams starting in the next 30 minutes or currently running
-		Or("streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", userID, now.Add(-15*time.Minute), now).     // Streams that just finished in the last 15 minutes
+		Where("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
+		Or("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now).     // Streams that just finished in the last 15 minutes
 		Order("streams.start ASC")
 
 	if slug != "" {
@@ -505,7 +505,7 @@ func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int
 	err := query.Limit(1).Scan(&result).Error
 
 	if err == gorm.ErrRecordNotFound || result.StreamKey == "" || result.ID == "" || result.Slug == "" {
-		stream, course, err := d.CreateOrGetTestStreamAndCourse(userID)
+		stream, course, err := d.CreateOrGetTestStreamAndCourse(user)
 		if err != nil {
 			return 0, "", "", err
 		}
@@ -520,8 +520,8 @@ func (d streamsDao) GetSoonStartingStreamInfo(userID uint, slug string, year int
 	return result.CourseID, result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
 }
 
-func (d streamsDao) CreateOrGetTestStreamAndCourse(userID uint) (model.Stream, model.Course, error) {
-	course, err := d.CreateOrGetTestCourse(userID)
+func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stream, model.Course, error) {
+	course, err := d.CreateOrGetTestCourse(user)
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
 	}
@@ -554,22 +554,22 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(userID uint) (model.Stream, m
 	return stream, course, err
 }
 
-func (d streamsDao) CreateOrGetTestCourse(userID uint) (model.Course, error) {
+func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
 	err := DB.FirstOrCreate(&course, model.Course{
-		Name:         "Test Course",
-		TeachingTerm: "W",
+		Name:         "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
+		TeachingTerm: "Test",
 		Slug:         "TESTCOURSE",
-		Year:         2021,
+		Year:         1234,
 		SchoolID:     1,
 		Visibility:   "hidden",
-		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary (?),
+		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
 	}).Error
 	if err != nil {
 		return model.Course{}, err
 	}
 
-	CoursesDao.AddOrUpdateAdminToCourse(NewDaoWrapper().CoursesDao, userID, course.ID)
+	CoursesDao.AddOrUpdateAdminToCourse(NewDaoWrapper().CoursesDao, user.ID, course.ID)
 
 	return course, nil
 }

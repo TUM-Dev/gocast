@@ -91,6 +91,10 @@ func initConfig() {
 	if Cfg.WikiURL == "" {
 		logger.Warn("No Wiki URL found, link cannot be provided on webpage")
 	}
+	if Cfg.RtmpProxyURL == "" {
+		logger.Warn("No RTMP Proxy URL found, RTMP streams will not work")
+	}
+
 	// allow overwriting database host with env var, mainly for testing with docker-compose
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
@@ -174,7 +178,7 @@ type Config struct {
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
 	WikiURL        string `yaml:"wikiURL"`
-	RtmpProxy      string `yaml:"rtmpProxy"`
+	RtmpProxyURL   string `yaml:"rtmpProxyURL"`
 }
 
 type MailConfig struct {

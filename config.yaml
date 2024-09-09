@@ -104,4 +104,4 @@ meili:
 vodURLTemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
 canonicalURL: https://tum.live
 wikiURL: rtmp://proxy.tum.live
-rtmpProxy: rtmp://proxy.tum.live/live
+rtmpProxyURL: rtmp://proxy.tum.live/live
