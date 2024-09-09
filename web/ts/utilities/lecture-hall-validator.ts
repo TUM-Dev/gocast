@@ -3,4 +3,10 @@ export function isLectureHallValid(lectureHall: string): boolean {
     return regex.test(lectureHall);
 }
 
-(window as any).isLectureHallValid = isLectureHallValid;
+declare global {
+    interface Window {
+        isLectureHallValid: (lectureHall: string) => boolean;
+    }
+}
+
+window.isLectureHallValid = isLectureHallValid;
