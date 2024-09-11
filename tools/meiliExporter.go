@@ -1,8 +1,10 @@
 package tools
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/TUM-Dev/gocast/model"
 	"strings"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -185,4 +187,50 @@ func (m *MeiliExporter) SetIndexSettings() {
 	if err != nil {
 		logger.Warn("could not set settings for meili index COURSES", "err", err)
 	}
+}
+
+func ToMeiliCourses(cs []model.Course) []MeiliCourse {
+	res := make([]MeiliCourse, len(cs))
+	for i, c := range cs {
+		res[i] = MeiliCourse{
+			ID:           c.ID,
+			Name:         c.Name,
+			Slug:         c.Slug,
+			Year:         c.Year,
+			TeachingTerm: c.TeachingTerm,
+			Visibility:   c.Visibility,
+		}
+	}
+	return res
+}
+
+func ToMeiliStreams(streams []model.Stream, coursesDao dao.CoursesDao) ([]MeiliStream, error) {
+	res := make([]MeiliStream, len(streams))
+	for i, s := range streams {
+		c, err := coursesDao.GetCourseById(context.Background(), s.CourseID)
+		if err != nil {
+			return nil, err
+		}
+		courseName := c.Name
+		year := c.Year
+		teachingTerm := c.TeachingTerm
+		visibility := c.Visibility
+		var private uint
+		if s.Private {
+			private = 1
+		}
+
+		res[i] = MeiliStream{
+			ID:           s.ID,
+			Name:         s.Name,
+			Description:  s.Description,
+			CourseName:   courseName,
+			Year:         year,
+			TeachingTerm: teachingTerm,
+			CourseID:     s.CourseID,
+			Private:      private,
+			Visibility:   visibility,
+		}
+	}
+	return res, nil
 }

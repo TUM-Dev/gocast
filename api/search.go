@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,8 +16,8 @@ import (
 	"strings"
 )
 
-func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := searchRoutes{daoWrapper}
+func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, meiliSearchInstance tools.MeiliSearchInterface) {
+	routes := searchRoutes{daoWrapper, meiliSearchInstance}
 
 	searchGroup := router.Group("/api/search")
 	searchGroup.GET("", routes.search)
@@ -33,6 +34,7 @@ func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 type searchRoutes struct {
 	dao.DaoWrapper
+	m tools.MeiliSearchInterface
 }
 
 const (
@@ -45,7 +47,7 @@ type MeiliSearchMap map[string]any
 func (r searchRoutes) searchSubtitles(c *gin.Context) {
 	s := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
 	q := c.Query("q")
-	c.JSON(http.StatusOK, tools.SearchSubtitles(q, s.ID))
+	c.JSON(http.StatusOK, r.m.SearchSubtitles(q, s.ID))
 }
 
 /*
@@ -70,7 +72,7 @@ course=...,... max. 2
 func (r searchRoutes) searchCourses(c *gin.Context) {
 	user, query, limit := getDefaultParameters(c)
 
-	res, err := semesterSearchHelper(c, query, int64(limit), user, true)
+	res, err := semesterSearchHelper(c, r.m, query, int64(limit), user, true)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -112,7 +114,7 @@ func (r searchRoutes) search(c *gin.Context) {
 				return
 			}
 		}
-		res = tools.Search(query, int64(limit), 3, "", meiliStreamFilter(c, user, model.Semester{}, courses), meiliSubtitleFilter(user, courses))
+		res = r.m.Search(query, int64(limit), 3, "", meiliStreamFilter(c, user, model.Semester{}, courses), meiliSubtitleFilter(user, courses))
 		if res == nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
@@ -122,7 +124,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		return
 	}
 
-	res, err := semesterSearchHelper(c, query, int64(limit), user, false)
+	res, err := semesterSearchHelper(c, r.m, query, int64(limit), user, false)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -147,7 +149,7 @@ func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
 	return msm
 }
 
-func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model.User, courseSearchOnly bool) (*meilisearch.MultiSearchResponse, error) {
+func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query string, limit int64, user *model.User, courseSearchOnly bool) (*meilisearch.MultiSearchResponse, error) {
 	var res *meilisearch.MultiSearchResponse
 	firstSemesterParam := c.Query("firstSemester")
 	lastSemesterParam := c.Query("lastSemester")
@@ -175,27 +177,27 @@ func semesterSearchHelper(c *gin.Context, query string, limit int64, user *model
 			} else {
 				semester = semesters[0]
 			}
-			res = tools.Search(query, limit, 6, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), meiliStreamFilter(c, user, semester, nil), "")
+			res = m.Search(query, limit, 6, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), meiliStreamFilter(c, user, semester, nil), "")
 		} else {
 			// multiple semester search
-			res = tools.Search(query, limit, 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
+			res = m.Search(query, limit, 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
 		}
 		return res, nil
 	}
 
 	sem1 := model.Semester{TeachingTerm: "S"}
 	sem2 := model.Semester{TeachingTerm: "W", Year: 3000}
-	return tools.Search(query, limit, 4, meiliCourseFilter(c, user, sem1, sem2, nil), "", ""), nil
+	return m.Search(query, limit, 4, meiliCourseFilter(c, user, sem1, sem2, nil), "", ""), nil
 }
 
-type MeiliCourseResponse struct {
+type SearchCourseDTO struct {
 	Name         string `json:"name"`
 	Slug         string `json:"slug"`
 	Year         int    `json:"year"`
 	TeachingTerm string `json:"semester"`
 }
 
-type MeiliStreamResponse struct {
+type SearchStreamDTO struct {
 	ID           uint   `json:"ID"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
@@ -205,7 +207,7 @@ type MeiliStreamResponse struct {
 	CourseSlug   string `json:"courseSlug"`
 }
 
-type MeiliResponseSubtitles struct {
+type SearchSubtitlesDTO struct {
 	StreamID           uint   `json:"streamID"`
 	Timestamp          int64  `json:"timestamp"`
 	TextPrev           string `json:"textPrev"` // the previous subtitle line
@@ -224,7 +226,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			hits := res.Hits
 			res.Hits = []any{}
 
-			var meiliStreams []MeiliStreamResponse
+			var meiliStreams []SearchStreamDTO
 			temp, err := json.Marshal(hits)
 			if err != nil { //shouldn't happen
 				continue
@@ -258,7 +260,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			hits := res.Hits
 			res.Hits = []any{}
 
-			var meiliCourses []MeiliCourseResponse
+			var meiliCourses []SearchCourseDTO
 			temp, err := json.Marshal(hits)
 			if err != nil { //shouldn't happen
 				continue
@@ -283,7 +285,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			hits := res.Hits
 			res.Hits = []any{}
 
-			var meiliSubtitles []MeiliResponseSubtitles
+			var meiliSubtitles []SearchSubtitlesDTO
 			temp, err := json.Marshal(hits)
 			if err != nil { //shouldn't happen
 				continue
@@ -515,4 +517,39 @@ func uintSliceToString(ids []uint) string {
 	}
 	filter := "[" + strings.Join(idsStringSlice, ",") + "]"
 	return filter
+}
+
+func ToSearchCourseDTO(c model.Course) SearchCourseDTO {
+	return SearchCourseDTO{
+		Name:         c.Name,
+		Slug:         c.Slug,
+		Year:         c.Year,
+		TeachingTerm: c.TeachingTerm,
+	}
+}
+
+func ToSearchStreamDTO(s model.Stream, wrapper dao.DaoWrapper) SearchStreamDTO {
+	c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
+	var courseName, teachingTerm, courseSlug string
+	var year int
+	if err != nil {
+		courseName = "unknown"
+		teachingTerm = "unknown"
+		courseSlug = "unknown"
+		year = 0
+	} else {
+		courseName = c.Name
+		teachingTerm = c.TeachingTerm
+		courseSlug = c.Slug
+		year = c.Year
+	}
+	return SearchStreamDTO{
+		ID:           s.ID,
+		Name:         s.Name,
+		Description:  s.Description,
+		CourseName:   courseName,
+		Year:         year,
+		TeachingTerm: teachingTerm,
+		CourseSlug:   courseSlug,
+	}
 }
