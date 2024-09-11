@@ -134,7 +134,7 @@ func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 	return res, err
 }
 
-// GetCourseStatsWeekdays returns the days and their sum of vod views of a course
+// GetLectureStatsWeekdays returns the days and their sum of vod views of a lecture
 func (d statisticsDao) GetLectureStatsWeekdays(courseID uint, streamID uint) ([]Stat, error) {
 	var res []Stat
 	err := DB.Raw(`SELECT DAYNAME(stats.time) AS x, SUM(stats.viewers) as y
@@ -146,7 +146,7 @@ func (d statisticsDao) GetLectureStatsWeekdays(courseID uint, streamID uint) ([]
 	return res, err
 }
 
-// GetCourseStatsHourly returns the hours with most vod viewing activity of a course
+// GetLectureStatsHourly returns the hours with most vod viewing activity of a lecture
 func (d statisticsDao) GetLectureStatsHourly(courseID uint, streamID uint) ([]Stat, error) {
 	var res []Stat
 	err := DB.Raw(`SELECT HOUR(stats.time) AS x, SUM(stats.viewers) as y
@@ -158,6 +158,7 @@ func (d statisticsDao) GetLectureStatsHourly(courseID uint, streamID uint) ([]St
 	return res, err
 }
 
+// GetLectureStats returns the number of viewers during a lecture
 func (d statisticsDao) GetLectureStats(courseID uint, streamID uint) ([]Stat, error) {
 	var res []Stat
 	err := DB.Raw(`SELECT Date_FORMAT(stats.time, "%H:%i") AS x, stats.viewers AS y
@@ -165,11 +166,6 @@ func (d statisticsDao) GetLectureStats(courseID uint, streamID uint) ([]Stat, er
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE s.course_id = ? AND s.id = ? AND stats.live = 1
 		ORDER BY x;`, courseID, streamID).Scan(&res).Error
-	// err := DB.Raw(`SELECT TIMESTAMPDIFF(MINUTE, s.start, stats.time) AS x, stats.viewers AS y
-	//	FROM stats
-	//		JOIN streams s ON s.id = stats.stream_id
-	//	WHERE s.course_id = ? AND stats.live = 1
-	//	ORDER BY x;`, courseID).Scan(&res).Error
 	return res, err
 }
 
