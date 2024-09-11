@@ -187,7 +187,7 @@
                             <i class="fa-solid fa-chevron-down pl-2 text-xs text-7 text-black dark:text-gray-300"></i>
                         </button>
                         <div x-show="open" @click.outside="open = false" class="flex flex-col absolute top-full bg-gray-100 dark:bg-gray-800 border border-gray-400 dark:border-none rounded-lg mt-1 w-fit pr-4 pl-1"
-                            style="max-height: 60vh; overflow-y: auto;">
+                            style="max-height: 60vh; overflow-y: auto; min-width: 20ch">
                             <input type="text" class="w-full px-3 py-2 outline-none border-none bg-transparent h-full grow text-sm text-black dark:text-gray-300"
                                 placeholder="Search Course"
                                 size="15"
@@ -203,8 +203,8 @@
                                     dark:text-gray-300 text-sm" x-text="course.Name + ' ' + course.Year + course.TeachingTerm"></span>
                                 </label>
                             </template>
-                            <template x-if="courses.length <= 0">
-                                <span class="text-black dark:text-gray-300 text-sm">No course in semesters</span>
+                            <template x-if="shownCourses.length <= 0">
+                                <span class="text-black dark:text-gray-300 text-sm p-2">No course found</span>
                             </template>
                         </div>
                     </div>
