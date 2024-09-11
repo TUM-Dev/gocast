@@ -172,7 +172,7 @@
                         <div x-show="open" @click.outside="open = false" class="flex flex-col absolute top-full bg-gray-100 dark:bg-gray-800 border border-gray-400 dark:border-none rounded-lg mt-1 w-fit pr-4 pl-1">
                             <template x-for="(semester, index) in semesters" :key="index">
                                 <label class="flex items-center text-sm py-1 h-full">
-                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterSemesters" :disabled="filterSemesters.length >= 5 && !filterSemesters.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
+                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterSemesters" :disabled="filterSemesters.length >= 5 && !filterSemesters.includes(index.toString())" @change="filterCourses = []; searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
                                     <span class="text-black dark:text-gray-300 text-sm" x-text="semester.Year + ' ' + semester.TeachingTerm"></span>
                                 </label>
                             </template>
@@ -266,8 +266,9 @@
                         <li role="option" aria-selected="false" tabindex="-1">
                             <a class="tum-live-search-result-main"
                                 :href="'/w/' + stream.courseSlug + '/' + stream.ID">
-                                <p x-text="stream.courseName"></p>
                                 <p x-text="stream.name"></p>
+                                <div class="px-2"></div>
+                                <p class="text-gray-600 dark:text-gray-400" x-text="stream.courseName"></p>
                             </a>
                         </li>
                     </template>
