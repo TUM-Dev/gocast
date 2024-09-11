@@ -182,6 +182,24 @@ func (r mainRoutes) LectureUnitsPage(c *gin.Context) {
 	}
 }
 
+func (r mainRoutes) LectureStatsPage(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	indexData := NewIndexData()
+	indexData.TUMLiveContext = tumLiveContext
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-stats.gohtml", LectureStatsPageData{
+		IndexData: indexData,
+		Lecture:   *tumLiveContext.Stream,
+	}); err != nil {
+		sentry.CaptureException(err)
+	}
+}
+
 func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -345,4 +363,9 @@ type LectureUnitsPageData struct {
 	IndexData IndexData
 	Lecture   model.Stream
 	Units     []model.StreamUnit
+}
+
+type LectureStatsPageData struct {
+	IndexData IndexData
+	Lecture   model.Stream
 }
