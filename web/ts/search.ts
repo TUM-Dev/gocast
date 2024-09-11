@@ -91,8 +91,6 @@ export function filteredSearch() {
 
         },
         searchWithDataFromPage: function (semesters: Semester[], selectedSemesters: number[], allCourses: Course[], selectedCourses: number[]) {
-            console.log(allCourses)
-            console.log(selectedCourses)
             let years = [];
             let teachingTerms = [];
             let courses = [];
@@ -206,14 +204,12 @@ export function initSearchBarArrowKeysListener() {
             let currentIndex = Array.from(searchResults).indexOf(activeElement);
             let nextIndex = currentIndex + 1;
             if (nextIndex < searchResults.length) {
-                console.log("Next index " + nextIndex);
                 (searchResults[nextIndex] as HTMLLIElement).focus();
             }
         } else if (event.key == "ArrowUp") {
             let currentIndex = Array.from(searchResults).indexOf(activeElement);
             let nextIndex = currentIndex - 1;
             if (nextIndex >= 0) {
-                console.log("Next index " + nextIndex);
                 (searchResults[nextIndex] as HTMLLIElement).focus();
             }
         } else if (event.key == "Enter") {
