@@ -49,26 +49,30 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	var tokens []dao.AllTokensDto
 	var infopages []model.InfoPage
 	var serverNotifications []model.ServerNotification
-	if page == "notifications" {
+	switch page {
+	case "notifications":
 		found, err := r.NotificationsDao.GetAllNotifications()
 		if err != nil {
 			logger.Error("couldn't query notifications", "err", err)
 		} else {
 			notifications = found
 		}
-	} else if page == "token" {
+		break
+	case "token":
 		tokens, err = r.TokenDao.GetAllTokens()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("couldn't query tokens", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
-	} else if page == "info-pages" {
+		break
+	case "info-pages":
 		infopages, err = r.InfoPageDao.GetAll()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("couldn't query texts", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
-	} else if page == "serverStats" {
+		break
+	case "serverStats":
 		streams, err := r.StreamsDao.GetAllStreams()
 		if err != nil {
 			logger.Error("Can't get all streams", "err", err)
@@ -79,12 +83,14 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Model:   gorm.Model{ID: 0},
 			Streams: streams,
 		}
-	} else if page == "serverNotifications" {
+		break
+	case "serverNotifications":
 		if res, err := r.ServerNotificationDao.GetAllServerNotifications(); err == nil {
 			serverNotifications = res
 		} else {
 			logger.Warn("could not get all server notifications", "err", err)
 		}
+		break
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
