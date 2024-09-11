@@ -145,7 +145,7 @@
 </header>
 <main id="content" class="flex grow h-full overflow-y-scroll">
     <section class="w-full">
-        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: [], query: home.getSearchQueryFromParam()}"
+        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: [], filterCourses: [], query: home.getSearchQueryFromParam(), courseQuery: home.getCourseFromParam(), semesterQuery: home.getSemestersFromParam(), courses: [], oldSemesterFilter: []}"
             x-init="home.initSearchBarArrowKeysListener()">
             <!--Search Bar-->
             <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
@@ -153,10 +153,10 @@
                 <input class="px-3 outline-none border-none bg-transparent h-full w-full grow text-black dark:text-gray-300" id="search-bar" type="text"
                        x-model="query"
                        placeholder="Search"
-                       x-init="searcher.searchInput = query; searcher.searchWithDataFromPage(semesters, filterSemesters)"
+                       x-init="searcher.searchInput = query; searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)"
                        @blur="searcher.open = false;"
                        @keyup="searcher.searchInput = query;
-                            searcher.searchWithDataFromPage(semesters, filterSemesters)">
+                            searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
             </div>
 
             <div class="flex flex-col justify-center">
@@ -172,9 +172,32 @@
                         <div x-show="open" @click.outside="open = false" class="flex flex-col absolute top-full bg-gray-100 dark:bg-gray-800 border border-gray-400 dark:border-none rounded-lg mt-1 w-fit pr-4 pl-1">
                             <template x-for="(semester, index) in semesters" :key="index">
                                 <label class="flex items-center text-sm py-1 h-full">
-                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterSemesters" :disabled="filterSemesters.length >= 5 && !filterSemesters.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters)">
+                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterSemesters" :disabled="filterSemesters.length >= 5 && !filterSemesters.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
                                     <span class="text-black dark:text-gray-300 text-sm" x-text="semester.Year + ' ' + semester.TeachingTerm"></span>
                                 </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!--Course Filter-->
+                    <div class="relative" x-data="{open: false}" x-show="filterSemesters.length > 0">
+                        <!-- if in next line is used to prevent courses from being loaded multiple times -->
+                        <button @click="open = !open; if (open && filterSemesters != oldSemesterFilter) {oldSemesterFilter = filterSemesters; courses = home.getCoursesOfSemesters(semesters, filterSemesters)}" class="flex items-center justify-center rounded-full bg-gray-100 text-sm py-1 h-8 w-fit px-2 dark:bg-gray-800">
+                            <span class="text-black dark:text-gray-300">Course</span>
+                            <i class="fa-solid fa-chevron-down pl-2 text-xs text-7 text-black dark:text-gray-300"></i>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" class="flex flex-col absolute top-full bg-gray-100 dark:bg-gray-800 border border-gray-400 dark:border-none rounded-lg mt-1 w-fit pr-4 pl-1"
+                            style="max-height: 60vh; overflow-y: auto;">
+                            <template x-for="(course, index) in courses" :key="index">
+                                <label class="flex items
+                                -center text-sm py-1 h-full">
+                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterCourses" :disabled="filterCourses.length >= 5 && !filterCourses.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
+                                    <span class="text-black
+                                    dark:text-gray-300 text-sm" x-text="course.Name"></span>
+                                </label>
+                            </template>
+                            <template x-if="courses.length <= 0">
+                                <span class="text-black dark:text-gray-300 text-sm">No course in semesters</span>
                             </template>
                         </div>
                     </div>
