@@ -5,7 +5,20 @@ import (
 	"github.com/meilisearch/meilisearch-go"
 )
 
-func SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
+//go:generate mockgen -source=meiliSearch.go -destination ../mock_tools/meiliSearch.go
+
+type MeiliSearchInterface interface {
+	SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse
+	Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse
+}
+
+type meiliSearchFunctions struct{}
+
+func NewMeiliSearchFunctions() MeiliSearchInterface {
+	return &meiliSearchFunctions{}
+}
+
+func (d *meiliSearchFunctions) SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {
 		return nil
@@ -54,7 +67,7 @@ func getCoursesSearchRequest(q string, limit int64, courseFilter string) meilise
 	return req
 }
 
-func Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
+func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {
 		return nil
