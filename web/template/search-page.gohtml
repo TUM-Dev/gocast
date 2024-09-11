@@ -193,7 +193,7 @@
                                 -center text-sm py-1 h-full">
                                     <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterCourses" :disabled="filterCourses.length >= 3 && !filterCourses.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
                                     <span class="text-black
-                                    dark:text-gray-300 text-sm" x-text="course.Name"></span>
+                                    dark:text-gray-300 text-sm" x-text="course.Name + ' ' + course.Year + course.TeachingTerm"></span>
                                 </label>
                             </template>
                             <template x-if="courses.length <= 0">
