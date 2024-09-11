@@ -44,61 +44,32 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	page := "schedule"
-	if c.Request.URL.Path == "/admin/users" {
-		page = "users"
-	}
-	if c.Request.URL.Path == "/admin/lectureHalls" {
-		page = "lectureHalls"
-	}
-	if c.Request.URL.Path == "/admin/lectureHalls/new" {
-		page = "createLectureHalls"
-	}
-	if c.Request.URL.Path == "/admin/workers" {
-		page = "workers"
-	}
-	if c.Request.URL.Path == "/admin/create-course" {
-		page = "createCourse"
-	}
-	if c.Request.URL.Path == "/admin/course-import" {
-		page = "courseImport"
-	}
-	if c.Request.URL.Path == "/admin/audits" {
-		page = "audits"
-	}
-	if c.Request.URL.Path == "/admin/maintenance" {
-		page = "maintenance"
-	}
+	page := GetPageString(c.Request.URL.Path)
 	var notifications []model.Notification
-	if c.Request.URL.Path == "/admin/notifications" {
-		page = "notifications"
+	var tokens []dao.AllTokensDto
+	var infopages []model.InfoPage
+	var serverNotifications []model.ServerNotification
+	switch page {
+	case "notifications":
 		found, err := r.NotificationsDao.GetAllNotifications()
 		if err != nil {
 			logger.Error("couldn't query notifications", "err", err)
 		} else {
 			notifications = found
 		}
-	}
-	var tokens []dao.AllTokensDto
-	if c.Request.URL.Path == "/admin/token" {
-		page = "token"
+	case "token":
 		tokens, err = r.TokenDao.GetAllTokens()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("couldn't query tokens", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
-	}
-	var infopages []model.InfoPage
-	if c.Request.URL.Path == "/admin/infopages" {
-		page = "info-pages"
+	case "info-pages":
 		infopages, err = r.InfoPageDao.GetAll()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("couldn't query texts", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
-	}
-	if c.Request.URL.Path == "/admin/server-stats" {
-		page = "serverStats"
+	case "serverStats":
 		streams, err := r.StreamsDao.GetAllStreams()
 		if err != nil {
 			logger.Error("Can't get all streams", "err", err)
@@ -109,10 +80,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Model:   gorm.Model{ID: 0},
 			Streams: streams,
 		}
-	}
-	var serverNotifications []model.ServerNotification
-	if c.Request.URL.Path == "/admin/server-notifications" {
-		page = "serverNotifications"
+	case "serverNotifications":
 		if res, err := r.ServerNotificationDao.GetAllServerNotifications(); err == nil {
 			serverNotifications = res
 		} else {
@@ -139,6 +107,41 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
+	}
+}
+
+func GetPageString(s string) string {
+	switch s {
+	case "":
+		return "schedule"
+	case "/admin/users":
+		return "users"
+	case "/admin/lectureHalls":
+		return "lectureHalls"
+	case "/admin/lectureHalls/new":
+		return "createLectureHalls"
+	case "/admin/workers":
+		return "workers"
+	case "/admin/create-course":
+		return "createCourse"
+	case "/admin/course-import":
+		return "courseImport"
+	case "/admin/audits":
+		return "audits"
+	case "/admin/maintenance":
+		return "maintenance"
+	case "/admin/notifications":
+		return "notifications"
+	case "/admin/token":
+		return "token"
+	case "/admin/infopages":
+		return "info-pages"
+	case "/admin/server-stats":
+		return "serverStats"
+	case "/admin/server-notifications":
+		return "serverNotifications"
+	default:
+		return "schedule"
 	}
 }
 
@@ -236,13 +239,17 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		}
 	}
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
-		IndexData:      indexData,
-		Courses:        courses,
-		Page:           "course",
-		Semesters:      semesters,
-		CurY:           tumLiveContext.Course.Year,
-		CurT:           tumLiveContext.Course.TeachingTerm,
-		EditCourseData: EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, LectureHalls: lectureHalls},
+		IndexData: indexData,
+		Courses:   courses,
+		Page:      "course",
+		Semesters: semesters,
+		CurY:      tumLiveContext.Course.Year,
+		CurT:      tumLiveContext.Course.TeachingTerm,
+		EditCourseData: EditCourseData{
+			IndexData:    indexData,
+			IngestBase:   tools.Cfg.IngestBase,
+			LectureHalls: lectureHalls,
+		},
 	})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
