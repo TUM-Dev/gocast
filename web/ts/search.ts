@@ -54,8 +54,6 @@ function getSemestersString(years: number[], teachingTerms: string[]) : string {
 }
 
 function getCoursesString(courses: Course[]) : string {
-    console.log("Courses are: ")
-    console.log(courses)
     let ret = "";
     for(let i = 0; i < courses.length; i++) {
         if(i == courses.length - 1) {
@@ -74,7 +72,7 @@ export function filteredSearch() {
         searchInput: "",
         search: function (years: number[], teachingTerms: string[], courses: Course[], limit: number = 20) {
             if (this.searchInput.length > 2) {
-                if (years.length < 8 && teachingTerms.length < 8 && teachingTerms.length == years.length && courses.length < 2) {
+                if (years.length < 8 && teachingTerms.length < 8 && teachingTerms.length == years.length && courses.length < 3) {
                     fetch(`/api/search?q=${this.searchInput}&semester=${encodeURIComponent(getSemestersString(years, teachingTerms))}&course=${encodeURIComponent(getCoursesString(courses))}&limit=${limit}`)
                         .then((res) => {
                                 if (res.ok) {

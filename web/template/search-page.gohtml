@@ -182,7 +182,7 @@
                     <!--Course Filter-->
                     <div class="relative" x-data="{open: false}" x-show="filterSemesters.length > 0">
                         <!-- if in next line is used to prevent courses from being loaded multiple times -->
-                        <button @click="open = !open; if (open && filterSemesters != oldSemesterFilter) {oldSemesterFilter = filterSemesters; courses = home.getCoursesOfSemesters(semesters, filterSemesters)}" class="flex items-center justify-center rounded-full bg-gray-100 text-sm py-1 h-8 w-fit px-2 dark:bg-gray-800">
+                        <button @click="open = !open; if (open && filterSemesters != oldSemesterFilter) {oldSemesterFilter = filterSemesters; courses = await home.getCoursesOfSemesters(semesters, filterSemesters)}" class="flex items-center justify-center rounded-full bg-gray-100 text-sm py-1 h-8 w-fit px-2 dark:bg-gray-800">
                             <span class="text-black dark:text-gray-300">Course</span>
                             <i class="fa-solid fa-chevron-down pl-2 text-xs text-7 text-black dark:text-gray-300"></i>
                         </button>
@@ -191,7 +191,7 @@
                             <template x-for="(course, index) in courses" :key="index">
                                 <label class="flex items
                                 -center text-sm py-1 h-full">
-                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterCourses" :disabled="filterCourses.length >= 5 && !filterCourses.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
+                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterCourses" :disabled="filterCourses.length >= 3 && !filterCourses.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
                                     <span class="text-black
                                     dark:text-gray-300 text-sm" x-text="course.Name"></span>
                                 </label>
