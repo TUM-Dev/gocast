@@ -17,13 +17,8 @@ const (
 type Action struct {
 	gorm.Model
 
-	ActionID string `gorm:"primaryKey"`
-
-	//foreign keys and references to the job and runner
-	AssignedRunner []*Runner `gorm:"foreignKey:Action"`
-	Runner         *Runner   `gorm:"foreignKey:Action"`
-	Job            *Job      `gorm:"foreignKey:Actions"`
-
+	AllRunners   []Runner `gorm:"many2many:action_runners;"`
+	JobID        uint
 	Type         string `gorm:"not null"`
 	Description  string
 	assignedDate time.Time
@@ -32,10 +27,7 @@ type Action struct {
 	Status       int `gorm:"not null;default:3"`
 }
 
-func (a *Action) BeforeCreate(tx *gorm.DB) (err error) {
-	if a.Job == nil {
-		return errors.New("job needs to be assigned")
-	}
+func (a *Action) BeforeCreate(*gorm.DB) (err error) {
 	if a.Type == "" {
 		return errors.New("type needs to be assigned, unnecessary creation")
 	}
@@ -62,36 +54,8 @@ func (a *Action) SetToRestarted() {
 	a.Status = restarted
 }
 
-func (a *Action) GetRunner() []*Runner {
-	if a.Runner == nil {
-		logger.Error("runner not assigned yet")
-		return nil
-	}
-	return a.AssignedRunner
-}
-
-func (a *Action) GetJob() *Job {
-	if a.Job == nil {
-		logger.Error("job not found. Please check database")
-		return nil
-	}
-	return a.Job
-}
-
 func (a *Action) GetDescription() string {
 	return a.Description
-}
-
-func (a *Action) AssignRunner(r *Runner) {
-	if r == nil {
-		logger.Error("runner not found")
-		return
-	} else if a.Status != awaiting {
-		logger.Error("action already assigned")
-		return
-	}
-
-	a.AssignedRunner = append(a.AssignedRunner, r)
 }
 
 func (a *Action) GetStatus() int {

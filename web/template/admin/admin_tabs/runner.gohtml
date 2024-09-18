@@ -1,4 +1,7 @@
 {{define "runners"}}
+    <section x-data="admin.runnerData()" x-on:failed-action-listing.window="showFailed=true"
+             x-on:stop-action-listing.window="showFailed=false;actions=$event.detail.failedActions"
+    >
     <div class="form-container">
         <h1 class="form-container-title">Runners</h1>
         <div class="form-container-body grid grid-cols-2 gap-3">
@@ -54,6 +57,19 @@
                 </tbody>
             </table>
         </div>
-    </div>
+        <div x-show="showFailed">
+            <div>
+                <h2>failed actions</h2>
+                <template x-for="action in failedActions">
+                    <div>
+                        <ul>
+                            <li style="margin-bottom: 10px" x-text="action.ActionID"></li>
+                        </ul>
+                    </div>
+                </template>
+            </div>
 
+        </div>
+    </div>
+    </section>
 {{end}}

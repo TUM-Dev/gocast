@@ -10,8 +10,7 @@ import (
 // Runner represents a runner that creates, converts and postprocessing streams and does other heavy lifting.
 type Runner struct {
 	gorm.Model
-
-	Hostname string `gorm:"primaryKey"`
+	Hostname string `gorm:"UniqueKey;type:varchar(80)"`
 	Port     int
 	LastSeen time.Time
 
@@ -22,8 +21,6 @@ type Runner struct {
 	Disk     string
 	Uptime   string
 	Version  string
-
-	Action *Action `gorm:"foreignKey:Hostname"`
 }
 
 // BeforeCreate returns errors if hostnames and ports of workers are invalid.

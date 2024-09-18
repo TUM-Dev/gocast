@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=action.go -destination ../mock_dao/action.go
+
 type ActionDao interface {
 	CreateAction(ctx context.Context, action *model.Action) error
 	CompleteAction(ctx context.Context, actionID string) error

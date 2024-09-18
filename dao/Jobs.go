@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=Jobs.go -destination ../mock_dao/jobs.go
+
 type JobDao interface {
 	CreateJob(ctx context.Context, job model.Job) error
 	Get(ctx context.Context, jobID string) (model.Job, error)

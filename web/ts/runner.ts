@@ -5,12 +5,30 @@ export async function deleteRunner(hostname: string) {
     });
 }
 
+const r = {
+    failedActions: [],
+}
+
+export function runnerData() {
+    return r;
+}
+
 export function getFailedAction() {
     window.dispatchEvent(new CustomEvent("load-failures"));
     fetch("/api/Actions/failed").then(
         (res) => {
             res.text().then((text) => {
                 console.log(text);
+                window.dispatchEvent(
+                    new CustomEvent(
+                        "FailedActionListing",
+                        {
+                            detail: {
+                                failedActions: JSON.parse(text)
+                            }
+                        }
+                    )
+                );
             });
         },
     );

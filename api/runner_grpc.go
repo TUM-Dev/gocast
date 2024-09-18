@@ -56,7 +56,6 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 		log.WithError(err).Error("Failed to get runner")
 		return &protobuf.HeartbeatResponse{Ok: false}, err
 	}
-	tempAction, err := g.ActionDao.GetActionByID(ctx, request.CurrentAction)
 
 	newStats := model.Runner{
 		Hostname: request.Hostname,
@@ -69,7 +68,6 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 		Disk:     request.Disk,
 		Uptime:   request.Uptime,
 		Version:  request.Version,
-		Action:   &tempAction,
 	}
 	ctx = context.WithValue(ctx, "newStats", newStats)
 	log.Info("Updating runner stats ", "runner", r)
@@ -455,7 +453,7 @@ func NotifyRunners(dao dao.DaoWrapper) func() {
 								logger.Error("No runners available", err)
 								return
 							}
-							AssignRunnerAction(dao, runner, action)
+							AssignRunnerAction(dao, runner, &action)
 						}
 					}
 

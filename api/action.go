@@ -29,7 +29,7 @@ func (a actionRoutes) getFailedActions(c *gin.Context) {
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "Can't fatch failed actions",
+			CustomMessage: "Can't fetch failed actions",
 			Err:           err,
 		})
 		return
