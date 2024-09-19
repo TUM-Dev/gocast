@@ -305,6 +305,15 @@ var (
 	PrivateStreamIDEnrolledCourse = uint(511)
 	PrivateStreamIDLoggedinCourse = uint(521)
 	PrivateStreamIDPublicCourse   = uint(531)
+
+	SubtitlesIDPublicCourseStream          = "1000"
+	SubtitlesIDPublicCoursePrivateStream   = "1001"
+	SubtitlesIDLoggedinCourseStream        = "1002"
+	SubtitlesIDLoggedinCoursePrivateStream = "1003"
+	SubtitlesIDEnrolledCourseStream        = "1004"
+	SubtitlesIDEnrolledCoursePrivateStream = "1005"
+	SubtitlesIDHiddenCourseStream          = "1006"
+	SubtitlesIDHiddenCoursePrivateStream   = "1007"
 )
 
 // TUMLiveContext for search tests
@@ -349,7 +358,7 @@ var (
 		Name:         "testen",
 		Slug:         "coursehidden",
 		Year:         2024,
-		TeachingTerm: "S",
+		TeachingTerm: "W",
 		Visibility:   "hidden",
 		Streams:      []model.Stream{StreamHiddenCourse, PrivateStreamHiddenCourse},
 		Admins:       []model.User{},
@@ -359,7 +368,7 @@ var (
 		UserID:       1,
 		Name:         "testen",
 		Slug:         "courseenrolled",
-		Year:         2023,
+		Year:         2024,
 		TeachingTerm: "W",
 		Visibility:   "enrolled",
 		Streams:      []model.Stream{StreamEnrolledCourse, PrivateStreamEnrolledCourse},
@@ -370,8 +379,8 @@ var (
 		UserID:       1,
 		Name:         "testen",
 		Slug:         "courseloggedin",
-		Year:         2023,
-		TeachingTerm: "S",
+		Year:         2024,
+		TeachingTerm: "W",
 		Visibility:   "loggedin",
 		Streams:      []model.Stream{StreamLoggedinCourse, PrivateStreamLoggedinCourse},
 		Admins:       []model.User{},
@@ -381,7 +390,7 @@ var (
 		UserID:       1,
 		Name:         "testen",
 		Slug:         "coursepublic",
-		Year:         2022,
+		Year:         2024,
 		TeachingTerm: "W",
 		Visibility:   "public",
 		Streams:      []model.Stream{StreamPublicCourse, PrivateStreamPublicCourse},
@@ -454,6 +463,49 @@ var (
 		CourseID:    403,
 		Recording:   true,
 		Private:     true,
+	}
+
+	//subtitles
+	AllSubtitlesForSearchTests  = []tools.MeiliSubtitles{SubtitlesStreamHiddenCourse, SubtitlesPrivateStreamHiddenCourse, SubtitlesStreamEnrolledCourse, SubtitlesPrivateStreamEnrolledCourse, SubtitlesStreamLoggedinCourse, SubtitlesPrivateStreamLoggedinCourse, SubtitlesStreamPublicCourse, SubtitlesPrivateStreamPublicCourse}
+	SubtitlesStreamPublicCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDPublicCourseStream,
+		StreamID: StreamIDPublicCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamPublicCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDPublicCoursePrivateStream,
+		StreamID: PrivateStreamIDPublicCourse,
+		Text:     "hallihallo2",
+	}
+	SubtitlesStreamLoggedinCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDLoggedinCourseStream,
+		StreamID: StreamIDLoggedinCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamLoggedinCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDLoggedinCoursePrivateStream,
+		StreamID: PrivateStreamIDLoggedinCourse,
+		Text:     "hallihallo2",
+	}
+	SubtitlesStreamEnrolledCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDEnrolledCourseStream,
+		StreamID: StreamIDEnrolledCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamEnrolledCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDEnrolledCoursePrivateStream,
+		StreamID: PrivateStreamIDEnrolledCourse,
+		Text:     "hallihallo2",
+	}
+	SubtitlesStreamHiddenCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDHiddenCourseStream,
+		StreamID: StreamIDHiddenCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamHiddenCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDHiddenCoursePrivateStream,
+		StreamID: PrivateStreamIDHiddenCourse,
+		Text:     "hallihallo2",
 	}
 )
 

@@ -519,37 +519,72 @@ func uintSliceToString(ids []uint) string {
 	return filter
 }
 
-func ToSearchCourseDTO(c model.Course) SearchCourseDTO {
-	return SearchCourseDTO{
-		Name:         c.Name,
-		Slug:         c.Slug,
-		Year:         c.Year,
-		TeachingTerm: c.TeachingTerm,
+func ToSearchCourseDTO(cs ...model.Course) []SearchCourseDTO {
+	res := make([]SearchCourseDTO, len(cs))
+	for i, c := range cs {
+		res[i] = SearchCourseDTO{
+			Name:         c.Name,
+			Slug:         c.Slug,
+			Year:         c.Year,
+			TeachingTerm: c.TeachingTerm,
+		}
 	}
+	return res
 }
 
-func ToSearchStreamDTO(s model.Stream, wrapper dao.DaoWrapper) SearchStreamDTO {
-	c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
-	var courseName, teachingTerm, courseSlug string
-	var year int
-	if err != nil {
-		courseName = "unknown"
-		teachingTerm = "unknown"
-		courseSlug = "unknown"
-		year = 0
-	} else {
-		courseName = c.Name
-		teachingTerm = c.TeachingTerm
-		courseSlug = c.Slug
-		year = c.Year
+// ToSearchStreamDTO ignores any errors and sets affected fields to zero value
+func ToSearchStreamDTO(wrapper dao.DaoWrapper, streams ...model.Stream) []SearchStreamDTO {
+	res := make([]SearchStreamDTO, len(streams))
+	for i, s := range streams {
+		var courseName, teachingTerm, slug string
+		var year int
+		c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
+		if err == nil {
+			courseName = c.Name
+			teachingTerm = c.TeachingTerm
+			slug = c.Slug
+			year = c.Year
+		}
+		res[i] = SearchStreamDTO{
+			ID:           s.ID,
+			Name:         s.Name,
+			Description:  s.Description,
+			CourseName:   courseName,
+			Year:         year,
+			TeachingTerm: teachingTerm,
+			CourseSlug:   slug,
+		}
 	}
-	return SearchStreamDTO{
-		ID:           s.ID,
-		Name:         s.Name,
-		Description:  s.Description,
-		CourseName:   courseName,
-		Year:         year,
-		TeachingTerm: teachingTerm,
-		CourseSlug:   courseSlug,
+	return res
+}
+
+// ToSearchSubtitleDTO ignores any errors and sets affected fields to zero value
+func ToSearchSubtitleDTO(wrapper dao.DaoWrapper, subtitles ...tools.MeiliSubtitles) []SearchSubtitlesDTO {
+	res := make([]SearchSubtitlesDTO, len(subtitles))
+	for i, subtitle := range subtitles {
+		var courseName, slug, teachingTerm string
+		var year int
+		s, err := wrapper.GetStreamByID(context.Background(), strconv.Itoa(int(subtitle.StreamID)))
+		if err == nil {
+			c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
+			if err == nil {
+				courseName = c.Name
+				teachingTerm = c.TeachingTerm
+				slug = c.Slug
+				year = c.Year
+			}
+		}
+		res[i] = SearchSubtitlesDTO{
+			StreamID:           subtitle.StreamID,
+			Timestamp:          subtitle.Timestamp,
+			TextPrev:           subtitle.TextPrev,
+			Text:               subtitle.Text,
+			TextNext:           subtitle.TextNext,
+			CourseName:         courseName,
+			CourseSlug:         slug,
+			CourseYear:         year,
+			CourseTeachingTerm: teachingTerm,
+		}
 	}
+	return res
 }
