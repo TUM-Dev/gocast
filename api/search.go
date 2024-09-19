@@ -225,6 +225,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 		case "STREAMS":
 			hits := res.Hits
 			res.Hits = []any{}
+			response.Results[i] = meilisearch.SearchResponse{}
 
 			var meiliStreams []SearchStreamDTO
 			temp, err := json.Marshal(hits)
@@ -259,6 +260,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 		case "COURSES":
 			hits := res.Hits
 			res.Hits = []any{}
+			response.Results[i] = meilisearch.SearchResponse{}
 
 			var meiliCourses []SearchCourseDTO
 			temp, err := json.Marshal(hits)
@@ -284,6 +286,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 		case "SUBTITLES":
 			hits := res.Hits
 			res.Hits = []any{}
+			response.Results[i] = meilisearch.SearchResponse{}
 
 			var meiliSubtitles []SearchSubtitlesDTO
 			temp, err := json.Marshal(hits)
