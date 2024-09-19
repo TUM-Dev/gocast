@@ -264,9 +264,9 @@ func (u *User) IsAdminOfCourse(course Course) bool {
 
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	if u == nil {
-		return course.Visibility == "public"
+		return course.Visibility == "public" || course.Visibility == "hidden"
 	}
-	if course.Visibility == "loggedin" {
+	if course.Visibility == "public" || course.Visibility == "hidden" || course.Visibility == "loggedin" {
 		return true
 	}
 	for _, invCourse := range u.Courses {
