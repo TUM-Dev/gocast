@@ -204,10 +204,10 @@ func ToMeiliCourses(cs []model.Course) []MeiliCourse {
 	return res
 }
 
-func ToMeiliStreams(streams []model.Stream, coursesDao dao.CoursesDao) ([]MeiliStream, error) {
+func ToMeiliStreams(streams []model.Stream, daoWrapper dao.DaoWrapper) ([]MeiliStream, error) {
 	res := make([]MeiliStream, len(streams))
 	for i, s := range streams {
-		c, err := coursesDao.GetCourseById(context.Background(), s.CourseID)
+		c, err := daoWrapper.GetCourseById(context.Background(), s.CourseID)
 		if err != nil {
 			return nil, err
 		}

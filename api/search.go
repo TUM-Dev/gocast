@@ -38,7 +38,7 @@ type searchRoutes struct {
 }
 
 const (
-	FilterMaxCoursesCount = 2
+	FilterMaxCoursesCount = 3
 	DefaultLimit          = 10
 )
 
@@ -81,7 +81,7 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res)
+	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
 	c.JSON(http.StatusOK, responseToMap(res))
 }
 
@@ -119,7 +119,7 @@ func (r searchRoutes) search(c *gin.Context) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res)
+		checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, true)
 		c.JSON(http.StatusOK, responseToMap(res))
 		return
 	}
@@ -133,7 +133,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res)
+	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
 	c.JSON(http.StatusOK, responseToMap(res))
 	return
 }
@@ -219,7 +219,19 @@ type SearchSubtitlesDTO struct {
 	CourseTeachingTerm string `json:"semester"`
 }
 
-func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse) {
+// checkAndFillResponse takes the response of meilisearch and filters out all courses/streams/subtitles which the user is not allowed to see
+// this is necessary because updating the course in the database (e.g. changing the visibility for a course from public to loggedin) does not update meilisearch data until the next day
+// ---
+// canSearchHiddenCourses indicates whether the response may include streams or subtitles of a hidden course
+// should only be true when the user has explicitly named the hidden course he wants to search through in the url params
+func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse, canSearchHiddenCourses bool) {
+	var userEligibleToSeeResultsOfHiddenCourse func(course model.Course) bool
+	if canSearchHiddenCourses {
+		userEligibleToSeeResultsOfHiddenCourse = user.IsEligibleToWatchCourse
+	} else {
+		userEligibleToSeeResultsOfHiddenCourse = user.IsEligibleToSearchForCourse
+	}
+
 	for i, res := range response.Results {
 		switch res.IndexUID {
 		case "STREAMS":
@@ -248,7 +260,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				}
 
 				meiliStream.CourseSlug = course.Slug
-				if user.IsEligibleToSearchForCourse(course) && !stream.Private || user.IsAdminOfCourse(course) {
+				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
 					res.Hits = append(res.Hits, meiliStream)
 				}
 
@@ -312,7 +324,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				meiliSubtitle.CourseName = course.Name
 				meiliSubtitle.CourseYear = course.Year
 				meiliSubtitle.CourseTeachingTerm = course.TeachingTerm
-				if user.IsEligibleToWatchCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
+				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
 					res.Hits = append(res.Hits, meiliSubtitle)
 				}
 
@@ -336,10 +348,9 @@ func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 
 	var streamIDs []uint
 	for _, course := range courses {
-		eligibleToSearch := user.IsEligibleToSearchForCourse(course)
 		admin := user.IsAdminOfCourse(course)
 		for _, stream := range course.Streams {
-			if eligibleToSearch && !stream.Private || admin {
+			if !stream.Private || admin {
 				streamIDs = append(streamIDs, stream.ID)
 			}
 		}
