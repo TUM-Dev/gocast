@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, meiliSearchInstance tools.MeiliSearchInterface) {
@@ -208,19 +209,23 @@ type SearchStreamDTO struct {
 }
 
 type SearchSubtitlesDTO struct {
-	StreamID           uint   `json:"streamID"`
-	Timestamp          int64  `json:"timestamp"`
-	TextPrev           string `json:"textPrev"` // the previous subtitle line
-	Text               string `json:"text"`
-	TextNext           string `json:"textNext"` // the next subtitle line
-	CourseName         string `json:"courseName"`
-	CourseSlug         string `json:"courseSlug"`
-	CourseYear         int    `json:"year"`
-	CourseTeachingTerm string `json:"semester"`
+	StreamID           uint      `json:"streamID"`
+	Timestamp          int64     `json:"timestamp"`
+	TextPrev           string    `json:"textPrev"` // the previous subtitle line
+	Text               string    `json:"text"`
+	TextNext           string    `json:"textNext"` // the next subtitle line
+	StreamName         string    `json:"streamName"`
+	StreamStartTime    time.Time `json:"streamStartTime"`
+	StreamEndTime      time.Time `json:"streamEndTime"`
+	CourseName         string    `json:"courseName"`
+	CourseSlug         string    `json:"courseSlug"`
+	CourseYear         int       `json:"year"`
+	CourseTeachingTerm string    `json:"semester"`
 }
 
-// checkAndFillResponse takes the response of meilisearch and filters out all courses/streams/subtitles which the user is not allowed to see
+// checkAndFillResponse takes the response of meilisearch and filters out all courses/streams/subtitles which the user is not allowed to see (checking)
 // this is necessary because updating the course in the database (e.g. changing the visibility for a course from public to loggedin) does not update meilisearch data until the next day
+// additionally it adds information to the results which is not saved in meili (fill)
 // ---
 // canSearchHiddenCourses indicates whether the response may include streams or subtitles of a hidden course
 // should only be true when the user has explicitly named the hidden course he wants to search through in the url params
@@ -320,6 +325,9 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 					continue
 				}
 
+				meiliSubtitle.StreamName = stream.Name
+				meiliSubtitle.StreamStartTime = stream.Start
+				meiliSubtitle.StreamEndTime = stream.End
 				meiliSubtitle.CourseSlug = course.Slug
 				meiliSubtitle.CourseName = course.Name
 				meiliSubtitle.CourseYear = course.Year
@@ -576,12 +584,16 @@ func ToSearchStreamDTO(wrapper dao.DaoWrapper, streams ...model.Stream) []Search
 func ToSearchSubtitleDTO(wrapper dao.DaoWrapper, subtitles ...tools.MeiliSubtitles) []SearchSubtitlesDTO {
 	res := make([]SearchSubtitlesDTO, len(subtitles))
 	for i, subtitle := range subtitles {
-		var courseName, slug, teachingTerm string
+		var streamName, courseName, slug, teachingTerm string
 		var year int
+		var startTime, endTime time.Time
 		s, err := wrapper.GetStreamByID(context.Background(), strconv.Itoa(int(subtitle.StreamID)))
 		if err == nil {
 			c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
 			if err == nil {
+				streamName = s.Name
+				startTime = s.Start
+				endTime = s.End
 				courseName = c.Name
 				teachingTerm = c.TeachingTerm
 				slug = c.Slug
@@ -594,6 +606,9 @@ func ToSearchSubtitleDTO(wrapper dao.DaoWrapper, subtitles ...tools.MeiliSubtitl
 			TextPrev:           subtitle.TextPrev,
 			Text:               subtitle.Text,
 			TextNext:           subtitle.TextNext,
+			StreamName:         streamName,
+			StreamStartTime:    startTime,
+			StreamEndTime:      endTime,
 			CourseName:         courseName,
 			CourseSlug:         slug,
 			CourseYear:         year,
