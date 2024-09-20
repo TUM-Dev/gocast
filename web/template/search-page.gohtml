@@ -146,7 +146,51 @@
 <main id="content" class="flex grow h-full overflow-y-scroll">
     <section class="w-full">
         <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: [], filterCourses: [], query: home.getSearchQueryFromParam(), courseFilterQuery: '', courseQuery: home.getCourseFromParam(), semesterQuery: home.getSemestersFromParam(), courses: [], oldSemesterFilter: [], shownCourses: []}"
-            x-init="home.initSearchBarArrowKeysListener()">
+            x-init="
+                home.initSearchBarArrowKeysListener();
+                if(courseQuery != '') {
+
+                    let year = home.getYearFromCourse(courseQuery);
+                    let term = home.getTermFromCourse(courseQuery);
+                    let slug = home.getSlugFromCourse(courseQuery);
+
+
+
+
+                    let timeout = setInterval(async function() {
+                        if (semesters.length > 0) {
+                            clearInterval(timeout);
+                            console.log(year + ' ' + term);
+                            console.log(semesters);
+
+                            for (let i = 0; i < semesters.length; i++) {
+                                console.log(semesters[i].Year + ' ' + semesters[i].TeachingTerm);
+                                if (semesters[i].Year == year && semesters[i].TeachingTerm == term) {
+                                    filterSemesters.push(i);
+                                    console.log('found semester');
+                                    break;
+                                }
+                            }
+
+                            courses = await home.getCoursesOfSemesters(semesters, filterSemesters);
+                            oldSemesterFilter = filterSemesters;
+                            shownCourses = courses;
+
+                            for (let i = 0; i < courses.length; i++) {
+                                if (courses[i].Slug == slug) {
+                                    filterCourses.push(i);
+                                    console.log('found course');
+                                    break;
+                                }
+                            }
+
+                            searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)
+                        }
+                    }, 100);
+
+
+                }
+            ">
             <!--Search Bar-->
             <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
                 <i class="fa-solid fa-search pl-3 text-xs text-7 text-black dark:text-gray-300"></i>

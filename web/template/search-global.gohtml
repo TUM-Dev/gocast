@@ -11,7 +11,7 @@
                     selectedSemesterIndex !== -1 ? searcher.search(semesters[selectedSemesterIndex].Year, semesters[selectedSemesterIndex].TeachingTerm) : searcher.search(semesters[0].Year, semesters[0].TeachingTerm);"
                    @keyup="
                    if ($event.key == 'Enter') {
-                        window.location.href = '/search?q=' + encodeURIComponent(document.getElementById('search-courses').value);
+                        window.location.href = '/search?q=' + encodeURIComponent(document.getElementById('search-courses').value) + '&course=' + (home.isInCourse() ? home.generateCourseFromParam() : '');
                         return;
                    }
                    searcher.searchInput = document.getElementById('search-courses').value;

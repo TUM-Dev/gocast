@@ -1,5 +1,6 @@
 import {Semester} from "./api/semesters";
 import {Course, CoursesAPI} from "./api/courses";
+import {Alpine} from "alpinejs";
 
 export function coursesSearch() {
     return {
@@ -174,13 +175,34 @@ export function getSearchQueryFromParam() {
 export function getCourseFromParam() {
     let url = new URL(document.location.href);
     let params = new URLSearchParams(url.search);
-    return params.get("slug");
+    return params.get("course");
 }
 
 export function getSemestersFromParam() {
     let url = new URL(document.location.href);
     let params = new URLSearchParams(url.search);
     return params.get("semester");
+}
+
+export function generateCourseFromParam() {
+    let url = new URL(document.location.href);
+    let params = new URLSearchParams(url.search);
+    let slug = params.get("slug");
+    let year = params.get("year");
+    let term = params.get("term");
+    return slug + year + term;
+}
+
+export function getYearFromCourse(course: string) {
+    return parseInt(course.substring(course.length - 5, course.length - 1));
+}
+
+export function getTermFromCourse(course: string) {
+    return course.substring(course.length - 1, course.length);
+}
+
+export function getSlugFromCourse(course: string) {
+    return course.substring(0, course.length - 5);
 }
 
 export async function getCoursesOfSemesters(semesters: Semester[], filterSemesters: number[]) : Promise<Course[]>{
