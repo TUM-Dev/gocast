@@ -266,6 +266,9 @@
             <template x-if="searcher != undefined" class="h-full w-1/2">
                 <ul class="center rounded-lg grid py-1 px-1 mt-1 gap-1" style="width: 60%;" role="listbox" id="search-results">
 
+                    <li role="listitem" aria-selected="false" class="text-gray-700 dark:text-gray-200">
+                        <p>Courses</p>
+                    </li>
                     <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length <= 0">
                         <li role="listitem" aria-selected="false">
                             <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
@@ -284,6 +287,9 @@
                         </li>
                     </template>
 
+                    <li role="listitem" aria-selected="false" class="text-gray-700 dark:text-gray-200">
+                        <p>Subtitles</p>
+                    </li>
                     <template x-if="!searcher.hits.SUBTITLES || searcher.hits.SUBTITLES.length <= 0">
                         <div>
                             <template x-if="filterCourses.length == 0">
@@ -303,7 +309,7 @@
                         </div>
                     </template>
                     <template x-for="subtitle in searcher.hits.SUBTITLES">
-                        <li role="option" aria-selected="false" tabindex="-1">
+                        <li role="option" aria-selected="false" tabindex="-1" class="h-fit">
                             <a class="tum-live-search-result-main flex flex-col"
                                 @mousedown="
                                     document.location.href = '/w/' + subtitle.courseSlug + '/' + subtitle.streamID + '/?t=' + (subtitle.timestamp / 1000);"
@@ -326,16 +332,19 @@
                         </li>
                     </template>
 
+                    <li role="listitem" aria-selected="false" class="text-gray-700 dark:text-gray-200">
+                        <p>Streams</p>
+                    </li>
                     <template x-if="!searcher.hits.STREAMS || searcher.hits.STREAMS.length <= 0">
                         <div>
-                            <template x-if="filterSemesters.length == 0">
+                            <template x-if="(filterSemesters.length == 0 || filterSemesters.length > 1) && filterCourses.length == 0">
                                 <li role="listitem" aria-selected="false">
                                     <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
-                                        No Stream found (at least one semester selection required)
+                                        No Stream found (only one selection required or some courses have to be selected)
                                     </a>
                                 </li>
                             </template>
-                            <template x-if="filterSemesters.length > 0">
+                            <template x-if="filterSemesters.length == 1  || filterCourses.length > 0">
                                 <li role="listitem" aria-selected="false">
                                     <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
                                         No Stream found

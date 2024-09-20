@@ -76,8 +76,10 @@
                 searcher.searchInput='';
                 searcher.open = false;
                 document.location.href = '/w/' + subtitle.courseSlug + '/' + subtitle.streamID + '/?t=' + (subtitle.timestamp / 1000);">
-            <p x-text="subtitle.streamName"></p>
+            <p class="text-gray-600 dark:text-gray-400" x-text="subtitle.streamName" x-show="subtitle.streamName != ''"></p>
+            <p class="text-gray-600 dark:text-gray-400" x-text="home.datetimeToFriendly(subtitle.streamStartTime)" x-show="subtitle.streamName == ''"></p>
             <p x-text="subtitle.text"></p>
+            <p class="text-gray-600 dark:text-gray-400" x-text="(new Date(subtitle.timestamp)).toLocaleTimeString('en-US', {timeZone: 'UTC', hourCycle:'h24'})"></p>
         </a>
     </li>
 {{end}}
