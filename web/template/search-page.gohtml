@@ -193,7 +193,7 @@
                                 size="15"
                                 maxlength="15"
                                 x-model="courseFilterQuery"
-                                @keyup="shownCourses = courses.filter(course => course.Name.toLowerCase().includes(courseFilterQuery.toLowerCase())); console.log(courses)"
+                                @keyup="shownCourses = courses.filter(course => course.Name.toLowerCase().includes(courseFilterQuery.toLowerCase()));"
                             />
                             <template x-for="(course, index) in courses" :key="index">
                                 <label x-show="shownCourses.includes(course)" class="flex items
