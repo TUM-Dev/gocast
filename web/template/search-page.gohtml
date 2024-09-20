@@ -241,11 +241,22 @@
                     </template>
 
                     <template x-if="!searcher.hits.SUBTITLES || searcher.hits.SUBTITLES.length <= 0">
-                        <li role="listitem" aria-selected="false">
-                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
-                                No Subtitle found
-                            </a>
-                        </li>
+                        <div>
+                            <template x-if="filterCourses.length == 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Subtitle found (at least one course selection required)
+                                    </a>
+                                </li>
+                            </template>
+                            <template x-if="filterCourses.length > 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Subtitle found
+                                    </a>
+                                </li>
+                            </template>
+                        </div>
                     </template>
                     <template x-for="subtitle in searcher.hits.SUBTITLES">
                         <li role="option" aria-selected="false" tabindex="-1">
@@ -272,11 +283,23 @@
                     </template>
 
                     <template x-if="!searcher.hits.STREAMS || searcher.hits.STREAMS.length <= 0">
-                        <li role="listitem" aria-selected="false">
-                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
-                                No Stream found
-                            </a>
-                        </li>
+                        <div>
+                            <template x-if="filterSemesters.length == 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Stream found (at least one semester selection required)
+                                    </a>
+                                </li>
+                            </template>
+                            <template x-if="filterSemesters.length > 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Stream found
+                                    </a>
+                                </li>
+                            </template>
+                        </div>
+
                     </template>
                     <template x-for="stream in searcher.hits.STREAMS">
                         <li role="option" aria-selected="false" tabindex="-1">
