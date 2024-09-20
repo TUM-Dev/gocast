@@ -189,7 +189,7 @@ export async function getCoursesOfSemesters(semesters: Semester[], filterSemeste
         courses = courses.concat(await CoursesAPI.getPublic(semesters[filterSemesters[i]].Year, semesters[filterSemesters[i]].TeachingTerm));
         courses = courses.concat(await CoursesAPI.getUsers(semesters[filterSemesters[i]].Year, semesters[filterSemesters[i]].TeachingTerm));
     }
-
+    courses = courses.filter((course, index, self) => self.findIndex((t) => t.Slug === course.Slug) === index);
     return [...new Set(courses)];
 }
 
