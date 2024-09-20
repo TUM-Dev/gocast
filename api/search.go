@@ -256,7 +256,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			}
 
 			for _, meiliStream := range meiliStreams {
-				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.Itoa(int(meiliStream.ID)))
+				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.FormatUint(uint64(meiliStream.ID), 10))
 				if err != nil {
 					continue
 				}
@@ -317,7 +317,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			}
 
 			for _, meiliSubtitle := range meiliSubtitles {
-				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.Itoa(int(meiliSubtitle.StreamID)))
+				stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.FormatUint(uint64(meiliSubtitle.StreamID), 10))
 				if err != nil {
 					continue
 				}
@@ -524,7 +524,7 @@ func courseSliceToString(courses []model.Course) string {
 	}
 	idsStringSlice := make([]string, len(courses))
 	for i, c := range courses {
-		idsStringSlice[i] = strconv.Itoa(int(c.ID))
+		idsStringSlice[i] = strconv.FormatUint(uint64(c.ID), 10)
 	}
 	filter := "[" + strings.Join(idsStringSlice, ",") + "]"
 	return filter
@@ -588,7 +588,7 @@ func ToSearchSubtitleDTO(wrapper dao.DaoWrapper, subtitles ...tools.MeiliSubtitl
 		var streamName, courseName, slug, teachingTerm string
 		var year int
 		var startTime, endTime time.Time
-		s, err := wrapper.GetStreamByID(context.Background(), strconv.Itoa(int(subtitle.StreamID)))
+		s, err := wrapper.GetStreamByID(context.Background(), strconv.FormatUint(uint64(subtitle.StreamID), 10))
 		if err == nil {
 			c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
 			if err == nil {
