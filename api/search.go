@@ -10,6 +10,7 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
 	"github.com/meilisearch/meilisearch-go"
+	"math"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -89,8 +90,8 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
 	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	query := c.Query("q")
-	limit, err := strconv.ParseUint(c.Query("limit"), 10, 64)
-	if err != nil {
+	limit, err := strconv.ParseUint(c.Query("limit"), 10, 16)
+	if err != nil || limit > math.MaxInt64 { //second condition should never happen, max bitSize for parseuint is 16
 		limit = DefaultLimit
 	}
 	return user, query, limit
