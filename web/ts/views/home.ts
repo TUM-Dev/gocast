@@ -3,7 +3,7 @@ import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
 import { Course, CoursesAPI } from "../api/courses";
 import { AlpineComponent } from "../components/alpine-component";
 import { PinnedUpdate, Tunnel } from "../utilities/tunnels";
-import {updateSearchBarPlaceholder} from "../search";
+import { updateSearchBarPlaceholder } from "../search";
 
 export function skeleton(): AlpineComponent {
     return {

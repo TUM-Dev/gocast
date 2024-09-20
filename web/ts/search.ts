@@ -1,6 +1,6 @@
-import {Semester} from "./api/semesters";
-import {Course, CoursesAPI} from "./api/courses";
-import {Alpine} from "alpinejs";
+import { Semester } from "./api/semesters";
+import { Course, CoursesAPI } from "./api/courses";
+import { Alpine } from "alpinejs";
 
 export function coursesSearch() {
     return {
@@ -26,10 +26,9 @@ export function coursesSearch() {
 }
 
 export function isInCourse() {
-    let url = new URL(document.location.href);
-    let params = new URLSearchParams(url.search);
+    const url = new URL(document.location.href);
+    const params = new URLSearchParams(url.search);
     return params.has("slug") && params.has("year") && params.has("term");
-
 }
 
 export function searchPlaceholder() {
@@ -39,13 +38,13 @@ export function searchPlaceholder() {
     return "Search for course";
 }
 
-function getSemestersString(years: number[], teachingTerms: string[]) : string {
+function getSemestersString(years: number[], teachingTerms: string[]): string {
     let ret = "";
-    if(years.length != teachingTerms.length) {
+    if (years.length != teachingTerms.length) {
         return ret;
     }
     for (let i = 0; i < years.length; i++) {
-        if(i == years.length - 1) {
+        if (i == years.length - 1) {
             ret += years[i] + teachingTerms[i];
         } else {
             ret += years[i] + teachingTerms[i] + ",";
@@ -54,10 +53,10 @@ function getSemestersString(years: number[], teachingTerms: string[]) : string {
     return ret;
 }
 
-function getCoursesString(courses: Course[]) : string {
+function getCoursesString(courses: Course[]): string {
     let ret = "";
-    for(let i = 0; i < courses.length; i++) {
-        if(i == courses.length - 1) {
+    for (let i = 0; i < courses.length; i++) {
+        if (i == courses.length - 1) {
             ret += courses[i].Slug + courses[i].Year + courses[i].TeachingTerm;
         } else {
             ret += courses[i].Slug + courses[i].Year + courses[i].TeachingTerm + ",";
@@ -73,28 +72,39 @@ export function filteredSearch() {
         searchInput: "",
         search: function (years: number[], teachingTerms: string[], courses: Course[], limit: number = 20) {
             if (this.searchInput.length > 2) {
-                if (years.length < 8 && teachingTerms.length < 8 && teachingTerms.length == years.length && courses.length < 3) {
-                    fetch(`/api/search?q=${this.searchInput}&semester=${encodeURIComponent(getSemestersString(years, teachingTerms))}&course=${encodeURIComponent(getCoursesString(courses))}&limit=${limit}`)
-                        .then((res) => {
-                                if (res.ok) {
-                                    res.json().then((data) => {
-                                        this.hits = data;
-                                        this.open = true;
-                                    });
-                                }
-                            }
-                        );
+                if (
+                    years.length < 8 &&
+                    teachingTerms.length < 8 &&
+                    teachingTerms.length == years.length &&
+                    courses.length < 3
+                ) {
+                    fetch(
+                        `/api/search?q=${this.searchInput}&semester=${encodeURIComponent(
+                            getSemestersString(years, teachingTerms),
+                        )}&course=${encodeURIComponent(getCoursesString(courses))}&limit=${limit}`,
+                    ).then((res) => {
+                        if (res.ok) {
+                            res.json().then((data) => {
+                                this.hits = data;
+                                this.open = true;
+                            });
+                        }
+                    });
                 }
             } else {
                 this.hits = {};
                 this.open = false;
             }
-
         },
-        searchWithDataFromPage: function (semesters: Semester[], selectedSemesters: number[], allCourses: Course[], selectedCourses: number[]) {
-            let years = [];
-            let teachingTerms = [];
-            let courses = [];
+        searchWithDataFromPage: function (
+            semesters: Semester[],
+            selectedSemesters: number[],
+            allCourses: Course[],
+            selectedCourses: number[],
+        ) {
+            const years = [];
+            const teachingTerms = [];
+            const courses = [];
 
             for (let i = 0; i < selectedSemesters.length; i++) {
                 years.push(semesters[selectedSemesters[i]].Year);
@@ -104,8 +114,8 @@ export function filteredSearch() {
                 courses.push(allCourses[selectedCourses[i]]);
             }
             this.search(years, teachingTerms, courses);
-        }
-    }
+        },
+    };
 }
 
 export function globalSearch() {
@@ -115,10 +125,14 @@ export function globalSearch() {
         searchInput: "",
         search: function (year: number = -1, teachingTerm: string = "", limit: number = 10) {
             if (this.searchInput.length > 2) {
-                let url = new URL(document.location.href);
-                let params = new URLSearchParams(url.search);
+                const url = new URL(document.location.href);
+                const params = new URLSearchParams(url.search);
                 if (params.has("slug") && params.has("year") && params.has("term")) {
-                    fetch(`/api/search?q=${this.searchInput}&course=${params.get("slug")}${params.get("year")}${params.get("term")}`).then((res) => {
+                    fetch(
+                        `/api/search?q=${this.searchInput}&course=${params.get("slug")}${params.get(
+                            "year",
+                        )}${params.get("term")}`,
+                    ).then((res) => {
                         if (res.ok) {
                             res.json().then((data) => {
                                 this.hits = data;
@@ -126,16 +140,17 @@ export function globalSearch() {
                             });
                         }
                     });
-                }
-                else if(year != -1 && teachingTerm != "") {
-                    fetch(`/api/search?q=${this.searchInput}&limit=${limit}&semester=${year}${teachingTerm}`).then((res) => {
-                        if (res.ok) {
-                            res.json().then((data) => {
-                                this.hits = data;
-                                this.open = true;
-                            });
-                        }
-                    });
+                } else if (year != -1 && teachingTerm != "") {
+                    fetch(`/api/search?q=${this.searchInput}&limit=${limit}&semester=${year}${teachingTerm}`).then(
+                        (res) => {
+                            if (res.ok) {
+                                res.json().then((data) => {
+                                    this.hits = data;
+                                    this.open = true;
+                                });
+                            }
+                        },
+                    );
                 } else {
                     fetch(`/api/search?q=${this.searchInput}&limit=${limit}`).then((res) => {
                         if (res.ok) {
@@ -155,11 +170,11 @@ export function globalSearch() {
 }
 
 export function initPopstateSearchBarListener() {
-    console.log("Initialized popstate listener")
+    console.log("Initialized popstate listener");
     document.body.addEventListener("click", (event) => {
         setTimeout(() => {}, 50);
         updateSearchBarPlaceholder();
-    })
+    });
 }
 
 export function updateSearchBarPlaceholder() {
@@ -167,29 +182,29 @@ export function updateSearchBarPlaceholder() {
 }
 
 export function getSearchQueryFromParam() {
-    let url = new URL(document.location.href);
-    let params = new URLSearchParams(url.search);
+    const url = new URL(document.location.href);
+    const params = new URLSearchParams(url.search);
     return params.get("q");
 }
 
 export function getCourseFromParam() {
-    let url = new URL(document.location.href);
-    let params = new URLSearchParams(url.search);
+    const url = new URL(document.location.href);
+    const params = new URLSearchParams(url.search);
     return params.get("course");
 }
 
 export function getSemestersFromParam() {
-    let url = new URL(document.location.href);
-    let params = new URLSearchParams(url.search);
+    const url = new URL(document.location.href);
+    const params = new URLSearchParams(url.search);
     return params.get("semester");
 }
 
 export function generateCourseFromParam() {
-    let url = new URL(document.location.href);
-    let params = new URLSearchParams(url.search);
-    let slug = params.get("slug");
-    let year = params.get("year");
-    let term = params.get("term");
+    const url = new URL(document.location.href);
+    const params = new URLSearchParams(url.search);
+    const slug = params.get("slug");
+    const year = params.get("year");
+    const term = params.get("term");
     return slug + year + term;
 }
 
@@ -205,11 +220,15 @@ export function getSlugFromCourse(course: string) {
     return course.substring(0, course.length - 5);
 }
 
-export async function getCoursesOfSemesters(semesters: Semester[], filterSemesters: number[]) : Promise<Course[]>{
-    let courses : Course[] = [];
-    for(let i = 0; i < filterSemesters.length; i++) {
-        courses = courses.concat(await CoursesAPI.getPublic(semesters[filterSemesters[i]].Year, semesters[filterSemesters[i]].TeachingTerm));
-        courses = courses.concat(await CoursesAPI.getUsers(semesters[filterSemesters[i]].Year, semesters[filterSemesters[i]].TeachingTerm));
+export async function getCoursesOfSemesters(semesters: Semester[], filterSemesters: number[]): Promise<Course[]> {
+    let courses: Course[] = [];
+    for (let i = 0; i < filterSemesters.length; i++) {
+        courses = courses.concat(
+            await CoursesAPI.getPublic(semesters[filterSemesters[i]].Year, semesters[filterSemesters[i]].TeachingTerm),
+        );
+        courses = courses.concat(
+            await CoursesAPI.getUsers(semesters[filterSemesters[i]].Year, semesters[filterSemesters[i]].TeachingTerm),
+        );
     }
     courses = courses.filter((course, index, self) => self.findIndex((t) => t.Slug === course.Slug) === index);
     return [...new Set(courses)];
@@ -220,24 +239,24 @@ export function initSearchBarArrowKeysListener() {
         if (document.getElementById("search-results") == null) {
             return;
         }
-        let searchResults = document.getElementById("search-results").querySelectorAll("li[role='option']");
-        let activeElement = document.activeElement as HTMLLIElement;
+        const searchResults = document.getElementById("search-results").querySelectorAll("li[role='option']");
+        const activeElement = document.activeElement as HTMLLIElement;
         if (event.key == "ArrowDown") {
-            let currentIndex = Array.from(searchResults).indexOf(activeElement);
-            let nextIndex = currentIndex + 1;
+            const currentIndex = Array.from(searchResults).indexOf(activeElement);
+            const nextIndex = currentIndex + 1;
             if (nextIndex < searchResults.length) {
                 (searchResults[nextIndex] as HTMLLIElement).focus();
             }
         } else if (event.key == "ArrowUp") {
-            let currentIndex = Array.from(searchResults).indexOf(activeElement);
-            let nextIndex = currentIndex - 1;
+            const currentIndex = Array.from(searchResults).indexOf(activeElement);
+            const nextIndex = currentIndex - 1;
             if (nextIndex >= 0) {
                 (searchResults[nextIndex] as HTMLLIElement).focus();
             }
         } else if (event.key == "Enter") {
-            let currentIndex = Array.from(searchResults).indexOf(activeElement);
+            const currentIndex = Array.from(searchResults).indexOf(activeElement);
             if (currentIndex >= 0 && currentIndex < searchResults.length) {
-                let curObj = searchResults[currentIndex];
+                const curObj = searchResults[currentIndex];
                 curObj.getElementsByTagName("a")[0].click();
             }
         }
