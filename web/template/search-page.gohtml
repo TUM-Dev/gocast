@@ -264,6 +264,9 @@
                                     <span class="text-gray-600 dark:text-gray-400" x-text="subtitle.streamName" x-show="subtitle.streamName != ''"></span>
                                     <span class="text-gray-600 dark:text-gray-400" x-text="home.datetimeToFriendly(subtitle.streamStartTime)" x-show="subtitle.streamName == ''"></span>
                                 </div>
+                                <div>
+                                    <span class="text-gray-600 dark:text-gray-400" x-text="(new Date(subtitle.timestamp)).toLocaleTimeString('en-US', {timeZone: 'UTC', hourCycle:'h24'})"></span>
+                                </div>
                             </a>
                         </li>
                     </template>
