@@ -3,6 +3,12 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"slices"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/mock_tools"
@@ -13,16 +19,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"github.com/meilisearch/meilisearch-go"
-	"net/http"
-	"slices"
-	"strconv"
-	"strings"
-	"testing"
 )
 
-var (
-	emptySlice = []any{}
-)
+var emptySlice = []any{}
 
 func SearchRouterWrapper(r *gin.Engine) {
 	configGinSearchRouter(r, dao.DaoWrapper{}, tools.NewMeiliSearchFunctions())
@@ -356,13 +355,15 @@ func getMeiliSearchMock(t *testing.T, daoWrapper dao.DaoWrapper) *mock_tools.Moc
 			streams, _ := tools.ToMeiliStreams(testutils.AllStreamsForSearchTests, daoWrapper)
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
 				{IndexUID: "COURSES", Hits: meiliCourseSliceToInterfaceSlice(tools.ToMeiliCourses(testutils.AllCoursesForSearchTests))},
-				{IndexUID: "STREAMS", Hits: meiliStreamSliceToInterfaceSlice(streams)}}}
+				{IndexUID: "STREAMS", Hits: meiliStreamSliceToInterfaceSlice(streams)},
+			}}
 		}).AnyTimes()
 
 	mock.EXPECT().Search(gomock.Any(), gomock.Any(), 4, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
 		func(q interface{}, limit interface{}, searchType interface{}, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
-				{IndexUID: "COURSES", Hits: meiliCourseSliceToInterfaceSlice(tools.ToMeiliCourses(testutils.AllCoursesForSearchTests))}}}
+				{IndexUID: "COURSES", Hits: meiliCourseSliceToInterfaceSlice(tools.ToMeiliCourses(testutils.AllCoursesForSearchTests))},
+			}}
 		}).AnyTimes()
 
 	mock.EXPECT().Search(gomock.Any(), gomock.Any(), 3, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
@@ -388,7 +389,8 @@ func getMeiliSearchMock(t *testing.T, daoWrapper dao.DaoWrapper) *mock_tools.Moc
 			returnStreams, _ := tools.ToMeiliStreams(streams, daoWrapper)
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
 				{IndexUID: "STREAMS", Hits: meiliStreamSliceToInterfaceSlice(returnStreams)},
-				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToInterfaceSlice(subtitles)}}}
+				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToInterfaceSlice(subtitles)},
+			}}
 		}).AnyTimes()
 	return mock
 }
@@ -400,7 +402,8 @@ func getMeiliSearchMockReturningEveryStreamAndSubtitle(t *testing.T, daoWrapper 
 			streams, _ := tools.ToMeiliStreams(testutils.AllStreamsForSearchTests, daoWrapper)
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
 				{IndexUID: "STREAMS", Hits: meiliStreamSliceToInterfaceSlice(streams)},
-				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToInterfaceSlice(testutils.AllSubtitlesForSearchTests)}}}
+				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToInterfaceSlice(testutils.AllSubtitlesForSearchTests)},
+			}}
 		}).AnyTimes()
 	return mock
 }

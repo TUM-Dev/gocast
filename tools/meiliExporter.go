@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/model"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/model"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/asticode/go-astisub"
@@ -21,7 +22,7 @@ type MeiliStream struct {
 	TeachingTerm string `json:"semester"`
 	CourseID     uint   `json:"courseID"`
 	Private      uint   `json:"private"`
-	Visibility   string `json:"visibility"` //corresponds to the visibility of the course
+	Visibility   string `json:"visibility"` // corresponds to the visibility of the course
 }
 
 type MeiliSubtitles struct {

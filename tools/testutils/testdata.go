@@ -325,7 +325,7 @@ var (
 )
 
 var (
-	//users
+	// users
 	LecturerNoCourse = model.User{
 		Model:               gorm.Model{ID: 610},
 		Role:                model.LecturerType,
@@ -349,7 +349,7 @@ var (
 		Courses: []model.Course{HiddenCourse, EnrolledCourse, LoggedinCourse, PublicCourse},
 	}
 
-	//courses
+	// courses
 	AllCoursesForSearchTests = []model.Course{HiddenCourse, EnrolledCourse, LoggedinCourse, PublicCourse}
 
 	HiddenCourse = model.Course{
@@ -397,7 +397,7 @@ var (
 		Admins:       []model.User{},
 	}
 
-	//streans
+	// streans
 	AllStreamsForSearchTests = []model.Stream{StreamHiddenCourse, PrivateStreamHiddenCourse, StreamEnrolledCourse, PrivateStreamEnrolledCourse, StreamLoggedinCourse, PrivateStreamLoggedinCourse, StreamPublicCourse, PrivateStreamPublicCourse}
 
 	StreamHiddenCourse = model.Stream{
@@ -465,7 +465,7 @@ var (
 		Private:     true,
 	}
 
-	//subtitles
+	// subtitles
 	AllSubtitlesForSearchTests  = []tools.MeiliSubtitles{SubtitlesStreamHiddenCourse, SubtitlesPrivateStreamHiddenCourse, SubtitlesStreamEnrolledCourse, SubtitlesPrivateStreamEnrolledCourse, SubtitlesStreamLoggedinCourse, SubtitlesPrivateStreamLoggedinCourse, SubtitlesStreamPublicCourse, SubtitlesPrivateStreamPublicCourse}
 	SubtitlesStreamPublicCourse = tools.MeiliSubtitles{
 		ID:       SubtitlesIDPublicCourseStream,

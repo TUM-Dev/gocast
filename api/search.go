@@ -5,17 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
-	"github.com/meilisearch/meilisearch-go"
 	"math"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
+	"github.com/meilisearch/meilisearch-go"
 )
 
 func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, meiliSearchInstance tools.MeiliSearchInterface) {
@@ -91,7 +92,7 @@ func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
 	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	query := c.Query("q")
 	limit, err := strconv.ParseUint(c.Query("limit"), 10, 16)
-	if err != nil || limit > math.MaxInt64 { //second condition should never happen, max bitSize for parseuint is 16
+	if err != nil || limit > math.MaxInt64 { // second condition should never happen, max bitSize for parseuint is 16
 		limit = DefaultLimit
 	}
 	return user, query, limit
@@ -247,7 +248,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 
 			var meiliStreams []SearchStreamDTO
 			temp, err := json.Marshal(hits)
-			if err != nil { //shouldn't happen
+			if err != nil { // shouldn't happen
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliStreams)
@@ -282,7 +283,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 
 			var meiliCourses []SearchCourseDTO
 			temp, err := json.Marshal(hits)
-			if err != nil { //shouldn't happen
+			if err != nil { // shouldn't happen
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliCourses)
@@ -308,7 +309,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 
 			var meiliSubtitles []SearchSubtitlesDTO
 			temp, err := json.Marshal(hits)
-			if err != nil { //shouldn't happen
+			if err != nil { // shouldn't happen
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliSubtitles)
@@ -433,12 +434,12 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 	}
 
 	if semesters == nil {
-		//single semester
+		// single semester
 		if firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm {
 			return fmt.Sprintf("(year = %d AND semester = \"%s\")", firstSemester.Year, firstSemester.TeachingTerm)
 		}
 
-		//multiple semesters
+		// multiple semesters
 		var constraint1, constraint2 string
 		if firstSemester.TeachingTerm == "W" {
 			constraint1 = fmt.Sprintf("(year = %d AND semester = \"%s\")", firstSemester.Year, firstSemester.TeachingTerm)

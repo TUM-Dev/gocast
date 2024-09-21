@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+
 	"github.com/meilisearch/meilisearch-go"
 )
 
@@ -90,7 +91,7 @@ func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, cou
 		bitOperator <<= 1
 	}
 
-	//multisearch Request
+	// multisearch Request
 	response, err := c.MultiSearch(&meilisearch.MultiSearchRequest{Queries: reqs})
 	if err != nil {
 		logger.Error("could not search in meili", "err", err)
@@ -110,7 +111,6 @@ func SearchCourses(q string, filter string) *meilisearch.SearchResponse {
 		Limit:                10,
 		AttributesToRetrieve: []string{"name", "slug", "year", "semester"},
 	})
-
 	if err != nil {
 		logger.Error("could not search courses in meili", "err", err)
 		return nil
