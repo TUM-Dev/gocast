@@ -8,19 +8,27 @@
             <table class="table-auto w-full col-span-full">
                 <thead>
                 <tr class="text-2 uppercase text-left">
-                    <th class="py-3 px-6 text-left">Name</th>
+                    <th class="py-3 pr-2 text-left"></th>
+                    <th class="py-3 pr-6 text-left">Name</th>
                     <th class="py-3 px-6 text-left">Status</th>
                     <th class="py-3 px-6 text-left">Uptime</th>
                     <th class="py-3 px-6 text-left">Actions</th>
                     <th class="py-3 px-6 text-left">Functions</th>
                 </tr>
                 </thead>
-                <tbody class="text-3">
+                <tbody class="text-3" x-data="{
+                {{range $runner := .Runners}}
+                    runner{{$runner.Model.ID}}open: false,
+                {{end}}
+                }">
                 {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
                 {{range $runner := .Runners}}
 
                     <tr class="border-gray-500">
-                        <td class="pt-3 px-6 text-left">
+                        <td class="flex flex-col items-start pt-4 pr-2">
+                            <i class="fa-solid text-sm hover:cursor-pointer fa-fw" :class="runner{{$runner.Model.ID}}open ? 'fa-chevron-down' : 'fa-chevron-right'" @click="runner{{$runner.Model.ID}}open = !runner{{$runner.Model.ID}}open"></i>
+                        </td>
+                        <td class="pt-3 pr-6 text-left">
                             <div class="font-semibold text-1">{{$runner.Hostname}}<span
                                         class="font-normal text-4">@{{$runner.Version}}</span>
                             </div>
@@ -52,6 +60,18 @@
                             </button>
                         </td>
                     </tr>
+                    <template x-if="runner{{$runner.Model.ID}}open">
+                        <tr class="border-gray-500">
+                            <td colspan="6" class="px-6 py-2">
+                                <div>
+                                    <!-- TODO: Additional Information about the Runner -->
+                                    <span>Work in progress...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+
+
                 {{end}}
                 </tbody>
             </table>
@@ -87,14 +107,18 @@
                 <span class="text-gray-500"># Run the TUM-Live-Runner executable with this command:</span><br>
                 <span class="flex">
                     {{template "terminalprompt"}}
+                    <span class="text-gray-300">export <span class="text-blue-400">GOCAST_SERVER</span>='localhost:50056'</span><br/>
+                </span>
+                <span class="flex">
+                    {{template "terminalprompt"}}
                     <span class="text-gray-300">./runner</span>
                 </span>
             </p>
             <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='docker'">
-                <span class="text-gray-500"># Run the TUM-Live-Runner docker container:</span><br>
+                <span class="text-gray-500"># Run the TUM-Live-Runner docker container with these environment variables (make sure to include port on server address):</span><br>
                 <span class="flex">
                     {{template "terminalprompt"}}
-                    <span class="text-gray-300">docker run -p 50051:50051 ghcr.io/TUM-Dev/gocast/runner:latest</span>
+                    <span class="text-gray-300">docker run -p 50051:50051 -e "GOCAST_SERVER=localhost:50056" ghcr.io/TUM-Dev/gocast/runner:latest</span>
                 </span>
             </p>
             <p class="dark:bg-secondary-lighter text-white shadow rounded bg-gray-400 p-3" x-show="show==='swarm'">
