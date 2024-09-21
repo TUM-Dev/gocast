@@ -71,7 +71,7 @@ type UserSetting struct {
 }
 
 // GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
-func (u User) GetPreferredName() string {
+func (u *User) GetPreferredName() string {
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName {
 			return setting.Value
@@ -158,7 +158,7 @@ func (u *User) GetCustomSpeeds() (speeds CustomSpeeds) {
 }
 
 // GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
-func (u User) GetPreferredGreeting() string {
+func (u *User) GetPreferredGreeting() string {
 	for _, setting := range u.Settings {
 		if setting.Type == Greeting {
 			return setting.Value
@@ -190,7 +190,7 @@ func (u *User) GetSeekingTime() int {
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
-func (u User) PreferredNameChangeAllowed() bool {
+func (u *User) PreferredNameChangeAllowed() bool {
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName && time.Since(setting.UpdatedAt) < time.Hour*24*30*3 {
 			return false
@@ -205,7 +205,7 @@ type AutoSkipSetting struct {
 }
 
 // GetAutoSkipEnabled returns whether the user has enabled auto skip
-func (u User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
+func (u *User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
 	for _, setting := range u.Settings {
 		if setting.Type == AutoSkip {
 			var a AutoSkipSetting
@@ -300,7 +300,7 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 	return cRes
 }
 
-func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemester Semester, semesters []Semester, context context.Context) []Course {
+func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemester Semester, semesters []Semester) []Course {
 	if u == nil {
 		return make([]Course, 0)
 	}
@@ -315,7 +315,7 @@ func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemes
 	return administeredCourses
 }
 
-func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester, semesters []Semester, context context.Context) []Course {
+func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester, semesters []Semester) []Course {
 	if u == nil {
 		return make([]Course, 0)
 	}

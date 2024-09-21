@@ -138,7 +138,6 @@ func (r searchRoutes) search(c *gin.Context) {
 	}
 	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
 	c.JSON(http.StatusOK, responseToMap(res))
-	return
 }
 
 func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
@@ -382,12 +381,12 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 	if user == nil {
 		permissionFilter = "(visibility = \"public\" AND private = 0)"
 	} else {
-		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(semester, semester, nil, c)
+		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(semester, semester, nil)
 		enrolledCoursesFilter := courseSliceToString(enrolledCourses)
 		if len(user.AdministeredCourses) == 0 {
 			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID IN %s)) AND private = 0)", enrolledCoursesFilter)
 		} else {
-			administeredCourses := user.AdministeredCoursesForSemesters(semester, semester, nil, c)
+			administeredCourses := user.AdministeredCoursesForSemesters(semester, semester, nil)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
 			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID IN %s)) AND private = 0 OR courseID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
@@ -395,9 +394,8 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 
 	if permissionFilter == "" {
 		return semesterFilter
-	} else {
-		return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 	}
+	return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 }
 
 func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
@@ -410,12 +408,12 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 	if user == nil {
 		permissionFilter = "(visibility = \"public\")"
 	} else {
-		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters, c)
+		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters)
 		enrolledCoursesFilter := courseSliceToString(enrolledCourses)
 		if len(user.AdministeredCourses) == 0 {
 			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s))", enrolledCoursesFilter)
 		} else {
-			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester, lastSemester, semesters, c)
+			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester, lastSemester, semesters)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
 			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s) OR ID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
@@ -423,9 +421,8 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 
 	if semesterFilter == "" || permissionFilter == "" {
 		return permissionFilter + semesterFilter
-	} else {
-		return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 	}
+	return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 }
 
 func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
@@ -453,17 +450,17 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 		}
 		if firstSemester.Year+1 < lastSemester.Year {
 			return fmt.Sprintf("(%s OR (year > %d AND year < %d) OR %s)", constraint1, firstSemester.Year, lastSemester.Year, constraint2)
-		} else {
-			return fmt.Sprintf("(%s OR %s)", constraint1, constraint2)
 		}
-	} else {
-		semesterStringsSlice := make([]string, len(semesters))
-		for i, semester := range semesters {
-			semesterStringsSlice[i] = fmt.Sprintf("(year = %d AND semester = \"%s\")", semester.Year, semester.TeachingTerm)
-		}
-		filter := "(" + strings.Join(semesterStringsSlice, " OR ") + ")"
-		return filter
+		return fmt.Sprintf("(%s OR %s)", constraint1, constraint2)
+
 	}
+
+	semesterStringsSlice := make([]string, len(semesters))
+	for i, semester := range semesters {
+		semesterStringsSlice[i] = fmt.Sprintf("(year = %d AND semester = \"%s\")", semester.Year, semester.TeachingTerm)
+	}
+	filter := "(" + strings.Join(semesterStringsSlice, " OR ") + ")"
+	return filter
 }
 
 // Utility functions
@@ -474,7 +471,7 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	}
 	semesterStrings := strings.Split(semestersParam, ",")
 
-	regex, err := regexp.Compile(`^[0-9]{4}[WS]$`)
+	regex, err := regexp.Compile(`^[0-9]{4}[WS]$`) //nolint:all
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +485,7 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 				Year:         year,
 			}
 		} else {
-			return nil, errors.New(fmt.Sprintf("semester %s is not valid", semester))
+			return nil, errors.New(fmt.Sprintf("semester %s is not valid", semester)) //nolint:all
 		}
 	}
 	return semesters, nil
@@ -498,7 +495,7 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse string) ([]model.Course, uint) {
 	coursesStrings := strings.Split(urlParamCourse, ",")
 
-	regex, err := regexp.Compile(`^.+[0-9]{4}[WS]$`)
+	regex, err := regexp.Compile(`^.+[0-9]{4}[WS]$`) //nolint:all
 	if err != nil {
 		return nil, 2
 	}
@@ -520,7 +517,7 @@ func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse stri
 }
 
 func courseSliceToString(courses []model.Course) string {
-	if courses == nil || len(courses) == 0 {
+	if len(courses) == 0 {
 		return "[]"
 	}
 	idsStringSlice := make([]string, len(courses))
@@ -532,7 +529,7 @@ func courseSliceToString(courses []model.Course) string {
 }
 
 func uintSliceToString(ids []uint) string {
-	if ids == nil || len(ids) == 0 {
+	if len(ids) == 0 {
 		return "[]"
 	}
 	idsStringSlice := make([]string, len(ids))

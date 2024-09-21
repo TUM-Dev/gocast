@@ -21,8 +21,6 @@ import (
 	"github.com/meilisearch/meilisearch-go"
 )
 
-var emptySlice = []any{}
-
 func SearchRouterWrapper(r *gin.Engine) {
 	configGinSearchRouter(r, dao.DaoWrapper{}, tools.NewMeiliSearchFunctions())
 }
