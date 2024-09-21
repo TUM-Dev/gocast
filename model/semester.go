@@ -14,13 +14,6 @@ func (s *Semester) InRangeOfSemesters(firstSemester Semester, lastSemester Semes
 			return s.Year == firstSemester.Year && s.TeachingTerm == firstSemester.TeachingTerm
 		}
 		return s.GreaterEqualThan(firstSemester) && lastSemester.GreaterEqualThan(*s)
-		/* Alternative:
-		return !(s.Year < firstSemester.Year || s.Year > lastSemester.Year ||
-		(s.Year == firstSemester.Year && s.TeachingTerm == "S" && firstSemester.TeachingTerm == "W") ||
-		(s.Year == lastSemester.Year && s.TeachingTerm == "W" && lastSemester.TeachingTerm == "S"))*/
-	}
-	if len(semesters) == 1 {
-		return s.Year == semesters[0].Year && s.TeachingTerm == semesters[0].TeachingTerm
 	}
 	for _, semester := range semesters {
 		if s.Year == semester.Year && s.TeachingTerm == semester.TeachingTerm {
