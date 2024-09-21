@@ -35,7 +35,6 @@
                                 <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}
                         </td>
                         <td class="px-6">{{$runner.Uptime}}</td>
-                        <td class="px-6">{{$runner.Action}}</td>
                         <td x-data class="px-6">
                             <button @click="admin.getFailedAction()"
                                     class="text-5 hover:text-1 items-center justify-center"
@@ -69,6 +68,42 @@
                 </template>
             </div>
 
+        </div>
+    </div>
+
+    <div class="p-5">
+        <h3 class="text-3">How to add a Runner</h3>
+        <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"
+             x-data="{show:'plain', token:'empty'}">
+            <div class="w-full dark:bg-secondary bg-gray-200 text-4 uppercase text-sm font-semibold py-3 leading-normal dark:bg-secondary rounded-t-md">
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" :class="show==='plain'&&'font-bold text-1'"
+                      @click="show='plain'">Plain</span>
+                <span class="hover:text-1 hover:font-bold px-6 border-x-2 border-gray-500 cursor-pointer"
+                      :class="show==='docker'&&'font-bold text-1'" @click="show='docker'">Docker</span>
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" @click="show='swarm'"
+                      :class="show==='swarm'&&'font-bold text-1'">Docker Swarm</span>
+            </div>
+            <p class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto shadow-md dark:bg-secondary-lighter p-3 h-fit" x-show="show==='plain'">
+                <span class="text-gray-500"># Run the TUM-Live-Runner executable with this command:</span><br>
+                <span class="flex">
+                    {{template "terminalprompt"}}
+                    <span class="text-gray-300">./runner</span>
+                </span>
+            </p>
+            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='docker'">
+                <span class="text-gray-500"># Run the TUM-Live-Runner docker container:</span><br>
+                <span class="flex">
+                    {{template "terminalprompt"}}
+                    <span class="text-gray-300">docker run -p 50051:50051 ghcr.io/TUM-Dev/gocast/runner:latest</span>
+                </span>
+            </p>
+            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-gray-400 p-3" x-show="show==='swarm'">
+                <span class="text-gray-500"># Refer to your manager node on which token to use here:</span><br>
+                <span class="flex">
+                    {{template "terminalprompt"}}
+                    <span class="text-gray-300">docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377</span>
+                </span>
+            </p>
         </div>
     </div>
     </section>
