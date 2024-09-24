@@ -252,7 +252,7 @@ func initCron() {
 	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
 	// Look for due streams and notify workers about them
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
-	//Look for due work to do and notify runner about them
+	// Look for due work to do and notify runner about them
 	_ = tools.Cron.AddFunc("triggerDueWork", api.NotifyRunners(daoWrapper), "0-59 * * * *") // update courses available
 	// Prefetch courses
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")

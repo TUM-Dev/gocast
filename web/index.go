@@ -231,8 +231,7 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 		case model.LecturerType:
 			{
 				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
-				coursesForLecturer, err :=
-					coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
+				coursesForLecturer, err := coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}

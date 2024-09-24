@@ -851,7 +851,6 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 			}
 		}
 	}
-
 }
 
 // notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.

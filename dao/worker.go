@@ -58,8 +58,7 @@ func getSchoolIDs(schools []model.School) []uint {
 func (d workerDao) GetAliveWorkers(schoolID uint) []model.Worker {
 	var workers []model.Worker
 
-	rawSQL :=
-		`
+	rawSQL := `
 WITH RECURSIVE school_hierarchy AS (
 	SELECT id, parent_id FROM schools WHERE id = ?
 	UNION ALL
