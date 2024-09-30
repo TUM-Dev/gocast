@@ -350,7 +350,19 @@ func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 // Checking eligibility to search for courses and validation of model.Semester format is the caller's responsibility
 func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester, courses []model.Course) string {
 	if courses != nil {
-		return fmt.Sprintf("courseID IN %s", courseSliceToString(courses))
+		administeredCourses := make([]model.Course, 0)
+		nonAdministeredCourses := make([]model.Course, 0)
+		for _, course := range courses {
+			if user.IsAdminOfCourse(course) {
+				administeredCourses = append(administeredCourses, course)
+			} else {
+				nonAdministeredCourses = append(nonAdministeredCourses, course)
+			}
+		}
+		if user == nil || len(administeredCourses) == 0 {
+			return fmt.Sprintf("courseID IN %s AND private = 0", courseSliceToString(nonAdministeredCourses))
+		}
+		return fmt.Sprintf("(courseID IN %s OR (courseID IN %s AND private = 0))", courseSliceToString(administeredCourses), courseSliceToString(nonAdministeredCourses))
 	}
 
 	semesterFilter := fmt.Sprintf("(year = %d AND semester = \"%s\")", semester.Year, semester.TeachingTerm)
