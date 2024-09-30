@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -368,15 +369,25 @@ func getMeiliSearchMock(t *testing.T, daoWrapper dao.DaoWrapper) *mock_tools.Moc
 		func(q interface{}, limit interface{}, searchType interface{}, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 			streams := make([]model.Stream, 0)
 			subtitles := make([]tools.MeiliSubtitles, 0)
-			idsAsStrings := strings.Split(streamFilter[len("courseID IN ["):len(streamFilter)-1], ",")
-			for _, idString := range idsAsStrings {
-				id, _ := strconv.Atoi(idString)
-				for _, stream := range testutils.AllStreamsForSearchTests {
-					if stream.CourseID == uint(id) {
-						streams = append(streams, stream)
+
+			// find indexes for id arrays
+			s, _ := regexp.Compile(`\[`)
+			c, _ := regexp.Compile(`]`)
+			startIndexes := s.FindAllIndex([]byte(streamFilter), -1)
+			endIndexes := c.FindAllIndex([]byte(streamFilter), -1)
+
+			for i, startIndex := range startIndexes {
+				idsAsStrings := strings.Split(streamFilter[startIndex[1]:endIndexes[i][0]], ",")
+				for _, idString := range idsAsStrings {
+					id, _ := strconv.Atoi(idString)
+					for _, stream := range testutils.AllStreamsForSearchTests {
+						if stream.CourseID == uint(id) {
+							streams = append(streams, stream)
+						}
 					}
 				}
 			}
+
 			for _, subtitle := range testutils.AllSubtitlesForSearchTests {
 				if slices.ContainsFunc(streams, func(stream model.Stream) bool {
 					return stream.ID == subtitle.StreamID
