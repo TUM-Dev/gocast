@@ -371,8 +371,8 @@ func getMeiliSearchMock(t *testing.T, daoWrapper dao.DaoWrapper) *mock_tools.Moc
 			subtitles := make([]tools.MeiliSubtitles, 0)
 
 			// find indexes for id arrays
-			s, _ := regexp.Compile(`\[`)
-			c, _ := regexp.Compile(`]`)
+			s := regexp.MustCompile(`\[`)
+			c := regexp.MustCompile(`]`)
 			startIndexes := s.FindAllIndex([]byte(streamFilter), -1)
 			endIndexes := c.FindAllIndex([]byte(streamFilter), -1)
 
