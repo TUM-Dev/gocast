@@ -60,6 +60,7 @@ func NewMeiliExporter(d dao.DaoWrapper) *MeiliExporter {
 	return &MeiliExporter{c, d}
 }
 
+// Export exports all relevant search data to MeiliSearch Instance
 func (m *MeiliExporter) Export() {
 	if m == nil {
 		return
@@ -190,6 +191,7 @@ func (m *MeiliExporter) SetIndexSettings() {
 	}
 }
 
+// ToMeiliCourses converts slice of model.Course to slice of MeiliCourse
 func ToMeiliCourses(cs []model.Course) []MeiliCourse {
 	res := make([]MeiliCourse, len(cs))
 	for i, c := range cs {
@@ -205,6 +207,7 @@ func ToMeiliCourses(cs []model.Course) []MeiliCourse {
 	return res
 }
 
+// ToMeiliStreams converts slice of model.Stream to slice of MeiliStream
 func ToMeiliStreams(streams []model.Stream, daoWrapper dao.DaoWrapper) ([]MeiliStream, error) {
 	res := make([]MeiliStream, len(streams))
 	for i, s := range streams {

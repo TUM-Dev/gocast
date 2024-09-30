@@ -88,7 +88,7 @@ func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
 	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	query := c.Query("q")
 	limit, err := strconv.ParseUint(c.Query("limit"), 10, 16)
-	if err != nil || limit > math.MaxInt64 { // second condition should never happen, max bitSize for parseuint is 16
+	if err != nil || limit > math.MaxInt64 { // second condition should never evaluate to true (maximum bitSize for ParseUint is 16)
 		limit = DefaultLimit
 	}
 	return user, query, limit
@@ -157,7 +157,7 @@ func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query st
 		semesters1, err1 := parseSemesters(firstSemesterParam)
 		semesters2, err2 := parseSemesters(lastSemesterParam)
 		semesters, err3 := parseSemesters(semestersParam)
-		if (err1 != nil || err2 != nil || len(semesters1) > 1 || len(semesters2) > 1) && err3 != nil {
+		if (err1 != nil || err2 != nil || len(semesters1) != 1 || len(semesters2) != 1) && err3 != nil {
 			return nil, errors.New("wrong parameters")
 		}
 		rangeSearch := false
@@ -344,8 +344,11 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 	}
 }
 
-// meilisearch filter
+// meilisearch filters
 
+// meiliSubtitleFilter returns a filter conforming to MeiliSearch filter format that can be used for filtering subtitles
+//
+// Checking eligibility to search in each course in courses is the caller's responsibility
 func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 	if len(courses) == 0 {
 		return ""
@@ -363,6 +366,9 @@ func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 	return fmt.Sprintf("streamID IN %s", uintSliceToString(streamIDs))
 }
 
+// meiliStreamFilter returns a filter conforming to MeiliSearch filter format that can be used for filtering streams
+//
+// Checking eligibility to search for courses and validation of model.Semester format is the caller's responsibility
 func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester, courses []model.Course) string {
 	if courses != nil {
 		return fmt.Sprintf("courseID IN %s", courseSliceToString(courses))
@@ -394,6 +400,9 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 	return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 }
 
+// meiliCourseFilter returns a filter conforming to MeiliSearch filter format that can be used for filtering courses
+//
+// Validation of model.Semester format is the caller's responsibility
 func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	semesterFilter := meiliSemesterFilter(firstSemester, lastSemester, semesters)
 	if user != nil && user.Role == model.AdminType {
@@ -421,6 +430,9 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 	return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
 }
 
+// meiliSemesterFilter returns a filter conforming to MeiliSearch filter format
+//
+// Validation of model.Semester format is the caller's responsibility
 func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	if len(semesters) == 0 && firstSemester.Year < 1900 && lastSemester.Year > 2800 {
 		return ""
@@ -448,7 +460,6 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 			return fmt.Sprintf("(%s OR (year > %d AND year < %d) OR %s)", constraint1, firstSemester.Year, lastSemester.Year, constraint2)
 		}
 		return fmt.Sprintf("(%s OR %s)", constraint1, constraint2)
-
 	}
 
 	semesterStringsSlice := make([]string, len(semesters))
@@ -487,7 +498,9 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	return semesters, nil
 }
 
-// parses the URL Parameter course (urlParamCourse) and returns a slice containing every course in the parameter or an error code
+// parseCourses parses the URL Parameter course (urlParamCourse) and returns a slice containing every course in the parameter or an error code
+//
+// Checking if the user is allowed to see returned courses is the caller's responsibility
 func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse string) ([]model.Course, uint) {
 	coursesStrings := strings.Split(urlParamCourse, ",")
 
@@ -536,6 +549,7 @@ func uintSliceToString(ids []uint) string {
 	return filter
 }
 
+// ToSearchCourseDTO converts Courses to slice of SearchCourseDTO
 func ToSearchCourseDTO(cs ...model.Course) []SearchCourseDTO {
 	res := make([]SearchCourseDTO, len(cs))
 	for i, c := range cs {
@@ -549,7 +563,9 @@ func ToSearchCourseDTO(cs ...model.Course) []SearchCourseDTO {
 	return res
 }
 
-// ToSearchStreamDTO ignores any errors and sets affected fields to zero value
+// ToSearchStreamDTO converts Streams to slice of SearchStreamDTO
+//
+// Ignores any errors and sets affected fields to zero value
 func ToSearchStreamDTO(wrapper dao.DaoWrapper, streams ...model.Stream) []SearchStreamDTO {
 	res := make([]SearchStreamDTO, len(streams))
 	for i, s := range streams {
@@ -575,7 +591,9 @@ func ToSearchStreamDTO(wrapper dao.DaoWrapper, streams ...model.Stream) []Search
 	return res
 }
 
-// ToSearchSubtitleDTO ignores any errors and sets affected fields to zero value
+// ToSearchSubtitleDTO converts MeiliSubtitles to slice of SearchSubtitlesDTO
+//
+// Ignores any errors and sets affected fields to zero value
 func ToSearchSubtitleDTO(wrapper dao.DaoWrapper, subtitles ...tools.MeiliSubtitles) []SearchSubtitlesDTO {
 	res := make([]SearchSubtitlesDTO, len(subtitles))
 	for i, subtitle := range subtitles {

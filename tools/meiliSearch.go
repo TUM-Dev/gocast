@@ -68,6 +68,9 @@ func getCoursesSearchRequest(q string, limit int64, courseFilter string) meilise
 	return req
 }
 
+// Search passes search requests on to MeiliSearch instance and returns the results
+//
+// searchType specifies bit-wise which indexes should be searched (lowest bit set to 1: Index SUBTITLES | second-lowest bit set to 1: Index STREAMS | third-lowest bit set to 1: Index COURSES)
 func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {

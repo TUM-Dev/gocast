@@ -5,6 +5,7 @@ type Semester struct {
 	Year         int
 }
 
+// InRangeOfSemesters checks if s is between firstSemester (inclusive) and lastSemester (inclusive) or is element of semesters slice
 func (s *Semester) InRangeOfSemesters(firstSemester Semester, lastSemester Semester, semesters []Semester) bool {
 	if s == nil {
 		return false
@@ -23,6 +24,7 @@ func (s *Semester) InRangeOfSemesters(firstSemester Semester, lastSemester Semes
 	return false
 }
 
+// GreaterEqualThan checks if s comes after or is equal to s1
 func (s *Semester) GreaterEqualThan(s1 Semester) bool {
 	if s == nil {
 		return false

@@ -262,6 +262,7 @@ func (u *User) IsAdminOfCourse(course Course) bool {
 	return u.Role == AdminType || course.UserID == u.ID
 }
 
+// IsEligibleToWatchCourse checks if the user is allowed to access the course
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	if u == nil {
 		return course.Visibility == "public" || course.Visibility == "hidden"
@@ -277,6 +278,7 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	return u.IsAdminOfCourse(course)
 }
 
+// IsEligibleToSearchForCourse is a stricter version of IsEligibleToWatchCourse; in case of hidden course, it returns true only when the user is an admin of the course
 func (u *User) IsEligibleToSearchForCourse(course Course) bool {
 	return u.IsEligibleToWatchCourse(course) && course.Visibility != "hidden" || u.IsAdminOfCourse(course)
 }
@@ -300,6 +302,7 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 	return cRes
 }
 
+// AdministeredCoursesForSemesters returns all courses, that the user is a course admin of, in the given semester range or semesters
 func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemester Semester, semesters []Semester) []Course {
 	if u == nil {
 		return make([]Course, 0)
@@ -315,6 +318,7 @@ func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemes
 	return administeredCourses
 }
 
+// CoursesForSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
 func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester, semesters []Semester) []Course {
 	if u == nil {
 		return make([]Course, 0)
