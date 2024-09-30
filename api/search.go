@@ -84,16 +84,6 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 	c.JSON(http.StatusOK, responseToMap(res))
 }
 
-func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
-	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	query := c.Query("q")
-	limit, err := strconv.ParseUint(c.Query("limit"), 10, 16)
-	if err != nil || limit > math.MaxInt64 { // second condition should never evaluate to true (maximum bitSize for ParseUint is 16)
-		limit = DefaultLimit
-	}
-	return user, query, limit
-}
-
 func (r searchRoutes) search(c *gin.Context) {
 	user, query, limit := getDefaultParameters(c)
 
@@ -134,17 +124,6 @@ func (r searchRoutes) search(c *gin.Context) {
 	}
 	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
 	c.JSON(http.StatusOK, responseToMap(res))
-}
-
-func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
-	msm := make(MeiliSearchMap)
-	if res == nil {
-		return msm
-	}
-	for _, r := range res.Results {
-		msm[r.IndexUID] = r.Hits
-	}
-	return msm
 }
 
 func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query string, limit int64, user *model.User, courseSearchOnly bool) (*meilisearch.MultiSearchResponse, error) {
@@ -471,6 +450,27 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 }
 
 // Utility functions
+
+func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
+	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	query := c.Query("q")
+	limit, err := strconv.ParseUint(c.Query("limit"), 10, 16)
+	if err != nil || limit > math.MaxInt64 { // second condition should never evaluate to true (maximum bitSize for ParseUint is 16)
+		limit = DefaultLimit
+	}
+	return user, query, limit
+}
+
+func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
+	msm := make(MeiliSearchMap)
+	if res == nil {
+		return msm
+	}
+	for _, r := range res.Results {
+		msm[r.IndexUID] = r.Hits
+	}
+	return msm
+}
 
 func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	if semestersParam == "" {
