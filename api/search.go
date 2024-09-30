@@ -28,10 +28,6 @@ func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, meiliS
 	withStream.Use(tools.InitStream(daoWrapper))
 	withStream.GET("/subtitles", routes.searchSubtitles)
 
-	/*withCourse := searchGroup.Group("/course/:courseID")
-	withCourse.Use(tools.InitCourse(daoWrapper))
-	//withCourse.GET("/streams", routes.searchStreams)*/
-
 	searchGroup.GET("/courses", routes.searchCourses)
 }
 
