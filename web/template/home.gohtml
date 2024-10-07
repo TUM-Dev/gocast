@@ -37,6 +37,13 @@
         link.setAttribute('href', location.href);
         document.head.appendChild(link);
     </script>
+
+    <script defer>
+        const isLectureHallValid = (lectureHall) => {
+            const regex = /^\d{4}\.[A-Z0-9]{2}\.[A-Z0-9]{3,4}$/;
+            return regex.test(lectureHall);
+        };
+    </script>
 </head>
 <body x-data="home.skeleton()"
       @popstate.window="onPopState"
@@ -566,6 +573,7 @@
                             </section>
                         </section>
                     </template>
+                    <div x-data="{ isLectureHallValid }">
                     <template x-if="plannedStreams.hasElements()">
                         <section class="tum-live-course-view-item px-3">
                             <header>
@@ -590,7 +598,7 @@
                                                         <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
                                                     </div>
                                                     <h4 x-text="s.Name" class="font-semibold text-1"></h4>
-                                                    <template x-if="window.isLectureHallValid(s.LectureHall)">
+                                                    <template x-if="isLectureHallValid(s.LectureHall)">
                                                         <a :href="`https://nav.tum.de/room/${s.LectureHall}`" class="no-underline" x-text="s.LectureHall"></a>
                                                     </template>
                                                 </div>
@@ -607,6 +615,7 @@
                             </article>
                         </section>
                     </template>
+                    </div>
                 </div>
             </article>
         </template>
