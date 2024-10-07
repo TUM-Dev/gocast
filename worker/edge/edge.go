@@ -150,12 +150,6 @@ func (c *JWTPlaylistClaims) GetFileName() string {
 func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claims *JWTPlaylistClaims, ok bool) {
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
-		cookie, err := r.Cookie("jwt")
-		if err != nil && cookie != nil {
-			token = cookie.Value
-		}
-	}
-	if token == "" {
 		http.Error(w, "Missing JWT", http.StatusForbidden)
 		return nil, false
 	}
