@@ -122,31 +122,31 @@ func (d streamsDao) AddVodView(id string) error {
 	return err
 }
 
-// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall, grouped by schoolID.
+// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall, grouped by organizationID.
 func (d streamsDao) GetDueStreamsForWorkers() map[uint][]model.Stream {
 	var streams []struct {
 		model.Stream
-		SchoolID uint
+		OrganizationID uint
 	}
 	DB.Model(&model.Stream{}).
 		Joins("JOIN courses c ON c.id = streams.course_id").
-		Joins("JOIN schools s ON s.id = c.school_id").
+		Joins("JOIN organizations s ON s.id = c.organization_id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
 			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
 		Scan(&streams)
 
 	res := make(map[uint][]model.Stream)
 	for _, stream := range streams {
-		res[stream.SchoolID] = append(res[stream.SchoolID], stream.Stream)
+		res[stream.OrganizationID] = append(res[stream.OrganizationID], stream.Stream)
 	}
 	return res
 }
 
-func (d streamsDao) GetDuePremieresForWorkers(schoolID uint) []model.Stream {
+func (d streamsDao) GetDuePremieresForWorkers(organizationID uint) []model.Stream {
 	var res []model.Stream
 	DB.Joins("JOIN courses ON courses.id = streams.course_id").
 		Preload("Files").
-		Find(&res, "courses.school_id = ? AND premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false", schoolID)
+		Find(&res, "courses.organization_id = ? AND premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false", organizationID)
 	return res
 }
 
@@ -557,13 +557,13 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
 	err := DB.FirstOrCreate(&course, model.Course{
-		Name:         "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
-		TeachingTerm: "Test",
-		Slug:         "TESTCOURSE",
-		Year:         1234,
-		SchoolID:     1,
-		Visibility:   "hidden",
-		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
+		Name:           "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
+		TeachingTerm:   "Test",
+		Slug:           "TESTCOURSE",
+		Year:           1234,
+		OrganizationID: 1,
+		Visibility:     "hidden",
+		VODEnabled:     false, // TODO: Change to VODEnabled: true for default testcourse if necessary
 	}).Error
 	if err != nil {
 		return model.Course{}, err

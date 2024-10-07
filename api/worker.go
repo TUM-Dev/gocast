@@ -38,7 +38,7 @@ func (r workerRoutes) deleteWorker(c *gin.Context) {
 
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 
-	if !u.IsAdminOfSchool(worker.SchoolID) {
+	if !u.IsAdminOfOrganization(worker.OrganizationID) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusForbidden,
 			CustomMessage: "you are not allowed to delete this worker",
@@ -74,7 +74,7 @@ func (r workerRoutes) toggleWorkerShared(c *gin.Context) {
 
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 
-	if !u.IsAdminOfSchool(worker.SchoolID) {
+	if !u.IsAdminOfOrganization(worker.OrganizationID) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusForbidden,
 			CustomMessage: "you are not allowed to update this worker",

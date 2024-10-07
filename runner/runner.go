@@ -31,7 +31,7 @@ type envConfig struct {
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
 	Version      string `env:"VERSION" envDefault:"dev"`
-	Token        string `env:"TOKEN" envDefault:"abc"` // used to authenticate school and connect initially
+	Token        string `env:"TOKEN" envDefault:"abc"` // used to authenticate organization and connect initially
 
 }
 

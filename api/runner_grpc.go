@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"regexp"
@@ -39,30 +40,30 @@ type GrpcRunnerServer struct {
 
 func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
 	// Parse and validate worker token
-	token, err := jwt.ParseWithClaims(request.Token, &JWTSchoolClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(request.Token, &JWTOrganizationClaims{}, func(token *jwt.Token) (interface{}, error) {
 		key := tools.Cfg.GetJWTKey().Public()
 		return key, nil
 	})
 	if err != nil || !token.Valid {
 		return nil, status.Error(codes.Unauthenticated, "Invalid token")
 	}
-	claims, ok := token.Claims.(*JWTSchoolClaims)
+	claims, ok := token.Claims.(*JWTOrganizationClaims)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "Invalid token claims")
 	}
 
-	schoolID, err := strconv.ParseUint(claims.SchoolID, 10, 32)
+	organizationID, err := strconv.ParseUint(claims.OrganizationID, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid SchoolID: %v", err)
+		return nil, fmt.Errorf("invalid OrganizationID: %v", err)
 	}
 
 	runner := model.Runner{
-		Hostname: request.Hostname,
-		Port:     int(request.Port),
-		LastSeen: sql.NullTime{Valid: true, Time: time.Now()},
-		Status:   "Alive",
-		Workload: 0,
-		SchoolID: uint(schoolID),
+		Hostname:       request.Hostname,
+		Port:           int(request.Port),
+		LastSeen:       sql.NullTime{Valid: true, Time: time.Now()},
+		Status:         "Alive",
+		Workload:       0,
+		OrganizationID: uint(organizationID),
 	}
 
 	err = g.RunnerDao.Create(ctx, &runner)
@@ -106,14 +107,14 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream,
 	if source == "" {
 		return
 	}
-	server, err := dao.IngestServerDao.GetBestIngestServer(course.SchoolID)
+	server, err := dao.IngestServerDao.GetBestIngestServer(course.OrganizationID)
 	if err != nil {
 		logger.Error("can't find ingest server", "err", err)
 		return
 	}
 
 	var slot model.StreamName
-	if version == "COMB" { //try to find a transcoding slot for comb view:
+	if version == "COMB" { // try to find a transcoding slot for comb view:
 		slot, err = dao.IngestServerDao.GetTranscodedStreamSlot(server.ID)
 	}
 	if version != "COMB" || err != nil {
@@ -133,7 +134,7 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream,
 		End:     timestamppb.New(end),
 		Source:  src,
 	}
-	//get runner with least workload for given job
+	// get runner with least workload for given job
 	runner, err := getRunnerWithLeastWorkloadForJob(runners, "stream")
 	if err != nil {
 		logger.Error("No runners available", "err", err)
@@ -177,7 +178,7 @@ func getRunnerWithLeastWorkloadForJob(runner []model.Runner, Job string) (model.
 // RequestSelfStream is called by the runner when a stream is supposed to be started by obs or other third party software
 // returns an error if anything goes wrong OR the stream may not be published
 func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protobuf.SelfStreamRequest) (*protobuf.SelfStreamResponse, error) {
-	//TODO Test me/Improve me
+	// TODO Test me/Improve me
 	if request.StreamKey == "" {
 		return nil, errors.New("stream key is empty")
 	}
@@ -193,7 +194,7 @@ func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protob
 		log.WithFields(log.Fields{"streamId": stream.ID}).Warn("Stream rejected, time out of bounds")
 		return nil, errors.New("stream rejected")
 	}
-	ingestServer, err := g.IngestServerDao.GetBestIngestServer(course.SchoolID)
+	ingestServer, err := g.IngestServerDao.GetBestIngestServer(course.OrganizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -222,17 +223,17 @@ func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *prot
 	defer mutex.Unlock()
 	runner, err := g.RunnerDao.Get(ctx, request.Hostname)
 	if err != nil {
-		logger.Error("Failed to get runner", err)
+		logger.Error("Failed to get runner", slog.String("err", err.Error()))
 		return nil, err
 	}
 	stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 	if err != nil {
-		logger.Error("Failed to get stream", err)
+		logger.Error("Failed to get stream", slog.String("err", err.Error()))
 		return nil, err
 	}
 	course, err := g.CoursesDao.GetCourseById(ctx, (uint)(request.CourseID))
 	if err != nil {
-		logger.Error("Failed to get course", err)
+		logger.Error("Failed to get course", slog.String("err", err.Error()))
 		return nil, err
 	}
 	go func() {
@@ -255,7 +256,7 @@ func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *prot
 
 		err := g.StreamsDao.SaveStream(&stream)
 		if err != nil {
-			logger.Error("Failed to save stream", err)
+			logger.Error("Failed to save stream", slog.String("err", err.Error()))
 		}
 		err = g.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
 		if err != nil {
@@ -317,49 +318,48 @@ func isHLSUrlOk(url string) bool {
 
 func NotifyRunners(dao dao.DaoWrapper) func() {
 	return func() {
-
 		logger.Info("Notifying runners")
 
-		schoolsStreams := dao.StreamsDao.GetDueStreamsForWorkers()
-		for schoolID, streams := range schoolsStreams {
-			runners, err := dao.RunnerDao.GetAll(context.Background(), schoolID)
+		organizationsStreams := dao.StreamsDao.GetDueStreamsForWorkers()
+		for organizationID, streams := range organizationsStreams {
+			runners, err := dao.RunnerDao.GetAll(context.Background(), organizationID)
 			if err != nil {
-				logger.Error("Can't get runners for school", err)
+				logger.Error("Can't get runners for organization", slog.String("err", err.Error()))
 				continue
 			}
 			if len(runners) == 0 {
-				logger.Error("No runners available for school")
+				logger.Error("No runners available for organization")
 				continue
 			}
 
 			for i := range streams {
 				err = dao.StreamsDao.SaveEndedState(streams[i].ID, false)
 				if err != nil {
-					logger.Warn("Can't save ended state", err)
+					logger.Warn("Can't save ended state", slog.String("err", err.Error()))
 					sentry.CaptureException(err)
 					continue
 				}
 				courseForStream, err := dao.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
 				if err != nil {
-					logger.Warn("Can't get course for stream", err)
+					logger.Warn("Can't get course for stream", slog.String("err", err.Error()))
 					sentry.CaptureException(err)
 					continue
 				}
 				lectureHallForStream, err := dao.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
 				if err != nil {
-					logger.Warn("Can't get lecture hall for stream", err)
+					logger.Warn("Can't get lecture hall for stream", slog.String("err", err.Error()))
 					sentry.CaptureException(err)
 					continue
 				}
 
 				switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
-				case 1: //presentation
+				case 1: // presentation
 					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
 					break
-				case 2: //camera
+				case 2: // camera
 					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
 					break
-				default: //combined
+				default: // combined
 					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
 					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
 					StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CombIP, runners, "COMB", streams[i].End)
@@ -371,7 +371,7 @@ func NotifyRunners(dao dao.DaoWrapper) func() {
 }
 
 func (g GrpcRunnerServer) mustEmbedUnimplementedFromRunnerServer() {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

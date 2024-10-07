@@ -1,12 +1,12 @@
 {{define "resources"}}
     {{if $.Query}}
-        {{range $school := .Schools}}
-            {{if eq $school.ID $.Query}}
+        {{range $organization := .Organizations}}
+            {{if eq $organization.ID $.Query}}
                 <div class="container">
                     <div id="alertBox" class="text-center">
                         <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex" role="alert">
-                            <span id="alertText" class="font-semibold mx-2 text-left flex-auto">Currently only showing resources for {{$school.OrgType}}: {{$school.Name}}</span>
-                            <span id="alertOk" onclick="window.location.replace('/admin/resources')" class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">View all resources for your schools</span>
+                            <span id="alertText" class="font-semibold mx-2 text-left flex-auto">Currently only showing resources for {{$organization.OrgType}}: {{$organization.Name}}</span>
+                            <span id="alertOk" onclick="window.location.replace('/admin/resources')" class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">View all resources for your organizations</span>
                         </div>
                     </div>
                 </div>
@@ -28,22 +28,22 @@
                     </tr>
                 </thead>
                 <tbody class="text-3">
-                    {{range $school := .Schools}}
-                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
+                    {{range $organization := .Organizations}}
+                        {{ if or (not $.Query) (eq $organization.ID $.Query) }}
                         {{$found := false}}
                         <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
                                 <thead>
                                 <tr>
                                     <td colspan="5" class="text-left">
                                         <h2 class="form-container-title">
-                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.OrgType}}: {{$school.Name}}</a>
+                                            <a href="/admin/resources?id={{$organization.ID}}">{{$organization.OrgType}}: {{$organization.Name}}</a>
                                         </h2>
                                     </td>
                                 </tr>
                                 </thead>
                                 <tbody class="text-3">
                                     {{range $runner := $.Runners}}
-                                        {{if eq $runner.SchoolID $school.ID}}
+                                        {{if eq $runner.OrganizationID $organization.ID}}
                                         {{$found = true}}
                                             <tr class="border-gray-500">
                                                 <td class="px-6 pb-4 text-left">
@@ -78,7 +78,7 @@
                                     {{end}}
                                     {{if not $found}}
                                         <tr>
-                                            <td colspan="5" class="text-center py-3 text-6 text-left">No runners found for this school.</td>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No runners found for this organization.</td>
                                         </tr>
                                     {{end}}
                                 </tbody>
@@ -103,29 +103,29 @@
                     <th class="px-6 text-center" style="width: 10%;">
                         <div class="inline-flex items-center">
                             SHARED
-                            <help-icon class="transform -translate-x-0.5" text="Share resource with other schools. Read more at https://tumlive-docs.pages.dev/docs/deployment/step-by-step/add-worker"/>
+                            <help-icon class="transform -translate-x-0.5" text="Share resource with other organizations. Read more at https://tumlive-docs.pages.dev/docs/deployment/step-by-step/add-worker"/>
                         </div>
                     </th>
                     <th class="px-6 text-center" style="width: 10%;">ACTIONS</th>
                 </tr>
                 </thead>
                 <tbody class="text-3">
-                    {{range $school := .Schools}}
-                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
+                    {{range $organization := .Organizations}}
+                        {{ if or (not $.Query) (eq $organization.ID $.Query) }}
                         {{$found := false}}
                         <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
                                 <thead>
                                 <tr>
                                     <td colspan="6" class="text-left">
                                         <h2 class="form-container-title">
-                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.OrgType}}: {{$school.Name}}</a>
+                                            <a href="/admin/resources?id={{$organization.ID}}">{{$organization.OrgType}}: {{$organization.Name}}</a>
                                         </h2>
                                     </td>
                                 </tr>
                                 </thead>
                                 <tbody class="text-3">
                                     {{range $worker := $.Workers}}
-                                        {{if eq $worker.SchoolID $school.ID}}
+                                        {{if eq $worker.OrganizationID $organization.ID}}
                                         {{$found = true}}
                                         <tr class="border-gray-500">
                                             <td class="py-2 px-6 text-left" style="width: 50%;">
@@ -165,7 +165,7 @@
                                                     <button @click="admin.toggleSharedStatus('{{$worker.WorkerID}}').then(() => window.location.reload())"
                                                         class="text-5 hover:text-1 items-center justify-center mr-4"
                                                         type="button"
-                                                        title="Allow worker to share resources with other schools">
+                                                        title="Allow worker to share resources with other organizations">
                                                         <i class="fas fa-globe"></i>
                                                     </button>
                                                 </template>
@@ -189,7 +189,7 @@
                                     {{end}}
                                     {{if not $found}}
                                         <tr>
-                                            <td colspan="5" class="text-center py-3 text-6 text-left">No workers found for this school.</td>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No workers found for this organization.</td>
                                         </tr>
                                     {{end}}
                                 </tbody>
@@ -223,28 +223,28 @@
                     <th class="px-6 text-center" style="width: 10%;">
                         <div class="inline-flex items-center">
                             SHARED
-                            <help-icon class="transform -translate-x-0.5" text="Share resource with other schools. Read more at https://tumlive-docs.pages.dev/docs/deployment/step-by-step/add-ingest-server"/>
+                            <help-icon class="transform -translate-x-0.5" text="Share resource with other organizations. Read more at https://tumlive-docs.pages.dev/docs/deployment/step-by-step/add-ingest-server"/>
                         </div>
                     </th>
                 </tr>
                 </thead>
                 <tbody class="text-3">
-                    {{range $school := .Schools}}
-                        {{ if or (not $.Query) (eq $school.ID $.Query) }}
+                    {{range $organization := .Organizations}}
+                        {{ if or (not $.Query) (eq $organization.ID $.Query) }}
                         {{$found := false}}
                         <table class="table-auto w-full col-span-full bg-gray-100 dark:bg-gray-800 rounded rounded-md">
                                 <thead>
                                 <tr>
                                     <td colspan="5" class="text-left">
                                         <h2 class="form-container-title">
-                                            <a href="/admin/resources?id={{$school.ID}}">{{$school.OrgType}}: {{$school.Name}}</a>
+                                            <a href="/admin/resources?id={{$organization.ID}}">{{$organization.OrgType}}: {{$organization.Name}}</a>
                                         </h2>
                                     </td>
                                 </tr>
                                 </thead>
                                 <tbody class="text-3">
                                     {{range $ingestServer := $.IngestServers}}
-                                        {{if eq $ingestServer.SchoolID $school.ID}}
+                                        {{if eq $ingestServer.OrganizationID $organization.ID}}
                                         {{$found = true}}
                                         <tr class="border-gray-500">
                                             <td class="pb-3 px-6 text-left font-semibold text-4 whitespace-nowrap" style="width: 30%;">
@@ -268,7 +268,7 @@
                                     {{end}}
                                     {{if not $found}}
                                         <tr>
-                                            <td colspan="5" class="text-center py-3 text-6 text-left">No dedicated ingest servers found for this school.</td>
+                                            <td colspan="5" class="text-center py-3 text-6 text-left">No dedicated ingest servers found for this organization.</td>
                                         </tr>
                                     {{end}}
                                 </tbody>
@@ -283,7 +283,7 @@
 
     <div class="p-5">
         <h3 class="text-3">How to add a RUNNER</h3>
-        <p class="text-6">NOTE: You can fetch a new token for your school by pressing on the key icon in the "schools"-tab</p>
+        <p class="text-6">NOTE: You can fetch a new token for your organization by pressing on the key icon in the "organizations"-tab</p>
         <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"
              x-data="{show:'plain', token:'ABC'}">
             <div class="w-full dark:bg-secondary bg-gray-200 text-4 uppercase text-sm font-semibold py-3 leading-normal dark:bg-secondary rounded-t-md">
@@ -325,7 +325,7 @@
 
     <div class="p-5">
         <h3 class="text-3">How to add a WORKER</h3>
-        <p class="text-6">NOTE: You can fetch a new token for your school by pressing on the key icon in the "schools"-tab</p>
+        <p class="text-6">NOTE: You can fetch a new token for your organization by pressing on the key icon in the "organizations"-tab</p>
         <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"
              x-data="{show:'plain', token:'ABC'}">
             <div class="w-full dark:bg-secondary bg-gray-200 text-4 uppercase text-sm font-semibold py-3 leading-normal dark:bg-secondary rounded-t-md">

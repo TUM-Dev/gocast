@@ -28,7 +28,7 @@ func (r runnerRoutes) deleteRunner(c *gin.Context) {
 	ctx := context.Background()
 	err := r.dao.Delete(ctx, c.Param("Hostname"))
 	if err != nil {
-		//logging for later
+		// logging for later
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not delete runner",
@@ -36,5 +36,4 @@ func (r runnerRoutes) deleteRunner(c *gin.Context) {
 		})
 		return
 	}
-
 }

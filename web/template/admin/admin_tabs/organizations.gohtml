@@ -1,14 +1,14 @@
 {{template "header" .IndexData.TUMLiveContext}}
-{{define "schools"}}
-<section class="form-container" x-data="{schoollist: new admin.SchoolsList({{.Data}}), role: {{.Role}}}">
-    <h1 class="form-container-title">School Management</h1>
+{{define "organizations"}}
+<section class="form-container" x-data="{organizationlist: new admin.OrganizationsList({{.Data}}), role: {{.Role}}}">
+    <h1 class="form-container-title">Organization Management</h1>
 
     <div class="form-container-body">
         <h2>Search</h2>
-        <input class="tl-input" placeholder="Search for schools administered by you" type="text" x-model="schoollist.searchInput"
-               @keyup="schoollist.search()">
+        <input class="tl-input" placeholder="Search for organizations administered by you" type="text" x-model="organizationlist.searchInput"
+               @keyup="organizationlist.search()">
         <div class="w-4 m-auto">
-            <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="schoollist.searchLoading"></i>
+            <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="organizationlist.searchLoading"></i>
         </div>
         <div class="table-container">
             <table class="">
@@ -23,50 +23,50 @@
                     <th class="rounded-tr-lg">Actions</th>
                 </tr>
                 </thead>
-                <tbody id="admin-school-list" class="w-full bg-transparent text-4">
-                <template x-for="(school, i) in schoollist.currentPage">
-                    <tr :id="`school-${i}`"
+                <tbody id="admin-organization-list" class="w-full bg-transparent text-4">
+                <template x-for="(organization, i) in organizationlist.currentPage">
+                    <tr :id="`organization-${i}`"
                         class="w-full bg-white dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent"
-                        :data-schoollist-index="i">
-                        <td class="pl-6 py-3 text-left whitespace-nowrap" x-text="school.id"></td>
-                        <td class="py-3 px-6 text-left whitespace-nowrap" x-text="school.name"></td>
-                        <template x-if="schoollist.showSearchResults">
-                            <td class="text-center cursor-pointer" @click="school.changing=true">
-                                <span x-show="school.orgType.startsWith('TUM')"
+                        :data-organizationlist-index="i">
+                        <td class="pl-6 py-3 text-left whitespace-nowrap" x-text="organization.id"></td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap" x-text="organization.name"></td>
+                        <template x-if="organizationlist.showSearchResults">
+                            <td class="text-center cursor-pointer" @click="organization.changing=true">
+                                <span x-show="organization.orgType.startsWith('TUM')"
                                     class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
-                                <span x-show="school.orgType.startsWith('LMU')"
+                                <span x-show="organization.orgType.startsWith('LMU')"
                                     class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
-                                <span x-show="school.orgType==='service'"
+                                <span x-show="organization.orgType==='service'"
                                     class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
                                     <div class="flex flex-row">
                                         Service
-                                        <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
+                                        <help-icon class="transform -translate-x-0.5" text="Represents a 'super-organization' which can manage all other organizations. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other organizations)"/>
                                     </div>
                                 </span>
-                                <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
+                                <span x-show="!organization.orgType.startsWith('TUM') && !organization.orgType.startsWith('LMU') && organization.orgType!=='service'" x-text="organization.orgType"
                                     class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
                             </td>
                         </template>
-                        <template x-if="!schoollist.showSearchResults">
+                        <template x-if="!organizationlist.showSearchResults">
                             <td class="text-center">
-                                <span x-show="school.orgType.startsWith('TUM')"
+                                <span x-show="organization.orgType.startsWith('TUM')"
                                     class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">TUM</span>
-                                <span x-show="school.orgType.startsWith('LMU')"
+                                <span x-show="organization.orgType.startsWith('LMU')"
                                     class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">LMU</span>
-                                <span x-show="school.orgType==='service'"
+                                <span x-show="organization.orgType==='service'"
                                     class="bg-red-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">
                                     <div class="flex flex-row">
                                         Service
-                                        <help-icon class="transform -translate-x-0.5" text="Represents a 'super-school' which can manage all other schools. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other schools)"/>
+                                        <help-icon class="transform -translate-x-0.5" text="Represents a 'super-organization' which can manage all other organizations. Maintainers of 'master/service' can be seen as super-admins of TUMLive and have the maximum priviledges (allowed to manage all other organizations)"/>
                                     </div>
                                 </span>
-                                <span x-show="!school.orgType.startsWith('TUM') && !school.orgType.startsWith('LMU') && school.orgType!=='service'" x-text="school.orgType"
+                                <span x-show="!organization.orgType.startsWith('TUM') && !organization.orgType.startsWith('LMU') && organization.orgType!=='service'" x-text="organization.orgType"
                                     class="bg-indigo-700 inline-block w-30 text-gray-100 py-1 px-2 rounded-full text-sm font-bold"></span>
                             </td>
                         </template>
-                        <td class="py-3 px-6 text-center" x-text="(school.orgId && school.orgSlug) ? school.orgId + '-' + school.orgSlug + ' (' + school.orgType + ')' : school.orgType"></td>                    <td class="py-3 px-6 text-center whitespace-nowrap" x-text="school.parent_id == 0 ? '-' : school.parent_id"></td>
+                        <td class="py-3 px-6 text-center" x-text="(organization.orgId && organization.orgSlug) ? organization.orgId + '-' + organization.orgSlug + ' (' + organization.orgType + ')' : organization.orgType"></td>                    <td class="py-3 px-6 text-center whitespace-nowrap" x-text="organization.parent_id == 0 ? '-' : organization.parent_id"></td>
                         <td class="py-3 px-6 text-center">
-                            <p class="font-bold cursor-pointer" x-text="school.admins.length + ' maintainer(s)'" @click="openMaintainerModal(school, i)" @mouseover="event.target.style.color = 'grey'" @mouseleave="event.target.style.color = ''"></p>                        <!-- Admin Modal -->
+                            <p class="font-bold cursor-pointer" x-text="organization.admins.length + ' maintainer(s)'" @click="openMaintainerModal(organization, i)" @mouseover="event.target.style.color = 'grey'" @mouseleave="event.target.style.color = ''"></p>                        <!-- Admin Modal -->
                             <div class="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center" style="display: none;" x-bind:id="'adminModal-' + i">
                                 <div class="fixed inset-0 opacity-100 backdrop-blur-sm"></div>
                                 <!-- Backdrop -->
@@ -93,7 +93,7 @@
                                                 </h3>
                                                 <form x-data="{ maintainerEmail: '', maintainerId: '', maintainerLrzId: ''}">
                                                     <div class="flex flex-row mb-1">
-                                                        <h2 class="italic" x-text="'Add a Maintainer for ' + school.name + ' (' + school.orgType + ')'"></h2>
+                                                        <h2 class="italic" x-text="'Add a Maintainer for ' + organization.name + ' (' + organization.orgType + ')'"></h2>
                                                         <help-icon class="transform -translate-x-0.5" text="Add either using Email, ID or LRZ ID."/>
                                                     </div>
                                                     <div class="flex flex-wrap">
@@ -108,7 +108,7 @@
                                                         </div>
                                                     </div>
                                                     <button id="createAdmin" title="Create Admin" class="btn primary mt-3 w-full" 
-                                                        @click.prevent="admin.addSchoolAdmin(school.id, maintainerEmail, maintainerId, maintainerLrzId)" 
+                                                        @click.prevent="admin.addOrganizationAdmin(organization.id, maintainerEmail, maintainerId, maintainerLrzId)" 
                                                         :disabled="maintainerEmail === '' && maintainerId === '' && maintainerLrzId === ''">
                                                         Create Maintainer
                                                     </button>
@@ -119,14 +119,14 @@
                                 </div>
                             </div>
                         <script>
-                            function openMaintainerModal(school, id) {
+                            function openMaintainerModal(organization, id) {
                                 var maintainerList = '';
-                                for (var i = 0; i < school.admins.length; i++) {
+                                for (var i = 0; i < organization.admins.length; i++) {
                                     maintainerList += '<div class="admin flex flex-row items-center justify-between text-sm mb-3">' +
-                                        '<p class="mr-1">' + school.admins[i].name + '</p>' +
+                                        '<p class="mr-1">' + organization.admins[i].name + '</p>' +
                                         '<div>' +
-                                            '<button type="button" x-bind-show="role == 1" class="btn text-xs mr-1 py-1 px-2" onclick="admin.deleteUser(' + school.admins[i].id + ')">Delete User</button>' +
-                                            '<button type="button" class="btn text-xs py-1 px-2" onclick="admin.deleteSchoolAdmin(' + school.id + ',' + school.admins[i].ID + ')">Revoke Admin Role for this school</button>' +
+                                            '<button type="button" x-bind-show="role == 1" class="btn text-xs mr-1 py-1 px-2" onclick="admin.deleteUser(' + organization.admins[i].id + ')">Delete User</button>' +
+                                            '<button type="button" class="btn text-xs py-1 px-2" onclick="admin.deleteOrganizationAdmin(' + organization.id + ',' + organization.admins[i].ID + ')">Revoke Admin Role for this organization</button>' +
                                         '</div>' +
                                     '</div>';
                                 }
@@ -143,22 +143,22 @@
                             <div class="flex item-center justify-center">
                                 <button title="Manage Maintainers"
                                         class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
-                                    <i @click="openMaintainerModal(school, i)"
+                                    <i @click="openMaintainerModal(organization, i)"
                                     class="fas fa-address-card"></i>
                                 </button>
                                 <button title="View Resources"
                                         class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
-                                    <i @click="window.location.replace('/admin/resources?id=' + school.id)"
+                                    <i @click="window.location.replace('/admin/resources?id=' + organization.id)"
                                     class="fas fa-server"></i>
                                 </button>
-                                <button title="Create Token for School"
+                                <button title="Create Token for Organization"
                                         class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
-                                    <i @click="admin.createTokenForSchool(school.id)" class="fas fa-key"></i>
+                                    <i @click="admin.createTokenForOrganization(organization.id)" class="fas fa-key"></i>
                                 </button>
-                                <template x-if="school.name != 'master'">
-                                    <button title="Delete School"
+                                <template x-if="organization.name != 'master'">
+                                    <button title="Delete Organization"
                                             class="w-4 transform hover:text-purple-500 hover:scale-110">
-                                        <i @click="admin.deleteSchool(school.id)" class="fas fa-trash"></i>
+                                        <i @click="admin.deleteOrganization(organization.id)" class="fas fa-trash"></i>
                                     </button>
                                 </template>
                             </div>
@@ -168,58 +168,58 @@
                 </tbody>
             </table>
         </div>
-        <template x-if="!schoollist.showSearchResults">
+        <template x-if="!organizationlist.showSearchResults">
             <div class="flex justify-center text-3">
                 <button title="Previous Page"
                         class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                        :disabled="schoollist.prevDisabled()" @click="schoollist.prev()">
+                        :disabled="organizationlist.prevDisabled()" @click="organizationlist.prev()">
                     <i class="text-sm m-auto fa fa-chevron-left"></i>
                 </button>
                 <div class="flex h-8 w-8 px-2">
-                    <span class="text-sm font-semibold m-auto" x-text="schoollist.currentIndexString()"></span>
+                    <span class="text-sm font-semibold m-auto" x-text="organizationlist.currentIndexString()"></span>
                 </div>
                 <button title="Next Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                        :disabled="schoollist.nextDisabled()" @click="schoollist.next()">
+                        :disabled="organizationlist.nextDisabled()" @click="organizationlist.next()">
                     <i class="text-sm m-auto fa fa-chevron-right"></i>
                 </button>
             </div>
         </template>
     </div>
 </section>
-<section class="form-container" x-data="{ schoollist: new admin.SchoolsList({{.Data}}), name: '', adminEmail: '', parentId: '', orgType: 'sub-school'}">
-    <h1 class="form-container-title">New School</h1>
+<section class="form-container" x-data="{ organizationlist: new admin.OrganizationsList({{.Data}}), name: '', adminEmail: '', parentId: '', orgType: 'sub-organization'}">
+    <h1 class="form-container-title">New Organization</h1>
     <div class="form-container-body">
         <form>
             <div class="flex flex-row mt-3">
                 <h2 class="italic">General Information (required)</h2>
-                <help-icon class="transform -translate-x-0.5" text="You won't be able to edit this information afterwards. You can select a parent school which is managed by you to create a sub-school. Otherwise, leave it empty to create a new school."/>
+                <help-icon class="transform -translate-x-0.5" text="You won't be able to edit this information afterwards. You can select a parent organization which is managed by you to create a sub-organization. Otherwise, leave it empty to create a new organization."/>
             </div>
             <div class="flex flex-wrap">
                 <div class="w-full md:w-1/2">
                     <select class="tl-input mt-3 md:mt-0" id="parentInput" name="parentInput" required x-model="parentId">
-                        <option value="">Select Parent School</option>
-                        <template x-for="(school, index) in schoollist.list" :key="index">
-                            <option :id="`parent-${index}`" :value="school.id" x-text="school.name"></option>
+                        <option value="">Select Parent Organization</option>
+                        <template x-for="(organization, index) in organizationlist.list" :key="index">
+                            <option :id="`parent-${index}`" :value="organization.id" x-text="organization.name"></option>
                         </template>
                     </select>
                 </div>
                 <div class="w-full md:w-1/2 mb-6 md:mb-0 pl-3">
-                    <input class="tl-input" id="nameInput" name="nameInput" placeholder="Enter School Name (e.g., CIT)" type="text" autocomplete="off" required x-model="name"/>
+                    <input class="tl-input" id="nameInput" name="nameInput" placeholder="Enter Organization Name (e.g., CIT)" type="text" autocomplete="off" required x-model="name"/>
                 </div>
             </div>
             <div class="flex flex-row mt-3">
-                <h2 class="italic">Invite an Admin for this school (optional)</h2>
-                <help-icon class="transform -translate-x-0.5" text="When you create the school, by default you will be its admin. You will be able to add additional admins later on."/>
+                <h2 class="italic">Invite an Admin for this organization (optional)</h2>
+                <help-icon class="transform -translate-x-0.5" text="When you create the organization, by default you will be its admin. You will be able to add additional admins later on."/>
             </div>
             <div class="flex flex-wrap">
                 <div class="w-full">
                     <input class="tl-input" id="maintainerEmailInput" name="maintainerEmailInput" type="text" required="false" placeholder="Enter Admin Email (e.g., max.mustermann@tum.de)" autocomplete="off" x-model="adminEmail"/>
                 </div>
             </div>
-            <button id="createSchool" title="Create School" class="btn primary mt-3 w-full" 
-                @click.prevent="admin.createSchool(name, orgType, adminEmail, parentId)" 
+            <button id="createOrganization" title="Create Organization" class="btn primary mt-3 w-full" 
+                @click.prevent="admin.createOrganization(name, orgType, adminEmail, parentId)" 
                 :disabled="name === ''">
-                Create School
+                Create Organization
             </button>
         </form>
     </div>

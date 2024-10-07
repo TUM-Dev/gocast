@@ -14,42 +14,42 @@ import (
 	"gorm.io/gorm"
 )
 
-func configGinSchoolsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := schoolsRoutes{daoWrapper}
+func configGinOrganizationsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := organizationsRoutes{daoWrapper}
 
-	router.POST("/api/schools/proxy/:token", routes.fetchStreamKey)
-	schools := router.Group("/api/schools")
-	schools.Use(tools.AdminOrMaintainer)
+	router.POST("/api/organizations/proxy/:token", routes.fetchStreamKey) // TODO: @cb
+	organizations := router.Group("/api/organizations")
+	organizations.Use(tools.AdminOrMaintainer)
 	{
-		schools.GET("/", routes.SearchSchool)
-		schools.POST("/", routes.CreateSchool)
-		schools.PATCH("/:id", routes.updateSchool)
-		schools.DELETE("/:id", routes.DeleteSchool)
-		schools.POST("/:id/token", routes.createTokenForSchool)
+		organizations.GET("/", routes.SearchOrganization)
+		organizations.POST("/", routes.CreateOrganization)
+		organizations.PATCH("/:id", routes.updateOrganization)
+		organizations.DELETE("/:id", routes.DeleteOrganization)
+		organizations.POST("/:id/token", routes.createTokenForOrganization)
 	}
 
-	router.GET("/api/schools/:id", tools.AtLeastLecturer, routes.GetSchoolById)
+	router.GET("/api/organizations/:id", tools.AtLeastLecturer, routes.GetOrganizationById)
 
-	admins := router.Group("/api/schools/:id/admins")
+	admins := router.Group("/api/organizations/:id/admins")
 	admins.Use(tools.AdminOrMaintainer)
 
 	{
-		admins.GET("/", routes.GetSchoolAdmin)
-		admins.POST("/", routes.AddAdminToSchool)
-		admins.DELETE("/:admin_id", routes.DeleteAdminFromSchool)
+		admins.GET("/", routes.GetOrganizationAdmin)
+		admins.POST("/", routes.AddAdminToOrganization)
+		admins.DELETE("/:admin_id", routes.DeleteAdminFromOrganization)
 	}
 
-	router.GET("/api/schools/all", tools.AtLeastLecturer, routes.SearchAllSchools)
+	router.GET("/api/organizations/all", tools.AtLeastLecturer, routes.SearchAllOrganizations)
 }
 
-type JWTSchoolClaims struct {
+type JWTOrganizationClaims struct {
 	jwt.RegisteredClaims
-	UserID   uint
-	SchoolID string
+	UserID         uint
+	OrganizationID string
 }
 
-func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
-	var req createSchoolRequest
+func (s *organizationsRoutes) CreateOrganization(c *gin.Context) {
+	var req createOrganizationRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "can not bind body"})
 		return
@@ -58,7 +58,7 @@ func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
 	// Check if user is admin
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	// Check if user is maintainer of parent school if parent school is set, otherwise check if user is admin
+	// Check if user is maintainer of parent organization if parent organization is set, otherwise check if user is admin
 	var parentIdUint uint
 	if req.ParentId != "" {
 		parentId, err := strconv.ParseUint(req.ParentId, 10, 32)
@@ -68,40 +68,40 @@ func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
 		}
 		parentIdUint = uint(parentId)
 
-		if !s.isAdminOfSchool(c, parentIdUint) {
+		if !s.isAdminOfOrganization(c, parentIdUint) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
 			return
 		}
 	} else if ctx.User.Role != model.AdminType {
-		c.JSON(http.StatusForbidden, gin.H{"error": "only admins can create schools without parent"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "only admins can create organizations without parent"})
 		return
 	}
 
-	// Check if a school with the same name already exists
-	if existingSchool, err := s.SchoolsDao.GetByName(c, req.Name); err != nil {
+	// Check if a organization with the same name already exists
+	if existingOrganization, err := s.OrganizationsDao.GetByName(c, req.Name); err != nil {
 		if err != gorm.ErrRecordNotFound {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not check for existing school"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not check for existing organization"})
 			return
 		}
-	} else if existingSchool.ID != 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "a school with this name already exists"})
+	} else if existingOrganization.ID != 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "a organization with this name already exists"})
 		return
 	}
 
-	// parentSchool, err := s.SchoolsDao.Get(c, parentIdUint)
+	// parentOrganization, err := s.OrganizationsDao.Get(c, parentIdUint)
 	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get parent school"})
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get parent organization"})
 	// 	return
 	// }
 
-	school := model.School{
+	organization := model.Organization{
 		Name:     req.Name,
 		OrgType:  req.OrgType,
 		ParentID: parentIdUint,
 	}
 
-	if err := s.SchoolsDao.Create(c, &school); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create school"})
+	if err := s.OrganizationsDao.Create(c, &organization); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create organization"})
 		return
 	}
 
@@ -113,8 +113,8 @@ func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
 			return
 		}
 	}
-	if err := s.SchoolsDao.AddAdmin(c, &school, ctx.User); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add admin to school"})
+	if err := s.OrganizationsDao.AddAdmin(c, &organization, ctx.User); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add admin to organization"})
 		return
 	}
 
@@ -134,43 +134,43 @@ func (s *schoolsRoutes) CreateSchool(c *gin.Context) {
 			}
 		}
 
-		if err := s.SchoolsDao.AddAdmin(c, &school, &u); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add admin to school"})
+		if err := s.OrganizationsDao.AddAdmin(c, &organization, &u); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add admin to organization"})
 			return
 		}
 	}
 
-	c.JSON(http.StatusOK, school)
+	c.JSON(http.StatusOK, organization)
 }
 
-func (s *schoolsRoutes) DeleteSchool(c *gin.Context) {
+func (s *organizationsRoutes) DeleteOrganization(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if !s.isAdminOfSchool(c, uint(id)) {
+	if !s.isAdminOfOrganization(c, uint(id)) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
 		return
 	}
-	if err := s.SchoolsDao.Delete(c, uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete school"})
+	if err := s.OrganizationsDao.Delete(c, uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete organization"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "school deleted"})
+	c.JSON(http.StatusOK, gin.H{"message": "organization deleted"})
 }
 
-func (s *schoolsRoutes) SearchSchool(c *gin.Context) {
+func (s *organizationsRoutes) SearchOrganization(c *gin.Context) {
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	if ctx.User == nil {
 		return
 	}
 
 	query := c.Query("q")
-	schools, err := s.SchoolsDao.QueryAdministerdSchools(c, ctx.User, query)
+	organizations, err := s.OrganizationsDao.QueryAdministerdOrganizations(c, ctx.User, query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not search schools"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not search organizations"})
 		return
 	}
 
-	type relevantSchoolInfo struct {
+	type relevantOrganizationInfo struct {
 		ID       uint         `json:"id"`
 		Name     string       `json:"name"`
 		OrgId    string       `json:"org_id"`
@@ -180,75 +180,75 @@ func (s *schoolsRoutes) SearchSchool(c *gin.Context) {
 		ParentID uint         `json:"parent_id"`
 	}
 
-	res := make([]relevantSchoolInfo, len(schools))
-	for i, school := range schools {
-		res[i] = relevantSchoolInfo{
-			ID:       school.ID,
-			Name:     school.Name,
-			OrgId:    school.OrgId,
-			OrgType:  school.OrgType,
-			OrgSlug:  school.OrgSlug,
-			Admins:   school.Admins,
-			ParentID: school.ParentID,
+	res := make([]relevantOrganizationInfo, len(organizations))
+	for i, organization := range organizations {
+		res[i] = relevantOrganizationInfo{
+			ID:       organization.ID,
+			Name:     organization.Name,
+			OrgId:    organization.OrgId,
+			OrgType:  organization.OrgType,
+			OrgSlug:  organization.OrgSlug,
+			Admins:   organization.Admins,
+			ParentID: organization.ParentID,
 		}
 	}
 	c.JSON(http.StatusOK, res)
 }
 
-func (s schoolsRoutes) SearchAllSchools(c *gin.Context) {
+func (s organizationsRoutes) SearchAllOrganizations(c *gin.Context) {
 	query := c.Query("q")
-	schools, err := s.SchoolsDao.Query(c, query)
+	organizations, err := s.OrganizationsDao.Query(c, query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not search schools"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not search organizations"})
 		return
 	}
 
-	type relevantSchoolInfo struct {
+	type relevantOrganizationInfo struct {
 		ID      uint   `json:"id"`
 		Name    string `json:"name"`
 		OrgType string `json:"org_type"`
 	}
 
-	res := make([]relevantSchoolInfo, len(schools))
-	for i, school := range schools {
-		res[i] = relevantSchoolInfo{
-			ID:      school.ID,
-			Name:    school.Name,
-			OrgType: school.OrgType,
+	res := make([]relevantOrganizationInfo, len(organizations))
+	for i, organization := range organizations {
+		res[i] = relevantOrganizationInfo{
+			ID:      organization.ID,
+			Name:    organization.Name,
+			OrgType: organization.OrgType,
 		}
 	}
 	c.JSON(http.StatusOK, res)
 }
 
-func (s *schoolsRoutes) updateSchool(c *gin.Context) {
-	var req updateSchoolRequest
+func (s *organizationsRoutes) updateOrganization(c *gin.Context) {
+	var req updateOrganizationRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "can not bind body"})
 		return
 	}
 
-	if !s.isAdminOfSchool(c, req.Id) {
+	if !s.isAdminOfOrganization(c, req.Id) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
 		return
 	}
 
-	school := model.School{
+	organization := model.Organization{
 		Model:   gorm.Model{ID: req.Id},
 		Name:    req.Name,
 		OrgType: req.OrgType,
 	}
 
-	if err := s.SchoolsDao.Update(c, &school); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update school"})
+	if err := s.OrganizationsDao.Update(c, &organization); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update organization"})
 		return
 	}
 
-	c.JSON(http.StatusOK, school)
+	c.JSON(http.StatusOK, organization)
 }
 
-func (s *schoolsRoutes) GetSchoolAdmin(c *gin.Context) {
+func (s *organizationsRoutes) GetOrganizationAdmin(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	admins, err := s.SchoolsDao.GetAdmins(c, uint(id))
+	admins, err := s.OrganizationsDao.GetAdmins(c, uint(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get admins"})
 		return
@@ -257,9 +257,9 @@ func (s *schoolsRoutes) GetSchoolAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, admins)
 }
 
-func (s *schoolsRoutes) AddAdminToSchool(c *gin.Context) {
+func (s *organizationsRoutes) AddAdminToOrganization(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if !s.isAdminOfSchool(c, uint(id)) {
+	if !s.isAdminOfOrganization(c, uint(id)) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
 		return
 	}
@@ -281,15 +281,15 @@ func (s *schoolsRoutes) AddAdminToSchool(c *gin.Context) {
 		return
 	}
 
-	if err := s.SchoolsDao.AddAdmin(c, &model.School{Model: gorm.Model{ID: uint(id)}}, &u); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add admin to school"})
+	if err := s.OrganizationsDao.AddAdmin(c, &model.Organization{Model: gorm.Model{ID: uint(id)}}, &u); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add admin to organization"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "admin added to school"})
+	c.JSON(http.StatusOK, gin.H{"message": "admin added to organization"})
 }
 
-func (s *schoolsRoutes) DeleteAdminFromSchool(c *gin.Context) {
+func (s *organizationsRoutes) DeleteAdminFromOrganization(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	adminIdStr := c.Param("admin_id")
 	if adminIdStr == "" {
@@ -297,7 +297,7 @@ func (s *schoolsRoutes) DeleteAdminFromSchool(c *gin.Context) {
 		return
 	}
 	adminId, _ := strconv.Atoi(adminIdStr)
-	if !s.isAdminOfSchool(c, uint(id)) {
+	if !s.isAdminOfOrganization(c, uint(id)) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
 		return
 	}
@@ -313,12 +313,12 @@ func (s *schoolsRoutes) DeleteAdminFromSchool(c *gin.Context) {
 
 	// Check the role of the admin
 	if admin.Role == model.AdminType {
-		c.JSON(http.StatusForbidden, gin.H{"error": "you can't remove super-admins from a school"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "you can't remove super-admins from a organization"})
 		return
 	}
 
 	// Check if the current user is the only admin left
-	adminCount, err := s.SchoolsDao.GetAdminCount(c, uint(id))
+	adminCount, err := s.OrganizationsDao.GetAdminCount(c, uint(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch admin count"})
 		return
@@ -329,16 +329,16 @@ func (s *schoolsRoutes) DeleteAdminFromSchool(c *gin.Context) {
 		return
 	}
 
-	if err := s.SchoolsDao.RemoveAdmin(c, uint(id), uint(adminId)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not remove admin from school"})
+	if err := s.OrganizationsDao.RemoveAdmin(c, uint(id), uint(adminId)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not remove admin from organization"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "admin removed from school"})
+	c.JSON(http.StatusOK, gin.H{"message": "admin removed from organization"})
 }
 
-func (s *schoolsRoutes) isAdminOfSchool(c *gin.Context, schoolId uint) bool {
-	admins, err := s.SchoolsDao.GetAdmins(c, schoolId)
+func (s *organizationsRoutes) isAdminOfOrganization(c *gin.Context, organizationId uint) bool {
+	admins, err := s.OrganizationsDao.GetAdmins(c, organizationId)
 	if err != nil {
 		return false
 	}
@@ -359,15 +359,15 @@ func (s *schoolsRoutes) isAdminOfSchool(c *gin.Context, schoolId uint) bool {
 	return false
 }
 
-func (s *schoolsRoutes) GetSchoolById(c *gin.Context) {
+func (s *organizationsRoutes) GetOrganizationById(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	school, err := s.SchoolsDao.Get(c, uint(id))
+	organization, err := s.OrganizationsDao.Get(c, uint(id))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get school"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get organization"})
 		return
 	}
 
-	c.JSON(http.StatusOK, school)
+	c.JSON(http.StatusOK, organization)
 }
 
 // This is used by the proxy to get the stream key of the next stream of the lecturer given a lecturer token
@@ -376,7 +376,7 @@ func (s *schoolsRoutes) GetSchoolById(c *gin.Context) {
 //				or: rtmp://proxy.example.com/<lecturer-token>?slug=ABC-123 <-- optional slug parameter in case the lecturer is streaming multiple courses simultaneously
 //
 //	Proxy returns:  rtmp://ingest.example.com/ABC-123?secret=610f609e4a2c43ac8a6d648177472b17
-func (s *schoolsRoutes) fetchStreamKey(c *gin.Context) {
+func (s *organizationsRoutes) fetchStreamKey(c *gin.Context) {
 	// Optional slug parameter to get the stream key of a specific course (in case the lecturer is streaming multiple courses simultaneously)
 	slug := c.Query("slug")
 	t := c.Param("token")
@@ -436,52 +436,52 @@ func (s *schoolsRoutes) fetchStreamKey(c *gin.Context) {
 		return
 	}
 
-	// Get school to redirect to the dedicated ingest server of the school
-	school, err := s.SchoolsDao.Get(c, course.SchoolID)
+	// Get organization to redirect to the dedicated ingest server of the organization
+	organization, err := s.OrganizationsDao.Get(c, course.OrganizationID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get school"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get organization"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"url": "" + school.IngestServerURL + "/" + courseSlug + "?secret=" + streamKey + "/" + courseSlug})
+	c.JSON(http.StatusOK, gin.H{"url": "" + organization.IngestServerURL + "/" + courseSlug + "?secret=" + streamKey + "/" + courseSlug})
 }
 
-func (s *schoolsRoutes) createTokenForSchool(c *gin.Context) {
+func (s *organizationsRoutes) createTokenForOrganization(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if !s.isAdminOfSchool(c, uint(id)) {
+	if !s.isAdminOfOrganization(c, uint(id)) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "operation not allowed"})
 		return
 	}
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	token := jwt.New(jwt.GetSigningMethod("RS256"))
-	token.Claims = &JWTSchoolClaims{
+	token.Claims = &JWTOrganizationClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 7)}, // Token expires in 7 hours
 		},
-		UserID:   ctx.User.ID,
-		SchoolID: strconv.FormatUint(uint64(id), 10),
+		UserID:         ctx.User.ID,
+		OrganizationID: strconv.FormatUint(uint64(id), 10),
 	}
 	str, err := token.SignedString(tools.Cfg.GetJWTKey())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create school token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create organization token"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": str})
 }
 
-type schoolsRoutes struct {
+type organizationsRoutes struct {
 	dao.DaoWrapper
 }
 
-type updateSchoolRequest struct {
+type updateOrganizationRequest struct {
 	Id      uint   `json:"id"`
 	Name    string `json:"name"`
 	OrgType string `json:"org_type"`
 }
 
-type createSchoolRequest struct {
+type createOrganizationRequest struct {
 	AdminEmail string `json:"admin_email"`
 	Name       string `json:"name"`
 	OrgType    string `json:"org_type"`

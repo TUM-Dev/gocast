@@ -78,7 +78,7 @@ func (mr *MockWorkerDaoMockRecorder) GetAliveWorkers(arg0 interface{}) *gomock.C
 }
 
 // GetAllWorkers mocks base method.
-func (m *MockWorkerDao) GetAllWorkers(arg0 []model.School) ([]model.Worker, error) {
+func (m *MockWorkerDao) GetAllWorkers(arg0 []model.Organization) ([]model.Worker, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllWorkers", arg0)
 	ret0, _ := ret[0].([]model.Worker)

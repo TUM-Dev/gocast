@@ -42,7 +42,7 @@ func PrefetchCourses(dao dao.DaoWrapper) func() {
 	}
 }
 
-// PrefetchCourses loads all courses from all schools known to gocast from tumonline, so we can use them in the course creation from search
+// PrefetchCourses loads all courses from all organizations known to gocast from tumonline, so we can use them in the course creation from search
 func PrefetchAllCourses(dao dao.DaoWrapper) func() {
 	return func() {
 		client, err := tools.Cfg.GetMeiliClient()
@@ -51,17 +51,17 @@ func PrefetchAllCourses(dao dao.DaoWrapper) func() {
 			return
 		}
 
-		schools := dao.SchoolsDao.GetAll()
+		organizations := dao.OrganizationsDao.GetAll()
 
-		if tools.Cfg.Campus.CampusProxy == nil || schools == nil {
+		if tools.Cfg.Campus.CampusProxy == nil || organizations == nil {
 			return
 		}
 
 		var res []*search.PrefetchedCourse
-		for _, school := range schools {
-			r, err := getCoursesForOrg(school.OrgId, school.ID)
+		for _, organization := range organizations {
+			r, err := getCoursesForOrg(organization.OrgId, organization.ID)
 			if err != nil {
-				logger.Error("Error getting courses for organisation "+school.OrgSlug+" with ID "+school.OrgId, "err", err)
+				logger.Error("Error getting courses for organisation "+organization.OrgSlug+" with ID "+organization.OrgId, "err", err)
 			} else {
 				res = append(res, r...)
 			}
@@ -75,7 +75,7 @@ func PrefetchAllCourses(dao dao.DaoWrapper) func() {
 	}
 }
 
-func getCoursesForOrg(org string, schoolID uint) ([]*search.PrefetchedCourse, error) {
+func getCoursesForOrg(org string, organizationID uint) ([]*search.PrefetchedCourse, error) {
 	conf := client.NewConfiguration()
 	conf.Host = "campus-proxy.mm.rbg.tum.de"
 	conf.Scheme = "https"
@@ -102,11 +102,11 @@ func getCoursesForOrg(org string, schoolID uint) ([]*search.PrefetchedCourse, er
 			continue
 		}
 		res = append(res, &search.PrefetchedCourse{
-			Name:     c.CourseName.GetText(),
-			CourseID: c.GetCourseId(),
-			SchoolID: schoolID,
-			Term:     t,
-			Year:     y,
+			Name:           c.CourseName.GetText(),
+			CourseID:       c.GetCourseId(),
+			OrganizationID: organizationID,
+			Term:           t,
+			Year:           y,
 		})
 	}
 	return res, nil

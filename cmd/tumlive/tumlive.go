@@ -190,7 +190,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
-		&model.School{},
+		&model.Organization{},
 		&model.Runner{},
 	)
 	if err != nil {
@@ -243,8 +243,8 @@ func initCron() {
 	// Fetch students
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
 	// Update or create orgs from TUMOnline
-	_ = tools.Cron.AddFunc("fetchSchools", tum.LoadTUMOnlineOrgs(daoWrapper, tools.Cfg.Campus.Tokens[0]), "0 0 * * 0")
-	// Fetch courses for every TUM school
+	_ = tools.Cron.AddFunc("fetchOrganizations", tum.LoadTUMOnlineOrgs(daoWrapper, tools.Cfg.Campus.Tokens[0]), "0 0 * * 0")
+	// Fetch courses for every TUM organization
 	_ = tools.Cron.AddFunc("prefetchAllCourses", tum.PrefetchAllCourses(daoWrapper), "30 3 * * *")
 	// Collect livestream stats (viewers)
 	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")

@@ -1007,7 +1007,7 @@ type JoinWorkersRequest struct {
 	Token    string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`       // token to authenticate the worker
 	Hostname string `protobuf:"bytes,2,opt,name=hostname,proto3" json:"hostname,omitempty"` // hostname of the worker
 	Address  string `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`   // address of the worker
-	Shared   bool   `protobuf:"varint,4,opt,name=shared,proto3" json:"shared,omitempty"`    // whether the worker can be shared with other schools
+	Shared   bool   `protobuf:"varint,4,opt,name=shared,proto3" json:"shared,omitempty"`    // whether the worker can be shared with other organizations
 }
 
 func (x *JoinWorkersRequest) Reset() {

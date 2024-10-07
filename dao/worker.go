@@ -13,7 +13,7 @@ type WorkerDao interface {
 	CreateWorker(worker *model.Worker) error
 	SaveWorker(worker model.Worker) error
 
-	GetAllWorkers([]model.School) ([]model.Worker, error)
+	GetAllWorkers([]model.Organization) ([]model.Worker, error)
 	GetAliveWorkers(uint) []model.Worker
 	GetWorkerByHostname(ctx context.Context, address string, hostname string) (model.Worker, error)
 	GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error)
@@ -37,39 +37,39 @@ func (d workerDao) SaveWorker(worker model.Worker) error {
 	return DB.Save(&worker).Error
 }
 
-// Return all workers for a user's administered schools
-// Return all workers for a user's administered schools
-func (d workerDao) GetAllWorkers(schools []model.School) ([]model.Worker, error) {
+// Return all workers for a user's administered organizations
+// Return all workers for a user's administered organizations
+func (d workerDao) GetAllWorkers(organizations []model.Organization) ([]model.Worker, error) {
 	var workers []model.Worker
-	err := DB.Where("school_id IN (?)", getSchoolIDs(schools)).Find(&workers).Error
+	err := DB.Where("organization_id IN (?)", getOrganizationIDs(organizations)).Find(&workers).Error
 	return workers, err
 }
 
-// Helper function to extract school IDs from a slice of schools
-func getSchoolIDs(schools []model.School) []uint {
-	ids := make([]uint, len(schools))
-	for i, school := range schools {
-		ids[i] = school.ID
+// Helper function to extract organization IDs from a slice of organizations
+func getOrganizationIDs(organizations []model.Organization) []uint {
+	ids := make([]uint, len(organizations))
+	for i, organization := range organizations {
+		ids[i] = organization.ID
 	}
 	return ids
 }
 
 // GetAliveWorkers returns all workers that were active within the last 5 minutes
-func (d workerDao) GetAliveWorkers(schoolID uint) []model.Worker {
+func (d workerDao) GetAliveWorkers(organizationID uint) []model.Worker { // TODO: @cb
 	var workers []model.Worker
 
 	rawSQL := `
-WITH RECURSIVE school_hierarchy AS (
-	SELECT id, parent_id FROM schools WHERE id = ?
+WITH RECURSIVE organization_hierarchy AS (
+	SELECT id, parent_id FROM organizations WHERE id = ?
 	UNION ALL
-	SELECT s.id, s.parent_id FROM schools s
-	INNER JOIN school_hierarchy sh ON s.id = sh.parent_id
+	SELECT s.id, s.parent_id FROM organizations s
+	INNER JOIN organization_hierarchy sh ON s.id = sh.parent_id
 )
 SELECT w.* FROM workers w
-INNER JOIN school_hierarchy sh ON sh.id = w.school_id
+INNER JOIN organization_hierarchy sh ON sh.id = w.organization_id
 WHERE w.last_seen > NOW() - INTERVAL 5 MINUTE OR w.shared = true
 `
-	DB.Raw(rawSQL, schoolID).Scan(&workers)
+	DB.Raw(rawSQL, organizationID).Scan(&workers)
 	return workers
 }
 

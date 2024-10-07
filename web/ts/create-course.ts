@@ -31,7 +31,7 @@ export function createCourse(
     yearW: number,
     name: string,
     slug: string,
-    schoolId: number,
+    organizationID: number,
 ): void {
     let teachingTerm;
     if (semester === "Wintersemester") {
@@ -49,7 +49,7 @@ export function createCourse(
         enVOD: true,
         enDL: false,
         enChat: false,
-        schoolID: schoolId,
+        organizationID: organizationID,
     }).then((data) => {
         if (data.status !== StatusCodes.CREATED) {
             data.text().then((t) => showMessage(t));

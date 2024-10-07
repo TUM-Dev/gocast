@@ -1072,15 +1072,15 @@ export function deleteCourse(courseID: string) {
     }
 }
 
-export async function updateCourseSchool(courseID: string, schoolID: string) {
-    if (confirm("Do you really want to update this course's school? This includes all associated lectures.")) {
-        const url = `/api/course/${courseID}/school`;
+export async function updateCourseOrganization(courseID: string, organizationID: string) {
+    if (confirm("Do you really want to update this course's organization? This includes all associated lectures.")) {
+        const url = `/api/course/${courseID}/organization`;
         fetch(url, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ schoolID }),
+            body: JSON.stringify({ organizationID }),
         }).then((response) => {
             if (response.status === StatusCodes.OK) {
                 showMessage("Course was updated successfully.");

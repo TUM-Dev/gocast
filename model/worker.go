@@ -5,8 +5,8 @@ import "time"
 type Worker struct {
 	WorkerID string `gorm:"primaryKey"`
 	Host     string // Hostname (e.g., "itovm01")
-	Address  string // IP address or FQDN (e.g., worker01.school.example.com)
-	Shared   bool   // Whether the worker can be shared with other schools
+	Address  string // IP address or FQDN (e.g., worker01.organization.example.com)
+	Shared   bool   // Whether the worker can be shared with other organizations
 	Ingest   bool   // Whether the worker acts as an ingest worker/server
 	Status   string
 	Workload uint // How much the worker has to do. +1 per silence detection job, +2 per converting job, +3 per streaming job
@@ -20,7 +20,7 @@ type Worker struct {
 
 	Version string
 
-	SchoolID uint `gorm:"not null"` // School the worker belongs to
+	OrganizationID uint `gorm:"not null"` // Organization the worker belongs to
 }
 
 func (w *Worker) IsAlive() bool {

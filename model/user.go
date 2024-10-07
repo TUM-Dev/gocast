@@ -35,17 +35,17 @@ var (
 type User struct {
 	gorm.Model
 
-	Name                string         `gorm:"type:varchar(80); not null" json:"name"`
-	LastName            *string        `json:"-"`
-	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
-	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
-	LrzID               string         `json:"-"`
-	Role                uint           `gorm:"default:5" json:"-"` // AdminType = 1, MaintainerType = 2, LecturerType = 3, GenericType = 4, StudentType  = 5
-	Password            string         `gorm:"default:null" json:"-"`
-	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
-	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
-	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
-	AdministeredSchools []School       `gorm:"many2many:school_admins"`
+	Name                      string         `gorm:"type:varchar(80); not null" json:"name"`
+	LastName                  *string        `json:"-"`
+	Email                     sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
+	MatriculationNumber       string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
+	LrzID                     string         `json:"-"`
+	Role                      uint           `gorm:"default:5" json:"-"` // AdminType = 1, MaintainerType = 2, LecturerType = 3, GenericType = 4, StudentType  = 5
+	Password                  string         `gorm:"default:null" json:"-"`
+	Courses                   []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
+	AdministeredCourses       []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
+	PinnedCourses             []Course       `gorm:"many2many:pinned_courses"`
+	AdministeredOrganizations []Organization `gorm:"many2many:organization_admins"`
 
 	Settings  []UserSetting `gorm:"foreignkey:UserID"`
 	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
@@ -435,17 +435,17 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// IsMaintainerOfCourse checks if the user is a maintainer of the course's school
+// IsMaintainerOfCourse checks if the user is a maintainer of the course's organization
 func (u *User) IsMaintainerOfCourse(course Course) bool {
 	if u == nil {
 		return false
 	}
 	logger.Error("Checking if user is maintainer of course", "user", u.ID, "course", course.ID)
-	logger.Error("User role and number of administered schools", "role", u.Role, "numSchools", len(u.AdministeredSchools))
+	logger.Error("User role and number of administered organizations", "role", u.Role, "numOrganizations", len(u.AdministeredOrganizations))
 	if u.Role == MaintainerType || u.Role == AdminType {
-		for _, s := range u.AdministeredSchools {
-			logger.Error("Checking if user is maintainer of course", "school", s.ID, "course", course.ID)
-			if s.ID == course.SchoolID {
+		for _, s := range u.AdministeredOrganizations {
+			logger.Error("Checking if user is maintainer of course", "organization", s.ID, "course", course.ID)
+			if s.ID == course.OrganizationID {
 				return true
 			}
 		}
@@ -454,13 +454,13 @@ func (u *User) IsMaintainerOfCourse(course Course) bool {
 	return false
 }
 
-// IsAdminOfSchool checks if the user is an admin of the school
-func (u *User) IsAdminOfSchool(schoolId uint) bool {
+// IsAdminOfOrganization checks if the user is an admin of the organization
+func (u *User) IsAdminOfOrganization(organizationId uint) bool {
 	if u == nil {
 		return false
 	}
-	for _, s := range u.AdministeredSchools {
-		if s.ID == schoolId {
+	for _, s := range u.AdministeredOrganizations {
+		if s.ID == organizationId {
 			return true
 		}
 	}

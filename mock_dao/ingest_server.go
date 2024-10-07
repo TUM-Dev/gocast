@@ -35,24 +35,24 @@ func (m *MockIngestServerDao) EXPECT() *MockIngestServerDaoMockRecorder {
 }
 
 // GetBestIngestServer mocks base method.
-func (m *MockIngestServerDao) GetBestIngestServer(schoolID uint) (model.IngestServer, error) {
+func (m *MockIngestServerDao) GetBestIngestServer(organizationID uint) (model.IngestServer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBestIngestServer", schoolID)
+	ret := m.ctrl.Call(m, "GetBestIngestServer", organizationID)
 	ret0, _ := ret[0].(model.IngestServer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBestIngestServer indicates an expected call of GetBestIngestServer.
-func (mr *MockIngestServerDaoMockRecorder) GetBestIngestServer(schoolID interface{}) *gomock.Call {
+func (mr *MockIngestServerDaoMockRecorder) GetBestIngestServer(organizationID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBestIngestServer", reflect.TypeOf((*MockIngestServerDao)(nil).GetBestIngestServer), schoolID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBestIngestServer", reflect.TypeOf((*MockIngestServerDao)(nil).GetBestIngestServer), organizationID)
 }
 
 // GetBestIngestWorker mocks base method.
-func (m *MockIngestServerDao) GetBestIngestWorker(schoolID uint) (model.Worker, error) {
+func (m *MockIngestServerDao) GetBestIngestWorker(organizationID uint) (model.Worker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBestIngestWorker", schoolID)
+	ret := m.ctrl.Call(m, "GetBestIngestWorker", organizationID)
 	ret0, _ := ret[0].(model.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1

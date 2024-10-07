@@ -105,7 +105,7 @@ func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, er
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("AdministeredCourses").Preload("AdministeredSchools").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("AdministeredCourses").Preload("AdministeredOrganizations").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}

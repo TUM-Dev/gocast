@@ -106,21 +106,21 @@ export class AdminUserList {
     }
 }
 
-export class SchoolsList {
+export class OrganizationsList {
     readonly rowsPerPage: number;
 
     numberOfPages: number;
     currentIndex: number;
 
-    list: object[]; // Pre-loaded schools
+    list: object[]; // Pre-loaded organizations
     currentPage: object[]; // Subset of list
 
     showSearchResults: boolean;
     searchLoading: boolean;
     searchInput: string;
 
-    constructor(schoolsAsJson: object[]) {
-        this.list = schoolsAsJson;
+    constructor(organizationsAsJson: object[]) {
+        this.list = organizationsAsJson;
         this.rowsPerPage = 10;
         this.showSearchResults = false;
         this.currentIndex = 0;
@@ -136,7 +136,7 @@ export class SchoolsList {
         }
         if (this.searchInput.length > 2) {
             this.searchLoading = true;
-            fetch("/api/schools?q=" + this.searchInput)
+            fetch("/api/organizations?q=" + this.searchInput)
                 .then((response) => {
                     this.searchLoading = false;
                     if (!response.ok) {
@@ -217,9 +217,9 @@ export async function deleteLectureHall(lectureHallID: number) {
     }
 }
 
-export async function createSchool(name: string, org_type: string, admin_email: string, parent_id: number = null) {
-    console.log("Creating school", name, org_type, admin_email, parent_id);
-    const response = await postData("/api/schools", {
+export async function createOrganization(name: string, org_type: string, admin_email: string, parent_id: number = null) {
+    console.log("Creating organization", name, org_type, admin_email, parent_id);
+    const response = await postData("/api/organizations", {
         name: name,
         org_type: org_type,
         admin_email: admin_email,
@@ -227,15 +227,15 @@ export async function createSchool(name: string, org_type: string, admin_email: 
     });
 
     if (response.status === StatusCodes.OK) {
-        showMessage("School was created successfully. Reload to see changes.");
+        showMessage("Organization was created successfully. Reload to see changes.");
     } else {
         const errorData = await response.json();
-        showMessage(`Error creating the school: ${errorData.error}`);
+        showMessage(`Error creating the organization: ${errorData.error}`);
     }
 }
 
-export async function createTokenForSchool(schoolID: number) {
-    const response = await postData(`/api/schools/${schoolID}/token`);
+export async function createTokenForOrganization(organizationID: number) {
+    const response = await postData(`/api/organizations/${organizationID}/token`);
 
     if (response.status === StatusCodes.OK) {
         const data = await response.json();
@@ -254,12 +254,12 @@ export async function createTokenForSchool(schoolID: number) {
     }
 }
 
-export async function updateSchool(schoolID: number, name: string) {
-    return patchData(`/api/schools/${schoolID}`, { name }).then((e) => {
+export async function updateOrganization(organizationID: number, name: string) {
+    return patchData(`/api/organizations/${organizationID}`, { name }).then((e) => {
         if (e.status === StatusCodes.OK) {
-            showMessage("School was updated successfully. Reload to see changes.");
+            showMessage("Organization was updated successfully. Reload to see changes.");
         } else {
-            showMessage("There was an error updating the school: " + e.body);
+            showMessage("There was an error updating the organization: " + e.body);
         }
     });
 }
@@ -274,32 +274,32 @@ export async function toggleSharedStatus(workerID) {
     });
 }
 
-export async function deleteSchool(schoolID: number) {
+export async function deleteOrganization(organizationID: number) {
     if (
         confirm(
-            "Do you really want to remove this school? This will also remove all associated lecture halls and users!",
+            "Do you really want to remove this organization? This will also remove all associated lecture halls and users!",
         )
     ) {
-        const response = await fetch(`/api/schools/${schoolID}`, { method: "DELETE" });
+        const response = await fetch(`/api/organizations/${organizationID}`, { method: "DELETE" });
 
         if (response.ok) {
-            showMessage("School removed successfully. Reload to see changes.");
+            showMessage("Organization removed successfully. Reload to see changes.");
         } else {
             const errorData = await response.json();
-            showMessage(`Error deleting the school: ${errorData.error}`);
+            showMessage(`Error deleting the organization: ${errorData.error}`);
         }
     }
 }
 
-export async function addSchoolAdmin(schoolID: number, email: string, id: number, lrz_id: string) {
+export async function addOrganizationAdmin(organizationID: number, email: string, id: number, lrz_id: string) {
     if (
         confirm(
-            "Do you really want to add this user as an maintainer? If you do, they will be granted full admin priviledges for all resources of school!",
+            "Do you really want to add this user as an maintainer? If you do, they will be granted full admin priviledges for all resources of organization!",
         )
     ) {
         const adminDetail = email ? { email } : id ? { id } : { lrz_id };
 
-        const response = await fetch(`/api/schools/${schoolID}/admins`, {
+        const response = await fetch(`/api/organizations/${organizationID}/admins`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -316,13 +316,13 @@ export async function addSchoolAdmin(schoolID: number, email: string, id: number
     }
 }
 
-export async function deleteSchoolAdmin(schoolID: number, adminID: number) {
+export async function deleteOrganizationAdmin(organizationID: number, adminID: number) {
     if (
         confirm(
-            "Do you really want to remove this maintainer? If you do, they will lose admin priviledges for the school's resources! (If you are the only admin, you will lose access to the school as well!)",
+            "Do you really want to remove this maintainer? If you do, they will lose admin priviledges for the organization's resources! (If you are the only admin, you will lose access to the organization as well!)",
         )
     ) {
-        const response = await fetch(`/api/schools/${schoolID}/admins/${adminID}`, { method: "DELETE" });
+        const response = await fetch(`/api/organizations/${organizationID}/admins/${adminID}`, { method: "DELETE" });
 
         if (response.ok) {
             showMessage("Maintainer removed successfully. Reload to see changes.");

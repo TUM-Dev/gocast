@@ -2,7 +2,7 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
     <div class="text-1 container mx-auto"
-         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', schoolId: '', searchResults: [] , isSearchResultVisible: false, schoolQuery: '', schoolResults: [] , isSchoolResultVisible: false, isQueryVisible: true}"
+         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', organizationId: '', searchResults: [] , isSearchResultVisible: false, organizationQuery: '', organizationResults: [] , isOrganizationResultVisible: false, isQueryVisible: true}"
         x-init="$watch('year',(value)=>{ yearW = (value<2000) ? '' : (value%1000) + 1 })">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
@@ -35,30 +35,30 @@
                     <p class="text-4 text-center font-semibold">or</p>
                     <h2>Manually enter Infos:</h2>
 
-                    <h3 class="text-sm text-5" x-text="isQueryVisible?'Select your university and school:':'Your university and school:'"></h3>
-                    <div class="flex flex-col space-x-1 border-red-500" x-show="isQueryVisible === true || !schoolQuery">
-                        <div x-init="fetch('/api/schools/all?q='+schoolQuery).then(r=>r.json()).then(r => schoolResults=r)">
-                            <input class="tl-input border border-red-500" type="text" placeholder="Search for your school or university" x-model="schoolQuery" @keyup="fetch('/api/schools/all?q='+schoolQuery).then(r=>r.json()).then(r => schoolResults=r)">
+                    <h3 class="text-sm text-5" x-text="isQueryVisible?'Select your university and organization:':'Your university and organization:'"></h3>
+                    <div class="flex flex-col space-x-1 border-red-500" x-show="isQueryVisible === true || !organizationQuery">
+                        <div x-init="fetch('/api/organizations/all?q='+organizationQuery).then(r=>r.json()).then(r => organizationResults=r)">
+                            <input class="tl-input border border-red-500" type="text" placeholder="Search for your organization or university" x-model="organizationQuery" @keyup="fetch('/api/organizations/all?q='+organizationQuery).then(r=>r.json()).then(r => organizationResults=r)">
                         </div>
-                        <div x-show="schoolResults.length === 0">
+                        <div x-show="organizationResults.length === 0">
                             <div colspan="3" class="p-2 whitespace-nowrap text-center">
-                                <i>No school found</i>
+                                <i>No organization found</i>
                             </div>
                         </div>
                         <ul role="listbox" class="mt-3">
-                            <template x-for="school in schoolResults" :key="school.id">
+                            <template x-for="organization in organizationResults" :key="organization.id">
                                 <li role="option" aria-selected="false"
                                     class="hover:bg-gray-500 dark:hover:bg-gray-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md m-2 p-2"
-                                    @click="isSchoolResultVisible = false;schoolQuery = school.name+' '+'('+school.org_type+')';schoolId=school.id;schoolResults=[];isQueryVisible=false">
-                                    <p x-text="school.name+' '+'('+school.org_type+')'"></p>
+                                    @click="isOrganizationResultVisible = false;organizationQuery = organization.name+' '+'('+organization.org_type+')';organizationId=organization.id;organizationResults=[];isQueryVisible=false">
+                                    <p x-text="organization.name+' '+'('+organization.org_type+')'"></p>
                                 </li>
                             </template>
                         </ul>
                     </div>
-                    <div role="option" aria-selected="false" x-show="isQueryVisible === false && schoolQuery"
+                    <div role="option" aria-selected="false" x-show="isQueryVisible === false && organizationQuery"
                         class="hover:bg-gray-500 dark:hover:bg-gray-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md p-2"
-                        @click="isQueryVisible=true;schoolQuery = '';schoolId=''">
-                        <p x-text="schoolQuery"></p>
+                        @click="isQueryVisible=true;organizationQuery = '';organizationId=''">
+                        <p x-text="organizationQuery"></p>
                     </div>
 
                     <h3 class="text-sm text-5">Course information:</h3>
@@ -82,8 +82,8 @@
                     {{template "semester-selection"}}
                 </form>
                 <br>
-                <button class="btn" @click="admin.createCourse(tumonlineid, semester, year, yearW, title, slug, schoolId);"
-                        :disabled="slug === '' || title === '' || year === '' || schoolId === ''">
+                <button class="btn" @click="admin.createCourse(tumonlineid, semester, year, yearW, title, slug, organizationId);"
+                        :disabled="slug === '' || title === '' || year === '' || organizationId === ''">
                     Create Course
                 </button>
             </div>

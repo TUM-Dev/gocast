@@ -43,8 +43,8 @@ func LoadTUMOnlineOrgs(daoWrapper dao.DaoWrapper, token string) func() {
 			orgTypName := xmlquery.FindOne(node, "org_typ_name").InnerText()
 
 			if orgTypName == "TUM School" {
-				logger.Info("Loading school", nr, kennung, orgTypName, nameEn)
-				daoWrapper.SchoolsDao.ImportSchool(nr, kennung, orgTypName, nameEn)
+				logger.Info("Loading organization", nr, kennung, orgTypName, nameEn)
+				daoWrapper.OrganizationsDao.ImportOrganization(nr, kennung, orgTypName, nameEn)
 			}
 		}
 		logger.Info("TUMOnline orgs loaded from URL.")

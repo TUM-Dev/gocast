@@ -13,7 +13,7 @@ type IngestServerDao interface {
 	SaveSlot(slot model.StreamName)
 	SaveIngestServer(server model.IngestServer)
 
-	GetBestIngestServer(schoolID uint) (server model.IngestServer, err error)
+	GetBestIngestServer(organizationID uint) (server model.IngestServer, err error)
 	GetTranscodedStreamSlot(ingestServerID uint) (sn model.StreamName, err error)
 	GetStreamSlot(ingestServerID uint) (sn model.StreamName, err error)
 
@@ -38,42 +38,42 @@ func (d ingestServerDao) SaveIngestServer(server model.IngestServer) {
 
 // GetBestIngestServer returns the IngestServer with the least streams assigned to it
 // TODO: Check if sn.stream_id IS NULL is necessary
-func (d ingestServerDao) GetBestIngestServer(schoolID uint) (server model.IngestServer, err error) {
-	// Case 1: School has own ingest server with free stream slot
+func (d ingestServerDao) GetBestIngestServer(organizationID uint) (server model.IngestServer, err error) {
+	// Case 1: Organization has own ingest server with free stream slot
 	err = DB.Raw(`
         SELECT i.* FROM ingest_servers i
         LEFT JOIN stream_names sn ON i.id = sn.ingest_server_id
-        WHERE i.school_id = ? AND sn.stream_id IS NULL
+        WHERE i.organization_id = ? AND sn.stream_id IS NULL
         GROUP BY i.id
         ORDER BY COUNT(sn.stream_id) ASC, i.workload ASC
         LIMIT 1
-    `, schoolID).Scan(&server).Error
+    `, organizationID).Scan(&server).Error
 	if err == nil && server.ID != 0 {
 		return server, nil
 	}
 
-	// Case 2: School doesn't have own ingest server with free stream slot, but parent school does
-	currentSchoolID := schoolID
-	for currentSchoolID != 0 {
-		var parentSchoolID uint
-		err = DB.Table("schools").Where("id = ?", currentSchoolID).Select("parent_id").Row().Scan(&parentSchoolID)
-		if err != nil || parentSchoolID == 0 {
+	// Case 2: Organization doesn't have own ingest server with free stream slot, but parent organization does
+	currentOrganizationID := organizationID
+	for currentOrganizationID != 0 {
+		var parentOrganizationID uint
+		err = DB.Table("organizations").Where("id = ?", currentOrganizationID).Select("parent_id").Row().Scan(&parentOrganizationID)
+		if err != nil || parentOrganizationID == 0 {
 			break
 		}
 
 		err = DB.Raw(`
             SELECT i.* FROM ingest_servers i
             LEFT JOIN stream_names sn ON i.id = sn.ingest_server_id
-            WHERE i.school_id = ? AND sn.stream_id IS NULL
+            WHERE i.organization_id = ? AND sn.stream_id IS NULL
             GROUP BY i.id
             ORDER BY COUNT(sn.stream_id) ASC, i.workload ASC
             LIMIT 1
-        `, parentSchoolID).Scan(&server).Error
+        `, parentOrganizationID).Scan(&server).Error
 		if err == nil && server.ID != 0 {
 			return server, nil
 		}
 
-		currentSchoolID = parentSchoolID
+		currentOrganizationID = parentOrganizationID
 	}
 
 	// Case 3: Fallback to shared ingest server with the least workload and a free stream slot

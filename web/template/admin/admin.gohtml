@@ -36,10 +36,10 @@
                             </a>
                         </li>
                         <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/schools"><span
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "organizations"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/organizations"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Schools</span>
+                                        class="relative">Organizations</span>
                             </a>
                         </li>
                         <li>
@@ -142,10 +142,10 @@
                             </a>
                         </li>
                         <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/schools"><span
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "organizations"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/organizations"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Schools</span>
+                                        class="relative">Organizations</span>
                             </a>
                         </li>
                         <li>
@@ -295,10 +295,10 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/schools"><span
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "organizations"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/organizations"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Schools</span>
+                                                class="relative">Organizations</span>
                                     </a>
                                 </li>
                                 <li>
@@ -402,10 +402,10 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "schools"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/schools"><span
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "organizations"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/organizations"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Schools</span>
+                                                class="relative">Organizations</span>
                                     </a>
                                 </li>
                                 <li>
@@ -551,8 +551,8 @@
             <div class="w-full">
                 {{if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "users")}}
                     {{template "users" dict "Data" .UsersAsJson "Role" $curUser.Role}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schools")}}
-                    {{template "schools" dict "Data" .SchoolsAsJson "Role" $curUser.Role}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "organizations")}}
+                    {{template "organizations" dict "Data" .OrganizationsAsJson "Role" $curUser.Role}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2) (eq $curUser.Role 3)) (eq .Page "course")}}
                     {{template "edit-course" .EditCourseData}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "lectureHalls")}}

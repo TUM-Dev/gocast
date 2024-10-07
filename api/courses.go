@@ -93,7 +93,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				admins.GET("", routes.getAdmins)
 				admins.PUT("/:userID", routes.addAdminToCourse)
-				courses.PATCH("/school", routes.updateCourseSchool)
+				courses.PATCH("/organization", routes.updateCourseOrganization)
 				admins.DELETE("/:userID", routes.removeAdminFromCourse)
 			}
 		}
@@ -249,7 +249,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 		case model.AdminType:
 			courses = r.GetAllCoursesForSemester(year, term, c)
 		case model.MaintainerType:
-			courses = r.GetAllCoursesForSchoolsForSemester(tumLiveContext.User.AdministeredSchools, year, term, c)
+			courses = r.GetAllCoursesForOrganizationsForSemester(tumLiveContext.User.AdministeredOrganizations, year, term, c)
 		case model.LecturerType:
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
@@ -507,7 +507,7 @@ func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
 		return
 	}
 
-	workers := r.WorkerDao.GetAliveWorkers(course.SchoolID)
+	workers := r.WorkerDao.GetAliveWorkers(course.OrganizationID)
 	if len(workers) == 0 {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -1429,7 +1429,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		ChatEnabled:         req.EnChat,
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
-		SchoolID:            req.SchoolID,
+		OrganizationID:      req.OrganizationID,
 	}
 	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Role != model.MaintainerType {
 		course.Admins = []model.User{*tumLiveContext.User}
@@ -1521,15 +1521,15 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 }
 
 type createCourseRequest struct {
-	Access       string // enrolled, public, hidden or loggedin
-	CourseID     string
-	EnChat       bool
-	EnDL         bool
-	EnVOD        bool
-	Name         string
-	Slug         string
-	TeachingTerm string
-	SchoolID     uint
+	Access         string // enrolled, public, hidden or loggedin
+	CourseID       string
+	EnChat         bool
+	EnDL           bool
+	EnVOD          bool
+	Name           string
+	Slug           string
+	TeachingTerm   string
+	OrganizationID uint
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
@@ -1614,7 +1614,7 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 		return
 	}
 
-	course.SchoolID = tlctx.Course.SchoolID
+	course.OrganizationID = tlctx.Course.OrganizationID
 	err = r.CoursesDao.CreateCourse(c, course, true)
 	if err != nil {
 		logger.Error("Can't create course", "err", err)
@@ -1674,11 +1674,11 @@ func (r coursesRoutes) searchCourse(c *gin.Context) {
 	c.JSON(http.StatusOK, search.Hits)
 }
 
-func (r coursesRoutes) updateCourseSchool(c *gin.Context) {
+func (r coursesRoutes) updateCourseOrganization(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	var request struct {
-		SchoolID uint `json:"schoolID"`
+		OrganizationID uint `json:"organizationID"`
 	}
 	if err := c.BindJSON(&request); err != nil {
 		logger.Error("invalid form", "err", err)
@@ -1691,7 +1691,7 @@ func (r coursesRoutes) updateCourseSchool(c *gin.Context) {
 	}
 
 	course := tumLiveContext.Course
-	course.SchoolID = request.SchoolID
+	course.OrganizationID = request.OrganizationID
 	if err := r.CoursesDao.UpdateCourse(c, *course); err != nil {
 		logger.Error("failed to update course", "err", err)
 		_ = c.Error(tools.RequestError{

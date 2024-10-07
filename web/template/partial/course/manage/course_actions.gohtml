@@ -2,7 +2,7 @@
     {{- /*gotype: github.com/TUM-Dev/gocast/model.Course*/ -}} 
    <div class="form-container-body grid gap-3"
          x-data="{ 
-            schoolId: '', searchResults: [] , isSearchResultVisible: false, schoolQuery: '', schoolResults: [] , isSchoolResultVisible: false, isQueryVisible: false,
+            organizationId: '', searchResults: [] , isSearchResultVisible: false, organizationQuery: '', organizationResults: [] , isOrganizationResultVisible: false, isQueryVisible: false,
             copying: false , year: '', yearW: '', semester: 'Wintersemester',
          init() {
               this.$watch('year', (newYear) => {
@@ -13,9 +13,9 @@
                       this.yearW = '';
                   }
               });
-            fetch('/api/schools/'+'{{.Course.SchoolID}}')
+            fetch('/api/organizations/'+'{{.Course.OrganizationID}}')
                 .then(response => response.json())
-                .then(data => this.schoolQuery = data.Name+' '+'('+data.OrgType+')');
+                .then(data => this.organizationQuery = data.Name+' '+'('+data.OrgType+')');
          }}">
         <div x-show="copying" class="grid gap-3">
             {{template "semester-selection"}}
@@ -24,43 +24,43 @@
             </button>
         </div>
 
-        <div class="flex flex-col space-x-1 border-red-500" x-show="isQueryVisible === true || !schoolQuery">
-            <input class="tl-input border border-red-500" type="text" placeholder="Search for your school or university" x-model="schoolQuery" @keyup="fetch('/api/schools/all?q='+schoolQuery).then(r=>r.json()).then(r => schoolResults=r)">
-            <div x-show="schoolResults.length === 0">
+        <div class="flex flex-col space-x-1 border-red-500" x-show="isQueryVisible === true || !organizationQuery">
+            <input class="tl-input border border-red-500" type="text" placeholder="Search for your organization or university" x-model="organizationQuery" @keyup="fetch('/api/organizations/all?q='+organizationQuery).then(r=>r.json()).then(r => organizationResults=r)">
+            <div x-show="organizationResults.length === 0">
                 <div colspan="3" class="p-2 whitespace-nowrap text-center">
-                    <i>No school found</i>
+                    <i>No organization found</i>
                 </div>
             </div>
             <ul role="listbox" class="mt-3">
-                <template x-for="school in schoolResults" :key="school.id">
+                <template x-for="organization in organizationResults" :key="organization.id">
                     <li role="option" aria-selected="false"
                         class="hover:bg-sky-500 dark:hover:bg-sky-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md m-2 p-2"
-                        @click="isSchoolResultVisible = false;schoolQuery = school.name+' '+'('+school.org_type+')';schoolId=school.id;schoolResults=[];isQueryVisible=false">
-                        <p x-text="school.name+' '+'('+school.org_type+')'"></p>
+                        @click="isOrganizationResultVisible = false;organizationQuery = organization.name+' '+'('+organization.org_type+')';organizationId=organization.id;organizationResults=[];isQueryVisible=false">
+                        <p x-text="organization.name+' '+'('+organization.org_type+')'"></p>
                     </li>
                 </template>
             </ul>
         </div>
         {{if eq $.User.Role 1}}
             <div class="flex gap-1">
-                <div role="option" aria-selected="false" x-show="isQueryVisible === false && schoolQuery"
+                <div role="option" aria-selected="false" x-show="isQueryVisible === false && organizationQuery"
                     class="w-full hover:bg-gray-500 dark:hover:bg-gray-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md p-2"
-                    @click="isQueryVisible=true;schoolQuery = '';schoolId=''">
-                    <span class="text-sm">Selected school for this course:</span> 
-                    <span x-text="schoolQuery"></span>
+                    @click="isQueryVisible=true;organizationQuery = '';organizationId=''">
+                    <span class="text-sm">Selected organization for this course:</span> 
+                    <span x-text="organizationQuery"></span>
                 </div>
                 <button 
                     class="btn btn-primary ml-auto hover:bg-sky-500 dark:hover:bg-sky-600 rounded-md" 
-                    @click="admin.updateCourseSchool('{{.Course.ID}}', schoolId)">
+                    @click="admin.updateCourseOrganization('{{.Course.ID}}', organizationId)">
                     Save
                 </button> 
             </div>
         {{else}}
-            <div role="option" aria-selected="false" x-show="isQueryVisible === false && schoolQuery"
+            <div role="option" aria-selected="false" x-show="isQueryVisible === false && organizationQuery"
                 class="flex dark:bg-gray-800 bg-gray-200 gap-10 cursor-pointer rounded-md p-2">
                 <div>
-                    <span class="text-sm text-5">Selected school for this course:</span> 
-                    <span x-text="schoolQuery"></span>
+                    <span class="text-sm text-5">Selected organization for this course:</span> 
+                    <span x-text="organizationQuery"></span>
                 </div>
                 <span class="text-sm text-5 ml-auto">(Want to change this? Please reach out to the RBG.)</span> 
             </div>

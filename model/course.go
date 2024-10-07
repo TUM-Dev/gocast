@@ -37,7 +37,7 @@ type Course struct {
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
 	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
 	Pinned                  bool   `gorm:"-"`        // Used to determine if the course is pinned when loaded for a specific user.
-	SchoolID                uint   `gorm:"not null"` // School the course belongs to
+	OrganizationID          uint   `gorm:"not null"` // Organization the course belongs to
 
 	LivePrivate bool `gorm:"not null; default:false"` // whether Livestreams are private
 	VodPrivate  bool `gorm:"not null; default:false"` // Whether VODs are made private after livestreams
@@ -55,7 +55,7 @@ type CourseDTO struct {
 	LastRecording    StreamDTO
 	Streams          []StreamDTO
 	IsAdmin          bool // Set in API handler
-	SchoolId         uint
+	OrganizationId   uint
 }
 
 func (c *Course) ToDTO(u *User) CourseDTO {
@@ -70,7 +70,7 @@ func (c *Course) ToDTO(u *User) CourseDTO {
 		NextLecture:      c.GetNextLecture(u).ToDTO(),
 		LastRecording:    c.GetLastRecording(u).ToDTO(),
 		IsAdmin:          false,
-		SchoolId:         c.SchoolID,
+		OrganizationId:   c.OrganizationID,
 	}
 }
 

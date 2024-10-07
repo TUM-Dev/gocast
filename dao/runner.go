@@ -18,8 +18,8 @@ type RunnerDao interface {
 	// Get all Runners in an array
 	GetAll(context.Context, uint) ([]model.Runner, error)
 
-	// Get all Runners in an array for a list of a user's administered schools.
-	// GetAllForSchools(context.Context, []model.School) ([]model.Runner, error)
+	// Get all Runners in an array for a list of a user's administered organizations.
+	// GetAllForOrganizations(context.Context, []model.Organization) ([]model.Runner, error)
 
 	// Create a new Runner for the database
 	Create(context.Context, *model.Runner) error
@@ -41,25 +41,25 @@ func (d runnerDao) Get(c context.Context, hostname string) (res model.Runner, er
 	return res, DB.WithContext(c).First(&res, "hostname = ?", hostname).Error
 }
 
-// Get all Runners in an array for a given school ID.
-func (d runnerDao) GetAll(c context.Context, schoolId uint) ([]model.Runner, error) {
+// Get all Runners in an array for a given organization ID.
+func (d runnerDao) GetAll(c context.Context, organizationId uint) ([]model.Runner, error) {
 	var runners []model.Runner
-	err := d.db.WithContext(c).Model(&model.Runner{}).Where("school_id = ?", schoolId).Find(&runners).Error
+	err := d.db.WithContext(c).Model(&model.Runner{}).Where("organization_id = ?", organizationId).Find(&runners).Error
 	if err != nil {
-		log.Error("no runners found for school ID: ", schoolId)
+		log.Error("no runners found for organization ID: ", organizationId)
 		return nil, err
 	}
 	return runners, nil
 }
 
-// Get all Runners in an array for a list of a user's administered schools.
-/*func (d runnerDao) GetAllForSchools(c context.Context, schools []model.School) ([]model.Runner, error) {
+// Get all Runners in an array for a list of a user's administered organizations.
+/*func (d runnerDao) GetAllForOrganizations(c context.Context, organizations []model.Organization) ([]model.Runner, error) {
 	var allRunners []model.Runner
-	for _, school := range schools {
+	for _, organization := range organizations {
 		var runners []model.Runner
-		err := d.db.WithContext(c).Model(&model.Runner{}).Where("school_id = ?", school.ID).Find(&runners).Error
+		err := d.db.WithContext(c).Model(&model.Runner{}).Where("organization_id = ?", organization.ID).Find(&runners).Error
 		if err != nil {
-			log.Error("no runners found for school ID: ", school.ID)
+			log.Error("no runners found for organization ID: ", organization.ID)
 			return nil, err
 		}
 		allRunners = append(allRunners, runners...)

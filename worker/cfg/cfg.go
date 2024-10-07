@@ -23,7 +23,7 @@ var (
 	LogDir         string
 	Hostname       string
 	Address        string
-	Shared         bool   // whether the worker can be shared with other schools (default: false)
+	Shared         bool   // whether the worker can be shared with other organizations (default: false)
 	Ingest         bool   // whether the worker will be used as an ingest server (default: false)
 	Token          string // setup token. Used to connect initially and to get a "WorkerID"
 	PersistDir     string // PersistDir is the directory, tum-live-worker will use to store persistent data
@@ -101,7 +101,7 @@ func SetConfig() {
 
 	Address = os.Getenv("Address")
 
-	Shared = os.Getenv("Shared") == "true" // whether the worker can be shared with other schools (default: false)
+	Shared = os.Getenv("Shared") == "true" // whether the worker can be shared with other organizations (default: false)
 
 	Shared = os.Getenv("Ingest") == "true" // whether the worker will be used as an ingest server (default: false)
 

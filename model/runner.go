@@ -23,7 +23,7 @@ type Runner struct {
 	Uptime   string
 	Version  string
 
-	SchoolID uint `gorm:"not null"` // School the runner belongs to
+	OrganizationID uint `gorm:"not null"` // Organization the runner belongs to
 }
 
 // BeforeCreate returns errors if hostnames and ports of workers are invalid.

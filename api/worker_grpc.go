@@ -71,27 +71,27 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 	logger.Info("JoinWorkers called", "host", request.Hostname, "address", request.Address)
 
 	// Parse and validate worker token
-	token, err := jwt.ParseWithClaims(request.Token, &JWTSchoolClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(request.Token, &JWTOrganizationClaims{}, func(token *jwt.Token) (interface{}, error) {
 		key := tools.Cfg.GetJWTKey().Public()
 		return key, nil
 	})
 	if err != nil || !token.Valid {
 		return nil, status.Error(codes.Unauthenticated, "Invalid token")
 	}
-	claims, ok := token.Claims.(*JWTSchoolClaims)
+	claims, ok := token.Claims.(*JWTOrganizationClaims)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "Invalid token claims")
 	}
 
-	schoolID, err := strconv.ParseUint(claims.SchoolID, 10, 32)
+	organizationID, err := strconv.ParseUint(claims.OrganizationID, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid SchoolID: %v", err)
+		return nil, fmt.Errorf("invalid OrganizationID: %v", err)
 	}
 	worker, err := s.DaoWrapper.WorkerDao.GetWorkerByHostname(ctx, request.Address, request.Hostname)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, status.Errorf(codes.Internal, "get worker by hostname: %v", err)
 	}
-	if err == nil && worker.SchoolID == uint(schoolID) {
+	if err == nil && worker.OrganizationID == uint(organizationID) {
 		// worker already exists, return its ID
 		return &pb.JoinWorkersResponse{
 			WorkerId: worker.WorkerID,
@@ -100,12 +100,12 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 
 	// worker does not exist, create it
 	worker = model.Worker{
-		Host:     request.Hostname,
-		Address:  request.Address,
-		Shared:   request.Shared,
-		WorkerID: uuid.NewV4().String(),
-		LastSeen: time.Now(),
-		SchoolID: uint(schoolID),
+		Host:           request.Hostname,
+		Address:        request.Address,
+		Shared:         request.Shared,
+		WorkerID:       uuid.NewV4().String(),
+		LastSeen:       time.Now(),
+		OrganizationID: uint(organizationID),
 	}
 	if err := s.DaoWrapper.WorkerDao.CreateWorker(&worker); err != nil {
 		logger.Error("Could not add worker to database", "err", err)
@@ -177,7 +177,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 
 	ingestServerUrl, outUrl, streamName := "", "", ""
 
-	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer(course.SchoolID)
+	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer(course.OrganizationID)
 	if err != nil {
 		logger.Error("Can't get best ingest server", "err", err)
 	} else {
@@ -546,7 +546,7 @@ func generateCombinedThumb(streamID uint, dao dao.DaoWrapper) {
 	if thumbCam == "" || thumbPres == "" {
 		return // nothing to do
 	}
-	workers := dao.GetAliveWorkers(course.SchoolID)
+	workers := dao.GetAliveWorkers(course.OrganizationID)
 	if len(workers) == 0 {
 		return
 	}
@@ -730,8 +730,8 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 
 	streamName, ingestServerUrl, outUrl := "", "", ""
 
-	// Only use dedicated ingest server if the course's school has one, otherwise stream directly to ingest worker
-	server, err := daoWrapper.IngestServerDao.GetBestIngestServer(course.SchoolID)
+	// Only use dedicated ingest server if the course's organization has one, otherwise stream directly to ingest worker
+	server, err := daoWrapper.IngestServerDao.GetBestIngestServer(course.OrganizationID)
 	if err != nil {
 		logger.Error("Can't find ingest server", "err", err)
 	} else {
@@ -805,10 +805,10 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 // and invokes the corresponding calls at the workers with the least workload via gRPC
 func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 	return func() {
-		schoolsStreams := daoWrapper.StreamsDao.GetDueStreamsForWorkers()
-		for schoolID, streams := range schoolsStreams {
-			notifyWorkersPremieres(daoWrapper, schoolID)
-			workers := daoWrapper.WorkerDao.GetAliveWorkers(schoolID)
+		organizationsStreams := daoWrapper.StreamsDao.GetDueStreamsForWorkers()
+		for organizationID, streams := range organizationsStreams {
+			notifyWorkersPremieres(daoWrapper, organizationID)
+			workers := daoWrapper.WorkerDao.GetAliveWorkers(organizationID)
 			if len(workers) == 0 && len(streams) != 0 {
 				logger.Error("not enough workers to handle streams")
 				return
@@ -854,9 +854,9 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 }
 
 // notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
-func notifyWorkersPremieres(daoWrapper dao.DaoWrapper, schoolID uint) {
-	streams := daoWrapper.StreamsDao.GetDuePremieresForWorkers(schoolID)
-	workers := daoWrapper.WorkerDao.GetAliveWorkers(schoolID)
+func notifyWorkersPremieres(daoWrapper dao.DaoWrapper, organizationID uint) {
+	streams := daoWrapper.StreamsDao.GetDuePremieresForWorkers(organizationID)
+	workers := daoWrapper.WorkerDao.GetAliveWorkers(organizationID)
 
 	if len(workers) == 0 && len(streams) != 0 {
 		logger.Error("Not enough alive workers for premiere")
@@ -875,7 +875,7 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper, schoolID uint) {
 		}
 		workerIndex := getWorkerWithLeastWorkload(workers)
 		workers[workerIndex].Workload += 3
-		ingestServer, err := daoWrapper.IngestServerDao.GetBestIngestServer(schoolID)
+		ingestServer, err := daoWrapper.IngestServerDao.GetBestIngestServer(organizationID)
 		if err != nil {
 			logger.Error("Can't find ingest server", "err", err)
 			continue
@@ -907,9 +907,9 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper, schoolID uint) {
 // FetchLivePreviews gets a live thumbnail from a worker.
 func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 	return func() {
-		schools := daoWrapper.SchoolsDao.GetAll()
-		for _, school := range schools {
-			workers := daoWrapper.WorkerDao.GetAliveWorkers(school.ID)
+		organizations := daoWrapper.OrganizationsDao.GetAll()
+		for _, organization := range organizations {
+			workers := daoWrapper.WorkerDao.GetAliveWorkers(organization.ID)
 			liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
 			if err != nil {
 				return
@@ -975,7 +975,7 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 // RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails
 // and for VoDs that were created before the thumbnail feature.
 func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.Stream, course *model.Course) error {
-	workers := daoWrapper.WorkerDao.GetAliveWorkers(course.SchoolID)
+	workers := daoWrapper.WorkerDao.GetAliveWorkers(course.OrganizationID)
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	if len(workers) == 0 {
 		return errors.New("no workers available")
@@ -1026,7 +1026,7 @@ func DeleteVideoSectionImage(daoWrapper dao.DaoWrapper, path string, streamID ui
 		return err
 	}
 
-	workers := daoWrapper.GetAliveWorkers(course.SchoolID)
+	workers := daoWrapper.GetAliveWorkers(course.OrganizationID)
 	if len(workers) == 0 {
 		return errors.New("no workers available")
 	}
@@ -1059,7 +1059,7 @@ func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateV
 		return err
 	}
 
-	workers := daoWrapper.WorkerDao.GetAliveWorkers(course.SchoolID)
+	workers := daoWrapper.WorkerDao.GetAliveWorkers(course.OrganizationID)
 	if len(workers) == 0 {
 		return errors.New("no workers available")
 	}

@@ -33,18 +33,18 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	var users []model.User
 	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
-	schools, err := r.SchoolsDao.GetAdministeredSchoolsByUser(context.Background(), tumLiveContext.User)
+	organizations, err := r.OrganizationsDao.GetAdministeredOrganizationsByUser(context.Background(), tumLiveContext.User)
 	if err != nil {
-		logger.Error("couldn't query schools for user.", "err", err)
-		schools = []model.School{}
+		logger.Error("couldn't query organizations for user.", "err", err)
+		organizations = []model.Organization{}
 	}
 	workers := []model.Worker{}
 	runners := []model.Runner{}
 	ingestServers := []model.IngestServer{}
-	for _, school := range schools {
-		workers = append(workers, school.Workers...)
-		runners = append(runners, school.Runners...)
-		ingestServers = append(ingestServers, school.IngestServers...)
+	for _, organization := range organizations {
+		workers = append(workers, organization.Workers...)
+		runners = append(runners, organization.Runners...)
+		ingestServers = append(ingestServers, organization.IngestServers...)
 	}
 
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
@@ -107,7 +107,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
 			Users:               users,
-			Schools:             schools,
+			Organizations:       organizations,
 			Courses:             courses,
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
@@ -126,7 +126,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 				Runners:       runners,
 				VODServices:   runners,
 				IngestServers: ingestServers,
-				Schools:       schools,
+				Organizations: organizations,
 				Query:         uint(query),
 			},
 		})
@@ -141,8 +141,8 @@ func GetPageString(s string) string {
 		return "schedule"
 	case "/admin/users":
 		return "users"
-	case "/admin/schools":
-		return "schools"
+	case "/admin/organizations":
+		return "organizations"
 	case "/admin/lectureHalls":
 		return "lectureHalls"
 	case "/admin/lectureHalls/new":
@@ -192,7 +192,7 @@ type Resources struct {
 	Runners       []model.Runner
 	VODServices   []model.Runner
 	IngestServers []model.IngestServer
-	Schools       []model.School
+	Organizations []model.Organization
 	Query         uint
 }
 
@@ -368,7 +368,7 @@ func (r mainRoutes) UpdateCourse(c *gin.Context) {
 type AdminPageData struct {
 	IndexData           IndexData
 	Users               []model.User
-	Schools             []model.School
+	Organizations       []model.Organization
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
@@ -406,31 +406,31 @@ func (apd AdminPageData) UsersAsJson() string {
 	return string(jsonStr)
 }
 
-func (apd AdminPageData) SchoolsAsJson() string {
-	type relevantSchoolInfo struct {
-		ID       uint         `json:"id"`
-		Name     string       `json:"name"`
-		OrgId    string       `json:"orgId"`
-		OrgType  string       `json:"orgType"`
-		OrgSlug  string       `json:"orgSlug"`
-		Admins   []model.User `json:"admins"`
-		ParentID uint         `json:"parent_id"`
+func (apd AdminPageData) OrganizationsAsJson() string {
+	type relevantOrganizationInfo struct {
+		ID       uint          `json:"id"`
+		Name     string        `json:"name"`
+		OrgId    string        `json:"orgId"`
+		OrgType  string        `json:"orgType"`
+		OrgSlug  string        `json:"orgSlug"`
+		Admins   *[]model.User `json:"admins"`
+		ParentID uint          `json:"parent_id"`
 	}
 
-	schools := make([]relevantSchoolInfo, len(apd.Schools))
-	for i, school := range apd.Schools {
-		schools[i] = relevantSchoolInfo{
-			ID:       school.ID,
-			Name:     school.Name,
-			OrgId:    school.OrgId,
-			OrgType:  school.OrgType,
-			OrgSlug:  school.OrgSlug,
-			Admins:   school.Admins,
-			ParentID: school.ParentID,
+	organizations := make([]relevantOrganizationInfo, len(apd.Organizations))
+	for i, organization := range apd.Organizations {
+		organizations[i] = relevantOrganizationInfo{
+			ID:       organization.ID,
+			Name:     organization.Name,
+			OrgId:    organization.OrgId,
+			OrgType:  organization.OrgType,
+			OrgSlug:  organization.OrgSlug,
+			Admins:   &organization.Admins,
+			ParentID: organization.ParentID,
 		}
 	}
 
-	jsonStr, _ := json.Marshal(schools)
+	jsonStr, _ := json.Marshal(organizations)
 	return string(jsonStr)
 }
 
