@@ -82,7 +82,7 @@ document.addEventListener("alpine:init", () => {
         const changeSet = evaluate(expression);
         const fieldName = value || el.name;
 
-        if (el.type === "file") {
+        if (el.type.toLowerCase() === "file") {
             const isSingle = modifiers.includes("single")
 
             const changeHandler = (e) => {
@@ -103,7 +103,7 @@ document.addEventListener("alpine:init", () => {
                 changeSet.removeListener(onChangeSetUpdateHandler);
                 el.removeEventListener('change', changeHandler)
             })
-        } else if (el.type === "checkbox") {
+        } else if (el.type.toLowerCase() === "checkbox") {
             const changeHandler = (e) => {
                 changeSet.patch(fieldName, e.target.checked);
             };
@@ -121,7 +121,7 @@ document.addEventListener("alpine:init", () => {
                 changeSet.removeListener(onChangeSetUpdateHandler);
                 el.removeEventListener('change', changeHandler)
             })
-        } else  if (el.tagName === "textarea" || textInputTypes.includes(el.type)) {
+        } else  if (el.tagName.toLowerCase() === "textarea" || textInputTypes.includes(el.type.toLowerCase())) {
             const keyupHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
             const changeHandler = (e) => changeSet.patch(fieldName, convert(modifiers, e.target.value));
 
@@ -172,23 +172,29 @@ document.addEventListener("alpine:init", () => {
      *
      * Modifiers:
      *  - "text": When provided, the directive will also update the element's innerText.
+     *  - "value": When provided, the directive will also update the element's value.
      *
      * Custom Events:
      *  - "csupdate": Custom event triggered when the change set is updated.
      *    The detail property of the event object contains the new value of the specified field.
      */
     Alpine.directive("change-set-listen", (el, { expression, modifiers }, { effect, evaluate, cleanup }) => {
-        effect(() => {
-            const [changeSetExpression, fieldName = null] = expression.split(".");
-            const changeSet = evaluate(changeSetExpression);
+        const [changeSetExpression, fieldName = null] = expression.split(".");
+        let changeSet = evaluate(changeSetExpression);
 
-            const onChangeSetUpdateHandler = (data) => {
-                const value = fieldName != null ? data[fieldName] : data;
-                if (modifiers.includes("text")) {
-                    el.innerText = `${value}`;
-                }
-                el.dispatchEvent(new CustomEvent(nativeEventName, { detail: { changeSet, value } }));
-            };
+        const onChangeSetUpdateHandler = (data) => {
+            const value = fieldName != null ? data[fieldName] : data;
+            if (modifiers.includes("text")) {
+                el.innerText = `${value}`;
+            }
+            if (modifiers.includes("value")) {
+                el.value = value;
+            }
+            el.dispatchEvent(new CustomEvent(nativeEventName, { detail: { changeSet, value } }));
+        };
+
+        effect(() => {
+            changeSet = evaluate(changeSetExpression);
 
             if (!changeSet) {
                 return;
@@ -197,11 +203,11 @@ document.addEventListener("alpine:init", () => {
             changeSet.removeListener(onChangeSetUpdateHandler);
             onChangeSetUpdateHandler(changeSet.get());
             changeSet.listen(onChangeSetUpdateHandler);
-
-            cleanup(() => {
-                changeSet.removeListener(onChangeSetUpdateHandler);
-            })
         });
+
+        cleanup(() => {
+            changeSet.removeListener(onChangeSetUpdateHandler);
+        })
     });
 
     /**

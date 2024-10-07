@@ -255,6 +255,48 @@
                         </div>
                     </template>
                 </article>
+
+                <header class="border-b dark:border-gray-600 w-full">
+                    <h6 class="text-sm text-5 font-light">Date and Time</h6>
+                </header>
+                <article class="w-full mb-2 flex"
+                        x-data="{ startId: $id('date-input'), endId: $id('date-input') }"
+                >
+                    <label :for="startId" class="grow mr-2">
+                        <span class="text-sm text-5">Start</span>
+                        <input class="tl-input"
+                           name="newStartDate"
+                           :id="startId"
+                           x-change-set-listen="changeSet.startDate"
+                           x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().startDate, 'Y-m-d H:i'))"
+                           x-init="flatpickr($el, {enableTime: true, time_24hr: true, altInput: true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true, onChange: (date) => changeSet.patch('start', flatpickr.formatDate(date[0], 'Z')) })"
+                       />
+                    </label>
+                    <template x-if="!lectureData.premiere && !lectureData.vodup">
+                        <label :for="endId">
+                            <span class="text-sm text-5">End</span>
+                            <span :class="lectureData.duration > 0 ? 'text-sm font-light bg-gray-500/20 px-1 rounded opacity-75' : 'text-sm font-light bg-red-500 px-1 rounded opacity-75'"
+                                  x-text="lectureData.durationFormatted">
+
+                            </span>
+                            <input class="tl-input"
+                               name="newEndTime"
+                               :id="endId"
+                               x-change-set-listen="changeSet.endDate"
+                               x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().endDate, 'H:i'))"
+                               x-init="flatpickr($el, {enableTime: true, noCalendar: true, altInput: true, altFormat: 'H:i', time_24hr: true, allowInput: true, onChange: (date) => {
+                                    const startDate = changeSet.get().startDate;
+                                    let val = date[0];
+                                    val.setDate(startDate.getDate());
+                                    val.setMonth(startDate.getMonth());
+                                    val.setFullYear(startDate.getFullYear());
+                                    changeSet.patch('end', flatpickr.formatDate(val, 'Z'))
+                               }})"
+                            />
+                        </label>
+                    </template>
+                </article>
+
                 <header class="border-b dark:border-gray-600 w-full">
                     <h6 class="text-sm text-5 font-light">Title and Description</h6>
                 </header>
@@ -376,7 +418,7 @@
                     </button>
                     <button
                             @click="saveEdit();"
-                            :disabled="!isDirty || isSaving"
+                            :disabled="!isDirty || isSaving || isInvalid"
                             class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
                             x-text="isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>
