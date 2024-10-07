@@ -72,6 +72,9 @@ type UserSetting struct {
 
 // GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
 func (u *User) GetPreferredName() string {
+	if u == nil {
+		return "Empty Name"
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName {
 			return setting.Value
@@ -159,6 +162,9 @@ func (u *User) GetCustomSpeeds() (speeds CustomSpeeds) {
 
 // GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
 func (u *User) GetPreferredGreeting() string {
+	if u == nil {
+		return "Moin"
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == Greeting {
 			return setting.Value
@@ -191,6 +197,9 @@ func (u *User) GetSeekingTime() int {
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
 func (u *User) PreferredNameChangeAllowed() bool {
+	if u == nil {
+		return false
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName && time.Since(setting.UpdatedAt) < time.Hour*24*30*3 {
 			return false
@@ -206,6 +215,9 @@ type AutoSkipSetting struct {
 
 // GetAutoSkipEnabled returns whether the user has enabled auto skip
 func (u *User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
+	if u == nil {
+		return AutoSkipSetting{Enabled: false}, nil
+	}
 	for _, setting := range u.Settings {
 		if setting.Type == AutoSkip {
 			var a AutoSkipSetting
