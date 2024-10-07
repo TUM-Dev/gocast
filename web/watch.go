@@ -34,7 +34,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	data.IndexData = NewIndexData()
-	if (tumLiveContext.Course.DownloadsEnabled ||  tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)) && tumLiveContext.Stream.IsDownloadable() {
+	if (tumLiveContext.Course.DownloadsEnabled || tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)) && tumLiveContext.Stream.IsDownloadable() {
 		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, true)
 	} else {
 		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, false)
