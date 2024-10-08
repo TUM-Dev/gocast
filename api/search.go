@@ -50,24 +50,19 @@ func (r searchRoutes) searchSubtitles(c *gin.Context) {
 }
 
 /*
-für alle:
-q=...&limit=...
+Expected format for URL Parameters:
+q=...&limit=... with q is the search query and limit is the maximum number of results
 
-Format für Semester:2024W
-Format für Kurs:<Slug><Semester>
-Einzelnes Semester:
-semester=...
-firstSemester=1234X&lastSemester=1234X
+If you want to search in only one semester you can add the following parameters:
+semester=... or firstSemester=...&lastSemester=... with semester being the semester in the format <year><teachingTerm>
+If you want to search in multiple semesters you can add the following parameters:
+semester=..., ... with semester being a comma separated list of semesters in the format <year><teachingTerm>
 
-Mehrere Semester:
-firstSemester=...&lastSemester=...
-semester=...,..., max. 8
-
-Einzelner oder Mehrere Kurse:
-course=...
-course=...,... max. 2
+If you want to search in only one course you can add the following parameters:
+course=... with course being the course in the format <slug><teachingTerm><year>
+If you want to search in multiple courses you can add the following parameters:
+course=..., ... with course being a comma separated list of courses in the format <slug><teachingTerm><year>
 */
-
 func (r searchRoutes) searchCourses(c *gin.Context) {
 	user, query, limit := getDefaultParameters(c)
 
