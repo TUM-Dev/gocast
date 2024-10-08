@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -234,6 +234,24 @@ func (r mainRoutes) LectureStatsPage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-stats.gohtml", LectureStatsPageData{
+		IndexData: indexData,
+		Lecture:   *tumLiveContext.Stream,
+	}); err != nil {
+		sentry.CaptureException(err)
+	}
+}
+
+func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	indexData := NewIndexData()
+	indexData.TUMLiveContext = tumLiveContext
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-live-management.gohtml", LiveLectureManagementData{
 		IndexData: indexData,
 		Lecture:   *tumLiveContext.Stream,
 	}); err != nil {
