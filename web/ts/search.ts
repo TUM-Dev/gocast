@@ -170,11 +170,12 @@ export function globalSearch() {
 }
 
 export function initPopstateSearchBarListener() {
-    console.log("Initialized popstate listener");
     document.body.addEventListener("click", (event) => {
-        setTimeout(() => {}, 50);
-        updateSearchBarPlaceholder();
+        setTimeout(() => {
+            updateSearchBarPlaceholder();
+        }, 50);
     });
+    console.log("Initialized popstate listener");
 }
 
 export function updateSearchBarPlaceholder() {
