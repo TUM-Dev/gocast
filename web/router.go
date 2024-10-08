@@ -138,6 +138,7 @@ func configMainRoute(router *gin.Engine) {
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
 	withStream.GET("/admin/stats/:courseID/:streamID", routes.LectureStatsPage)
+	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)

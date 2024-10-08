@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"regexp"
-
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -15,6 +12,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"net/http"
+	"regexp"
 )
 
 // AdminPage serves all administration pages. todo: refactor into multiple methods
@@ -200,6 +199,24 @@ func (r mainRoutes) LectureStatsPage(c *gin.Context) {
 	}
 }
 
+func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	indexData := NewIndexData()
+	indexData.TUMLiveContext = tumLiveContext
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-live-management.gohtml", LiveLectureManagementData{
+		IndexData: indexData,
+		Lecture:   *tumLiveContext.Stream,
+	}); err != nil {
+		sentry.CaptureException(err)
+	}
+}
+
 func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -366,6 +383,11 @@ type LectureUnitsPageData struct {
 }
 
 type LectureStatsPageData struct {
+	IndexData IndexData
+	Lecture   model.Stream
+}
+
+type LiveLectureManagementData struct {
 	IndexData IndexData
 	Lecture   model.Stream
 }
