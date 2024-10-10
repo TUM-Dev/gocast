@@ -73,9 +73,7 @@ func (m *MeiliExporter) Export() {
 
 	m.d.StreamsDao.ExecAllStreamsWithCoursesAndSubtitles(func(streams []dao.StreamWithCourseAndSubtitles) {
 		meilistreams := make([]MeiliStream, len(streams))
-		streamIDs := make([]uint, len(streams))
 		for i, stream := range streams {
-			streamIDs[i] = stream.ID
 			meilistreams[i] = MeiliStream{
 				ID:           stream.ID,
 				CourseID:     stream.CourseID,
@@ -132,9 +130,7 @@ func (m *MeiliExporter) Export() {
 
 	m.d.CoursesDao.ExecAllCourses(func(courses []dao.Course) {
 		meilicourses := make([]MeiliCourse, len(courses))
-		courseIDs := make([]uint, len(courses))
 		for i, course := range courses {
-			courseIDs[i] = course.ID
 			meilicourses[i] = MeiliCourse{
 				ID:           course.ID,
 				Name:         course.Name,
