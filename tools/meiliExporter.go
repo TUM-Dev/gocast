@@ -215,10 +215,6 @@ func ToMeiliStreams(streams []model.Stream, daoWrapper dao.DaoWrapper) ([]MeiliS
 		if err != nil {
 			return nil, err
 		}
-		courseName := c.Name
-		year := c.Year
-		teachingTerm := c.TeachingTerm
-		visibility := c.Visibility
 		var private uint
 		if s.Private {
 			private = 1
@@ -228,12 +224,12 @@ func ToMeiliStreams(streams []model.Stream, daoWrapper dao.DaoWrapper) ([]MeiliS
 			ID:           s.ID,
 			Name:         s.Name,
 			Description:  s.Description,
-			CourseName:   courseName,
-			Year:         year,
-			TeachingTerm: teachingTerm,
+			CourseName:   c.Name,
+			Year:         c.Year,
+			TeachingTerm: c.TeachingTerm,
 			CourseID:     s.CourseID,
 			Private:      private,
-			Visibility:   visibility,
+			Visibility:   c.Visibility,
 		}
 	}
 	return res, nil
