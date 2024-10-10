@@ -52,6 +52,46 @@
             </div>
         </div>
 
+        <!-- Video Stats -->
+        <script>
+            watch.videoStatListener.listen();
+        </script>
+        <div
+            x-data="{ data: { bufferSeconds: 0, videoHeight: 0, videoWidth: 0, bandwidth: 0, mediaRequests: 0, mediaRequestsFailed: 0 } }"
+            x-on:newvideostats.window="e => { data = e.detail }"
+            class="text-white"
+        >
+            <div class="flex justify-between align-middle pb-4">
+                <h3>Video Stats</h3>
+            </div>
+            <div class="flex justify-between align-middle">
+                <div>
+                    <div>Resolution:</div>
+                    <div>Bandwidth:</div>
+                </div>
+                <div class="pr-4">
+                    <div class="text-right" x-text="`${data.videoWidth}x${data.videoHeight}`"></div>
+                    <div class="text-right"
+                         x-text="Math.round(data.bandwidth / 1000000) + ' MBit/s'"></div>
+                </div>
+            </div>
+            <br>
+            <div>Buffer:</div>
+            <div class="flex justify-between align-middle">
+                <div>
+                    <div class="pl-2">> Buffered Time:</div>
+                    <div class="pl-2">> Chunks Requested:</div>
+                    <div class="pl-2">> Requests Failed:</div>
+                </div>
+                <div class="pr-4">
+                    <div class="text-right"
+                         x-text="(Math.round(data.bufferSeconds * 100) / 100) + 's'"></div>
+                    <div class="text-right" x-text="data.mediaRequests"></div>
+                    <div class="text-right" x-text="data.mediaRequestsFailed"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </body>
 </html>
