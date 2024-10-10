@@ -212,6 +212,10 @@ func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-live-management.gohtml", LiveLectureManagementData{
 		IndexData: indexData,
 		Lecture:   *tumLiveContext.Stream,
+		ChatData: ChatData{
+			IsAdminOfCourse: tumLiveContext.UserIsAdmin(),
+			IndexData:       indexData,
+		},
 	}); err != nil {
 		sentry.CaptureException(err)
 	}
@@ -390,4 +394,5 @@ type LectureStatsPageData struct {
 type LiveLectureManagementData struct {
 	IndexData IndexData
 	Lecture   model.Stream
+	ChatData  ChatData
 }

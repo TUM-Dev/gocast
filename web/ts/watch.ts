@@ -133,6 +133,38 @@ export class ShareURL {
     }
 }
 
+export async function setupAudioMeter() {
+    console.log("Setting up audio meter")
+    const video = document.getElementsByTagName('video')[0];
+    const audioMeter = document.getElementById('audio-meter');
+    const audioContext = new AudioContext();
+    const audioSource = audioContext.createMediaElementSource(video);
+    const analyser = audioContext.createAnalyser();
+
+    audioSource.connect(analyser);
+    analyser.connect(audioContext.destination);
+    console.log("Audio meter setup complete")
+
+    const bufferLength = analyser.fftSize;
+    const frequencyData = new Uint8Array(bufferLength);
+
+    function updateAudioMeter() {
+        analyser.getByteFrequencyData(frequencyData);
+
+        // Calculate average volume
+        const averageVolume = frequencyData.reduce((sum, value) => sum + value, 0) / bufferLength;
+
+        // Update the audio meter (adjust styling as needed)
+        audioMeter.style.width = `${averageVolume / 255 * 100}%`;
+        audioMeter.style.backgroundColor = `rgb(${averageVolume}, 0, 0)`;
+
+        requestAnimationFrame(updateAudioMeter);
+    }
+
+    updateAudioMeter();
+
+}
+
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
 export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";

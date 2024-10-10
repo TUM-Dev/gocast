@@ -36,11 +36,11 @@
             <a href="/?year={{$course.Year}}&term={{$course.TeachingTerm}}&slug={{$course.Slug}}&view=3"><h3 class="text-gray-800 dark:text-gray-300">{{$course.Name}}</h3></a>
         </div>
 
-        <div class="w-full flex flex-row pt-5 pl-5">
+        <div class="w-full flex flex-row pt-5 pl-5 gap-2">
             <!-- Video Player -->
             <div style="width: 25%; height: fit-content;">
                 <video-js id="videoPlayer" class="video-js vjs-default-skin vjs-16-9"
-                       preload="auto" width="640" height="360" muted autoplay
+                       preload="auto" muted autoplay
                        data-setup='{"fluid": true, "liveui": true}'
                        poster="/public/no_active_stream.jpg">
                     {{if $stream.PlaylistUrl}}
@@ -50,48 +50,62 @@
                     {{end}}
                 </video-js>
             </div>
+
+            <!-- Video Stats -->
+            <div
+                    x-data="{ data: { bufferSeconds: 0, videoHeight: 0, videoWidth: 0, bandwidth: 0, mediaRequests: 0, mediaRequestsFailed: 0 } }"
+                    x-on:newvideostats.window="e => { data = e.detail }"
+                    class="text-gray-900 dark:text-gray-100"
+            >
+                <div class="flex justify-between align-middle pb-4">
+                    <h3>Video Stats</h3>
+                </div>
+                <div class="flex justify-between align-middle">
+                    <div>
+                        <div>Resolution:</div>
+                        <div>Bandwidth:</div>
+                    </div>
+                    <div class="pr-4">
+                        <div class="text-right" x-text="`${data.videoWidth}x${data.videoHeight}`"></div>
+                        <div class="text-right"
+                             x-text="Math.round(data.bandwidth / 1000000) + ' MBit/s'"></div>
+                    </div>
+                </div>
+                <br>
+                <div>Buffer:</div>
+                <div class="flex justify-between align-middle">
+                    <div>
+                        <div class="pl-2">> Buffered Time:</div>
+                        <div class="pl-2">> Chunks Requested:</div>
+                        <div class="pl-2">> Requests Failed:</div>
+                    </div>
+                    <div class="pr-4">
+                        <div class="text-right"
+                             x-text="(Math.round(data.bufferSeconds * 100) / 100) + 's'"></div>
+                        <div class="text-right" x-text="data.mediaRequests"></div>
+                        <div class="text-right" x-text="data.mediaRequestsFailed"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Video Stats -->
-        <script>
-            watch.videoStatListener.listen();
-        </script>
-        <div
-            x-data="{ data: { bufferSeconds: 0, videoHeight: 0, videoWidth: 0, bandwidth: 0, mediaRequests: 0, mediaRequestsFailed: 0 } }"
-            x-on:newvideostats.window="e => { data = e.detail }"
-            class="text-white"
-        >
-            <div class="flex justify-between align-middle pb-4">
-                <h3>Video Stats</h3>
-            </div>
-            <div class="flex justify-between align-middle">
-                <div>
-                    <div>Resolution:</div>
-                    <div>Bandwidth:</div>
-                </div>
-                <div class="pr-4">
-                    <div class="text-right" x-text="`${data.videoWidth}x${data.videoHeight}`"></div>
-                    <div class="text-right"
-                         x-text="Math.round(data.bandwidth / 1000000) + ' MBit/s'"></div>
+        <!-- Chat -->
+        {{if and $course.ChatEnabled $stream.ChatEnabled}}
+            <div
+                 class="w-1/5" style="height: 50vh">
+                <div class="border dark:border-gray-800 rounded-lg h-full">
+                    {{template "chat-component" .ChatData}}
                 </div>
             </div>
-            <br>
-            <div>Buffer:</div>
-            <div class="flex justify-between align-middle">
-                <div>
-                    <div class="pl-2">> Buffered Time:</div>
-                    <div class="pl-2">> Chunks Requested:</div>
-                    <div class="pl-2">> Requests Failed:</div>
-                </div>
-                <div class="pr-4">
-                    <div class="text-right"
-                         x-text="(Math.round(data.bufferSeconds * 100) / 100) + 's'"></div>
-                    <div class="text-right" x-text="data.mediaRequests"></div>
-                    <div class="text-right" x-text="data.mediaRequestsFailed"></div>
-                </div>
-            </div>
-        </div>
+        {{end}}
+
+
 
     </div>
+
+    <script defer>
+        watch.initPlayer("videoPlayer", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}});
+        watch.videoStatListener.listen();
+    </script>
 </body>
 </html>
