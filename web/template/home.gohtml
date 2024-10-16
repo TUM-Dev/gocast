@@ -666,7 +666,7 @@
                                         <div class="px-2">
                                             <a class="course text-sm"
                                                :href="livestream.Course.URL()"
-                                               @click.prevent="showCourse(livestream.Course.Slug)"
+                                               @click.prevent="showCourse(livestream.Course.Slug, livestream.Course.Year, livestream.Course.TeachingTerm)"
                                                x-text="livestream.Course.Name">
                                             </a>
                                             <template x-if="livestream.Stream.HasName()">
@@ -786,7 +786,7 @@
                                         </a>
                                         <div class="px-1">
                                             <a class="course text-xs"
-                                               x-text="course.Name" @click.prevent="showCourse(course.Slug)"
+                                               x-text="course.Name" @click.prevent="showCourse(course.Slug, course.Year, course.TeachingTerm)"
                                                :href="course.URL()"
                                                :class="course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"></a>
                                             <template x-if="course.LastRecording.HasName()">
