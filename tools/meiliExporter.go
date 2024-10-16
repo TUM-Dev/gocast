@@ -66,12 +66,16 @@ func (m *MeiliExporter) Export() {
 		return
 	}
 	index := m.c.Index("STREAMS")
-	_, err := m.c.Index("SUBTITLES").DeleteAllDocuments()
+	_, err := index.DeleteAllDocuments()
+	if err != nil {
+		logger.Warn("could not delete all old streams", "err", err)
+	}
+	_, err = m.c.Index("SUBTITLES").DeleteAllDocuments()
 	if err != nil {
 		logger.Warn("could not delete all old subtitles", "err", err)
 	}
 
-	m.d.StreamsDao.ExecAllStreamsWithCoursesAndSubtitles(func(streams []dao.StreamWithCourseAndSubtitles) {
+	m.d.StreamsDao.ExecAllStreamsWithCoursesAndSubtitlesBatched(func(streams []dao.StreamWithCourseAndSubtitles) {
 		meilistreams := make([]MeiliStream, len(streams))
 		for i, stream := range streams {
 			meilistreams[i] = MeiliStream{
