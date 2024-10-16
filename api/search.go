@@ -59,9 +59,9 @@ If you want to search in multiple semesters you can add the following parameters
 semester=..., ... with semester being a comma separated list of semesters in the format <year><teachingTerm>
 
 If you want to search in only one course you can add the following parameters:
-course=... with course being the course in the format <slug><teachingTerm><year>
+course=... with course being the course in the format <slug><year><teachingTerm>
 If you want to search in multiple courses you can add the following parameters:
-course=..., ... with course being a comma separated list of courses in the format <slug><teachingTerm><year>
+course=..., ... with course being a comma separated list of courses in the format <slug><year><teachingTerm>
 */
 func (r searchRoutes) searchCourses(c *gin.Context) {
 	user, query, limit := getDefaultParameters(c)
@@ -72,6 +72,7 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 		return
 	}
 	if res == nil {
+		logger.Warn("meilisearch did not return any search result")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -86,6 +87,7 @@ func (r searchRoutes) search(c *gin.Context) {
 	if courseParam := c.Query("course"); courseParam != "" {
 		courses, errorCode := parseCourses(c, r.DaoWrapper, courseParam)
 		if errorCode == 2 {
+			// logger warning already done in parseCourses
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		} else if errorCode != 0 || len(courses) > FilterMaxCoursesCount {
@@ -100,6 +102,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		}
 		res = r.m.Search(query, int64(limit), 3, "", meiliStreamFilter(c, user, model.Semester{}, courses), meiliSubtitleFilter(user, courses))
 		if res == nil {
+			logger.Warn("meilisearch did not return any search result")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -114,6 +117,7 @@ func (r searchRoutes) search(c *gin.Context) {
 		return
 	}
 	if res == nil {
+		logger.Warn("meilisearch did not return any search result")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -218,10 +222,12 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			var meiliStreams []SearchStreamDTO
 			temp, err := json.Marshal(hits)
 			if err != nil { // shouldn't happen
+				logger.Warn("meilisearch response post processing streams json marshaling error", "err", err)
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliStreams)
 			if err != nil { // shouldn't happen
+				logger.Warn("meilisearch response streams post processing streams json unmarshaling error", "err", err)
 				continue
 			}
 
@@ -253,10 +259,12 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			var meiliCourses []SearchCourseDTO
 			temp, err := json.Marshal(hits)
 			if err != nil { // shouldn't happen
+				logger.Warn("meilisearch response post processing courses json marshaling error", "err", err)
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliCourses)
 			if err != nil { // shouldn't happen
+				logger.Warn("meilisearch response post processing courses json unmarshaling error", "err", err)
 				continue
 			}
 
@@ -279,10 +287,12 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			var meiliSubtitles []SearchSubtitlesDTO
 			temp, err := json.Marshal(hits)
 			if err != nil { // shouldn't happen
+				logger.Warn("meilisearch response post processing subtitles json marshaling error", "err", err)
 				continue
 			}
 			err = json.Unmarshal(temp, &meiliSubtitles)
 			if err != nil { // shouldn't happen
+				logger.Warn("meilisearch response post processing subtitles json unmarshaling error", "err", err)
 				continue
 			}
 
@@ -487,6 +497,7 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 
 	regex, err := regexp.Compile(`^[0-9]{4}[WS]$`) //nolint:all
 	if err != nil {
+		logger.Warn("regex compile error", "err", err)
 		return nil, err
 	}
 
@@ -513,6 +524,7 @@ func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse stri
 
 	regex, err := regexp.Compile(`^.+[0-9]{4}[WS]$`) //nolint:all
 	if err != nil {
+		logger.Warn("regex compiler error", "err", err)
 		return nil, 2
 	}
 
