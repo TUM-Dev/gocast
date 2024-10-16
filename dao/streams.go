@@ -250,7 +250,7 @@ func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]Stream
 			fmt.Println(err)
 		}
 		if err == nil {
-			lastSeenId = res[len(res)-1].ID + 1
+			lastSeenId = res[len(res)-1].ID
 		}
 		f(res)
 		batchNum++
