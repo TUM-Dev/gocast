@@ -385,6 +385,7 @@ type StreamDTO struct {
 	Start       time.Time
 	End         time.Time
 	Duration    int32
+	LectureHall string
 }
 
 func (s Stream) ToDTO() StreamDTO {
@@ -408,6 +409,7 @@ func (s Stream) ToDTO() StreamDTO {
 		Start:       s.Start,
 		End:         s.End,
 		Duration:    duration,
+		LectureHall: s.RoomCode,
 	}
 }
 
