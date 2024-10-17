@@ -88,7 +88,7 @@ type IndexData struct {
 	Courses             []model.Course
 	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
-	Semesters           []dao.Semester
+	Semesters           []model.Semester
 	CurrentYear         int
 	CurrentTerm         string
 	UserName            string
