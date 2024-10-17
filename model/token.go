@@ -7,6 +7,7 @@ import (
 )
 
 const TokenScopeAdmin = "admin"
+const TokenScopeLecturer = "lecturer"
 
 // Token can be used to authenticate instead of a user account
 type Token struct {
