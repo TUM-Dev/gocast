@@ -408,13 +408,13 @@ func (apd AdminPageData) UsersAsJson() string {
 
 func (apd AdminPageData) OrganizationsAsJson() string {
 	type relevantOrganizationInfo struct {
-		ID       uint          `json:"id"`
-		Name     string        `json:"name"`
-		OrgId    string        `json:"orgId"`
-		OrgType  string        `json:"orgType"`
-		OrgSlug  string        `json:"orgSlug"`
-		Admins   *[]model.User `json:"admins"`
-		ParentID uint          `json:"parent_id"`
+		ID       uint         `json:"id"`
+		Name     string       `json:"name"`
+		OrgId    string       `json:"orgId"`
+		OrgType  string       `json:"orgType"`
+		OrgSlug  string       `json:"orgSlug"`
+		Admins   []model.User `json:"admins"`
+		ParentID uint         `json:"parent_id"`
 	}
 
 	organizations := make([]relevantOrganizationInfo, len(apd.Organizations))
@@ -425,7 +425,7 @@ func (apd AdminPageData) OrganizationsAsJson() string {
 			OrgId:    organization.OrgId,
 			OrgType:  organization.OrgType,
 			OrgSlug:  organization.OrgSlug,
-			Admins:   &organization.Admins,
+			Admins:   organization.Admins,
 			ParentID: organization.ParentID,
 		}
 	}

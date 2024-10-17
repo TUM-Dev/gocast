@@ -561,7 +561,7 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 		TeachingTerm:   "Test",
 		Slug:           "TESTCOURSE",
 		Year:           1234,
-		OrganizationID: 1,
+		OrganizationID: 3, // TODO: Change to main organization ID for default testcourse
 		Visibility:     "hidden",
 		VODEnabled:     false, // TODO: Change to VODEnabled: true for default testcourse if necessary
 	}).Error

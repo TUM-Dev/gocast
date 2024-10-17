@@ -17,7 +17,7 @@ import (
 func configGinOrganizationsRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := organizationsRoutes{daoWrapper}
 
-	router.POST("/api/organizations/proxy/:token", routes.fetchStreamKey) // TODO: @cb
+	router.POST("/api/organizations/proxy/:token", routes.fetchStreamKey)
 	organizations := router.Group("/api/organizations")
 	organizations.Use(tools.AdminOrMaintainer)
 	{

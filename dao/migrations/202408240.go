@@ -37,7 +37,7 @@ func Migrate2024090240() *gormigrate.Migration {
 			if err := tx.Exec("UPDATE ingest_servers SET organization_id = ?, shared = TRUE", citID).Error; err != nil {
 				return err
 			}
-			if err := tx.Exec("UPDATE workers SET organization_id = ?, ingest = FALSE, shared = TRUE, address = host+'.cit.tum.de'", citID).Error; err != nil {
+			if err := tx.Exec("UPDATE workers SET organization_id = ?, ingest = FALSE, shared = TRUE, address = CONCAT(host, '.cit.tum.de')", citID).Error; err != nil {
 				return err
 			}
 

@@ -126,7 +126,7 @@
                                         '<p class="mr-1">' + organization.admins[i].name + '</p>' +
                                         '<div>' +
                                             '<button type="button" x-bind-show="role == 1" class="btn text-xs mr-1 py-1 px-2" onclick="admin.deleteUser(' + organization.admins[i].id + ')">Delete User</button>' +
-                                            '<button type="button" class="btn text-xs py-1 px-2" onclick="admin.deleteOrganizationAdmin(' + organization.id + ',' + organization.admins[i].ID + ')">Revoke Admin Role for this organization</button>' +
+                                            '<button type="button" class="btn text-xs py-1 px-2" onclick="admin.deleteOrganizationAdmin(' + organization.id + ',' + organization.admins[i].ID + ')">Remove from Maintainers</button>' +
                                         '</div>' +
                                     '</div>';
                                 }
@@ -208,12 +208,12 @@
                 </div>
             </div>
             <div class="flex flex-row mt-3">
-                <h2 class="italic">Invite an Admin for this organization (optional)</h2>
-                <help-icon class="transform -translate-x-0.5" text="When you create the organization, by default you will be its admin. You will be able to add additional admins later on."/>
+                <h2 class="italic">Invite a Maintainer for this Organization (optional)</h2>
+                <help-icon class="transform -translate-x-0.5" text="When you create the organization, by default you will be its maintainer. You will be able to add additional maintainers later on."/>
             </div>
             <div class="flex flex-wrap">
                 <div class="w-full">
-                    <input class="tl-input" id="maintainerEmailInput" name="maintainerEmailInput" type="text" required="false" placeholder="Enter Admin Email (e.g., max.mustermann@tum.de)" autocomplete="off" x-model="adminEmail"/>
+                    <input class="tl-input" id="maintainerEmailInput" name="maintainerEmailInput" type="text" required="false" placeholder="Enter Maintainer Email (e.g., max.mustermann@tum.de)" autocomplete="off" x-model="adminEmail"/>
                 </div>
             </div>
             <button id="createOrganization" title="Create Organization" class="btn primary mt-3 w-full" 
