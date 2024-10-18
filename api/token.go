@@ -135,13 +135,13 @@ func (r tokenRoutes) createToken(c *gin.Context) {
 //				or: rtmp://proxy.example.com/<lecturer-token>?slug=ABC-123 <-- optional slug parameter in case the lecturer is streaming multiple courses simultaneously
 //
 //	Proxy returns:  rtmp://ingest.example.com/ABC-123?secret=610f609e4a2c43ac8a6d648177472b17
-func (s *tokenRoutes) fetchStreamKey(c *gin.Context) {
+func (r *tokenRoutes) fetchStreamKey(c *gin.Context) {
 	// Optional slug parameter to get the stream key of a specific course (in case the lecturer is streaming multiple courses simultaneously)
 	slug := c.Query("slug")
 	t := c.Param("token")
 
 	// Get user from token
-	token, err := s.TokenDao.GetToken(t)
+	token, err := r.TokenDao.GetToken(t)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -160,7 +160,7 @@ func (s *tokenRoutes) fetchStreamKey(c *gin.Context) {
 	}
 
 	// Get user and check if he has the right to start a stream
-	user, err := s.UsersDao.GetUserByID(c, token.UserID)
+	user, err := r.UsersDao.GetUserByID(c, token.UserID)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -180,7 +180,7 @@ func (s *tokenRoutes) fetchStreamKey(c *gin.Context) {
 
 	// Find current/next stream and course of which the user is a lecturer
 	year, term := tum.GetCurrentSemester()
-	streamKey, courseSlug, err := s.StreamsDao.GetSoonStartingStreamInfo(&user, slug, year, term)
+	streamKey, courseSlug, err := r.StreamsDao.GetSoonStartingStreamInfo(&user, slug, year, term)
 	if err != nil || streamKey == "" || courseSlug == "" {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,

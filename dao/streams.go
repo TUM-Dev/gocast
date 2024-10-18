@@ -402,7 +402,10 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 		return model.Course{}, err
 	}
 
-	CoursesDao.AddAdminToCourse(NewDaoWrapper().CoursesDao, user.ID, course.ID)
+	err = CoursesDao.AddAdminToCourse(NewDaoWrapper().CoursesDao, user.ID, course.ID)
+	if err != nil {
+		return model.Course{}, err
+	}
 
 	return course, nil
 }
