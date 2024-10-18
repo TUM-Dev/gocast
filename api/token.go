@@ -16,10 +16,10 @@ import (
 func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := tokenRoutes{daoWrapper}
 	g := r.Group("/api/token")
+	g.POST("/proxy/:token", routes.fetchStreamKey)
 	g.Use(tools.AtLeastLecturer)
 	g.POST("/create", routes.createToken)
 	g.DELETE("/:id", routes.deleteToken)
-	g.POST("/:token", routes.fetchStreamKey)
 }
 
 type tokenRoutes struct {
