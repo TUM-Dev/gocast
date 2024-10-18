@@ -174,6 +174,7 @@ type Config struct {
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
 	WikiURL        string `yaml:"wikiURL"`
+	RtmpProxyURL   string `yaml:"rtmpProxyURL"`
 }
 
 type MailConfig struct {

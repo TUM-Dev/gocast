@@ -2,26 +2,26 @@
 <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
 <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
-<form class="form-container" x-data="{expires: '', scope: 'admin', generatedToken:null}"
+<form class="form-container" x-data="{expires: '', scope: 'lecturer', generatedToken:null}"
       @submit.prevent="admin.createToken(expires, scope).then(r=>r.json()).then(r => generatedToken=r.token)">
 
     <h1 class="form-container-title">Token Management</h1>
     <div class="form-container-body grid grid-cols-2 gap-3">
         <table class="table-auto w-full col-span-full">
             <thead>
-            <tr class="text-2 uppercase text-left">
-                <th>User</th>
+            <tr class="text-2 uppercase text-center">
+                <th class="px-4 text-left">User</th>
                 <th>Scope</th>
                 <th>Last Used</th>
                 <th>Expires</th>
                 <th>Actions</th>
             </tr>
             </thead>
-            <tbody class="text-3">
-            {{range .}}
-                {{- /*gotype: github.com/TUM-Dev/gocast/dao.AllTokensDto*/ -}}
+            <tbody class="text-3 text-center">
+            {{range .Tokens.Tokens}}
+                {{- /*gotype: github.com/TUM-Dev/gocast/web.TokensData*/ -}}
                 <tr x-data="{id: {{.Token.Model.ID}}, show:true}" x-show="show">
-                    <td class="p-4">{{if .UserMail}}{{.UserMail}}{{else}}{{.UserName}} {{.UserLrzID}}{{end}}</td>
+                    <td class="p-4 text-left">{{if .UserMail}}{{.UserMail}}{{else}}{{.UserName}} {{.UserLrzID}}{{end}}</td>
                     <td>{{.Scope}}</td>
                     <td>{{if .Token.LastUse.Valid}}{{.Token.LastUse.Time.Format "02 Jan 06 15:04:05"}}{{else}}never
                         used{{end}}</td>
@@ -40,17 +40,110 @@
                    x-init="flatpickr($el)">
         </label>
         <select x-model="scope" class="tl-select">
-            <option value="admin" class="text-4">
+            <option value="lecturer" class="text-4">
+                Scope: lecturer
+            </option>
+            <option value="admin" class="text-4" x-show="role == 1" x-init="role = {{.Role}}">
                 Scope: admin
             </option>
         </select>
-        <p x-show="generatedToken !== null" class="text-2">
-            This is your token. Write it down and keep it safe:
-            <span class="font-bold" x-text="generatedToken"></span>
-        </p>
         <button type="submit" class="btn primary col-span-full">
             <i class="fas fa-plus mr-1"></i>Create
         </button>
+    </div>
+    <div x-show="generatedToken !== null" class="rounded-lg p-6 mb-4 text-1">
+        <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold mb-2">Your Generated Token</h3>
+        <code @click="global.copyToClipboard(generatedToken)" class="block p-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer"><span x-text="generatedToken"></span></code>
+        </div>
+        <p class="mb-4">This is your generated token. Please <span @click="global.copyToClipboard(generatedToken)" class="btn primary hover:bg-blue-700 text-white font-bold py-1 px-4 rounded cursor-pointer" x-init="generatedToken=generatedToken">Copy</span> it and store it securely. It will not be shown again.<br>To use this token for self-streaming, follow the instructions below:</p>
+        <p class="border-t border-gray-100 dark:border-gray-500 my-4" x-show="scope === 'lecturer'"></span>
+        <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg" x-show="scope === 'lecturer'">
+                <div class="mb-4">
+                    <div x-data="{ tab: 'OBS' }">
+                        <div class="flex">
+                            <button type="button" @click="tab = 'OBS'" :class="tab === 'OBS' ? 'primary text-bold' : 'bg-gray-200 dark:bg-secondary'" class="px-4 py-2 rounded-t-lg">OBS</button>
+                            <button type="button" @click="tab = 'Zoom'" :class="tab === 'Zoom' ? 'primary text-bold' : 'bg-gray-200 dark:bg-secondary'" class="px-4 py-2 rounded-t-lg">Zoom</button>
+                            <button type="button" @click="tab = 'Teams'" :class="tab === 'Teams' ? 'primary text-bold' : 'bg-gray-200 dark:bg-secondary'" class="px-4 py-2 rounded-t-lg">Teams</button>
+                        </div>
+                        <div x-show="tab === 'OBS'" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                            <ol class="list-decimal list-inside">
+                                <li class="mb-2">Open OBS.</li>
+                                <li class="mb-2">Go to <strong>File</strong> > <strong>Settings</strong> > <strong>Stream</strong>.</li>
+                                <li class="mb-2">Select the <strong>Custom</strong> service and enter the <strong>Server</strong> and <strong>Stream Key</strong> from below.</li>
+                                <li class="mb-2">Click <strong>Start Streaming</strong> to go live.</li>
+                            </ol>
+                             <p class="border-t border-gray-200 dark:border-gray-500 my-4"></p>
+                            <p class="mb-2">
+                                <strong>Server:</strong> 
+                                <code @click="global.copyToClipboard(`{{.Tokens.RtmpProxyURL}}`)" class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
+                                    {{.Tokens.RtmpProxyURL}}
+                                </code>
+                            </p>
+                            <p>
+                                <strong>Stream Key:</strong> 
+                                <code @click="global.copyToClipboard(generatedToken)" class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
+                                    <span x-text="generatedToken"></span>
+                                </code> 
+                            </p>
+                             <p class="border-t border-gray-200 dark:border-gray-500 mt-4"></p>
+                        </div>
+                        <div x-show="tab === 'Zoom'" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                            <ol class="list-decimal list-inside">
+                                <li class="mb-2">Sign in to the Zoom web portal.</li>
+                                <li class="mb-2">Click <strong>Meetings</strong>.</li>
+                                <li class="mb-2">Click <strong>Schedule a Meeting</strong> and enter the required information to schedule a meeting.</li>
+                                <li class="mb-2">Click <strong>Save</strong> to display a set of tabs with advanced options.</li>
+                                <li class="mb-2">Click the <strong>Live Streaming</strong> tab, then click <strong>Configure Custom Streaming Service</strong>.</li>
+                                <li class="mb-2">Follow the instructions located in the green box, which were provided by your administrator. Contact your administrator if the instructions do not include sufficient information, or enable <strong>Configure live stream during the meeting</strong> to enter the details live.</li>
+                                <li class="mb-2">Click <strong>Save</strong> to save your livestreaming settings. The host will be able to livestream this meeting without needing to add these settings after the meeting begins.</li>
+                            </ol>
+                             <p class="border-t border-gray-200 dark:border-gray-500 my-4"></p>
+                            <p class="mb-2">
+                                <strong>Stream URL:</strong> 
+                                <code @click="global.copyToClipboard(`{{.Tokens.RtmpProxyURL}}`)" class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
+                                    {{.Tokens.RtmpProxyURL}}
+                                </code>
+                            </p>
+                            <p>
+                                <strong>Stream Key:</strong> 
+                                <code @click="global.copyToClipboard(generatedToken)" class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
+                                    <span x-text="generatedToken"></span>
+                                </code> 
+                            </p>
+                             <p class="border-t border-gray-200 dark:border-gray-500 mt-4"></p>
+                        </div>
+                        <div x-show="tab === 'Teams'" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                            <ol class="list-decimal list-inside">
+                                <li class="mb-2">Open Microsoft Teams and oin the meeting or webinar you wish to live stream.</li>
+                                <li class="mb-2">Add the <strong>Custom Streaming</strong> app to the meeting.</li>
+                                <li class="mb-2">Click <strong>Add</strong> and <strong>Save</strong>.</li>
+                                <li class="mb-2">In the right-hand panel that opens, paste the <strong>Stream URL</strong> and <strong>Stream Key</strong> from below.</li>
+                                <li class="mb-2">Click <strong>Start streaming</strong> in the lower right, then select <strong>Allow</strong> in the dialog box when it appears.</li>
+                                <li class="mb-2">You’re now live streaming! Share your screen and/or use your cameras and microphones to run your event as you would any normal Microsoft Teams meeting.</li>
+                                <li class="mb-2">When you’re finished with the event, you can stop streaming via Teams and YouTube.</li>
+                            </ol>
+                             <p class="border-t border-gray-200 dark:border-gray-500 my-4"></p>
+                            <p class="mb-2">
+                                <strong>Stream URL:</strong> 
+                                <code @click="global.copyToClipboard(`{{.Tokens.RtmpProxyURL}}`)" class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
+                                    {{.Tokens.RtmpProxyURL}}
+                                </code>
+                            </p>
+                            <p>
+                                <strong>Stream Key:</strong> 
+                                <code @click="global.copyToClipboard(generatedToken)" class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
+                                    <span x-text="generatedToken"></span>
+                                </code> 
+                            </p>
+                             <p class="border-t border-gray-200 dark:border-gray-500 mt-4"></p>
+                        </div>
+                    </div>
+                    <p class="text-sm text-5 px-4">You can start streaming from 15 minutes before the lecture starts and up to 15 minutes after the lecture ends - TUMLive automatically finds the lecture you want to stream.</p>
+                    <p class="text-sm text-5 px-4">To test your setup, you can start streaming while not in a lecture and a private test stream will be created.</p>
+                </div>
+          <p class="mt-4 italic">For more information, please refer to the <a href="https://docs.live.rbg.tum.de/docs/usage/02-self-streaming/" target="_blank" rel="noopener noreferrer" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 underline">self-streaming guide</a>.</p>
+        </div>
     </div>
 </form>
 {{end}}
