@@ -64,18 +64,18 @@ func (mr *MockTokenDaoMockRecorder) DeleteToken(id interface{}) *gomock.Call {
 }
 
 // GetAllTokens mocks base method.
-func (m *MockTokenDao) GetAllTokens() ([]dao.AllTokensDto, error) {
+func (m *MockTokenDao) GetAllTokens(user *model.User) ([]dao.AllTokensDto, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllTokens")
+	ret := m.ctrl.Call(m, "GetAllTokens", user)
 	ret0, _ := ret[0].([]dao.AllTokensDto)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllTokens indicates an expected call of GetAllTokens.
-func (mr *MockTokenDaoMockRecorder) GetAllTokens() *gomock.Call {
+func (mr *MockTokenDaoMockRecorder) GetAllTokens(user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokens", reflect.TypeOf((*MockTokenDao)(nil).GetAllTokens))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokens", reflect.TypeOf((*MockTokenDao)(nil).GetAllTokens), user)
 }
 
 // GetToken mocks base method.
