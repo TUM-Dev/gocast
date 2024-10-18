@@ -13,6 +13,7 @@ type TokenDao interface {
 	AddToken(token model.Token) error
 
 	GetToken(token string) (model.Token, error)
+	GetTokenByID(id string) (model.Token, error)
 	GetAllTokens() ([]AllTokensDto, error)
 
 	TokenUsed(token model.Token) error
@@ -37,6 +38,12 @@ func (d tokenDao) AddToken(token model.Token) error {
 func (d tokenDao) GetToken(token string) (model.Token, error) {
 	var t model.Token
 	err := DB.Model(&t).Where("token = ? AND (expires IS null OR expires > NOW())", token).First(&t).Error
+	return t, err
+}
+
+func (d tokenDao) GetTokenByID(id string) (model.Token, error) {
+	var t model.Token
+	err := DB.Model(&t).Where("id = ?", id).First(&t).Error
 	return t, err
 }
 

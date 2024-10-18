@@ -6,8 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
-const TokenScopeAdmin = "admin"
-const TokenScopeLecturer = "lecturer"
+const (
+	TokenScopeAdmin    = "admin"
+	TokenScopeLecturer = "lecturer"
+)
 
 // Token can be used to authenticate instead of a user account
 type Token struct {
