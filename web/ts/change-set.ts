@@ -1,6 +1,25 @@
+import { throttle, ThrottleFunc } from "./throttle";
+
+export enum LogLevel {
+    none,
+    warn,
+    info,
+    debug,
+}
+
+const logLevelNames: string[] = ["None", "Warn", "Info", "Debug"];
+
 export interface DirtyState {
     isDirty: boolean;
     dirtyKeys: string[];
+}
+
+export interface ChangeSetOptions<T> {
+    comparator?: (key: string, a: T, b: T) => boolean;
+    updateTransformer?: ComputedProperties<T>;
+    onUpdate?: (changeState: T, dirtyState: DirtyState) => void;
+    updateThrottle?: number;
+    logLevel?: LogLevel;
 }
 
 /**
@@ -57,16 +76,38 @@ export class ChangeSet<T> {
     private changeState: T;
     private readonly comparator?: PropertyComparator<T>;
     private onUpdate: ((changeState: T, dirtyState: DirtyState) => void)[];
+    private readonly changeStateTransformer?: (changeState: T) => T;
+    private readonly stateTransformer?: (changeState: T) => T;
+
+    private readonly throttledDispatchUpdateNoStateChanged?: ThrottleFunc;
+    private readonly throttledDispatchUpdateStateChanged?: ThrottleFunc;
+
+    private readonly logLevel: LogLevel;
+    private lastLogTimestamp: number;
+    private static logIdCounter: number = 0;
+    private readonly logId: number;
 
     constructor(
         state: T,
-        comparator?: (key: string, a: T, b: T) => boolean,
-        onUpdate?: (changeState: T, dirtyState: DirtyState) => void,
+        {
+            comparator,
+            updateTransformer,
+            onUpdate,
+            updateThrottle = 0,
+            logLevel = LogLevel.none,
+        }: ChangeSetOptions<T> = {},
     ) {
+        this.lastLogTimestamp = Date.now();
+        this.logLevel = logLevel;
+        this.logId = ChangeSet.logIdCounter++;
         this.state = state;
         this.onUpdate = onUpdate ? [onUpdate] : [];
+        this.changeStateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
+        this.stateTransformer = updateTransformer !== undefined ? updateTransformer.create() : undefined;
         this.comparator = comparator;
-        this.reset();
+        this.throttledDispatchUpdateNoStateChanged = throttle(() => this._dispatchUpdate(false), updateThrottle, true);
+        this.throttledDispatchUpdateStateChanged = throttle(() => this._dispatchUpdate(true), updateThrottle, true);
+        this.init();
     }
 
     /**
@@ -74,6 +115,7 @@ export class ChangeSet<T> {
      * @param onUpdate
      */
     listen(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
+        this._log(LogLevel.debug, "Add Update Listener", { onUpdate });
         this.onUpdate.push(onUpdate);
     }
 
@@ -82,6 +124,7 @@ export class ChangeSet<T> {
      * @param onUpdate
      */
     removeListener(onUpdate: (changeState: T, dirtyState: DirtyState) => void) {
+        this._log(LogLevel.debug, "Remove Update Listener", { onUpdate });
         this.onUpdate = this.onUpdate.filter((o) => o !== onUpdate);
     }
 
@@ -90,7 +133,7 @@ export class ChangeSet<T> {
      * @param key key to return
      * @param lastCommittedState if set to true, value of the last committed state is returned
      */
-    getValue(key: string, { lastCommittedState = false }): T {
+    getValue(key: string, { lastCommittedState = false } = {}): T {
         if (lastCommittedState) {
             return this.state[key];
         }
@@ -109,8 +152,9 @@ export class ChangeSet<T> {
      * @param val
      */
     set(val: T) {
+        this._log(LogLevel.info, "Set ChangeState", { val });
         this.changeState = { ...val };
-        this.dispatchUpdate();
+        this.dispatchUpdateThrottled(false);
     }
 
     /**
@@ -121,11 +165,12 @@ export class ChangeSet<T> {
      */
     /* eslint-disable @typescript-eslint/no-explicit-any */
     patch(key: string, val: any, { isCommitted = false }: { isCommitted?: boolean } = {}) {
+        this._log(LogLevel.info, "Patch State", { key, val, isCommitted });
         this.changeState = { ...this.changeState, [key]: val };
         if (isCommitted) {
             this.state = { ...this.state, [key]: val };
         }
-        this.dispatchUpdate();
+        this.dispatchUpdateThrottled(isCommitted);
     }
 
     /**
@@ -133,6 +178,7 @@ export class ChangeSet<T> {
      * @param state
      */
     updateState(state: T) {
+        this._log(LogLevel.info, "Update State", { state });
         const changedKeys = this.changedKeys();
         this.state = { ...state };
 
@@ -141,8 +187,7 @@ export class ChangeSet<T> {
                 this.changeState[key] = this.state[key];
             }
         }
-
-        this.dispatchUpdate();
+        this.dispatchUpdateThrottled(true);
     }
 
     /**
@@ -150,19 +195,30 @@ export class ChangeSet<T> {
      * @param discardKeys List of keys that should be discarded and not committed.
      */
     commit({ discardKeys = [] }: { discardKeys?: string[] } = {}): void {
+        this._log(LogLevel.info, "Perform Commit", { discardKeys });
         for (const key in discardKeys) {
             this.changeState[key] = this.state[key];
         }
         this.state = { ...this.changeState };
-        this.dispatchUpdate();
+        this.dispatchUpdateThrottled(true);
+    }
+
+    /**
+     * Init new state
+     */
+    init(): void {
+        this._log(LogLevel.info, "Perform Init");
+        this.changeState = { ...this.state };
+        this.dispatchUpdateThrottled(true);
     }
 
     /**
      * Resets the change state to the state. Change state is the most current state afterwards.
      */
     reset(): void {
+        this._log(LogLevel.info, "Perform Reset");
         this.changeState = { ...this.state };
-        this.dispatchUpdate();
+        this.dispatchUpdateThrottled(false);
     }
 
     /**
@@ -209,9 +265,23 @@ export class ChangeSet<T> {
 
     /**
      * Executes all onUpdate listeners
+     * @param stateChanged if state changed, state computed values are recalculated
      */
-    dispatchUpdate() {
+    _dispatchUpdate(stateChanged: boolean) {
+        this._log(LogLevel.info, "Dispatch Update", { stateChanged });
+
+        if (stateChanged && this.stateTransformer) {
+            this._log(LogLevel.info, "Reevaluate Computed on State");
+            this.state = this.stateTransformer(this.state);
+        }
+
+        if (this.changeStateTransformer) {
+            this._log(LogLevel.info, "Reevaluate Computed on ChangeState");
+            this.changeState = this.changeStateTransformer(this.changeState);
+        }
+
         if (this.onUpdate.length > 0) {
+            this._log(LogLevel.info, `Trigger ${this.onUpdate.length} onUpdate handler`);
             const dirtyKeys = this.changedKeys();
             for (const onUpdate of this.onUpdate) {
                 onUpdate(this.changeState, {
@@ -219,6 +289,47 @@ export class ChangeSet<T> {
                     isDirty: dirtyKeys.length > 0,
                 });
             }
+        }
+    }
+
+    /**
+     * Log Function that prints messages to console or discards them if the loglevel of changeSet is lower than the
+     * loglevel of the message
+     * @param level LogLevel of the message, if lower than changeSet's loglevel it will be discarded
+     * @param message The message to print to console
+     * @param payload Any payload object, "instance" is automatically attached if the changeSet loglevel is set to "debug"
+     */
+    _log(level: LogLevel, message: string, payload?: object) {
+        if (level <= this.logLevel) {
+            const ts = Date.now();
+            const tsDelta = ts - this.lastLogTimestamp;
+            this.lastLogTimestamp = ts;
+
+            if (this.logLevel === LogLevel.debug) {
+                payload = { ...(payload ?? {}), instance: this };
+            }
+
+            console.log(
+                `[CHANGESET | ${this.logId.toString().padStart(4, "0")} | ${logLevelNames[level].padEnd(
+                    5,
+                    " ",
+                )}] ${message}`,
+                payload ?? "",
+                `[${tsDelta}ms]`,
+            );
+        }
+    }
+
+    /**
+     * Executes all onUpdate listeners
+     * @param stateChanged if state changed, state computed values are recalculated
+     */
+    dispatchUpdateThrottled(stateChanged: boolean) {
+        this._log(LogLevel.debug, "Throttled: Dispatch Update", { stateChanged });
+        if (stateChanged && this.stateTransformer) {
+            return this.throttledDispatchUpdateStateChanged();
+        } else {
+            return this.throttledDispatchUpdateNoStateChanged();
         }
     }
 }
@@ -244,6 +355,15 @@ export function singleProperty<T>(key: string, comparator: SinglePropertyCompara
     };
 }
 
+export function multiProperty<T>(keys: string[], comparator: PropertyComparator<T>): PropertyComparator<T> {
+    return (_key: string, a, b) => {
+        if (!keys.includes(_key)) {
+            return null;
+        }
+        return comparator(_key, a, b);
+    };
+}
+
 export function comparatorPipeline<T>(list: PropertyComparator<T>[]): PropertyComparator<T> {
     return (key: string, a, b) => {
         for (const comparator of list) {
@@ -255,5 +375,53 @@ export function comparatorPipeline<T>(list: PropertyComparator<T>[]): PropertyCo
             }
         }
         return null;
+    };
+}
+
+export type ComputedPropertyTransformer<T> = (state: T) => T;
+export type ComputedPropertySubTransformer<T> = {
+    transform: (state: T, oldState: T) => T;
+    key: string;
+};
+
+export class ComputedProperties<T> {
+    private readonly computed: ComputedPropertySubTransformer<T>[];
+
+    constructor(computed: ComputedPropertySubTransformer<T>[]) {
+        this.computed = computed;
+    }
+
+    create(): ComputedPropertyTransformer<T> {
+        let oldState: T | null = null;
+        return (state: T) => {
+            for (const transformer of this.computed) {
+                state = transformer.transform(state, oldState);
+            }
+            oldState = { ...state };
+            return state;
+        };
+    }
+
+    /**
+     * This is syntactic sugar to quickly ignore the computed keys in a changeset
+     */
+    ignore(): PropertyComparator<T> {
+        return ignoreKeys(this.computed.map((transformer) => transformer.key));
+    }
+}
+
+export function computedProperty<T, R>(
+    key: string,
+    updater: (changeState: T, old: T | null) => R,
+    deps: string[] = [],
+): ComputedPropertySubTransformer<T> {
+    return {
+        transform: (state: T, oldState: T | null) => {
+            if (oldState == null || deps.length == 0 || deps.some((k) => oldState[k] !== state[k])) {
+                state[key] = updater(state, oldState);
+            }
+            return state;
+        },
+        key,
     };
 }

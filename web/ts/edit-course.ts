@@ -15,9 +15,18 @@ import {
     videoSectionSort,
     videoSectionTimestamp,
 } from "./api/admin-lecture-list";
-import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
+import {
+    ChangeSet,
+    comparatorPipeline,
+    ComputedProperties,
+    computedProperty,
+    ignoreKeys,
+    multiProperty,
+    singleProperty,
+} from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
 import { uploadFile } from "./utilities/fetch-wrappers";
+import { dateFormatOptions, timeFormatOptions } from "./data-store/admin-lecture-list";
 
 export enum UIEditMode {
     none,
@@ -111,6 +120,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         uiEditMode: UIEditMode.none,
         isDirty: false,
         isSaving: false,
+        isInvalid: false,
 
         // Lecture Data
         changeSet: null as ChangeSet<Lecture> | null,
@@ -120,8 +130,65 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
+            const computedFields = new ComputedProperties([
+                computedProperty<Lecture, Date>(
+                    "startDate",
+                    (changeSet) => {
+                        return new Date(changeSet.start);
+                    },
+                    ["start"],
+                ),
+                computedProperty<Lecture, string>(
+                    "startDateFormatted",
+                    (changeSet) => {
+                        return changeSet.startDate.toLocaleDateString("en-US", dateFormatOptions);
+                    },
+                    ["start"],
+                ),
+                computedProperty<Lecture, string>(
+                    "startTimeFormatted",
+                    (changeSet) => {
+                        return changeSet.startDate.toLocaleDateString("en-US", timeFormatOptions);
+                    },
+                    ["start"],
+                ),
+                computedProperty<Lecture, Date>(
+                    "endDate",
+                    (changeSet) => {
+                        return new Date(changeSet.end);
+                    },
+                    ["end"],
+                ),
+                computedProperty<Lecture, string>(
+                    "endTimeFormatted",
+                    (changeSet) => {
+                        return changeSet.endDate.toLocaleTimeString("en-US", timeFormatOptions);
+                    },
+                    ["end"],
+                ),
+                computedProperty<Lecture, number>(
+                    "duration",
+                    (changeSet) => {
+                        // To ignore day differences
+                        const normalizedEndDate = new Date(changeSet.startDate.getTime());
+                        normalizedEndDate.setHours(changeSet.endDate.getHours());
+                        normalizedEndDate.setMinutes(changeSet.endDate.getMinutes());
+                        return normalizedEndDate.getTime() - changeSet.startDate.getTime();
+                    },
+                    ["start", "end"],
+                ),
+                computedProperty<Lecture, string>(
+                    "durationFormatted",
+                    (changeSet) => {
+                        return this.generateFormattedDuration(changeSet);
+                    },
+                    ["start", "end"],
+                ),
+            ]);
+
             const customComparator = comparatorPipeline([
-                ignoreKeys(["files"]),
+                computedFields.ignore(),
+                ignoreKeys(["files", "downloadableVods", "transcodingProgresses"]),
                 singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
                     // List length differs, something was removed or added
                     if (a.videoSections.length !== b.videoSections.length) {
@@ -139,12 +206,23 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                     // A section has edited and different information now
                     return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
                 }),
+                multiProperty(["start", "end"], (key: string, a: Lecture, b: Lecture): boolean | null => {
+                    const dateA = new Date(a[key]);
+                    const dateB = new Date(b[key]);
+                    return dateA.getTime() !== dateB.getTime();
+                }),
             ]);
 
             // This tracks changes that are not saved yet
-            this.changeSet = new ChangeSet<Lecture>(lecture, customComparator, (data, dirtyState) => {
-                this.lectureData = data;
-                this.isDirty = dirtyState.isDirty;
+            this.changeSet = new ChangeSet<Lecture>(lecture, {
+                //logLevel: LogLevel.debug,
+                comparator: customComparator,
+                updateTransformer: computedFields,
+                onUpdate: (data, dirtyState) => {
+                    this.lectureData = data;
+                    this.isDirty = dirtyState.isDirty;
+                    this.isInvalid = data.duration <= 0;
+                },
             });
 
             // This updates the state live in background
@@ -216,6 +294,23 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
         deleteAttachment(id: number) {
             DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
+        },
+
+        generateFormattedDuration(lecture: Lecture): string {
+            if (lecture.duration <= 0) {
+                return "invalid";
+            }
+            const duration = lecture.duration / 1000 / 60;
+            const hours = Math.floor(duration / 60);
+            const minutes = duration - hours * 60;
+            let res = "";
+            if (hours > 0) {
+                res += `${hours}h `;
+            }
+            if (minutes > 0) {
+                res += `${minutes}min`;
+            }
+            return res;
         },
 
         friendlySectionTimestamp(section: VideoSection): string {
@@ -319,7 +414,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } =
+            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections, start, end } =
                 this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
@@ -336,6 +431,19 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         saveSeries: this.uiEditMode === UIEditMode.series,
                     },
                 });
+
+                // Save new date and time
+                if (changedKeys.includes("start") || changedKeys.includes("end")) {
+                    const startDate = new Date(start);
+                    const endDate = new Date(end);
+                    endDate.setFullYear(startDate.getFullYear());
+                    endDate.setMonth(startDate.getMonth());
+                    endDate.setDate(startDate.getDate());
+                    await DataStore.adminLectureList.updateStartEnd(courseId, lectureId, {
+                        start: startDate,
+                        end: endDate,
+                    });
+                }
 
                 // Saving VideoSections
                 if (changedKeys.includes("videoSections")) {
