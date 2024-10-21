@@ -3,12 +3,15 @@ package dao
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm/clause"
 
 	"github.com/TUM-Dev/gocast/model"
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -32,6 +35,7 @@ type StreamsDao interface {
 	GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error)
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
 	GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error)
+	GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error)
 
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
@@ -303,6 +307,107 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 		streams[i].Watched = watchedStates[i].Watched
 	}
 	return
+}
+
+// GetSoonStartingStreamInfo returns the stream key, course slug and course name of an upcoming stream.
+func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error) {
+	var result struct {
+		CourseID  uint
+		StreamKey string
+		ID        string
+		Slug      string
+	}
+	now := time.Now()
+	query := DB.Table("streams").
+		Select("streams.course_id, streams.stream_key, streams.id, courses.slug").
+		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
+		Joins("JOIN courses ON courses.id = course_admins.course_id").
+		Where("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
+		Or("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now).     // Streams that just finished in the last 15 minutes
+		Order("streams.start ASC")
+
+	if slug != "" {
+		query = query.Where("courses.slug = ?", slug)
+	}
+	if year != 0 {
+		query = query.Where("courses.year = ?", year)
+	}
+	if term != "" {
+		query = query.Where("courses.teaching_term = ?", term)
+	}
+
+	err := query.Limit(1).Scan(&result).Error
+	if err == gorm.ErrRecordNotFound || result.StreamKey == "" || result.ID == "" || result.Slug == "" {
+		stream, course, err := d.CreateOrGetTestStreamAndCourse(user)
+		if err != nil {
+			return "", "", err
+		}
+		return stream.StreamKey, fmt.Sprintf("%s-%d", course.Slug, stream.ID), nil
+	}
+	if err != nil {
+		logger.Error("Error getting soon starting stream: %v", slog.String("err", err.Error()))
+		return "", "", err
+	}
+
+	return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
+}
+
+// Helper method to fetch test stream and course for current user.
+func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stream, model.Course, error) {
+	course, err := d.CreateOrGetTestCourse(user)
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	var stream model.Stream
+	err = DB.FirstOrCreate(&stream, model.Stream{
+		CourseID:      course.ID,
+		Name:          "Test Stream",
+		Description:   "This is a test stream",
+		LectureHallID: 0,
+	}).Error
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	stream.Start = time.Now().Add(5 * time.Minute)
+	stream.End = time.Now().Add(1 * time.Hour)
+	stream.LiveNow = true
+	stream.Recording = true
+	stream.LiveNowTimestamp = time.Now().Add(5 * time.Minute)
+	stream.Private = true
+	streamKey := uuid.NewV4().String()
+	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
+	stream.LectureHallID = 1
+	err = DB.Save(&stream).Error
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	return stream, course, err
+}
+
+// Helper method to fetch test course for current user.
+func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
+	var course model.Course
+	err := DB.FirstOrCreate(&course, model.Course{
+		Name:         "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
+		TeachingTerm: "Test",
+		Slug:         "TESTCOURSE",
+		Year:         1234,
+		Visibility:   "hidden",
+		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
+	}).Error
+	if err != nil {
+		return model.Course{}, err
+	}
+
+	err = CoursesDao.AddAdminToCourse(NewDaoWrapper().CoursesDao, user.ID, course.ID)
+	if err != nil {
+		return model.Course{}, err
+	}
+
+	return course, nil
 }
 
 // SetLectureHall set lecture-halls of streamIds to lectureHallID

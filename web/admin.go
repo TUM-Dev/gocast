@@ -58,7 +58,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			notifications = found
 		}
 	case "token":
-		tokens, err = r.TokenDao.GetAllTokens()
+		tokens, err = r.TokenDao.GetAllTokens(tumLiveContext.User)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("couldn't query tokens", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -100,7 +100,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
-			Tokens:              tokens,
+			Tokens:              TokensData{Tokens: tokens, RtmpProxyURL: tools.Cfg.RtmpProxyURL, User: tumLiveContext.User},
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
@@ -148,6 +148,12 @@ func GetPageString(s string) string {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
+}
+
+type TokensData struct {
+	Tokens       []dao.AllTokensDto
+	RtmpProxyURL string
+	User         *model.User
 }
 
 func (r mainRoutes) LectureCutPage(c *gin.Context) {
@@ -327,7 +333,7 @@ type AdminPageData struct {
 	CurT                string
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
-	Tokens              []dao.AllTokensDto
+	Tokens              TokensData
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 }
