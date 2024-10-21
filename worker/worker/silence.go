@@ -1,11 +1,10 @@
 package worker
 
 import (
+	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strconv"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type SilenceDetect struct {
@@ -56,7 +55,7 @@ func (s *SilenceDetect) ParseSilence() error {
 	return nil
 }
 
-// postprocess merges short duration of silence into units of silence
+//postprocess merges short duration of silence into units of silence
 func (s *SilenceDetect) postprocess() {
 	oldSilences := *s.Silences
 	if len(oldSilences) < 2 {
