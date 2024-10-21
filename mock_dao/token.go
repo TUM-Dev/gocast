@@ -64,18 +64,18 @@ func (mr *MockTokenDaoMockRecorder) DeleteToken(id interface{}) *gomock.Call {
 }
 
 // GetAllTokens mocks base method.
-func (m *MockTokenDao) GetAllTokens() ([]dao.AllTokensDto, error) {
+func (m *MockTokenDao) GetAllTokens(user *model.User) ([]dao.AllTokensDto, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllTokens")
+	ret := m.ctrl.Call(m, "GetAllTokens", user)
 	ret0, _ := ret[0].([]dao.AllTokensDto)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllTokens indicates an expected call of GetAllTokens.
-func (mr *MockTokenDaoMockRecorder) GetAllTokens() *gomock.Call {
+func (mr *MockTokenDaoMockRecorder) GetAllTokens(user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokens", reflect.TypeOf((*MockTokenDao)(nil).GetAllTokens))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokens", reflect.TypeOf((*MockTokenDao)(nil).GetAllTokens), user)
 }
 
 // GetToken mocks base method.
@@ -91,6 +91,21 @@ func (m *MockTokenDao) GetToken(token string) (model.Token, error) {
 func (mr *MockTokenDaoMockRecorder) GetToken(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*MockTokenDao)(nil).GetToken), token)
+}
+
+// GetTokenByID mocks base method.
+func (m *MockTokenDao) GetTokenByID(id string) (model.Token, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTokenByID", id)
+	ret0, _ := ret[0].(model.Token)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTokenByID indicates an expected call of GetTokenByID.
+func (mr *MockTokenDaoMockRecorder) GetTokenByID(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenByID", reflect.TypeOf((*MockTokenDao)(nil).GetTokenByID), id)
 }
 
 // TokenUsed mocks base method.

@@ -95,6 +95,7 @@ type IndexData struct {
 	ServerNotifications []model.ServerNotification
 	CanonicalURL        tools.CanonicalURL
 	Branding            tools.Branding
+	WikiURL             string
 }
 
 func NewIndexData() IndexData {
@@ -102,6 +103,7 @@ func NewIndexData() IndexData {
 		VersionTag:   VersionTag,
 		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
 		Branding:     tools.BrandingCfg,
+		WikiURL:      tools.Cfg.WikiURL,
 	}
 }
 

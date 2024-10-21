@@ -457,13 +457,20 @@
 
                 <!-- Desktop stream info-->
                 <div class="pt-2 lg:pt-0">
-                    <div class="justify-center space-x-2 text-lg text-4 flex shrink-0">
+                    <div class="justify-center space-x-2 text-lg flex shrink-0">
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
-                            <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                            <div class="rounded-lg px-3 text-4 py-2 h-fit w-fit bg-gray-100 dark:bg-secondary-light space-x-2">
+                            <a
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
                                :title="'Edit course settings'">
                                 <i class="fa-solid fa-pen text-4"></i>
                             </a>
+                            <a
+                               href="/admin/stats/{{$course.Model.ID}}/{{$stream.Model.ID}}"
+                               :title="'Watch lecture stats'">
+                                <i class="fa-solid fa-chart-simple text-4"></i>
+                            </a>
+                            </div>
                         {{end}}
 
                         {{if .IndexData.TUMLiveContext.User}}

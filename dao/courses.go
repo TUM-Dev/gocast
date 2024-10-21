@@ -71,7 +71,7 @@ func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep
 
 func (d coursesDao) AddAdminToCourse(userID uint, courseID uint) error {
 	defer Cache.Clear()
-	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?)", userID, courseID).Error
+	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?) on duplicate key update user_id = user_id", userID, courseID).Error
 }
 
 // GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
