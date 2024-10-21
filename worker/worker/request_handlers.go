@@ -231,7 +231,7 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		publishVoD:    request.GetPublishVoD(),
 		streamName:    request.GetStreamName(),
 		ingestServer:  request.GetIngestServer(),
-		isSelfStream:  false,
+		isSelfStream:  request.GetSelfStream(),
 		outUrl:        request.GetOutUrl(),
 	}
 
@@ -328,6 +328,7 @@ func HandleUploadRestReq(streamInfo *pb.GetStreamInfoForUploadResponse, localFil
 		streamVersion: streamInfo.VideoType,
 		publishVoD:    true,
 		recordingPath: &localFile,
+		isSelfStream:  false,
 	}
 	log.WithFields(log.Fields{"stream": c.streamId, "course": c.courseSlug, "file": localFile}).Debug("Handling upload request")
 
