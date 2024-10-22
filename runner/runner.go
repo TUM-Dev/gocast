@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/caarlos0/env"
-	"github.com/google/uuid"
 	"github.com/tum-dev/gocast/runner/actions"
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/logging"
@@ -37,9 +36,9 @@ type Runner struct {
 	log *slog.Logger
 	cmd config.CmdList
 
-	JobCount chan int
-	draining bool
-	jobs     map[string]*Job
+	draining      bool
+	ActionCount   chan int
+	activeActions map[string][]*actions.Action
 
 	actions   actions.ActionProvider
 	hlsServer *HLSServer
@@ -65,12 +64,12 @@ func NewRunner(v string) *Runner {
 
 	start := time.Now()
 	return &Runner{
-		log:      log,
-		JobCount: make(chan int, 1),
-		draining: false,
-		cfg:      cfg,
-		cmd:      *cmd,
-		jobs:     make(map[string]*Job),
+		log:           log,
+		ActionCount:   make(chan int),
+		activeActions: make(map[string][]*actions.Action),
+		draining:      false,
+		cfg:           cfg,
+		cmd:           *cmd,
 		actions: actions.ActionProvider{
 			Log:        log,
 			Cmd:        *cmd,
@@ -139,81 +138,35 @@ func (r *Runner) InitApiGrpc() {
 
 }
 
-type Job struct {
-	ID      string
-	Actions []*actions.Action
-
-	Log *slog.Logger
-}
-
-// Run triggers all actions in the job sequentially.
-func (j *Job) Run(ctx context.Context) {
-	for i := range j.Actions {
-		if j.Actions[i].Canceled {
-			j.Log.Info("skipping action because it was canceled", "action", j.Actions[i].Type)
-			continue
-		}
-		// create new context to make each action cancelable individually
-		actionContext, cancel := context.WithCancelCause(ctx)
-		j.Actions[i].Cancel = cancel
-		j.Log.Info("running action", "action", j.Actions[i].Type)
-		c, err := j.Actions[i].ActionFn(actionContext, j.Log.With("action", j.Actions[i].Type))
-		if err != nil {
-			// ensure context is canceled even on error
-			j.Log.Error("action failed", "error", err, "action", j.Actions[i].Type)
-			j.Actions[i].Cancel(err)
-			return
-		}
-		// pass context to next action without cancel
-		ctx = context.WithoutCancel(c)
-
-		j.Actions[i].Cancel(nil)
-	}
-}
-
-func (j *Job) Cancel(reason error, actionTypes ...actions.ActionType) {
-	for i := len(j.Actions) - 1; i >= 0; i-- { // cancel actions in reverse order to ensure all actions are canceled when they run
-		for _, actionType := range actionTypes {
-			if j.Actions[i].Type == actionType {
-				if j.Actions[i].Cancel != nil {
-					// action already running -> cancel context
-					j.Actions[i].Cancel(reason)
-				}
-				// set canceled flag -> stop action from being started
-				j.Actions[i].Canceled = true
+func (r *Runner) RunAction(ctx context.Context, a []*actions.Action) string {
+	r.ActionCount <- len(r.activeActions)
+	ActionID := ctx.Value("actionID").(string)
+	r.activeActions[ActionID] = a
+	go func() {
+		for _, action := range a {
+			if action.Canceled {
+				r.log.Info("skipping action because it was canceled", "action", action.Type)
+				continue
 			}
-		}
-	}
-	j.Log.Info("job canceled", "reason", reason)
-}
+			// create new context to make each action cancelable individually
+			actionContext, cancel := context.WithCancelCause(ctx)
+			action.Cancel = cancel
+			r.log.Info("running action", "action", action.Type)
+			c, err := action.ActionFn(actionContext, r.log.With("action", action.Type))
+			if err != nil {
+				// ensure context is canceled even on error
+				r.log.Error("action failed", "error", err, "action", action.Type)
+				action.Cancel(err)
+				return
+			}
+			// pass context to next action without cancel
+			ctx = context.WithoutCancel(c)
 
-// AddJob adds a job to the runner and starts it.
-func (r *Runner) AddJob(ctx context.Context, a []*actions.Action) string {
-	jobID := uuid.New().String()
-	r.jobs[jobID] = &Job{
-		ID:      jobID,
-		Actions: a,
-
-		Log: enrichLogger(r.log, ctx).With("jobID", jobID),
-	}
-	// notify main loop about current job count
-	r.JobCount <- len(r.jobs)
-	done := make(chan struct{})
-
-	go func() {
-		defer func() { done <- struct{}{} }()
-		r.jobs[jobID].Run(ctx)
-	}()
-	go func() {
-		select {
-		case d := <-done:
-			// update job count and remove job from map after it's done
-			r.log.Info("job cancelled", "jobID", jobID, "reason", ctx.Err(), "cancelReason", d)
-			delete(r.jobs, jobID)
-			r.JobCount <- len(r.jobs)
+			action.Cancel(nil)
 		}
 	}()
-	return jobID
+
+	return ActionID
 }
 
 // enrichLogger adds StreamID, CourseID, Version to the logger if present in the context

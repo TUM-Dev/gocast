@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/TUM-Dev/gocast/dao"
@@ -75,8 +76,29 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 	return &protobuf.HeartbeatResponse{Ok: p}, err
 }
 
-func StreamRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream, course model.Course, source string, runners []model.Runner, version string, end time.Time) {
+func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner) {
+	streamID := fmt.Sprintf("%f", ctx.Value("stream"))
+	stream, err := dao.StreamsDao.GetStreamByID(ctx, streamID)
+	if err != nil {
+		logger.Error("Can't get stream", "err", err)
+		return
+	}
+	course, err := dao.CoursesDao.GetCourseById(ctx, uint(ctx.Value("course").(float64)))
+	if err != nil {
+		logger.Error("Can't get course", "err", err)
+		return
+	}
+	source := fmt.Sprintf("%v", ctx.Value("source"))
+	version := fmt.Sprintf("%v", ctx.Value("version"))
+	actionID := fmt.Sprintf("%v", ctx.Value("actionID"))
+	stringEnd := fmt.Sprintf("%v", ctx.Value("end"))
+	end, err := time.Parse("2006-01-02T15:04:05+02:00", stringEnd)
+	if err != nil {
+		logger.Error("Can't parse end", "err", err)
+		return
+	}
 	if source == "" {
+		logger.Error("No source", "source", source)
 		return
 	}
 	server, err := dao.IngestServerDao.GetBestIngestServer()
@@ -100,17 +122,12 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream,
 	slot.StreamID = stream.ID
 	dao.IngestServerDao.SaveSlot(slot)
 	req := protobuf.StreamRequest{
-		Stream:  uint64(stream.ID),
-		Course:  uint64(course.ID),
-		Version: version,
-		End:     timestamppb.New(end),
-		Source:  src,
-	}
-	//get runner with least workload for given job
-	runner, err := getRunnerWithLeastWorkloadForJob(runners, "stream")
-	if err != nil {
-		logger.Error("No runners available", "err", err)
-		return
+		ActionID: actionID,
+		Stream:   uint64(stream.ID),
+		Course:   uint64(course.ID),
+		Version:  version,
+		End:      timestamppb.New(end),
+		Source:   src,
 	}
 	err = dao.StreamsDao.SetStreamRequested(stream)
 	if err != nil {
@@ -128,25 +145,34 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream,
 		logger.Error("Can't request stream", "err", err)
 		return
 	}
-	logger.Info("Stream requested", "jobID", resp.Job)
+	logger.Info("Stream requested", "ActionID", resp.ActionID)
 	if err = conn.Close(); err != nil {
 		logger.Error("Can't close connection", "err", err)
 	}
 
 	return
 }
-func TranscodingRequest(ctx context.Context, dao dao.DaoWrapper, stream model.Stream, course model.Course, source string, runners []model.Runner, version string) {
+func TranscodingRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner) {
+	stream, err := dao.StreamsDao.GetStreamByID(ctx, ctx.Value("stream").(string))
+	if err != nil {
+		logger.Error("Can't get stream", "err", err)
+		return
+	}
+	course, err := dao.CoursesDao.GetCourseById(ctx, ctx.Value("course").(uint))
+	if err != nil {
+		logger.Error("Can't get course", "err", err)
+		return
+	}
+	source := ctx.Value("source").(string)
+	version := ctx.Value("version").(string)
+	actionID := ctx.Value("actionID").(string)
+
 	if source == "" {
 		return
 	}
 
 	//gather all data into one part url
 
-	runner, err := getRunnerWithLeastWorkloadForJob(runners, "transcode")
-	if err != nil {
-		logger.Error("No runners available", "err", err)
-		return
-	}
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Error("Can't dial runner", "err", err)
@@ -154,6 +180,7 @@ func TranscodingRequest(ctx context.Context, dao dao.DaoWrapper, stream model.St
 	}
 	client := protobuf.NewToRunnerClient(conn)
 	resp, err := client.RequestTranscoding(context.Background(), &protobuf.TranscodingRequest{
+		ActionID:   actionID,
 		DataURL:    "",
 		RunnerID:   runner.Hostname,
 		StreamName: stream.StreamName,
@@ -164,7 +191,7 @@ func TranscodingRequest(ctx context.Context, dao dao.DaoWrapper, stream model.St
 		logger.Error("Can't request transcode", "err", err)
 		return
 	}
-	logger.Info("Transcode requested", "jobID", resp.TranscodingID)
+	logger.Info("Transcode requested", "actionID", resp.ActionID)
 	if err = conn.Close(); err != nil {
 		logger.Error("Can't close connection", "err", err)
 	}
@@ -176,6 +203,9 @@ func getRunnerWithLeastWorkloadForJob(runner []model.Runner, Job string) (model.
 		return model.Runner{}, errors.New("runner array is empty")
 	}
 	chosen := runner[0]
+	switch Job {
+
+	}
 	for _, r := range runner {
 		if r.Workload < chosen.Workload {
 			chosen = r
@@ -229,7 +259,7 @@ func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protob
 
 func (g GrpcRunnerServer) NotifyStreamEnd(ctx context.Context, request *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
 	//TODO Test me
-	stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.JobID))
+	stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%v", request.ActionID))
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +394,6 @@ func (g GrpcRunnerServer) NotifyActionFinished(ctx context.Context, request *pro
 
 	return &protobuf.Status{Ok: status.Ok}, nil
 
-	panic("implement me")
 }
 
 func SetUploadFinished(ctx context.Context, req *protobuf.ActionFinished) (*protobuf.Status, error) {
@@ -375,23 +404,15 @@ func SetTranscodeFinished(ctx context.Context, req *protobuf.ActionFinished) (*p
 	panic("implement me")
 }
 
-func NotifyRunners(dao dao.DaoWrapper) func() {
+func NotifyForStreams(dao dao.DaoWrapper) func() {
 	return func() {
 
 		logger.Info("Notifying runners")
 
 		streams := dao.StreamsDao.GetDueStreamsForWorkers()
-		runners, err := dao.RunnerDao.GetAll(context.Background())
-		if err != nil {
-			logger.Error("Can't get runners", err)
-			return
-		}
-		if len(runners) == 0 {
-			logger.Error("No runners available")
-			return
-		}
+		logger.Info("incoming stream count", "count", len(streams))
 		for i := range streams {
-			err = dao.StreamsDao.SaveEndedState(streams[i].ID, false)
+			err := dao.StreamsDao.SaveEndedState(streams[i].ID, false)
 			if err != nil {
 				logger.Warn("Can't save ended state", err)
 				sentry.CaptureException(err)
@@ -409,67 +430,180 @@ func NotifyRunners(dao dao.DaoWrapper) func() {
 				sentry.CaptureException(err)
 				continue
 			}
-
+			ctx := context.WithValue(context.Background(), "type", "stream")
+			values := map[string]interface{}{
+				"type":   "stream",
+				"stream": streams[i].ID,
+				"course": courseForStream.ID,
+				"end":    streams[i].End,
+			}
 			switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
 			case 1:
-				CreateJob(dao, streams[i], courseForStream, lectureHallForStream.PresIP, "PRES", streams[i].End) //presentation
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
+				values["version"] = "PRES"
+				values["source"] = lectureHallForStream.PresIP
+				err = CreateJob(dao, ctx, values) //presentation
+				if err != nil {
+					logger.Error("Can't create job", err)
+				}
 				break
 			case 2: //camera
-				CreateJob(dao, streams[i], courseForStream, lectureHallForStream.CamIP, "CAM", streams[i].End)
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
+				values["version"] = "CAM"
+				values["source"] = lectureHallForStream.CamIP
+				err = CreateJob(dao, ctx, values)
+				if err != nil {
+					logger.Error("Can't create job", err)
+				}
 				break
 			default: //combined
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.PresIP, runners, "PRES", streams[i].End)
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CamIP, runners, "CAM", streams[i].End)
-				StreamRequest(context.Background(), dao, streams[i], courseForStream, lectureHallForStream.CombIP, runners, "COMB", streams[i].End)
+				values["version"] = "PRES"
+				values["source"] = lectureHallForStream.PresIP
+				err = CreateJob(dao, ctx, values)
+
+				if err != nil {
+					logger.Error("Can't create job", err)
+				}
+
+				values["version"] = "CAM"
+				values["source"] = lectureHallForStream.CamIP
+				err = CreateJob(dao, ctx, values)
+				if err != nil {
+					logger.Error("Can't create job", err)
+				}
+
+				values["version"] = "COMB"
+				values["source"] = lectureHallForStream.CombIP
+				err = CreateJob(dao, ctx, values)
+				if err != nil {
+					logger.Error("Can't create job", err)
+				}
 				break
 			}
-
-			//TODO: create proper rundown of job/Actions
-			ctx := context.Background()
-			AllOpenJobs, err := dao.JobDao.GetAllOpenJobs(ctx)
-			if err != nil {
-				logger.Error("Can't get all open jobs", err)
-				return
-			}
-			for _, job := range AllOpenJobs {
-				lastString := 3
-			actionLoop:
-				for _, action := range job.Actions {
-					switch action.Status {
-					case 0:
-						lastString = 0
-						continue actionLoop
-					case 1:
-						break actionLoop
-					case 2:
-						lastString = 2
-						break
-					case 3:
-						if lastString == 0 {
-							runner, err := getRunnerWithLeastWorkloadForJob(runners, action.Type)
-							if err != nil {
-								logger.Error("No runners available", err)
-								return
-							}
-							AssignRunnerAction(dao, runner, &action)
-						}
-					}
-
-				}
-			}
 		}
-
 	}
 }
 
-func AssignRunnerAction(dao dao.DaoWrapper, runner model.Runner, action *model.Action) error {
-	panic("implement me")
+func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
+	return func() {
+		logger.Info("Assigning runners to action")
+		ctx := context.Background()
+
+		//Running normal jobs with the idea that they are working as they should
+		jobs, err := dao.JobDao.GetAllOpenJobs(ctx)
+		if err != nil {
+			logger.Error("Can't get jobs", err)
+			return
+		}
+		for _, job := range jobs {
+			action, err := job.GetNextAction()
+			if err != nil {
+				logger.Error("Can't get next action", err)
+				continue
+			}
+			err = AssignRunnerAction(dao, action)
+			if err != nil {
+				logger.Error("Can't assign runner to action", err)
+				continue
+			}
+		}
+		//checking for each running action if the runner is still doing the job or if it is dead
+		activeAction, err := dao.ActionDao.GetRunningActions(ctx)
+		if err != nil {
+			logger.Error("Can't get running actions", err)
+		}
+		for _, action := range activeAction {
+			runner := action.GetCurrentRunner()
+			if !runner.IsAlive() && action.IsCompleted() {
+				action.SetToFailed()
+			}
+		}
+
+		failedActions, err := dao.ActionDao.GetAllFailedActions(ctx)
+		if err != nil {
+			logger.Error("Can't get failed actions", err)
+			return
+		}
+		for _, failedAction := range failedActions {
+			failedAction.SetToRestarted()
+			err = AssignRunnerAction(dao, &failedAction)
+			if err != nil {
+				logger.Error("Can't assign runner to action", err)
+			}
+		}
+	}
 }
 
-func CreateJob(dao dao.DaoWrapper, stream model.Stream, course model.Course, ip string, version string, end time.Time) error {
-	panic("implement me")
+func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
+	//here is where we are going to selectively get the runner for each type of action
+	runners, err := dao.RunnerDao.GetAll(context.Background())
+	if err != nil {
+		return err
+	}
+	if len(runners) == 0 {
+		logger.Error("No runners available")
+		return err
+	}
+	runner, err := getRunnerWithLeastWorkloadForJob(runners, action.Type)
+	action.AssignRunner(runner)
+	ctx := context.Background()
+
+	if err != nil {
+		logger.Error("Can't unmarshal json", err)
+		return err
+	}
+	values := map[string]interface{}{}
+	err = json.Unmarshal([]byte(action.Values), &values)
+	for key, value := range values {
+		logger.Info("values", "value", value)
+		ctx = context.WithValue(ctx, key, value)
+	}
+	ctx = context.WithValue(ctx, "actionID", fmt.Sprintf("%v", action.ID))
+
+	switch action.Type {
+	case "stream":
+		StreamRequest(ctx, dao, runner)
+		break
+	case "transcoding":
+		TranscodingRequest(ctx, dao, runner)
+		break
+	}
+	action.SetToRunning()
+	return nil
+}
+
+func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interface{}) error {
+	job := model.Job{
+		Start:     time.Now(),
+		Completed: false,
+	}
+	value, err := json.Marshal(values)
+	if err != nil {
+		return err
+	}
+	var actions []model.Action
+	switch ctx.Value("type") {
+	case "stream":
+		actions = append(actions, model.Action{
+			Status: 3,
+			Type:   "stream",
+			Values: string(value),
+		}, model.Action{
+			Status: 3,
+			Type:   "transcode",
+			Values: string(value),
+		}, model.Action{
+			Status: 3,
+			Type:   "upload",
+			Values: string(value),
+		})
+		job.Actions = append(job.Actions, actions...)
+	}
+	err = dao.CreateJob(ctx, job)
+	if err != nil {
+		logger.Error("couldn't create job in database", err)
+		return err
+	}
+
+	return nil
 }
 
 func (g GrpcRunnerServer) mustEmbedUnimplementedFromRunnerServer() {

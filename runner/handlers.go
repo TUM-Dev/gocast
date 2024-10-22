@@ -25,21 +25,19 @@ func contextFromTranscodingReq(req *protobuf.TranscodingRequest, ctx context.Con
 
 func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
 	r.ReadDiagnostics(5)
-	//TODO: Assign Runner to the action that needs to be passed with the request
-
-	// don't reuse context from grpc, it will be canceled when the request is done.
 	ctx = context.Background()
 	ctx = contextFromStreamReq(req, ctx)
 	ctx = context.WithValue(ctx, "URL", "")
 	ctx = context.WithValue(ctx, "Hostname", r.cfg.Hostname)
+	ctx = context.WithValue(ctx, "ActionID", req.ActionID)
 	a := []*actions.Action{
 		r.actions.PrepareAction(),
 		r.actions.StreamAction(),
 	}
-	jobID := r.AddJob(ctx, a)
-	r.log.Info("job added", "jobID", jobID)
+	aID := r.RunAction(ctx, a)
+	r.log.Info("job added", "ActionID", aID)
 
-	return &protobuf.StreamResponse{Job: jobID}, nil
+	return &protobuf.StreamResponse{ActionID: aID}, nil
 }
 
 func (r *Runner) RequestUpload(ctx context.Context, req *protobuf.UploadRequest) (*protobuf.UploadResponse, error) {
@@ -55,6 +53,7 @@ func (r *Runner) RequestTranscoding(ctx context.Context, req *protobuf.Transcodi
 	ctx = contextFromTranscodingReq(req, ctx)
 	ctx = context.WithValue(ctx, "URL", "")
 	ctx = context.WithValue(ctx, "Hostname", r.cfg.Hostname)
+	ctx = context.WithValue(ctx, "ActionID", req.ActionID)
 	if req.GetRunnerID() != r.cfg.Hostname {
 		r.log.Error("transcoding request for wrong hostname", "hostname", req.GetRunnerID(), "expected", r.cfg.Hostname)
 		return nil, errors.New("wrong hostname")
@@ -62,36 +61,32 @@ func (r *Runner) RequestTranscoding(ctx context.Context, req *protobuf.Transcodi
 	a := []*actions.Action{
 		r.actions.TranscodeAction(),
 	}
-	jobID := r.AddJob(ctx, a)
-	r.log.Info("job added", "jobID", jobID)
-	return &protobuf.TranscodingResponse{TranscodingID: jobID}, nil
+	_ = r.RunAction(ctx, a)
+	r.log.Info("action added", "action", req.ActionID)
+	return &protobuf.TranscodingResponse{ActionID: req.ActionID, TranscodingID: req.ActionID}, nil
 }
 
 func (r *Runner) RequestStreamEnd(ctx context.Context, request *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
 	r.ReadDiagnostics(5)
-	if job, ok := r.jobs[request.GetJobID()]; ok {
-		job.Cancel(errors.New("canceled by user request"), actions.StreamAction, actions.UploadAction)
-		return &protobuf.StreamEndResponse{}, nil
+	if activeAction, ok := r.activeActions[request.ActionID]; ok {
+		for _, action := range activeAction {
+			if action.Cancel != nil {
+				// action already running -> cancel context
+				action.Cancel(errors.New("cancelled by user request"))
+			}
+			// set canceled flag -> stop action from being started
+			action.Canceled = true
+		}
 	}
-	return nil, errors.New("job not found")
+	return &protobuf.StreamEndResponse{}, nil
 }
 
 func (r *Runner) GenerateLivePreview(ctx context.Context, request *protobuf.LivePreviewRequest) (*protobuf.LivePreviewResponse, error) {
 	r.ReadDiagnostics(5)
-	if job, ok := r.jobs[request.GetRunnerID()]; ok {
-		job.Cancel(errors.New("canceled by user request"), actions.StreamAction)
-		return &protobuf.LivePreviewResponse{}, nil
-	}
-
-	return nil, errors.New("Live Preview not Generated")
+	panic("implement me")
 }
 
 func (r *Runner) GenerateSectionImages(ctx context.Context, request *protobuf.GenerateSectionImageRequest) (*protobuf.Status, error) {
 	r.ReadDiagnostics(5)
-	if job, ok := r.jobs[request.PlaylistURL]; ok {
-		job.Cancel(errors.New("canceled by user request"), actions.StreamAction)
-		return &protobuf.Status{Ok: true}, nil
-	}
-
-	return nil, errors.New("Section Images not Generated")
+	panic("implement me")
 }

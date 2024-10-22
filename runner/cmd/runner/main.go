@@ -23,10 +23,10 @@ func main() {
 	currentCount := 0
 	go func() {
 		for {
-			currentCount = <-r.JobCount // wait for a job to finish
-			slog.Info("current job count", "count", currentCount)
+			currentCount = <-r.ActionCount // wait for a job to finish
+			slog.Info("current action count", "count", currentCount)
 			if shouldShutdown && currentCount == 0 { // if we should shut down and no jobs are running, exit.
-				slog.Info("No jobs left, shutting down")
+				slog.Info("No actions left, shutting down")
 				os.Exit(0)
 			}
 		}

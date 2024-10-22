@@ -20,6 +20,7 @@ type Action struct {
 	AllRunners   []Runner `gorm:"many2many:action_runners;"`
 	JobID        uint
 	Type         string `gorm:"not null"`
+	Values       string
 	Description  string
 	assignedDate time.Time
 	Start        time.Time
@@ -27,10 +28,14 @@ type Action struct {
 	Status       int `gorm:"not null;default:3"`
 }
 
+type Values struct {
+}
+
 func (a *Action) BeforeCreate(*gorm.DB) (err error) {
 	if a.Type == "" {
 		return errors.New("type needs to be assigned, unnecessary creation")
 	}
+	a.Status = awaiting
 	return nil
 }
 
@@ -52,6 +57,22 @@ func (a *Action) SetToAwaiting() {
 
 func (a *Action) SetToRestarted() {
 	a.Status = restarted
+}
+
+func (a *Action) IsCompleted() bool {
+	return a.Status == completed
+}
+
+func (a *Action) GetCurrentRunner() Runner {
+	return a.AllRunners[len(a.AllRunners)-1]
+}
+
+func (a *Action) AssignRunner(runner Runner) {
+	a.AllRunners = append(a.AllRunners, runner)
+}
+
+func (a *Action) GetValues() string {
+	return a.Values
 }
 
 func (a *Action) GetDescription() string {

@@ -11,9 +11,9 @@ import (
 type JobDao interface {
 	CreateJob(ctx context.Context, job model.Job) error
 	Get(ctx context.Context, jobID string) (model.Job, error)
-	CompleteJob(ctx context.Context, jobID uint32) error
-	GetRunners(ctx context.Context, jobID uint32) error
-	RemoveAction(ctx context.Context, actionID uint32) error
+	CompleteJob(ctx context.Context, job model.Job) error
+	GetRunners(ctx context.Context, job model.Job) ([]*model.Runner, error)
+	RemoveAction(ctx context.Context, job model.Job, actionID uint32) error
 	GetAllOpenJobs(ctx context.Context) ([]model.Job, error)
 }
 
@@ -30,23 +30,26 @@ func (j jobDao) Get(ctx context.Context, jobID string) (res model.Job, err error
 }
 
 func (j jobDao) CreateJob(ctx context.Context, job model.Job) error {
-	panic("implement me")
+	return j.db.WithContext(ctx).Create(&job).Error
 }
 
-func (j jobDao) CompleteJob(ctx context.Context, jobID uint32) error {
-	panic("implement me")
+func (j jobDao) CompleteJob(ctx context.Context, job model.Job) error {
+	return j.db.WithContext(ctx).Model(&job).Update("complete", true).Error
 }
 
-func (j jobDao) GetRunners(ctx context.Context, jobID uint32) error {
-	panic("implement me")
+func (j jobDao) GetRunners(ctx context.Context, job model.Job) ([]*model.Runner, error) {
+	var runners []*model.Runner
+	err := j.db.WithContext(ctx).Model(&job).Association("JobRunner").Find(&runners)
+	return runners, err
 }
 
-func (j jobDao) RemoveAction(ctx context.Context, actionID uint32) error {
-	panic("implement me")
+func (j jobDao) RemoveAction(ctx context.Context, job model.Job, actionID uint32) error {
+	return j.db.WithContext(ctx).Delete(&model.Action{}, "job_id = ? AND action_id = ?", job.ID, actionID).Error
+
 }
 
 func (j jobDao) GetAllOpenJobs(ctx context.Context) ([]model.Job, error) {
 	var jobs []model.Job
-	err := j.db.WithContext(ctx).Model(&model.Job{}).Find(&jobs).Where("completed = ?", false).Error
+	err := j.db.WithContext(ctx).Model(&model.Job{}).Preload("Actions").Find(&jobs).Where("completed = ?", false).Error
 	return jobs, err
 }

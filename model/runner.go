@@ -46,5 +46,5 @@ func (r *Runner) UpdateStats(tx *gorm.DB, ctx context.Context) (bool, error) {
 }
 
 func (r *Runner) IsAlive() bool {
-	return r.LastSeen.After(time.Now().Add(time.Minute * -6))
+	return r.LastSeen.After(time.Now().Add(time.Minute * -1))
 }

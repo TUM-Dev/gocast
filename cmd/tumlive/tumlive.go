@@ -253,7 +253,8 @@ func initCron() {
 	//Look for due streams and notify workers about them
 	//_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	//Look for due work to do and notify runner about them
-	_ = tools.Cron.AddFunc("triggerDueWork", api.NotifyRunners(daoWrapper), "0-59 * * * *")
+	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyForStreams(daoWrapper), "1-59/2 * * * *")
+	_ = tools.Cron.AddFunc("AssignOpenActions", api.NotifyRunnerAssignments(daoWrapper), "0-58/2 * * * *")
 	// update courses available
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
 	// export data to meili search

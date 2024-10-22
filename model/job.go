@@ -21,7 +21,7 @@ func (j *Job) BeforeCreate(*gorm.DB) (err error) {
 	if j.Actions == nil {
 		return errors.New("job has no actions, unnecessary job creation")
 	}
-	if j.Start.IsZero() || j.End.IsZero() || j.Start.Before(time.Now()) || j.End.After(time.Now()) {
+	if !(j.Start.IsZero() || j.End.IsZero() || j.Start.After(time.Now())) {
 		return errors.New("job has no valid time set. " +
 			"Please make sure the time for each start and end value is correct")
 	}
@@ -35,15 +35,19 @@ func (j *Job) GetAllActions() ([]Action, error) {
 	return j.Actions, nil
 }
 
-func (j *Job) GetNextAction() (Action, error) {
+func (j *Job) GetNextAction() (*Action, error) {
 	if j.Actions == nil {
-		return Action{}, errors.New("no actions found")
+		return nil, errors.New("no actions found")
 	} else if j.Actions[0].Status == completed {
-		return Action{}, errors.New("action already completed, not pushed")
+		return nil, errors.New("action already completed, not pushed")
+	}
+	if len(j.Actions) == 0 {
+		j.Completed = true
+		return nil, nil
 	}
 	action := j.Actions[0]
 	j.Actions = j.Actions[1:]
-	return action, nil
+	return &action, nil
 }
 
 func (j *Job) GetAllRunners() ([]Runner, error) {

@@ -82,7 +82,7 @@ func (r *Runner) ReadDiagnostics(retries int) {
 		Port:          int32(r.cfg.Port),
 		LastSeen:      timestamppb.New(time.Now()),
 		Status:        "Alive",
-		Workload:      uint32(len(r.jobs)),
+		Workload:      uint32(len(r.activeActions)),
 		CPU:           cpu,
 		Memory:        memory,
 		Disk:          disk,

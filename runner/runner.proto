@@ -17,60 +17,70 @@ service ToRunner {
 }
 
 message UploadRequest{
-  string RunnerID = 1;
-  string HLSUrl = 2;
-  string SourceType = 3;
-  string CourseName = 4;
-  uint32 CourseYear = 5;
-  string CourseTeachingTerm = 6;
-  string ThumbnailUrl = 7;
+  string ActionID = 1;
+  string RunnerID = 2;
+  string HLSUrl = 3;
+  string SourceType = 4;
+  string CourseName = 5;
+  uint32 CourseYear = 6;
+  string CourseTeachingTerm = 7;
+  string ThumbnailUrl = 8;
 }
 
 message UploadResponse{
-  string UploadKey = 1;
+  string ActionID = 1;
+  string UploadKey = 2;
 }
 
 message ThumbnailRequest{
-  string RunnerID = 1;
-  string HLSUrl = 2;
-  string SourceType = 3;
-  string CourseName = 4;
-  uint32 CourseYear = 5;
-  string CourseTeachingTerm = 6;
+  string ActionID = 1;
+  string RunnerID = 2;
+  string HLSUrl = 3;
+  string SourceType = 4;
+  string CourseName = 5;
+  uint32 CourseYear = 6;
+  string CourseTeachingTerm = 7;
 }
 
 message ThumbnailResponse{
-  string ThumbnailUrl = 1;
+  string ActionID = 1;
+  string ThumbnailUrl = 2;
 }
 
 message TranscodingRequest{
-  string RunnerID = 1;
-  string SourceType = 2;
-  string CourseName = 3;
-  string DataURL = 4;
-  string streamName = 5;
+  string ActionID = 1;
+  string RunnerID = 2;
+  string SourceType = 3;
+  string CourseName = 4;
+  string DataURL = 5;
+  string streamName = 6;
 }
 
 message TranscodingResponse{
-  string TranscodingID = 1;
+  string ActionID = 1;
+  string TranscodingID = 2;
 
 }
 
 message LivePreviewRequest{
-  string RunnerID = 1;
-  string HLSUrl = 2;
+  string ActionID = 1;
+  string RunnerID = 2;
+  string HLSUrl = 3;
 }
 
 message LivePreviewResponse{
-  bytes LiveThumb = 1;
+  string ActionID = 1;
+  bytes LiveThumb = 2;
 }
 
 message DeleteSectionImageRequest {
-  string Path = 1;
+  string ActionID = 1;
+  string Path = 2;
 }
 
 message GenerateSectionImageResponse {
-  repeated string Paths = 1;
+  string ActionID = 1;
+  repeated string Paths = 2;
 }
 
 message Section {
@@ -80,11 +90,12 @@ message Section {
 }
 
 message GenerateSectionImageRequest {
-  string PlaylistURL = 1;
-  string CourseName = 2;
-  uint32 CourseYear = 3;
-  string CourseTeachingTerm = 4;
-  repeated Section Sections = 5;
+  string ActionID = 1;
+  string PlaylistURL = 2;
+  string CourseName = 3;
+  uint32 CourseYear = 4;
+  string CourseTeachingTerm = 5;
+  repeated Section Sections = 6;
 }
 
 message Status{
@@ -92,20 +103,21 @@ message Status{
 }
 
 message StreamRequest {
-  uint64 stream = 1;
-  uint64 course = 2;
-  string version = 3;
-  google.protobuf.Timestamp end = 4;
-  string source = 5;
+  string ActionID = 1;
+  uint64 stream = 2;
+  uint64 course = 3;
+  string version = 4;
+  google.protobuf.Timestamp end = 5;
+  string source = 6;
 }
 
 
 message StreamResponse {
-  string job = 1;
+  string ActionID = 1;
 }
 
 message StreamEndRequest {
-  string jobID = 1;
+  string ActionID = 1;
   bool keepVod = 2;
 }
 
