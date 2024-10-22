@@ -1,10 +1,10 @@
-name: Build & Deploy Workers
+name: Build & Deploy Runners
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - '*'
+      - '.*beta.*'
 
 permissions:
   packages: write
