@@ -9,6 +9,7 @@ export * from "../lecture-hall-management";
 export * from "../admin";
 export * from "../token-management";
 export * from "../worker";
+export * from "../runner";
 export * from "../courseAdminManagement";
 export * from "../notification-management";
 export * from "../audits";

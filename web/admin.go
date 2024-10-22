@@ -41,6 +41,10 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	if err != nil {
 		sentry.CaptureException(err)
 	}
+	runners, err := r.RunnerDao.GetAll(context.Background())
+	if err != nil {
+		sentry.CaptureException(err)
+	}
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
@@ -104,6 +108,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
+			Runners:             RunnersData{Runners: runners},
 		})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
@@ -140,6 +145,8 @@ func GetPageString(s string) string {
 		return "serverStats"
 	case "/admin/server-notifications":
 		return "serverNotifications"
+	case "/admin/runners":
+		return "runners"
 	default:
 		return "schedule"
 	}
@@ -154,6 +161,10 @@ type TokensData struct {
 	Tokens       []dao.AllTokensDto
 	RtmpProxyURL string
 	User         *model.User
+}
+
+type RunnersData struct {
+	Runners []model.Runner
 }
 
 func (r mainRoutes) LectureCutPage(c *gin.Context) {
@@ -336,6 +347,7 @@ type AdminPageData struct {
 	Tokens              TokensData
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
+	Runners             RunnersData
 }
 
 func (apd AdminPageData) UsersAsJson() string {

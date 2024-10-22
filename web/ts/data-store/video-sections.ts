@@ -1,6 +1,6 @@
 import { Time } from "../global";
 import { StreamableMapProvider } from "./provider";
-import { Section, VideoSectionAPI } from "../api/video-sections";
+import {Section, VideoSectionAPI} from "../api/video-sections";
 
 export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {
     protected async fetcher(streamId: number): Promise<Section[]> {

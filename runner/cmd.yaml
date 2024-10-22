@@ -1,0 +1,17 @@
+stream: '-y -hide_banner -nostats %v -t %.0f -i %v -c:v copy -c:a copy -f mpegts %v -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k -f hls -hls_time 2 -hls_list_size 3600 -hls_playlist_type event -hls_flags append_list -hls_segment_filename %v/%%05d.ts %v'
+
+SeparateAudioFast: "-i %v -vn -c:a copy %v"
+SeparateAudio: "-i %v -vn %v"
+
+# Two-pass audio normalization with FFmpeg loudnorm
+# Loudnorm configuration "I=-23:TP=-2:LRA=7" -- Chosen according to EBU R128
+## First pass: Audio analyse, get parameters needed in second pass
+AudioNormalize1: "-i %v -nostats -y -af loudnorm=I=-23:TP=-2:LRA=7:print_format=json -f null -"
+## Second pass: Apply normalization to the audio
+AudioNormalize2: "-i %v -af loudnorm=I=-23:TP=-2:LRA=7:measured_i=%v:measured_tp=%v:measured_lra=%v:measured_thresh=%v:offset=%v:linear=true:print_format=summary -c:a aac -c:v libx264 -crf 0 -probesize 100M -analyzeduration 250M %v"
+
+
+Transcoding: '-i %v -c:v libx264 -c:a copy -crf 0 -probesize 100M -analyzeduration 250M %v'
+
+SilenceDetect: '-nostats -i %v -af silencedetect=n=-15dB:d=30 -f null -'
+

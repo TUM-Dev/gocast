@@ -1,0 +1,255 @@
+syntax = "proto3";
+package protobuf;
+option go_package = "runner/protobuf";
+
+import "google/protobuf/timestamp.proto";
+
+service ToRunner {
+  // Requests a stream from a lecture hall
+  rpc RequestStream (StreamRequest) returns (StreamResponse) {}
+  rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+  rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse){}
+  rpc GenerateSectionImages (GenerateSectionImageRequest) returns (Status) {}
+  rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
+  rpc RequestTranscoding(TranscodingRequest) returns (TranscodingResponse) {}
+  rpc RequestThumbnail(ThumbnailRequest) returns (ThumbnailResponse) {}
+  rpc RequestUpload(UploadRequest) returns (UploadResponse) {}
+}
+
+message UploadRequest{
+  string ActionID = 1;
+  string RunnerID = 2;
+  string HLSUrl = 3;
+  string SourceType = 4;
+  string CourseName = 5;
+  uint32 CourseYear = 6;
+  string CourseTeachingTerm = 7;
+  string ThumbnailUrl = 8;
+}
+
+message UploadResponse{
+  string ActionID = 1;
+  string UploadKey = 2;
+}
+
+message ThumbnailRequest{
+  string ActionID = 1;
+  string RunnerID = 2;
+  string HLSUrl = 3;
+  string SourceType = 4;
+  string CourseName = 5;
+  uint32 CourseYear = 6;
+  string CourseTeachingTerm = 7;
+}
+
+message ThumbnailResponse{
+  string ActionID = 1;
+  string ThumbnailUrl = 2;
+}
+
+message TranscodingRequest{
+  string ActionID = 1;
+  string RunnerID = 2;
+  string SourceType = 3;
+  string CourseName = 4;
+  string DataURL = 5;
+  string streamName = 6;
+}
+
+message TranscodingResponse{
+  string ActionID = 1;
+  string TranscodingID = 2;
+
+}
+
+message LivePreviewRequest{
+  string ActionID = 1;
+  string RunnerID = 2;
+  string HLSUrl = 3;
+}
+
+message LivePreviewResponse{
+  string ActionID = 1;
+  bytes LiveThumb = 2;
+}
+
+message DeleteSectionImageRequest {
+  string ActionID = 1;
+  string Path = 2;
+}
+
+message GenerateSectionImageResponse {
+  string ActionID = 1;
+  repeated string Paths = 2;
+}
+
+message Section {
+  uint32 Hours = 1;
+  uint32 Minutes = 2;
+  uint32 Seconds = 3;
+}
+
+message GenerateSectionImageRequest {
+  string ActionID = 1;
+  string PlaylistURL = 2;
+  string CourseName = 3;
+  uint32 CourseYear = 4;
+  string CourseTeachingTerm = 5;
+  repeated Section Sections = 6;
+}
+
+message Status{
+  bool ok = 1;
+}
+
+message StreamRequest {
+  string ActionID = 1;
+  uint64 stream = 2;
+  uint64 course = 3;
+  string version = 4;
+  google.protobuf.Timestamp end = 5;
+  string source = 6;
+}
+
+
+message StreamResponse {
+  string ActionID = 1;
+}
+
+message StreamEndRequest {
+  string ActionID = 1;
+  bool keepVod = 2;
+}
+
+message StreamEndResponse {}
+
+// FromRunner service defines communication from runners to gocast
+service FromRunner {
+  // Register is a request to the server to join the runners pool.
+  rpc Register (RegisterRequest) returns (RegisterResponse) {}
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse) {}
+  rpc RequestSelfStream (SelfStreamRequest) returns (SelfStreamResponse) {}
+  rpc NotifyVoDUploadFinished (VoDUploadFinished) returns (Status) {}
+  rpc NotifySilenceResults (SilenceResults) returns (Status) {}
+  rpc NotifyStreamStarted (StreamStarted) returns (Status) {}
+  rpc NotifyStreamEnded (StreamEnded) returns (Status) {}
+  rpc NotifyThumbnailsFinished (ThumbnailsFinished) returns (Status) {}
+  rpc NotifyTranscodingFailure (TranscodingFailureNotification) returns (Status) {}
+  rpc GetStreamInfoForUpload (StreamInfoForUploadRequest) returns (StreamInfoForUploadResponse) {}
+  rpc NotifyActionFinished (ActionFinished) returns (Status) {}
+}
+
+message ActionFinished{
+  string RunnerID = 1;
+  string ActionID = 2;
+  string type = 3;
+}
+
+message StreamInfoForUploadRequest{
+  string RunnerID = 1;
+  uint32 UploadKey = 2;
+}
+
+message StreamInfoForUploadResponse{
+  string CourseSlug = 1;
+  string CourseTerm = 2;
+  uint32 CourseYear = 3;
+  google.protobuf.Timestamp StreamStart = 4;
+  google.protobuf.Timestamp StreamEnd = 5;
+  uint32 StreamID = 6;
+  string VideoType = 7;
+}
+
+message VoDUploadFinished{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  string HLSUrl = 3;
+  string SourceType = 4;
+  string ThumbnailUrl = 5;
+}
+
+message SilenceResults{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  repeated uint32 starts = 3 [packed = true];
+  repeated uint32 ends = 4 [packed = true];
+}
+
+message StreamStarted {
+  string Hostname = 1;
+  uint32 StreamID = 2;
+  uint32 CourseID = 3;
+  string Version = 4;
+  string HLSUrl = 5;
+  string SourceType = 6;
+}
+
+message StreamEnded{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  uint32 CourseID = 3;
+  string Version = 4;
+}
+
+message ThumbnailsFinished{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  string FilePath = 3;
+  uint32 Interval = 4;
+  string SourceType = 5;
+
+  string LargeThumbnailPath = 6;
+}
+
+message TranscodingFailureNotification{
+  string RunnerID = 1;
+  uint32 StreamID = 2;
+  string Version = 3;
+  string FilePath = 4;
+  string Logs = 5;
+  int64 ExitCode = 6;
+}
+
+message RegisterRequest {
+  string hostname = 1;
+  int32 port = 2;
+}
+
+message RegisterResponse {
+  string ID = 1;
+}
+
+message HeartbeatRequest {
+  string hostname = 1;
+  int32 port = 2;
+  google.protobuf.Timestamp LastSeen = 3;
+  string Status = 4;
+  uint32 Workload = 5;
+  string CPU = 6;
+  string Memory = 7;
+  string Disk = 8;
+  string Uptime = 9;
+  string Version = 10;
+  string CurrentAction = 11;
+}
+
+message HeartbeatResponse {
+  bool ok = 1;
+}
+
+message SelfStreamRequest {
+  string streamKey = 1;
+}
+
+message SelfStreamResponse {
+  uint64 stream = 1;
+  uint64 course = 2;
+  uint64 courseYear = 3;
+  google.protobuf.Timestamp streamStart = 4;
+  google.protobuf.Timestamp streamEnd = 5;
+  bool uploadVoD = 6;
+  string ingestServer = 7;
+  string streamName = 8;
+  string outURL = 9;
+}
+

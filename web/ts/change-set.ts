@@ -90,7 +90,7 @@ export class ChangeSet<T> {
      * @param key key to return
      * @param lastCommittedState if set to true, value of the last committed state is returned
      */
-    getValue(key: string, { lastCommittedState = false }): T {
+    getValue(key: string, {lastCommittedState = false}): T {
         if (lastCommittedState) {
             return this.state[key];
         }

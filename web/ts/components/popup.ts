@@ -8,7 +8,8 @@ export function popupContext(streamId: number): AlpineComponent {
             // subscription?
             SocketConnections.ws = new RealtimeFacade("chat/" + streamId);
             // ws needs to subscribe, so that pop-out chat can work
-            const handler = (data) => {};
+            const handler = (data) => {
+            };
             SocketConnections.ws.subscribe(handler);
         },
     } as AlpineComponent;
