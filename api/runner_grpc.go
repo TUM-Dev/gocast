@@ -31,6 +31,8 @@ type GrpcRunnerServer struct {
 	dao.DaoWrapper
 }
 
+//
+
 func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
 	runner := model.Runner{
 		Hostname: request.Hostname,
