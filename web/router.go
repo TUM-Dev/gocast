@@ -3,11 +3,12 @@ package web
 import (
 	"embed"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"html/template"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/TUM-Dev/gocast/dao"
@@ -137,6 +138,7 @@ func configMainRoute(router *gin.Engine) {
 	withStream.Use(tools.InitStream(daoWrapper))
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
+	withStream.GET("/admin/stats/:courseID/:streamID", routes.LectureStatsPage)
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)

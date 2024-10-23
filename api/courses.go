@@ -5,16 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/RBG-TUM/commons"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/meilisearch/meilisearch-go"
-	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -25,6 +15,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/RBG-TUM/commons"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"github.com/meilisearch/meilisearch-go"
+	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 )
 
 func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -139,6 +140,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 
 	livestreams := make([]CourseStream, 0)
 
+	user := tumLiveContext.User
 	for _, stream := range streams {
 		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
 
@@ -152,8 +154,12 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 				continue
 			}
 		}
-		// Only show hidden streams to admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		// Only show hidden streams to course admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
+			continue
+		}
+		// Only show private streams to course admins
+		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
 			continue
 		}
 		var lectureHall *model.LectureHall
@@ -174,7 +180,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		}
 
 		livestreams = append(livestreams, CourseStream{
-			Course:      courseForLiveStream.ToDTO(),
+			Course:      courseForLiveStream.ToDTO(user),
 			Stream:      stream.ToDTO(),
 			LectureHall: lectureHall.ToDTO(),
 			Viewers:     viewers,
@@ -212,9 +218,10 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 		courses = commons.Unique(public, func(c model.Course) uint { return c.ID })
 	}
 
+	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, len(courses))
 	for i, course := range courses {
-		resp[i] = course.ToDTO()
+		resp[i] = course.ToDTO(user)
 	}
 
 	c.JSON(http.StatusOK, resp)
@@ -253,10 +260,12 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 
 	sortCourses(courses)
 	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+
+	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(courses))
 	for _, course := range courses {
 		if !course.IsHidden() {
-			resp = append(resp, course.ToDTO())
+			resp = append(resp, course.ToDTO(user))
 		}
 	}
 
@@ -274,10 +283,11 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	}
 
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
+	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
 		if !course.IsHidden() {
-			resp = append(resp, course.ToDTO())
+			resp = append(resp, course.ToDTO(user))
 		}
 	}
 
@@ -354,7 +364,14 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 
-	streams := course.Streams
+	user := tumLiveContext.User
+	var streams []model.Stream
+	for _, stream := range course.Streams {
+		if !stream.Private || (user != nil && user.IsAdminOfCourse(course)) {
+			streams = append(streams, stream)
+		}
+	}
+
 	streamsDTO := make([]model.StreamDTO, len(streams))
 	for i, s := range streams {
 		err := tools.SetSignedPlaylists(&s, &model.User{
@@ -379,7 +396,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		}
 	}
 
-	courseDTO := course.ToDTO()
+	courseDTO := course.ToDTO(tumLiveContext.User)
 	courseDTO.Streams = streamsDTO
 	courseDTO.IsAdmin = isAdmin
 
@@ -1343,7 +1360,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		return
 	}
 
-	//verify teaching term input, should either be Sommersemester 2020 or Wintersemester 2020/21
+	// verify teaching term input, should either be Sommersemester 2020 or Wintersemester 2020/21
 	match, err = regexp.MatchString("(Sommersemester [0-9]{4}|Wintersemester [0-9]{4}/[0-9]{2})$", req.TeachingTerm)
 	if err != nil || !match {
 		_ = c.Error(tools.RequestError{
@@ -1481,7 +1498,7 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 }
 
 type createCourseRequest struct {
-	Access       string //enrolled, public, hidden or loggedin
+	Access       string // enrolled, public, hidden or loggedin
 	CourseID     string
 	EnChat       bool
 	EnDL         bool

@@ -2,16 +2,18 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"strconv"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 type statReq struct {
 	Interval string `form:"interval" json:"interval" xml:"interval"  binding:"required"`
+	Lecture  string `form:"lecture" json:"lecture" xml:"lecture"`
 }
 
 type statExportReq struct {
@@ -45,11 +47,35 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	} else { // use course from context
 		cid = ctx.(tools.TUMLiveContext).Course.ID
 	}
+
+	var sid uint
+	if req.Lecture != "" {
+		sidTemp, err := strconv.ParseUint(req.Lecture, 10, 32)
+		if err != nil {
+			logger.Warn("strconv.Atoi failed", "err", err, "courseId", cid)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "strconv.Atoi failed",
+				Err:           err,
+			})
+			return
+		}
+		sid = uint(sidTemp)
+	} else {
+		sid = ^uint(0)
+	}
+
 	switch req.Interval {
 	case "week":
 		fallthrough
 	case "day":
-		res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
+		var res []dao.Stat
+		var err error
+		if sid != ^uint(0) {
+			res, err = r.StatisticsDao.GetLectureStatsWeekdays(cid, sid)
+		} else {
+			res, err = r.StatisticsDao.GetCourseStatsWeekdays(cid)
+		}
 		if err != nil {
 			logger.Warn("GetCourseStatsWeekdays failed", "err", err, "courseId", cid)
 			_ = c.Error(tools.RequestError{
@@ -68,7 +94,13 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
 	case "hour":
-		res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
+		var res []dao.Stat
+		var err error
+		if sid != ^uint(0) {
+			res, err = r.StatisticsDao.GetLectureStatsHourly(cid, sid)
+		} else {
+			res, err = r.StatisticsDao.GetCourseStatsHourly(cid)
+		}
 		if err != nil {
 			logger.Warn("GetCourseStatsHourly failed", "err", err, "courseId", cid)
 			_ = c.Error(tools.RequestError{
@@ -84,6 +116,25 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			Options:   newChartJsOptions(),
 		}
 		resp.Data.Datasets[0].Label = "Sum(viewers)"
+		resp.Data.Datasets[0].Data = res
+		c.JSON(http.StatusOK, resp)
+	case "lecture":
+		res, err := r.StatisticsDao.GetLectureStats(cid, sid)
+		if err != nil {
+			logger.Warn("GetLectureStats failed", "err", err, "courseId", cid)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get course stats hourly",
+				Err:           err,
+			})
+			return
+		}
+		resp := chartJs{
+			ChartType: "bar",
+			Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+			Options:   newChartJsOptions(),
+		}
+		resp.Data.Datasets[0].Label = "View Count"
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
 	case "activity-live":
@@ -143,7 +194,13 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "vodViews":
-		res, err := r.StatisticsDao.GetCourseNumVodViews(cid)
+		var res int
+		var err error
+		if sid != ^uint(0) {
+			res, err = r.StatisticsDao.GetLectureNumVodViews(sid)
+		} else {
+			res, err = r.StatisticsDao.GetCourseNumVodViews(cid)
+		}
 		if err != nil {
 			logger.Warn("GetCourseNumVodViews failed", "err", err, "courseId", cid)
 			_ = c.Error(tools.RequestError{
@@ -156,7 +213,13 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "liveViews":
-		res, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
+		var res int
+		var err error
+		if sid != ^uint(0) {
+			res, err = r.StatisticsDao.GetLectureNumLiveViews(sid)
+		} else {
+			res, err = r.StatisticsDao.GetCourseNumLiveViews(cid)
+		}
 		if err != nil {
 			logger.Warn("GetCourseNumLiveViews failed", "err", err, "courseId", cid)
 			_ = c.Error(tools.RequestError{
@@ -170,7 +233,13 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		}
 	case "allDays":
 		{
-			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			var res []dao.Stat
+			var err error
+			if sid != ^uint(0) {
+				res, err = r.StatisticsDao.GetLectureNumVodViewsPerDay(sid)
+			} else {
+				res, err = r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			}
 			if err != nil {
 				logger.Warn("GetCourseNumLiveViews failed", "err", err, "courseId", cid)
 				_ = c.Error(tools.RequestError{

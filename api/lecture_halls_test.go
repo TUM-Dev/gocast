@@ -4,19 +4,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
+	"testing"
+	"time"
+
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
-	"html/template"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func LectureHallRouterWrapper(t *testing.T) func(r *gin.Engine) {
@@ -81,7 +82,8 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -172,7 +174,8 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
 				Body:         updateLectureHallReq{CamIp: "0.0.0.0"},
-			}}.
+			},
+		}.
 			Router(LectureHallRouterWrapper(t)).
 			Method(http.MethodPut).
 			Url(url).
@@ -305,7 +308,8 @@ func TestLectureHallsCRUD(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(LectureHallRouterWrapper(t)).
 			Method(http.MethodDelete).
 			Url(url).
@@ -430,7 +434,8 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(LectureHallRouterWrapper(t)).
 			Method(http.MethodPost).
 			Url(url).
@@ -467,7 +472,8 @@ func TestCourseImport(t *testing.T) {
 				Url:          "/api/course-schedule?range=2022-05-23 to 2022-05-24&department=Ap",
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
-			}}.
+			},
+		}.
 			Router(LectureHallRouterWrapper(t)).
 			Method(http.MethodGet).
 			Run(t, testutils.Equal)
@@ -480,17 +486,20 @@ func TestCourseImport(t *testing.T) {
 			OptIn   bool                  `json:"optIn"`
 		}
 		testData := []campusonline.Course{
-			{Title: "GBS",
+			{
+				Title:  "GBS",
 				Slug:   "GBS",
 				Import: false,
 				Events: []campusonline.Event{{RoomName: "1"}},
 			},
-			{Title: "GDB",
+			{
+				Title:  "GDB",
 				Slug:   "GDB",
 				Import: true,
 				Events: []campusonline.Event{{RoomName: "1"}},
 			},
-			{Title: "FPV",
+			{
+				Title:  "FPV",
 				Slug:   "FPV",
 				Import: true,
 				Events: []campusonline.Event{{RoomName: "1"}},
@@ -500,11 +509,13 @@ func TestCourseImport(t *testing.T) {
 			"POST [no context]": {
 				Url:          "/api/course-schedule/2022/S",
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
-				ExpectedCode: http.StatusInternalServerError},
+				ExpectedCode: http.StatusInternalServerError,
+			},
 			"POST [invalid body]": {
 				Url:          "/api/course-schedule/2022/S",
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				ExpectedCode: http.StatusBadRequest},
+				ExpectedCode: http.StatusBadRequest,
+			},
 			"POST [invalid year]": {
 				Url:         "/api/course-schedule/ABC/S",
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -516,7 +527,8 @@ func TestCourseImport(t *testing.T) {
 					},
 					OptIn: false,
 				},
-				ExpectedCode: http.StatusBadRequest},
+				ExpectedCode: http.StatusBadRequest,
+			},
 			"POST [invalid term]": {
 				Url:         "/api/course-schedule/2022/T",
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -524,7 +536,8 @@ func TestCourseImport(t *testing.T) {
 					Courses: testData,
 					OptIn:   false,
 				},
-				ExpectedCode: http.StatusBadRequest},
+				ExpectedCode: http.StatusBadRequest,
+			},
 			"POST [CreateCourse returns error]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
@@ -558,7 +571,8 @@ func TestCourseImport(t *testing.T) {
 					Courses: testData,
 					OptIn:   false,
 				},
-				ExpectedCode: http.StatusInternalServerError},
+				ExpectedCode: http.StatusInternalServerError,
+			},
 			"POST [GetLectureHallByPartialName returns error]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
@@ -592,7 +606,8 @@ func TestCourseImport(t *testing.T) {
 					Courses: testData,
 					OptIn:   false,
 				},
-				ExpectedCode: http.StatusOK},
+				ExpectedCode: http.StatusOK,
+			},
 			"POST [AddAdminToCourse returns error]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
@@ -662,7 +677,8 @@ func TestCourseImport(t *testing.T) {
 					OptIn:   false,
 				},
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(LectureHallRouterWrapper(t)).
 			Method(http.MethodPost).
 			Run(t, testutils.Equal)
@@ -775,7 +791,8 @@ func TestLectureHallIcal(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedResponse: icalLoggedIn.Bytes(),
 				ExpectedCode:     http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -823,7 +840,8 @@ func TestLectureHallPresets(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -900,7 +918,8 @@ func TestLectureHallPresets(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -978,7 +997,8 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: gin.H{"path": fmt.Sprintf("/public/%s", testutils.CameraPreset.Image)},
-			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
+			},
+		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 }
 
@@ -1138,7 +1158,8 @@ func TestLectureHallSetLH(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)

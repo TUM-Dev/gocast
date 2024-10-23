@@ -2,9 +2,10 @@ package model
 
 import (
 	"errors"
-	"gorm.io/gorm"
 	"html/template"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // ServerNotification todo: rename to ServerAlert to avoid confusion with Notification

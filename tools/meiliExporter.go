@@ -3,10 +3,11 @@ package tools
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/asticode/go-astisub"
 	"github.com/meilisearch/meilisearch-go"
-	"strings"
 )
 
 type MeiliStream struct {
@@ -77,7 +78,7 @@ func (m *MeiliExporter) Export() {
 					logger.Warn("could not parse subtitles", "err", err)
 					continue
 				}
-				for i, _ := range vtt.Items {
+				for i := range vtt.Items {
 					sub := MeiliSubtitles{
 						ID:        fmt.Sprintf("%d-%d", stream.ID, vtt.Items[i].StartAt.Milliseconds()),
 						StreamID:  stream.ID,
@@ -104,7 +105,6 @@ func (m *MeiliExporter) Export() {
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
-
 	})
 }
 

@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/testutils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 )
 
@@ -85,7 +85,8 @@ func TestReportSeek(t *testing.T) {
 				},
 				Body:         body,
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(ReportSeekRouterWrapper).
 			Method(http.MethodPost).
 			Url(fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID)).
@@ -153,7 +154,8 @@ func TestReportSeek(t *testing.T) {
 				},
 				ExpectedResponse: testResponse,
 				ExpectedCode:     http.StatusOK,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID)).
 			Run(t, testutils.Equal)

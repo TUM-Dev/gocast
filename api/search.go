@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
+	"net/http"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
-	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
 func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {

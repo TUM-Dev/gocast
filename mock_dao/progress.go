@@ -7,8 +7,8 @@ package mock_dao
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	model "github.com/TUM-Dev/gocast/model"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockProgressDao is a mock of ProgressDao interface.

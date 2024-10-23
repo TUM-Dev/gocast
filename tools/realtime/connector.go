@@ -4,10 +4,12 @@ import (
 	"net/http"
 )
 
-type ConnectHookFunc func(*Client)
-type DisconnectHookFunc func(*Client)
-type MessageHookFunc func(*Client, []byte)
-type RequestHandlerFunc func(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error
+type (
+	ConnectHookFunc    func(*Client)
+	DisconnectHookFunc func(*Client)
+	MessageHookFunc    func(*Client, []byte)
+	RequestHandlerFunc func(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error
+)
 
 type Connector struct {
 	requestHandler RequestHandlerFunc

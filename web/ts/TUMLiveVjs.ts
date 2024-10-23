@@ -143,6 +143,7 @@ export const initPlayer = function (
     isEmbedded: boolean,
     playbackSpeeds: number[],
     live: boolean,
+    seekingTime: number,
     spriteID?: number,
     spriteInterval?: number,
     streamID?: number,
@@ -184,10 +185,10 @@ export const initPlayer = function (
         });
     }
     player.seekButtons({
-        // TODO user preferences, e.g. change to 5s
+        // the user's preferred seeking time will be used for forwards and backwards seeking.
         backIndex: 0,
-        forward: 15,
-        back: 15,
+        forward: seekingTime,
+        back: seekingTime,
     });
 
     player.on("volumechange", function () {
@@ -274,6 +275,12 @@ export const skipSilence = function (options) {
                 }, intervalMillis);
             });
 
+            // Triggered when user seeks
+            players[j].on("seeked", () => {
+                toggleSkipSilence();
+            });
+
+            // Updates if skip silence button be shown
             const toggleSkipSilence = () => {
                 const ctime = players[j].currentTime();
                 let shouldShow = false;

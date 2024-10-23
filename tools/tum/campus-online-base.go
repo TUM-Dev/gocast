@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/antchfx/xmlquery"
@@ -14,7 +15,7 @@ func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
 	if err != nil {
 		return CourseInfo{}, fmt.Errorf("GetCourseInformation: Can't LoadURL: %v", err)
 	}
-	var isError = len(xmlquery.Find(doc, "//Error")) != 0
+	isError := len(xmlquery.Find(doc, "//Error")) != 0
 	if isError {
 		return CourseInfo{}, errors.New("course not found")
 	}
@@ -37,7 +38,7 @@ func FetchCourses(daoWrapper dao.DaoWrapper) func() {
 			return
 		}
 		FindStudentsForCourses(courses, daoWrapper.UsersDao)
-		//GetEventsForCourses(courses)
+		// GetEventsForCourses(courses)
 	}
 }
 

@@ -5,6 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
+
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -12,12 +19,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
-	"html/template"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
-	"unicode"
 )
 
 func (r lectureHallRoutes) postSchedule(c *gin.Context) {
@@ -215,7 +216,7 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 		})
 		return
 	}
-	//todo figure out right token
+	// todo figure out right token
 	campus, err := campusonline.New(tools.Cfg.Campus.Tokens[0], "")
 	if err != nil {
 		logger.Error("Can't create campus client", "err", err)

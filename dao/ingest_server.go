@@ -1,9 +1,10 @@
 package dao
 
 import (
+	"time"
+
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
-	"time"
 )
 
 //go:generate mockgen -source=ingest_server.go -destination ../mock_dao/ingest_server.go

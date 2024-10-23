@@ -1,9 +1,10 @@
 package dao
 
 import (
+	"time"
+
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
-	"time"
 )
 
 //go:generate mockgen -source=token.go -destination ../mock_dao/token.go
@@ -12,7 +13,8 @@ type TokenDao interface {
 	AddToken(token model.Token) error
 
 	GetToken(token string) (model.Token, error)
-	GetAllTokens() ([]AllTokensDto, error)
+	GetTokenByID(id string) (model.Token, error)
+	GetAllTokens(user *model.User) ([]AllTokensDto, error)
 
 	TokenUsed(token model.Token) error
 
@@ -39,11 +41,31 @@ func (d tokenDao) GetToken(token string) (model.Token, error) {
 	return t, err
 }
 
+func (d tokenDao) GetTokenByID(id string) (model.Token, error) {
+	var t model.Token
+	err := DB.Model(&t).Where("id = ?", id).First(&t).Error
+	return t, err
+}
+
 // GetAllTokens returns all tokens and the corresponding users name, email and lrz id
-func (d tokenDao) GetAllTokens() ([]AllTokensDto, error) {
+func (d tokenDao) GetAllTokens(user *model.User) ([]AllTokensDto, error) {
 	var tokens []AllTokensDto
-	err := DB.Raw("SELECT tokens.*, u.name as user_name, u.email as user_email, u.lrz_id as user_lrz_id FROM tokens JOIN users u ON u.id = tokens.user_id WHERE tokens.deleted_at IS null").Scan(&tokens).Error
-	return tokens, err
+
+	query := DB.Table("tokens").
+		Select("tokens.*, u.name as user_name, u.email as user_email, u.lrz_id as user_lrz_id").
+		Joins("JOIN users u ON u.id = tokens.user_id").
+		Where("tokens.deleted_at IS NULL")
+
+	if user.Role != model.AdminType {
+		query = query.Where("tokens.user_id = ?", user.ID)
+	}
+
+	err := query.Scan(&tokens).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
 }
 
 // TokenUsed is called when a token is used. It sets the last_used field to the current time.

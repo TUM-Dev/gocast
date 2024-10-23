@@ -2,16 +2,17 @@ package tools
 
 import (
 	"errors"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 )
 
 var templateExecutor TemplateExecutor

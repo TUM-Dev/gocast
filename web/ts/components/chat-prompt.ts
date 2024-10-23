@@ -120,8 +120,9 @@ export function chatPromptContext(streamId: number): AlpineComponent {
 
         openPopOut() {
             const height = window.innerHeight * 0.8;
+            const location = window.location;
             window.open(
-                `${window.location.href}/chat/popup`,
+                `${location.origin}${location.pathname}/chat/popup${location.search}${location.hash}`,
                 "tumlive-popout",
                 `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
             );

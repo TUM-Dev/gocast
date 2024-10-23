@@ -3,18 +3,19 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
+	"net/http"
+	"os"
+	"testing"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
-	"net/http"
-	"os"
-	"testing"
 )
 
 func StreamRouterWrapper(r *gin.Engine) {
@@ -127,7 +128,8 @@ func TestStream(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -145,7 +147,8 @@ func TestStream(t *testing.T) {
 			"end":         stream.End,
 			"ingest":      fmt.Sprintf("%s%s-%d?secret=%s", tools.Cfg.IngestBase, course.Slug, stream.ID, stream.StreamKey),
 			"live":        stream.LiveNow,
-			"vod":         stream.Recording}
+			"vod":         stream.Recording,
+		}
 
 		url := fmt.Sprintf("/api/stream/%d", testutils.StreamFPVLive.ID)
 
@@ -161,7 +164,8 @@ func TestStream(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
-			}}.
+			},
+		}.
 			Router(StreamDefaultRouter(t)).
 			Method(http.MethodGet).
 			Url(url).
@@ -264,7 +268,8 @@ func TestStream(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         gin.H{"private": false},
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(StreamDefaultRouter(t)).
 			Method(http.MethodPatch).
 			Url(url).
@@ -318,7 +323,8 @@ func TestStreamVideoSections(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: testutils.StreamFPVLive.VideoSections,
-			}}.
+			},
+		}.
 			Method(http.MethodGet).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -848,7 +854,8 @@ func TestAttachments(t *testing.T) {
 				Body:         "file_url=https://storage.com/test.txt",
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(StreamRouterWrapper).
 			Method(http.MethodPost).
 			Url(endpoint).
@@ -956,7 +963,8 @@ func TestAttachments(t *testing.T) {
 				Before: func() {
 					_, _ = os.Create(testFile.Path)
 				},
-			}}.
+			},
+		}.
 			Method(http.MethodDelete).
 			Url(url).
 			Run(t, testutils.Equal)
@@ -1034,7 +1042,8 @@ func TestSubtitles(t *testing.T) {
 			Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 			ExpectedCode:     http.StatusOK,
 			ExpectedResponse: testutils.SubtitlesFPVLive.Content,
-		}}.
+		},
+	}.
 		Router(StreamDefaultRouter(t)).
 		Method(http.MethodGet).
 		Url(endpoint).

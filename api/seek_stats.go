@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 // progressRoutes contains a DaoWrapper object and all route functions dangle from it.
@@ -47,7 +48,6 @@ const (
 // getSeek get seeks for a video
 func (r seekStatsRoutes) getSeek(c *gin.Context) {
 	chunks, err := r.VideoSeekDao.Get(c.Param("streamID"))
-
 	if err != nil {
 		logger.Error("Could not get seek hits", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)

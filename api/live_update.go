@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"sync"
+
 	"github.com/RBG-TUM/commons"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -11,7 +13,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"sync"
 )
 
 const (
@@ -19,8 +20,10 @@ const (
 	UpdateTypeCourseWentLive = "course_went_live"
 )
 
-var liveUpdateListenerMutex sync.RWMutex
-var liveUpdateListener = map[uint]*liveUpdateUserSessionsWrapper{}
+var (
+	liveUpdateListenerMutex sync.RWMutex
+	liveUpdateListener      = map[uint]*liveUpdateUserSessionsWrapper{}
+)
 
 type liveUpdateUserSessionsWrapper struct {
 	sessions []*realtime.Context

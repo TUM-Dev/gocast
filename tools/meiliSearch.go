@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+
 	"github.com/meilisearch/meilisearch-go"
 )
 

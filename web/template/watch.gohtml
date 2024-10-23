@@ -86,7 +86,13 @@
     {{template "alert-modal" . }}
 {{end}}
 <div id="watchPageMainWrapper">
-    <input type="hidden" id="description" value="{{.Description}}">
+    <div class="offscreen video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
+        <div>
+            <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm">
+                <span id="description">{{.Description}}</span>
+            </div>
+        </div>
+    </div>
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div x-data="interaction.videoInformationContext({{$stream.ID}});"
          class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
@@ -452,13 +458,20 @@
 
                 <!-- Desktop stream info-->
                 <div class="pt-2 lg:pt-0">
-                    <div class="justify-center space-x-2 text-lg text-4 flex shrink-0">
+                    <div class="justify-center space-x-2 text-lg flex shrink-0">
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
-                            <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                            <div class="rounded-lg px-3 text-4 py-2 h-fit w-fit bg-gray-100 dark:bg-secondary-light space-x-2">
+                            <a
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
                                :title="'Edit course settings'">
                                 <i class="fa-solid fa-pen text-4"></i>
                             </a>
+                            <a
+                               href="/admin/stats/{{$course.Model.ID}}/{{$stream.Model.ID}}"
+                               :title="'Watch lecture stats'">
+                                <i class="fa-solid fa-chart-simple text-4"></i>
+                            </a>
+                            </div>
                         {{end}}
 
                         {{if .IndexData.TUMLiveContext.User}}
@@ -578,7 +591,7 @@
                         </button>
                         <template x-if="less">
                             <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
-                                    x-text="showFullDescription.toggleText('Show more', 'Show less')"
+                                    x-text="showFullDescription.toggleText('Show less', 'Show more')"
                                     @click="showFullDescription.toggle()"></button>
                         </template>
                     </div>
@@ -629,12 +642,12 @@
     {{if (eq .Version "SPLIT")}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
-    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}});
-    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     watch.syncPlayers();
@@ -642,10 +655,10 @@
     {{else}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     {{end}}

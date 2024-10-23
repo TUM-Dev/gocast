@@ -12,10 +12,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var r *http.Request
-var w *httptest.ResponseRecorder
-var streamID string
-var testSlug string
+var (
+	r        *http.Request
+	w        *httptest.ResponseRecorder
+	streamID string
+	testSlug string
+)
 
 func setup() {
 	r = httptest.NewRequest(http.MethodGet, "https://test.de", nil)

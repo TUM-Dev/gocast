@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	dao "github.com/TUM-Dev/gocast/dao"
 	model "github.com/TUM-Dev/gocast/model"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockStreamsDao is a mock of StreamsDao interface.
@@ -241,6 +241,22 @@ func (m *MockStreamsDao) GetLiveStreamsInLectureHall(lectureHallId uint) ([]mode
 func (mr *MockStreamsDaoMockRecorder) GetLiveStreamsInLectureHall(lectureHallId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveStreamsInLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).GetLiveStreamsInLectureHall), lectureHallId)
+}
+
+// GetSoonStartingStreamInfo mocks base method.
+func (m *MockStreamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSoonStartingStreamInfo", user, slug, year, term)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetSoonStartingStreamInfo indicates an expected call of GetSoonStartingStreamInfo.
+func (mr *MockStreamsDaoMockRecorder) GetSoonStartingStreamInfo(user, slug, year, term interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSoonStartingStreamInfo", reflect.TypeOf((*MockStreamsDao)(nil).GetSoonStartingStreamInfo), user, slug, year, term)
 }
 
 // GetStreamByID mocks base method.

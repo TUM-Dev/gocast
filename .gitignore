@@ -29,6 +29,7 @@ bin
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/copilot/
 
 # Generated files
 .idea/**/contentModel.xml

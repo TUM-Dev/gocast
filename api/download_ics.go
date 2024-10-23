@@ -1,14 +1,15 @@
 package api
 
 import (
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 )
 
 func configGinDownloadICSRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -79,7 +80,7 @@ type CalendarEntry struct {
 
 func streamToCalendarEntry(s model.Stream, c model.Course) CalendarEntry {
 	layout := "20060102T150405"
-	var location = ""
+	location := ""
 	if len(s.RoomName) > 0 {
 		location += s.RoomName + " "
 	}

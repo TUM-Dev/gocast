@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/antchfx/xmlquery"
 	uuid "github.com/satori/go.uuid"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func getEventsForCourse(courseID string, token string) (events map[time.Time]Event, deleted []Event, err error) {

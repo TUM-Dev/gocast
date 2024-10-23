@@ -281,26 +281,7 @@
                     </article>
                     <article class="flex justify-center">
                         <span class="text-xs text-3 my-auto">Attach files or URL to files by Drag & Drop in the description field.</span>
-                        <div x-data="{showInfo: false}"
-                             class="relative my-auto">
-                            <button @click="showInfo = !showInfo;">
-                                <i class="fa fa-circle-info text-3 ml-2"></i>
-                            </button>
-                            <div x-show="showInfo"
-                                 class="absolute top-full z-50"
-                                 @mouseleave="showInfo = false">
-                                <div>
-                                    <div class="tooltip relative w-56">
-                                        <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
-                                        <div class="bg-black dark:bg-white rounded-md px-2 py-1">
-                                    <span class="text-white dark:text-black text-xs font-bold">
-                                        Attachments allow students to download (additional) material directly from this TUMLive-stream.
-                                    </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <help-icon text="Attachments allow students to download (additional) material directly from this TUMLive-stream."/>
                     </article>
                 </section>
 

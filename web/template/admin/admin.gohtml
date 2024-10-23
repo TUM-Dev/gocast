@@ -94,6 +94,37 @@
                     </ul>
                 </li>
             {{end}}
+            {{if eq $curUser.Role 2}}
+                <li class="mt-8"><h5
+                            class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
+                        Streaming</h5>
+                    <ul>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                                href="/admin/token"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Token Management</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                                href="https://docs.live.rbg.tum.de/docs/usage/02-self-streaming/" target="_blank" rel="noopener noreferrer">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Self-Streaming Guide</span>
+                                <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
+                                href="https://docs.live.rbg.tum.de/" target="_blank" rel="noopener noreferrer">
+                                <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                <span class="relative">Need Help?</span>
+                                <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            {{end}}
             <li class="mt-8"><span
                         class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
                             <span class="grow">Courses</span><a href="/admin/create-course"><i
@@ -110,9 +141,16 @@
                             <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
                                href="#" @click="expanded=!expanded">
                                 <i class="fas fa-chevron-right mr-1 transform" :class="expanded?'rotate-90':''"></i>
+                                <span class="rounded-md absolute bg-cyan-50 opacity-0"></span>
                                 <span
-                                        class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                        class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
+                                    class="relative">
+                                    {{if eq $semester.TeachingTerm "Test"}}
+                                        Test Course
+                                    {{else}}
+                                        {{$semester.Year}} - {{$semester.TeachingTerm}}
+                                    {{end}}
+                                </span>
+                            </a>
                             <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
                                 class="semesterCourses pl-4"
                                 x-show="expanded">
@@ -210,6 +248,38 @@
                             </ul>
                         </li>
                     {{end}}
+       
+                    {{if eq $curUser.Role 2}}
+                        <li class="mt-8"><h5
+                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
+                                Streaming</h5>
+                            <ul>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "token"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/token"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Token Management</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 text-5 relative block"
+                                    href="https://docs.live.rbg.tum.de/docs/usage/02-self-streaming/" target="_blank" rel="noopener noreferrer">
+                                        <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                        <span class="relative">Self-Streaming Guide</span>
+                                        <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 text-5 relative block"
+                                    href="https://docs.live.rbg.tum.de/" target="_blank" rel="noopener noreferrer">
+                                        <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
+                                        <span class="relative">Need Help?</span>
+                                        <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {{end}}
                     <li class="mt-8"><span
                                 class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
                             <span class="grow">Courses</span><a title="Create Course" href="/admin/create-course"><i
@@ -228,18 +298,24 @@
                                         <i class="fas fa-chevron-right mr-1 transform"
                                            :class="expanded?'rotate-90':''"></i>
                                         <span
-                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
-                                    <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
-                                        class="semesterCourses pl-4"
-                                        x-show="expanded">
-                                        {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
-                                            <li>
-                                                <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
-                                                   href="/admin/course/{{$course.Model.ID}}"><span
-                                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                            class="relative">{{$course.Name}}</span></a></li>
-                                        {{end}}
+                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span 
+                                            class="relative">
+                                            {{if eq $semester.TeachingTerm "Test"}}
+                                                Test Courses
+                                            {{else}}
+                                                {{$semester.Year}} - {{$semester.TeachingTerm}}
+                                            {{end}}
+                                        </span></a>
+                                        <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
+                                            class="semesterCourses pl-4"
+                                            x-show="expanded">
+                                            {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
+                                                <li>
+                                                    <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
+                                                    href="/admin/course/{{$course.Model.ID}}"><span
+                                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
+                                                                class="relative">{{$course.Name}}</span></a></li>
+                                            {{end}}
                                         {{end}}
                                     </ul>
                                 </li>
@@ -277,8 +353,8 @@
                     {{template "create-course" .IndexData.VersionTag}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "courseImport")}}
                     {{template "course-import" .}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "token")}}
-                    {{template "token" .Tokens}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "token")}}
+                    {{template "token" dict "Tokens" .Tokens "Role" $curUser.Role}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "info-pages")}}
                     {{template "info-pages" .InfoPages}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}

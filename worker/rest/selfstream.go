@@ -2,9 +2,10 @@ package rest
 
 import (
 	"encoding/json"
-	"google.golang.org/grpc"
 	"io"
 	"net/http"
+
+	"google.golang.org/grpc"
 
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
@@ -74,7 +75,6 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go func() {
-
 		s.mutex.Lock()
 		if streamCtx, ok := s.streams[streamKey]; ok {
 			log.Debug("SelfStream already exists, stopping it.")

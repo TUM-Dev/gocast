@@ -1,9 +1,10 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"net/url"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 type FileType uint

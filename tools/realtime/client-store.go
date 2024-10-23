@@ -1,8 +1,9 @@
 package realtime
 
 import (
-	"github.com/google/uuid"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type ClientStore struct {
@@ -15,7 +16,7 @@ func (c *ClientStore) init() {
 }
 
 func (c *ClientStore) NextId() string {
-	var uuidGen, _ = uuid.NewUUID()
+	uuidGen, _ := uuid.NewUUID()
 	uuidString := uuidGen.String()
 	if _, ok := c.clients[uuidString]; ok {
 		return c.NextId()

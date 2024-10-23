@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/TUM-Dev/gocast/model"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 //go:generate mockgen -source=users.go -destination ../mock_dao/users.go
@@ -102,8 +103,8 @@ func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, er
 }
 
 func (d usersDao) CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error) {
-	var link = uuid.NewV4().String()
-	var registerLinkObj = model.RegisterLink{
+	link := uuid.NewV4().String()
+	registerLinkObj := model.RegisterLink{
 		UserID:         user.ID,
 		RegisterSecret: link,
 	}
@@ -157,7 +158,7 @@ func (d usersDao) UpsertUser(user *model.User) error {
 	var foundUser *model.User
 	err := DB.Model(&model.User{}).Where("matriculation_number = ?", user.MatriculationNumber).First(&foundUser).Error
 	if err == nil && foundUser != nil {
-		//User found: update
+		// User found: update
 		user.Model = foundUser.Model
 		foundUser.LrzID = user.LrzID
 		foundUser.Name = user.Name

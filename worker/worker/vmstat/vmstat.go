@@ -3,12 +3,13 @@ package vmstat
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/icza/gox/fmtx"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
 	"golang.org/x/sync/errgroup"
-	"time"
 )
 
 type VmStat struct {
@@ -24,9 +25,7 @@ type VmStat struct {
 	DiskUsed    uint64
 }
 
-var (
-	ErrCPUInvalid = fmt.Errorf("len (cpu.Percent) != 1")
-)
+var ErrCPUInvalid = fmt.Errorf("len (cpu.Percent) != 1")
 
 func New() *VmStat {
 	return &VmStat{diskPath: "/"}

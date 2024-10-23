@@ -2,8 +2,9 @@
 package timing
 
 import (
-	"github.com/jinzhu/now"
 	"time"
+
+	"github.com/jinzhu/now"
 )
 
 // GetWeeksInYear returns the number of weeks in the given year
