@@ -169,7 +169,7 @@ func main() {
 		&model.IngestServer{},
 		&model.StreamName{},
 		&model.Stream{},
-		&model.Worker{},
+		//&model.Worker{},
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
