@@ -38,6 +38,7 @@ var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 var initializers = []initializer{
 	tools.LoadConfig,
 	api.ServeWorkerGRPC,
+	api.StartGrpcRunnerServer,
 	tools.InitBranding,
 }
 
@@ -189,6 +190,9 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Runner{},
+		&model.Job{},
+		&model.Action{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -243,8 +247,11 @@ func initCron() {
 	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")
 	// Flush stale sentry exceptions and transactions every 5 minutes
 	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
-	// Look for due streams and notify workers about them
-	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
+	//Look for due streams and notify workers about them
+	//_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
+	//Look for due work to do and notify runner about them
+	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyForStreams(daoWrapper), "1-59/2 * * * *")
+	_ = tools.Cron.AddFunc("AssignOpenActions", api.NotifyRunnerAssignments(daoWrapper), "0-58/2 * * * *")
 	// update courses available
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
 	// export data to meili search

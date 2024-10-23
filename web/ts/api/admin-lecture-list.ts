@@ -130,7 +130,7 @@ export function videoSectionListDelta(oldSections: VideoSection[], newSections: 
     }
     for (const section of oldSections) {
         // Deleted Sections
-        if (!newSections.some(({ id }) => section.id === id)) {
+        if (!newSections.some(({id}) => section.id === id)) {
             sectionsToDelete.push(section);
         }
     }

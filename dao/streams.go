@@ -62,10 +62,16 @@ type StreamsDao interface {
 	DeleteStreamsWithTumID(ids []uint)
 	UpdateLectureSeries(model.Stream) error
 	DeleteLectureSeries(string) error
+
+	SetStreamRequested(stream model.Stream) error
 }
 
 type streamsDao struct {
 	db *gorm.DB
+}
+
+func (d streamsDao) SetStreamRequested(stream model.Stream) error {
+	return DB.Model(&stream).Updates(map[string]interface{}{"requested": true}).Error
 }
 
 func (d streamsDao) GetTranscodingProgressByVersion(v model.StreamVersion, streamId uint) (p model.TranscodingProgress, err error) {
@@ -464,7 +470,8 @@ func (d streamsDao) UpdateStreamFullAssoc(vod *model.Stream) error {
 
 func (d streamsDao) SetStreamNotLiveById(streamID uint) error {
 	defer Cache.Clear()
-	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"live_now": 0}).Error
+	//return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
 // SetStreamLiveNowTimestampById stores timestamp when stream is going live.

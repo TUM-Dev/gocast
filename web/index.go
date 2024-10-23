@@ -21,7 +21,7 @@ import (
 var VersionTag string
 
 func (r mainRoutes) MainPage(c *gin.Context) {
-	tName := sentry.TransactionName("GET /")
+	tName := sentry.WithTransactionName("GET /")
 	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
 	defer spanMain.Finish()
 

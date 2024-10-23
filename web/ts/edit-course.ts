@@ -1,4 +1,4 @@
-import { patchData, postData, putData, sendFormData } from "./global";
+import {patchData, postData, putData, sendFormData} from "./global";
 import { StatusCodes } from "http-status-codes";
 import { DataStore } from "./data-store/data-store";
 import {
@@ -15,9 +15,9 @@ import {
     videoSectionSort,
     videoSectionTimestamp,
 } from "./api/admin-lecture-list";
-import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
+import {ChangeSet, comparatorPipeline, ignoreKeys, singleProperty} from "./change-set";
 import { AlpineComponent } from "./components/alpine-component";
-import { uploadFile } from "./utilities/fetch-wrappers";
+import {uploadFile} from "./utilities/fetch-wrappers";
 
 export enum UIEditMode {
     none,
@@ -130,8 +130,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
                     // List length is the same but items do have no id, so they are new.
                     if (
-                        a.videoSections.some(({ id }) => id === undefined) ||
-                        b.videoSections.some(({ id }) => id === undefined)
+                        a.videoSections.some(({id}) => id === undefined) ||
+                        b.videoSections.some(({id}) => id === undefined)
                     ) {
                         return true;
                     }
@@ -319,7 +319,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } =
+            const {courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections} =
                 this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
@@ -339,7 +339,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
                 // Saving VideoSections
                 if (changedKeys.includes("videoSections")) {
-                    const oldVideoSections = this.changeSet.getValue("videoSections", { lastCommittedState: true });
+                    const oldVideoSections = this.changeSet.getValue("videoSections", {lastCommittedState: true});
                     const delta = videoSectionListDelta(oldVideoSections, videoSections);
 
                     if (delta.toAdd.length > 0) {
