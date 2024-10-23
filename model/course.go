@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -331,13 +330,4 @@ func (c Course) IsLoggedIn() bool {
 // IsEnrolled returns true if visibility is set to 'enrolled' and false if not
 func (c Course) IsEnrolled() bool {
 	return c.Visibility == "enrolled"
-}
-
-// AdminJson is the JSON representation of a courses streams for the admin panel
-func (c Course) AdminJson(lhs []LectureHall) []gin.H {
-	var res []gin.H
-	for _, s := range c.Streams {
-		res = append(res, s.getJson(lhs, c))
-	}
-	return res
 }
