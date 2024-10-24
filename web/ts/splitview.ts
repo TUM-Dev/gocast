@@ -1,7 +1,7 @@
 import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
 import { cloneEvents } from "./global";
-import videojs, {VideoJsPlayer} from "video.js";
+import videojs, { VideoJsPlayer } from "video.js";
 import PlayerOptions = videojs.PlayerOptions;
 
 const mouseMovingTimeout = 2200;
