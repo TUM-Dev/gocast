@@ -30,7 +30,7 @@ type StreamsDao interface {
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
 	GetAllStreams() ([]model.Stream, error)
-	ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles))
+	ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error)
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
@@ -216,38 +216,45 @@ func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 }
 
 type StreamWithCourseAndSubtitles struct {
-	Name, Description, TeachingTerm, CourseName, Subtitles string
-	ID, CourseID                                           uint
-	Year                                                   int
+	Name, Description, TeachingTerm, CourseName, Subtitles, Visibility string
+	ID, CourseID, Private                                              uint
+	Year                                                               int
 }
 
-// ExecAllStreamsWithCoursesAndSubtitles executes f on all streams with their courses and subtitles preloaded.
-func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles)) {
+// ExecAllStreamsWithCoursesAndSubtitlesBatched executes f on all streams (batched) with their courses and subtitles preloaded.
+func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles)) {
 	var res []StreamWithCourseAndSubtitles
 	batchNum := 0
 	batchSize := 100
 	var numStreams int64
 	DB.Where("recording").Model(&model.Stream{}).Count(&numStreams)
+	lastSeenId := uint(0)
 	for batchSize*batchNum < int(numStreams) {
 		err := DB.Raw(`WITH sws AS (
 				SELECT streams.id,
                     streams.name,
                     streams.description,
+					streams.private as private,
                     c.id as course_id,
                     c.name as course_name,
                     c.teaching_term,
                     c.year,
+					c.visibility as visibility,
                     s.content as subtitles,
                     IFNULL(s.stream_id, streams.id) as sid
              	FROM streams
                       JOIN courses c ON c.id = streams.course_id
                       LEFT JOIN subtitles s ON streams.id = s.stream_id
-             	WHERE streams.recording AND streams.deleted_at IS NULL
-				LIMIT ? OFFSET ?
+             	WHERE streams.recording AND streams.deleted_at IS NULL AND streams.id > ?
+				ORDER BY streams.id ASC
+				LIMIT ? 
              	)
-			SELECT *, GROUP_CONCAT(subtitles, '\n') AS subtitles FROM sws GROUP BY sid;`, batchSize, batchNum*batchSize).Scan(&res).Error
+			SELECT *, GROUP_CONCAT(subtitles, '\n') AS subtitles FROM sws GROUP BY sid ORDER BY sid;`, lastSeenId, batchSize).Scan(&res).Error
 		if err != nil {
 			fmt.Println(err)
+		}
+		if err == nil {
+			lastSeenId = res[len(res)-1].ID
 		}
 		f(res)
 		batchNum++

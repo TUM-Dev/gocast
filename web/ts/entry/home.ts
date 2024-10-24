@@ -4,4 +4,6 @@ export * from "../components/livestreams";
 export * from "../components/course";
 export * from "../components/servernotifications";
 export * from "../components/main";
+export * from "../search";
+export * from "../utilities/date";
 export * from "../utilities/lectureHallValidator";

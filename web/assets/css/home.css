@@ -422,3 +422,9 @@ label:has(~ .tum-live-input) {
 .tum-live-markdown a {
     border-bottom: 1px solid black;
 }
+
+.tum-live-search-result-main {
+    @apply flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1 border border-black dark:border-gray-300 w-full text-black dark:text-gray-300;
+    width: 100%;
+    height: fit-content !important;
+}

@@ -143,16 +143,16 @@ func (mr *MockStreamsDaoMockRecorder) DeleteUnit(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUnit", reflect.TypeOf((*MockStreamsDao)(nil).DeleteUnit), id)
 }
 
-// ExecAllStreamsWithCoursesAndSubtitles mocks base method.
-func (m *MockStreamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]dao.StreamWithCourseAndSubtitles)) {
+// ExecAllStreamsWithCoursesAndSubtitlesBatched mocks base method.
+func (m *MockStreamsDao) ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]dao.StreamWithCourseAndSubtitles)) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExecAllStreamsWithCoursesAndSubtitles", f)
+	m.ctrl.Call(m, "ExecAllStreamsWithCoursesAndSubtitlesBatched", f)
 }
 
-// ExecAllStreamsWithCoursesAndSubtitles indicates an expected call of ExecAllStreamsWithCoursesAndSubtitles.
-func (mr *MockStreamsDaoMockRecorder) ExecAllStreamsWithCoursesAndSubtitles(f interface{}) *gomock.Call {
+// ExecAllStreamsWithCoursesAndSubtitlesBatched indicates an expected call of ExecAllStreamsWithCoursesAndSubtitlesBatched.
+func (mr *MockStreamsDaoMockRecorder) ExecAllStreamsWithCoursesAndSubtitlesBatched(f interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecAllStreamsWithCoursesAndSubtitles", reflect.TypeOf((*MockStreamsDao)(nil).ExecAllStreamsWithCoursesAndSubtitles), f)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecAllStreamsWithCoursesAndSubtitlesBatched", reflect.TypeOf((*MockStreamsDao)(nil).ExecAllStreamsWithCoursesAndSubtitlesBatched), f)
 }
 
 // GetAllStreams mocks base method.

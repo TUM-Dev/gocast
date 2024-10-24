@@ -111,6 +111,9 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/imprint", routes.InfoPage(2, "imprint"))
 	router.GET("/about", routes.InfoPage(3, "about"))
 
+	// search
+	router.GET("/search", routes.SearchPage)
+
 	// admins
 	adminGroup := router.Group("/")
 	adminGroup.GET("/admin/users", routes.AdminPage)
@@ -201,6 +204,13 @@ func (r mainRoutes) home(c *gin.Context) {
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
 		logger.Error("Could not execute template: 'home.gohtml'", "err", err)
+	}
+}
+
+func (r mainRoutes) SearchPage(c *gin.Context) {
+	indexData := NewIndexDataWithContext(c)
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "search-page.gohtml", indexData); err != nil {
+		logger.Error("Could not execute template: 'search.gohtml'", "err", err)
 	}
 }
 

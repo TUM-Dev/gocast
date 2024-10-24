@@ -328,7 +328,7 @@ type AdminPageData struct {
 	LectureHalls        []model.LectureHall
 	Page                string
 	Workers             WorkersData
-	Semesters           []dao.Semester
+	Semesters           []model.Semester
 	CurY                int
 	CurT                string
 	EditCourseData      EditCourseData

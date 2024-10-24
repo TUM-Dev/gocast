@@ -289,6 +289,226 @@ var (
 	}
 )
 
+// testdata for testing the search functionality
+// ids
+var (
+	HiddenCourseID   = uint(400)
+	EnrolledCourseID = uint(401)
+	LoggedinCourseID = uint(402)
+	PublicCourseID   = uint(403)
+
+	StreamIDHiddenCourse          = uint(500)
+	StreamIDEnrolledCourse        = uint(510)
+	StreamIDLoggedinCourse        = uint(520)
+	StreamIDPublicCourse          = uint(530)
+	PrivateStreamIDHiddenCourse   = uint(501)
+	PrivateStreamIDEnrolledCourse = uint(511)
+	PrivateStreamIDLoggedinCourse = uint(521)
+	PrivateStreamIDPublicCourse   = uint(531)
+
+	SubtitlesIDPublicCourseStream          = "1000"
+	SubtitlesIDPublicCoursePrivateStream   = "1001"
+	SubtitlesIDLoggedinCourseStream        = "1002"
+	SubtitlesIDLoggedinCoursePrivateStream = "1003"
+	SubtitlesIDEnrolledCourseStream        = "1004"
+	SubtitlesIDEnrolledCoursePrivateStream = "1005"
+	SubtitlesIDHiddenCourseStream          = "1006"
+	SubtitlesIDHiddenCoursePrivateStream   = "1007"
+)
+
+// TUMLiveContext for search tests
+var (
+	TUMLiveContextLecturerNoCourseSearch   = tools.TUMLiveContext{User: &LecturerNoCourse}
+	TUMLiveContextLecturerAllCoursesSearch = tools.TUMLiveContext{User: &LecturerAllCourses}
+	TUMLiveContextStudentNoCourseSearch    = tools.TUMLiveContext{User: &StudentNoCourse}
+	TUMLiveContextStudentAllCoursesSearch  = tools.TUMLiveContext{User: &StudentAllCourses}
+)
+
+var (
+	// users
+	LecturerNoCourse = model.User{
+		Model:               gorm.Model{ID: 610},
+		Role:                model.LecturerType,
+		Courses:             []model.Course{},
+		AdministeredCourses: []model.Course{},
+	}
+	LecturerAllCourses = model.User{
+		Model:               gorm.Model{ID: 611},
+		Role:                model.LecturerType,
+		Courses:             []model.Course{},
+		AdministeredCourses: []model.Course{HiddenCourse, EnrolledCourse, LoggedinCourse, PublicCourse},
+	}
+	StudentNoCourse = model.User{
+		Model:   gorm.Model{ID: 620},
+		Role:    model.StudentType,
+		Courses: []model.Course{},
+	}
+	StudentAllCourses = model.User{
+		Model:   gorm.Model{ID: 621},
+		Role:    model.StudentType,
+		Courses: []model.Course{HiddenCourse, EnrolledCourse, LoggedinCourse, PublicCourse},
+	}
+
+	// courses
+	AllCoursesForSearchTests = []model.Course{HiddenCourse, EnrolledCourse, LoggedinCourse, PublicCourse}
+
+	HiddenCourse = model.Course{
+		Model:        gorm.Model{ID: HiddenCourseID},
+		UserID:       1,
+		Name:         "testen",
+		Slug:         "coursehidden",
+		Year:         2024,
+		TeachingTerm: "W",
+		Visibility:   "hidden",
+		Streams:      []model.Stream{StreamHiddenCourse, PrivateStreamHiddenCourse},
+		Admins:       []model.User{},
+	}
+	EnrolledCourse = model.Course{
+		Model:        gorm.Model{ID: EnrolledCourseID},
+		UserID:       1,
+		Name:         "testen",
+		Slug:         "courseenrolled",
+		Year:         2024,
+		TeachingTerm: "W",
+		Visibility:   "enrolled",
+		Streams:      []model.Stream{StreamEnrolledCourse, PrivateStreamEnrolledCourse},
+		Admins:       []model.User{},
+	}
+	LoggedinCourse = model.Course{
+		Model:        gorm.Model{ID: LoggedinCourseID},
+		UserID:       1,
+		Name:         "testen",
+		Slug:         "courseloggedin",
+		Year:         2024,
+		TeachingTerm: "W",
+		Visibility:   "loggedin",
+		Streams:      []model.Stream{StreamLoggedinCourse, PrivateStreamLoggedinCourse},
+		Admins:       []model.User{},
+	}
+	PublicCourse = model.Course{
+		Model:        gorm.Model{ID: PublicCourseID},
+		UserID:       1,
+		Name:         "testen",
+		Slug:         "coursepublic",
+		Year:         2024,
+		TeachingTerm: "W",
+		Visibility:   "public",
+		Streams:      []model.Stream{StreamPublicCourse, PrivateStreamPublicCourse},
+		Admins:       []model.User{},
+	}
+
+	// streans
+	AllStreamsForSearchTests = []model.Stream{StreamHiddenCourse, PrivateStreamHiddenCourse, StreamEnrolledCourse, PrivateStreamEnrolledCourse, StreamLoggedinCourse, PrivateStreamLoggedinCourse, StreamPublicCourse, PrivateStreamPublicCourse}
+
+	StreamHiddenCourse = model.Stream{
+		Model:       gorm.Model{ID: StreamIDHiddenCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    400,
+		Recording:   true,
+		Private:     false,
+	}
+	PrivateStreamHiddenCourse = model.Stream{
+		Model:       gorm.Model{ID: PrivateStreamIDHiddenCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    400,
+		Recording:   true,
+		Private:     true,
+	}
+	StreamEnrolledCourse = model.Stream{
+		Model:       gorm.Model{ID: StreamIDEnrolledCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    401,
+		Recording:   true,
+		Private:     false,
+	}
+	PrivateStreamEnrolledCourse = model.Stream{
+		Model:       gorm.Model{ID: PrivateStreamIDEnrolledCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    401,
+		Recording:   true,
+		Private:     true,
+	}
+	StreamLoggedinCourse = model.Stream{
+		Model:       gorm.Model{ID: StreamIDLoggedinCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    402,
+		Recording:   true,
+		Private:     false,
+	}
+	PrivateStreamLoggedinCourse = model.Stream{
+		Model:       gorm.Model{ID: PrivateStreamIDLoggedinCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    402,
+		Recording:   true,
+		Private:     true,
+	}
+	StreamPublicCourse = model.Stream{
+		Model:       gorm.Model{ID: StreamIDPublicCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    403,
+		Recording:   true,
+		Private:     false,
+	}
+	PrivateStreamPublicCourse = model.Stream{
+		Model:       gorm.Model{ID: PrivateStreamIDPublicCourse},
+		Name:        "testen",
+		Description: "testen",
+		CourseID:    403,
+		Recording:   true,
+		Private:     true,
+	}
+
+	// subtitles
+	AllSubtitlesForSearchTests  = []tools.MeiliSubtitles{SubtitlesStreamHiddenCourse, SubtitlesPrivateStreamHiddenCourse, SubtitlesStreamEnrolledCourse, SubtitlesPrivateStreamEnrolledCourse, SubtitlesStreamLoggedinCourse, SubtitlesPrivateStreamLoggedinCourse, SubtitlesStreamPublicCourse, SubtitlesPrivateStreamPublicCourse}
+	SubtitlesStreamPublicCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDPublicCourseStream,
+		StreamID: StreamIDPublicCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamPublicCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDPublicCoursePrivateStream,
+		StreamID: PrivateStreamIDPublicCourse,
+		Text:     "hallihallo2",
+	}
+	SubtitlesStreamLoggedinCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDLoggedinCourseStream,
+		StreamID: StreamIDLoggedinCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamLoggedinCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDLoggedinCoursePrivateStream,
+		StreamID: PrivateStreamIDLoggedinCourse,
+		Text:     "hallihallo2",
+	}
+	SubtitlesStreamEnrolledCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDEnrolledCourseStream,
+		StreamID: StreamIDEnrolledCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamEnrolledCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDEnrolledCoursePrivateStream,
+		StreamID: PrivateStreamIDEnrolledCourse,
+		Text:     "hallihallo2",
+	}
+	SubtitlesStreamHiddenCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDHiddenCourseStream,
+		StreamID: StreamIDHiddenCourse,
+		Text:     "hallihallo1",
+	}
+	SubtitlesPrivateStreamHiddenCourse = tools.MeiliSubtitles{
+		ID:       SubtitlesIDHiddenCoursePrivateStream,
+		StreamID: PrivateStreamIDHiddenCourse,
+		Text:     "hallihallo2",
+	}
+)
+
 // CreateVideoSeekData returns list of generated VideoSeekChunk and expected response object
 func CreateVideoSeekData(streamId uint, chunkCount int) ([]model.VideoSeekChunk, gin.H) {
 	var chunks []model.VideoSeekChunk
