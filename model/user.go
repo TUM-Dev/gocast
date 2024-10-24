@@ -303,12 +303,25 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 }
 
 // AdministeredCoursesForSemesters returns all courses, that the user is a course admin of, in the given semester range or semesters
-func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemester Semester, semesters []Semester) []Course {
+func (u *User) AdministeredCoursesForSemesters(semesters []Semester) []Course {
 	var semester Semester
 	administeredCourses := make([]Course, 0)
 	for _, c := range u.AdministeredCourses {
 		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
-		if semester.InRangeOfSemesters(firstSemester, lastSemester, semesters) {
+		if semester.IsInRangeOfSemesters(semesters) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+// AdministeredCoursesBetweenSemesters returns all courses, that the user is a course admin of, between firstSemester and lasSemester
+func (u *User) AdministeredCoursesBetweenSemesters(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) {
 			administeredCourses = append(administeredCourses, c)
 		}
 	}
@@ -316,12 +329,25 @@ func (u *User) AdministeredCoursesForSemesters(firstSemester Semester, lastSemes
 }
 
 // CoursesForSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
-func (u *User) CoursesForSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester, semesters []Semester) []Course {
+func (u *User) CoursesForSemestersWithoutAdministeredCourses(semesters []Semester) []Course {
 	var semester Semester
 	courses := make([]Course, 0)
 	for _, c := range u.Courses {
 		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
-		if semester.InRangeOfSemesters(firstSemester, lastSemester, semesters) && !u.IsAdminOfCourse(c) {
+		if semester.IsInRangeOfSemesters(semesters) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
+}
+
+// CoursesBetweenSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
+func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) && !u.IsAdminOfCourse(c) {
 			courses = append(courses, c)
 		}
 	}

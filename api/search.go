@@ -138,24 +138,17 @@ func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query st
 		if (err1 != nil || err2 != nil || len(semesters1) != 1 || len(semesters2) != 1) && err3 != nil {
 			return nil, errors.New("wrong parameters")
 		}
-		rangeSearch := false
 		if len(semesters1) > 0 && len(semesters2) > 0 {
 			firstSemester = semesters1[0]
 			lastSemester = semesters2[0]
-			rangeSearch = true
 		}
 
-		if !courseSearchOnly && (rangeSearch && firstSemester.Year == lastSemester.Year && firstSemester.TeachingTerm == lastSemester.TeachingTerm || len(semesters) == 1) {
+		isSingleSemesterSearch, singleSemester := determineSingleSemester(firstSemester, lastSemester, semesters)
+		if !courseSearchOnly && isSingleSemesterSearch {
 			// single semester search
-			var semester model.Semester
-			if rangeSearch {
-				semester = firstSemester
-			} else {
-				semester = semesters[0]
-			}
-			res = m.Search(query, limit, 6, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), meiliStreamFilter(c, user, semester, nil), "")
+			res = m.Search(query, limit, 6, meiliCourseFilter(c, user, singleSemester, singleSemester, nil), meiliStreamFilter(c, user, singleSemester, nil), "")
 		} else {
-			// multiple semester search
+			// multiple semester or course only search
 			res = m.Search(query, limit, 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
 		}
 		return res, nil
@@ -379,12 +372,12 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 	if user == nil {
 		permissionFilter = "(visibility = \"public\" AND private = 0)"
 	} else {
-		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(semester, semester, nil)
+		enrolledCourses := user.CoursesBetweenSemestersWithoutAdministeredCourses(semester, semester)
 		enrolledCoursesFilter := courseSliceToString(enrolledCourses)
 		if len(user.AdministeredCourses) == 0 {
 			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID IN %s)) AND private = 0)", enrolledCoursesFilter)
 		} else {
-			administeredCourses := user.AdministeredCoursesForSemesters(semester, semester, nil)
+			administeredCourses := user.AdministeredCoursesBetweenSemesters(semester, semester)
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
 			permissionFilter = fmt.Sprintf("((visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND courseID IN %s)) AND private = 0 OR courseID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
@@ -398,7 +391,9 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 
 // meiliCourseFilter returns a filter conforming to MeiliSearch filter format that can be used for filtering courses
 //
-// Validation of model.Semester format is the caller's responsibility
+// # Validation of model.Semester format is the caller's responsibility
+//
+// ignores either semesters or firstSemester/lastSemester, depending on semesters == nil
 func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	semesterFilter := meiliSemesterFilter(firstSemester, lastSemester, semesters)
 	if user != nil && user.Role == model.AdminType {
@@ -409,12 +404,22 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 	if user == nil {
 		permissionFilter = "(visibility = \"public\")"
 	} else {
-		enrolledCourses := user.CoursesForSemestersWithoutAdministeredCourses(firstSemester, lastSemester, semesters)
+		var enrolledCourses []model.Course
+		if semesters == nil {
+			enrolledCourses = user.CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester, lastSemester)
+		} else {
+			enrolledCourses = user.CoursesForSemestersWithoutAdministeredCourses(semesters)
+		}
 		enrolledCoursesFilter := courseSliceToString(enrolledCourses)
 		if len(user.AdministeredCourses) == 0 {
 			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s))", enrolledCoursesFilter)
 		} else {
-			administeredCourses := user.AdministeredCoursesForSemesters(firstSemester, lastSemester, semesters)
+			var administeredCourses []model.Course
+			if semesters == nil {
+				administeredCourses = user.AdministeredCoursesBetweenSemesters(firstSemester, lastSemester)
+			} else {
+				administeredCourses = user.AdministeredCoursesForSemesters(semesters)
+			}
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
 			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s) OR ID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
 		}
@@ -428,7 +433,9 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 
 // meiliSemesterFilter returns a filter conforming to MeiliSearch filter format
 //
-// Validation of model.Semester format is the caller's responsibility
+// # Validation of model.Semester format is the caller's responsibility
+//
+// ignores either semesters or firstSemester/lastSemester, depending on semesters == nil
 func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	if len(semesters) == 0 && firstSemester.Year < 1900 && lastSemester.Year > 2800 {
 		return ""
@@ -489,6 +496,7 @@ func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
 	return msm
 }
 
+// parseSemesters parses the URL Parameter semester and returns a slice containing every semester in the parameter or an error code
 func parseSemesters(semestersParam string) ([]model.Semester, error) {
 	if semestersParam == "" {
 		return nil, errors.New("empty semestersParam")
@@ -566,6 +574,19 @@ func uintSliceToString(ids []uint) string {
 	}
 	filter := "[" + strings.Join(idsStringSlice, ",") + "]"
 	return filter
+}
+
+func determineSingleSemester(firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) (bool, model.Semester) {
+	if semesters == nil {
+		if firstSemester.IsEqual(lastSemester) {
+			return true, firstSemester
+		}
+		return false, model.Semester{}
+	}
+	if len(semesters) == 1 {
+		return true, semesters[0]
+	}
+	return false, model.Semester{}
 }
 
 // ToSearchCourseDTO converts Courses to slice of SearchCourseDTO
