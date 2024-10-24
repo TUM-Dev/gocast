@@ -416,9 +416,9 @@ func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Sem
 		} else {
 			var administeredCourses []model.Course
 			if semesters == nil {
-				enrolledCourses = user.CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester, lastSemester)
+				administeredCourses = user.AdministeredCoursesBetweenSemesters(firstSemester, lastSemester)
 			} else {
-				enrolledCourses = user.CoursesForSemestersWithoutAdministeredCourses(semesters)
+				administeredCourses = user.AdministeredCoursesForSemesters(semesters)
 			}
 			administeredCoursesFilter := courseSliceToString(administeredCourses)
 			permissionFilter = fmt.Sprintf("(visibility = \"loggedin\" OR visibility = \"public\" OR (visibility = \"enrolled\" AND ID IN %s) OR ID IN %s)", enrolledCoursesFilter, administeredCoursesFilter)
