@@ -39,16 +39,16 @@ export class SplitView {
         this.videoWrapperResizeObs.observe(this.videoWrapper);
         this.detectMouseNotMoving();
 
-        this.players[0].ready(() => {
+        this.players[1].ready(() => {
             this.setTrackBarModes(0, "disabled");
         });
 
-        this.players[1].ready(() => {
+        this.players[0].ready(() => {
             this.setupControlBars();
             this.overwriteFullscreenToggle();
         });
 
-        cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
+        cloneEvents(this.players[1].el(), this.players[0].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
         // Setup splitview
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -109,15 +109,15 @@ export class SplitView {
     }
 
     private setupControlBars() {
-        this.players[0].controlBar.hide();
-        this.players[0].muted(true);
+        this.players[1].controlBar.hide();
+        this.players[1].muted(true);
 
-        this.players[1].el().addEventListener("fullscreenchange", () => {
+        this.players[0].el().addEventListener("fullscreenchange", () => {
             this.isFullscreen = document.fullscreenElement !== null;
             this.updateControlBarSize(this.getSizes());
         });
 
-        const mainControlBarElem = this.players[1].controlBar.el();
+        const mainControlBarElem = this.players[0].controlBar.el();
         mainControlBarElem.style.position = "absolute";
         mainControlBarElem.style.zIndex = "1";
 
@@ -128,29 +128,24 @@ export class SplitView {
         const wrapperSize = this.videoWrapper.getBoundingClientRect().width;
 
         let marginLeft;
-        if (this.isFullscreen) {
-            marginLeft = "0";
-        } else if (sizes[0] === 100) {
-            marginLeft = `${this.gutterWidth / 2 - wrapperSize}px`; //`calc(${this.gutterWidth / 2}px - 100vw)`;
-        } else if (sizes[0] === 0) {
-            marginLeft = `-${this.gutterWidth / 2}px`;
+        if (sizes[0] === 0) {
+            marginLeft = `${this.gutterWidth / 2}px`;
         } else {
-            const leftContainerWidth = (sizes[0] * wrapperSize) / 100;
-            marginLeft = `-${leftContainerWidth}px`;
+            marginLeft = `0px`;
         }
-
-        const mainControlBarElem = this.players[1].controlBar.el();
-        mainControlBarElem.style.marginLeft = marginLeft;
+        const mainControlBarElem = this.players[0].controlBar.el();
         mainControlBarElem.style.width = `${wrapperSize}px`;
+        mainControlBarElem.style.marginLeft = marginLeft;
 
-        const textTrackDisplay = this.players[1].el_.querySelector(".vjs-text-track-display");
+        const textTrackDisplay = this.players[0].el_.querySelector(".vjs-text-track-display");
         if (textTrackDisplay) {
-            textTrackDisplay.style.left = marginLeft;
+            textTrackDisplay.style.width = `${wrapperSize}px`;
+            textTrackDisplay.style.zIndex = "1";
         }
     }
 
     private overwriteFullscreenToggle() {
-        const fullscreenToggle = this.players[1].controlBar.fullscreenToggle;
+        const fullscreenToggle = this.players[0].controlBar.fullscreenToggle;
         fullscreenToggle.off("click");
 
         fullscreenToggle.on("click", async () => {
@@ -159,8 +154,6 @@ export class SplitView {
 
         (this.players[0] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
         (this.players[1] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
-
-        this.splitParent.addEventListener("fullscreenchange", () => this.update(25))
     }
 
     private async toggleFullscreen() {
