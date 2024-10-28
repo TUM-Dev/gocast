@@ -13,6 +13,7 @@ type Runner struct {
 	Hostname string `gorm:"UniqueKey;type:varchar(80)"`
 	Port     int
 	LastSeen time.Time
+	Alive    bool
 
 	Status   string
 	Workload uint
@@ -46,5 +47,6 @@ func (r *Runner) UpdateStats(tx *gorm.DB, ctx context.Context) (bool, error) {
 }
 
 func (r *Runner) IsAlive() bool {
-	return r.LastSeen.After(time.Now().Add(time.Minute * -1))
+	r.Alive = r.LastSeen.After(time.Now().Add(time.Minute * -1))
+	return r.Alive
 }
