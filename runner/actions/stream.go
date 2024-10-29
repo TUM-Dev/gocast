@@ -106,7 +106,7 @@ func (a *ActionProvider) StreamAction() *Action {
 					StreamID: uint32(streamID),
 					CourseID: uint32(courseID),
 					Version:  version,
-					HLSUrl:   fmt.Sprintf("http://localhost:8187/%d/%d/%s/%s/playlist.m3u8", courseID, streamID, version, end.Format("15-04-05")),
+					HLSUrl:   fmt.Sprintf("http://%v:8187/%d/%d/%s/%s/playlist.m3u8",hostname, courseID, streamID, version, end.Format("15-04-05")),
 				})
 				if resp.Ok != true {
 					log.Warn("streamAction: NotifyStreamStarted failed")
