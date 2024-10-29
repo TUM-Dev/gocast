@@ -45,7 +45,13 @@ func (d runnerDao) GetAll(c context.Context) ([]model.Runner, error) {
 		log.Error("no runners found")
 		return nil, err
 	}
-	return runners, err
+	var aliveRunner []model.Runner
+	for _, runner := range runners {
+		if runner.IsAlive() {
+			aliveRunner = append(aliveRunner, runner)
+		}
+	}
+	return aliveRunner, err
 }
 
 // Create a Runner.

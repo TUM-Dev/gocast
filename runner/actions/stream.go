@@ -54,7 +54,7 @@ func (a *ActionProvider) StreamAction() *Action {
 			if !ok {
 				return ctx, fmt.Errorf("%w: context doesn't contain end", ErrRequiredContextValNotFound)
 			}
-			log.Info("streaming", "source", source, "end", time.Now().Second()+end.Second())
+			log.Info("streaming", "source", source, "now", time.Now(), "end", end, "before", time.Now().Before(end))
 
 			//endingTime := time.Now().Add(time.Second * time.Duration(end.Second()))
 			log.Info("streaming until", "end", end)
@@ -86,7 +86,7 @@ func (a *ActionProvider) StreamAction() *Action {
 					src += "-re" // read input at native framerate, e.g. when streaming a file in realtime
 				}
 
-				log.Info("streaming", "source", source, "end", time.Now().Second()+end.Second())
+				log.Info("streaming", "source", source, "end", time.Until(end).Seconds())
 
 				//changing the end variable from a date to a duration and adding the duration to the current time
 				cmd := fmt.Sprintf(a.Cmd.Stream, src, time.Until(end).Seconds(), source, filename, filepath.Join(a.GetLiveDir(courseID, streamID, version), end.Format("15-04-05")), livePlaylist)

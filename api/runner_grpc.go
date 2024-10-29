@@ -94,7 +94,7 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner)
 	version := fmt.Sprintf("%v", ctx.Value("version"))
 	actionID := fmt.Sprintf("%v", ctx.Value("actionID"))
 	stringEnd := fmt.Sprintf("%v", ctx.Value("end"))
-	end, err := time.Parse("2006-01-02T15:04:05+02:00", stringEnd)
+	end, err := time.Parse(time.RFC3339, stringEnd)
 	if err != nil {
 		logger.Error("Can't parse end", "err", err)
 		return
@@ -103,14 +103,14 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner)
 		logger.Error("No source", "source", source)
 		return
 	}
-	server, err := dao.IngestServerDao.GetBestIngestServer()
+	/*server, err := dao.IngestServerDao.GetBestIngestServer()
 	if err != nil {
 		logger.Error("can't find ingest server", "err", err)
 		return
-	}
+	}*/
 
-	var slot model.StreamName
-	if version == "COMB" { //try to find a transcoding slot for comb view:
+	//var slot model.StreamName
+	/*if version == "COMB" { //try to find a transcoding slot for comb view:
 		slot, err = dao.IngestServerDao.GetTranscodedStreamSlot(server.ID)
 	}
 	if version != "COMB" || err != nil {
@@ -119,10 +119,10 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner)
 			logger.Error("No free stream slot", "err", err)
 			return
 		}
-	}
+	}*/
 	src := "rtsp://" + source
-	slot.StreamID = stream.ID
-	dao.IngestServerDao.SaveSlot(slot)
+	//slot.StreamID = stream.ID
+	//dao.IngestServerDao.SaveSlot(slot)
 	req := protobuf.StreamRequest{
 		ActionID: actionID,
 		Stream:   uint64(stream.ID),
@@ -130,11 +130,6 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner)
 		Version:  version,
 		End:      timestamppb.New(end),
 		Source:   src,
-	}
-	err = dao.StreamsDao.SetStreamRequested(stream)
-	if err != nil {
-		logger.Error("Can't set stream requested", "err", err)
-		return
 	}
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -145,6 +140,11 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner)
 	resp, err := client.RequestStream(context.Background(), &req)
 	if err != nil {
 		logger.Error("Can't request stream", "err", err)
+		return
+	}
+	err = dao.StreamsDao.SetStreamRequested(stream)
+	if err != nil {
+		logger.Error("Can't set stream requested", "err", err)
 		return
 	}
 	logger.Info("Stream requested", "ActionID", resp.ActionID)
@@ -514,7 +514,7 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 		}
 		for _, action := range activeAction {
 			runner := action.GetCurrentRunner()
-			if !runner.IsAlive() && action.IsCompleted() {
+			if !runner.IsAlive() && !action.IsCompleted() {
 				action.SetToFailed()
 			}
 		}
@@ -563,12 +563,13 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 	switch action.Type {
 	case "stream":
 		StreamRequest(ctx, dao, runner)
+		action.SetToRunning()
 		break
 	case "transcoding":
-		TranscodingRequest(ctx, dao, runner)
+		//TranscodingRequest(ctx, dao, runner)
 		break
 	}
-	action.SetToRunning()
+
 	return nil
 }
 
