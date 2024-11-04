@@ -37,6 +37,7 @@
         link.setAttribute('href', location.href);
         document.head.appendChild(link);
     </script>
+
 </head>
 <body x-data="home.skeleton()"
       @popstate.window="onPopState"
@@ -590,6 +591,9 @@
                                                         <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
                                                     </div>
                                                     <h4 x-text="s.Name" class="font-semibold text-1"></h4>
+                                                    <template x-if="home.isLectureHallValid(s.LectureHall)">
+                                                        <a :href="`https://nav.tum.de/room/${s.LectureHall}`" class="no-underline" x-text="s.LectureHall"></a>
+                                                    </template>
                                                 </div>
                                             </div>
                                         </article>
