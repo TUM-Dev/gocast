@@ -3,6 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"os/exec"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/TUM-Dev/gocast/worker/api"
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
@@ -13,23 +21,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/exec"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 // OsSignal contains the current os signal received.
 // Application exits when it's terminating (kill, int, sigusr, term)
-var OsSignal chan os.Signal
-var VersionTag = "dev"
+var (
+	OsSignal   chan os.Signal
+	VersionTag = "dev"
+)
 
 // prepare checks if the required dependencies are installed
 func prepare() {
-	//check if ffmpeg is installed
+	// check if ffmpeg is installed
 	_, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		log.Fatal("ffmpeg is not installed")
@@ -46,7 +49,8 @@ func main() {
 			BaseDelay:  1 * time.Second,
 			Multiplier: 1.6,
 			MaxDelay:   30 * time.Second,
-		}}), grpc.WithBlock())
+		},
+	}), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("Could not connect to main base: %v", err)
 	}

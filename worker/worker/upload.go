@@ -1,14 +1,15 @@
 package worker
 
 import (
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	log "github.com/sirupsen/logrus"
 )
 
 func upload(streamCtx *StreamContext) {
