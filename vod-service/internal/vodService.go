@@ -96,6 +96,33 @@ func (a *App) packageFile(file, name string) {
 		logger.Error("Error on creating directories", "err", err)
 		return
 	}
+
+	cmdCheck := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name", "-of", "default=nw=1:nk=1", file)
+	output, err := cmdCheck.Output()
+	if err != nil {
+		logger.Error("Error running ffprobe", "err", err)
+		return
+	}
+
+	codec := strings.TrimSpace(string(output))
+	fmt.Printf("Codec: %s\n", codec)
+
+	if codec != "h264" {
+		fmt.Println("Converting video to H.264")
+		h264File := file + "_h264.mp4"
+
+		cmdConvert := exec.Command("ffmpeg", "-i", file, "-c:v", "libx264", "-preset", "fast", "-c:a", "aac", h264File)
+		cmdConvert.Stdout = os.Stdout
+		cmdConvert.Stderr = os.Stderr
+		err = cmdConvert.Run()
+		if err != nil {
+			logger.Error("Error converting video to h264", "err", err)
+			return
+		}
+
+		file = h264File
+	}
+
 	c := exec.Command("ffmpeg",
 		strings.Split(
 			"-i "+file+
