@@ -24,6 +24,11 @@ export enum ViewMode {
     List,
 }
 
+export enum GroupMode {
+    Month,
+    Week,
+}
+
 export function courseContext(slug: string, year: number, term: string, userId: number): AlpineComponent {
     return {
         userId: userId as number,
@@ -41,6 +46,11 @@ export function courseContext(slug: string, year: number, term: string, userId: 
         streamSortMode: +getFromStorage("streamSortMode") ?? StreamSortMode.NewestFirst,
         streamFilterMode: +getFromStorage("streamFilterMode") ?? StreamFilterMode.ShowWatched,
         viewMode: (+getFromStorage("viewMode") ?? ViewMode.Grid) as number,
+        groupMode: (+getFromStorage("groupMode") ?? GroupMode.Month) as number,
+
+        dateOfFirstWeek: new Date(),
+        weekCountWithoutEmptyWeeks: new Map<number, number>(),
+
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -70,8 +80,9 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.upcomingStreams.set(this.course.Upcoming).reset();
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
                         this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));
-                        this.courseStreams.set(this.course.Recordings, (s: Stream) => s.StartDate().getMonth());
-                    });
+                    })
+                    .then(() => this.initializeWeekMap())
+                    .then(() => this.applyGroupView());
                     console.log("🌑 init course", this.course);
                 });
         },
@@ -130,6 +141,54 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         isListView() {
             return this.viewMode == ViewMode.List;
+        },
+
+        toggleWeekView() {
+            this.groupMode = this.groupMode === GroupMode.Month ? GroupMode.Week : GroupMode.Month;
+            setInStorage("groupMode", this.groupMode.toString());
+            this.applyGroupView();
+        },
+
+        isWeekView() {
+            return this.groupMode == GroupMode.Week;
+        },
+
+        applyGroupView() {
+            if (this.groupMode === GroupMode.Month) {
+                this.courseStreams.set(this.course.Recordings, (s: Stream) => s.StartDate().getMonth());
+            } else {
+                this.courseStreams.set(this.course.Recordings, (s: Stream) => this.getTrueWeek(s.GetWeekNumber(this.dateOfFirstWeek)));
+            }
+        },
+
+        /**
+         * Maps the difference in Weeks between any lecture and the first lecture to the true week count ignoring weeks without lectures (e.g. Christmas Break)
+         */
+        initializeWeekMap() {
+            let latestWeek = 1;
+            this.course.Recordings.sort(this.sortFn(StreamSortMode.OldestFirst)).forEach((s : Stream, i : number) => {
+                if (i === 0) {
+                    this.dateOfFirstWeek = s.StartDate();
+                    this.dateOfFirstWeek = new Date(this.dateOfFirstWeek.getTime() - this.dateOfFirstWeek.getDay() * 1000 * 60 * 60 * 24);
+                    this.dateOfFirstWeek.setHours(0, 1); // avoids errors e.g. in case week1 has vod on Monday at 10am, week2 at 8am
+                }
+                const week = s.GetWeekNumber(this.dateOfFirstWeek);
+                if (!this.weekCountWithoutEmptyWeeks.has(week)) {
+                    this.weekCountWithoutEmptyWeeks.set(week, latestWeek++);
+                }
+            });
+        },
+
+        getTrueWeek(n : number): number {
+            return this.weekCountWithoutEmptyWeeks.get(n);
+        },
+
+        getGroupName(s : Stream) : string {
+            if (this.groupMode === GroupMode.Month) {
+                return s.GetMonthName();
+            } else {
+                return "Week " + this.getTrueWeek(s.GetWeekNumber(this.dateOfFirstWeek)).toString();
+            }
         },
 
         /**

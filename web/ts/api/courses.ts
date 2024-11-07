@@ -1,13 +1,16 @@
-import { get } from "../utilities/fetch-wrappers";
-import { Progress } from "./progress";
-import { ToggleableElement } from "../utilities/ToggleableElement";
-import { same_day } from "../utilities/time-utils";
-import { CustomURL } from "../utilities/url";
+import {get} from "../utilities/fetch-wrappers";
+import {Progress} from "./progress";
+import {ToggleableElement} from "../utilities/ToggleableElement";
+import {same_day} from "../utilities/time-utils";
+import {CustomURL} from "../utilities/url";
+import {GroupMode} from "../components/course";
 
 type DownloadableVOD = {
     readonly FriendlyName: string;
     readonly DownloadURL: string;
 };
+
+const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
 export class Stream implements Identifiable {
     readonly ID: number;
@@ -116,6 +119,18 @@ export class Stream implements Identifiable {
             "November",
             "December",
         ][this.StartDate().getMonth()];
+    }
+
+    public GetWeekNumber(dateOfFirstWeek : Date) : number {
+        return Math.floor(((this.StartDate().getTime() - dateOfFirstWeek.getTime())) / MS_IN_DAY / 7) + 1;
+    }
+
+    public GetGroupName(mode : GroupMode, dateOfFirstWeek : Date) : string {
+        if (mode === GroupMode.Month) {
+            return this.GetMonthName();
+        } else if (mode === GroupMode.Week) {
+            return "Week " + this.GetWeekNumber(dateOfFirstWeek).toString();
+        }
     }
 
     private static TimeOf(d: string): string {
