@@ -17,6 +17,7 @@ This guide contains information on how to stream from your own computer.
 
 ### OBS
 
+- ⚠️ important ⚠️ self streaming can be unreliable and we cannot guarantee proper recording of your lecture just yet. In some cases, recordings might be corrupted. Please save a local copy just in case using the streaming software of your choice.
 - Download and install OBS from [here](https://obsproject.com/).
 - Open OBS and click on `Settings` in the bottom right corner.
 - Click on `Stream` in the left sidebar.
