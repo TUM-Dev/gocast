@@ -50,6 +50,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
 
         dateOfFirstWeek: new Date(),
         weekCountWithoutEmptyWeeks: new Map<number, number>(),
+        groupNames: new Map<number, string>(),
 
 
         /**
@@ -158,6 +159,16 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                 this.courseStreams.set(this.course.Recordings, (s: Stream) => s.StartDate().getMonth());
             } else {
                 this.courseStreams.set(this.course.Recordings, (s: Stream) => this.getTrueWeek(s.GetWeekNumber(this.dateOfFirstWeek)));
+            }
+
+            // update group names
+            let groups = this.courseStreams.get(this.sortFn(this.streamSortMode), this.filterPred(this.streamFilterMode));
+            this.groupNames.clear();
+            for (let i = 0; i < groups.length; i++) {
+                let s1 = groups[i][0];
+                this.groupNames.set(s1.ID, this.getGroupName(s1));
+                let s2 = groups[i][groups[i].length - 1];
+                this.groupNames.set(s2.ID, this.getGroupName(s2));
             }
         },
 
