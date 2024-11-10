@@ -218,6 +218,21 @@ export function seekToLive() {
     });
 }
 
+export function setHighestQuality() {
+    const players = getPlayers();
+    console.debug(players);
+    players.forEach((player) => {
+        let qualityLevels = player.qualityLevels();
+        // Listen to change events for when the player selects a new quality level
+        qualityLevels.on('change', function() {
+            console.log('Quality Level changed!');
+            console.log('New level:', qualityLevels[qualityLevels.selectedIndex]);
+        });
+        qualityLevels.trigger({ type: 'change', selectedIndex: 0 });
+    });
+
+}
+
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
 export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";
