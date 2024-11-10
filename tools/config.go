@@ -95,6 +95,11 @@ func initConfig() {
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
 	}
+	if len(Cfg.AllowedReactions) > 0 {
+		logger.Debug("Allowed reactions", "reactions", Cfg.AllowedReactions)
+	} else {
+		logger.Warn("No allowed reactions configured")
+	}
 }
 
 type Config struct {
@@ -171,10 +176,11 @@ type Config struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
-	VodURLTemplate string `yaml:"vodURLTemplate"`
-	CanonicalURL   string `yaml:"canonicalURL"`
-	WikiURL        string `yaml:"wikiURL"`
-	RtmpProxyURL   string `yaml:"rtmpProxyURL"`
+	VodURLTemplate   string   `yaml:"vodURLTemplate"`
+	CanonicalURL     string   `yaml:"canonicalURL"`
+	WikiURL          string   `yaml:"wikiURL"`
+	RtmpProxyURL     string   `yaml:"rtmpProxyURL"`
+	AllowedReactions []string `yaml:"allowedReactions"`
 }
 
 type MailConfig struct {

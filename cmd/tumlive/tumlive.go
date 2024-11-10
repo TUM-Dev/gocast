@@ -212,6 +212,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.StreamReaction{},
 		&model.Runner{},
 	)
 	if err != nil {
