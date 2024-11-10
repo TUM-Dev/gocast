@@ -251,6 +251,18 @@ func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
+	stream := tumLiveContext.Stream
+
+	if stream == nil {
+		tools.RenderErrorPage(c, http.StatusNotFound, "Lecture not found")
+		return
+	}
+
+	if !stream.LiveNow {
+		tools.RenderErrorPage(c, http.StatusNotFound, "Lecture is not live")
+		return
+	}
+
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-live-management.gohtml", LiveLectureManagementData{
 		IndexData: indexData,
 		Lecture:   *tumLiveContext.Stream,
