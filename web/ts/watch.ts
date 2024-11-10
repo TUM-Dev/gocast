@@ -218,19 +218,33 @@ export function seekToLive() {
     });
 }
 
+function getHighestQualityLevel(qualityLevels : any[]): number {
+    let highestQuality = qualityLevels[0];
+    for(let i = 1; i < qualityLevels.length; i++) {
+        if(qualityLevels[i].height > highestQuality.height) {
+            highestQuality = qualityLevels[i];
+        }
+    }
+    return qualityLevels.indexOf(highestQuality);
+}
+
 export function setHighestQuality() {
     const players = getPlayers();
     console.debug(players);
     players.forEach((player) => {
         let qualityLevels = (player as any).qualityLevels();
+        let highestQuality = getHighestQualityLevel(qualityLevels.levels_);
         // Listen to change events for when the player selects a new quality level
         qualityLevels.on('change', function() {
-            console.log('Quality Level changed!');
-            console.log('New level:', qualityLevels[qualityLevels.selectedIndex]);
+            console.debug('Quality Level changed!');
+            console.debug('New level:', qualityLevels[qualityLevels.selectedIndex]);
         });
-        qualityLevels.trigger({ type: 'change', selectedIndex: 0 });
+        qualityLevels.trigger({ type: 'change', selectedIndex: highestQuality });
+        qualityLevels.selectedIndex_ = highestQuality;
+        for(let i = 0; i < qualityLevels.length; i++) {
+            qualityLevels[i].enabled = i == highestQuality;
+        }
     });
-
 }
 
 export { repeatHeatMap } from "./repeat-heatmap";
