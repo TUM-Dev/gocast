@@ -307,7 +307,7 @@ func (s Stream) Color() string {
 	}
 }
 
-func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
+func (s Stream) GetJson(lhs []LectureHall, course Course) gin.H {
 	var files []gin.H
 	for _, file := range s.Files {
 		files = append(files, gin.H{
@@ -385,6 +385,7 @@ type StreamDTO struct {
 	Start       time.Time
 	End         time.Time
 	Duration    int32
+	LectureHall string
 }
 
 func (s Stream) ToDTO() StreamDTO {
@@ -408,6 +409,7 @@ func (s Stream) ToDTO() StreamDTO {
 		Start:       s.Start,
 		End:         s.End,
 		Duration:    duration,
+		LectureHall: s.RoomCode,
 	}
 }
 
