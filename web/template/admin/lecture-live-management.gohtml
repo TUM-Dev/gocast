@@ -53,7 +53,11 @@
                         </video-js>
                     </div>
                     <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm w-full p-2 mt-1">
-                        <span id="description" class="text-wrap">{{.Lecture.Description}}</span>
+                        {{if eq .Lecture.Description ""}}
+                            <span id="description" class="text-wrap">No description available</span>
+                        {{else}}
+                            <span id="description" class="text-wrap">{{.Lecture.Description}}</span>
+                        {{end}}
                     </div>
                     <button @click="watch.seekToLive()" class="align-middle mt-1 text-5 hover:text-1 font-medium tum-live-bg-primary rounded-2xl w-full">Seek to Live</button>
                 </div>
