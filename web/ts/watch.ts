@@ -165,6 +165,15 @@ export async function setupAudioMeter() {
 
 }
 
+export function seekToLive() {
+    const players = getPlayers();
+    console.log("Seeking to live edge");
+    console.debug(players);
+    players.forEach((player) => {
+        player.liveTracker.seekToLiveEdge();
+    });
+}
+
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
 export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";
