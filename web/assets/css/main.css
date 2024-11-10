@@ -66,6 +66,11 @@
         @apply text-gray-700 dark:text-gray-300;
     }
 
+    /*low contrast text*/
+    .important-text-4 {
+        @apply text-gray-700 dark:text-gray-300 !important;
+    }
+
     /*full contrast text*/
     .text-5 {
         @apply text-gray-600 dark:text-gray-400;
