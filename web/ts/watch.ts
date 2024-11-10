@@ -178,7 +178,7 @@ export function setHighestQuality() {
     const players = getPlayers();
     console.debug(players);
     players.forEach((player) => {
-        let qualityLevels = player.qualityLevels();
+        let qualityLevels = (player as any).qualityLevels();
         // Listen to change events for when the player selects a new quality level
         qualityLevels.on('change', function() {
             console.log('Quality Level changed!');
