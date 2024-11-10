@@ -46,3 +46,15 @@ export function videoInformationContext(streamId: number): AlpineComponent {
         },
     } as AlpineComponent;
 }
+
+function updateLiveTimeLeft(streamEnd : Date) {
+    let now = new Date();
+    let timeLeft = streamEnd.getTime() - now.getTime();
+    let timeLeftAbs = Math.abs(timeLeft) / 1000;
+    document.getElementById("live-time-remaining").innerHTML = "Time left: " + (timeLeft < 0 ? "-" : "") + Math.floor(timeLeftAbs / 60) + ":" + ('0' + Math.floor(timeLeftAbs % 60)).slice(-2);
+}
+
+export function periodicUpdateLiveTimeLeft(streamEnd : string) {
+    let streamEndDate = new Date(streamEnd.match("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d")[0]);
+    setInterval(() => updateLiveTimeLeft(streamEndDate), 1000);
+}
