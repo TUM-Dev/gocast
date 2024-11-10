@@ -38,9 +38,12 @@
 
         <div class="flex flex-row w-full">
             <div class="flex flex-col w-full pl-5 pt-3">
-                <div x-init="interaction.periodicUpdateLiveTimeLeft( '{{.Lecture.End}}' );" class="flex flex-row items-center justify-start mt-1 gap-1">
-                    <div class="pulsing-circle"></div>
-                    <span class="text-2 text-gray-800 dark:text-gray-200" id="live-time-remaining">Live time left: {{.Lecture.End}}</span>
+                <div class="flex flex-row items-center justify-between" style="width: 25vw;">
+                    <div x-init="interaction.periodicUpdateLiveTimeLeft( '{{.Lecture.End}}' );" class="flex flex-row items-center justify-start gap-1">
+                        <div class="pulsing-circle"></div>
+                        <span class="text-2 text-gray-800 dark:text-gray-200 mt-1" id="live-time-remaining">Time left: </span>
+                    </div>
+                    <span class="text-2 text-gray-800 dark:text-gray-200 mt-1" id="time"></span>
                 </div>
                 <div class="w-full flex flex-row gap-2">
                     <div class="flex flex-col h-full" style="width: 25vw">
@@ -125,6 +128,7 @@
     <script defer>
         watch.initPlayer("videoPlayer", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}});
         setTimeout(() => watch.setHighestQuality(), 2000);
+        watch.periodicCurrentTime("time");
         watch.videoStatListener.listen();
     </script>
 </body>
