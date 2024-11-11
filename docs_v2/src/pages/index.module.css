@@ -1,0 +1,122 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.header {
+  background-image: url('/icons/curves.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--hero-banner-bg-color-dark);
+}
+
+[data-theme='light'] .header {
+  background-color: var(--hero-banner-color-dark);
+}
+
+.heroBanner {
+  padding: 10rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  color: var(--hero-banner-color-dark);
+  background-color: transparent;
+}
+
+[data-theme='light'] .heroBanner {
+  color: var(--hero-banner-color-light);
+  background-color: transparent;
+}
+
+.heroButton {
+  color: var(--hero-button-color-dark);
+  background: linear-gradient(90deg, #0063ba, #0063ba);
+  background-size: 200% 100%;
+  background-position: right bottom;
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-position 2s ease;
+}
+
+.heroButton:hover {
+  color: var(--hero-button-color-dark);
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  background-position: left bottom;
+}
+
+.heroButton:active {
+  transform: scale(0.95);
+}
+
+[data-theme='light'] .heroButton {
+  color: var(--hero-button-color-dark);
+  background: linear-gradient(90deg, #0063ba,  #0063ba);
+  background-size: 200% 100%;
+  background-position: right bottom;
+  border: none;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+}
+
+@media (max-width: 768px) {
+  .buttons {
+    flex-direction: column;
+  }
+}
+
+.stats {
+  display: flex;
+  flex-direction: row; /* Add this line to explicitly set the direction on large screens */
+  margin-top: 4rem;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  padding: 2rem 0;
+}
+
+.statsContainer {
+  display: flex;
+  flex-direction: row; /* Add this line to explicitly set the direction on large screens */
+  justify-content: center;
+  background: var(--ifm-color-primary-light);
+  padding: 0.4rem 0;
+  border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+  .stats,
+  .statsContainer {
+    flex-direction: column;
+  }
+}
+.statBox {
+  padding: 1rem;
+  border-left: 1px solid var(--ifm-color-primary-darker);
+  text-align: center;
+}
+
+.statBox:first-child {
+  border-left: none;
+}
+
+.statBox h1 {
+  color: var(--ifm-color-primary);
+  font-size: 3rem;
+}
+
+.statBox p {
+  color: var(--ifm-color);
+}
