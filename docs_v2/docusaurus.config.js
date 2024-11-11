@@ -149,10 +149,10 @@ const config = {
           {
             title: "Most Viewed Docs",
             items: [
-              {
-                label: "Set up GoCast for your school",
-                to: "/docs/beta/category/deployment",
-              },
+              //{
+              //  label: "Set up GoCast for your school",
+              //  to: "/docs/beta/category/deployment",
+              //},
               {
                 label: "Start streaming lectures",
                 to: "/docs/features/LectureHallStreams",
@@ -185,7 +185,7 @@ const config = {
               },
               {
                 label: "Changelogs",
-                href: "/changelogs",
+                href: "/blog",
               },
             ],
           },
