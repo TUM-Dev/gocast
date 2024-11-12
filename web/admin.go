@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 // AdminPage serves all administration pages. todo: refactor into multiple methods
@@ -224,6 +225,12 @@ func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
 
 	if !stream.LiveNow {
 		tools.RenderErrorPage(c, http.StatusNotFound, "Lecture is not live")
+		return
+	}
+
+	if c.Query("restart") == "1" {
+		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
+		// TODO: Add restart functionality
 		return
 	}
 
