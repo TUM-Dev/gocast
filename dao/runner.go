@@ -12,7 +12,7 @@ import (
 
 type RunnerDao interface {
 	// Get Runner by hostname
-	Get(context.Context, string) (model.Runner, error)
+	Get(context.Context, string) (*model.Runner, error)
 
 	// Get all Runners in an array
 	GetAll(context.Context) ([]model.Runner, error)
@@ -33,7 +33,7 @@ func NewRunnerDao() RunnerDao {
 }
 
 // Get a Runner by id.
-func (d runnerDao) Get(c context.Context, hostname string) (res model.Runner, err error) {
+func (d runnerDao) Get(c context.Context, hostname string) (res *model.Runner, err error) {
 	return res, DB.WithContext(c).First(&res, "hostname = ?", hostname).Error
 }
 

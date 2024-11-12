@@ -29,6 +29,8 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	ctx = contextFromStreamReq(req, ctx)
 	ctx = context.WithValue(ctx, "URL", "")
 	ctx = context.WithValue(ctx, "Hostname", r.cfg.Hostname)
+	ctx = context.WithValue(ctx, "Port", r.cfg.Port)
+	ctx = context.WithValue(ctx, "Edge", r.cfg.EdgeServer)
 	ctx = context.WithValue(ctx, "actionID", req.ActionID)
 	r.log.Info("stream request", "jobID", req.ActionID)
 	a := []*actions.Action{

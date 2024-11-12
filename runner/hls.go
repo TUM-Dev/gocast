@@ -17,12 +17,10 @@ func NewHLSServer(LiveDir string, log *slog.Logger) *HLSServer {
 func (h *HLSServer) Start() error {
 	http.Handle("/", h)
 	h.log.Info("starting hls server", "port", 8187)
-	return http.ListenAndServe(":8187", nil)
+	return http.ListenAndServe(":8187", h)
 }
 
 func (h *HLSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	h.log.Info("serving request", "path", r.URL.Path, "method", r.Method)
+	//w.Header().Set("Access-Control-Allow-Origin", "*")
 	h.fs.ServeHTTP(w, r)
 }

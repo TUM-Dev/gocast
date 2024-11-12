@@ -34,18 +34,21 @@ type GrpcRunnerServer struct {
 //
 
 func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
-	runner := model.Runner{
-		Hostname: request.Hostname,
-		Port:     int(request.Port),
-		LastSeen: time.Now(),
-		Status:   "Alive",
-		Workload: 0,
+	runner, err := g.RunnerDao.Get(ctx, request.Hostname)
+	if runner == nil || runner.Hostname == "" {
+		runner = &model.Runner{
+			Hostname: request.Hostname,
+			Port:     int(request.Port),
+			LastSeen: time.Now(),
+			Status:   "Alive",
+			Workload: 0,
+		}
 	}
-	err := g.RunnerDao.Create(ctx, &runner)
+	err = g.RunnerDao.Create(ctx, runner)
 	if err != nil {
 		return nil, err
 	}
-	return &protobuf.RegisterResponse{}, nil
+	return &protobuf.RegisterResponse{ID: runner.Hostname}, nil
 }
 
 func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.HeartbeatRequest) (*protobuf.HeartbeatResponse, error) {
@@ -71,6 +74,7 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 		Disk:     request.Disk,
 		Uptime:   request.Uptime,
 		Version:  request.Version,
+		Actions:  request.CurrentAction,
 	}
 	ctx = context.WithValue(ctx, "newStats", newStats)
 	log.Info("Updating runner stats ", "runner", r)
@@ -103,26 +107,32 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner)
 		logger.Error("No source", "source", source)
 		return
 	}
-	/*server, err := dao.IngestServerDao.GetBestIngestServer()
-	if err != nil {
-		logger.Error("can't find ingest server", "err", err)
-		return
-	}*/
 
-	//var slot model.StreamName
-	/*if version == "COMB" { //try to find a transcoding slot for comb view:
-		slot, err = dao.IngestServerDao.GetTranscodedStreamSlot(server.ID)
-	}
-	if version != "COMB" || err != nil {
-		slot, err = dao.IngestServerDao.GetStreamSlot(server.ID)
+	//TODO: Implement environment variable for ingest
+	ingest := false
+	if ingest {
+		server, err := dao.IngestServerDao.GetBestIngestServer()
 		if err != nil {
-			logger.Error("No free stream slot", "err", err)
+			logger.Error("can't find ingest server", "err", err)
 			return
 		}
-	}*/
+
+		var slot model.StreamName
+		if version == "COMB" { //try to find a transcoding slot for comb view:
+			slot, err = dao.IngestServerDao.GetTranscodedStreamSlot(server.ID)
+		}
+		if version != "COMB" || err != nil {
+			slot, err = dao.IngestServerDao.GetStreamSlot(server.ID)
+			if err != nil {
+				logger.Error("No free stream slot", "err", err)
+				return
+			}
+		}
+		slot.StreamID = stream.ID
+		dao.IngestServerDao.SaveSlot(slot)
+	}
+
 	src := "rtsp://" + source
-	//slot.StreamID = stream.ID
-	//dao.IngestServerDao.SaveSlot(slot)
 	req := protobuf.StreamRequest{
 		ActionID: actionID,
 		Stream:   uint64(stream.ID),
@@ -259,18 +269,17 @@ func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protob
 	}, nil
 }
 
-func (g GrpcRunnerServer) NotifyStreamEnd(ctx context.Context, request *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
+func (g GrpcRunnerServer) NotifyStreamEnded(ctx context.Context, request *protobuf.StreamEnded) (*protobuf.Status, error) {
 	//TODO Test me
-	stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%v", request.ActionID))
+	stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%v", request.StreamID))
 	if err != nil {
-		return nil, err
+		return &protobuf.Status{Ok: false}, err
 	}
 	err = g.StreamsDao.SaveEndedState(stream.ID, true)
 	if err != nil {
-		return nil, err
+		return &protobuf.Status{Ok: false}, err
 	}
-	return &protobuf.StreamEndResponse{}, nil
-
+	return &protobuf.Status{Ok: true}, nil
 }
 
 func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *protobuf.StreamStarted) (*protobuf.Status, error) {
@@ -330,6 +339,8 @@ func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *prot
 			})
 			request.HLSUrl = strings.ReplaceAll(request.HLSUrl, "?dvr", "")
 		}
+
+		logger.Info("hls url", "url", request.HLSUrl)
 
 		switch request.Version {
 		case "CAM":
@@ -409,10 +420,9 @@ func SetTranscodeFinished(ctx context.Context, req *protobuf.ActionFinished) (*p
 func NotifyForStreams(dao dao.DaoWrapper) func() {
 	return func() {
 
-		logger.Info("Notifying runners")
+		logger.Info("Collecting due streams")
 
 		streams := dao.StreamsDao.GetDueStreamsForWorkers()
-		logger.Info("incoming stream count", "count", len(streams))
 		for i := range streams {
 			err := dao.StreamsDao.SaveEndedState(streams[i].ID, false)
 			if err != nil {
@@ -445,7 +455,7 @@ func NotifyForStreams(dao dao.DaoWrapper) func() {
 				values["source"] = lectureHallForStream.PresIP
 				err = CreateJob(dao, ctx, values) //presentation
 				if err != nil {
-					logger.Error("Can't create job", err)
+					log.Error("Can't create job", err)
 				}
 				break
 			case 2: //camera
@@ -489,6 +499,53 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 		logger.Info("Assigning runners to action")
 		ctx := context.Background()
 
+		//checking for each running action if the runner is still doing the job or if it is dead
+		activeAction, err := dao.ActionDao.GetRunningActions(ctx)
+		if err != nil {
+			logger.Error("Can't get running actions", err)
+		}
+		for _, action := range activeAction {
+			if action.End.Before(time.Now().Add(5 * time.Minute)) {
+				action.SetToIgnored()
+				log.Info("Action ignored, check for progress manually", "action", action.ID)
+				continue
+			}
+			runner, err := action.GetCurrentRunner()
+			if err != nil {
+				logger.Error("Can't get current runner", err)
+				action.SetToFailed()
+				err = dao.ActionDao.UpdateAction(ctx, &action)
+				if err != nil {
+					return
+				}
+				continue
+			}
+			if !runner.IsAlive() && !action.IsCompleted() {
+				action.SetToFailed()
+				err = dao.ActionDao.UpdateAction(ctx, &action)
+				if err != nil {
+					return
+				}
+			}
+		}
+
+		failedActions, err := dao.ActionDao.GetAllFailedActions(ctx)
+		if err != nil {
+			logger.Error("Can't get failed actions", err)
+			return
+		}
+		for _, failedAction := range failedActions {
+			failedAction.SetToRunning()
+			err = AssignRunnerAction(dao, &failedAction)
+			err = dao.ActionDao.UpdateAction(ctx, &failedAction)
+			if err != nil {
+				return
+			}
+			if err != nil {
+				logger.Error("Can't assign runner to action", err)
+			}
+		}
+
 		//Running normal jobs with the idea that they are working as they should
 		jobs, err := dao.JobDao.GetAllOpenJobs(ctx)
 		if err != nil {
@@ -501,36 +558,22 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 				logger.Error("Can't get next action", err)
 				continue
 			}
+			if dao.JobDao.UpdateJob(ctx, job) != nil {
+				logger.Error("Can't update job", err)
+				continue
+			}
 			err = AssignRunnerAction(dao, action)
 			if err != nil {
 				logger.Error("Can't assign runner to action", err)
 				continue
 			}
-		}
-		//checking for each running action if the runner is still doing the job or if it is dead
-		activeAction, err := dao.ActionDao.GetRunningActions(ctx)
-		if err != nil {
-			logger.Error("Can't get running actions", err)
-		}
-		for _, action := range activeAction {
-			runner := action.GetCurrentRunner()
-			if !runner.IsAlive() && !action.IsCompleted() {
-				action.SetToFailed()
+			action.SetToRunning()
+			err = dao.ActionDao.UpdateAction(ctx, action)
+			if err != nil {
+				return
 			}
 		}
 
-		failedActions, err := dao.ActionDao.GetAllFailedActions(ctx)
-		if err != nil {
-			logger.Error("Can't get failed actions", err)
-			return
-		}
-		for _, failedAction := range failedActions {
-			failedAction.SetToRestarted()
-			err = AssignRunnerAction(dao, &failedAction)
-			if err != nil {
-				logger.Error("Can't assign runner to action", err)
-			}
-		}
 	}
 }
 
@@ -569,11 +612,12 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 		//TranscodingRequest(ctx, dao, runner)
 		break
 	}
-
+	action.SetToRunning()
 	return nil
 }
 
 func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interface{}) error {
+	logger.Info("Creating Job", "values", values)
 	job := model.Job{
 		Start:     time.Now(),
 		Completed: false,

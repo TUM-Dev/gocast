@@ -16,6 +16,7 @@ func configActionRouter(r *gin.Engine, wrapper dao.DaoWrapper) {
 	routes := actionRoutes{dao: wrapper.ActionDao}
 
 	g.GET("/failed", routes.getFailedActions)
+	g.GET("/:id", routes.getActionById)
 }
 
 type actionRoutes struct {
@@ -36,4 +37,19 @@ func (a actionRoutes) getFailedActions(c *gin.Context) {
 	}
 	res := make([]gin.H, len(models))
 	c.JSON(http.StatusOK, res)
+}
+
+func (a actionRoutes) getActionById(c *gin.Context) {
+	log.Info("Getting action by id: ", c.Param("id"))
+	ctx := context.Background()
+	model, err := a.dao.GetActionByID(ctx, c.Param("id"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "Action not found",
+			Err:           err,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, model)
 }

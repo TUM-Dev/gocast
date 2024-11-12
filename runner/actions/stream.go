@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"log/slog"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,6 +34,10 @@ func (a *ActionProvider) StreamAction() *Action {
 			hostname, ok := ctx.Value("Hostname").(string)
 			if !ok {
 				return ctx, fmt.Errorf("%w: context doesn't contain hostname", ErrRequiredContextValNotFound)
+			}
+			edgeVM, ok := ctx.Value("Edge").(string)
+			if !ok {
+				return ctx, fmt.Errorf("%w: context doesn't contain edge", ErrRequiredContextValNotFound)
 			}
 			streamID, ok := ctx.Value("stream").(uint64)
 			if !ok {
@@ -101,12 +106,24 @@ func (a *ActionProvider) StreamAction() *Action {
 					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
 					continue
 				}
+
+				localhls := fmt.Sprintf("%v/%d/%d/%s/%s/playlist.m3u8", hostname, courseID, streamID, version, end.Format("15-04-05"))
+
+				edgeURL, err := url.Parse(fmt.Sprintf("http://%v:8089/%v",
+					edgeVM, localhls,
+				))
+				if err != nil {
+					return ctx, fmt.Errorf("%w: cannot create urlPath", err)
+				}
+				log.Info("streaming", "edgeURL", edgeURL.String())
+
 				resp := a.Server.NotifyStreamStarted(ctx, &protobuf.StreamStarted{
 					Hostname: hostname,
 					StreamID: uint32(streamID),
 					CourseID: uint32(courseID),
 					Version:  version,
-					HLSUrl:   fmt.Sprintf("http://localhost:8187/%d/%d/%s/%s/playlist.m3u8", courseID, streamID, version, end.Format("15-04-05")),
+					HLSUrl:   edgeURL.String(),
+					// fmt.Sprintf("http://%v:%v/%v:8187/%d/%d/%s/%s/playlist.m3u8", edgeVM, 8089, hostname, courseID, streamID, version, end.Format("15-04-05")), //edgeURL.String(),
 				})
 				if resp.Ok != true {
 					log.Warn("streamAction: NotifyStreamStarted failed")
