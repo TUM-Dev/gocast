@@ -7,7 +7,11 @@ export function createNotification(body: string, target: number, title: string |
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(notification),
+        body: JSON.stringify({
+            title: notification.title,
+            body: notification.body,
+            target: Number(notification.target),
+        }),
     })
         .then((r) => r.json())
         .then((r) => {

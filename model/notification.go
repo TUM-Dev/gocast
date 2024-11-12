@@ -23,10 +23,9 @@ const (
 // Notification is a message (e.g. a feature alert) that is displayed to users
 type Notification struct {
 	Model
-
 	Title  *string            `json:"title,omitempty"`
 	Body   string             `json:"-" gorm:"not null"`
-	Target NotificationTarget `json:"-" gorm:"not null; default:1"`
+	Target NotificationTarget `json:"target" gorm:"not null; default:1"`
 
 	// SanitizedBody is the body of the notification, converted from markdown to HTML
 	SanitizedBody string `json:"body" gorm:"-"`
