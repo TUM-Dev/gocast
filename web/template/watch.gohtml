@@ -27,7 +27,7 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false, transcriptAvailable: false}"
       x-init="seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="shortcuts-help-modal" class="hidden flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
@@ -425,7 +425,7 @@
         {{end}}
 
         <!-- Transcript -->
-        <div id="transcript-desktop" x-cloak="" x-show="sidebar === watch.SidebarState.Transcript"
+        <div id="transcript-desktop" x-cloak="" x-show="sidebar === watch.SidebarState.Transcript && transcriptAvailable"
             :class="sidebar === watch.SidebarState.Transcript ? 'lg:basis-1/4' : 'lg:basis-0'"
             class="basis-full md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4">
             {{template "transcript-modal" $stream.ID}}
@@ -497,7 +497,8 @@
                             </button>
                         {{end}}
 
-                        <button @click="sidebar = (sidebar === watch.SidebarState.Transcript ? watch.SidebarState.Hidden : watch.SidebarState.Transcript)"
+                        <!-- Transcript Button -->
+                        <button x-show="transcriptAvailable" @toggletranscript.window="e => {transcriptAvailable=true}" @click="sidebar = (sidebar === watch.SidebarState.Transcript ? watch.SidebarState.Hidden : watch.SidebarState.Transcript)"
                                 class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                 :title="'Show Transcript'">
                             <i class="fa-solid fa-text-height text-4"></i>

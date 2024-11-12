@@ -1,5 +1,5 @@
 {{define "transcript-modal"}}
-    <div x-data="{transcriptController: new watch.TranscriptController(), isOutOfSync: false, showScrollUp: false}"
+    <div x-data="{ transcriptController: new watch.TranscriptController(), isOutOfSync: false, showScrollUp: false }"
          class="relative h-full border rounded-lg dark:border-gray-800 flex flex-col items-center justify-center overflow-hidden">
         <div class="h-full w-full max-w-3xl flex flex-col">
             <div class="flex justify-between items-end p-4">
@@ -16,13 +16,6 @@
             <div class="flex-grow overflow-hidden relative">
                 {{template "transcript-list" .}}
             </div>
-            <!--<div class="w-full flex items-center justify-center" x-show="isOutOfSync">
-                <button type="button" title="Sync to video time"
-                        class="text-3 text-sm font-semibold hover:bg-blue-500 dark:bg-indigo-600 rounded-full p-1 my-3 w-1/2 max-w-3xl"
-                        @click="isOutOfSync = false;">
-                    Sync to video time
-                </button>
-            </div>-->
         </div>
     </div>
 {{end}}
@@ -30,13 +23,13 @@
 {{define "transcript-list"}}
     <div x-cloak
          x-data="{ transcriptController: new watch.TranscriptController(), transcript: [] }"
-         x-init="() => { transcriptController.init('transcript-list', $el);}"
+         x-init="() => { transcriptController.init('transcript-list', $el); }"
          @update="(e) => (transcript = e.detail)"
          class="h-full w-full max-w-3xl mx-auto transcript-container overflow-hidden">
         <div class="relative grid gap-1 overflow-y-auto pr-3 h-full">
             <template x-for="(cue, index) in transcript" :key="index">
                 <div class="flex items-start space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded"
-                     @click="watch.jumpTo({Ms: cue.startTime * 1000});" :data-cue-start="cue.startTime">
+                     @click="watch.jumpTo({ Ms: cue.startTime * 1000 }, true);" :data-cue-start="cue.startTime">
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         <span x-text="new Date(cue.startTime * 1000).toISOString().substr(11, 8)"></span>
                     </div>
