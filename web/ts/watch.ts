@@ -133,6 +133,11 @@ export class ShareURL {
     }
 }
 
+export function pauseVideo() {
+    const player = getPlayers()[0];
+    player.pause();
+}
+
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
 export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";

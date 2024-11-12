@@ -1,12 +1,10 @@
 import { VideoSectionProvider } from "./video-sections";
 import { BookmarksProvider } from "./bookmarks";
-import { TranscriptProvider } from "./transcript";
 import { StreamPlaylistProvider } from "./stream-playlist";
 import { AdminLectureListProvider } from "./admin-lecture-list";
 
 export abstract class DataStore {
     static bookmarks: BookmarksProvider = new BookmarksProvider();
-    static transcript: TranscriptProvider = new TranscriptProvider();
     static videoSections: VideoSectionProvider = new VideoSectionProvider();
     static streamPlaylist: StreamPlaylistProvider = new StreamPlaylistProvider();
 

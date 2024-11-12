@@ -426,10 +426,19 @@
 
         <!-- Transcript -->
         <div id="transcript-desktop" x-cloak="" x-show="sidebar === watch.SidebarState.Transcript"
-                :class="sidebar === watch.SidebarState.Transcript ? 'lg:basis-1/4' : 'lg:basis-0'"
-                class="hidden md:block basis-full h-16/9 lg:h-16/6 px-5 md:px-2 lg:order-none order-4">
+            :class="sidebar === watch.SidebarState.Transcript ? 'lg:basis-1/4' : 'lg:basis-0'"
+            class="basis-full md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4">
             {{template "transcript-modal" $stream.ID}}
         </div>
+
+        <!-- Scroll to Top Button -->
+        <button x-data="{ showScrollUp: false }"
+                x-show="showScrollUp"
+                @click="watch.pauseVideo();window.scrollTo({ top: 0, behavior: 'smooth' }); "
+                class="fixed bottom-4 right-4 md:hidden bg-blue-500 text-white rounded-full p-2 shadow-lg z-50"
+                @scroll.window="showScrollUp = (window.scrollY > 200)">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
 
         <!-- Streams -->
         {{if .IndexData.TUMLiveContext.User}}
@@ -482,20 +491,20 @@
 
                         {{if .IndexData.TUMLiveContext.User}}
                             <button @click="sidebar = (sidebar === watch.SidebarState.Bookmarks ? watch.SidebarState.Hidden : watch.SidebarState.Bookmarks)"
-                                    class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                    class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                     :title="'New Bookmark'">
                                 <i class="fa-solid fa-bookmark text-4"></i>
                             </button>
                         {{end}}
 
                         <button @click="sidebar = (sidebar === watch.SidebarState.Transcript ? watch.SidebarState.Hidden : watch.SidebarState.Transcript)"
-                                class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                 :title="'Show Transcript'">
                             <i class="fa-solid fa-text-height text-4"></i>
                         </button>
 
                         <button @click="showShare = true;"
-                                class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                 :title="'Share'">
                             <i class="fa-solid fa-share text-4"></i>
                         </button>
