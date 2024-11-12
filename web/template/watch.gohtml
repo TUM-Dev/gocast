@@ -478,7 +478,7 @@
 
                 <!-- Desktop stream info-->
                 <div class="pt-2 lg:pt-0">
-                    <div class="justify-center space-x-2 text-lg flex shrink-0">
+                    <div class="justify-center space-x-2 text-lg flex shrink-0" x-data="{reactionsOpen: false}" @keydown.escape="reactionsOpen = false;">
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
                             <div class="rounded-lg px-3 text-4 py-2 h-fit w-fit bg-gray-100 dark:bg-secondary-light space-x-2">
                             <a
@@ -518,15 +518,28 @@
                         <!-- Actions-->
                         {{template "actions" .}}
 
-                        <!-- Desktop Open Chat -->
-                        {{if and $course.ChatEnabled $stream.ChatEnabled}}
-                            <button @click="sidebar = (sidebar === watch.SidebarState.Chat ? watch.SidebarState.Hidden : watch.SidebarState.Chat)"
-                                    title="Open Chat"
-                                    :class="sidebar === watch.SidebarState.Chat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
-                                    class="rounded-lg px-3 py-2 h-fit w-fit">
-                                <i class="fa-solid fa-comments text-4"></i>
+                        <!-- Stream Reactions -->
+                        <div class="rounded-lg px-3 text-4 py-2 h-fit w-fit bg-gray-100 dark:bg-secondary-light space-x-2">
+                            <button
+                                    @click="reactionsOpen = true"
+                                    :title="'React to stream'">
+                                <i class="fa-solid fa-face-smile"></i>
                             </button>
-                        {{end}}
+
+                            <!-- Desktop Open Chat -->
+                            {{if and $course.ChatEnabled $stream.ChatEnabled}}
+                                <button @click="sidebar = (sidebar === watch.SidebarState.Chat ? watch.SidebarState.Hidden : watch.SidebarState.Chat)"
+                                        title="Open Chat">
+                                    <i class="fa-solid fa-comments text-4"></i>
+                                </button>
+                            {{end}}
+                        </div>
+                        <!-- Reactions overlay -->
+                        <div class="fixed left-0 top-0 w-full h-full bg-black opacity-75 z-50 m-0 p-0 flex flex-row items-center justify-center" x-show="reactionsOpen" @click="reactionsOpen = false;">
+                            <div class="w-1/5 h-1/5">
+                                {{template "stream-reactions" $stream}}
+                            </div>
+                        </div>
 
                         {{ if not $stream.LiveNow }}
                         <!-- Lecture Stream Playlist -->
