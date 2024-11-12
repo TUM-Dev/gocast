@@ -125,14 +125,6 @@ export class Stream implements Identifiable {
         return Math.floor(((this.StartDate().getTime() - dateOfFirstWeek.getTime())) / MS_IN_DAY / 7) + 1;
     }
 
-    public GetGroupName(mode : GroupMode, dateOfFirstWeek : Date) : string {
-        if (mode === GroupMode.Month) {
-            return this.GetMonthName();
-        } else if (mode === GroupMode.Week) {
-            return "Week " + this.GetWeekNumber(dateOfFirstWeek).toString();
-        }
-    }
-
     private static TimeOf(d: string): string {
         return new Date(d).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
     }
