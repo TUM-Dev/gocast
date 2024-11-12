@@ -10,6 +10,7 @@
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script src="/static/assets/ts-dist/watch.bundle.js?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"></script>
+    <script src="/static/assets/ts-dist/admin.bundle.js?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"></script>
     <script src="/static/assets/ts-dist/interaction.bundle.js?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"></script>
     <link href="/static/assets/css-dist/home.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
@@ -81,6 +82,15 @@
                                 <i class="fas fa-power-off mr-1"></i>Stop
                             </button>
                         </div>
+
+                        <!-- TODO: Fix this
+                        <div>
+                            <span class="text-gray-200">Student Live activity during lecture</span>
+                            <div class="w-full m-auto" style="min-height: 200px; min-width:200px;">
+                                <canvas id="lectureLiveStats" width="400" height="100" aria-label="Viewer Live stats"
+                                        role="img"></canvas>
+                            </div>
+                        </div>-->
                     </div>
 
 
@@ -138,6 +148,8 @@
                 </div>
             </div>
 
+            <!-- TODO: Add live view count and live view history -->
+
             <!-- Chat -->
             {{if and $course.ChatEnabled $stream.ChatEnabled}}
                 <div
@@ -190,6 +202,9 @@
         setTimeout(() => watch.setHighestQuality(), 2000);
         watch.periodicCurrentTime("time");
         watch.videoStatListener.listen();
+
+        admin.loadLectureStats("lecture", "lectureLiveStats", "{{.Lecture.Model.ID}}");
+        admin.initLectureStatsPage("{{.Lecture.Model.ID}}");
     </script>
 </body>
 </html>
