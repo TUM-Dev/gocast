@@ -67,7 +67,7 @@ export class TranscriptController {
     }
 
     getTranscriptFromTracks(textTracks: TextTrackList, label?: string): VTTCue[] {
-        let transcript: VTTCue[] = [];
+        const transcript: VTTCue[] = [];
         for (let i = 0; i < textTracks.length; i++) {
             const track = textTracks[i];
             if ((track.kind === "captions" || track.kind === "subtitles") && (!label || track.label === label)) {
@@ -105,7 +105,7 @@ export class TranscriptController {
         }
     }
 
-    onUpdate(data: any) {
+    onUpdate(data: VTTCue[]) {
         this.updateTranscript(data);
     }
 
@@ -133,7 +133,7 @@ export class TranscriptController {
             if ((track.kind === "captions" || track.kind === "subtitles") && (!label || track.label === label)) {
                 for (let j = 0; j < track.cues.length; j++) {
                     const cue = track.cues[j];
-                    transcript += `${cue.text}\n\n`;
+                    transcript += `${(cue as VTTCue).text}\n\n`;
                 }
                 if (label && transcript !== "") {
                     return transcript;
