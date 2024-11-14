@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +31,7 @@ const (
 
 func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := streamRoutes{daoWrapper}
+	reactionRoutes := StreamReactionRoutes{daoWrapper}
 
 	stream := router.Group("/api/stream")
 	{
@@ -47,8 +47,9 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 			streamById.GET("/playlist", routes.getStreamPlaylist)
 
-			streamById.POST("/reaction", routes.addReaction)
-			streamById.GET("/reaction/allowed", routes.allowedReactions)
+			streamById.POST("/reaction", reactionRoutes.addReaction)
+			streamById.GET("/reaction/allowed", reactionRoutes.allowedReactions)
+			streamById.GET("/reaction/ws", reactionRoutes.upgradeWebsocket)
 
 			thumbs := streamById.Group("/thumbs")
 			{
@@ -428,94 +429,6 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, sections)
-}
-
-// TODO: This can be modified to allow different reactions for different streams
-func (r streamRoutes) allowedReactions(c *gin.Context) {
-	c.JSON(http.StatusOK, tools.Cfg.AllowedReactions)
-}
-
-func (r streamRoutes) addReaction(c *gin.Context) {
-	cooldownSeconds := 10
-
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	user := tumLiveContext.User
-	stream := tumLiveContext.Stream
-
-	if stream == nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "stream not found",
-		})
-		return
-	}
-
-	course, err := r.DaoWrapper.CoursesDao.GetCourseById(c, stream.CourseID)
-
-	if user == nil || err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "user or course not found",
-		})
-		return
-	}
-
-	if !user.IsEligibleToWatchCourse(course) {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusForbidden,
-			CustomMessage: "user not eligible to watch course",
-		})
-		return
-	}
-
-	type reactionRequest struct {
-		Reaction string `json:"reaction"`
-	}
-
-	var reaction reactionRequest
-	if err := c.ShouldBindJSON(&reaction); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-
-	// TODO: This can be modified to allow different reactions for different streams
-	if !slices.Contains(tools.Cfg.AllowedReactions, reaction.Reaction) {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "reaction not allowed",
-		})
-		return
-	}
-
-	lastReaction, _ := r.DaoWrapper.StreamReactionDao.GetLastReactionOfUser(c, user.ID)
-	if lastReaction.Reaction != "" && lastReaction.CreatedAt.Add(time.Duration(cooldownSeconds)*time.Second).After(time.Now()) {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusTooManyRequests,
-			CustomMessage: "cooldown not over",
-		})
-		return
-	}
-
-	reactionObj := model.StreamReaction{
-		Reaction: reaction.Reaction,
-		StreamID: stream.ID,
-		UserID:   user.ID,
-	}
-
-	err = r.DaoWrapper.StreamReactionDao.Create(c, &reactionObj)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not create reaction",
-			Err:           err,
-		})
-		return
-	}
-	c.JSON(http.StatusOK, "")
 }
 
 // RegenerateThumbs regenerates the thumbnails for a stream.
