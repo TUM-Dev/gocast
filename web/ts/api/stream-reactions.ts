@@ -18,9 +18,7 @@ export function getAllowedReactions(streamID: number): Promise<string[]> {
 export const liveReactionListener = {
     async init(streamId: string) {
         await Realtime.get().subscribeChannel("reaction-update", this.handle);
-        setTimeout(async () => {
-            await Realtime.get().send("reaction-update", {type: RealtimeMessageTypes.RealtimeMessageTypeChannelMessage, payload: {"streamID": streamId}});
-        }, 2000);
+        await Realtime.get().send("reaction-update", {type: RealtimeMessageTypes.RealtimeMessageTypeChannelMessage, payload: {"streamID": streamId}});
     },
 
     handle(payload: object) {

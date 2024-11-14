@@ -118,6 +118,7 @@ const (
 var (
 	liveReactionListenerMutex sync.RWMutex
 	liveReactionListener      = map[uint]*liveReactionAdminSessionsWrapper{}
+	daoWrapper                dao.DaoWrapper
 )
 
 type liveReactionAdminSessionsWrapper struct {
@@ -125,12 +126,13 @@ type liveReactionAdminSessionsWrapper struct {
 	stream   uint
 }
 
-func RegisterReactionUpdateRealtimeChannel() {
+func RegisterReactionUpdateRealtimeChannel(wrapper dao.DaoWrapper) {
 	RealtimeInstance.RegisterChannel(ReactionUpdateRoomName, realtime.ChannelHandlers{
 		OnSubscribe:   reactionUpdateOnSubscribe,
 		OnUnsubscribe: reactionUpdateOnUnsubscribe,
 		OnMessage:     reactionUpdateSetStream,
 	})
+	daoWrapper = wrapper
 }
 
 func reactionUpdateOnUnsubscribe(psc *realtime.Context) {
@@ -227,7 +229,6 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 		return
 	}
 
-	daoWrapper := ctx.(dao.DaoWrapper)
 	stream, err := daoWrapper.StreamsDao.GetStreamByID(nil, messageObj.StreamID)
 	if err != nil {
 		logger.Error("Cant get stream by id", "err", err)

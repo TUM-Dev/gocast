@@ -20,7 +20,7 @@ func ConfigRealtimeRouter(router *gin.RouterGroup) {
 
 	// Register Channels
 	RegisterLiveUpdateRealtimeChannel()
-	RegisterReactionUpdateRealtimeChannel()
+	RegisterReactionUpdateRealtimeChannel(daoWrapper)
 	RegisterLiveRunnerPageUpdateRealtimeChannel(daoWrapper)
 	RegisterRealtimeChatChannel()
 }
