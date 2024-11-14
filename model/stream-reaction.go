@@ -14,5 +14,5 @@ type StreamReaction struct {
 
 // TableName returns the name of the table for the StreamReaction model in the database.
 func (*StreamReaction) TableName() string {
-	return "streamReaction" // todo
+	return "stream_reaction" // todo
 }
