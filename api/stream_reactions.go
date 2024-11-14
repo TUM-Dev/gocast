@@ -222,9 +222,25 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 
 	var messageObj Message
 	err = json.Unmarshal(message.Payload, &messageObj)
-
 	if err != nil {
 		logger.Error("could not unmarshal message", "err", err)
+		return
+	}
+
+	daoWrapper := ctx.(dao.DaoWrapper)
+	stream, err := daoWrapper.StreamsDao.GetStreamByID(nil, messageObj.StreamID)
+	if err != nil {
+		logger.Error("Cant get stream by id", "err", err)
+		return
+	}
+	course, err := daoWrapper.CoursesDao.GetCourseById(nil, stream.CourseID)
+	if err != nil {
+		logger.Error("Cant get course by id", "err", err)
+		return
+	}
+	if !tumLiveContext.User.IsAdminOfCourse(course) {
+		logger.Error("User is not admin of course")
+		reactionUpdateOnUnsubscribe(psc)
 		return
 	}
 
