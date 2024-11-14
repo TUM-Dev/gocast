@@ -25,13 +25,3 @@ export const liveReactionListener = {
         window.dispatchEvent(new CustomEvent("reactionupdate", { detail: { data: payload } }));
     },
 };
-
-export function startReactionAnimation(reaction: string) {
-    const reactionElement = document.getElementById(`reaction-${reaction}`);
-    if (reactionElement) {
-        reactionElement.classList.add("opacity-0");
-        setTimeout(() => {
-            reactionElement.classList.remove("opacity-0");
-        }, 500);
-    }
-}

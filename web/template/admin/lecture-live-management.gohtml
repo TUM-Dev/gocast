@@ -111,7 +111,14 @@
                 </div>
             </div>
 
-            <div x-init="watch.liveReactionListener.init('{{$stream.Model.ID}}')"  x-on:reactionupdate.window="console.log('Reaction update')"></div>
+            <div x-init="watch.liveReactionListener.init('{{$stream.Model.ID}}'); reactions = await watch.getAllowedReactions({{$stream.Model.ID}})"  x-on:reactionupdate.window="e => {console.log(e); highlightedReaction = e.detail.data.reaction; setTimeout(() => {highlightedReaction = ''}, 1000)}"
+            class="w-fit flex flex-row p-5 gap-2" x-data="{reactions: [], highlightedReaction: ''}">
+                <!-- Next line is used for tailwind to compile classes -->
+                <span class="hidden opacity-0"></span>
+                <template x-for="reaction in reactions">
+                    <span x-text="reaction" class="text-5xl text-white" :class="highlightedReaction == reaction ? 'opacity-0' : 'opacity-25'"></span>
+                </template>
+            </div>
 
             <!-- Chat -->
             {{if and $course.ChatEnabled $stream.ChatEnabled}}

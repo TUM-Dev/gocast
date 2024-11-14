@@ -136,6 +136,7 @@ func RegisterReactionUpdateRealtimeChannel(wrapper dao.DaoWrapper) {
 }
 
 func reactionUpdateOnUnsubscribe(psc *realtime.Context) {
+	logger.Debug("Unsubscribing from reaction Update")
 	ctx, _ := psc.Client.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
@@ -163,6 +164,7 @@ func reactionUpdateOnUnsubscribe(psc *realtime.Context) {
 	} else {
 		liveReactionListener[userId].sessions = newSessions
 	}
+	logger.Debug("Successfully unsubscribed from reaction Update")
 }
 
 func reactionUpdateOnSubscribe(psc *realtime.Context) {
@@ -188,12 +190,12 @@ func reactionUpdateOnSubscribe(psc *realtime.Context) {
 	}
 
 	liveReactionListenerMutex.Lock()
+	defer liveReactionListenerMutex.Unlock()
 	if liveReactionListener[userId] != nil {
 		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{append(liveUpdateListener[userId].sessions, psc), liveReactionListener[userId].stream}
 	} else {
 		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{[]*realtime.Context{psc}, 0}
 	}
-	liveReactionListenerMutex.Unlock()
 }
 
 func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
@@ -246,6 +248,7 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 	}
 
 	liveReactionListenerMutex.Lock()
+	defer liveReactionListenerMutex.Unlock()
 	if liveReactionListener[userId] != nil {
 		uId, err := strconv.Atoi(messageObj.StreamID)
 		if err != nil {
@@ -256,11 +259,11 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 	} else {
 		logger.Error("User has no live reaction listener")
 	}
-	liveReactionListenerMutex.Unlock()
 }
 
 func NotifyAdminsOnReaction(streamID uint, reaction string) {
 	liveReactionListenerMutex.Lock()
+	defer liveReactionListenerMutex.Unlock()
 	reactionStruct := struct {
 		Reaction string `json:"reaction"`
 	}{
