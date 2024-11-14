@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -103,8 +105,11 @@ func (r StreamReactionRoutes) addReaction(c *gin.Context) {
 		})
 		return
 	}
+	NotifyAdminsOnReaction(stream.ID, reaction.Reaction)
 	c.JSON(http.StatusOK, "")
 }
+
+// The part below is used for Realtime Connection to the client
 
 const (
 	ReactionUpdateRoomName = "reaction-update"
@@ -124,6 +129,7 @@ func RegisterReactionUpdateRealtimeChannel() {
 	RealtimeInstance.RegisterChannel(ReactionUpdateRoomName, realtime.ChannelHandlers{
 		OnSubscribe:   reactionUpdateOnSubscribe,
 		OnUnsubscribe: reactionUpdateOnUnsubscribe,
+		OnMessage:     reactionUpdateSetStream,
 	})
 }
 
@@ -179,23 +185,79 @@ func reactionUpdateOnSubscribe(psc *realtime.Context) {
 
 	}
 
-	stream := tumLiveContext.Stream
+	liveReactionListenerMutex.Lock()
+	if liveReactionListener[userId] != nil {
+		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{append(liveUpdateListener[userId].sessions, psc), liveReactionListener[userId].stream}
+	} else {
+		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{[]*realtime.Context{psc}, 0}
+	}
+	liveReactionListenerMutex.Unlock()
+}
+
+func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
+	logger.Info("reactionUpdateSetStream", "message", string(message.Payload))
+	ctx, _ := psc.Client.Get("ctx") // get gin context
+
+	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		return
+	}
+
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	var userId uint = 0
+	var err error
+
+	if tumLiveContext.User != nil {
+		userId = tumLiveContext.User.ID
+	} else {
+		logger.Error("could not get user from request", "err", err)
+		return
+	}
+
+	type Message struct {
+		StreamID string `json:"streamId"`
+	}
+
+	var messageObj Message
+	err = json.Unmarshal(message.Payload, &messageObj)
+
+	if err != nil {
+		logger.Error("could not unmarshal message", "err", err)
+		return
+	}
 
 	liveReactionListenerMutex.Lock()
 	if liveReactionListener[userId] != nil {
-		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{append(liveUpdateListener[userId].sessions, psc), stream.Model.ID}
+		uId, err := strconv.Atoi(messageObj.StreamID)
+		if err != nil {
+			logger.Error("could not convert streamID to int", "err", err)
+			return
+		}
+		liveReactionListener[userId].stream = uint(uId)
 	} else {
-		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{[]*realtime.Context{psc}, stream.Model.ID}
+		logger.Error("User has no live reaction listener")
 	}
 	liveReactionListenerMutex.Unlock()
 }
 
 func NotifyAdminsOnReaction(streamID uint, reaction string) {
 	liveReactionListenerMutex.Lock()
+	reactionStruct := struct {
+		Reaction string `json:"reaction"`
+	}{
+		Reaction: reaction,
+	}
+	reactionMarshaled, err := json.Marshal(reactionStruct)
+	if err != nil {
+		logger.Error("could not marshal reaction", "err", err)
+		return
+	}
 	for _, session := range liveReactionListener {
 		if session.stream == streamID {
 			for _, s := range session.sessions {
-				err := s.Send([]byte(reaction))
+				err := s.Send([]byte(reactionMarshaled))
 				if err != nil {
 					logger.Error("can't write reaction to session", "err", err)
 				}

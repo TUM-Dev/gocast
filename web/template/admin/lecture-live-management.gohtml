@@ -28,7 +28,7 @@
 </head>
 <body x-data="{'streamID': {{$stream.Model.ID}} }" class="w-full">
     {{template "header" .IndexData.TUMLiveContext}}
-    <div class="h-full w-full flex flex-col items-center" x-data="interaction.videoInformationContext({{$stream.ID}});">
+    <div class="h-full w-full flex flex-col items-center" x-data="interaction.videoInformationContext({{$stream.Model.ID}});">
         <!-- Heading with Lecture and Course Name -->
         <div class="flex flex-row items-center pt-2">
             <a href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><h1 class="text-gray-900 dark:text-gray-200 mb-0">{{$stream.Name}}</h1></a>
@@ -110,6 +110,8 @@
                     </div>
                 </div>
             </div>
+
+            <div x-init="watch.liveReactionListener.init('{{$stream.Model.ID}}')"  x-on:reactionupdate.window="console.log('Reaction update')"></div>
 
             <!-- Chat -->
             {{if and $course.ChatEnabled $stream.ChatEnabled}}

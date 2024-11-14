@@ -49,7 +49,6 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 			streamById.POST("/reaction", reactionRoutes.addReaction)
 			streamById.GET("/reaction/allowed", reactionRoutes.allowedReactions)
-			streamById.GET("/reaction/ws", reactionRoutes.upgradeWebsocket)
 
 			thumbs := streamById.Group("/thumbs")
 			{
