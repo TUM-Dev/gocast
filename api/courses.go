@@ -362,6 +362,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 
 	if (course.IsLoggedIn() && tumLiveContext.User == nil) || (course.IsEnrolled() && !tumLiveContext.User.IsEligibleToWatchCourse(course)) {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	user := tumLiveContext.User

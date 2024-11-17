@@ -4,16 +4,15 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/pb"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	"github.com/TUM-Dev/gocast/worker/pb"
-	log "github.com/sirupsen/logrus"
 )
 
 func buildCommand(niceness int, infile string, outfile string, tune string, crf int, self bool) *exec.Cmd {
@@ -22,8 +21,7 @@ func buildCommand(niceness int, infile string, outfile string, tune string, crf 
 		"ffmpeg", "-nostats", "-loglevel", "error", "-y",
 		"-progress", "-",
 		"-i", infile,
-		"-vsync", "2", "-c:v", "libx264", "-level", "4.0", "-movflags", "+faststart",
-	}
+		"-vsync", "2", "-c:v", "libx264", "-level", "4.0", "-movflags", "+faststart"}
 	if tune != "" {
 		c = append(c, "-tune", tune)
 	}
@@ -78,7 +76,7 @@ func transcode(streamCtx *StreamContext) error {
 	case "COMB":
 		cmd = buildCommand(8, in, out, "", 24, streamCtx.isSelfStream)
 	default:
-		// unknown source, use higher compression and less priority
+		//unknown source, use higher compression and less priority
 		cmd = buildCommand(10, in, out, "", 26, streamCtx.isSelfStream)
 	}
 	log.WithFields(log.Fields{"input": in, "output": out, "command": cmd.String()}).Info("Transcoding")
@@ -149,7 +147,7 @@ func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressCh
 // creates folder for output file if it doesn't exist
 func prepare(out string) error {
 	dir := filepath.Dir(out)
-	err := os.MkdirAll(dir, 0o750)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return fmt.Errorf("create output directory for transcoding: %s", err)
 	}
@@ -159,7 +157,7 @@ func prepare(out string) error {
 // markForDeletion moves the file to $recfolder/.trash/
 func markForDeletion(ctx *StreamContext) error {
 	trashName := ctx.getRecordingTrashName()
-	err := os.MkdirAll(filepath.Dir(trashName), 0o750)
+	err := os.MkdirAll(filepath.Dir(trashName), 0750)
 	if err != nil {
 		return fmt.Errorf("create trash directory: %s", err)
 	}
