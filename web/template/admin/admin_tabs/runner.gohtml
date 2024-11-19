@@ -1,7 +1,75 @@
 {{define "runners"}}
-    <section x-data="admin.runnerData()" x-on:failed-action-listing.window="showFailed=true"
-             x-on:stop-action-listing.window="showFailed=false;actions=$event.detail.failedActions"
-    >
+<h1 class="text-2xl text-1 my-4">Runners</h1>
+<link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+<link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
+
+<style>
+    .listAction {
+        visibility: hidden;
+        position: relative;
+        top: 30%;
+        left: 10%;
+        right: 10%;
+        width: 80%;
+        display: block;
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        z-index: 2000;
+        margin: .5rem .5rem;
+    }
+
+    .listAction .listActionBlocks {
+
+        width: 160px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px 0;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -80px;
+    }
+
+    /* Toggle this class when clicking on the popup container (hide and show the popup) */
+    .listAction .show {
+        visibility: visible;
+        -webkit-animation: fadeIn 1s;
+        animation: fadeIn 1s
+    }
+
+    /* Add animation (fade in the popup) */
+    @-webkit-keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+</style>
+
+<section
+        x-data="admin.runnerData()"
+        x-on:failed-action-listing.window="showFailed=true;showActions=true;failedActions=$event.detail.failedActions;actions=$event.detail.actions;"
+        x-on:stop-action-listing.window="showFailed=false;showActions=false;failedActions=$event.detail.failedActions;actions=$event.detail.actions;"
+        x-init="admin.listActions();admin.getFailedAction();">
+
     <div class="form-container">
         <h1 class="form-container-title">Runners</h1>
         <div class="form-container-body grid grid-cols-2 gap-3">
@@ -30,21 +98,27 @@
                                 <span class="mr-4">Disk: {{$runner.Disk}}</span>
                             </div>
                         </td>
-                        <td class="px-6">{{if $runner.IsAlive}}
+                        <td class="px-6 text-center-6">{{if $runner.IsAlive}}
                                 <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
                                 <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}
                         </td>
-                        <td class="px-6">{{$runner.Uptime}}</td>
-                        <td class="px-6"></td>
-                        <td x-data class="px-6">
-                            <button @click="admin.getFailedAction()"
+                        <td class="px-px-6 text-center">{{$runner.Uptime}}</td>
+                        <td class="px-6 text-center">
+                            <button @click="admin.listActions(`{{$runner.Actions}}`).then(() => window.location.reload())"
+                                    class="text-5 hover:text-1 items-center justify-center"
+                                    type="button"
+                                    title="list current actions">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        </td>
+                        <td x-data class="px-6 text-center">
+                            <button @click="admin.getFailedAction().then(() => window.location.reload())"
                                     class="text-5 hover:text-1 items-center justify-center"
                                     type="button"
                                     title="Restart Action">
                                 <i class="fas fa-repeat"></i>
                             </button>
-                        </td>
-                        <td x-data class="px-6">
+                            <span class="mx-4"></span>
                             <button @click="admin.deleteRunner('{{$runner.Hostname}}').then(() => window.location.reload())"
                                     class="text-5 hover:text-1 items-center justify-center"
                                     type="button"
@@ -57,19 +131,35 @@
                 </tbody>
             </table>
         </div>
-        <div x-show="showFailed">
-            <div>
-                <h2>failed actions</h2>
-                <template x-for="action in failedActions">
-                    <div>
-                        <ul>
-                            <li style="margin-bottom: 10px" x-text="action.ActionID"></li>
-                        </ul>
-                    </div>
+    </div>
+    <div class="listAction form-container" id="actionList">
+        <div class="form-container-body grid grid-cols-2 gap-3">
+            <table class="table-auto w-full col-span-full">
+                <thead>
+                <tr class="text-2 uppercase text-left">
+                    <th class="py-3 px-6 text-left">ID</th>
+                    <th class="py-3 px-6 text-left">Status</th>
+                    <th class="py-3 px-6 text-left">Start</th>
+                    <th class="py-3 px-6 text-left">Type</th>
+                    <th class="py-3 px-6 text-left">Duration</th>
+                </thead>
+                <tbody class="text-3">
+                <template x-for="action in actions">
+                    <tr class="border-gray-500 listActionBlocks">
+                        <td class="pt-3 px-6 text-left" x-text="action.id"></td>
+                        <td class="px-6 text-center-6">
+                            <span x-if="action.status"
+                                  class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>
+                            <span x-if="!action.status"
+                                  class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}
+                        </td>
+                        <td class="px-px-6 text-center" x-text="action.start"></td>
+                        <td class="px-6 text-center" x-text="action.type"></td>
+                        <td class="px-6 text-center" x-text="action.duration"></td>
+                    </tr>
                 </template>
-            </div>
-
+                </tbody>
+            </table>
         </div>
     </div>
     </section>
-{{end}}

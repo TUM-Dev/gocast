@@ -40,7 +40,6 @@ func (a actionRoutes) getFailedActions(c *gin.Context) {
 }
 
 func (a actionRoutes) getActionById(c *gin.Context) {
-	log.Info("Getting action by id: ", c.Param("id"))
 	ctx := context.Background()
 	model, err := a.dao.GetActionByID(ctx, c.Param("id"))
 	if err != nil {
