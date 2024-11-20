@@ -11,7 +11,7 @@ const (
 	running
 	failed
 	awaiting
-	restarted
+	ignored
 )
 
 type Action struct {
@@ -55,16 +55,19 @@ func (a *Action) SetToAwaiting() {
 	a.Status = awaiting
 }
 
-func (a *Action) SetToRestarted() {
-	a.Status = restarted
+func (a *Action) SetToIgnored() {
+	a.Status = ignored
 }
 
 func (a *Action) IsCompleted() bool {
 	return a.Status == completed
 }
 
-func (a *Action) GetCurrentRunner() Runner {
-	return a.AllRunners[len(a.AllRunners)-1]
+func (a *Action) GetCurrentRunner() (*Runner, error) {
+	if len(a.AllRunners) == 0 {
+		return nil, errors.New("no runner assigned")
+	}
+	return &a.AllRunners[len(a.AllRunners)-1], nil
 }
 
 func (a *Action) AssignRunner(runner Runner) {

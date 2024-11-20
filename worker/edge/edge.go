@@ -34,14 +34,14 @@ var (
 	inflightLock = sync.Mutex{}
 	inflight     = make(map[string]*sync.Mutex)
 
-	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
-	// allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
+	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9:]+/([\w.\-_]+/)*[\w.\-_]+\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
+	// allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/stream/1234.ts
 )
 
 var port = ":8089"
 
 var (
-	originPort  = "8085"
+	originPort  = "8187"
 	originProto = "http://"
 )
 
@@ -303,8 +303,10 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
+	writer.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 
+	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
+	log.Println("requested:", urlParts[2])
 	// proxy m3u8 playlist
 	if strings.HasSuffix(request.URL.Path, ".m3u8") {
 		request.Host = urlParts[1]
@@ -328,6 +330,7 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		proxy.ServeHTTP(writer, request)
 		return
 	}
+
 	err := fetchFile(urlParts[1], urlParts[2])
 	if err != nil {
 		log.Printf("Could not fetch file: %v", err)

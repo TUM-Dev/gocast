@@ -38,8 +38,9 @@ func (j *Job) GetAllActions() ([]Action, error) {
 func (j *Job) GetNextAction() (*Action, error) {
 	if j.Actions == nil {
 		return nil, errors.New("no actions found")
-	} else if j.Actions[0].Status == completed {
-		return nil, errors.New("action already completed, not pushed")
+	} else if j.Actions[0].Status != awaiting {
+		j.Actions = j.Actions[1:]
+		return nil, errors.New("action not in awaiting, not pushed")
 	}
 	if len(j.Actions) == 0 {
 		j.Completed = true

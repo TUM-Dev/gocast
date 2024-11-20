@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -76,6 +77,10 @@ func (r *Runner) ReadDiagnostics(retries int) {
 		r.ReadDiagnostics(retries - 1)
 		return
 	}
+	actions := ""
+	for id, _ := range r.activeActions {
+		actions += fmt.Sprintln(id + ",")
+	}
 
 	_, err = con.Heartbeat(context.Background(), &protobuf.HeartbeatRequest{
 		Hostname:      r.cfg.Hostname,
@@ -88,7 +93,7 @@ func (r *Runner) ReadDiagnostics(retries int) {
 		Disk:          disk,
 		Uptime:        uptime,
 		Version:       r.cfg.Version,
-		CurrentAction: "none",
+		CurrentAction: actions,
 	})
 	if err != nil {
 		r.log.Warn("Error sending the heartbeat", "error", err, "sleeping(s)", 5-retries)

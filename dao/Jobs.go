@@ -15,6 +15,7 @@ type JobDao interface {
 	GetRunners(ctx context.Context, job model.Job) ([]*model.Runner, error)
 	RemoveAction(ctx context.Context, job model.Job, actionID uint32) error
 	GetAllOpenJobs(ctx context.Context) ([]model.Job, error)
+	UpdateJob(ctx context.Context, job model.Job) error
 }
 
 type jobDao struct {
@@ -52,4 +53,8 @@ func (j jobDao) GetAllOpenJobs(ctx context.Context) ([]model.Job, error) {
 	var jobs []model.Job
 	err := j.db.WithContext(ctx).Model(&model.Job{}).Preload("Actions").Find(&jobs).Where("completed = ?", false).Error
 	return jobs, err
+}
+
+func (j jobDao) UpdateJob(ctx context.Context, job model.Job) error {
+	return j.db.WithContext(ctx).Model(&job).Updates(&job).Error
 }

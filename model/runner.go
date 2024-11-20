@@ -22,6 +22,7 @@ type Runner struct {
 	Disk     string
 	Uptime   string
 	Version  string
+	Actions  string
 }
 
 // BeforeCreate returns errors if hostnames and ports of workers are invalid.
@@ -47,6 +48,11 @@ func (r *Runner) UpdateStats(tx *gorm.DB, ctx context.Context) (bool, error) {
 }
 
 func (r *Runner) IsAlive() bool {
-	r.Alive = r.LastSeen.After(time.Now().Add(time.Minute * -1))
+	r.Alive = r.LastSeen.After(time.Now().Add(time.Minute * -2))
+	if r.Alive {
+		r.Status = "Alive"
+	} else {
+		r.Status = "Dead"
+	}
 	return r.Alive
 }

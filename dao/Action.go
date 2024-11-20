@@ -17,6 +17,8 @@ type ActionDao interface {
 	GetRunningActions(ctx context.Context) ([]model.Action, error)
 	GetAll(ctx context.Context) ([]model.Action, error)
 	GetAllFailedActions(ctx context.Context) ([]model.Action, error)
+	UpdateAction(ctx context.Context, action *model.Action) error
+	GetAllActionOfRunner(ctx context.Context, runnerID string) ([]model.Action, error)
 }
 
 type actionDao struct {
@@ -68,5 +70,15 @@ func (d actionDao) GetAll(ctx context.Context) ([]model.Action, error) {
 func (d actionDao) GetAllFailedActions(ctx context.Context) ([]model.Action, error) {
 	var actions []model.Action
 	err := d.db.WithContext(ctx).Find(&actions, "status = ?", 2).Error
+	return actions, err
+}
+
+func (d actionDao) UpdateAction(ctx context.Context, action *model.Action) error {
+	return d.db.WithContext(ctx).Model(&model.Action{}).Where("id = ?", action.ID).Updates(action).Error
+}
+
+func (d actionDao) GetAllActionOfRunner(ctx context.Context, runnerID string) ([]model.Action, error) {
+	var actions []model.Action
+	err := d.db.WithContext(ctx).Joins("AllRunners").Where("id = ?", runnerID).Find(&actions).Error
 	return actions, err
 }
