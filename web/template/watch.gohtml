@@ -450,9 +450,11 @@
                         </div>
                     </div>
 
+                    {{if $stream.Recording}}
                     <div>
                         <span class="text-5 text-sm">{{$stream.FriendlyTime}}</span>
                     </div>
+                    {{end}}
                     {{if not $stream.Recording}}
                         {{template "watch-info" .}}
                     {{end}}
