@@ -448,7 +448,10 @@
                             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                                 <span class="text-5 hover:text-1 hover:underline">{{$course.Name}}</span></a>
                         </div>
+                    </div>
 
+                    <div>
+                        <span class="text-5 text-sm">{{$stream.FriendlyTime}}</span>
                     </div>
                     {{if not $stream.Recording}}
                         {{template "watch-info" .}}
