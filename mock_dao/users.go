@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	model "github.com/TUM-Dev/gocast/model"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockUsersDao is a mock of UsersDao interface.
@@ -249,6 +249,21 @@ func (m *MockUsersDao) SearchUser(query string) ([]model.User, error) {
 func (mr *MockUsersDaoMockRecorder) SearchUser(query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUser", reflect.TypeOf((*MockUsersDao)(nil).SearchUser), query)
+}
+
+// SearchUserWithRole mocks base method.
+func (m *MockUsersDao) SearchUserWithRole(query string, role uint64) ([]model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchUserWithRole", query, role)
+	ret0, _ := ret[0].([]model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchUserWithRole indicates an expected call of SearchUserWithRole.
+func (mr *MockUsersDaoMockRecorder) SearchUserWithRole(query, role interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUserWithRole", reflect.TypeOf((*MockUsersDao)(nil).SearchUserWithRole), query, role)
 }
 
 // UpdateUser mocks base method.
