@@ -3,7 +3,6 @@ import {Progress} from "./progress";
 import {ToggleableElement} from "../utilities/ToggleableElement";
 import {same_day} from "../utilities/time-utils";
 import {CustomURL} from "../utilities/url";
-import {GroupMode} from "../components/course";
 
 type DownloadableVOD = {
     readonly FriendlyName: string;
