@@ -52,7 +52,6 @@ export function courseContext(slug: string, year: number, term: string, userId: 
         weekCountWithoutEmptyWeeks: new Map<number, number>(),
         groupNames: new Map<number, string>(),
 
-
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
@@ -80,10 +79,10 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.plannedStreams.set(this.course.Planned.reverse()).reset();
                     this.upcomingStreams.set(this.course.Upcoming).reset();
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
-                        this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));
-                    })
-                    .then(() => this.initializeWeekMap())
-                    .then(() => this.applyGroupView());
+                            this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));
+                        })
+                        .then(() => this.initializeWeekMap())
+                        .then(() => this.applyGroupView());
                     console.log("🌑 init course", this.course);
                 });
         },
@@ -158,16 +157,21 @@ export function courseContext(slug: string, year: number, term: string, userId: 
             if (this.groupMode === GroupMode.Month) {
                 this.courseStreams.set(this.course.Recordings, (s: Stream) => s.StartDate().getMonth());
             } else {
-                this.courseStreams.set(this.course.Recordings, (s: Stream) => this.getTrueWeek(s.GetWeekNumber(this.dateOfFirstWeek)));
+                this.courseStreams.set(this.course.Recordings, (s: Stream) =>
+                    this.getTrueWeek(s.GetWeekNumber(this.dateOfFirstWeek))
+                );
             }
 
             // update group names
-            let groups = this.courseStreams.get(this.sortFn(this.streamSortMode), this.filterPred(this.streamFilterMode));
+            const groups = this.courseStreams.get(
+                this.sortFn(this.streamSortMode),
+                this.filterPred(this.streamFilterMode)
+            );
             this.groupNames.clear();
             for (let i = 0; i < groups.length; i++) {
-                let s1 = groups[i][0];
+                const s1 = groups[i][0];
                 this.groupNames.set(s1.ID, this.getGroupName(s1));
-                let s2 = groups[i][groups[i].length - 1];
+                const s2 = groups[i][groups[i].length - 1];
                 this.groupNames.set(s2.ID, this.getGroupName(s2));
             }
         },
@@ -177,10 +181,12 @@ export function courseContext(slug: string, year: number, term: string, userId: 
          */
         initializeWeekMap() {
             let latestWeek = 1;
-            this.course.Recordings.sort(this.sortFn(StreamSortMode.OldestFirst)).forEach((s : Stream, i : number) => {
+            this.course.Recordings.sort(this.sortFn(StreamSortMode.OldestFirst)).forEach((s: Stream, i: number) => {
                 if (i === 0) {
                     this.dateOfFirstWeek = s.StartDate();
-                    this.dateOfFirstWeek = new Date(this.dateOfFirstWeek.getTime() - this.dateOfFirstWeek.getDay() * 1000 * 60 * 60 * 24);
+                    this.dateOfFirstWeek = new Date(
+                        this.dateOfFirstWeek.getTime() - this.dateOfFirstWeek.getDay() * 1000 * 60 * 60 * 24
+                    );
                     this.dateOfFirstWeek.setHours(0, 1); // avoids errors e.g. in case week1 has vod on Monday at 10am, week2 at 8am
                 }
                 const week = s.GetWeekNumber(this.dateOfFirstWeek);
@@ -190,11 +196,11 @@ export function courseContext(slug: string, year: number, term: string, userId: 
             });
         },
 
-        getTrueWeek(n : number): number {
+        getTrueWeek(n: number): number {
             return this.weekCountWithoutEmptyWeeks.get(n);
         },
 
-        getGroupName(s : Stream) : string {
+        getGroupName(s: Stream) : string {
             if (this.groupMode === GroupMode.Month) {
                 return s.GetMonthName();
             } else {

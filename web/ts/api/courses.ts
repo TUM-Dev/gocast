@@ -1,8 +1,8 @@
-import {get} from "../utilities/fetch-wrappers";
-import {Progress} from "./progress";
-import {ToggleableElement} from "../utilities/ToggleableElement";
-import {same_day} from "../utilities/time-utils";
-import {CustomURL} from "../utilities/url";
+import { get } from "../utilities/fetch-wrappers";
+import { Progress } from "./progress";
+import { ToggleableElement } from "../utilities/ToggleableElement";
+import { same_day } from "../utilities/time-utils";
+import { CustomURL } from "../utilities/url";
 
 type DownloadableVOD = {
     readonly FriendlyName: string;
@@ -120,8 +120,8 @@ export class Stream implements Identifiable {
         ][this.StartDate().getMonth()];
     }
 
-    public GetWeekNumber(dateOfFirstWeek : Date) : number {
-        return Math.floor(((this.StartDate().getTime() - dateOfFirstWeek.getTime())) / MS_IN_DAY / 7) + 1;
+    public GetWeekNumber(dateOfFirstWeek: Date): number {
+        return Math.floor((this.StartDate().getTime() - dateOfFirstWeek.getTime()) / MS_IN_DAY / 7) + 1;
     }
 
     private static TimeOf(d: string): string {
