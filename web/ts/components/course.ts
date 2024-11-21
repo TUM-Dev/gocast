@@ -78,7 +78,8 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.loadPinned();
                     this.plannedStreams.set(this.course.Planned.reverse()).reset();
                     this.upcomingStreams.set(this.course.Upcoming).reset();
-                    this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
+                    this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID))
+                        .then((progresses) => {
                             this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));
                         })
                         .then(() => this.initializeWeekMap())
@@ -158,14 +159,14 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                 this.courseStreams.set(this.course.Recordings, (s: Stream) => s.StartDate().getMonth());
             } else {
                 this.courseStreams.set(this.course.Recordings, (s: Stream) =>
-                    this.getTrueWeek(s.GetWeekNumber(this.dateOfFirstWeek))
+                    this.getTrueWeek(s.GetWeekNumber(this.dateOfFirstWeek)),
                 );
             }
 
             // update group names
             const groups = this.courseStreams.get(
                 this.sortFn(this.streamSortMode),
-                this.filterPred(this.streamFilterMode)
+                this.filterPred(this.streamFilterMode),
             );
             this.groupNames.clear();
             for (let i = 0; i < groups.length; i++) {
@@ -185,7 +186,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                 if (i === 0) {
                     this.dateOfFirstWeek = s.StartDate();
                     this.dateOfFirstWeek = new Date(
-                        this.dateOfFirstWeek.getTime() - this.dateOfFirstWeek.getDay() * 1000 * 60 * 60 * 24
+                        this.dateOfFirstWeek.getTime() - this.dateOfFirstWeek.getDay() * 1000 * 60 * 60 * 24,
                     );
                     this.dateOfFirstWeek.setHours(0, 1); // avoids errors e.g. in case week1 has vod on Monday at 10am, week2 at 8am
                 }
@@ -200,7 +201,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
             return this.weekCountWithoutEmptyWeeks.get(n);
         },
 
-        getGroupName(s: Stream) : string {
+        getGroupName(s: Stream): string {
             if (this.groupMode === GroupMode.Month) {
                 return s.GetMonthName();
             } else {
