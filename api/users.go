@@ -127,7 +127,7 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err error) {
 	q := c.Query("q")
 	rQ := c.Query("r")
-	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
+	reg := regexp.MustCompile("[^a-zA-Z0-9 ]+")
 	q = reg.ReplaceAllString(q, "")
 	// Removed in order to make the search work with empty query but selected role
 	if len(q) < 3 && (rQ == "-1" || rQ == "") {
@@ -138,7 +138,7 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
 	role, err := strconv.ParseUint(rQ, 10, 64)
-	if err != nil {
+	if rQ == "" || rQ == "-1" || err != nil {
 		users, err = r.UsersDao.SearchUser(q)
 	} else {
 		users, err = r.UsersDao.SearchUserWithRole(q, role)

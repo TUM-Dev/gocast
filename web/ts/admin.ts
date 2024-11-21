@@ -44,7 +44,7 @@ export class AdminUserList {
                     return response.json();
                 })
                 .then((r) => {
-                    this.currentPage = r;
+                    this.currentPage = r; // show all results on page one.
                     this.showSearchResults = true;
                 })
                 .catch((err) => {
