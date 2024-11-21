@@ -2,8 +2,9 @@
     <div class="mb-4">
         <label x-show="formData.premiere || formData.vodup && !loading">
             <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
-            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                   x-on:change="updateFiles('COMB', Object.values($event.target.files))">
+            <input type="button" class="btn mt-2" value="Deselect Files" x-on:click="updateFiles('COMB', []);document.getElementById('fileSelection').value = '';">
+            <input id="fileSelection" type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
+                   x-on:change="updateFiles('COMB', Object.values($event.target.files));">
         </label>
     </div>
 
