@@ -44,13 +44,7 @@ export class AdminUserList {
                     return response.json();
                 })
                 .then((r) => {
-                    if (this.roles != -1) {
-                        this.currentPage = r.filter((obj) => {
-                            return obj.role == this.roles;
-                        }); // show all results on page one.
-                    } else {
-                        this.currentPage = r;
-                    }
+                    this.currentPage = r;
                     this.showSearchResults = true;
                 })
                 .catch((err) => {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -136,7 +137,12 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 		})
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
-	users, err = r.UsersDao.SearchUser(q)
+	role, err := strconv.ParseUint(rQ, 10, 64)
+	if err != nil {
+		users, err = r.UsersDao.SearchUser(q)
+	} else {
+		users, err = r.UsersDao.SearchUserWithRole(q, role)
+	}
 	if err != nil && err != gorm.ErrRecordNotFound {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

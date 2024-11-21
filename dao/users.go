@@ -18,6 +18,7 @@ type UsersDao interface {
 	CreateUser(ctx context.Context, user *model.User) (err error)
 	DeleteUser(ctx context.Context, uid uint) (err error)
 	SearchUser(query string) (users []model.User, err error)
+	SearchUserWithRole(query string, role uint64) (users []model.User, err error)
 	IsUserAdmin(ctx context.Context, uid uint) (res bool, err error)
 	GetUserByEmail(ctx context.Context, email string) (user model.User, err error)
 	GetAllAdminsAndLecturers(users *[]model.User) (err error)
@@ -66,6 +67,12 @@ func (d usersDao) DeleteUser(ctx context.Context, uid uint) (err error) {
 func (d usersDao) SearchUser(query string) (users []model.User, err error) {
 	q := "%" + query + "%"
 	res := DB.Where("UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?)", q, q, q).Limit(10).Preload("Settings").Find(&users)
+	return users, res.Error
+}
+
+func (d usersDao) SearchUserWithRole(query string, role uint64) (users []model.User, err error) {
+	q := "%" + query + "%"
+	res := DB.Where("role = ? AND (UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?))", role, q, q, q).Limit(10).Preload("Settings").Find(&users)
 	return users, res.Error
 }
 
