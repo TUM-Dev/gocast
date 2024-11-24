@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"errors"
+	"fmt"
 	"github.com/tidwall/gjson"
 	"os/exec"
 )
@@ -14,12 +16,42 @@ func getDuration(file string) (float64, error) {
 	return gjson.Get(probe, "format.duration").Float(), nil
 }
 
-func getCodec(file string) (string, error) {
+func getVideoCodec(file string) (string, error) {
 	probe, err := probe(file)
 	if err != nil {
 		return "", err
 	}
-	return gjson.Get(probe, "streams.0.codec_name").String(), nil
+	codecNumber := gjson.Get(probe, "streams.#").Int()
+	videoIndex := -1
+	for i := 0; i < int(codecNumber); i++ {
+		if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "video" {
+			videoIndex = int(gjson.Get(probe, fmt.Sprintf("streams.%d.index", i)).Int())
+			break
+		}
+	}
+	if videoIndex != -1 {
+		return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", videoIndex)).String(), nil
+	}
+	return "", errors.New("no video stream found")
+}
+
+func getAudioCodec(file string) (string, error) {
+	probe, err := probe(file)
+	if err != nil {
+		return "", err
+	}
+	codecNumber := gjson.Get(probe, "streams.#").Int()
+	audioIndex := -1
+	for i := 0; i < int(codecNumber); i++ {
+		if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "audio" {
+			audioIndex = int(gjson.Get(probe, fmt.Sprintf("streams.%d.index", i)).Int())
+			break
+		}
+	}
+	if audioIndex != -1 {
+		return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", audioIndex)).String(), nil
+	}
+	return "", errors.New("no video stream found")
 }
 
 func getLevel(file string) (string, error) {
