@@ -138,7 +138,11 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
 	role, err := strconv.ParseUint(rQ, 10, 64)
-	if rQ == "" || rQ == "-1" || err != nil {
+	if err != nil {
+		tools.RenderErrorPage(c, http.StatusBadRequest, "invalid role")
+		return nil, err
+	}
+	if rQ == "" || rQ == "-1" {
 		users, err = r.UsersDao.SearchUser(q)
 	} else {
 		users, err = r.UsersDao.SearchUserWithRole(q, role)
