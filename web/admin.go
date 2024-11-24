@@ -248,8 +248,13 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	if err != nil {
 		logger.Error("Error getting invited users for course", "err", err)
 	}
+	y, t := tum.GetCurrentSemester()
+
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
+	indexData.CurrentYear = y
+	indexData.CurrentTerm = t
+
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		logger.Error("couldn't query courses for user.", "err", err)
