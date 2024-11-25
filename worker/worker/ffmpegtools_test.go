@@ -14,7 +14,7 @@ func TestGetDuration(t *testing.T) {
 }
 
 func TestGetVideoCodec(t *testing.T) {
-	codec, err := getVideoCodec("testvid.mp4")
+	codec, err := getCodec("testvid.mp4", "video")
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -25,7 +25,7 @@ func TestGetVideoCodec(t *testing.T) {
 }
 
 func TestGetAudioCodec(t *testing.T) {
-	codec, err := getAudioCodec("testvid.mp4")
+	codec, err := getCodec("testvid.mp4", "audio")
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

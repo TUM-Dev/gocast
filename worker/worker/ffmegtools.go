@@ -16,42 +16,29 @@ func getDuration(file string) (float64, error) {
 	return gjson.Get(probe, "format.duration").Float(), nil
 }
 
-func getVideoCodec(file string) (string, error) {
+func getCodec(file string, codecType string) (string, error) {
 	probe, err := probe(file)
 	if err != nil {
 		return "", err
 	}
-	codecNumber := gjson.Get(probe, "streams.#").Int()
-	videoIndex := -1
-	for i := 0; i < int(codecNumber); i++ {
-		if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "video" {
-			videoIndex = int(gjson.Get(probe, fmt.Sprintf("streams.%d.index", i)).Int())
-			break
+	nStreams := gjson.Get(probe, "streams.#").Int()
+	if codecType == "video" {
+		for i := 0; i < int(nStreams); i++ {
+			if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "video" {
+				return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", i)).String(), nil
+			}
 		}
+		return "", errors.New("no video stream found")
 	}
-	if videoIndex != -1 {
-		return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", videoIndex)).String(), nil
-	}
-	return "", errors.New("no video stream found")
-}
-
-func getAudioCodec(file string) (string, error) {
-	probe, err := probe(file)
-	if err != nil {
-		return "", err
-	}
-	codecNumber := gjson.Get(probe, "streams.#").Int()
-	audioIndex := -1
-	for i := 0; i < int(codecNumber); i++ {
-		if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "audio" {
-			audioIndex = int(gjson.Get(probe, fmt.Sprintf("streams.%d.index", i)).Int())
-			break
+	if codecType == "audio" {
+		for i := 0; i < int(nStreams); i++ {
+			if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "audio" {
+				return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", i)).String(), nil
+			}
 		}
+		return "", errors.New("no audio stream found")
 	}
-	if audioIndex != -1 {
-		return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", audioIndex)).String(), nil
-	}
-	return "", errors.New("no video stream found")
+	return "", errors.New("no stream found")
 }
 
 func getLevel(file string) (string, error) {
