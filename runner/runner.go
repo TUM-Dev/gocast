@@ -28,7 +28,6 @@ type envConfig struct {
 	RecPath      string `env:"REC_PATH" envDefault:"storage/rec"`
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
-	EdgeServer   string `env:"EDGE_SERVER" envDefault:"localhost"`
 	Version      string `env:"VERSION" envDefault:"dev"`
 }
 

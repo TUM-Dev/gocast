@@ -30,6 +30,9 @@ db:
   database: tumlive
   password: example
   user: root
+edge:
+  domain: http://localhost
+  port: 8089
 ingestbase: rtmp://ingest.tum.live/
 jwtkey: # This is an example key, delete and restart to generate a proper one
   |
