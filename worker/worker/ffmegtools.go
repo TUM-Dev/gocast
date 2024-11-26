@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
 	"os/exec"
@@ -22,23 +21,12 @@ func getCodec(file string, codecType string) (string, error) {
 		return "", err
 	}
 	nStreams := gjson.Get(probe, "streams.#").Int()
-	if codecType == "video" {
-		for i := 0; i < int(nStreams); i++ {
-			if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "video" {
-				return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", i)).String(), nil
-			}
+	for i := 0; i < int(nStreams); i++ {
+		if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == codecType {
+			return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", i)).String(), nil
 		}
-		return "", errors.New("no video stream found")
 	}
-	if codecType == "audio" {
-		for i := 0; i < int(nStreams); i++ {
-			if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == "audio" {
-				return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", i)).String(), nil
-			}
-		}
-		return "", errors.New("no audio stream found")
-	}
-	return "", errors.New("no stream found")
+	return "", fmt.Errorf("no %s stream found", codecType)
 }
 
 func getLevel(file string) (string, error) {
