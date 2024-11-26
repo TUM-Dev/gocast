@@ -202,13 +202,14 @@ const config = {
         disableSwitch: false,
         respectPrefersColorScheme: false,
       },
-      algolia: {
+      /* Enable once the new docs are accepted and soon to be deployed in production
+        algolia: {
         // The application ID provided by Algolia
         appId: "3YMWAWWJ0X",
         // Public API key: it is safe to commit it
         apiKey: "264acc28faec8429deaf4b14772332cc",
         indexName: "gocast-docs",
-      },
+      },*/
     }),
   scripts: [
     {

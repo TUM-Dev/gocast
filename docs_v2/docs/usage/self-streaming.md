@@ -4,23 +4,19 @@ sidebar_position: 4
 description: "Information on how to stream from your own computer."
 ---
 
-## Self Streaming
-
 This guide contains information on how to stream from your own computer.
 
-### Gather streaming key.
+## Gather streaming key.
 
 - Open the course's admin page
 - Create a stream with the location "self stream" if it doesn't exist already.
 - Navigate to the stream and click `show keys`.
 
-### 1. Create a personal token
+## OBS
 
-- Go to your [token settings](https://live.rbg.tum.de/admin/tokens)
-
-- Create a new token of type `lecturer` and store it securely
-
-### OBS
+:::warning
+Self streaming can be unreliable and we cannot guarantee proper recording of your lecture just yet. In some cases, recordings might be corrupted. **Please save a local copy just in case using the streaming software of your choice.**
+:::
 
 - Download and install OBS from [here](https://obsproject.com/).
 - Open OBS and click on `Settings` in the bottom right corner.

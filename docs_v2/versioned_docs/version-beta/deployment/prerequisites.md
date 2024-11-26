@@ -4,7 +4,7 @@ sidebar_position: 2
 description: "What you need before you can start deploying GoCast."
 ---
 
-# Prerequisites
+## Hardware
 
 Make sure to check the following system requirements before deploying GoCast:
 

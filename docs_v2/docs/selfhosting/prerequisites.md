@@ -3,7 +3,7 @@ title: "Prerequisites"
 sidebar_position: 1
 ---
 
-## Prerequisites
+## Hardware
 
 We deploy GoCast on our own hardware in VMs. Any cloud hosting provider works just as well.
 You will need the following hardware configuration:
