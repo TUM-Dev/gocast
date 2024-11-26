@@ -323,8 +323,7 @@ func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, yea
 		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
 		Joins("JOIN courses ON courses.id = course_admins.course_id").
 		Where("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
-		Or("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now).     // Streams that just finished in the last 15 minutes
-		Order("streams.start ASC")
+		Or("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now)      // Streams that just finished in the last 15 minutes
 
 	if slug != "" {
 		query = query.Where("courses.slug = ?", slug)
@@ -336,7 +335,7 @@ func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, yea
 		query = query.Where("courses.teaching_term = ?", term)
 	}
 
-	err := query.Limit(1).Scan(&result).Error
+	err := query.Order("streams.start DESC").Limit(1).Scan(&result).Error // Prioritize streams that are starting soon
 	if err == gorm.ErrRecordNotFound || result.StreamKey == "" || result.ID == "" || result.Slug == "" {
 		stream, course, err := d.CreateOrGetTestStreamAndCourse(user)
 		if err != nil {
