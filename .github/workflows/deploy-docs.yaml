@@ -42,12 +42,14 @@ jobs:
             node-version: '16'
         - name: Install dependencies
           run: npm install
+          working-directory: ./docs_v2
         - name: Build with Docusaurus
           run: npm run build
+          working-directory: ./docs_v2
         - name: Upload artifact
           uses: actions/upload-pages-artifact@v1
           with:
-            path: build
+            path: ./docs_v2/build
     
   # Deployment job
   deploy:
