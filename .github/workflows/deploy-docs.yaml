@@ -18,13 +18,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: yarn
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm install
         working-directory: ./docs_v2
       - name: Build website
-        run: yarn build
+        run: npm run build
         working-directory: ./docs_v2
 
       - name: Upload Build Artifact
