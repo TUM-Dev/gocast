@@ -28,7 +28,7 @@ function HomepageHeader() {
             className={clsx("button button--lg", styles.heroButton)}
             to="/docs/intro"
           >
-            Get started and start streaming in 5min ⏱️
+            Get started and start streaming ⏱️
           </Link>
         </div>
       </div>

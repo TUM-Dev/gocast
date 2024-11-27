@@ -86,7 +86,7 @@ const config = {
             position: "left",
             label: "Documentation",
           },
-          { to: "/blog", label: "Changelogs", position: "left" },
+          //{ to: "/blog", label: "Changelogs", position: "left" },
           {
             href: "https://live.rbg.tum.de",
             label: "GoCast",
@@ -202,14 +202,13 @@ const config = {
         disableSwitch: false,
         respectPrefersColorScheme: false,
       },
-      /* Enable once the new docs are accepted and soon to be deployed in production
-        algolia: {
+      algolia: {
         // The application ID provided by Algolia
-        appId: "3YMWAWWJ0X",
+        appId: "FLS9C8AV4W",
         // Public API key: it is safe to commit it
-        apiKey: "264acc28faec8429deaf4b14772332cc",
-        indexName: "gocast-docs",
-      },*/
+        apiKey: "639109f1526c3dbcf3d87dbdd35666f1",
+        indexName: "tumlive-pages",
+      },
     }),
   scripts: [
     {
