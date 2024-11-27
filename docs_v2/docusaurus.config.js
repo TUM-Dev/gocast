@@ -12,7 +12,7 @@ const config = {
   tagline:
     "Livestreaming und VoD Service of the Technical University of Munich",
   url: "https://tum.live",
-  baseUrl: "/",
+  baseUrl: "/gocast/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
   favicon: "img/favicon.ico",
