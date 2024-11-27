@@ -29,6 +29,9 @@ jobs:
         run: npm run build
         working-directory: ./docs_v2
 
+      - name: Create CNAME file
+        run: echo "docs.live.rbg.tum.de" > ./docs_v2/build/CNAME
+      
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
