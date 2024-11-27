@@ -76,7 +76,7 @@ export default function Home() {
         <section className={styles.stats}>
           <div>
             <h2 className="text--center">
-              Already trusted by TUM's largest schools
+              Already used at TUM's largest schools
             </h2>
             <div className={styles.statsContainer}>
               {StatsList.map((props, idx) => (
