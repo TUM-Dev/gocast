@@ -1,0 +1,375 @@
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IndexData*/ -}}
+{{$user := .TUMLiveContext.User}}
+{{$userID := 0}}
+{{if $user}}{{$userID = $user.ID}}{{end}}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
+
+    <title>{{.Branding.Title}}</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+
+    <script src="static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/home.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+
+    <link rel="manifest" href="/static/assets/manifest.json">
+    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <style>[x-cloak] {
+            display: none !important;
+        }</style>
+    <script defer type='text/javascript'>
+        const link = !!document.querySelector("link[rel='canonical']") ? document.querySelector("link[rel='canonical']") : document.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        link.setAttribute('href', location.href);
+        document.head.appendChild(link);
+    </script>
+</head>
+<body x-data="home.skeleton()"
+      @popstate.window="onPopState"
+      class="h-screen flex flex-col items-stretch tum-live-bg">
+<header x-data="home.header()"
+        class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
+        <button type="button" id="open-sidenav" title="Open Sidenav" @click="navigation.toggle()"
+                class="tum-live-icon-button p-3 text-lg md:hidden">
+            <i class="fa-solid fa-bars" :class="{'rotate-90': navigation.value}"></i>
+        </button>
+        <button class="mx-3" type="button" id="logo" title="Start" @click="window.location.href = '/'">
+            <img src="/logo.svg" width="64" alt="TUM-Live Logo">
+        </button>
+    </div>
+    <div id="user-context" class="flex items-center ms-auto">
+        {{template "notifications"}}
+        {{if not $user}}
+            <a href="/login" class="tum-live-button tum-live-button-primary mx-3">Login</a>
+        {{else}}
+            <div>
+                <button type="button" @click="userContext.toggle(true)"
+                        class="border-2 tum-live-border-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
+                    <i class="fa-solid fa-user tum-live-font-primary"></i>
+                </button>
+                <div class="relative">
+                    <article x-cloak x-show="userContext.value"
+                             @click.outside="userContext.toggle();"
+                             class="tum-live-menu absolute top-full right-[50%] mt-2 h-fit overflow-hidden w-56">
+                        <header>
+                            <p class="font-semibold">Signed in as</p>
+                            <span>@{{$user.Name}}</span>
+                        </header>
+                        <nav class="d-grid gap-3 font-light">
+                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                                <a href="/admin"
+                                   class="tum-live-menu-item">
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-solid fa-hammer"></i>
+                                    </div>
+                                    <p>Admin</p>
+                                </a>
+                                <div class="border-b dark:border-gray-800"></div>
+                            {{end}}
+                            <div>
+                                <button type="button"
+                                        class="tum-live-menu-item"
+                                        @click="userContext.getChild('themePicker').toggle()">
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-regular fa-moon"></i>
+                                    </div>
+                                    <span>Theme</span>
+                                    <i class="fa-solid ml-auto"
+                                       :class="userContext.getChild('themePicker').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                </button>
+                                <div x-cloak x-show="userContext.getChild('themePicker').value" class="grid gap-1">
+                                    <template x-for="[modeId, mode] of Object.entries($store.theme.modes)"
+                                              :key="modeId">
+                                        <button type="button" tabindex="0"
+                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-1 px-10"
+                                                :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
+                                                @click="$store.theme.setTheme(modeId)"
+                                                x-text="mode.name">
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            <a href="/settings"
+                               class="tum-live-menu-item">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-gear"></i>
+                                </div>
+                                <p>Settings</p>
+                            </a>
+                            <div class="border-b dark:border-gray-800"></div>
+                            <a href="https://github.com/TUM-Dev/gocast"
+                               target="_blank"
+                               class="tum-live-menu-item">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-regular fa-comment"></i>
+                                </div>
+                                <p>Send Feedback</p>
+                            </a>
+                            <a href="https://github.com/TUM-Dev/gocast/issues/new?assignees=&labels=&template=bug_report.md&title="
+                               class="tum-live-menu-item"
+                               target="_blank">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-brands fa-github"></i>
+                                </div>
+                                <p>Report problem</p>
+                            </a>
+                            <div class="border-b dark:border-gray-800"></div>
+                            <a href="/logout"
+                               class="tum-live-menu-item">
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-sign-out"></i>
+                                </div>
+                                <p>Logout</p>
+                            </a>
+                        </nav>
+                    </article>
+                </div>
+            </div>
+        {{end}}
+    </div>
+</header>
+<main id="content" class="flex grow h-full overflow-y-scroll">
+    <section class="w-full">
+        <div id="search" class="h-fit w-full flex items-center flex-col" x-data="{searcher: home.filteredSearch(), filterSemesters: [], filterCourses: [], query: home.getSearchQueryFromParam(), courseFilterQuery: '', courseQuery: home.getCourseFromParam(), semesterQuery: home.getSemestersFromParam(), courses: [], oldSemesterFilter: [], shownCourses: []}"
+            x-init="
+                home.initSearchBarArrowKeysListener();
+                if(courseQuery != '') {
+
+                    let year = home.getYearFromCourse(courseQuery);
+                    let term = home.getTermFromCourse(courseQuery);
+                    let slug = home.getSlugFromCourse(courseQuery);
+
+
+
+
+                    let timeout = setInterval(async function() {
+                        if (semesters.length > 0) {
+                            clearInterval(timeout);
+                            console.log(year + ' ' + term);
+                            console.log(semesters);
+
+                            for (let i = 0; i < semesters.length; i++) {
+                                console.log(semesters[i].Year + ' ' + semesters[i].TeachingTerm);
+                                if (semesters[i].Year == year && semesters[i].TeachingTerm == term) {
+                                    filterSemesters.push(i);
+                                    console.log('found semester');
+                                    break;
+                                }
+                            }
+
+                            courses = await home.getCoursesOfSemesters(semesters, filterSemesters);
+                            oldSemesterFilter = filterSemesters;
+                            shownCourses = courses;
+
+                            for (let i = 0; i < courses.length; i++) {
+                                if (courses[i].Slug == slug) {
+                                    filterCourses.push(i);
+                                    console.log('found course');
+                                    break;
+                                }
+                            }
+
+                            searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)
+                        }
+                    }, 100);
+
+
+                }
+            ">
+            <!--Search Bar-->
+            <div class="flex items-center rounded-full bg-gray-100 text-sm py-1 h-12 dark:bg-gray-800" style="width: 50%;">
+                <i class="fa-solid fa-search pl-3 text-xs text-7 text-black dark:text-gray-300"></i>
+                <input class="px-3 outline-none border-none bg-transparent h-full w-full grow text-black dark:text-gray-300" id="search-bar" type="text"
+                       x-model="query"
+                       placeholder="Search"
+                       x-init="searcher.searchInput = query; searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)"
+                       @blur="searcher.open = false;"
+                       @keyup="searcher.searchInput = query;
+                            searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
+            </div>
+
+            <div class="flex flex-col justify-center">
+                <!--Search Filters-->
+                <div class="flex items-center justify-center space-x-2 space-y-1 mt-2 max-w-xl flex-wrap">
+
+                    <!--Semester Filter-->
+                    <div class="relative" x-data="{open: false}">
+                        <button @click="open = !open" class="flex items-center justify-center rounded-full bg-gray-100 text-sm py-1 h-8 w-fit px-2 dark:bg-gray-800">
+                            <span class="text-black dark:text-gray-300">Semester</span>
+                            <i class="fa-solid fa-chevron-down pl-2 text-xs text-7 text-black dark:text-gray-300"></i>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" class="flex flex-col absolute top-full bg-gray-100 dark:bg-gray-800 border border-gray-400 dark:border-none rounded-lg mt-1 w-fit pr-4 pl-1">
+                            <template x-for="(semester, index) in semesters" :key="index">
+                                <label class="flex items-center text-sm py-1 h-full">
+                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterSemesters" :disabled="filterSemesters.length >= 5 && !filterSemesters.includes(index.toString())" @change="filterCourses = []; searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
+                                    <span class="text-black dark:text-gray-300 text-sm" x-text="semester.Year + ' ' + semester.TeachingTerm"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!--Course Filter-->
+                    <div class="relative" x-data="{open: false}" x-show="filterSemesters.length > 0">
+                        <!-- if in next line is used to prevent courses from being loaded multiple times -->
+                        <button @click="open = !open; if (open && filterSemesters != oldSemesterFilter) {oldSemesterFilter = filterSemesters; courses = await home.getCoursesOfSemesters(semesters, filterSemesters);} shownCourses = courses; courseFilterQuery = '';" class="flex items-center justify-center rounded-full bg-gray-100 text-sm py-1 h-8 w-fit px-2 dark:bg-gray-800">
+                            <span class="text-black dark:text-gray-300">Course</span>
+                            <i class="fa-solid fa-chevron-down pl-2 text-xs text-7 text-black dark:text-gray-300"></i>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" class="flex flex-col absolute top-full bg-gray-100 dark:bg-gray-800 border border-gray-400 dark:border-none rounded-lg mt-1 w-fit pr-4 pl-1"
+                            style="max-height: 60vh; overflow-y: auto; min-width: 20ch">
+                            <input type="text" class="w-full px-3 py-2 outline-none border-none bg-transparent h-full grow text-sm text-black dark:text-gray-300"
+                                placeholder="Search Course"
+                                size="15"
+                                maxlength="15"
+                                x-model="courseFilterQuery"
+                                @keyup="shownCourses = courses.filter(course => course.Name.toLowerCase().includes(courseFilterQuery.toLowerCase()));"
+                            />
+                            <template x-for="(course, index) in courses" :key="index">
+                                <label x-show="shownCourses.includes(course)" class="flex items
+                                -center text-sm py-1 h-full">
+                                    <input type="checkbox" class="mr-2 pl-1" :value="index" x-model="filterCourses" :disabled="filterCourses.length >= 3 && !filterCourses.includes(index.toString())" @change="searcher.searchWithDataFromPage(semesters, filterSemesters, courses, filterCourses)">
+                                    <span class="text-black
+                                    dark:text-gray-300 text-sm" x-text="course.Name + ' ' + course.Year + course.TeachingTerm"></span>
+                                </label>
+                            </template>
+                            <template x-if="shownCourses.length <= 0">
+                                <span class="text-black dark:text-gray-300 text-sm p-2">No course found</span>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!--Recommended Filters-->
+                    <!--<div>
+                        <div class="flex items-center justify-center space-x-2 space-y-1 mt-2 max-w-xl flex-wrap">
+
+                        </div>
+                    </div>-->
+                </div>
+            </div>
+
+            <!--Search Results-->
+            <template x-if="searcher != undefined" class="h-full w-1/2">
+                <ul class="center rounded-lg grid py-1 px-1 mt-1 gap-1" style="width: 60%;" role="listbox" id="search-results">
+
+                    <li role="listitem" aria-selected="false" class="text-gray-700 dark:text-gray-200">
+                        <p>Courses</p>
+                    </li>
+                    <template x-if="!searcher.hits.COURSES || searcher.hits.COURSES.length <= 0">
+                        <li role="listitem" aria-selected="false">
+                            <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                No Course found
+                            </a>
+                        </li>
+                    </template>
+                    <template x-for="course in searcher.hits.COURSES">
+                        <li role="option" aria-selected="false" tabindex="-1">
+                            <a class="tum-live-search-result-main flex flex-col"
+                               :href="'/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3'"
+                               @mousedown="window.location.href = '/?year='+ course.year + '&term=' + course.semester + '&slug=' + course.slug + '&view=3';">
+                                <p x-text="course.name"></p>
+                                <p x-text="course.year + ' ' + course.semester"></p>
+                            </a>
+                        </li>
+                    </template>
+
+                    <li role="listitem" aria-selected="false" class="text-gray-700 dark:text-gray-200">
+                        <p>Subtitles</p>
+                    </li>
+                    <template x-if="!searcher.hits.SUBTITLES || searcher.hits.SUBTITLES.length <= 0">
+                        <div>
+                            <template x-if="filterCourses.length == 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Subtitle found (at least one course selection required)
+                                    </a>
+                                </li>
+                            </template>
+                            <template x-if="filterCourses.length > 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Subtitle found
+                                    </a>
+                                </li>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-for="subtitle in searcher.hits.SUBTITLES">
+                        <li role="option" aria-selected="false" tabindex="-1" class="h-fit">
+                            <a class="tum-live-search-result-main flex flex-col"
+                                @mousedown="
+                                    document.location.href = '/w/' + subtitle.courseSlug + '/' + subtitle.streamID + '/?t=' + (subtitle.timestamp / 1000);"
+                                :href="'/w/' + subtitle.courseSlug + '/' + subtitle.streamID">
+                                <div>
+                                    <span class="inline text-gray-600 dark:text-gray-400" x-text="subtitle.textPrev"></span>
+                                    <span class="inline text-gray-900 dark:text-gray-200" x-text="subtitle.text"></span>
+                                    <span class="inline text-gray-600 dark:text-gray-400" x-text="subtitle.textNext"></span>
+                                </div>
+                                <div class="pt-1">
+                                    <span class="text-gray-700 dark:text-gray-300" x-text="subtitle.courseName"></span>
+                                    <span>|</span>
+                                    <span class="text-gray-600 dark:text-gray-400" x-text="subtitle.streamName" x-show="subtitle.streamName != ''"></span>
+                                    <span class="text-gray-600 dark:text-gray-400" x-text="home.datetimeToFriendly(subtitle.streamStartTime)" x-show="subtitle.streamName == ''"></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600 dark:text-gray-400" x-text="(new Date(subtitle.timestamp)).toLocaleTimeString('en-US', {timeZone: 'UTC', hourCycle:'h24'})"></span>
+                                </div>
+                            </a>
+                        </li>
+                    </template>
+
+                    <li role="listitem" aria-selected="false" class="text-gray-700 dark:text-gray-200">
+                        <p>Streams</p>
+                    </li>
+                    <template x-if="!searcher.hits.STREAMS || searcher.hits.STREAMS.length <= 0">
+                        <div>
+                            <template x-if="(filterSemesters.length == 0 || filterSemesters.length > 1) && filterCourses.length == 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Stream found (only one selection required or some courses have to be selected)
+                                    </a>
+                                </li>
+                            </template>
+                            <template x-if="filterSemesters.length == 1  || filterCourses.length > 0">
+                                <li role="listitem" aria-selected="false">
+                                    <a class="flex text-left rounded-lg text-4 tum-live-bg text-sm py-1 px-2 mt-1">
+                                        No Stream found
+                                    </a>
+                                </li>
+                            </template>
+                        </div>
+
+                    </template>
+                    <template x-for="stream in searcher.hits.STREAMS">
+                        <li role="option" aria-selected="false" tabindex="-1">
+                            <a class="tum-live-search-result-main"
+                                :href="'/w/' + stream.courseSlug + '/' + stream.ID">
+                                <p x-text="stream.name"></p>
+                                <div class="px-2"></div>
+                                <p class="text-gray-600 dark:text-gray-400" x-text="stream.courseName"></p>
+                            </a>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+        </div>
+    </section>
+
+</main>
+{{template "footer" .VersionTag}}
+</body>
+</html>

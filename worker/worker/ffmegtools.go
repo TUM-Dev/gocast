@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"fmt"
 	"github.com/tidwall/gjson"
 	"os/exec"
 )
@@ -14,12 +15,18 @@ func getDuration(file string) (float64, error) {
 	return gjson.Get(probe, "format.duration").Float(), nil
 }
 
-func getCodec(file string) (string, error) {
+func getCodec(file string, codecType string) (string, error) {
 	probe, err := probe(file)
 	if err != nil {
 		return "", err
 	}
-	return gjson.Get(probe, "streams.0.codec_name").String(), nil
+	nStreams := gjson.Get(probe, "streams.#").Int()
+	for i := 0; i < int(nStreams); i++ {
+		if gjson.Get(probe, fmt.Sprintf("streams.%d.codec_type", i)).String() == codecType {
+			return gjson.Get(probe, fmt.Sprintf("streams.%d.codec_name", i)).String(), nil
+		}
+	}
+	return "", fmt.Errorf("no %s stream found", codecType)
 }
 
 func getLevel(file string) (string, error) {

@@ -341,10 +341,18 @@ func HandleUploadRestReq(streamInfo *pb.GetStreamInfoForUploadResponse, localFil
 		log.Debugf("Wrong container: %s, converting", container)
 	}
 
-	if codec, err := getCodec(localFile); err != nil {
+	if codec, err := getCodec(localFile, "video"); err != nil {
 		log.WithError(err).Warn("Error getting codec")
 		needsConversion = true
 	} else if codec != "h264" {
+		needsConversion = true
+		log.Debugf("wrong codec: %s, converting", codec)
+	}
+
+	if codec, err := getCodec(localFile, "audio"); err != nil {
+		log.WithError(err).Warn("Error getting codec")
+		needsConversion = true
+	} else if codec != "aac" {
 		needsConversion = true
 		log.Debugf("wrong codec: %s, converting", codec)
 	}

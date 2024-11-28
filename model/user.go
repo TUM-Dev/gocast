@@ -71,7 +71,7 @@ type UserSetting struct {
 }
 
 // GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
-func (u User) GetPreferredName() string {
+func (u *User) GetPreferredName() string {
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName {
 			return setting.Value
@@ -155,7 +155,7 @@ func (u *User) GetCustomSpeeds() (speeds CustomSpeeds) {
 }
 
 // GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
-func (u User) GetPreferredGreeting() string {
+func (u *User) GetPreferredGreeting() string {
 	for _, setting := range u.Settings {
 		if setting.Type == Greeting {
 			return setting.Value
@@ -187,7 +187,7 @@ func (u *User) GetSeekingTime() int {
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
-func (u User) PreferredNameChangeAllowed() bool {
+func (u *User) PreferredNameChangeAllowed() bool {
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName && time.Since(setting.UpdatedAt) < time.Hour*24*30*3 {
 			return false
@@ -202,7 +202,7 @@ type AutoSkipSetting struct {
 }
 
 // GetAutoSkipEnabled returns whether the user has enabled auto skip
-func (u User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
+func (u *User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
 	for _, setting := range u.Settings {
 		if setting.Type == AutoSkip {
 			var a AutoSkipSetting
@@ -259,8 +259,12 @@ func (u *User) IsAdminOfCourse(course Course) bool {
 	return u.Role == AdminType || course.UserID == u.ID
 }
 
+// IsEligibleToWatchCourse checks if the user is allowed to access the course
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
-	if course.Visibility == "loggedin" || course.Visibility == "public" {
+	if u == nil {
+		return course.Visibility == "public" || course.Visibility == "hidden"
+	}
+	if course.Visibility == "public" || course.Visibility == "hidden" || course.Visibility == "loggedin" {
 		return true
 	}
 	for _, invCourse := range u.Courses {
@@ -269,6 +273,11 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 		}
 	}
 	return u.IsAdminOfCourse(course)
+}
+
+// IsEligibleToSearchForCourse is a stricter version of IsEligibleToWatchCourse; in case of hidden course, it returns true only when the user is an admin of the course
+func (u *User) IsEligibleToSearchForCourse(course Course) bool {
+	return u.IsEligibleToWatchCourse(course) && course.Visibility != "hidden" || u.IsAdminOfCourse(course)
 }
 
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
@@ -288,6 +297,58 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 		cRes = append(cRes, c)
 	}
 	return cRes
+}
+
+// AdministeredCoursesForSemesters returns all courses, that the user is a course admin of, in the given semester range or semesters
+func (u *User) AdministeredCoursesForSemesters(semesters []Semester) []Course {
+	var semester Semester
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsInRangeOfSemesters(semesters) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+// AdministeredCoursesBetweenSemesters returns all courses, that the user is a course admin of, between firstSemester and lasSemester
+func (u *User) AdministeredCoursesBetweenSemesters(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+// CoursesForSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
+func (u *User) CoursesForSemestersWithoutAdministeredCourses(semesters []Semester) []Course {
+	var semester Semester
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsInRangeOfSemesters(semesters) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
+}
+
+// CoursesBetweenSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
+func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
 }
 
 var (
