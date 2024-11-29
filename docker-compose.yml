@@ -71,6 +71,8 @@ services:
       - ./init.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
+    ports:
+      - "3306:3306"
 # Omitted for local development due to size. Comment out to use voice-service
 #  voice-service:
 #    container_name: tum-live-voice-service

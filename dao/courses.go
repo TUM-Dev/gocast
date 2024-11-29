@@ -44,6 +44,8 @@ type CoursesDao interface {
 
 	RemoveAdminFromCourse(userID uint, courseID uint) error
 	DeleteCourse(course model.Course)
+
+	IsUserEnrolledInCourse(userID uint, courseID uint) (bool, error)
 }
 
 type coursesDao struct {
@@ -337,4 +339,13 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	if err != nil {
 		logger.Error("Can't delete course", "err", err)
 	}
+}
+
+func (d coursesDao) IsUserEnrolledInCourse(user uint, course uint) (bool, error) {
+	var nRows int64
+	err := DB.Table("course_users").Where("user_id = ? AND course_id = ?", user, course).Count(&nRows).Error
+	if err != nil {
+		return false, err
+	}
+	return nRows == 1, nil
 }
