@@ -87,7 +87,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			logger.Warn("could not get all server notifications", "err", err)
 		}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	y, t := tum.GetCurrentSemester()
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
@@ -221,7 +221,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, false)
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
@@ -260,7 +260,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, false)
 	for i := range tumLiveContext.Course.Streams {
 		err := tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, true)
 		if err != nil {
