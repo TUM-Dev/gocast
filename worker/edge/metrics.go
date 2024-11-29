@@ -1,11 +1,10 @@
 package main
 
 import (
-	"sync"
-	"time"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"sync"
+	"time"
 )
 
 var (

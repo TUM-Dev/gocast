@@ -362,6 +362,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 
 	if (course.IsLoggedIn() && tumLiveContext.User == nil) || (course.IsEnrolled() && !tumLiveContext.User.IsEligibleToWatchCourse(course)) {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	user := tumLiveContext.User
@@ -1059,7 +1060,7 @@ func (r coursesRoutes) fetchLectures(c *gin.Context) {
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
-	streams := tlctx.Course.AdminJson(lectureHalls)
+	streams := tools.AdminCourseJson(tlctx.Course, lectureHalls, tlctx.User)
 
 	c.JSON(http.StatusOK, gin.H{
 		"streams": streams,
