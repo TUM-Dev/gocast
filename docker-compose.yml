@@ -62,6 +62,8 @@ services:
   db:
     container_name: mariadb_container
     image: mariadb
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_USER: root
       MYSQL_ROOT_PASSWORD: example
