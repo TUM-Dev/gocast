@@ -328,7 +328,7 @@ func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *prot
 			logger.Error("Can't set StreamLiveNowTimestamp", "err", err)
 		}
 
-		hlsUrl := fmt.Sprintf("%v:%v/%v", tools.Cfg.Edge.Domain, tools.Cfg.Edge.Port, request.HLSUrl)
+		hlsUrl := fmt.Sprintf("%v/%v", tools.Cfg.Edge.Domain, request.HLSUrl)
 
 		time.Sleep(time.Second * 5)
 		if !isHLSUrlOk(hlsUrl) {
@@ -510,6 +510,7 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 		for _, action := range activeAction {
 			if action.End.Before(time.Now().Add(5 * time.Minute)) {
 				action.SetToIgnored()
+				err = dao.ActionDao.UpdateAction(ctx, &action)
 				log.Info("Action ignored, check for progress manually", "action", action.ID)
 				continue
 			}
@@ -556,6 +557,9 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 			return
 		}
 		for _, job := range jobs {
+			if job.Actions[0].Status != 3 {
+				continue
+			}
 			action, err := job.GetNextAction()
 			if err != nil {
 				logger.Error("Can't get next action", err)
@@ -636,15 +640,14 @@ func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interf
 			Status: 3,
 			Type:   "stream",
 			Values: string(value),
-		}, model.Action{
-			Status: 3,
-			Type:   "transcode",
-			Values: string(value),
-		}, model.Action{
-			Status: 3,
-			Type:   "upload",
-			Values: string(value),
-		})
+		},
+		/*
+			 model.Action{
+				Status: 3,
+				Type:   "upload",
+				Values: string(value),
+			}
+		*/)
 		job.Actions = append(job.Actions, actions...)
 	}
 	err = dao.CreateJob(ctx, job)

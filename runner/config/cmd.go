@@ -10,7 +10,7 @@ import (
 type CmdList struct {
 	//this is for adding extra parameters
 
-	Stream            string `Default:"-y -hide_banner -nostats %x -t &.0f -i %s -c:v copy -c:a copy -f mpegts %x -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k -f hls -hls_time 2 -hls_list_size 3600 -hls_playlist_type event -hls_flags append_list -hls_segment_filename %x %x"`
+	Stream            string `Default:"-y -hide_banner -loglevel quiet -nostats %v -t %.0f -i %v -c:v copy -c:a copy -f mpegts %v -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k -f hls -hls_time 2 -hls_list_size 3600 -hls_playlist_type event -hls_flags append_list -hls_segment_filename %v/%%05d.ts %v"`
 	SeparateAudioFast string `Default:"-i %v -vn -c:a copy %v"`
 	SeparateAudio     string `Default:"-i %v -vn %v"`
 	AudioNormalize1   string `Default:"-i %v -nostats -y -af loudnorm=I=-23:TP=-2:LRA=7:print_format=json -f null -"`
