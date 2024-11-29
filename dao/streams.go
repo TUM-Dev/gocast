@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm/clause"
 
 	"github.com/TUM-Dev/gocast/model"
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -382,7 +384,21 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 		return model.Stream{}, model.Course{}, err
 	}
 
-	return stream, course, nil
+	stream.Start = time.Now().Add(5 * time.Minute)
+	stream.End = time.Now().Add(1 * time.Hour)
+	stream.LiveNow = true
+	stream.Recording = true
+	stream.LiveNowTimestamp = time.Now().Add(5 * time.Minute)
+	stream.Private = true
+	streamKey := uuid.NewV4().String()
+	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
+	stream.LectureHallID = 1
+	err = DB.Save(&stream).Error
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	return stream, course, err
 }
 
 // Helper method to fetch test course for current user.
