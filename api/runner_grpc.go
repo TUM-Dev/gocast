@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/tum-dev/gocast/runner/protobuf"
@@ -327,8 +328,10 @@ func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *prot
 			logger.Error("Can't set StreamLiveNowTimestamp", "err", err)
 		}
 
+		hlsUrl := fmt.Sprintf("%v:%v/%v", tools.Cfg.Edge.Domain, tools.Cfg.Edge.Port, request.HLSUrl)
+
 		time.Sleep(time.Second * 5)
-		if !isHLSUrlOk(request.HLSUrl) {
+		if !isHLSUrlOk(hlsUrl) {
 			sentry.WithScope(func(scope *sentry.Scope) {
 				scope.SetExtra("URL", request.HLSUrl)
 				scope.SetExtra("StreamID", request.StreamID)
@@ -337,18 +340,18 @@ func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *prot
 				scope.SetExtra("Version", request.SourceType)
 				sentry.CaptureException(errors.New("DVR URL 404s"))
 			})
-			request.HLSUrl = strings.ReplaceAll(request.HLSUrl, "?dvr", "")
+			hlsUrl = strings.ReplaceAll(hlsUrl, "?dvr", "")
 		}
 
-		logger.Info("hls url", "url", request.HLSUrl)
+		logger.Info("hls url", "url", hlsUrl)
 
 		switch request.Version {
 		case "CAM":
-			g.StreamsDao.SaveCAMURL(&stream, request.HLSUrl)
+			g.StreamsDao.SaveCAMURL(&stream, hlsUrl)
 		case "PRES":
-			g.StreamsDao.SavePRESURL(&stream, request.HLSUrl)
+			g.StreamsDao.SavePRESURL(&stream, hlsUrl)
 		default:
-			g.StreamsDao.SaveCOMBURL(&stream, request.HLSUrl)
+			g.StreamsDao.SaveCOMBURL(&stream, hlsUrl)
 		}
 
 		NotifyViewersLiveState(stream.Model.ID, true)
@@ -598,7 +601,7 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 	values := map[string]interface{}{}
 	err = json.Unmarshal([]byte(action.Values), &values)
 	for key, value := range values {
-		logger.Info("values", "value", value)
+		//logger.Info("values", "value", value)
 		ctx = context.WithValue(ctx, key, value)
 	}
 	ctx = context.WithValue(ctx, "actionID", fmt.Sprintf("%v", action.ID))

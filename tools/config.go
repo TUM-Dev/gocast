@@ -51,7 +51,12 @@ func initConfig() {
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %v", err))
 	}
-
+	if Cfg.Edge.Domain == "" {
+		logger.Error("No domain for edge found, can't proxy streams")
+	}
+	if Cfg.Edge.Port == 0 {
+		logger.Error("No port for edge found, can't proxy streams")
+	}
 	// set defaults
 	if Cfg.WorkerToken == "" {
 		Cfg.WorkerToken = uuid.NewV4().String()
@@ -113,6 +118,10 @@ type Config struct {
 		Host     string `yaml:"host"`
 		Port     uint   `yaml:"port"`
 	} `yaml:"db"`
+	Edge struct {
+		Domain string `yaml:"domain"`
+		Port   int    `yaml:"port"`
+	} `yaml:"edge"`
 	Campus struct {
 		Base        string   `yaml:"base"`
 		Tokens      []string `yaml:"tokens"`

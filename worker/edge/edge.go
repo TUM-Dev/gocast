@@ -5,6 +5,8 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
 	"log"
 	"mime"
@@ -22,9 +24,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -230,6 +229,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
+
 			if err != nil {
 				err404Playlists.WithLabelValues(claims.StreamID, claims.Playlist).Inc()
 				w.WriteHeader(http.StatusNotFound)
@@ -377,7 +377,7 @@ func fetchFile(host, file string) error {
 		return fmt.Errorf("parse file path: %s", file)
 	}
 	d := filepath.Dir(diskDir)
-	err = os.MkdirAll(d, 0o755)
+	err = os.MkdirAll(d, 0755)
 	if err != nil {
 		return err
 	}
