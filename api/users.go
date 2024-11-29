@@ -137,14 +137,18 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 		})
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
-	role, err := strconv.ParseUint(rQ, 10, 64)
-	if err != nil && rQ != "" && rQ != "-1" {
-		tools.RenderErrorPage(c, http.StatusBadRequest, "invalid role")
-		return nil, err
-	}
 	if rQ == "" || rQ == "-1" {
 		users, err = r.UsersDao.SearchUser(q)
 	} else {
+		role, err := strconv.ParseUint(rQ, 10, 64)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "could not parse role",
+				Err:           err,
+			})
+			return nil, err
+		}
 		users, err = r.UsersDao.SearchUserWithRole(q, role)
 	}
 	if err != nil && err != gorm.ErrRecordNotFound {
