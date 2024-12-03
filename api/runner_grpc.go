@@ -640,15 +640,25 @@ func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interf
 			Status: 3,
 			Type:   "stream",
 			Values: string(value),
-		},
-		/*
-			 model.Action{
-				Status: 3,
-				Type:   "upload",
-				Values: string(value),
-			}
-		*/)
+		})
 		job.Actions = append(job.Actions, actions...)
+		break
+	case "transcode":
+		actions = append(actions, model.Action{
+			Status: 3,
+			Type:   "transcode",
+			Values: string(value),
+		})
+		job.Actions = append(job.Actions, actions...)
+		break
+	case "upload":
+		actions = append(actions, model.Action{
+			Status: 3,
+			Type:   "upload",
+			Values: string(value),
+		})
+		job.Actions = append(job.Actions, actions...)
+		break
 	}
 	err = dao.CreateJob(ctx, job)
 	if err != nil {
