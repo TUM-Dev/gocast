@@ -64,6 +64,7 @@ func (a *Action) IsCompleted() bool {
 }
 
 func (a *Action) GetCurrentRunner() (*Runner, error) {
+	logger.Info("runner count", "info", a)
 	if len(a.AllRunners) == 0 {
 		return nil, errors.New("no runner assigned")
 	}
@@ -72,6 +73,7 @@ func (a *Action) GetCurrentRunner() (*Runner, error) {
 
 func (a *Action) AssignRunner(runner Runner) {
 	a.AllRunners = append(a.AllRunners, runner)
+	logger.Info("runner count", "count", len(a.AllRunners))
 }
 
 func (a *Action) GetValues() string {

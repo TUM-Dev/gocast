@@ -30,32 +30,30 @@ export function getFailedAction(): void {
             );
         });
     });
-    r
+    r;
 }
 
 export function listActions(actions: string): void {
     window.dispatchEvent(new CustomEvent("load-actions"));
     actions.split(",\n").forEach((id) => {
-            if (id === "") {
-                return;
-            }
-            fetch("/api/Actions/" + id).then((res) => {
-                res.text().then((text) => {
-                    window.dispatchEvent(
-                        new CustomEvent("ActionListing", {
-                            detail: {
-                                actions: JSON.parse(text),
-                            },
-                        }),
-                    );
-                });
-            });
+        if (id === "") {
+            return;
         }
-    );
-    var actionwindow = document.getElementById("actionList");
+        fetch("/api/Actions/" + id).then((res) => {
+            res.text().then((text) => {
+                window.dispatchEvent(
+                    new CustomEvent("ActionListing", {
+                        detail: {
+                            actions: JSON.parse(text),
+                        },
+                    }),
+                );
+            });
+        });
+    });
+    const actionwindow = document.getElementById("actionList");
     actionwindow.classList.toggle("show");
 
     console.log(actionwindow.style.getPropertyValue("visibility"));
     //actionwindow.classList.add
-
 }

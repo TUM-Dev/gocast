@@ -78,9 +78,11 @@ func (r *Runner) ReadDiagnostics(retries int) {
 		return
 	}
 	actions := ""
-	for id, _ := range r.activeActions {
+	for id := range r.activeActions {
 		actions += fmt.Sprintln(id + ",")
 	}
+
+	r.log.Info("current actions of runner", "actions", actions)
 
 	_, err = con.Heartbeat(context.Background(), &protobuf.HeartbeatRequest{
 		Hostname:      r.cfg.Hostname,

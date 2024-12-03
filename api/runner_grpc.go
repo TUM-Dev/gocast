@@ -508,7 +508,7 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 			logger.Error("Can't get running actions", err)
 		}
 		for _, action := range activeAction {
-			if action.End.Before(time.Now().Add(5 * time.Minute)) {
+			if action.End.Before(time.Now().Add(-5 * time.Minute)) {
 				action.SetToIgnored()
 				err = dao.ActionDao.UpdateAction(ctx, &action)
 				log.Info("Action ignored, check for progress manually", "action", action.ID)
@@ -619,7 +619,13 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 		//TranscodingRequest(ctx, dao, runner)
 		break
 	}
-	action.SetToRunning()
+	//action.SetToRunning()
+	err = dao.ActionDao.UpdateAction(ctx, action)
+	if err != nil {
+		logger.Error("couldn't update action!", "error", err)
+		return err
+	}
+	logger.Info("runner counts", "count", len(action.AllRunners))
 	return nil
 }
 
@@ -640,6 +646,7 @@ func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interf
 			Status: 3,
 			Type:   "stream",
 			Values: string(value),
+			End:    values["end"].(time.Time),
 		})
 		job.Actions = append(job.Actions, actions...)
 		break
@@ -648,6 +655,7 @@ func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interf
 			Status: 3,
 			Type:   "transcode",
 			Values: string(value),
+			End:    values["end"].(time.Time),
 		})
 		job.Actions = append(job.Actions, actions...)
 		break
@@ -656,6 +664,7 @@ func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interf
 			Status: 3,
 			Type:   "upload",
 			Values: string(value),
+			End:    values["end"].(time.Time),
 		})
 		job.Actions = append(job.Actions, actions...)
 		break
