@@ -83,7 +83,7 @@ func GinServer() (err error) {
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.Run(":8083")
+	err = router.Run(":8081")
 	// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)
