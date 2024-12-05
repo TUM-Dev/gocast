@@ -286,10 +286,12 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
+		enrolled := false
+		var err error
 		// todo: check if user is allowed to see the course
 		// -> Get full course from database
 		if tumLiveContext.User != nil {
-			enrolled, err := r.CoursesDao.IsUserEnrolledInCourse(tumLiveContext.User.ID, course.ID)
+			enrolled, err = r.CoursesDao.IsUserEnrolledInCourse(tumLiveContext.User.ID, course.ID)
 			if err != nil {
 				enrolled = false
 			}
