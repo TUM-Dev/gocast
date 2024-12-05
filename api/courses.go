@@ -290,7 +290,7 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 		var err error
 		// todo: check if user is allowed to see the course
 		// -> Get full course from database
-		if tumLiveContext.User != nil {
+		if tumLiveContext.User != nil && course != nil {
 			enrolled, err = r.CoursesDao.IsUserEnrolledInCourse(tumLiveContext.User.ID, course.ID)
 			if err != nil {
 				enrolled = false
