@@ -344,10 +344,7 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 func (d coursesDao) IsUserEnrolledInCourse(user uint, course uint) (bool, error) {
 	var nRows int64
 	var err error
-	if DB == nil {
-		return false, err
-	}
-	err = DB.Table("course_users").Where("user_id = ? AND course_id = ?", user, course).Count(&nRows).Error
+	err := DB.Table("course_users").Where("user_id = ? AND course_id = ?", user, course).Count(&nRows).Error
 	if err != nil {
 		return false, err
 	}
