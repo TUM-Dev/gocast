@@ -410,7 +410,7 @@
                                  :class="plannedStreams.hasElements() ? 'col-span-2' : 'col-span-full'">
                             <header>
                                 <h3 class="font-bold">VODs</h3>
-                                <section class="space-x-2">
+                                <section class="button-area space-y-1">
                                     <button type="button" @click="sortNewestFirst()"
                                             class="tum-live-button tum-live-button-tertiary"
                                             :class="{'active' : isNewestFirst() }">
@@ -433,6 +433,11 @@
                                             :class="{'active' : isListView() }">
                                         List View
                                     </button>
+                                    <button type="button" @click="toggleWeekView()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isWeekView() }">
+                                        Week View
+                                    </button>
                                 </section>
                             </header>
                             <section>
@@ -442,7 +447,7 @@
                                                 x-for="group in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                             <article class="mb-8">
                                                 <header class="mb-2">
-                                                    <h6 class="font-semibold" x-text="group[0].GetMonthName()"></h6>
+                                                    <h6 class="font-semibold" x-text="groupNames.get(group[0].ID);"></h6>
                                                 </header>
                                                 <section class="grid gap-3  grid-cols-1"
                                                          :class="isListView() ? 'xl:grid-cols-1 lg:grid-cols-1 md:grid-cols-1 grid-cols-1' : plannedStreams.hasElements()

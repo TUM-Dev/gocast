@@ -178,6 +178,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Error("could not get current live streams", "err", err)
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+		return
 	}
 
 	tumLiveContext := d.TUMLiveContext
