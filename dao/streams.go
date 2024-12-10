@@ -36,6 +36,7 @@ type StreamsDao interface {
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
 	GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error)
 	GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error)
+	CreateOrGetTestCourse(user *model.User) (model.Course, error)
 
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
