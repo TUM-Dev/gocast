@@ -635,7 +635,7 @@ export type jumpToSettings = {
     S: number | undefined;
 };
 
-export function jumpTo(settings: jumpToSettings) {
+export function jumpTo(settings: jumpToSettings, autoplay = false) {
     if (settings.timeParts) {
         settings.time = new Time(settings.timeParts.hours, settings.timeParts.minutes, settings.timeParts.seconds);
     } else if (settings.Ms) {
@@ -646,6 +646,9 @@ export function jumpTo(settings: jumpToSettings) {
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
             players[j].currentTime(settings.time.toSeconds());
+            if (autoplay && players[j].paused()) {
+                players[j].play();
+            }
         });
     }
 }
