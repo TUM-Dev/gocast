@@ -1,12 +1,12 @@
 import { getPlayers } from "./TUMLiveVjs";
 import { copyToClipboard, Time } from "./global";
-import { seekbarOverlay } from "./seekbar-overlay";
 
 export enum SidebarState {
     Hidden = "hidden",
     Chat = "chat",
     Bookmarks = "bookmarks",
     Streams = "streams",
+    Transcript = "transcript",
 }
 
 /*
@@ -131,6 +131,11 @@ export class ShareURL {
             }
         }
     }
+}
+
+export function pauseVideo() {
+    const player = getPlayers()[0];
+    player.pause();
 }
 
 export { repeatHeatMap } from "./repeat-heatmap";

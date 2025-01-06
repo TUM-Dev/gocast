@@ -27,7 +27,7 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false, transcriptAvailable: false}"
       x-init="seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="shortcuts-help-modal" class="hidden flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
@@ -73,7 +73,7 @@
     </div>
 </div>
 {{if .IndexData.TUMLiveContext.User}}
-    <div id="bookmarks-mobile" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
+    <div id="bookmarks-mobile" x-cloak x-show="sidebar === watch.SidebarState.Bookmarks"
          class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
         <div @click.outside="sidebar = watch.SidebarState.Hidden"
              class="m-auto w-3/4 h-16/9 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
@@ -417,16 +417,32 @@
 
         <!-- Bookmarks -->
         {{if .IndexData.TUMLiveContext.User}}
-            <div id="bookmarks-desktop" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
+            <div id="bookmarks-desktop" x-cloak x-show="sidebar === watch.SidebarState.Bookmarks"
                  :class="sidebar === watch.SidebarState.Bookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
                  class="hidden md:block basis-full h-16/9 lg:h-16/6 px-5 md:px-2 lg:order-none order-4">
                 {{template "bookmarks-modal" $stream.ID}}
             </div>
         {{end}}
 
+        <!-- Transcript -->
+        <div id="transcript-desktop" x-cloak x-show="sidebar === watch.SidebarState.Transcript && transcriptAvailable"
+            :class="sidebar === watch.SidebarState.Transcript ? 'lg:basis-1/4' : 'lg:basis-0'"
+            class="basis-full md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4 grow">
+            {{template "transcript-modal" $stream.ID}}
+        </div>
+
+        <!-- Scroll to Top Button -->
+        <button x-data="{ showScrollUp: false }"
+                x-show="showScrollUp"
+                @click="watch.pauseVideo();window.scrollTo({ top: 0, behavior: 'smooth' }); "
+                class="fixed bottom-4 right-4 md:hidden bg-blue-500 text-white rounded-full p-2 shadow-lg z-50"
+                @scroll.window="showScrollUp = (window.scrollY > 200)">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
+
         <!-- Streams -->
         {{if .IndexData.TUMLiveContext.User}}
-            <div id="streams-box" x-cloak="" x-show="sidebar === watch.SidebarState.Streams"
+            <div id="streams-box" x-cloak x-show="sidebar === watch.SidebarState.Streams"
                  :class="sidebar === watch.SidebarState.Streams ? 'lg:basis-1/4' : 'lg:basis-0'"
                  class="order-4 z-20 basis-full px-5 md:px-2 lg:order-none lg:h-16/6 h-16/9">
                 {{template "playlist" $stream.ID}}
@@ -467,12 +483,12 @@
                             <div class="rounded-lg px-3 text-4 py-2 h-fit w-fit bg-gray-100 dark:bg-secondary-light space-x-2">
                             <a
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
-                               :title="'Edit course settings'">
+                               title="Edit course settings">
                                 <i class="fa-solid fa-pen text-4"></i>
                             </a>
                             <a
                                href="/admin/stats/{{$course.Model.ID}}/{{$stream.Model.ID}}"
-                               :title="'Watch lecture stats'">
+                               title="Watch lecture stats">
                                 <i class="fa-solid fa-chart-simple text-4"></i>
                             </a>
                             </div>
@@ -480,15 +496,22 @@
 
                         {{if .IndexData.TUMLiveContext.User}}
                             <button @click="sidebar = (sidebar === watch.SidebarState.Bookmarks ? watch.SidebarState.Hidden : watch.SidebarState.Bookmarks)"
-                                    class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
-                                    :title="'New Bookmark'">
+                                    class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                    title="New Bookmark">
                                 <i class="fa-solid fa-bookmark text-4"></i>
                             </button>
                         {{end}}
 
+                        <!-- Transcript Button -->
+                        <button x-show="transcriptAvailable" @toggletranscript.window="e => {transcriptAvailable=true}" @click="sidebar = (sidebar === watch.SidebarState.Transcript ? watch.SidebarState.Hidden : watch.SidebarState.Transcript)"
+                                class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                title="Show Transcript">
+                            <i class="fa-solid fa-text-height text-4"></i>
+                        </button>
+
                         <button @click="showShare = true;"
-                                class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
-                                :title="'Share'">
+                                class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                title="Share">
                             <i class="fa-solid fa-share text-4"></i>
                         </button>
 
