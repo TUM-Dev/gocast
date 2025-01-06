@@ -76,6 +76,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await AdminLectureList.delete(courseId, lectureIds);
         this.data[courseId] = (await this.getData(courseId)).filter((s) => !lectureIds.includes(s.lectureId));
         await this.triggerUpdate(courseId);
+        window.location.reload();
     }
 
     async deleteSeries(courseId: number, lectureId: number) {
