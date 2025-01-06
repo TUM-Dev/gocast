@@ -44,8 +44,6 @@ type CoursesDao interface {
 
 	RemoveAdminFromCourse(userID uint, courseID uint) error
 	DeleteCourse(course model.Course)
-
-	IsUserEnrolledInCourse(userID uint, courseID uint) (bool, error)
 }
 
 type coursesDao struct {
