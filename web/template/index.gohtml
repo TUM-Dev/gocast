@@ -27,7 +27,7 @@
     {{if .PinnedCourses}}
         <h2 class="text-2xl text-1 mt-2">Pinned Courses</h2>
         {{range $course := .PinnedCourses}}
-            {{if $user.IsEligibleToWatchCourse $course}}
+            {{if not $course.IsHidden}}
                 {{template "course-card" (dict "course" $course "user" $user)}}
             {{end}}
         {{end}}

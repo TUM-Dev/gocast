@@ -310,21 +310,6 @@ func (mr *MockCoursesDaoMockRecorder) GetPublicCourses(year, term interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicCourses", reflect.TypeOf((*MockCoursesDao)(nil).GetPublicCourses), year, term)
 }
 
-// IsUserEnrolledInCourse mocks base method.
-func (m *MockCoursesDao) IsUserEnrolledInCourse(userID, courseID uint) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsUserEnrolledInCourse", userID, courseID)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsUserEnrolledInCourse indicates an expected call of IsUserEnrolledInCourse.
-func (mr *MockCoursesDaoMockRecorder) IsUserEnrolledInCourse(userID, courseID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserEnrolledInCourse", reflect.TypeOf((*MockCoursesDao)(nil).IsUserEnrolledInCourse), userID, courseID)
-}
-
 // RemoveAdminFromCourse mocks base method.
 func (m *MockCoursesDao) RemoveAdminFromCourse(userID, courseID uint) error {
 	m.ctrl.T.Helper()
