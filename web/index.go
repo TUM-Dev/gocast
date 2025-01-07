@@ -194,7 +194,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
 		if courseForLiveStream.Visibility == "enrolled" {
-			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
@@ -284,18 +284,6 @@ type CourseStream struct {
 	Course      model.Course
 	Stream      model.Stream
 	LectureHall *model.LectureHall
-}
-
-func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
-	if user != nil {
-		for _, c := range user.Courses {
-			if c.ID == course.ID {
-				return true
-			}
-		}
-		return user.IsEligibleToWatchCourse(course)
-	}
-	return false
 }
 
 func sortCourses(courses []model.Course) {
