@@ -1,0 +1,565 @@
+syntax = "proto3";
+package protobuf;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "./api_v2/protobuf";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info : {title : "gocast API";
+version : "2.0";
+description : "The shiny new gocast API!\nThis API is designed to be a "
+              "user-friendly and easy-to-use interface for third party "
+              "services.\nIt provides access to all non-administrative "
+              "features of the GoCast platform.";
+contact : {
+name:
+  "TUM-Developers - gocast";
+url:
+  "https://github.com/TUM-Dev/gocast";
+};
+license : {
+name:
+  "MIT";
+url:
+  "https://github.com/TUM-Dev/gocast/blob/main/LICENSE";
+};
+}
+;
+schemes :
+    [HTTP, HTTPS];
+base_path : "/api/v2";
+host : "localhost:8081";
+consumes : "application/json";
+produces : "application/json";
+}
+;
+
+service API {
+
+  // HEALTHCHECK (./api.go)
+
+  rpc healthCheck(HealthCheckRequest) returns (HealthCheckResponse) {
+    option (google.api.http) = {
+      get : "/status"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "API Status"
+      summary : "API healthcheck ."
+      description : "If this endpoint does not return 200, the API is "
+                    "experiencing a catastrophic outage."
+    };
+  }
+
+  // USER ENDPOINTS (./user.go)
+
+  rpc getUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get : "/users/me"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "User"
+      summary : "Get user."
+      description : "Retrieves the current user."
+    };
+  }
+
+  rpc resetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post : "/users/reset-password"
+      body : "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "User"
+      summary : "Reset user password."
+      description : "Resets the user password."
+    };
+  }
+
+  rpc updateUserSettings(UpdateUserSettingsRequest)
+      returns (UpdateUserSettingsResponse) {
+    option (google.api.http) = {
+      patch : "/users/settings"
+      body : "*"
+      response_body : "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "User"
+      summary : "Update the current user's settings."
+      description : "Updates the current user's settings."
+    };
+  }
+
+  rpc exportPersonalData(ExportPersonalDataRequest)
+      returns (ExportPersonalDataResponse) {
+    option (google.api.http) = {
+      get : "/users/export"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "User"
+      summary : "Export user data."
+      description : "Exports the current user's data."
+    };
+  }
+
+  // SEMESTER ENDPOINTS (./semester.go)
+
+  rpc getSemesters(GetSemestersRequest) returns (GetSemestersResponse) {
+    option (google.api.http) = {
+      get : "/semesters"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Semesters"
+      summary : "Get available semesters."
+      description : "Retrieves all available semesters and the current "
+                    "semester."
+    };
+  }
+
+  // COURSE ENDPOINTS (./course.go)
+
+  rpc getLiveStreams(GetLiveStreamsRequest) returns (GetLiveStreamsResponse) {
+    option (google.api.http) = {
+      get : "/streams/live"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Courses"
+      summary : "Get currently live courses with stream."
+      description : "Retrieves the currently live courses with their streams."
+    };
+  }
+
+  rpc getPublicCourses(GetPublicCoursesRequest)
+      returns (GetPublicCoursesResponse) {
+    option (google.api.http) = {
+      get : "/courses"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Courses"
+      summary : "Get public courses."
+      description : "Retrieves the public courses for a given semester."
+    };
+  }
+
+  rpc getCourseBySlug(GetCourseBySlugRequest)
+      returns (GetCourseBySlugResponse) {
+    option (google.api.http) = {
+      get : "/courses/{slug}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Courses"
+      summary : "Get course by slug."
+      description : "Retrieves a course by its slug, year, and term."
+    };
+  }
+
+  rpc getUserCourses(GetUserCoursesRequest) returns (GetUserCoursesResponse) {
+    option (google.api.http) = {
+      get : "/courses/enrolled"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Courses"
+      summary : "Get user courses."
+      description : "Retrieves the enrolled courses for a user for a given "
+                    "semester."
+    };
+  }
+
+  rpc getPinnedCourses(GetPinnedCoursesRequest)
+      returns (GetPinnedCoursesResponse) {
+    option (google.api.http) = {
+      get : "/courses/pinned"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Courses"
+      summary : "Get pinned courses."
+      description : "Retrieves the pinned courses for a user."
+    };
+  }
+
+  rpc GetPinForCourse(GetPinForCourseRequest)
+      returns (GetPinForCourseResponse) {
+    option (google.api.http) = {
+      get : "/courses/{course_id}/pin"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Courses"
+      summary : "Get pin for course."
+      description : "Checks if the user has pinned the course."
+    };
+  }
+
+  rpc PinCourse(PinCourseRequest) returns (PinCourseResponse) {
+    option (google.api.http) = {
+      post : "/courses/{course_id}/pin"
+      body : "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags : "Courses"
+      summary : "Pin or unpin a course."
+      description : "Pins or unpins a course for the user."
+    };
+  }
+}
+
+///////////////////////////////
+///// HEALTHCHECK_MESSAGE /////
+///////////////////////////////
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse { string status = 1; }
+
+///////////////////////////////
+//////// USER_MESSAGE /////////
+///////////////////////////////
+
+message User {
+  uint32 id = 1;
+  string name = 2;
+  string lastName = 3;
+  string email = 4;
+  string matriculationNumber = 5;
+  string lrzID = 6;
+  uint32 role = 7;
+  repeated Course courses = 8;
+  repeated Course administeredCourses = 9;
+  repeated Course pinnedCourses = 10;
+  repeated UserSetting settings = 11;
+  repeated Bookmark bookmarks = 12;
+  google.protobuf.Timestamp createdAt = 13;
+}
+
+message UserSetting {
+  UserSettingType type = 3;
+  string value = 4;
+}
+
+enum UserSettingType {
+  PREFERRED_NAME = 0;
+  GREETING = 1;
+  CUSTOM_PLAYBACK_SPEEDS = 2;
+}
+
+///////////////////////////////
+//////// USER_REQUEST /////////
+///////////////////////////////
+
+message GetUserRequest {}
+
+message UpdateUserSettingsRequest { repeated UserSetting userSettings = 1; }
+
+message ResetPasswordRequest { string email = 1; }
+
+message ExportPersonalDataRequest {}
+
+///////////////////////////////
+//////// USER_RESPONSE ////////
+///////////////////////////////
+
+message GetUserResponse { User user = 1; }
+
+message UpdateUserSettingsResponse { repeated UserSetting userSettings = 1; }
+
+message ResetPasswordResponse { string message = 1; }
+
+message ExportPersonalDataResponse {
+  User user_data = 1;
+  repeated Enrollment enrollments = 2;
+  repeated VideoView video_views = 3;
+  repeated Chat chats = 4;
+}
+
+message Enrollment {
+  int32 year = 1;
+  string term = 2;
+  string course = 3;
+}
+
+message VideoView {
+  uint32 stream_id = 1;
+  float progress = 2;
+  bool marked_finished = 3;
+}
+
+message Chat {
+  uint32 stream_id = 1;
+  string message = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+///////////////////////////////
+////// BOOKMARK_MESSAGE ///////
+///////////////////////////////
+
+message Bookmark {
+  uint32 id = 1;
+  string description = 2;
+  uint32 hours = 3;
+  uint32 minutes = 4;
+  uint32 seconds = 5;
+  uint32 userID = 6;
+  uint32 streamID = 7;
+}
+
+///////////////////////////////
+////// BOOKMARK_REQUEST ///////
+///////////////////////////////
+
+message GetBookmarksRequest { uint32 streamID = 1; }
+
+message PutBookmarkRequest {
+  string description = 1;
+  uint32 hours = 2;
+  uint32 minutes = 3;
+  uint32 seconds = 4;
+  uint32 streamID = 5;
+}
+
+message PatchBookmarkRequest {
+  string description = 1;
+  uint32 hours = 2;
+  uint32 minutes = 3;
+  uint32 seconds = 4;
+  uint32 bookmarkID = 5;
+}
+
+message DeleteBookmarkRequest { uint32 bookmarkID = 1; }
+
+///////////////////////////////
+////// BOOKMARK_RESPONSE //////
+///////////////////////////////
+
+message GetBookmarksResponse { repeated Bookmark bookmarks = 1; }
+
+message PutBookmarkResponse { Bookmark bookmark = 1; }
+
+message PatchBookmarkResponse { Bookmark bookmark = 1; }
+
+message DeleteBookmarkResponse {}
+
+///////////////////////////////
+/////// COURSE_MESSAGE ////////
+///////////////////////////////
+
+message Course {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  Semester semester = 4;
+  string TUMOnlineIdentifier = 5;
+  bool VODEnabled = 6;
+  bool downloadsEnabled = 7;
+  bool chatEnabled = 8;
+  bool anonymousChatEnabled = 9;
+  bool moderatedChatEnabled = 10;
+  bool vodChatEnabled = 11;
+  repeated Stream streams = 12;
+  string cameraPresetPreferences = 13;
+  string sourcePreferences = 14;
+  uint32 lastRecordingID = 15;
+  uint32 nextLectureID = 16;
+}
+
+///////////////////////////////
+/////// COURSE_REQUEST ////////
+///////////////////////////////
+
+message GetLiveStreamsRequest {}
+
+message GetPublicCoursesRequest {
+  uint32 year = 1;
+  string term = 2;
+}
+
+message GetCourseBySlugRequest {
+  string slug = 1;
+  uint32 year = 2;
+  string term = 3;
+}
+
+message GetUserCoursesRequest {
+  uint32 year = 1;
+  string term = 2;
+}
+
+message GetPinnedCoursesRequest {}
+
+message GetPinForCourseRequest { uint32 course_id = 1; }
+
+message PinCourseRequest {
+  uint32 course_id = 1;
+  bool pin = 2;
+}
+
+///////////////////////////////
+/////// COURSE_RESPONSE ///////
+///////////////////////////////
+
+message GetLiveStreamsResponse { repeated CourseStream streams = 1; }
+
+message GetPublicCoursesResponse { repeated Course courses = 1; }
+
+message GetCourseBySlugResponse { Course course = 1; }
+
+message GetUserCoursesResponse { repeated Course courses = 1; }
+
+message GetPinnedCoursesResponse { repeated Course courses = 1; }
+
+message PinCourseResponse { string message = 1; }
+
+message GetPinForCourseResponse { bool has = 1; }
+
+///////////////////////////////
+/////// COURSE_STREAM /////////
+///////////////////////////////
+
+message CourseStream {
+  Course course = 1;
+  Stream stream = 2;
+  LectureHall lecture_hall = 3;
+  uint32 viewers = 4;
+}
+
+///////////////////////////////
+/////// SEMESTER_MESSAGE //////
+///////////////////////////////
+
+message Semester {
+  string teachingTerm = 1;
+  uint32 year = 2;
+}
+
+///////////////////////////////
+/////// SEMESTER_REQUEST //////
+///////////////////////////////
+
+message GetSemestersRequest {}
+
+///////////////////////////////
+////// SEMESTER_RESPONSE //////
+///////////////////////////////
+
+message GetSemestersResponse {
+  Semester current = 1;
+  repeated Semester semesters = 2;
+}
+
+///////////////////////////////
+/////// STREAM_MESSAGE ////////
+///////////////////////////////
+
+message Stream {
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+  uint32 courseID = 4;
+  google.protobuf.Timestamp start = 5;
+  google.protobuf.Timestamp end = 6;
+  bool chatEnabled = 7;
+  string roomName = 8;
+  string roomCode = 9;
+  string eventTypeName = 10;
+  uint32 TUMOnlineEventID = 11;
+  string seriesIdentifier = 12;
+  string playlistUrl = 13;
+  string playlistUrlPRES = 14;
+  string playlistUrlCAM = 15;
+  bool liveNow = 16;
+  google.protobuf.Timestamp liveNowTimestamp = 17;
+  bool recording = 18;
+  bool premiere = 19;
+  bool ended = 20;
+  uint32 vodViews = 21;
+  uint32 startOffset = 22;
+  uint32 endOffset = 23;
+  uint32 duration = 28;
+  repeated Download downloads = 29;
+  bool isPlanned = 30;
+  bool isComingUp = 31;
+  string HLSUrl = 32;
+}
+
+///////////////////////////////
+/////// STREAM_REQUESTS ///////
+///////////////////////////////
+
+message GetStreamRequest { uint32 streamID = 1; }
+
+message GetNowLiveRequest {}
+
+message GetThumbsLiveRequest { uint32 streamID = 1; }
+
+message GetThumbsVODRequest { uint32 streamID = 1; }
+
+///////////////////////////////
+////// STREAM_RESPONSES ///////
+///////////////////////////////
+
+message GetStreamResponse { Stream stream = 1; }
+
+message GetNowLiveResponse { repeated Stream stream = 1; }
+
+message GetThumbsVODResponse { string path = 1; }
+
+message GetThumbsLiveResponse { string path = 1; }
+
+///////////////////////////////
+////// DOWNLOAD_MESSAGE ///////
+///////////////////////////////
+
+message Download {
+  string friendlyName = 1;
+  string downloadURL = 2;
+}
+
+///////////////////////////////
+////// PROGRESS_MESSAGE ///////
+///////////////////////////////
+
+message Progress {
+  float progress = 1;
+  bool watched = 2;
+  uint32 userID = 3;
+  uint32 streamID = 4;
+}
+
+///////////////////////////////
+////// PROGRESS_REQUEST ///////
+///////////////////////////////
+
+message GetProgressRequest { uint32 streamID = 1; }
+
+message PutProgressRequest {
+  float progress = 1;
+  uint32 streamID = 3;
+}
+
+message MarkAsWatchedRequest { uint32 streamID = 1; }
+
+///////////////////////////////
+////// PROGRESS_RESPONSE //////
+///////////////////////////////
+
+message GetProgressResponse { Progress progress = 1; }
+
+message PutProgressResponse { Progress progress = 1; }
+
+message MarkAsWatchedResponse { Progress progress = 1; }
+
+///////////////////////////////
+/////// LECTURE_HALL_MESSAGE ///
+///////////////////////////////
+
+message LectureHall {
+  uint32 id = 1;
+  string name = 2;
+  repeated CameraPreset camera_presets = 3;
+}
+
+message CameraPreset {
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+}

@@ -1,0 +1,1056 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "gocast API",
+    "description": "The shiny new gocast API!\nThis API is designed to be a user-friendly and easy-to-use interface for third party services.\nIt provides access to all non-administrative features of the GoCast platform.",
+    "version": "2.0",
+    "contact": {
+      "name": "TUM-Developers - gocast",
+      "url": "https://github.com/TUM-Dev/gocast"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/TUM-Dev/gocast/blob/main/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "API"
+    }
+  ],
+  "host": "localhost:8081",
+  "basePath": "/api/v2",
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/courses": {
+      "get": {
+        "summary": "Get public courses.",
+        "description": "Retrieves the public courses for a given semester.",
+        "operationId": "API_getPublicCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetPublicCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/enrolled": {
+      "get": {
+        "summary": "Get user courses.",
+        "description": "Retrieves the enrolled courses for a user for a given semester.",
+        "operationId": "API_getUserCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/pinned": {
+      "get": {
+        "summary": "Get pinned courses.",
+        "description": "Retrieves the pinned courses for a user.",
+        "operationId": "API_getPinnedCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetPinnedCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/pin": {
+      "get": {
+        "summary": "Get pin for course.",
+        "description": "Checks if the user has pinned the course.",
+        "operationId": "API_GetPinForCourse",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetPinForCourseResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "post": {
+        "summary": "Pin or unpin a course.",
+        "description": "Pins or unpins a course for the user.",
+        "operationId": "API_PinCourse",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufPinCourseResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/APIPinCourseBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{slug}": {
+      "get": {
+        "summary": "Get course by slug.",
+        "description": "Retrieves a course by its slug, year, and term.",
+        "operationId": "API_getCourseBySlug",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetCourseBySlugResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/semesters": {
+      "get": {
+        "summary": "Get available semesters.",
+        "description": "Retrieves all available semesters and the current semester.",
+        "operationId": "API_getSemesters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetSemestersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Semesters"
+        ]
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "API healthcheck .",
+        "description": "If this endpoint does not return 200, the API is experiencing a catastrophic outage.",
+        "operationId": "API_healthCheck",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufHealthCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "API Status"
+        ]
+      }
+    },
+    "/streams/live": {
+      "get": {
+        "summary": "Get currently live courses with stream.",
+        "description": "Retrieves the currently live courses with their streams.",
+        "operationId": "API_getLiveStreams",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetLiveStreamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/users/export": {
+      "get": {
+        "summary": "Export user data.",
+        "description": "Exports the current user's data.",
+        "operationId": "API_exportPersonalData",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufExportPersonalDataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/users/me": {
+      "get": {
+        "summary": "Get user.",
+        "description": "Retrieves the current user.",
+        "operationId": "API_getUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/users/reset-password": {
+      "post": {
+        "summary": "Reset user password.",
+        "description": "Resets the user password.",
+        "operationId": "API_resetPassword",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufResetPasswordResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufResetPasswordRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/users/settings": {
+      "patch": {
+        "summary": "Update the current user's settings.",
+        "description": "Updates the current user's settings.",
+        "operationId": "API_updateUserSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufUpdateUserSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufUpdateUserSettingsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "APIPinCourseBody": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "protobufBookmark": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": {
+          "type": "string"
+        },
+        "hours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "minutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufCameraPreset": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufChat": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "message": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "protobufCourse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "semester": {
+          "$ref": "#/definitions/protobufSemester"
+        },
+        "TUMOnlineIdentifier": {
+          "type": "string"
+        },
+        "VODEnabled": {
+          "type": "boolean"
+        },
+        "downloadsEnabled": {
+          "type": "boolean"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "anonymousChatEnabled": {
+          "type": "boolean"
+        },
+        "moderatedChatEnabled": {
+          "type": "boolean"
+        },
+        "vodChatEnabled": {
+          "type": "boolean"
+        },
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStream"
+          }
+        },
+        "cameraPresetPreferences": {
+          "type": "string"
+        },
+        "sourcePreferences": {
+          "type": "string"
+        },
+        "lastRecordingID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nextLectureID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufCourseStream": {
+      "type": "object",
+      "properties": {
+        "course": {
+          "$ref": "#/definitions/protobufCourse"
+        },
+        "stream": {
+          "$ref": "#/definitions/protobufStream"
+        },
+        "lectureHall": {
+          "$ref": "#/definitions/protobufLectureHall"
+        },
+        "viewers": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufDownload": {
+      "type": "object",
+      "properties": {
+        "friendlyName": {
+          "type": "string"
+        },
+        "downloadURL": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufEnrollment": {
+      "type": "object",
+      "properties": {
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "term": {
+          "type": "string"
+        },
+        "course": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufExportPersonalDataResponse": {
+      "type": "object",
+      "properties": {
+        "userData": {
+          "$ref": "#/definitions/protobufUser"
+        },
+        "enrollments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufEnrollment"
+          }
+        },
+        "videoViews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufVideoView"
+          }
+        },
+        "chats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChat"
+          }
+        }
+      }
+    },
+    "protobufGetCourseBySlugResponse": {
+      "type": "object",
+      "properties": {
+        "course": {
+          "$ref": "#/definitions/protobufCourse"
+        }
+      }
+    },
+    "protobufGetLiveStreamsResponse": {
+      "type": "object",
+      "properties": {
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseStream"
+          }
+        }
+      }
+    },
+    "protobufGetPinForCourseResponse": {
+      "type": "object",
+      "properties": {
+        "has": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufGetPinnedCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetPublicCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetSemestersResponse": {
+      "type": "object",
+      "properties": {
+        "current": {
+          "$ref": "#/definitions/protobufSemester"
+        },
+        "semesters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufSemester"
+          }
+        }
+      }
+    },
+    "protobufGetUserCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        }
+      }
+    },
+    "protobufGetUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/protobufUser"
+        }
+      }
+    },
+    "protobufHealthCheckResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufLectureHall": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "cameraPresets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCameraPreset"
+          }
+        }
+      }
+    },
+    "protobufPinCourseResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufResetPasswordRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufResetPasswordResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufSemester": {
+      "type": "object",
+      "properties": {
+        "teachingTerm": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufStream": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "courseID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "roomName": {
+          "type": "string"
+        },
+        "roomCode": {
+          "type": "string"
+        },
+        "eventTypeName": {
+          "type": "string"
+        },
+        "TUMOnlineEventID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seriesIdentifier": {
+          "type": "string"
+        },
+        "playlistUrl": {
+          "type": "string"
+        },
+        "playlistUrlPRES": {
+          "type": "string"
+        },
+        "playlistUrlCAM": {
+          "type": "string"
+        },
+        "liveNow": {
+          "type": "boolean"
+        },
+        "liveNowTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "recording": {
+          "type": "boolean"
+        },
+        "premiere": {
+          "type": "boolean"
+        },
+        "ended": {
+          "type": "boolean"
+        },
+        "vodViews": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "endOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "duration": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "downloads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufDownload"
+          }
+        },
+        "isPlanned": {
+          "type": "boolean"
+        },
+        "isComingUp": {
+          "type": "boolean"
+        },
+        "HLSUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufUpdateUserSettingsRequest": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
+    "protobufUpdateUserSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        }
+      }
+    },
+    "protobufUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "matriculationNumber": {
+          "type": "string"
+        },
+        "lrzID": {
+          "type": "string"
+        },
+        "role": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "administeredCourses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "pinnedCourses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourse"
+          }
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSetting"
+          }
+        },
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBookmark"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "protobufUserSetting": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/protobufUserSettingType"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufUserSettingType": {
+      "type": "string",
+      "enum": [
+        "PREFERRED_NAME",
+        "GREETING",
+        "CUSTOM_PLAYBACK_SPEEDS"
+      ],
+      "default": "PREFERRED_NAME"
+    },
+    "protobufVideoView": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "progress": {
+          "type": "number",
+          "format": "float"
+        },
+        "markedFinished": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}
