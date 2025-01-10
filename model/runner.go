@@ -37,10 +37,8 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 // UpdateStats SendHeartbeat updates the last seen time of the runner and gives runner stats
-func (r *Runner) UpdateStats(tx *gorm.DB, ctx context.Context) (bool, error) {
-	newStats := ctx.Value("newStats").(map[string]interface{})
-	logger.Info("updating stats", "newStats", newStats)
-	err := tx.WithContext(ctx).Model(&r).Updates(newStats).Error
+func (r *Runner) UpdateStats(tx *gorm.DB, ctx context.Context, values map[string]interface{}) (bool, error) {
+	err := tx.WithContext(ctx).Model(&r).Updates(values).Error
 	if err != nil {
 		return false, err
 	}
