@@ -4,6 +4,7 @@ package protobuf;
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "./api_v2/protobuf";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
@@ -40,7 +41,7 @@ service API {
 
   // HEALTHCHECK (./api.go)
 
-  rpc healthCheck(HealthCheckRequest) returns (HealthCheckResponse) {
+  rpc healthCheck(google.protobuf.Empty) returns (HealthCheckResponse) {
     option (google.api.http) = {
       get : "/status"
     };
@@ -54,7 +55,7 @@ service API {
 
   // USER ENDPOINTS (./user.go)
 
-  rpc getUser(GetUserRequest) returns (GetUserResponse) {
+  rpc getUser(google.protobuf.Empty) returns (GetUserResponse) {
     option (google.api.http) = {
       get : "/users/me"
     };
@@ -91,7 +92,7 @@ service API {
     };
   }
 
-  rpc exportPersonalData(ExportPersonalDataRequest)
+  rpc exportPersonalData(google.protobuf.Empty)
       returns (ExportPersonalDataResponse) {
     option (google.api.http) = {
       get : "/users/export"
@@ -105,7 +106,7 @@ service API {
 
   // SEMESTER ENDPOINTS (./semester.go)
 
-  rpc getSemesters(GetSemestersRequest) returns (GetSemestersResponse) {
+  rpc getSemesters(google.protobuf.Empty) returns (GetSemestersResponse) {
     option (google.api.http) = {
       get : "/semesters"
     };
@@ -119,7 +120,7 @@ service API {
 
   // COURSE ENDPOINTS (./course.go)
 
-  rpc getLiveStreams(GetLiveStreamsRequest) returns (GetLiveStreamsResponse) {
+  rpc getLiveStreams(google.protobuf.Empty) returns (GetLiveStreamsResponse) {
     option (google.api.http) = {
       get : "/streams/live"
     };
@@ -166,7 +167,7 @@ service API {
     };
   }
 
-  rpc getPinnedCourses(GetPinnedCoursesRequest)
+  rpc getPinnedCourses(google.protobuf.Empty)
       returns (GetPinnedCoursesResponse) {
     option (google.api.http) = {
       get : "/courses/pinned"
@@ -207,8 +208,6 @@ service API {
 ///// HEALTHCHECK_MESSAGE /////
 ///////////////////////////////
 
-message HealthCheckRequest {}
-
 message HealthCheckResponse { string status = 1; }
 
 ///////////////////////////////
@@ -246,13 +245,9 @@ enum UserSettingType {
 //////// USER_REQUEST /////////
 ///////////////////////////////
 
-message GetUserRequest {}
-
 message UpdateUserSettingsRequest { repeated UserSetting userSettings = 1; }
 
 message ResetPasswordRequest { string email = 1; }
-
-message ExportPersonalDataRequest {}
 
 ///////////////////////////////
 //////// USER_RESPONSE ////////
@@ -337,8 +332,6 @@ message PutBookmarkResponse { Bookmark bookmark = 1; }
 
 message PatchBookmarkResponse { Bookmark bookmark = 1; }
 
-message DeleteBookmarkResponse {}
-
 ///////////////////////////////
 /////// COURSE_MESSAGE ////////
 ///////////////////////////////
@@ -366,8 +359,6 @@ message Course {
 /////// COURSE_REQUEST ////////
 ///////////////////////////////
 
-message GetLiveStreamsRequest {}
-
 message GetPublicCoursesRequest {
   uint32 year = 1;
   string term = 2;
@@ -383,8 +374,6 @@ message GetUserCoursesRequest {
   uint32 year = 1;
   string term = 2;
 }
-
-message GetPinnedCoursesRequest {}
 
 message GetPinForCourseRequest { uint32 course_id = 1; }
 
@@ -432,12 +421,6 @@ message Semester {
 }
 
 ///////////////////////////////
-/////// SEMESTER_REQUEST //////
-///////////////////////////////
-
-message GetSemestersRequest {}
-
-///////////////////////////////
 ////// SEMESTER_RESPONSE //////
 ///////////////////////////////
 
@@ -482,30 +465,6 @@ message Stream {
 }
 
 ///////////////////////////////
-/////// STREAM_REQUESTS ///////
-///////////////////////////////
-
-message GetStreamRequest { uint32 streamID = 1; }
-
-message GetNowLiveRequest {}
-
-message GetThumbsLiveRequest { uint32 streamID = 1; }
-
-message GetThumbsVODRequest { uint32 streamID = 1; }
-
-///////////////////////////////
-////// STREAM_RESPONSES ///////
-///////////////////////////////
-
-message GetStreamResponse { Stream stream = 1; }
-
-message GetNowLiveResponse { repeated Stream stream = 1; }
-
-message GetThumbsVODResponse { string path = 1; }
-
-message GetThumbsLiveResponse { string path = 1; }
-
-///////////////////////////////
 ////// DOWNLOAD_MESSAGE ///////
 ///////////////////////////////
 
@@ -513,40 +472,6 @@ message Download {
   string friendlyName = 1;
   string downloadURL = 2;
 }
-
-///////////////////////////////
-////// PROGRESS_MESSAGE ///////
-///////////////////////////////
-
-message Progress {
-  float progress = 1;
-  bool watched = 2;
-  uint32 userID = 3;
-  uint32 streamID = 4;
-}
-
-///////////////////////////////
-////// PROGRESS_REQUEST ///////
-///////////////////////////////
-
-message GetProgressRequest { uint32 streamID = 1; }
-
-message PutProgressRequest {
-  float progress = 1;
-  uint32 streamID = 3;
-}
-
-message MarkAsWatchedRequest { uint32 streamID = 1; }
-
-///////////////////////////////
-////// PROGRESS_RESPONSE //////
-///////////////////////////////
-
-message GetProgressResponse { Progress progress = 1; }
-
-message PutProgressResponse { Progress progress = 1; }
-
-message MarkAsWatchedResponse { Progress progress = 1; }
 
 ///////////////////////////////
 /////// LECTURE_HALL_MESSAGE ///

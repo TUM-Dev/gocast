@@ -11,13 +11,14 @@ import (
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
 // GetUser retrieves the current user based on the context.
 // It returns a GetUserResponse or an error if one occurs.
-func (a *API) GetUser(ctx context.Context, req *protobuf.GetUserRequest) (*protobuf.GetUserResponse, error) {
+func (a *API) GetUser(ctx context.Context, req *emptypb.Empty) (*protobuf.GetUserResponse, error) {
 	a.log.Info("GetUser")
 
 	user, err := a.getCurrent(ctx)
@@ -92,7 +93,7 @@ func (a *API) ResetPassword(ctx context.Context, req *protobuf.ResetPasswordRequ
 }
 
 // ExportPersonalData exports the personal data of the current user.
-func (a *API) ExportPersonalData(ctx context.Context, req *protobuf.ExportPersonalDataRequest) (*protobuf.ExportPersonalDataResponse, error) {
+func (a *API) ExportPersonalData(ctx context.Context, req *emptypb.Empty) (*protobuf.ExportPersonalDataResponse, error) {
 	a.log.Info("ExportPersonalData")
 
 	user, err := a.getCurrent(ctx)

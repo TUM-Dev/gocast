@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -38,17 +39,17 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type APIClient interface {
-	HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
-	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
+	HealthCheck(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthCheckResponse, error)
+	GetUser(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetUserResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
 	UpdateUserSettings(ctx context.Context, in *UpdateUserSettingsRequest, opts ...grpc.CallOption) (*UpdateUserSettingsResponse, error)
-	ExportPersonalData(ctx context.Context, in *ExportPersonalDataRequest, opts ...grpc.CallOption) (*ExportPersonalDataResponse, error)
-	GetSemesters(ctx context.Context, in *GetSemestersRequest, opts ...grpc.CallOption) (*GetSemestersResponse, error)
-	GetLiveStreams(ctx context.Context, in *GetLiveStreamsRequest, opts ...grpc.CallOption) (*GetLiveStreamsResponse, error)
+	ExportPersonalData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExportPersonalDataResponse, error)
+	GetSemesters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSemestersResponse, error)
+	GetLiveStreams(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveStreamsResponse, error)
 	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(ctx context.Context, in *GetCourseBySlugRequest, opts ...grpc.CallOption) (*GetCourseBySlugResponse, error)
 	GetUserCourses(ctx context.Context, in *GetUserCoursesRequest, opts ...grpc.CallOption) (*GetUserCoursesResponse, error)
-	GetPinnedCourses(ctx context.Context, in *GetPinnedCoursesRequest, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error)
+	GetPinnedCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error)
 	GetPinForCourse(ctx context.Context, in *GetPinForCourseRequest, opts ...grpc.CallOption) (*GetPinForCourseResponse, error)
 	PinCourse(ctx context.Context, in *PinCourseRequest, opts ...grpc.CallOption) (*PinCourseResponse, error)
 }
@@ -61,7 +62,7 @@ func NewAPIClient(cc grpc.ClientConnInterface) APIClient {
 	return &aPIClient{cc}
 }
 
-func (c *aPIClient) HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
+func (c *aPIClient) HealthCheck(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HealthCheckResponse)
 	err := c.cc.Invoke(ctx, API_HealthCheck_FullMethodName, in, out, cOpts...)
@@ -71,7 +72,7 @@ func (c *aPIClient) HealthCheck(ctx context.Context, in *HealthCheckRequest, opt
 	return out, nil
 }
 
-func (c *aPIClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error) {
+func (c *aPIClient) GetUser(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetUserResponse)
 	err := c.cc.Invoke(ctx, API_GetUser_FullMethodName, in, out, cOpts...)
@@ -101,7 +102,7 @@ func (c *aPIClient) UpdateUserSettings(ctx context.Context, in *UpdateUserSettin
 	return out, nil
 }
 
-func (c *aPIClient) ExportPersonalData(ctx context.Context, in *ExportPersonalDataRequest, opts ...grpc.CallOption) (*ExportPersonalDataResponse, error) {
+func (c *aPIClient) ExportPersonalData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExportPersonalDataResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExportPersonalDataResponse)
 	err := c.cc.Invoke(ctx, API_ExportPersonalData_FullMethodName, in, out, cOpts...)
@@ -111,7 +112,7 @@ func (c *aPIClient) ExportPersonalData(ctx context.Context, in *ExportPersonalDa
 	return out, nil
 }
 
-func (c *aPIClient) GetSemesters(ctx context.Context, in *GetSemestersRequest, opts ...grpc.CallOption) (*GetSemestersResponse, error) {
+func (c *aPIClient) GetSemesters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSemestersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSemestersResponse)
 	err := c.cc.Invoke(ctx, API_GetSemesters_FullMethodName, in, out, cOpts...)
@@ -121,7 +122,7 @@ func (c *aPIClient) GetSemesters(ctx context.Context, in *GetSemestersRequest, o
 	return out, nil
 }
 
-func (c *aPIClient) GetLiveStreams(ctx context.Context, in *GetLiveStreamsRequest, opts ...grpc.CallOption) (*GetLiveStreamsResponse, error) {
+func (c *aPIClient) GetLiveStreams(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveStreamsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetLiveStreamsResponse)
 	err := c.cc.Invoke(ctx, API_GetLiveStreams_FullMethodName, in, out, cOpts...)
@@ -161,7 +162,7 @@ func (c *aPIClient) GetUserCourses(ctx context.Context, in *GetUserCoursesReques
 	return out, nil
 }
 
-func (c *aPIClient) GetPinnedCourses(ctx context.Context, in *GetPinnedCoursesRequest, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error) {
+func (c *aPIClient) GetPinnedCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetPinnedCoursesResponse)
 	err := c.cc.Invoke(ctx, API_GetPinnedCourses_FullMethodName, in, out, cOpts...)
@@ -195,17 +196,17 @@ func (c *aPIClient) PinCourse(ctx context.Context, in *PinCourseRequest, opts ..
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility.
 type APIServer interface {
-	HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
-	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
+	HealthCheck(context.Context, *emptypb.Empty) (*HealthCheckResponse, error)
+	GetUser(context.Context, *emptypb.Empty) (*GetUserResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
 	UpdateUserSettings(context.Context, *UpdateUserSettingsRequest) (*UpdateUserSettingsResponse, error)
-	ExportPersonalData(context.Context, *ExportPersonalDataRequest) (*ExportPersonalDataResponse, error)
-	GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error)
-	GetLiveStreams(context.Context, *GetLiveStreamsRequest) (*GetLiveStreamsResponse, error)
+	ExportPersonalData(context.Context, *emptypb.Empty) (*ExportPersonalDataResponse, error)
+	GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error)
+	GetLiveStreams(context.Context, *emptypb.Empty) (*GetLiveStreamsResponse, error)
 	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(context.Context, *GetCourseBySlugRequest) (*GetCourseBySlugResponse, error)
 	GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error)
-	GetPinnedCourses(context.Context, *GetPinnedCoursesRequest) (*GetPinnedCoursesResponse, error)
+	GetPinnedCourses(context.Context, *emptypb.Empty) (*GetPinnedCoursesResponse, error)
 	GetPinForCourse(context.Context, *GetPinForCourseRequest) (*GetPinForCourseResponse, error)
 	PinCourse(context.Context, *PinCourseRequest) (*PinCourseResponse, error)
 	mustEmbedUnimplementedAPIServer()
@@ -218,10 +219,10 @@ type APIServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAPIServer struct{}
 
-func (UnimplementedAPIServer) HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
+func (UnimplementedAPIServer) HealthCheck(context.Context, *emptypb.Empty) (*HealthCheckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HealthCheck not implemented")
 }
-func (UnimplementedAPIServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
+func (UnimplementedAPIServer) GetUser(context.Context, *emptypb.Empty) (*GetUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
 }
 func (UnimplementedAPIServer) ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error) {
@@ -230,13 +231,13 @@ func (UnimplementedAPIServer) ResetPassword(context.Context, *ResetPasswordReque
 func (UnimplementedAPIServer) UpdateUserSettings(context.Context, *UpdateUserSettingsRequest) (*UpdateUserSettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserSettings not implemented")
 }
-func (UnimplementedAPIServer) ExportPersonalData(context.Context, *ExportPersonalDataRequest) (*ExportPersonalDataResponse, error) {
+func (UnimplementedAPIServer) ExportPersonalData(context.Context, *emptypb.Empty) (*ExportPersonalDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExportPersonalData not implemented")
 }
-func (UnimplementedAPIServer) GetSemesters(context.Context, *GetSemestersRequest) (*GetSemestersResponse, error) {
+func (UnimplementedAPIServer) GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSemesters not implemented")
 }
-func (UnimplementedAPIServer) GetLiveStreams(context.Context, *GetLiveStreamsRequest) (*GetLiveStreamsResponse, error) {
+func (UnimplementedAPIServer) GetLiveStreams(context.Context, *emptypb.Empty) (*GetLiveStreamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLiveStreams not implemented")
 }
 func (UnimplementedAPIServer) GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error) {
@@ -248,7 +249,7 @@ func (UnimplementedAPIServer) GetCourseBySlug(context.Context, *GetCourseBySlugR
 func (UnimplementedAPIServer) GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserCourses not implemented")
 }
-func (UnimplementedAPIServer) GetPinnedCourses(context.Context, *GetPinnedCoursesRequest) (*GetPinnedCoursesResponse, error) {
+func (UnimplementedAPIServer) GetPinnedCourses(context.Context, *emptypb.Empty) (*GetPinnedCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPinnedCourses not implemented")
 }
 func (UnimplementedAPIServer) GetPinForCourse(context.Context, *GetPinForCourseRequest) (*GetPinForCourseResponse, error) {
@@ -279,7 +280,7 @@ func RegisterAPIServer(s grpc.ServiceRegistrar, srv APIServer) {
 }
 
 func _API_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthCheckRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -291,13 +292,13 @@ func _API_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: API_HealthCheck_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).HealthCheck(ctx, req.(*HealthCheckRequest))
+		return srv.(APIServer).HealthCheck(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _API_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUserRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -309,7 +310,7 @@ func _API_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interfa
 		FullMethod: API_GetUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).GetUser(ctx, req.(*GetUserRequest))
+		return srv.(APIServer).GetUser(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -351,7 +352,7 @@ func _API_UpdateUserSettings_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _API_ExportPersonalData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExportPersonalDataRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -363,13 +364,13 @@ func _API_ExportPersonalData_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: API_ExportPersonalData_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).ExportPersonalData(ctx, req.(*ExportPersonalDataRequest))
+		return srv.(APIServer).ExportPersonalData(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _API_GetSemesters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSemestersRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -381,13 +382,13 @@ func _API_GetSemesters_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: API_GetSemesters_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).GetSemesters(ctx, req.(*GetSemestersRequest))
+		return srv.(APIServer).GetSemesters(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _API_GetLiveStreams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetLiveStreamsRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -399,7 +400,7 @@ func _API_GetLiveStreams_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: API_GetLiveStreams_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).GetLiveStreams(ctx, req.(*GetLiveStreamsRequest))
+		return srv.(APIServer).GetLiveStreams(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -459,7 +460,7 @@ func _API_GetUserCourses_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _API_GetPinnedCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPinnedCoursesRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -471,7 +472,7 @@ func _API_GetPinnedCourses_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: API_GetPinnedCourses_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).GetPinnedCourses(ctx, req.(*GetPinnedCoursesRequest))
+		return srv.(APIServer).GetPinnedCourses(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

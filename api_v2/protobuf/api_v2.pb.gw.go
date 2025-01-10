@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Suppress "imported and not used" errors
@@ -37,7 +38,7 @@ var (
 
 func request_API_HealthCheck_0(ctx context.Context, marshaler runtime.Marshaler, client APIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq HealthCheckRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := client.HealthCheck(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -46,7 +47,7 @@ func request_API_HealthCheck_0(ctx context.Context, marshaler runtime.Marshaler,
 
 func local_request_API_HealthCheck_0(ctx context.Context, marshaler runtime.Marshaler, server APIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq HealthCheckRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := server.HealthCheck(ctx, &protoReq)
@@ -55,7 +56,7 @@ func local_request_API_HealthCheck_0(ctx context.Context, marshaler runtime.Mars
 
 func request_API_GetUser_0(ctx context.Context, marshaler runtime.Marshaler, client APIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetUserRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := client.GetUser(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -64,7 +65,7 @@ func request_API_GetUser_0(ctx context.Context, marshaler runtime.Marshaler, cli
 
 func local_request_API_GetUser_0(ctx context.Context, marshaler runtime.Marshaler, server APIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetUserRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := server.GetUser(ctx, &protoReq)
@@ -121,7 +122,7 @@ func local_request_API_UpdateUserSettings_0(ctx context.Context, marshaler runti
 
 func request_API_ExportPersonalData_0(ctx context.Context, marshaler runtime.Marshaler, client APIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq ExportPersonalDataRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := client.ExportPersonalData(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -130,7 +131,7 @@ func request_API_ExportPersonalData_0(ctx context.Context, marshaler runtime.Mar
 
 func local_request_API_ExportPersonalData_0(ctx context.Context, marshaler runtime.Marshaler, server APIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq ExportPersonalDataRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := server.ExportPersonalData(ctx, &protoReq)
@@ -139,7 +140,7 @@ func local_request_API_ExportPersonalData_0(ctx context.Context, marshaler runti
 
 func request_API_GetSemesters_0(ctx context.Context, marshaler runtime.Marshaler, client APIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetSemestersRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := client.GetSemesters(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -148,7 +149,7 @@ func request_API_GetSemesters_0(ctx context.Context, marshaler runtime.Marshaler
 
 func local_request_API_GetSemesters_0(ctx context.Context, marshaler runtime.Marshaler, server APIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetSemestersRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := server.GetSemesters(ctx, &protoReq)
@@ -157,7 +158,7 @@ func local_request_API_GetSemesters_0(ctx context.Context, marshaler runtime.Mar
 
 func request_API_GetLiveStreams_0(ctx context.Context, marshaler runtime.Marshaler, client APIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetLiveStreamsRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := client.GetLiveStreams(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -166,7 +167,7 @@ func request_API_GetLiveStreams_0(ctx context.Context, marshaler runtime.Marshal
 
 func local_request_API_GetLiveStreams_0(ctx context.Context, marshaler runtime.Marshaler, server APIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetLiveStreamsRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := server.GetLiveStreams(ctx, &protoReq)
@@ -289,7 +290,7 @@ func local_request_API_GetUserCourses_0(ctx context.Context, marshaler runtime.M
 
 func request_API_GetPinnedCourses_0(ctx context.Context, marshaler runtime.Marshaler, client APIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetPinnedCoursesRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := client.GetPinnedCourses(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -298,7 +299,7 @@ func request_API_GetPinnedCourses_0(ctx context.Context, marshaler runtime.Marsh
 
 func local_request_API_GetPinnedCourses_0(ctx context.Context, marshaler runtime.Marshaler, server APIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetPinnedCoursesRequest
+		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
 	msg, err := server.GetPinnedCourses(ctx, &protoReq)

@@ -11,11 +11,12 @@ import (
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
 
 // GetLiveStreams retrieves the currently live streams.
-func (a *API) GetLiveStreams(ctx context.Context, req *protobuf.GetLiveStreamsRequest) (*protobuf.GetLiveStreamsResponse, error) {
+func (a *API) GetLiveStreams(ctx context.Context, req *emptypb.Empty) (*protobuf.GetLiveStreamsResponse, error) {
 	a.log.Info("GetLiveStreams")
 
 	streams, err := a.dao.GetCurrentLive(context.Background())
@@ -196,7 +197,7 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 }
 
 // GetPinnedCourses retrieves the pinned courses for a user.
-func (a *API) GetPinnedCourses(ctx context.Context, req *protobuf.GetPinnedCoursesRequest) (*protobuf.GetPinnedCoursesResponse, error) {
+func (a *API) GetPinnedCourses(ctx context.Context, req *emptypb.Empty) (*protobuf.GetPinnedCoursesResponse, error) {
 	a.log.Info("GetPinnedCourses")
 
 	user, err := a.getCurrent(ctx)

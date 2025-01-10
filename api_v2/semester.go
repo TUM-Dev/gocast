@@ -5,10 +5,11 @@ import (
 
 	"github.com/TUM-Dev/gocast/api_v2/protobuf"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // GetSemesters retrieves all available semesters and the current semester.
-func (a *API) GetSemesters(ctx context.Context, req *protobuf.GetSemestersRequest) (*protobuf.GetSemestersResponse, error) {
+func (a *API) GetSemesters(ctx context.Context, req *emptypb.Empty) (*protobuf.GetSemestersResponse, error) {
 	semesters := a.dao.GetAvailableSemesters(ctx)
 	year, term := tum.GetCurrentSemester()
 

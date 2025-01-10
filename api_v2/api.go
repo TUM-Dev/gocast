@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
 
@@ -91,6 +92,6 @@ func (a *API) handleDocs(c *gin.Context) {
 }
 
 // healthcheck
-func (a *API) HealthCheck(ctx context.Context, req *protobuf.HealthCheckRequest) (*protobuf.HealthCheckResponse, error) {
+func (a *API) HealthCheck(ctx context.Context, req *emptypb.Empty) (*protobuf.HealthCheckResponse, error) {
 	return &protobuf.HealthCheckResponse{Status: "OK"}, nil
 }
