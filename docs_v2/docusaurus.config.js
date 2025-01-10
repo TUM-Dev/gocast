@@ -37,7 +37,7 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://github.com/TumDev/gocast/docs_v2/edit/main",
+          editUrl: "https://github.com/tum-dev/gocast/edit/main",
           lastVersion: "current",
           versions: {
             current: {
