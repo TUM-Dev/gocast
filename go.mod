@@ -1,7 +1,8 @@
 module github.com/TUM-Dev/gocast
 
-go 1.21
-toolchain go1.22.5
+go 1.22
+
+toolchain go1.23.2
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
@@ -41,7 +42,7 @@ require (
 	github.com/crewjam/saml v0.4.14
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.22
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/u2takey/go-utils v0.3.1
 )
 
@@ -52,6 +53,7 @@ require (
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/orandin/slog-gorm v1.1.0
+	go.uber.org/mock v0.5.0
 )
 
 require (

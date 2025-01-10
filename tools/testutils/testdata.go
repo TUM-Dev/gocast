@@ -13,7 +13,7 @@ import (
 	"github.com/TUM-Dev/gocast/mock_tools"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 

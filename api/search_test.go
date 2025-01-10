@@ -17,9 +17,9 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"github.com/meilisearch/meilisearch-go"
+	"go.uber.org/mock/gomock"
 )
 
 func SearchRouterWrapper(r *gin.Engine) {

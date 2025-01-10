@@ -11,8 +11,8 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/testutils"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
+	"go.uber.org/mock/gomock"
 )
 
 func ReportSeekRouterWrapper(r *gin.Engine) {

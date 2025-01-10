@@ -16,9 +16,9 @@ import (
 	"github.com/TUM-Dev/gocast/tools/testutils"
 	"github.com/dgraph-io/ristretto"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
 	"github.com/u2takey/go-utils/uuid"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 
