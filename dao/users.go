@@ -160,8 +160,6 @@ func (d usersDao) UpsertUser(user *model.User) error {
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// User not found, try create
-		user.Role = model.StudentType
-		user.Name = user.Name
 		err = DB.Create(&user).Error
 		return fmt.Errorf("create user failed: %w", err)
 	} else if err != nil {
