@@ -398,7 +398,7 @@ export async function deleteLectures(cid: number, lids: number[]) {
             alert("An unknown error occurred during the deletion process!");
             return;
         }
-
+        window.location.reload();
         //LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
         //LectureList.triggerUpdate();
     }

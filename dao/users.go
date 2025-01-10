@@ -157,29 +157,27 @@ func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) erro
 func (d usersDao) UpsertUser(user *model.User) error {
 	var foundUser *model.User
 	err := DB.Model(&model.User{}).Where("matriculation_number = ?", user.MatriculationNumber).First(&foundUser).Error
-	if err == nil && foundUser != nil {
-		// User found: update
-		user.Model = foundUser.Model
-		foundUser.LrzID = user.LrzID
-		foundUser.Name = user.Name
-		if user.Role != 0 {
-			foundUser.Role = user.Role
-		}
-		err := DB.Save(foundUser).Error
-		if err != nil {
-			return err
-		}
-		return nil
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// User not found, try create
+		err = DB.Create(&user).Error
+		return fmt.Errorf("create user failed: %w", err)
+	} else if err != nil {
+		return fmt.Errorf("lookup user by matriculation_number failed: %w", err)
 	}
-	// user not found, create:
-	user.Role = model.StudentType
-	err = DB.
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "matriculation_number"}},
-			DoUpdates: clause.Assignments(map[string]interface{}{"name": user.Name}),
-		}).
-		Create(&user).Error
-	return err
+
+	// User found: update
+	user.Model = foundUser.Model
+	foundUser.LrzID = user.LrzID
+	foundUser.Name = user.Name
+	if user.Role != 0 {
+		foundUser.Role = user.Role
+	}
+	err = DB.Save(foundUser).Error
+	if err != nil {
+		return fmt.Errorf("update user failed: %w", err)
+	}
+	return nil
 }
 
 func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {

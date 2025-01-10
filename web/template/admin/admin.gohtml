@@ -92,6 +92,7 @@
                             class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
                         Streaming</h5>
                     <ul>
+                        <!-- Disable new self-streaming for lecturers, until https://github.com/TUM-Dev/gocast/issues/1418 is resolved
                         <li>
                             <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
                                 href="/admin/token"><span
@@ -99,9 +100,10 @@
                                         class="relative">Token Management</span>
                             </a>
                         </li>
+                        -->
                         <li>
                             <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
-                                href="https://docs.live.rbg.tum.de/docs/usage/02-self-streaming/" target="_blank" rel="noopener noreferrer">
+                                href="{{.IndexData.WikiURL}}/docs/usage/self-streaming/" target="_blank" rel="noopener noreferrer">
                                 <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
                                 <span class="relative">Self-Streaming Guide</span>
                                 <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -109,9 +111,9 @@
                         </li>
                         <li>
                             <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
-                                href="https://docs.live.rbg.tum.de/" target="_blank" rel="noopener noreferrer">
+                                href="https://github.com/TUM-Dev/gocast/issues/new/choose" target="_blank" rel="noopener noreferrer">
                                 <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
-                                <span class="relative">Need Help?</span>
+                                <span class="relative">Report an issue</span>
                                 <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </a>
                         </li>
@@ -240,6 +242,7 @@
                                     class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
                                 Streaming</h5>
                             <ul>
+                                <!-- Disable new self-streaming for lecturers, until https://github.com/TUM-Dev/gocast/issues/1418 is resolved
                                 <li>
                                     <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "token"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/token"><span
@@ -247,9 +250,10 @@
                                                 class="relative">Token Management</span>
                                     </a>
                                 </li>
+                                -->
                                 <li>
                                     <a class="px-3 py-2 transition-colors duration-200 text-5 relative block"
-                                    href="https://docs.live.rbg.tum.de/docs/usage/02-self-streaming/" target="_blank" rel="noopener noreferrer">
+                                    href="{{.IndexData.WikiURL}}/docs/usage/self-streaming/" target="_blank" rel="noopener noreferrer">
                                         <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
                                         <span class="relative">Self-Streaming Guide</span>
                                         <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -257,9 +261,9 @@
                                 </li>
                                 <li>
                                     <a class="px-3 py-2 transition-colors duration-200 text-5 relative block"
-                                    href="https://docs.live.rbg.tum.de/" target="_blank" rel="noopener noreferrer">
+                                    href="https://github.com/TUM-Dev/gocast/issues/new/choose" target="_blank" rel="noopener noreferrer">
                                         <span class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span>
-                                        <span class="relative">Need Help?</span>
+                                        <span class="relative">Report an Issue</span>
                                         <svg class="inline-block ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9l3 3m0 0l-3 3m3-3H3m18 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     </a>
                                 </li>
@@ -338,7 +342,7 @@
                 {{else if and (eq $curUser.Role 1) (eq .Page "courseImport")}}
                     {{template "course-import" .}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "token")}}
-                    {{template "token" dict "Tokens" .Tokens "Role" $curUser.Role}}
+                    {{template "token" dict "Tokens" .Tokens "Role" $curUser.Role "WikiURL" .IndexData.WikiURL}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "info-pages")}}
                     {{template "info-pages" .InfoPages}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
