@@ -48,7 +48,7 @@ require (
 require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
 	github.com/TUM-Dev/gocast/worker v0.0.0-20240108170208-25b3b0415b48
-	github.com/asticode/go-astisub v0.26.2
+	github.com/asticode/go-astisub v0.32.0
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/orandin/slog-gorm v1.1.0
