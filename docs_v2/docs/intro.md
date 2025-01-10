@@ -15,7 +15,7 @@ GoCast is a fully self-hosted platform for live-streaming and recording of lectu
 GoCast is
 
 - **Widely used** at the Technical University of Munich and handles thousands of hours of video every semester for more than 150 courses and 15.000 Students.
-- **Open-source** and licensed under the [MIT license](https://github.com/joschahenningsen/TUM-Live/blob/dev/LICENSE).
+- **Open-source** and licensed under the [MIT license](https://github.com/tum-dev/gocast/blob/dev/LICENSE).
 - **Self-hosted**: You have full control over your data and can run GoCast on your own servers.
 
 ## Features
