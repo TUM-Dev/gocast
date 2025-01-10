@@ -7,7 +7,7 @@ require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/antchfx/xmlquery v1.3.18
-	github.com/dgraph-io/ristretto v0.1.1
+	github.com/dgraph-io/ristretto v0.2.0
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/gin-contrib/gzip v0.0.6
@@ -17,7 +17,6 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.6
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v4 v4.5.1
-	github.com/golang/glog v1.2.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/jinzhu/now v1.1.5
 	github.com/microcosm-cc/bluemonday v1.0.26
@@ -63,6 +62,7 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/pprof v0.0.0-20231229205709-960ae82b1e42 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
