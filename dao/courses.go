@@ -261,7 +261,7 @@ func (d coursesDao) GetAvailableSemesters(c context.Context, includeTestSemester
 	}
 	var filtered []model.Semester
 	for _, semester := range semesters {
-		if semester.TeachingTerm != "Test" {
+		if semester.Year != 1234 {
 			filtered = append(filtered, semester)
 		}
 	}

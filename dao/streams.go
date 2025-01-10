@@ -399,8 +399,8 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
 	err := DB.FirstOrCreate(&course, model.Course{
-		Name:         "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
-		TeachingTerm: "Test",
+		Name:         user.GetPreferredName() + "'s Test Course",
+		TeachingTerm: "W",
 		Slug:         "TESTCOURSE",
 		Year:         1234,
 		Visibility:   "hidden",

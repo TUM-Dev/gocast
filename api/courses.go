@@ -1454,7 +1454,15 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 func (r coursesRoutes) createTestCourse(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	r.StreamsDao.CreateOrGetTestCourse(tumLiveContext.User)
+	_, err := r.StreamsDao.CreateOrGetTestCourse(tumLiveContext.User)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Couldn't save course. Please reach out to us.",
+			Err:           err,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{})
 }
 

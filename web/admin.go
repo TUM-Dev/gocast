@@ -92,7 +92,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 
 	hasTestCourse := false
 	for _, course := range courses {
-		if course.TeachingTerm == "Test" {
+		if course.Year == 1234 {
 			hasTestCourse = true
 			break
 		}
@@ -280,7 +280,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 
 	hasTestCourse := false
 	for _, course := range courses {
-		if course.TeachingTerm == "Test" {
+		if course.Year == 1234 {
 			hasTestCourse = true
 			break
 		}

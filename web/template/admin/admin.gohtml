@@ -138,8 +138,8 @@
                                 <span class="rounded-md absolute bg-cyan-50 opacity-0"></span>
                                 <span 
                                     class="relative">
-                                    {{if eq $semester.TeachingTerm "Test"}}
-                                        Test Courses
+                                    {{if eq $semester.Year 1234}}
+                                        Test Course
                                     {{else}}
                                         {{$semester.Year}} - {{$semester.TeachingTerm}}
                                     {{end}}
@@ -287,7 +287,7 @@
                                         <span
                                             class="rounded-md absolute bg-cyan-50 opacity-0"></span><span 
                                             class="relative">
-                                            {{if eq $semester.TeachingTerm "Test"}}
+                                            {{if eq $semester.Year 1234}}
                                                 Test Course
                                             {{else}}
                                                 {{$semester.Year}} - {{$semester.TeachingTerm}}
@@ -305,7 +305,7 @@
                                                             class="relative">{{$course.Name}}</span></a></li>
                                             {{end}}
                                         {{end}}
-                                        {{if and (eq $semester.TeachingTerm "Test") (not $hasTestCourse)}}
+                                        {{if and (eq $semester.Year 1234) (not $hasTestCourse)}}
                                             <li>
                                                 <button @click="admin.createTestCourse()" class="mx-3 my-2 transition-colors duration-200 text-5 relative block">
                                                     <span class="rounded-md absolute bg-cyan-50 opacity-0"></span>
