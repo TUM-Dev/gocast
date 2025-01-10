@@ -24,7 +24,6 @@ func contextFromTranscodingReq(req *protobuf.TranscodingRequest, ctx context.Con
 }
 
 func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
-	r.ReadDiagnostics(5)
 	ctx = context.Background()
 	ctx = contextFromStreamReq(req, ctx)
 	ctx = context.WithValue(ctx, "URL", "")

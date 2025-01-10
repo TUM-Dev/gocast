@@ -39,7 +39,7 @@ func (r *Runner) RegisterWithGocast(retries int) {
 	go func() {
 		for {
 			r.ReadDiagnostics(5)
-			time.Sleep(time.Minute)
+			time.Sleep(time.Second * 30)
 		}
 	}()
 }

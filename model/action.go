@@ -71,11 +71,6 @@ func (a *Action) GetCurrentRunner() (*Runner, error) {
 	return &a.AllRunners[len(a.AllRunners)-1], nil
 }
 
-func (a *Action) AssignRunner(runner Runner) {
-	a.AllRunners = append(a.AllRunners, runner)
-	logger.Info("runner count", "count", len(a.AllRunners))
-}
-
 func (a *Action) GetValues() string {
 	return a.Values
 }
