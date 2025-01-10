@@ -82,6 +82,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				stream.Use(tools.InitStream(daoWrapper))
 				stream.GET("/transcodingProgress", routes.getTranscodingProgress)
+				stream.POST("/copy", routes.copyStream)
 			}
 
 			stats := courses.Group("/stats")
@@ -1571,6 +1572,62 @@ type copyCourseRequest struct {
 	Semester string
 	Year     string
 	YearW    string
+}
+
+func (r coursesRoutes) copyStream(c *gin.Context) {
+	type req struct {
+		TargetCourse uint `json:"targetCourse"`
+		Move         bool `json:"move"`
+	}
+	var request req
+	err := c.BindJSON(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
+		return
+	}
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	isAdmin := tlctx.User.Role == model.AdminType
+
+	if !isAdmin {
+		targetCourseAdmins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(request.TargetCourse)
+		if err != nil {
+			logger.Error("Error getting course admins", "err", err)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't determine admins of target course",
+				Err:           err,
+			})
+		}
+		for _, admin := range targetCourseAdmins {
+			if admin.ID == tlctx.User.ID {
+				isAdmin = true
+				break
+			}
+		}
+	}
+	if !isAdmin {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "you are not admin of the target course",
+		})
+		return
+	}
+
+	stream := tlctx.Stream
+	stream.Model = gorm.Model{}
+	stream.CourseID = request.TargetCourse
+	err = r.StreamsDao.CreateStream(stream)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't save stream",
+			Err:           err,
+		})
+	}
+	if request.Move {
+		r.StreamsDao.DeleteStream(strconv.Itoa(int(tlctx.Stream.ID)))
+	}
 }
 
 func (r coursesRoutes) copyCourse(c *gin.Context) {

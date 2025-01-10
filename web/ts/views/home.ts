@@ -172,7 +172,7 @@ class PageState {
     constructor(url: URL) {
         this.url = url;
         this.term = url.searchParams.get("term") ?? undefined;
-        this.year = +url.searchParams.get("year") ?? undefined;
+        this.year = +(url.searchParams.get("year") ?? undefined);
         if (this.year === 0) {
             this.year = undefined;
         }

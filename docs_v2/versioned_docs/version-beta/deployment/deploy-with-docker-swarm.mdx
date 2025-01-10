@@ -1,0 +1,122 @@
+---
+title: "Deploy with Docker Swarm"
+sidebar_position: 3
+description: "Deploy GoCast with just one Docker Swarm command"
+---
+
+# Deploy with Docker Swarm
+
+## Software
+
+Install Docker on all servers/VMs: https://docs.docker.com/engine/install.
+
+## Create a Swarm
+
+1. On one of the servers, initialize the swarm:
+
+   ```sh
+   $ docker swarm init
+
+   > Swarm initialized: current node (bvz81updecsj6wjz393c09vti) is now a manager.
+   >
+   > To add a worker to this swarm, run the following command:
+   >
+   >     docker swarm join \
+   >     --token SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-1awxwuwd3z9j1z3puu7rcgdbx \
+   >     172.17.0.2:2377
+   >
+   > To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+   ```
+
+2. On the other servers, join the swarm:
+
+   ```sh
+   $ docker swarm join \
+       --token SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-1awxwuwd3z9j1z3puu7rcgdbx \
+       172.17.0.2:2377
+   ```
+
+3. Read the [administration guide](https://docs.docker.com/engine/swarm/admin_guide/) for docker swarm carefully and make the appropriate adjustments for your environment and verify that all nodes are in the swarm:
+
+   ```bash
+   $ docker node ls
+   ID                                HOSTNAME         STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+   ko66mqj76xo9ftunxq78luc8p         vm01             Ready     Active         Reachable        23.0.1
+   ogziph0qxfeivly5fnekepwx0         vm02             Ready     Active                          23.0.1
+   8utl07361ocn5xvzqh27z0c8s *       vm03             Ready     Active         Reachable        23.0.1
+   1prl8b1m7xw2ph5b8dnh98glk         vm04             Ready     Active                          23.0.1
+   ...
+   ```
+
+## Tag Nodes
+
+We use labels to tag our nodes and to deploy services to appropriate nodes.
+You will need the following labels:
+
+- `worker`: Deploys [Workers](./step-by-step/add-worker) and [VoD Services](./step-by-step/add-vodservice) (_Required, unless you use Runners_)
+- `runner`: Deploys [Runners](./step-by-step/add-runner) (_Required, unless you use Workers_)
+- `edge`: Deploys [Edge Servers](./step-by-step/setup-edge) (_Required_)
+- `voiceservice`: Lecture transcription (_Optional_)
+
+This command adds the label `worker` to the node `vm02`, instructing our deployment to deploy Workers on this node:
+
+```sh
+docker node update --label-add worker=true vm02
+```
+
+<details>
+<summary>This is an example configuration you should aim for:</summary>
+
+```sh
+docker node ls -q | xargs docker node inspect -f '{{ .ID }} [{{ .Description.Hostname }}]: {{ .Spec.Labels }}'
+
+kwgmm6sxb9nqwojoclxuy4mpt [vmgpu01]: map[voiceservice:true] # optional, this is a server with a GPU for transcription
+ctfdd9mtkse2yxid8zku2wx1f [vm01]: map[worker:true] # the number of Workers depends on the number of concurrent streams you want to process. 1 worker can process around 5 stream in our environment.
+u391iukj6nljosaaygcfkzy2s [vm02]: map[worker:true]
+wkxct5tvzclvc4uqm8w573dlf [vm03]: map[worker:true]
+72weo6nozra1cdgjs5wghe7gh [vm04]: map[worker:true]
+f7ik66qq6tzhsbwphfpdp2vm1 [vm07]: map[worker:true]
+i4l8ouumms96qu96evkb6srol [vm08]: map[worker:true]
+vq5cw2bgwncenr5cp89xzsi32 [vm09]: map[worker:true]
+q4as4i27z2hnwypgzj8ql2dz1 [vm10]: map[worker:true]
+lfged5ra1a7z9wlstxa2bml5c [vm11]: map[worker:true]
+3wu812ybzynnunrpoqdsay0bf [vm12]: map[worker:true]
+itdbo77gempnl251lakioe5y1 [vm13]: map[worker:true]
+zcplsihexr88plf0t8q25tdn7 [vm14]: map[worker:true]
+fbi92hp7s0u3c2x13tgrb6fd6 [vm15]: map[worker:true]
+o6k2egpupik3qjgq2w0azv70o [vm16]: map[worker:true]
+th77fn3s91s06sy4ciprita3s [vm17]: map[edge:true] # the number of Edge nodes depends on the number of concurrent viewers you want to support.
+wpue8f384h7z71mngov5j72c1 [vm18]: map[edge:true]
+urac70xjf1kx5op39kyulykad [vm19]: map[edge:true]
+5bqr01nyefxqmkd3luzhh3sne [vm20]: map[edge:true]
+```
+
+</details>
+
+## Deploy GoCast
+
+1. Download the [docker-compose.yml](/deployment/docker-compose.yml) file.
+
+2. Edit the [docker-compose.yml](/deployment/docker-compose.yml) file and replace the placeholders with your actual values.
+   :::tip
+   To find all placeholders for fields, search for lines containing `TODO`, while placeholders for paths are marked as `/path/to/xyz`.
+   :::
+
+3. Deploy the stack to the swarm:
+
+   ```sh
+   docker stack deploy -c docker-compose.yml gocast
+   ```
+
+4. Verify that the services are running:
+
+   ```sh
+   docker service ls
+   ```
+
+   You should see a list of services with their replicas. If the number of replicas for a service is less than the desired number, it means that the service is still starting up or has encountered an error.
+
+5. To view the logs of a service:
+   ```sh
+   docker service logs SERVICE_NAME
+   ```

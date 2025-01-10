@@ -110,6 +110,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "400 - Bad Request", "error": err.Error()})
+			return
 		}
 		response, err := getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.ParseResponse(c.Request, []string{""})
 		if err != nil {
