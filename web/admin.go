@@ -276,6 +276,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		CurT:      tumLiveContext.Course.TeachingTerm,
 		EditCourseData: EditCourseData{
 			IndexData:    indexData,
+			Courses:      courses,
 			IngestBase:   tools.Cfg.IngestBase,
 			LectureHalls: lectureHalls,
 		},
@@ -368,6 +369,7 @@ type EditCourseData struct {
 	IndexData    IndexData
 	IngestBase   string
 	LectureHalls []model.LectureHall
+	Courses      []model.Course // administered courses of user
 }
 
 type LectureUnitsPageData struct {

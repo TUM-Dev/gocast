@@ -1,0 +1,82 @@
+---
+title: "1. Add a Runner"
+sidebar_position: 5
+description: "Add a Runner."
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Runner
+
+Runners are responsible for recording your lecture halls, transcoding recordings and pushing these to your shared storage.
+
+:::caution
+Runners will soon replace the current TUMLive Workers, but until they have released for production, use them with caution.
+:::
+
+## Add a Runner to the GoCast network
+
+<Tabs
+  defaultValue="docker"
+  values={[
+    {label: 'Docker', value: 'docker'},
+    {label: 'Manually', value: 'manually'},
+  ]
+}>
+<TabItem value="docker">
+
+1. Run the TUM-Live-Runner docker container with the organization token and make sure to include its hostname:
+
+   ```sh
+   docker run -d -p 50057:50057 \
+   -e "STORAGE_PATH=/path/to/mass" \
+   -e "SEGMENT_PATH=/path/to/livestreams" \
+   -e "REC_PATH=/path/to/recordings" \
+   -e "REALHOST=$(hostname)" \
+   -e "TOKEN=<your-organization-token>" \
+   -e "GOCAST_SERVER=live.rbg.tum.de:50056" \
+   ghcr.io/tum-dev/gocast/runner:latest
+   ```
+
+2. _Optional_: Join your docker node cluster:
+   ```sh
+   # Refer to your manager node on which token to use here:
+   docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377
+   ```
+
+</TabItem>
+
+<TabItem value="manually">
+
+1. Clone the GoCast repository:
+   ```sh
+   git clone https://github.com/tum-Dev/gocast
+   ```
+2. Change into the Runner directory:
+
+   ```sh
+   cd gocast && cd runner
+   ```
+
+3. Start the Runner with the organization token and make sure to include its hostname:
+   ```sh
+   STORAGE_PATH=/path/to/mass \
+   SEGMENT_PATH=/path/to/livestreams \
+   REC_PATH=/path/to/recordings \
+   REALHOST=$(hostname) \
+   TOKEN=<your-organization-token> \
+   GOCAST_SERVER=live.rbg.tum.de:50056 \
+   go run ./cmd/runner/main.go
+   ```
+
+</TabItem>
+
+</Tabs>
+
+## Verify successful deployment
+
+Once a Runner has been added successfully, you should be able to see it in the ["resources"-tab](https://live.rbg.tum.de/admins/organizations) of the admin dashboard.
+
+Here's an example of how it should look, if you added two runners:
+![runner.png](/deployment/runners.png)

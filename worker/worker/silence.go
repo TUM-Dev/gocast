@@ -55,7 +55,7 @@ func (s *SilenceDetect) ParseSilence() error {
 	return nil
 }
 
-//postprocess merges short duration of silence into units of silence
+// postprocess merges short duration of silence into units of silence
 func (s *SilenceDetect) postprocess() {
 	oldSilences := *s.Silences
 	if len(oldSilences) < 2 {
