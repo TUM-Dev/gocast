@@ -2,204 +2,178 @@ syntax = "proto3";
 package protobuf;
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
-import "google/protobuf/empty.proto";
 
 option go_package = "./api_v2/protobuf";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
-  info : {title : "gocast API";
-version : "2.0";
-description : "The shiny new gocast API!\nThis API is designed to be a "
-              "user-friendly and easy-to-use interface for third party "
-              "services.\nIt provides access to all non-administrative "
-              "features of the GoCast platform.";
-contact : {
-name:
-  "TUM-Developers - gocast";
-url:
-  "https://github.com/TUM-Dev/gocast";
+  info: {
+    title: "gocast API"
+    version: "2.0"
+    description:
+      "The shiny new gocast API!\nThis API is designed to be a "
+      "user-friendly and easy-to-use interface for third party "
+      "services.\nIt provides access to all non-administrative "
+      "features of the GoCast platform."
+    contact: {
+      name: "TUM-Developers - gocast"
+      url: "https://github.com/TUM-Dev/gocast"
+    }
+    license: {
+      name: "MIT"
+      url: "https://github.com/TUM-Dev/gocast/blob/main/LICENSE"
+    }
+  }
+  schemes: [
+    HTTP,
+    HTTPS
+  ]
+  base_path: "/api/v2"
+  host: "localhost:8081"
+  consumes: "application/json"
+  produces: "application/json"
 };
-license : {
-name:
-  "MIT";
-url:
-  "https://github.com/TUM-Dev/gocast/blob/main/LICENSE";
-};
-}
-;
-schemes :
-    [HTTP, HTTPS];
-base_path : "/api/v2";
-host : "localhost:8081";
-consumes : "application/json";
-produces : "application/json";
-}
-;
 
 service API {
-
   // HEALTHCHECK (./api.go)
 
   rpc healthCheck(google.protobuf.Empty) returns (HealthCheckResponse) {
-    option (google.api.http) = {
-      get : "/status"
-    };
+    option (google.api.http) = {get: "/status"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "API Status"
-      summary : "API healthcheck ."
-      description : "If this endpoint does not return 200, the API is "
-                    "experiencing a catastrophic outage."
+      tags: "API Status"
+      summary: "API healthcheck ."
+      description:
+        "If this endpoint does not return 200, the API is "
+        "experiencing a catastrophic outage."
     };
   }
 
   // USER ENDPOINTS (./user.go)
 
   rpc getUser(google.protobuf.Empty) returns (GetUserResponse) {
-    option (google.api.http) = {
-      get : "/users/me"
-    };
+    option (google.api.http) = {get: "/users/me"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "User"
-      summary : "Get user."
-      description : "Retrieves the current user."
+      tags: "User"
+      summary: "Get user."
+      description: "Retrieves the current user."
     };
   }
 
   rpc resetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
     option (google.api.http) = {
-      post : "/users/reset-password"
-      body : "*"
+      post: "/users/reset-password"
+      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "User"
-      summary : "Reset user password."
-      description : "Resets the user password."
+      tags: "User"
+      summary: "Reset user password."
+      description: "Resets the user password."
     };
   }
 
-  rpc updateUserSettings(UpdateUserSettingsRequest)
-      returns (UpdateUserSettingsResponse) {
+  rpc updateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse) {
     option (google.api.http) = {
-      patch : "/users/settings"
-      body : "*"
-      response_body : "*"
+      patch: "/users/settings"
+      body: "*"
+      response_body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "User"
-      summary : "Update the current user's settings."
-      description : "Updates the current user's settings."
+      tags: "User"
+      summary: "Update the current user's settings."
+      description: "Updates the current user's settings."
     };
   }
 
-  rpc exportPersonalData(google.protobuf.Empty)
-      returns (ExportPersonalDataResponse) {
-    option (google.api.http) = {
-      get : "/users/export"
-    };
+  rpc exportPersonalData(google.protobuf.Empty) returns (ExportPersonalDataResponse) {
+    option (google.api.http) = {get: "/users/export"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "User"
-      summary : "Export user data."
-      description : "Exports the current user's data."
+      tags: "User"
+      summary: "Export user data."
+      description: "Exports the current user's data."
     };
   }
 
   // SEMESTER ENDPOINTS (./semester.go)
 
   rpc getSemesters(google.protobuf.Empty) returns (GetSemestersResponse) {
-    option (google.api.http) = {
-      get : "/semesters"
-    };
+    option (google.api.http) = {get: "/semesters"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Semesters"
-      summary : "Get available semesters."
-      description : "Retrieves all available semesters and the current "
-                    "semester."
+      tags: "Semesters"
+      summary: "Get available semesters."
+      description:
+        "Retrieves all available semesters and the current "
+        "semester."
     };
   }
 
   // COURSE ENDPOINTS (./course.go)
 
   rpc getLiveStreams(google.protobuf.Empty) returns (GetLiveStreamsResponse) {
-    option (google.api.http) = {
-      get : "/streams/live"
-    };
+    option (google.api.http) = {get: "/streams/live"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Courses"
-      summary : "Get currently live courses with stream."
-      description : "Retrieves the currently live courses with their streams."
+      tags: "Courses"
+      summary: "Get currently live courses with stream."
+      description: "Retrieves the currently live courses with their streams."
     };
   }
 
-  rpc getPublicCourses(GetPublicCoursesRequest)
-      returns (GetPublicCoursesResponse) {
-    option (google.api.http) = {
-      get : "/courses"
-    };
+  rpc getPublicCourses(GetPublicCoursesRequest) returns (GetPublicCoursesResponse) {
+    option (google.api.http) = {get: "/courses"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Courses"
-      summary : "Get public courses."
-      description : "Retrieves the public courses for a given semester."
+      tags: "Courses"
+      summary: "Get public courses."
+      description: "Retrieves the public courses for a given semester."
     };
   }
 
-  rpc getCourseBySlug(GetCourseBySlugRequest)
-      returns (GetCourseBySlugResponse) {
-    option (google.api.http) = {
-      get : "/courses/{slug}"
-    };
+  rpc getCourseBySlug(GetCourseBySlugRequest) returns (GetCourseBySlugResponse) {
+    option (google.api.http) = {get: "/courses/{slug}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Courses"
-      summary : "Get course by slug."
-      description : "Retrieves a course by its slug, year, and term."
+      tags: "Courses"
+      summary: "Get course by slug."
+      description: "Retrieves a course by its slug, year, and term."
     };
   }
 
   rpc getUserCourses(GetUserCoursesRequest) returns (GetUserCoursesResponse) {
-    option (google.api.http) = {
-      get : "/courses/enrolled"
-    };
+    option (google.api.http) = {get: "/courses/enrolled"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Courses"
-      summary : "Get user courses."
-      description : "Retrieves the enrolled courses for a user for a given "
-                    "semester."
+      tags: "Courses"
+      summary: "Get user courses."
+      description:
+        "Retrieves the enrolled courses for a user for a given "
+        "semester."
     };
   }
 
-  rpc getPinnedCourses(google.protobuf.Empty)
-      returns (GetPinnedCoursesResponse) {
-    option (google.api.http) = {
-      get : "/courses/pinned"
-    };
+  rpc getPinnedCourses(google.protobuf.Empty) returns (GetPinnedCoursesResponse) {
+    option (google.api.http) = {get: "/courses/pinned"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Courses"
-      summary : "Get pinned courses."
-      description : "Retrieves the pinned courses for a user."
+      tags: "Courses"
+      summary: "Get pinned courses."
+      description: "Retrieves the pinned courses for a user."
     };
   }
 
-  rpc GetPinForCourse(GetPinForCourseRequest)
-      returns (GetPinForCourseResponse) {
-    option (google.api.http) = {
-      get : "/courses/{course_id}/pin"
-    };
+  rpc GetPinForCourse(GetPinForCourseRequest) returns (GetPinForCourseResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/pin"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Courses"
-      summary : "Get pin for course."
-      description : "Checks if the user has pinned the course."
+      tags: "Courses"
+      summary: "Get pin for course."
+      description: "Checks if the user has pinned the course."
     };
   }
 
   rpc PinCourse(PinCourseRequest) returns (PinCourseResponse) {
     option (google.api.http) = {
-      post : "/courses/{course_id}/pin"
-      body : "*"
+      post: "/courses/{course_id}/pin"
+      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags : "Courses"
-      summary : "Pin or unpin a course."
-      description : "Pins or unpins a course for the user."
+      tags: "Courses"
+      summary: "Pin or unpin a course."
+      description: "Pins or unpins a course for the user."
     };
   }
 }
@@ -208,7 +182,9 @@ service API {
 ///// HEALTHCHECK_MESSAGE /////
 ///////////////////////////////
 
-message HealthCheckResponse { string status = 1; }
+message HealthCheckResponse {
+  string status = 1;
+}
 
 ///////////////////////////////
 //////// USER_MESSAGE /////////
@@ -245,19 +221,29 @@ enum UserSettingType {
 //////// USER_REQUEST /////////
 ///////////////////////////////
 
-message UpdateUserSettingsRequest { repeated UserSetting userSettings = 1; }
+message UpdateUserSettingsRequest {
+  repeated UserSetting userSettings = 1;
+}
 
-message ResetPasswordRequest { string email = 1; }
+message ResetPasswordRequest {
+  string email = 1;
+}
 
 ///////////////////////////////
 //////// USER_RESPONSE ////////
 ///////////////////////////////
 
-message GetUserResponse { User user = 1; }
+message GetUserResponse {
+  User user = 1;
+}
 
-message UpdateUserSettingsResponse { repeated UserSetting userSettings = 1; }
+message UpdateUserSettingsResponse {
+  repeated UserSetting userSettings = 1;
+}
 
-message ResetPasswordResponse { string message = 1; }
+message ResetPasswordResponse {
+  string message = 1;
+}
 
 message ExportPersonalDataResponse {
   User user_data = 1;
@@ -302,7 +288,9 @@ message Bookmark {
 ////// BOOKMARK_REQUEST ///////
 ///////////////////////////////
 
-message GetBookmarksRequest { uint32 streamID = 1; }
+message GetBookmarksRequest {
+  uint32 streamID = 1;
+}
 
 message PutBookmarkRequest {
   string description = 1;
@@ -320,17 +308,25 @@ message PatchBookmarkRequest {
   uint32 bookmarkID = 5;
 }
 
-message DeleteBookmarkRequest { uint32 bookmarkID = 1; }
+message DeleteBookmarkRequest {
+  uint32 bookmarkID = 1;
+}
 
 ///////////////////////////////
 ////// BOOKMARK_RESPONSE //////
 ///////////////////////////////
 
-message GetBookmarksResponse { repeated Bookmark bookmarks = 1; }
+message GetBookmarksResponse {
+  repeated Bookmark bookmarks = 1;
+}
 
-message PutBookmarkResponse { Bookmark bookmark = 1; }
+message PutBookmarkResponse {
+  Bookmark bookmark = 1;
+}
 
-message PatchBookmarkResponse { Bookmark bookmark = 1; }
+message PatchBookmarkResponse {
+  Bookmark bookmark = 1;
+}
 
 ///////////////////////////////
 /////// COURSE_MESSAGE ////////
@@ -375,7 +371,9 @@ message GetUserCoursesRequest {
   string term = 2;
 }
 
-message GetPinForCourseRequest { uint32 course_id = 1; }
+message GetPinForCourseRequest {
+  uint32 course_id = 1;
+}
 
 message PinCourseRequest {
   uint32 course_id = 1;
@@ -386,19 +384,33 @@ message PinCourseRequest {
 /////// COURSE_RESPONSE ///////
 ///////////////////////////////
 
-message GetLiveStreamsResponse { repeated CourseStream streams = 1; }
+message GetLiveStreamsResponse {
+  repeated CourseStream streams = 1;
+}
 
-message GetPublicCoursesResponse { repeated Course courses = 1; }
+message GetPublicCoursesResponse {
+  repeated Course courses = 1;
+}
 
-message GetCourseBySlugResponse { Course course = 1; }
+message GetCourseBySlugResponse {
+  Course course = 1;
+}
 
-message GetUserCoursesResponse { repeated Course courses = 1; }
+message GetUserCoursesResponse {
+  repeated Course courses = 1;
+}
 
-message GetPinnedCoursesResponse { repeated Course courses = 1; }
+message GetPinnedCoursesResponse {
+  repeated Course courses = 1;
+}
 
-message PinCourseResponse { string message = 1; }
+message PinCourseResponse {
+  string message = 1;
+}
 
-message GetPinForCourseResponse { bool has = 1; }
+message GetPinForCourseResponse {
+  bool has = 1;
+}
 
 ///////////////////////////////
 /////// COURSE_STREAM /////////

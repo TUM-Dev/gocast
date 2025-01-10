@@ -14,7 +14,7 @@ import (
 	"github.com/soheilhy/cmux"
 
 	"github.com/TUM-Dev/gocast/api"
-	"github.com/TUM-Dev/gocast/api_v2"
+	api_v2 "github.com/TUM-Dev/gocast/api_v2/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
