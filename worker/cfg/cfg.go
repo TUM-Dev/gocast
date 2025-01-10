@@ -19,6 +19,7 @@ var (
 	LrzSubDir      string
 	MainBase       string
 	LrzUploadUrl   string
+	UploadUrl      string
 	VodURLTemplate string
 	LogDir         string
 	Hostname       string
@@ -45,6 +46,7 @@ func SetConfig() {
 	LrzPhone = os.Getenv("LrzPhone")
 	LrzSubDir = os.Getenv("LrzSubDir")
 	LrzUploadUrl = os.Getenv("LrzUploadUrl")
+	UploadUrl = os.Getenv("UploadUrl")
 	MainBase = os.Getenv("MainBase")             // eg. live.mm.rbg.tum.de
 	VodURLTemplate = os.Getenv("VodURLTemplate") // eg. https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
 

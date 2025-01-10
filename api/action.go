@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 )
 
 func configActionRouter(r *gin.Engine, wrapper dao.DaoWrapper) {
@@ -41,7 +42,16 @@ func (a actionRoutes) getFailedActions(c *gin.Context) {
 
 func (a actionRoutes) getActionById(c *gin.Context) {
 	ctx := context.Background()
-	model, err := a.dao.GetActionByID(ctx, c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid action id",
+			Err:           err,
+		})
+		return
+	}
+	model, err := a.dao.GetActionByID(ctx, uint(id))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,

@@ -9,7 +9,6 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
-	log "github.com/sirupsen/logrus"
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -20,6 +19,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -53,32 +53,26 @@ func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.Regist
 }
 
 func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.HeartbeatRequest) (*protobuf.HeartbeatResponse, error) {
-	runner := model.Runner{
-		Hostname: request.Hostname,
-		Port:     int(request.Port),
-	}
-
-	r, err := g.RunnerDao.Get(ctx, runner.Hostname)
+	r, err := g.RunnerDao.Get(ctx, request.Hostname)
 	if err != nil {
-		log.WithError(err).Error("Failed to get runner")
+		logger.Error("Failed to get runner", "err", err)
 		return &protobuf.HeartbeatResponse{Ok: false}, err
 	}
 
-	newStats := model.Runner{
-		Hostname: request.Hostname,
-		Port:     int(request.Port),
-		LastSeen: time.Now(),
-		Status:   "Alive",
-		Workload: uint(request.Workload),
-		CPU:      request.CPU,
-		Memory:   request.Memory,
-		Disk:     request.Disk,
-		Uptime:   request.Uptime,
-		Version:  request.Version,
-		Actions:  request.CurrentAction,
-	}
-	ctx = context.WithValue(ctx, "newStats", newStats)
-	log.Info("Updating runner stats ", "runner", r)
+	newStat := make(map[string]interface{})
+	newStat["LastSeen"] = time.Now()
+	newStat["Status"] = "Alive"
+	newStat["Workload"] = uint(request.Workload)
+	newStat["CPU"] = request.CPU
+	newStat["Memory"] = request.Memory
+	newStat["Disk"] = request.Disk
+	newStat["Uptime"] = request.Uptime
+	newStat["Version"] = request.Version
+	newStat["Actions"] = request.CurrentAction
+
+	logger.Info("the actions of this runner", "runner", r, "actions", request.CurrentAction)
+	ctx = context.WithValue(ctx, "newStats", newStat)
+	logger.Info("Updating runner stats ", "runner", r)
 	p, err := r.UpdateStats(dao.DB, ctx)
 	return &protobuf.HeartbeatResponse{Ok: p}, err
 }
@@ -243,7 +237,7 @@ func (g GrpcRunnerServer) RequestSelfStream(ctx context.Context, request *protob
 		return nil, err
 	}
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
-		log.WithFields(log.Fields{"streamId": stream.ID}).Warn("Stream rejected, time out of bounds")
+		logger.Warn("Stream rejected, time out of bounds", "streamID", stream.ID)
 		return nil, errors.New("stream rejected")
 	}
 	ingestServer, err := g.IngestServerDao.GetBestIngestServer()
@@ -328,7 +322,7 @@ func (g GrpcRunnerServer) NotifyStreamStarted(ctx context.Context, request *prot
 			logger.Error("Can't set StreamLiveNowTimestamp", "err", err)
 		}
 
-		hlsUrl := fmt.Sprintf("%v:%v/%v", tools.Cfg.Edge.Domain, tools.Cfg.Edge.Port, request.HLSUrl)
+		hlsUrl := fmt.Sprintf("%v/%v", tools.Cfg.Edge.Domain, request.HLSUrl)
 
 		time.Sleep(time.Second * 5)
 		if !isHLSUrlOk(hlsUrl) {
@@ -458,7 +452,7 @@ func NotifyForStreams(dao dao.DaoWrapper) func() {
 				values["source"] = lectureHallForStream.PresIP
 				err = CreateJob(dao, ctx, values) //presentation
 				if err != nil {
-					log.Error("Can't create job", err)
+					logger.Error("Can't create job", err)
 				}
 				break
 			case 2: //camera
@@ -508,9 +502,10 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 			logger.Error("Can't get running actions", err)
 		}
 		for _, action := range activeAction {
-			if action.End.Before(time.Now().Add(5 * time.Minute)) {
+			if action.End.Before(time.Now().Add(-5 * time.Minute)) {
 				action.SetToIgnored()
-				log.Info("Action ignored, check for progress manually", "action", action.ID)
+				err = dao.ActionDao.UpdateAction(ctx, &action)
+				logger.Info("Action ignored, check for progress manually", "action", action.ID)
 				continue
 			}
 			runner, err := action.GetCurrentRunner()
@@ -523,7 +518,8 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 				}
 				continue
 			}
-			if !runner.IsAlive() && !action.IsCompleted() {
+			hasAction := strings.Contains(runner.Actions, strconv.Itoa(int(action.ID)))
+			if !runner.IsAlive() && !action.IsCompleted() && hasAction {
 				action.SetToFailed()
 				err = dao.ActionDao.UpdateAction(ctx, &action)
 				if err != nil {
@@ -539,13 +535,10 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 		}
 		for _, failedAction := range failedActions {
 			failedAction.SetToRunning()
-			err = AssignRunnerAction(dao, &failedAction)
-			err = dao.ActionDao.UpdateAction(ctx, &failedAction)
-			if err != nil {
-				return
-			}
+			err := AssignRunnerAction(dao, &failedAction)
 			if err != nil {
 				logger.Error("Can't assign runner to action", err)
+				return
 			}
 		}
 
@@ -556,6 +549,9 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 			return
 		}
 		for _, job := range jobs {
+			if job.Actions[0].Status != 3 {
+				continue
+			}
 			action, err := job.GetNextAction()
 			if err != nil {
 				logger.Error("Can't get next action", err)
@@ -565,12 +561,13 @@ func NotifyRunnerAssignments(dao dao.DaoWrapper) func() {
 				logger.Error("Can't update job", err)
 				continue
 			}
+			action.SetToRunning()
 			err = AssignRunnerAction(dao, action)
 			if err != nil {
 				logger.Error("Can't assign runner to action", err)
 				continue
 			}
-			action.SetToRunning()
+
 			err = dao.ActionDao.UpdateAction(ctx, action)
 			if err != nil {
 				return
@@ -591,15 +588,18 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 		return err
 	}
 	runner, err := getRunnerWithLeastWorkloadForJob(runners, action.Type)
-	action.AssignRunner(runner)
 	ctx := context.Background()
-
+	err = dao.AssignRunner(ctx, action, &runner)
 	if err != nil {
-		logger.Error("Can't unmarshal json", err)
+		logger.Error("Can't assign action", err)
 		return err
 	}
 	values := map[string]interface{}{}
 	err = json.Unmarshal([]byte(action.Values), &values)
+	if err != nil {
+		logger.Error("Can't unmarshal json", err)
+		return err
+	}
 	for key, value := range values {
 		//logger.Info("values", "value", value)
 		ctx = context.WithValue(ctx, key, value)
@@ -615,7 +615,12 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 		//TranscodingRequest(ctx, dao, runner)
 		break
 	}
-	action.SetToRunning()
+	logger.Info("runner counts", "count", len(action.AllRunners))
+	err = dao.ActionDao.UpdateAction(ctx, action)
+	if err != nil {
+		logger.Error("Can't update action", err)
+		return err
+	}
 	return nil
 }
 
@@ -636,16 +641,28 @@ func CreateJob(dao dao.DaoWrapper, ctx context.Context, values map[string]interf
 			Status: 3,
 			Type:   "stream",
 			Values: string(value),
-		}, model.Action{
+			End:    values["end"].(time.Time),
+		})
+		job.Actions = append(job.Actions, actions...)
+		break
+	case "transcode":
+		actions = append(actions, model.Action{
 			Status: 3,
 			Type:   "transcode",
 			Values: string(value),
-		}, model.Action{
+			End:    values["end"].(time.Time),
+		})
+		job.Actions = append(job.Actions, actions...)
+		break
+	case "upload":
+		actions = append(actions, model.Action{
 			Status: 3,
 			Type:   "upload",
 			Values: string(value),
+			End:    values["end"].(time.Time),
 		})
 		job.Actions = append(job.Actions, actions...)
+		break
 	}
 	err = dao.CreateJob(ctx, job)
 	if err != nil {
@@ -664,7 +681,7 @@ func (g GrpcRunnerServer) mustEmbedUnimplementedFromRunnerServer() {
 func StartGrpcRunnerServer() {
 	lis, err := net.Listen("tcp", ":50056")
 	if err != nil {
-		log.WithError(err).Error("Failed to init grpc server")
+		logger.Error("Failed to init grpc server", "err", err)
 		return
 	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
@@ -678,7 +695,7 @@ func StartGrpcRunnerServer() {
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {
-			log.WithError(err).Errorf("Can't serve grpc")
+			logger.Error("Can't serve grpc", "err", err)
 		}
 	}()
 }

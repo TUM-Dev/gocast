@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tum-dev/gocast/runner/protobuf"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -77,19 +78,19 @@ func (a *ActionProvider) StreamAction() *Action {
 					}
 				}
 
-				src := ""
+				opt := ""
 				if strings.HasPrefix(source, "rtsp") {
-					src += "-rtsp_transport tcp"
+					opt += "-rtsp_transport tcp"
 				} else if strings.HasPrefix(source, "rtmp") {
-					src += "-rw_timeout 5000000" // timeout selfstream	s after 5 seconds of no data
+					opt += "-rw_timeout 5000000" // timeout selfstream	s after 5 seconds of no data
 				} else {
-					src += "-re" // read input at native framerate, e.g. when streaming a file in realtime
+					opt += "-re" // read input at native framerate, e.g. when streaming a file in realtime
 				}
 
 				log.Info("streaming", "source", source, "end", time.Until(end).Seconds())
 
 				//changing the end variable from a date to a duration and adding the duration to the current time
-				cmd := fmt.Sprintf(a.Cmd.Stream, src, time.Until(end).Seconds(), source, filename, filepath.Join(a.GetLiveDir(courseID, streamID, version), end.Format("15-04-05")), livePlaylist)
+				cmd := fmt.Sprintf(a.Cmd.Stream, opt, time.Until(end).Seconds(), source, filepath.Join(a.GetLiveDir(courseID, streamID, version), end.Format("15-04-05")), livePlaylist)
 
 				c := exec.CommandContext(ctx, "ffmpeg", strings.Split(cmd, " ")...)
 				c.Stderr = os.Stderr
@@ -124,6 +125,33 @@ func (a *ActionProvider) StreamAction() *Action {
 					time.Sleep(5 * time.Second) // little backoff to prevent dossing source
 					continue
 				}
+				//move the files into the ceph storage
+				file, err := os.Open(filename)
+				if err != nil {
+					log.Warn("streamAction: failed to open file, move file to dest manually", "err", err)
+					return ctx, err
+				}
+				defer file.Close()
+
+				copy, err := os.Create(filepath.Join(a.GetMassDir(courseID, streamID, version), end.Format("15-04-05")+".ts"))
+				if err != nil {
+					log.Warn("streamAction: failed to create file, move file to dest manually", "err", err)
+					return ctx, err
+				}
+				defer copy.Close()
+
+				_, err = io.Copy(copy, file)
+				if err != nil {
+					log.Warn("streamAction: failed to copy file, move file to dest manually", "err", err)
+					return ctx, err
+				}
+				err = os.Remove(filename)
+				if err != nil {
+					log.Warn("streamAction: failed to remove file, move file to dest manually", "err", err)
+					return ctx, err
+				}
+				//end file moving
+
 				log.Info("stream finished. now sending notification")
 				resp = a.Server.NotifyStreamEnded(ctx, &protobuf.StreamEnded{
 					RunnerID: hostname,

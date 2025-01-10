@@ -64,14 +64,11 @@ func (a *Action) IsCompleted() bool {
 }
 
 func (a *Action) GetCurrentRunner() (*Runner, error) {
+	logger.Info("runner count", "info", a)
 	if len(a.AllRunners) == 0 {
 		return nil, errors.New("no runner assigned")
 	}
 	return &a.AllRunners[len(a.AllRunners)-1], nil
-}
-
-func (a *Action) AssignRunner(runner Runner) {
-	a.AllRunners = append(a.AllRunners, runner)
 }
 
 func (a *Action) GetValues() string {
