@@ -3,7 +3,7 @@ package worker
 import (
 	"encoding/gob"
 	"errors"
-	"github.com/joschahenningsen/TUM-Live/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/cfg"
 	"os"
 	"sync"
 	"time"

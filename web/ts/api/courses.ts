@@ -9,7 +9,9 @@ type DownloadableVOD = {
     readonly DownloadURL: string;
 };
 
-export class Stream {
+const MS_IN_DAY = 1000 * 60 * 60 * 24;
+
+export class Stream implements Identifiable {
     readonly ID: number;
     readonly Name: string;
     readonly IsRecording: boolean;
@@ -20,6 +22,7 @@ export class Stream {
     readonly End: string;
     readonly Start: string;
     readonly Downloads: DownloadableVOD[];
+    readonly Duration: number;
 
     Progress?: Progress;
 
@@ -31,15 +34,26 @@ export class Stream {
     }
 
     public FriendlyDateStart(): string {
-        return new Date(this.Start).toLocaleString();
+        return new Date(this.Start).toLocaleString("default", {
+            weekday: "long",
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
+
+    public StartDate(): Date {
+        return new Date(this.Start);
     }
 
     public MonthOfStart(): string {
-        return new Date(this.Start).toLocaleString("default", { month: "short" });
+        return this.StartDate().toLocaleString("default", { month: "short" });
     }
 
     public DayOfStart(): number {
-        return new Date(this.Start).getDate();
+        return this.StartDate().getDate();
     }
 
     public TimeOfStart(): string {
@@ -51,20 +65,15 @@ export class Stream {
     }
 
     public IsToday(): boolean {
-        return same_day(new Date(this.Start), new Date());
+        return same_day(this.StartDate(), new Date());
     }
 
     public MinutesLeftToStart(): number {
-        return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
+        return Math.round((this.StartDate().valueOf() - new Date().valueOf()) / 60000);
     }
 
     public DurationString() {
-        const diff = new Date(this.End).getTime() - new Date(this.Start).getTime();
-        return new Date(diff).toLocaleTimeString("default", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        });
+        return new Date(this.Duration * 1000).toISOString().slice(11, 19);
     }
 
     public UntilString(): string {
@@ -79,7 +88,7 @@ export class Stream {
     }
 
     public CompareStart(other: Stream) {
-        const a = new Date(this.Start);
+        const a = this.StartDate();
         const b = new Date(other.Start);
         if (a < b) {
             return 1;
@@ -94,12 +103,33 @@ export class Stream {
         this.Thumbnail.src = `/api/stream/${this.ID}/thumbs/vod`;
     }
 
+    public GetMonthName(): string {
+        return [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ][this.StartDate().getMonth()];
+    }
+
+    public GetWeekNumber(dateOfFirstWeek: Date): number {
+        return Math.floor((this.StartDate().getTime() - dateOfFirstWeek.getTime()) / MS_IN_DAY / 7) + 1;
+    }
+
     private static TimeOf(d: string): string {
         return new Date(d).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
     }
 }
 
-export class Course {
+export class Course implements Identifiable {
     readonly ID: number;
     readonly Visibility: string;
     readonly Slug: string;
@@ -113,6 +143,8 @@ export class Course {
     readonly LastRecording?: Stream;
 
     readonly Pinned: boolean = false;
+
+    readonly IsAdmin: boolean;
 
     private readonly Streams?: Stream[];
 
@@ -211,8 +243,8 @@ export const CoursesAPI = {
         return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    async get(slug: string, year?: number, term?: string) {
-        const url = new CustomURL(`/api/courses/${slug}`, { year, term });
+    async get(slug: string, year?: number, term?: string, userId?: number) {
+        const url = new CustomURL(`/api/courses/${slug}`, { year, term, userId });
         return get(url.toString(), {}, true).then((course) => Course.New(course));
     },
 };

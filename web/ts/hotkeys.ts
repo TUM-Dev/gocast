@@ -170,6 +170,10 @@ export const defaultOptions = {
             match: ["End"],
             handle: handleSeekTo(1),
         },
+        skipSilence: {
+            match: ["s", "S"],
+            handle: handleWithClick("SkipSilenceToggle"),
+        },
     } as Hotkeys,
 };
 

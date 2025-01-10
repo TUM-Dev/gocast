@@ -229,6 +229,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
 
 			if err != nil {
+				err404Playlists.WithLabelValues(claims.StreamID, claims.Playlist).Inc()
 				w.WriteHeader(http.StatusNotFound)
 				_, _ = w.Write([]byte("Not Found"))
 				return

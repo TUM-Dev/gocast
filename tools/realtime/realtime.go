@@ -3,7 +3,6 @@ package realtime
 import (
 	"encoding/json"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -86,7 +85,7 @@ func (r *Realtime) messageHandler(c *Client, msg []byte) {
 	var req Message
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
-		log.WithError(err).Warn("could not unmarshal request")
+		logger.Warn("could not unmarshal request", "err", err)
 		return
 	}
 
@@ -98,6 +97,6 @@ func (r *Realtime) messageHandler(c *Client, msg []byte) {
 	case MessageTypeChannelMessage:
 		r.channels.OnMessage(c, &req)
 	default:
-		log.WithField("type", req.Type).Warn("unknown pubsub websocket request type")
+		logger.Warn("unknown pubsub websocket request type", "type", req.Type)
 	}
 }

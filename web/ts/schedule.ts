@@ -67,8 +67,8 @@ const opts = {
                     <div class="flex"><p>${new Date(streamInfo["start"]).toLocaleString()}</p></div>
                 </div>
                 <form x-data="{showSubmit:false}" @submit="admin.saveLectureName(event, ${streamInfo["courseID"]}, ${
-            streamInfo["streamID"]
-        }).then((r)=>showSubmit=!r)"
+                    streamInfo["streamID"]
+                }).then((r)=>showSubmit=!r)"
                     class="w-full flex flex-row mb-2 focus-within:border-gray-300 border-gray-500">
                     <label for="lectureNameInput${streamInfo["streamID"]}" class="hidden">Lecture title</label>
                     <input id="lectureNameInput${streamInfo["streamID"]}"

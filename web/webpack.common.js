@@ -8,6 +8,7 @@ module.exports = {
         home: "./ts/entry/home.ts",
         admin: "./ts/entry/admins.ts",
         watch: "./ts/entry/video.ts",
+        interaction: "./ts/entry/interactions.ts",
         global: "./ts/entry/user.ts",
     },
     module: {

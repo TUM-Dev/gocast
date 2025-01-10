@@ -37,7 +37,8 @@ func (t AuditType) String() string {
 }
 
 func GetAllAuditTypes() []AuditType {
-	return []AuditType{AuditInfo,
+	return []AuditType{
+		AuditInfo,
 		AuditWarning,
 		AuditError,
 		AuditCourseCreate,

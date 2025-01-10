@@ -8,9 +8,11 @@ import (
 	"unicode/utf8"
 )
 
-var ErrUnbalancedTags = errors.New("unbalanced tags")
-var TagExpr = regexp.MustCompile("<(/?)([A-Za-z0-9]+).*?>")
-var EntityExpr = regexp.MustCompile("&#?[A-Za-z0-9]+;")
+var (
+	ErrUnbalancedTags = errors.New("unbalanced tags")
+	TagExpr           = regexp.MustCompile("<(/?)([A-Za-z0-9]+).*?>")
+	EntityExpr        = regexp.MustCompile("&#?[A-Za-z0-9]+;")
+)
 
 // TruncateHtml will truncate a given byte slice to a maximum of maxlen visible
 // characters and optionally append ellipsis. HTML tags are automatically closed
@@ -30,9 +32,11 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 	// of void elements and may appear simply as <tag>. Hence, if one of the
 	// following is picked up by the tag expression as a start tag, do not add
 	// it to the stack of tags that should be closed.
-	voidElementTags := []string{"area", "base", "br", "col", "embed", "hr",
+	voidElementTags := []string{
+		"area", "base", "br", "col", "embed", "hr",
 		"img", "input", "keygen", "link", "meta",
-		"param", "source", "track", "wbr"}
+		"param", "source", "track", "wbr",
+	}
 
 	// Check to see if no input was provided.
 	if len(buf) == 0 || maxlen == 0 {

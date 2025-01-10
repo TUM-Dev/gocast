@@ -5,18 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
+
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
 )
 
 // Matrix strategy
-type Matrix struct {
-}
+type Matrix struct{}
 
 // matrixMessage represents a Matrix message event that includes html formatting as specified
 // in https://spec.matrix.org/v1.2/client-server-api/#mroommessage-msgtypes
@@ -74,14 +73,14 @@ func (m *Matrix) getClientUrl() string {
 func (m *Matrix) SendBotMessage(message Message) error {
 	err := m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.LogRoomID, message)
 	if err != nil {
-		log.WithError(err).Error("Failed to send message to matrix log room")
+		logger.Error("Failed to send message to matrix log room", "err", err)
 		sentry.CaptureException(err)
 		return err
 	}
 	if message.Prio {
 		err = m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.AlertRoomID, message)
 		if err != nil {
-			log.WithError(err).Error("Failed to send message to matrix alert room")
+			logger.Error("Failed to send message to matrix alert room", "err", err)
 			sentry.CaptureException(err)
 		}
 	}
@@ -98,7 +97,7 @@ func (m *Matrix) sendMessageToRoom(roomID string, message Message) error {
 		return errors.New("authentication failed, could not get token")
 	}
 
-	var roomMessageSuffix = roomMsgPrefix + id + accessTokenSuffix
+	roomMessageSuffix := roomMsgPrefix + id + accessTokenSuffix
 	url := m.getClientUrl() + roomSuffix + roomID + roomMessageSuffix + authToken
 	matrixMessage := matrixMessage{
 		MsgType:       msgType,

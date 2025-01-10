@@ -1,8 +1,8 @@
 package dao
 
 import (
+	"github.com/TUM-Dev/gocast/dao/migrations"
 	"github.com/go-gormigrate/gormigrate/v2"
-	"github.com/joschahenningsen/TUM-Live/dao/migrations"
 	"gorm.io/gorm"
 )
 

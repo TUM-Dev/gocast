@@ -1,5 +1,23 @@
-import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
+import { patchData, postData, putData, sendFormData } from "./global";
 import { StatusCodes } from "http-status-codes";
+import { DataStore } from "./data-store/data-store";
+import {
+    AdminLectureList,
+    Lecture,
+    LectureVideoType,
+    LectureVideoTypeCam,
+    LectureVideoTypeComb,
+    LectureVideoTypePres,
+    VideoSection,
+    videoSectionFriendlyTimestamp,
+    videoSectionHasChanged,
+    videoSectionListDelta,
+    videoSectionSort,
+    videoSectionTimestamp,
+} from "./api/admin-lecture-list";
+import { ChangeSet, comparatorPipeline, ignoreKeys, singleProperty } from "./change-set";
+import { AlpineComponent } from "./components/alpine-component";
+import { uploadFile } from "./utilities/fetch-wrappers";
 
 export enum UIEditMode {
     none,
@@ -18,36 +36,30 @@ export enum FileType {
 }
 
 export class LectureList {
-    static lectures: Lecture[] = [];
-    static markedIds: number[] = [];
+    courseId: number;
+    lectures: Lecture[] = [];
+    markedIds: number[] = [];
 
-    static init(initialState: Lecture[]) {
-        if (initialState === null) {
-            initialState = [];
-        }
-
+    constructor(courseId: number) {
+        this.courseId = courseId;
         this.markedIds = this.parseUrlHash();
-
-        // load initial state into lecture objects
-        for (const lecture of initialState) {
-            let l = new Lecture();
-            l = Object.assign(l, lecture);
-            l.start = new Date(lecture.start);
-            l.end = new Date(lecture.end);
-            LectureList.lectures.push(l);
-        }
-
-        LectureList.triggerUpdate();
-        setTimeout(() => this.scrollSelectedLecturesIntoView(), 500);
+        this.setup();
     }
 
-    static scrollSelectedLecturesIntoView() {
+    async setup() {
+        await DataStore.adminLectureList.subscribe(this.courseId, (lectures) => {
+            this.lectures = lectures;
+            this.triggerUpdateEvent();
+        });
+    }
+
+    scrollSelectedLecturesIntoView() {
         if (this.markedIds.length > 0) {
             document.querySelector(`#lecture-${this.markedIds[0]}`).scrollIntoView({ behavior: "smooth" });
         }
     }
 
-    static parseUrlHash(): number[] {
+    parseUrlHash(): number[] {
         if (!window.location.hash.startsWith("#lectures:")) {
             return [];
         }
@@ -57,33 +69,21 @@ export class LectureList {
             .map((s) => parseInt(s));
     }
 
-    static hasIndividualChatEnabledSettings(): boolean {
+    hasIndividualChatEnabledSettings(): boolean {
         const lectures = this.lectures;
         if (lectures.length < 2) return false;
         const first = lectures[0];
-        return lectures.slice(1).some((lecture) => lecture.isChatEnabled !== first.isChatEnabled);
+        return lectures.slice(1).some((l) => l.isChatEnabled !== first.isChatEnabled);
     }
 
-    static triggerUpdate() {
+    triggerUpdateEvent() {
         const event = new CustomEvent("newlectures", {
             detail: {
-                lectures: LectureList.lectures,
+                lectures: this.lectures,
                 markedIds: this.markedIds,
             },
         });
         window.dispatchEvent(event);
-    }
-}
-
-class LectureFile {
-    readonly id: number;
-    readonly fileType: number;
-    readonly friendlyName: string;
-
-    constructor({ id, fileType, friendlyName }) {
-        this.id = id;
-        this.fileType = fileType;
-        this.friendlyName = friendlyName;
     }
 }
 
@@ -92,409 +92,294 @@ class DownloadableVod {
     friendlyName: string;
 }
 
-class TranscodingProgress {
-    version: string;
-    progress: number;
+interface VideoFileUI {
+    info: LectureVideoType;
+    title: string;
+    inputId: string;
 }
 
-export class Lecture {
-    static dateFormatOptions: Intl.DateTimeFormatOptions = {
-        weekday: "long",
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-    };
-    static timeFormatOptions: Intl.DateTimeFormatOptions = {
-        hour: "2-digit",
-        minute: "2-digit",
-    };
-    readonly courseId: number;
-    readonly courseSlug: string;
-    readonly lectureId: number;
-    readonly streamKey: string;
-    readonly seriesIdentifier: string;
-    color: string;
-    readonly vodViews: number;
-    start: Date;
-    end: Date;
-    readonly isLiveNow: boolean;
-    isConverting: boolean;
-    readonly isRecording: boolean;
-    readonly isPast: boolean;
-    readonly hasStats: boolean;
+export function lectureEditor(lecture: Lecture): AlpineComponent {
+    return {
+        videoFiles: [
+            { info: LectureVideoTypeComb, title: "Combined Video", inputId: `input_${lecture.lectureId}_comb` },
+            { info: LectureVideoTypePres, title: "Presentation Video", inputId: `input_${lecture.lectureId}_pres` },
+            { info: LectureVideoTypeCam, title: "Camera Video", inputId: `input_${lecture.lectureId}_cam` },
+        ] as VideoFileUI[],
 
-    name: string;
-    description: string;
-    lectureHallId: string;
-    lectureHallName: string;
-    isChatEnabled = false;
-    uiEditMode: UIEditMode = UIEditMode.none;
-    newName: string;
-    newDescription: string;
-    newLectureHallId: string;
-    newIsChatEnabled = false;
-    newCombinedVideo = null;
-    newPresentationVideo = null;
-    newCameraVideo = null;
-    isDirty = false;
-    isSaving = false;
-    isDeleted = false;
-    lastErrors: string[] = [];
-    transcodingProgresses: TranscodingProgress[];
-    files: LectureFile[];
-    private: boolean;
-    downloadableVods: DownloadableVod[];
+        // UI Data
+        lastErrors: [] as string[],
+        uiEditMode: UIEditMode.none,
+        isDirty: false,
+        isSaving: false,
 
-    clone() {
-        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    }
+        // Lecture Data
+        changeSet: null as ChangeSet<Lecture> | null,
+        lectureData: null as Lecture | null,
 
-    startDateFormatted() {
-        return this.start.toLocaleDateString("en-US", Lecture.dateFormatOptions);
-    }
+        /**
+         * AlpineJS init function which is called automatically in addition to 'x-init'
+         */
+        init() {
+            const customComparator = comparatorPipeline([
+                ignoreKeys(["files"]),
+                singleProperty("videoSections", (a: Lecture, b: Lecture): boolean | null => {
+                    // List length differs, something was removed or added
+                    if (a.videoSections.length !== b.videoSections.length) {
+                        return true;
+                    }
 
-    startTimeFormatted() {
-        return this.start.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
-    }
+                    // List length is the same but items do have no id, so they are new.
+                    if (
+                        a.videoSections.some(({ id }) => id === undefined) ||
+                        b.videoSections.some(({ id }) => id === undefined)
+                    ) {
+                        return true;
+                    }
 
-    endFormatted() {
-        return this.end.toLocaleDateString("en-US", Lecture.dateFormatOptions);
-    }
+                    // A section has edited and different information now
+                    return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
+                }),
+            ]);
 
-    endTimeFormatted() {
-        return this.end.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
-    }
+            // This tracks changes that are not saved yet
+            this.changeSet = new ChangeSet<Lecture>(lecture, customComparator, (data, dirtyState) => {
+                this.lectureData = data;
+                this.isDirty = dirtyState.isDirty;
+            });
 
-    updateIsDirty() {
-        this.isDirty =
-            this.newName !== this.name ||
-            this.newDescription !== this.description ||
-            this.newLectureHallId !== this.lectureHallId ||
-            this.newIsChatEnabled !== this.isChatEnabled ||
-            this.newCombinedVideo !== null ||
-            this.newPresentationVideo !== null ||
-            this.newCameraVideo !== null;
-    }
+            // This updates the state live in background
+            DataStore.adminLectureList.subscribe(lecture.courseId, (lectureList) => {
+                const update = lectureList.find((l) => l.lectureId === lecture.lectureId);
+                if (update) {
+                    this.changeSet.updateState(update);
+                }
+            });
+        },
 
-    resetNewFields() {
-        this.newName = this.name;
-        this.newDescription = this.description;
-        this.newLectureHallId = this.lectureHallId;
-        this.newIsChatEnabled = this.isChatEnabled;
-        this.isDirty = false;
-        this.lastErrors = [];
-        this.newCombinedVideo = null;
-        this.newPresentationVideo = null;
-        this.newCameraVideo = null;
-    }
+        toggleVisibility() {
+            DataStore.adminLectureList.setPrivate(
+                this.lectureData.courseId,
+                this.lectureData.lectureId,
+                !this.lectureData.private,
+            );
+        },
 
-    startSeriesEdit() {
-        if (this.uiEditMode !== UIEditMode.none) return;
-        this.resetNewFields();
-        this.uiEditMode = UIEditMode.series;
-    }
+        async keepProgressesUpdated() {
+            if (!this.isConverting) {
+                return;
+            }
+            setTimeout(async () => {
+                for (let i = 0; i < this.transcodingProgresses.length; i++) {
+                    const res = await AdminLectureList.getTranscodingProgress(
+                        this.lectureData.courseId,
+                        this.lectureData.lectureId,
+                        this.transcodingProgresses[i].version,
+                    );
+                    if (res === 100) {
+                        this.transcodingProgresses.splice(i, 1);
+                    } else {
+                        this.transcodingProgresses[i].progress = res;
+                    }
+                }
+                this.isConverting = this.transcodingProgresses.length > 0;
+                this.keepProgressesUpdated();
+            }, 5000);
+        },
 
-    startSingleEdit() {
-        if (this.uiEditMode !== UIEditMode.none) return;
-        this.resetNewFields();
-        this.uiEditMode = UIEditMode.single;
-    }
+        getVideoFile(key: string): File {
+            return this.lectureData[key];
+        },
 
-    async toggleVisibility() {
-        fetch(`/api/stream/${this.lectureId}/visibility`, {
-            method: "PATCH",
-            body: JSON.stringify({ private: !this.private }),
-            headers: { "Content-Type": "application/json" },
-        }).then((r) => {
-            if (r.status == StatusCodes.OK) {
-                this.private = !this.private;
-                if (this.private) {
-                    this.color = "gray-500";
-                } else {
-                    this.color = "success";
+        onAttachmentFileDrop(e) {
+            if (e.dataTransfer.items) {
+                const item = e.dataTransfer.items[0];
+                const { kind } = item;
+                switch (kind) {
+                    case "file": {
+                        DataStore.adminLectureList.uploadAttachmentFile(
+                            this.lectureData.courseId,
+                            this.lectureData.lectureId,
+                            item.getAsFile(),
+                        );
+                        break;
+                    }
+                    case "string": {
+                        DataStore.adminLectureList.uploadAttachmentUrl(
+                            this.lectureData.courseId,
+                            this.lectureData.lectureId,
+                            e.dataTransfer.getData("URL"),
+                        );
+                    }
                 }
             }
-        });
-    }
+        },
 
-    async keepProgressesUpdated() {
-        if (!this.isConverting) {
-            return;
-        }
-        setTimeout(() => {
-            for (let i = 0; i < this.transcodingProgresses.length; i++) {
-                fetch(
-                    `/api/course/${this.courseId}/stream/${this.lectureId}/transcodingProgress?v=${this.transcodingProgresses[i].version}`,
-                )
-                    .then((r) => {
-                        return r.json() as Promise<number>;
-                    })
-                    .then((r) => {
-                        if (r === 100) {
-                            this.transcodingProgresses.splice(i, 1);
-                        } else {
-                            this.transcodingProgresses[i].progress = r;
-                        }
-                    });
-            }
-            this.isConverting = this.transcodingProgresses.length > 0;
-            this.keepProgressesUpdated();
-        }, 5000);
-    }
+        deleteAttachment(id: number) {
+            DataStore.adminLectureList.deleteAttachment(this.lectureData.courseId, this.lectureData.lectureId, id);
+        },
 
-    async saveEdit() {
-        this.lastErrors = [];
-        if (this.uiEditMode === UIEditMode.none) return;
+        friendlySectionTimestamp(section: VideoSection): string {
+            return videoSectionFriendlyTimestamp(section);
+        },
 
-        this.isSaving = true;
+        getSectionKey(section: VideoSection): string {
+            return section.id ? `sid_${section.id}` : section.key;
+        },
 
-        // Save Settings
-        const promises = [];
-        if (this.newName !== this.name) promises.push(this.saveNewLectureName());
-        if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
-        if (this.newLectureHallId !== this.lectureHallId) promises.push(this.saveNewLectureHall());
-        if (this.newIsChatEnabled !== this.isChatEnabled) promises.push(this.saveNewIsChatEnabled());
-        const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
+        genPseudoSectionKey(): string {
+            return `sts_${new Date().getTime()}`;
+        },
 
-        if (this.uiEditMode === UIEditMode.series && errors.length === 0) {
-            const seriesUpdateResult = await this.saveSeries();
-            if (seriesUpdateResult.status !== StatusCodes.OK) {
-                errors.push(seriesUpdateResult);
-            }
-        }
-
-        if (errors.length > 0) {
-            this.lastErrors = await Promise.all(
-                errors.map((e) => {
-                    const text = e.text();
-                    try {
-                        const msg = JSON.parse(text).msg;
-                        if (msg != null && msg.length > 0) {
-                            return msg;
-                        }
-                        // eslint-disable-next-line no-empty
-                    } catch (_) {}
-                    return text;
-                }),
+        addSection(section: VideoSection) {
+            this.changeSet.patch(
+                "videoSections",
+                [
+                    ...this.lectureData.videoSections,
+                    {
+                        ...section,
+                        key: this.genPseudoSectionKey(),
+                    },
+                ].sort(videoSectionSort),
             );
-            this.isSaving = false;
-            return false;
-        }
+        },
 
-        // Upload new media files
-        const uploadErrors = await this.saveNewVODMedia();
+        updateSection(section: VideoSection) {
+            const sectionKey = this.getSectionKey(section);
+            this.changeSet.patch(
+                "videoSections",
+                [...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)), section].sort(
+                    videoSectionSort,
+                ),
+            );
+        },
 
-        if (uploadErrors.length > 0) {
-            this.lastErrors = uploadErrors;
-            this.isSaving = false;
-            return false;
-        }
+        deleteSection(section) {
+            const sectionKey = this.getSectionKey(section);
+            this.changeSet.patch("videoSections", [
+                ...this.lectureData.videoSections.filter((s) => sectionKey !== this.getSectionKey(s)),
+            ]);
+        },
 
-        this.uiEditMode = UIEditMode.none;
-        this.isSaving = false;
-        return true;
-    }
+        isValidVideoSection(section: VideoSection): boolean {
+            const sectionKey = this.getSectionKey(section);
+            const hasValidTime = !this.lectureData.videoSections.some(
+                (s) =>
+                    videoSectionTimestamp(s) == videoSectionTimestamp(section) && sectionKey != this.getSectionKey(s),
+            );
 
-    discardEdit() {
-        this.uiEditMode = UIEditMode.none;
-    }
+            return (
+                section.description !== "" &&
+                section.startHours !== null &&
+                section.startHours < 32 &&
+                section.startMinutes !== null &&
+                section.startMinutes < 60 &&
+                section.startSeconds !== null &&
+                section.startSeconds < 60 &&
+                hasValidTime
+            );
+        },
 
-    async saveNewLectureName() {
-        const res = await postData("/api/course/" + this.courseId + "/renameLecture/" + this.lectureId, {
-            name: this.newName,
-        });
+        deleteLecture() {
+            if (confirm("Do you really want to delete this lecture? This includes any recordings.")) {
+                DataStore.adminLectureList.delete(this.lectureData.courseId, [this.lectureData.lectureId]);
+            }
+        },
 
-        if (res.status == StatusCodes.OK) {
-            this.name = this.newName;
-        }
+        deleteLectureSeries() {
+            DataStore.adminLectureList.deleteSeries(this.lectureData.courseId, this.lectureData.lectureId);
+        },
 
-        return res;
-    }
+        /**
+         * Opens the series lecture editor UI
+         */
+        startSeriesEdit() {
+            if (this.uiEditMode !== UIEditMode.none) return;
+            this.changeSet.reset();
+            this.uiEditMode = UIEditMode.series;
+        },
 
-    async saveNewLectureDescription() {
-        const res = await putData("/api/course/" + this.courseId + "/updateDescription/" + this.lectureId, {
-            name: this.newDescription,
-        });
+        /**
+         * Opens the single lecture editor UI
+         */
+        startSingleEdit() {
+            if (this.uiEditMode !== UIEditMode.none) return;
+            this.changeSet.reset();
+            this.uiEditMode = UIEditMode.single;
+        },
 
-        if (res.status == StatusCodes.OK) {
-            this.description = this.newDescription;
-        }
+        /**
+         * Discards current changes
+         */
+        discardEdit() {
+            this.changeSet.reset();
+            this.uiEditMode = UIEditMode.none;
+        },
 
-        return res;
-    }
-
-    async saveNewLectureHall() {
-        const res = await saveLectureHall([this.lectureId], this.newLectureHallId);
-
-        if (res.status == StatusCodes.OK) {
-            this.lectureHallId = this.newLectureHallId;
-            this.lectureHallName = "";
-        }
-
-        return res;
-    }
-
-    async saveNewIsChatEnabled() {
-        const res = await saveIsChatEnabled(this.lectureId, this.newIsChatEnabled);
-
-        if (res.status == StatusCodes.OK) {
-            this.isChatEnabled = this.newIsChatEnabled;
-        } else {
-            res.text().then((t) => showMessage(t));
-        }
-        return res;
-    }
-
-    async saveNewVODMedia(): Promise<string[]> {
-        const errors = [];
-        const mediaInfo = [
-            { key: "newCombinedVideo", type: "COMB" },
-            { key: "newPresentationVideo", type: "PRES" },
-            { key: "newCameraVideo", type: "CAM" },
-        ];
-
-        for (const info of mediaInfo) {
-            const mediaFile = this[info.key];
-            if (mediaFile === null) continue;
+        /**
+         * Save changes send them to backend and commit change set.
+         */
+        async saveEdit() {
+            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, videoSections } =
+                this.lectureData;
+            const changedKeys = this.changeSet.changedKeys();
 
             try {
-                await uploadFilePost(
-                    `/api/course/${this.courseId}/uploadVODMedia?streamID=${this.lectureId}&videoType=${info.type}`,
-                    mediaFile,
-                    (progress) => {
-                        window.dispatchEvent(
-                            new CustomEvent(`voduploadprogressedit`, {
-                                detail: { type: info.type, progress, lectureId: this.lectureId },
-                            }),
-                        );
+                // Saving new meta data
+                await DataStore.adminLectureList.updateMeta(courseId, lectureId, {
+                    payload: {
+                        name: changedKeys.includes("name") ? name : undefined,
+                        description: changedKeys.includes("description") ? description : undefined,
+                        lectureHallId: changedKeys.includes("lectureHallId") ? lectureHallId : undefined,
+                        isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
                     },
-                );
-                this[info.key] = null;
-            } catch (e) {
-                const error = `Failed to upload "${mediaFile.name}".`;
-                errors.push(error);
-            }
-        }
-        return errors;
-    }
+                    options: {
+                        saveSeries: this.uiEditMode === UIEditMode.series,
+                    },
+                });
 
-    async saveSeries() {
-        const res = await postData("/api/course/" + this.courseId + "/updateLectureSeries/" + this.lectureId);
+                // Saving VideoSections
+                if (changedKeys.includes("videoSections")) {
+                    const oldVideoSections = this.changeSet.getValue("videoSections", { lastCommittedState: true });
+                    const delta = videoSectionListDelta(oldVideoSections, videoSections);
 
-        if (res.status == StatusCodes.OK) {
-            LectureList.lectures = LectureList.lectures.map((lecture) => {
-                if (this.lectureId !== lecture.lectureId && lecture.seriesIdentifier === this.seriesIdentifier) {
-                    /* cloning, as otherwise alpine doesn't detect the changed object in the array ... */
-                    lecture = lecture.clone();
-                    lecture.name = this.name;
-                    lecture.description = this.description;
-                    lecture.lectureHallId = this.lectureHallId;
-                    lecture.uiEditMode = UIEditMode.none;
+                    if (delta.toAdd.length > 0) {
+                        await DataStore.adminLectureList.addSections(courseId, lectureId, delta.toAdd);
+                    }
+                    for (const section of delta.toUpdate) {
+                        await DataStore.adminLectureList.updateSection(courseId, lectureId, section);
+                    }
+                    for (const section of delta.toDelete) {
+                        await DataStore.adminLectureList.deleteSection(courseId, lectureId, section.id);
+                    }
                 }
-                return lecture;
-            });
-            LectureList.triggerUpdate();
-        }
 
-        return res;
-    }
+                // Uploading new videos
+                for (const videoFile of this.videoFiles) {
+                    if (!changedKeys.includes(videoFile.info.key)) {
+                        continue;
+                    }
 
-    async deleteLecture() {
-        if (confirm("Confirm deleting video?")) {
-            const res = await postData("/api/course/" + this.courseId + "/deleteLectures", {
-                streamIDs: [this.lectureId.toString()],
-            });
-
-            if (res.status !== StatusCodes.OK) {
-                alert("An unknown error occurred during the deletion process!");
+                    const file = this.lectureData[videoFile.info.key];
+                    await DataStore.adminLectureList.uploadVideo(courseId, lectureId, videoFile.info.type, file, {
+                        onProgress: (progress) => {
+                            window.dispatchEvent(
+                                new CustomEvent(`voduploadprogressedit`, {
+                                    detail: { type: videoFile.info.type, progress, lectureId: this.lectureId },
+                                }),
+                            );
+                        },
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                this.lastErrors = [e.message];
                 return;
             }
 
-            LectureList.lectures = LectureList.lectures.filter((l) => l.lectureId !== this.lectureId);
-            LectureList.triggerUpdate();
-        }
-    }
-
-    async deleteLectureSeries() {
-        const lectureCount = LectureList.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
-        if (confirm("Confirm deleting " + lectureCount + " videos in the lecture series?")) {
-            const res = await Delete("/api/course/" + this.courseId + "/deleteLectureSeries/" + this.lectureId);
-
-            if (res.status === StatusCodes.OK) {
-                LectureList.lectures = LectureList.lectures.filter((l) => l.seriesIdentifier !== this.seriesIdentifier);
-                LectureList.triggerUpdate();
-            }
-
-            return res;
-        }
-    }
-
-    getDownloads() {
-        return this.downloadableVods;
-    }
-
-    async deleteFile(fileId: number) {
-        await fetch(`/api/stream/${this.lectureId}/files/${fileId}`, {
-            method: "DELETE",
-        })
-            .catch((err) => console.log(err))
-            .then(() => {
-                this.files = this.files.filter((f) => f.id !== fileId);
-            });
-    }
-
-    hasAttachments(): boolean {
-        if (this.files !== undefined && this.files !== null) {
-            const filtered = this.files.filter((f) => f.fileType === FileType.attachment);
-            return filtered.length > 0;
-        }
-        return false;
-    }
-
-    onFileDrop(e) {
-        if (e.dataTransfer.items) {
-            const kind = e.dataTransfer.items[0].kind;
-            switch (kind) {
-                case "file": {
-                    this.postFile(e.dataTransfer.items[0].getAsFile());
-                    break;
-                }
-                case "string": {
-                    this.postFileAsURL(e.dataTransfer.getData("URL"));
-                }
-            }
-        }
-    }
-
-    private async postFile(file) {
-        const formData = new FormData();
-        formData.append("file", file);
-        await fetch(`/api/stream/${this.lectureId}/files?type=file`, {
-            method: "POST",
-            body: formData,
-        }).then((res) =>
-            res.json().then((id) => {
-                const friendlyName = file.name;
-                const fileType = 2;
-                this.files.push(new LectureFile({ id, fileType, friendlyName }));
-            }),
-        );
-    }
-
-    private async postFileAsURL(fileURL) {
-        const formData = new FormData();
-        formData.append("file_url", fileURL);
-        await fetch(`/api/stream/${this.lectureId}/files?type=url`, {
-            method: "POST",
-            body: formData,
-        }).then((res) =>
-            res.json().then((id) => {
-                const friendlyName = fileURL.substring(fileURL.lastIndexOf("/") + 1);
-                const fileType = 2;
-                this.files.push(new LectureFile({ id, fileType, friendlyName }));
-            }),
-        );
-    }
+            this.changeSet.commit({ discardKeys: this.videoFiles.map((v) => v.info.key) });
+            this.uiEditMode = UIEditMode.none;
+        },
+    } as AlpineComponent;
 }
 
 export function decodeHtml(html) {
@@ -513,9 +398,9 @@ export async function deleteLectures(cid: number, lids: number[]) {
             alert("An unknown error occurred during the deletion process!");
             return;
         }
-
-        LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
-        LectureList.triggerUpdate();
+        window.location.reload();
+        //LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
+        //LectureList.triggerUpdate();
     }
 }
 
@@ -525,9 +410,9 @@ export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean) {
 
 export async function saveIsChatEnabledForAllLectures(isChatEnabled: boolean) {
     const promises = [];
-    for (const lecture of LectureList.lectures) {
+    /*for (const lecture of LectureList.lectures) {
         promises.push(saveIsChatEnabled(lecture.lectureId, isChatEnabled));
-    }
+    }*/
     const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
     return errors.length <= 0;
 }
@@ -541,10 +426,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number): Prom
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
     return putData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -553,10 +435,7 @@ export function saveLectureName(e: Event, cID: number, lID: number): Promise<boo
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
     return postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
-        if (res.status !== StatusCodes.OK) {
-            return false;
-        }
-        return true;
+        return res.status === StatusCodes.OK;
     });
 }
 
@@ -594,8 +473,244 @@ interface MediaUpload {
     progress: number;
 }
 
+export enum LectureCreateType {
+    vodRecord,
+    livestream,
+    vodUpload,
+}
+
+function stopRecorder(recorder: MediaRecorder): Promise<Blob> {
+    return new Promise((resolve) => {
+        recorder.ondataavailable = (e) => {
+            resolve(e.data);
+        };
+        recorder.stop();
+    });
+}
+
+function loadVideoBlob(elem: HTMLVideoElement, video: Blob): Promise<void> {
+    return new Promise((resolve) => {
+        elem.srcObject = null;
+        elem.onloadedmetadata = (e) => {
+            elem.pause();
+            elem.currentTime = 0;
+            resolve();
+        };
+        elem.src = URL.createObjectURL(video);
+    });
+}
+
+class LectureRecorder {
+    private eventRoot: HTMLElement;
+    private readonly onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => void;
+
+    private screencastStream: MediaStream;
+    private cameraStream: MediaStream;
+
+    private screencastDisplay: HTMLVideoElement;
+    private cameraDisplay: HTMLVideoElement;
+
+    private screencastRecorder: MediaRecorder;
+    private cameraRecorder: MediaRecorder;
+
+    private screenRecording: Blob;
+    private cameraRecording: Blob;
+
+    public screencastAvailable: boolean;
+    public cameraAvailable: boolean;
+    public isRecording: boolean;
+    public retrieveRecording: boolean;
+    public recordingsReady: boolean;
+    public isPlaying: boolean;
+
+    constructor(eventRoot: HTMLElement, onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => void) {
+        this.eventRoot = eventRoot;
+        this.onUpdateData = onUpdateData;
+        this.screencastAvailable = false;
+        this.cameraAvailable = false;
+        this.isRecording = false;
+        this.retrieveRecording = false;
+        this.recordingsReady = false;
+        this.isPlaying = false;
+    }
+
+    async selectScreencast(display: HTMLVideoElement): Promise<void> {
+        if (this.isRecording || this.recordingsReady) return;
+        try {
+            this.screencastDisplay = display;
+            this.screencastStream = await navigator.mediaDevices.getDisplayMedia({
+                audio: true,
+                video: true,
+            });
+
+            await this.initScreencastDisplay();
+        } catch (err) {
+            alert("Failed to access your screen.");
+        }
+    }
+
+    async selectCamera(display: HTMLVideoElement): Promise<void> {
+        if (this.isRecording || this.recordingsReady) return;
+        try {
+            this.cameraDisplay = display;
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: true,
+            });
+
+            await this.initCameraDisplay();
+
+            this.cameraAvailable = true;
+        } catch (err) {
+            alert("Failed to access your webcam & mic.");
+        }
+    }
+
+    initScreencastDisplay() {
+        return new Promise<void>((resolve) => {
+            this.screencastDisplay.srcObject = this.screencastStream;
+            this.screencastDisplay.onloadedmetadata = (e) => {
+                this.screencastDisplay.muted = true;
+                this.screencastDisplay.play();
+                this.screencastRecorder = new MediaRecorder(this.screencastStream, {
+                    mimeType: "video/webm",
+                });
+                this.screencastAvailable = true;
+                resolve();
+            };
+        });
+    }
+
+    initCameraDisplay(): Promise<void> {
+        return new Promise<void>((resolve) => {
+            this.cameraDisplay.srcObject = this.cameraStream;
+            this.cameraDisplay.onloadedmetadata = (e) => {
+                this.cameraDisplay.muted = true;
+                this.cameraDisplay.play();
+                this.cameraRecorder = new MediaRecorder(this.cameraStream, {
+                    mimeType: "video/webm",
+                });
+                resolve();
+            };
+        });
+    }
+
+    async toggleRecording(): Promise<void> {
+        if (this.isRecording) {
+            await this.stop();
+        } else {
+            this.start();
+        }
+    }
+
+    start(): void {
+        if (this.isRecording) return;
+        if (this.screencastAvailable) {
+            this.screencastRecorder.start();
+        }
+        if (this.cameraRecorder) {
+            this.cameraRecorder.start();
+        }
+        this.isRecording = true;
+    }
+
+    async stop(): Promise<void> {
+        if (!this.isRecording || this.retrieveRecording) return;
+        this.isRecording = false;
+        this.retrieveRecording = true;
+
+        await Promise.all(
+            [
+                async () => {
+                    if (!this.screencastRecorder) {
+                        return;
+                    }
+                    this.screenRecording = await stopRecorder(this.screencastRecorder);
+                    this.screencastRecorder = null;
+                },
+                async () => {
+                    if (!this.cameraRecorder) {
+                        return;
+                    }
+                    this.cameraRecording = await stopRecorder(this.cameraRecorder);
+                    this.cameraRecorder = null;
+                },
+            ].map((fn) => fn()),
+        );
+        await this.displayRecordings();
+        this.onUpdateData(this.screenRecording, this.cameraRecording);
+        this.retrieveRecording = false;
+        this.recordingsReady = true;
+    }
+
+    async displayRecordings(): Promise<void> {
+        if (this.screenRecording) {
+            await loadVideoBlob(this.screencastDisplay, this.screenRecording);
+        }
+        if (this.cameraRecording) {
+            await loadVideoBlob(this.cameraDisplay, this.cameraRecording);
+        }
+    }
+
+    togglePlay() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    play() {
+        if (this.isPlaying) return;
+        if (this.screenRecording) {
+            this.screencastDisplay.play();
+            this.screencastDisplay.onended = () => this.resetPlay();
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.currentTime = this.screencastDisplay.currentTime;
+            this.cameraDisplay.play();
+            this.cameraDisplay.onended = () => this.resetPlay();
+        }
+        this.isPlaying = true;
+    }
+
+    pause() {
+        if (!this.isPlaying) return;
+        if (this.screenRecording) {
+            this.screencastDisplay.pause();
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.pause();
+        }
+        this.isPlaying = false;
+    }
+
+    resetPlay() {
+        this.pause();
+        if (this.screenRecording) {
+            this.screencastDisplay.currentTime = 0;
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.currentTime = 0;
+        }
+    }
+
+    deleteRecordings() {
+        this.pause();
+        if (confirm("Are your sure you want to delete all recordings?")) {
+            this.screenRecording = null;
+            this.cameraRecording = null;
+            this.recordingsReady = null;
+            this.initScreencastDisplay();
+            this.initCameraDisplay();
+            this.onUpdateData(this.screenRecording, this.cameraRecording);
+        }
+    }
+}
+
 export function createLectureForm(args: { s: [] }) {
     return {
+        createType: LectureCreateType.livestream,
         currentTab: 0,
         canGoBack: false,
         canContinue: true,
@@ -624,8 +739,12 @@ export function createLectureForm(args: { s: [] }) {
         error: false,
         courseID: -1,
         invalidReason: "",
+        cannotContinueReason: "",
         init() {
             this.onUpdate();
+        },
+        initRecorder(eventRoot: HTMLElement): LectureRecorder {
+            return new LectureRecorder(eventRoot, (screen, cam) => this.updateRecordings(screen, cam));
         },
         next() {
             if (this.onLastSlide) {
@@ -638,6 +757,10 @@ export function createLectureForm(args: { s: [] }) {
         prev() {
             this.currentTab--;
             this.onUpdate();
+        },
+        updateCreateType(newType: LectureCreateType) {
+            this.createType = newType;
+            this.formData.vodup = newType !== LectureCreateType.livestream;
         },
         updateLiveAdHoc(adHoc: boolean) {
             this.formData.adHoc = adHoc;
@@ -675,10 +798,28 @@ export function createLectureForm(args: { s: [] }) {
             this.onUpdate();
         },
 
+        updateRecordings(screenRecording: Blob, cameraRecording: Blob) {
+            this.formData.combFile = [];
+            this.formData.presFile = [];
+            this.formData.camFile = [];
+
+            if (screenRecording) {
+                this.formData.presFile = [new File([screenRecording], "pres.webm")];
+            }
+            if (cameraRecording) {
+                this.formData.camFile = [new File([cameraRecording], "cam.webm")];
+            }
+
+            this.onUpdate();
+        },
+
         // This function sets flags depending on the current tab and current data
         onUpdate() {
+            this.error = false;
+
             if (this.currentTab === 0) {
                 this.canContinue = true;
+                this.cannotContinueReason = "";
                 this.canGoBack = false;
                 this.onLastSlide = false;
                 return;
@@ -691,9 +832,21 @@ export function createLectureForm(args: { s: [] }) {
                     // => we are not on the last tab
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
                 } else {
+                    this.onLastSlide = true;
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
+                    this.cannotContinueReason = "";
+                    if (this.formData.start.length <= 0) {
+                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+                    }
+                    if (this.formData.end.length <= 0) {
+                        this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                    }
                 }
                 return;
             }
@@ -702,6 +855,14 @@ export function createLectureForm(args: { s: [] }) {
                 this.canContinue =
                     (this.getMediaFiles().length > 0 && this.formData.vodup) ||
                     (this.formData.adHoc && this.formData.end != "");
+                this.cannotContinueReason = "";
+                if (this.formData.vodup && this.getMediaFiles().length <= 0) {
+                    this.cannotContinueReason += "No media files!\n";
+                }
+                if (this.formData.adHoc && this.formData.end == "") {
+                    this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                }
+
                 this.canGoBack = true;
                 this.onLastSlide = true;
                 return;
@@ -863,12 +1024,14 @@ export function createLectureForm(args: { s: [] }) {
             // Upload media
             try {
                 for (const mediaUpload of mediaFiles) {
-                    await uploadFilePost(
+                    await uploadFile(
                         `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
                         mediaUpload.file,
-                        (progress) => {
-                            mediaUpload.progress = progress;
-                            this.dispatchMediaProgress(mediaFiles);
+                        {
+                            onProgress: (progress) => {
+                                mediaUpload.progress = progress;
+                                this.dispatchMediaProgress(mediaFiles);
+                            },
                         },
                     );
                 }
@@ -882,29 +1045,6 @@ export function createLectureForm(args: { s: [] }) {
             return streamID;
         },
     };
-}
-
-function uploadFilePost(url: string, file: File, onProgress: (progress: number) => void): Promise<string> {
-    const xhr = new XMLHttpRequest();
-    const vodUploadFormData = new FormData();
-    vodUploadFormData.append("file", file);
-    return new Promise((resolve, reject) => {
-        xhr.onloadend = () => {
-            if (xhr.status === 200) {
-                resolve(xhr.responseText);
-            } else {
-                reject();
-            }
-        };
-        xhr.upload.onprogress = (e: ProgressEvent) => {
-            if (!e.lengthComputable) {
-                return;
-            }
-            onProgress(Math.floor(100 * (e.loaded / e.total)));
-        };
-        xhr.open("POST", url);
-        xhr.send(vodUploadFormData);
-    });
 }
 
 export function sendCourseSettingsForm(courseId: number) {

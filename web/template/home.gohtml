@@ -1,5 +1,7 @@
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
+{{$userID := 0}}
+{{if $user}}{{$userID = $user.ID}}{{end}}
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -35,6 +37,7 @@
         link.setAttribute('href', location.href);
         document.head.appendChild(link);
     </script>
+
 </head>
 <body x-data="home.skeleton()"
       @popstate.window="onPopState"
@@ -47,18 +50,11 @@
             <i class="fa-solid fa-bars" :class="{'rotate-90': navigation.value}"></i>
         </button>
         <button class="mx-3" type="button" id="logo" title="Start" @click="showMain()">
-            <img src="/logo.svg" width="42" alt="TUM-Live Logo">
+            <img src="/logo.svg" width="64" alt="TUM-Live Logo">
         </button>
     </div>
 
-    <!--
-    <article id="search" class="h-10 w-96">
-        <label class="flex items-center rounded-full bg-gray-100 dark:bg-gray-800 text-sm py-1 h-full">
-            <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
-            <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" type="text"
-                   placeholder="Search in lectures">
-        </label>
-    </article>-->
+{{template "search-global"}}
 
     <div id="user-context" class="flex items-center ms-auto">
         {{template "notifications"}}
@@ -67,8 +63,8 @@
         {{else}}
             <div>
                 <button type="button" @click="userContext.toggle(true)"
-                        class="tum-live-button-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
-                    <span class="text-white font-semibold uppercase">{{printf "%.1s" $user.GetPreferredName}}</span>
+                        class="border-2 tum-live-border-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
+                    <i class="fa-solid fa-user tum-live-font-primary"></i>
                 </button>
                 <div class="relative">
                     <article x-cloak x-show="userContext.value"
@@ -82,7 +78,9 @@
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
                                    class="tum-live-menu-item">
-                                    <i class="fa-solid fa-hammer mr-4"></i>
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-solid fa-hammer"></i>
+                                    </div>
                                     <p>Admin</p>
                                 </a>
                                 <div class="border-b dark:border-gray-800"></div>
@@ -91,7 +89,9 @@
                                 <button type="button"
                                         class="tum-live-menu-item"
                                         @click="userContext.getChild('themePicker').toggle()">
-                                    <i class="fa-regular fa-moon mr-4"></i>
+                                    <div class="icon-wrapper mr-2">
+                                        <i class="fa-regular fa-moon"></i>
+                                    </div>
                                     <span>Theme</span>
                                     <i class="fa-solid ml-auto"
                                        :class="userContext.getChild('themePicker').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
@@ -100,7 +100,7 @@
                                     <template x-for="[modeId, mode] of Object.entries($store.theme.modes)"
                                               :key="modeId">
                                         <button type="button" tabindex="0"
-                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
+                                                class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-1 px-10"
                                                 :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
                                                 @click="$store.theme.setTheme(modeId)"
                                                 x-text="mode.name">
@@ -110,26 +110,34 @@
                             </div>
                             <a href="/settings"
                                class="tum-live-menu-item">
-                                <i class="fa-solid fa-gear mr-4"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-gear"></i>
+                                </div>
                                 <p>Settings</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
-                            <a href="https://github.com/joschahenningsen/TUM-Live"
+                            <a href="https://github.com/TUM-Dev/gocast"
                                target="_blank"
                                class="tum-live-menu-item">
-                                <i class="fa-regular fa-comment mr-4"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-regular fa-comment"></i>
+                                </div>
                                 <p>Send Feedback</p>
                             </a>
-                            <a href="https://github.com/joschahenningsen/TUM-Live/issues/new?assignees=&labels=&template=bug_report.md&title="
+                            <a href="https://github.com/TUM-Dev/gocast/issues/new?assignees=&labels=&template=bug_report.md&title="
                                class="tum-live-menu-item"
                                target="_blank">
-                                <i class="fa-brands fa-github mr-4"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-brands fa-github"></i>
+                                </div>
                                 <p>Report problem</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="/logout"
                                class="tum-live-menu-item">
-                                <i class="fa-solid fa-sign-out mr-4"></i>
+                                <div class="icon-wrapper mr-2">
+                                    <i class="fa-solid fa-sign-out"></i>
+                                </div>
                                 <p>Logout</p>
                             </a>
                         </nav>
@@ -148,11 +156,13 @@
                 <i class="fa-solid fa-calendar"></i>
                 Semesters
             </header>
-            <span class="tum-live-side-navigation-group-item mb-1 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
-                  x-text="semesters[selectedSemesterIndex]?.FriendlyString()"></span>
+            <span class="tum-live-side-navigation-group-item mb-4 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
+                  x-text="semesters[selectedSemesterIndex]?.FriendlyString()"
+                  x-show="!navigation.getChild('allSemesters').value"></span>
             <template x-if="navigation.getChild('allSemesters').value">
-                <template x-for="s in semesters">
+                <template x-for="(s, i) in semesters">
                     <button type="button" @click="switchSemester(s.Year, s.TeachingTerm)"
+                            :class="{'border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50': i == selectedSemesterIndex }"
                             class="tum-live-side-navigation-group-item hover"
                             x-text="s.FriendlyString()"></button>
                 </template>
@@ -173,7 +183,7 @@
                 <template x-for="course in pinnedCourses" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item hover"
                        :href="course.URL()"
-                       @click.prevent="showCourse(course.Slug)"
+                       @click.prevent="showCourse(course.Slug, course.Year, course.TeachingTerm)"
                        x-text="course.Name">
                     </a>
                 </template>
@@ -221,22 +231,13 @@
                 </button>
             </template>
         </article>
-        <footer class="tum-live-footer w-full md:hidden">
-            <div class="grid divide-y dark:divide-gray-800">
-                <a href="/about">About</a>
-                <a href="/privacy">Data Privacy</a>
-                <a href="/imprint">Imprint</a>
-            </div>
-            <a href="https://github.com/joschahenningsen/TUM-Live" class="block mt-2 text-center">
-                <i class="fa-brands fa-github"></i> GitHub
-            </a>
-        </footer>
+        {{template "mobile_footer" .}}
     </section>
 
     <!-- views -->
     <article class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
         <template x-if="state.isPublicCourses()">
-            <article id="public-courses" class="tum-live-course-list">
+            <article id="public-courses" class="tum-live-course-list h-full overflow-y-scroll">
                 <header>
                     <h1>
                         <i class="text-base fa-solid fa-chalkboard mr-2"></i>
@@ -261,7 +262,8 @@
                                         : 'No upcoming lecture.'"></span>
                                 <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
-                                    <span class="hover:underline">Most recent lecture</span>
+                                    <span class="hover:underline"
+                                          x-text="`Most recent lecture: ${course.LastRecording.FriendlyDateStart()}`"></span>
                                 </a>
                             </div>
                         </section>
@@ -270,7 +272,7 @@
             </article>
         </template>
         <template x-if="state.isUserCourses()">
-            <article id="user-courses" class="tum-live-course-list">
+            <article id="user-courses" class="tum-live-course-list h-full overflow-y-scroll">
                 <header>
                     <h1>
                         <i class="text-base fa-solid fa-graduation-cap mr-2"></i>
@@ -290,12 +292,13 @@
                                x-text="course.Name">
                             </a>
                             <div class="links">
-                                <span x-text="course.LastRecording.ID !== 0
-                                        ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
+                                <span x-text="course.NextLecture.ID !== 0
+                                        ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
                                         : 'No upcoming lecture.'"></span>
                                 <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
-                                    <span class="hover:underline">Most recent lecture</span>
+                                    <span class="hover:underline"
+                                          x-text="`Most recent lecture: ${course.LastRecording.FriendlyDateStart()}`"></span>
                                 </a>
                             </div>
                         </section>
@@ -304,7 +307,7 @@
             </article>
         </template>
         <template x-if="state.isCourse()">
-            <article x-data="home.courseContext(state.slug, state.year, state.term)"
+            <article x-data="home.courseContext(state.slug, state.year, state.term, {{$userID}})"
                      x-init="$watch('state', (s) => reload(s.slug, s.year, s.term))"
                      class="tum-live-course-view">
                 <header>
@@ -331,208 +334,239 @@
                             .ics
                         </a>
                         {{if $user}}
-                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                            <template x-if="course.IsAdmin || {{$user.Role}} === 1">
                                 <a :href="`/admin/course/${course.ID}`"
                                    class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
                                    title="Go to admin page">
                                     <i class="fa-solid fa-hammer mr-2"></i>
                                     Admin
                                 </a>
-                            {{end}}
+                            </template>
                         {{end}}
                     </section>
                 </header>
-                <div class="grid gap-x-8 xl:grid-cols-3">
-                    <div :class="plannedStreams.hasElements() ? 'xl:col-span-2' : 'col-span-full'">
-                        <div x-data="home.livestreams((s) => s.Course.ID === course.ID)"
-                             x-init="$watch('course.ID', (id) => refilter((s) => s.Course.ID === id))"
-                             :class="{'tum-live-course-view-item' : hasLivestreams()}">
-                            <template x-if="hasLivestreams()">
-                                <section>
-                                    <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
-                                        <article class="tum-live-stream-row" :id="`livestream-${livestream.Stream.ID}`">
-                                            <div class="aspect-video relative md:h-40">
-                                                <div class="absolute right-2 bottom-2 flex items-center space-x-2 text-xs font-semibold text-white z-40">
-                                                    <template x-if="livestream.InLectureHall()">
-                                                        <a class="tum-live-badge bg-black"
-                                                           target="_blank"
-                                                           :href="livestream.LectureHall.ExternalURL">
-                                                            <i class="fas fa-location-pin"></i>
-                                                            <span x-text="livestream.LectureHall.Name"></span>
-                                                        </a>
-                                                    </template>
-                                                    <span class="tum-live-badge bg-red-500 text-white uppercase">
+                <div class="grid gap-x-8 xl:grid-cols-3 grid-cols-1">
+                    <div x-data="home.livestreams((s) => s.Course.ID === course.ID)"
+                         x-init="$watch('course.ID', (id) => refilter((s) => s.Course.ID === id))"
+                         class="col-span-full"
+                         :class="{'tum-live-course-view-item' : hasLivestreams()}">
+                        <template x-if="hasLivestreams()">
+                            <section>
+                                <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
+                                    <article class="tum-live-stream-row" :id="`livestream-${livestream.Stream.ID}`">
+                                        <div class="aspect-video relative md:h-40">
+                                            <div class="absolute right-2 bottom-2 flex items-center space-x-2 text-xs font-semibold text-white z-40">
+                                                <template x-if="livestream.InLectureHall()">
+                                                    <a class="tum-live-badge bg-black"
+                                                       target="_blank"
+                                                       :href="livestream.LectureHall.ExternalURL">
+                                                        <i class="fas fa-location-pin"></i>
+                                                        <span x-text="livestream.LectureHall.Name"></span>
+                                                    </a>
+                                                </template>
+                                                <span class="tum-live-badge bg-red-500 text-white uppercase">
                                                     <i class="fa-solid fa-satellite-dish"></i>
                                                     Live
                                                 </span>
-                                                </div>
-                                                <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                                                    <div :style="`background-image:url('/api/stream/${livestream.Stream.ID}/thumbs/live')`"
-                                                         class="h-full tum-live-thumbnail"></div>
-                                                </a>
                                             </div>
-                                            <div class="px-3">
-                                                <a class="title text-xl"
-                                                   :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
-                                                   x-text="livestream.Stream.Name"></a>
-                                                <span class="description text-sm mt-2"
-                                                      x-text="livestream.Stream.Description"></span>
-                                                <span class="date text-sm"
-                                                      x-text="livestream.Stream.UntilString()"></span>
-                                            </div>
-                                        </article>
-                                    </template>
-                                </section>
-                            </template>
-                        </div>
-
-                        <template x-if="upcomingStreams.hasElements()">
-                            <section class="tum-live-course-view-item">
-                                <section class="tum-live-upcoming">
-                                    <template x-for="upcoming in upcomingStreams.get()" :key="upcoming.ID">
-                                        <article class="tum-live-upcoming-item">
-                                            <span>Next lecture starts in </span><!--
-                                            --><span x-text="upcoming.MinutesLeftToStart()"></span><!--
-                                            --><span> Minutes.</span>
-                                            <a :href="course.WatchURL(upcoming.ID)" class="underline"
-                                               title="Join waiting room">Join waiting room</a>
-                                        </article>
-                                    </template>
-                                </section>
-                            </section>
-                        </template>
-
-                        <template x-if="courseStreams.hasElements()">
-                            <section class="tum-live-course-view-item">
-                                <header>
-                                    <h3 class="font-bold">VODs</h3>
-                                    <section class="space-x-2">
-                                        <button type="button" @click="sortNewestFirst()"
-                                                class="tum-live-button tum-live-button-tertiary"
-                                                :class="{'active' : isNewestFirst() }">
-                                            Newest first
-                                        </button>
-                                        <button type="button" @click="sortOldestFirst()"
-                                                class="tum-live-button tum-live-button-tertiary"
-                                                :class="{'active' : isOldestFirst() }">
-                                            Oldest first
-                                        </button>
-                                        {{if $user}}
-                                            <button type="button" @click="toggleShowWatched()"
-                                                    class="tum-live-button tum-live-button-tertiary"
-                                                    :class="{'active' : isHideWatched() }">
-                                                Hide watched
-                                            </button>
-                                        {{end}}
-                                    </section>
-                                </header>
-                                <section>
-                                    <article class="grid gap-3"
-                                             :class="plannedStreams.hasElements()
-                                                ? 'xl:grid-cols-3 lg:grid-cols-2 grid-cols-1'
-                                                : 'xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1'">
-                                        <template
-                                                x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))"
-                                                :key="vod.ID">
-                                            <article class="tum-live-stream group sm:col-span-1 col-span-full"
-                                                     @click.outside="vod.Dropdown.toggle(false)">
-                                                <a :href="course.WatchURL(vod.ID)" class="block mb-2">
-                                                    <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
-                                                         class="aspect-video tum-live-thumbnail">
-                                                        <div :id="`vod-progress-${vod.ID}`"
-                                                             class="tum-live-thumbnail-progress">
-                                                            <div>
-                                                                <template x-if="vod.Progress !== undefined">
-                                                    <span :style="`width: ${vod.Progress.Percentage()}%`"
-                                                          :class="{'rounded-br-lg': vod.Progress.HasProgressOne()}"></span>
-                                                                </template>
-                                                            </div>
-                                                        </div>
-                                                        <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-4 right-2 z-40 text-xs">
-                                                            <span x-text="vod.DurationString()"></span>
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                                <div class="relative flex justify-between px-1 min-h-[32px]">
-                                                    <div>
-                                                        <template x-if="vod.HasName()">
-                                                            <a class="title" :href="course.WatchURL(vod.ID)"
-                                                               x-text="vod.Name"></a>
-                                                        </template>
-                                                        <span class="date text-xs"
-                                                              x-text="vod.FriendlyDateStart()"></span>
-                                                    </div>
-                                                    <button type="button" @click="vod.Dropdown.toggle()"
-                                                            class="md:group-hover:block md:hidden px-2">
-                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
-                                                    </button>
-                                                    <template x-if="vod.Dropdown.value">
-                                                        <div class="absolute tum-live-menu py-2 absolute bottom-full right-0 h-fit overflow-hidden z-50 w-56">
-                                                            {{if $user}}
-                                                                <button type="button"
-                                                                        @click="vod.Progress.ToggleWatched()"
-                                                                        class="tum-live-menu-item">
-                                                                    <i class="fa-solid mr-4"
-                                                                       :class="vod.Progress.watched
-                                                                ? 'fa-eye-slash'
-                                                                : 'fa-eye'"></i>
-                                                                    <span class="block"
-                                                                          x-text="vod.Progress.watched
-                                                                ? 'Unmark as watched'
-                                                                : 'Mark as watched'"></span>
-                                                                </button>
-                                                            {{end}}
-                                                            <button type="button" @click="copyHLS(vod, vod.Dropdown)"
-                                                                    class="tum-live-menu-item">
-                                                                <i class="fa-solid fa-link mr-4"></i>
-                                                                <span class="block">Copy HLS URL</span>
-                                                            </button>
-                                                            {{if $user}}
-                                                                <template
-                                                                        x-if="course.DownloadsEnabled && vod.HasDownloads()">
-                                                                    <div>
-                                                                        <button type="button"
-                                                                                @click="vod.Dropdown.getChild('downloads').toggle()"
-                                                                                class="tum-live-menu-item">
-                                                                            <i class="fa-solid fa-cloud-arrow-down mr-4"></i>
-                                                                            <span class="block">Download</span>
-                                                                            <i class="fa-solid ml-auto"
-                                                                               :class="vod.Dropdown.getChild('downloads').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                                                                        </button>
-                                                                        <div x-cloak
-                                                                             x-show="vod.Dropdown.getChild('downloads').value"
-                                                                             class="grid gap-1">
-                                                                            <template x-for="file in vod.Downloads">
-                                                                                <a href="" download
-                                                                                   class="block text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
-                                                                                   x-text="file.FriendlyName">
-                                                                                </a>
-                                                                            </template>
-                                                                        </div>
-                                                                    </div>
-                                                                </template>
-                                                            {{end}}
-                                                        </div>
-                                                    </template>
-                                                </div>
-                                            </article>
-                                        </template>
-                                    </article>
-                                    <template x-if="courseStreams.hasNext()">
-                                        <div class="flex flex-grow justify-center mt-8">
-                                            <button class="tum-live-button tum-live-button-secondary" type="button"
-                                                    @click="courseStreams.next()">
-                                                <i class="fa-solid fa-angles-down mr-2"></i>
-                                                More
-                                            </button>
+                                            <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
+                                                <div :style="`background:url('/api/stream/${livestream.Stream.ID}/thumbs/live'), url('/thumb-fallback.png'); background-size: cover;`"
+                                                     class="h-full tum-live-thumbnail"></div>
+                                            </a>
                                         </div>
-                                    </template>
-                                </section>
+                                        <div class="px-3">
+                                            <a class="title text-xl"
+                                               :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
+                                               x-text="livestream.Stream.Name"></a>
+                                            <span class="description text-sm mt-2"
+                                                  x-text="livestream.Stream.Description"></span>
+                                            <span class="date text-sm"
+                                                  x-text="livestream.Stream.UntilString()"></span>
+                                        </div>
+                                    </article>
+                                </template>
                             </section>
                         </template>
                     </div>
+
+                    <template x-if="upcomingStreams.hasElements()">
+                        <section class="tum-live-course-view-item col-span-full">
+                            <section class="tum-live-upcoming">
+                                <template x-for="upcoming in upcomingStreams.get()" :key="upcoming.ID">
+                                    <article class="tum-live-upcoming-item">
+                                        <span>Next lecture starts in </span><!--
+                                            --><span x-text="upcoming.MinutesLeftToStart()"></span><!--
+                                            --><span> Minutes.</span>
+                                        <a :href="course.WatchURL(upcoming.ID)" class="underline"
+                                           title="Join waiting room">Join waiting room</a>
+                                    </article>
+                                </template>
+                            </section>
+                        </section>
+                    </template>
+
+                    <template x-if="courseStreams.hasElements()">
+                        <section class="tum-live-course-view-item"
+                                 :class="plannedStreams.hasElements() ? 'col-span-2' : 'col-span-full'">
+                            <header>
+                                <h3 class="font-bold">VODs</h3>
+                                <section class="button-area space-y-1">
+                                    <button type="button" @click="sortNewestFirst()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isNewestFirst() }">
+                                        Newest first
+                                    </button>
+                                    <button type="button" @click="sortOldestFirst()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isOldestFirst() }">
+                                        Oldest first
+                                    </button>
+                                    {{if $user}}
+                                        <button type="button" @click="toggleShowWatched()"
+                                                class="tum-live-button tum-live-button-tertiary"
+                                                :class="{'active' : isHideWatched() }">
+                                            Hide watched
+                                        </button>
+                                    {{end}}
+                                    <button type="button" @click="toggleListView()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isListView() }">
+                                        List View
+                                    </button>
+                                    <button type="button" @click="toggleWeekView()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isWeekView() }">
+                                        Week View
+                                    </button>
+                                </section>
+                            </header>
+                            <section>
+                                <template x-if="courseStreams.hasElements()">
+                                    <article class="grid">
+                                        <template
+                                                x-for="group in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
+                                            <article class="mb-8">
+                                                <header class="mb-2">
+                                                    <h6 class="font-semibold" x-text="groupNames.get(group[0].ID);"></h6>
+                                                </header>
+                                                <section class="grid gap-3  grid-cols-1"
+                                                         :class="isListView() ? 'xl:grid-cols-1 lg:grid-cols-1 md:grid-cols-1 grid-cols-1' : plannedStreams.hasElements()
+                                                                        ? 'xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2'
+                                                                        : 'xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-2'">
+                                                    <template x-for="vod in group" :key="vod.ID">
+                                                        <article
+                                                                class="tum-live-stream group sm:col-span-1 col-span-full"
+                                                                @click.outside="vod.Dropdown.toggle(false)">
+                                                            <a :href="course.WatchURL(vod.ID)" class="block mb-2">
+                                                                <div :style="`background: url('/api/stream/${vod.ID}/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;`"
+                                                                     class="aspect-video tum-live-thumbnail"
+                                                                    x-show="!isListView()">
+                                                                    <div :id="`vod-progress-${vod.ID}`"
+                                                                         class="tum-live-thumbnail-progress">
+                                                                        <div>
+                                                                            <template
+                                                                                    x-if="vod.Progress !== undefined">
+                                                                                    <span :style="`width: ${vod.Progress.Percentage()}%`"
+                                                                                          :class="{'rounded-br-lg': vod.Progress.HasProgressOne()}"></span>
+                                                                            </template>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex space-x-1 absolute text-white bottom-4 right-2 z-40 text-xs">
+                                                                        <div x-cloak x-show="vod.Progress?.watched"
+                                                                             class="bg-black/[.8] rounded-full px-2 py-1 text-white">
+                                                                            <i class="fa-solid fa-eye mr-0"></i>
+                                                                        </div>
+                                                                        <div class="tum-live-badge bg-black/[.8]">
+                                                                            <span x-text="vod.DurationString()"></span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                            <div class="relative flex justify-between px-1 min-h-[32px]">
+                                                                <div class="w-full">
+                                                                    <template x-if="vod.HasName()">
+                                                                        <a class="title overflow-hidden"
+                                                                           :href="course.WatchURL(vod.ID)"
+                                                                           :title="vod.Name"
+                                                                           x-text="vod.Name">
+
+                                                                        </a>
+                                                                    </template>
+                                                                    <template x-if="vod.HasName()">
+                                                                    <span class="date text-sm"
+                                                                          x-text="vod.FriendlyDateStart()"></span>
+                                                                    </template>
+
+                                                                    <template x-if="!vod.HasName()">
+                                                                        <a :class="isListView() ? 'title overflow-hidden' : ''" :href="course.WatchURL(vod.ID)">
+                                                                        <span class="date" :class="isListView() ? '' : 'text-sm'"   
+                                                                              x-text="vod.FriendlyDateStart()"></span>
+                                                                        </a>
+                                                                    </template>
+                                                                </div>
+                                                                <button type="button" @click="vod.Dropdown.toggle()"
+                                                                        class="md:group-hover:opacity-100 md:opacity-0 px-2">
+                                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                                </button>
+                                                                <template x-if="vod.Dropdown.value">
+                                                                    <div class="absolute tum-live-menu py-px bottom-full right-0 h-fit overflow-hidden z-50 w-56">
+                                                                        {{if $user}}
+                                                                            <button type="button"
+                                                                                    @click="vod.Progress.ToggleWatched()"
+                                                                                    class="tum-live-menu-item">
+                                                                                <i class="fa-solid mr-4"
+                                                                                   :class="vod.Progress.watched ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                                                                <span class="block"
+                                                                                      x-text="vod.Progress.watched ? 'Unmark as watched' : 'Mark as watched'"></span>
+                                                                            </button>
+                                                                        {{end}}
+                                                                        <button type="button"
+                                                                                @click="copyHLS(vod, vod.Dropdown)"
+                                                                                class="tum-live-menu-item">
+                                                                            <i class="fa-solid fa-link mr-4"></i>
+                                                                            <span class="block">Copy HLS URL</span>
+                                                                        </button>
+                                                                        {{if $user}}
+                                                                            <template
+                                                                                    x-if="course.DownloadsEnabled && vod.HasDownloads()">
+                                                                                <div>
+                                                                                    <button type="button"
+                                                                                            @click="vod.Dropdown.getChild('downloads').toggle()"
+                                                                                            class="tum-live-menu-item">
+                                                                                        <i class="fa-solid fa-cloud-arrow-down mr-4"></i>
+                                                                                        <span class="block">Download</span>
+                                                                                        <i class="fa-solid ml-auto"
+                                                                                           :class="vod.Dropdown.getChild('downloads').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                                                                    </button>
+                                                                                    <div x-cloak
+                                                                                         x-show="vod.Dropdown.getChild('downloads').value"
+                                                                                         class="grid gap-1">
+                                                                                        <template
+                                                                                                x-for="file in vod.Downloads">
+                                                                                            <a :href="file.DownloadURL" download
+                                                                                               class="block text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
+                                                                                               x-text="file.FriendlyName">
+                                                                                            </a>
+                                                                                        </template>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </template>
+                                                                        {{end}}
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </article>
+                                                    </template>
+                                                </section>
+                                            </article>
+                                        </template>
+                                    </article>
+                                </template>
+                            </section>
+                        </section>
+                    </template>
                     <template x-if="plannedStreams.hasElements()">
-                        <section class="tum-live-course-view-item xl:col-span-1">
+                        <section class="tum-live-course-view-item px-3">
                             <header>
                                 <h3>Scheduled</h3>
                             </header>
@@ -555,6 +589,9 @@
                                                         <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
                                                     </div>
                                                     <h4 x-text="s.Name" class="font-semibold text-1"></h4>
+                                                    <template x-if="home.isLectureHallValid(s.LectureHall)">
+                                                        <a :href="`https://nav.tum.de/room/${s.LectureHall}`" class="no-underline" x-text="s.LectureHall"></a>
+                                                    </template>
                                                 </div>
                                             </div>
                                         </article>
@@ -620,7 +657,7 @@
                                                 </template>
                                             </div>
                                             <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                                                <div :style="`background-image:url('/api/stream/${livestream.Stream.ID}/thumbs/live')`"
+                                                <div :style="`background:url('/api/stream/${livestream.Stream.ID}/thumbs/live'), url('/thumb-fallback.png'); background-size: cover;`"
                                                      class="h-full tum-live-thumbnail"></div>
                                             </a>
                                             <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-2 right-2 z-40 text-xs">
@@ -631,7 +668,7 @@
                                         <div class="px-2">
                                             <a class="course text-sm"
                                                :href="livestream.Course.URL()"
-                                               @click.prevent="showCourse(livestream.Course.Slug)"
+                                               @click.prevent="showCourse(livestream.Course.Slug, livestream.Course.Year, livestream.Course.TeachingTerm)"
                                                x-text="livestream.Course.Name">
                                             </a>
                                             <template x-if="livestream.Stream.HasName()">
@@ -689,6 +726,41 @@
                         </article>
                     </template>
 
+                    <!-- my courses -->
+                    <template x-if="userCourses.length > 0">
+                        <article class="tum-live-content-grid-item my-3" id="my-courses">
+                            <h3><i class="fa-solid fa-graduation-cap mr-2"></i>My Courses</h3>
+                            <article class="grid gap-2 py-3 pl-2">
+                                <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
+                                    <section class="tum-live-course-list-item">
+                                        <a class="title"
+                                           :href="course.URL()"
+                                           @click.prevent="showCourse(course.Slug)"
+                                           x-text="course.Name">
+                                        </a>
+                                        <div class="links">
+                                            <span x-text="course.NextLecture.ID !== 0
+                                                    ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
+                                                    : 'No upcoming lecture.'"></span>
+                                            <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
+                                                <i class="fa-solid fa-square-up-right"></i>
+                                                <span class="hover:underline"
+                                                      x-text="`Most recent lecture: ${course.LastRecording.FriendlyDateStart()}`"></span>
+                                            </a>
+                                        </div>
+                                    </section>
+                                </template>
+                            </article>
+                            <template x-if="userCourses.length > 8 && !state.isUserCourses()">
+                                <button @click="showUserCourses()"
+                                        class="tum-live-side-navigation-group-item hover ml-2">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                    Show all my courses
+                                </button>
+                            </template>
+                        </article>
+                    </template>
+
                     <!-- Recently -->
                     <template x-if="recently.hasElements()">
                         <article class="tum-live-content-grid-item" id="recent-vods">
@@ -698,7 +770,7 @@
                                 <template x-for="course in recently.get()" :key="course.ID">
                                     <article class="tum-live-stream sm:col-span-1 col-span-full p-3">
                                         <a :href="course.LastRecordingURL()" class="block mb-2">
-                                            <div :style="`background-image:url('/api/stream/${course.LastRecording.ID}/thumbs/vod')`"
+                                            <div :style="`background:url('/api/stream/${course.LastRecording.ID}/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;`"
                                                  class="aspect-video tum-live-thumbnail">
                                                 <div :id="`vod-progress-${course.LastRecording.ID}`"
                                                      class="tum-live-thumbnail-progress">
@@ -716,7 +788,7 @@
                                         </a>
                                         <div class="px-1">
                                             <a class="course text-xs"
-                                               x-text="course.Name" @click.prevent="showCourse(course.Slug)"
+                                               x-text="course.Name" @click.prevent="showCourse(course.Slug, course.Year, course.TeachingTerm)"
                                                :href="course.URL()"
                                                :class="course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"></a>
                                             <template x-if="course.LastRecording.HasName()">
@@ -734,20 +806,12 @@
                             </template>
                         </article>
                     </template>
-                </div>
+                </span>
             </article>
         </template>
     </article>
 </main>
-<footer id="desktop-footer"
-        class="tum-live-footer justify-between space-x-3 items-center hidden md:flex">
-    <div class="flex space-x-3">
-        <a href="/about">About</a>
-        <a href="/privacy">Data Privacy</a>
-        <a href="/imprint">Imprint</a>
-    </div>
-    <a href="https://github.com/joschahenningsen/TUM-Live"><i class="fa-brands fa-github"></i> GitHub</a>
-</footer>
+{{template "footer" .}}
 </body>
 </html>
 

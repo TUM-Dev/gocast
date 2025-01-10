@@ -1,10 +1,10 @@
 package tools
 
 import (
-	"github.com/Masterminds/sprig/v3"
-	log "github.com/sirupsen/logrus"
 	"html/template"
 	"io"
+
+	"github.com/Masterminds/sprig/v3"
 )
 
 type TemplateExecutor interface {
@@ -20,16 +20,16 @@ func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data in
 		panic("Provide at least one pattern for the debug template executor.")
 	}
 
-	var t, err = template.New("base").Funcs(sprig.FuncMap()).ParseGlob(e.Patterns[0])
+	t, err := template.New("base").Funcs(sprig.FuncMap()).ParseGlob(e.Patterns[0])
 	if err != nil {
-		log.Print("Failed to load pattern: '" + e.Patterns[0] + "'. Error: " + err.Error())
+		logger.Error("Failed to load pattern: '"+e.Patterns[0], "err", err.Error())
 	}
 
 	for i := 1; i < len(e.Patterns); i++ {
 		pattern := e.Patterns[i]
 		_, err := t.ParseGlob(pattern)
 		if err != nil {
-			log.Print("Failed to load pattern: '" + pattern + "'. Error: " + err.Error())
+			logger.Error("Failed to load pattern: '"+pattern+"'.", "err", err.Error())
 		}
 	}
 

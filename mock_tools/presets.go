@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	model "github.com/TUM-Dev/gocast/model"
+	camera "github.com/TUM-Dev/gocast/tools/camera"
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/joschahenningsen/TUM-Live/model"
-	camera "github.com/joschahenningsen/TUM-Live/tools/camera"
 )
 
 // MockPresetUtility is a mock of PresetUtility interface.

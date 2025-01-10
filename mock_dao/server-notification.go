@@ -7,8 +7,8 @@ package mock_dao
 import (
 	reflect "reflect"
 
+	model "github.com/TUM-Dev/gocast/model"
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/joschahenningsen/TUM-Live/model"
 )
 
 // MockServerNotificationDao is a mock of ServerNotificationDao interface.

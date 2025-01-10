@@ -2,8 +2,8 @@ package worker
 
 import (
 	"fmt"
+	"github.com/TUM-Dev/gocast/worker/pb"
 	uuid "github.com/iris-contrib/go.uuid"
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"

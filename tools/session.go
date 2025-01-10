@@ -1,11 +1,10 @@
 package tools
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	log "github.com/sirupsen/logrus"
-
-	"time"
 )
 
 type SessionData struct {
@@ -16,7 +15,7 @@ type SessionData struct {
 func StartSession(c *gin.Context, data *SessionData) {
 	token, err := createToken(data.Userid, data.SamlSubjectID)
 	if err != nil {
-		log.WithError(err).Error("Could not create token")
+		logger.Error("Could not create token", "err", err)
 		return
 	}
 	c.SetCookie("jwt", token, 60*60*24*7, "/", "", CookieSecure, true)

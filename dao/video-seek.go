@@ -2,8 +2,8 @@ package dao
 
 import (
 	"errors"
-	"github.com/joschahenningsen/TUM-Live/model"
-	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -31,12 +31,12 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 		return err
 	}
 
-	if (pos / float64(stream.Duration)) > 1 {
-		log.Error("position is bigger than stream duration")
+	if (pos / float64(stream.Duration.Int32)) > 1 {
+		logger.Error("position is bigger than stream duration")
 		return errors.New("position is bigger than stream duration")
 	}
 
-	chunkTimeRange := float64(stream.Duration) / maxChunksPerVideo
+	chunkTimeRange := float64(stream.Duration.Int32) / maxChunksPerVideo
 	chunk := uint(pos / chunkTimeRange)
 
 	return DB.Clauses(clause.OnConflict{

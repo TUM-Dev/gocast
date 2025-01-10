@@ -9,6 +9,7 @@ export function mainContext(year: number, term: string) {
         term: term as string,
 
         publicCourses: [] as Course[],
+        pinnedCourses: [] as Course[],
         userCourses: [] as Course[],
         liveToday: [] as Course[],
         recently: new AutoPaginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
@@ -26,15 +27,25 @@ export function mainContext(year: number, term: string) {
         reload(year: number, term: string) {
             this.year = year;
             this.term = term;
-            Promise.all([this.loadUserCourses(), this.loadPublicCourses()])
+            Promise.all([this.loadUserCourses(), this.loadPublicCourses(), this.loadPinnedCourses()])
                 .catch((err) => {
                     console.error(err);
                 })
                 .then(() => {
                     this.liveToday = this.getLiveToday();
                     if (this.userCourses.length > 0) {
-                        this.recently.set(this.getRecently(this.userCourses));
-                        this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
+                        if (this.pinnedCourses.length > 0) {
+                            //
+                            const pinnedOrUserCourses: Course[] = this.userCourses.concat(
+                                this.pinnedCourses.filter((c: Course) => this.userCourses.indexOf(c) < 0),
+                            );
+                            this.recently.set(this.getRecently(pinnedOrUserCourses));
+                            this.loadProgresses(pinnedOrUserCourses.map((c) => c.LastRecording.ID));
+                        } else {
+                            // If user did not pin any course, just show the userCourses on recently VOD section
+                            this.recently.set(this.getRecently(this.userCourses));
+                            this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
+                        }
                     } else {
                         this.recently.set(this.getRecently(this.publicCourses));
                     }
@@ -69,6 +80,10 @@ export function mainContext(year: number, term: string) {
 
         async loadUserCourses() {
             this.userCourses = await CoursesAPI.getUsers(this.state.year, this.state.term);
+        },
+
+        async loadPinnedCourses() {
+            this.pinnedCourses = await CoursesAPI.getPinned(this.state.year, this.state.term);
         },
 
         async loadProgresses(ids: number[]) {

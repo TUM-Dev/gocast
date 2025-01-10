@@ -3,6 +3,7 @@ import { postData, showMessage } from "./global";
 
 export function loadCourseInfo(
     id: string,
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
 ): Promise<{ title: string; semester: string; year: number; yearW: number; numberAttendees: number } | any> {
     return fetch("/api/courseInfo", { method: "POST", body: JSON.stringify({ courseID: id }) }).then((data) => {
         if (data.status != StatusCodes.OK) {

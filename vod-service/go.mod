@@ -1,3 +1,3 @@
-module github.com/joschahenningsen/TUM-Live/vod-service
+module github.com/TUM-Dev/gocast/vod-service
 
 go 1.19

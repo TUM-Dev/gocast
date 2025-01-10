@@ -1,0 +1,519 @@
+{{define "chat-component"}}
+    {{- /*gotype: github.com/TUM-Dev/gocast/web.ChatData*/ -}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$userName := ""}}
+    {{$userId := 0}}
+    {{$isAdmin := .IsAdminOfCourse}}
+    {{if .IndexData.TUMLiveContext.User}}
+        {{$userName = .IndexData.TUMLiveContext.User.Name}}
+        {{$userId = .IndexData.TUMLiveContext.User.ID}}
+    {{end}}
+    <article
+            x-data="interaction.videoInteractionContext({ID: {{$userId}}, name: '{{$userName}}', isAdmin: {{$isAdmin}}})"
+            class="h-full">
+        <template x-if="isChat()">
+            <article
+                    x-data="interaction.chatContext({{ $stream.ID }}, user, {{ $stream.Recording }})"
+                    x-init="if (isPopOut()) { afterInitPopout(); }
+                            else { afterInitNotPopout(watch.getPlayers()[0], '{{$stream.ParsableStartTime}}') }"
+                    x-on:wsrealtimeconnectionchange.window="(e) => setStatus(e.detail.status);"
+                    class="flex relative flex-col text-1 h-full">
+                <header class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 rounded-t-lg bg-white dark:bg-secondary border-b dark:border-gray-800"
+                        style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
+                    <section class="relative flex items-center space-x-3 text-sm"
+                             @click.outside="showSortSelect.toggle(false);">
+                        <button type="button" @click="showSortSelect.toggle()"
+                                class="tum-live-button-secondary px-3 py-1 rounded-full"
+                                title="Change to 'Popular First Order'">
+                            <i class="fa-solid fa-chevron-down mr-2"></i>
+                            <span x-cloak x-show="isPopularFirst() && !isReplaying()">Popular First</span>
+                            <span x-cloak x-show="isLiveFirst() && !isReplaying()">Live First</span>
+                            <span x-cloak x-show="isReplaying()">Chat Replay</span>
+                        </button>
+                        <article x-cloak x-show="showSortSelect.value"
+                                 class="tum-live-menu absolute top-full left-3 w-56 font-light">
+                            <button type="button" @click="sortLiveFirst()"
+                                    class="tum-live-menu-item"
+                                    :class="{'active' : (isLiveFirst() && !isReplaying())}">
+                                <i class="fa-solid fa-arrow-down-a-z w-8 mr-2"></i>
+                                Live first
+                            </button>
+                            <button type="button" @click="sortPopularFirst()"
+                                    class="tum-live-menu-item"
+                                    :class="{'active' : (isPopularFirst() && !isReplaying())}">
+                                <i class="fa-solid fa-fire w-8 mr-2"></i>
+                                Popular first
+                            </button>
+                            {{if $stream.Recording}}
+                                <template x-if="!isPopOut()">
+                                    <button type="button" @click="toggleReplay()"
+                                            class="tum-live-menu-item"
+                                            :class="{'active' : isReplaying()}">
+                                        <i class="fa-solid fa-clock-rotate-left w-8 mr-2"></i>
+                                        Chat Replay
+                                    </button>
+                                </template>
+                            {{end}}
+                        </article>
+                    </section>
+                    <button type="button"
+                            @click="showPolls()"
+                            class="tum-live-button tum-live-button-tertiary ml-auto">Polls
+                    </button>
+                </header>
+
+                <!-- Messages -->
+                <article id="chat-box" class="relative h-full w-full overflow-y-scroll overflow-x-hidden z-30">
+                    <div class="grid gap-y-8 content-start px-4 py-3 min-h-full">
+                        <template x-for="m in messages.get(chatSortFn)" :key="m.ID">
+                            <section class="grid gap-y-1 text-4 text-sm scroll-mb-4"
+                                     :class="{'opacity-60' : m.isGrayedOut}"
+                                     :id="'chat-message-' + m.ID">
+                                <div class="text-xs">
+                                    <span x-show="m.admin"
+                                          class="fa-video text-white bg-red-400 p-1 rounded fas"></span>
+                                    <span class="text-2 font-semibold" x-text="m.name" :style="'color:'+m.color"></span>
+                                    <span x-show="!m.visible" class="text-5 font-light">This message is currently only visible to you and admins.</span>
+                                </div>
+                                <div class="relative group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <div class="flex justify-between">
+                                        <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message"
+                                              x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
+                                        </span>
+                                    </div>
+                                    <!-- message-date -->
+                                    <span class="absolute right-2 bottom-2 hidden group-hover:inline text-xs text-5 font-light"
+                                          x-text="m.friendlyCreatedAt()"></span>
+                                </div>
+
+                                <!-- reactions -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center relative flex-wrap">
+                                        <template x-for="(reactionGroup, i) in m.aggregatedReactions">
+                                            <button type="button"
+                                                    @click="reactToMessage(m.ID, reactionGroup.emojiName)" {{/* notify emoji click */}}
+                                                    :title="reactionGroup.namesPretty" {{/* e.g. ':eyes:' */}}
+                                                    :disabled="!isLoggedIn()"
+                                                    :class="reactionGroup.hasReacted ? 'border-blue-500/50 bg-blue-100/25 dark:border-indigo-600 dark:bg-indigo-900/25' : 'border-gray-500'"
+                                                    class="cursor-pointer m-1 px-2 h-6 border-[1px] rounded-full border-solid text-xs flex justify-start items-center disabled:cursor-default">
+                                                <span x-text="reactionGroup.emoji"></span>
+                                                <span x-text="reactionGroup.reactions.length" class="ml-2"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- open reply button -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex space-x-2 align-middle items-center">
+                                        <div class="relative" @click.outside="() => m.ShowEmojiPicker.toggle(false)">
+                                            <button x-cloak x-show="isLoggedIn()" type="button" title="React"
+                                                    @click="m.ShowEmojiPicker.toggle()"
+                                                    class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                <i class="far fa-face-smile m-auto"></i>
+                                            </button>
+
+                                            <div x-data="interaction.emojiPickerContext(m.ID)"
+                                                 class="absolute ease-out duration-100 bg-white dark:bg-secondary border-2 border-solid border-gray-200 dark:border-black rounded left-[-10px] top-[-36px] text-left overflow-hidden whitespace-nowrap p-1 flex flex-row"
+                                                 :class="m.ShowEmojiPicker.value ? 'scale-100 opacity-1 translate-x-0 translate-y-0' : 'scale-0 opacity-0 translate-x-[-42px] translate-y-[42px]'">
+                                                <template x-for="emoji in emojiSuggestions">
+                                                    <button type="button" x-text="emoji.emoji"
+                                                            :title="`:${emoji.short_names[0]}:`"
+                                                            @click="reactToMessage(m.ID, emoji.short_names[0]); m.ShowEmojiPicker.toggle(false);"
+                                                            class="cursor-pointer mr-1 ml-1 w-7 h-7 rounded text-sm hover:bg-gray-100 hover:dark:bg-gray-600">
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <template x-if="m.resolved">
+                                            <i class="fa-solid fa-check-double text-success"></i>
+                                        </template>
+                                        <template x-if="m.replies.length > 0">
+                                            <button class="tum-live-button-secondary px-2 py-1 rounded-full uppercase font-light text-xs text-5"
+                                                    @click="m.ShowReplies.toggle()">
+                                                <span>replies</span>
+                                                <span x-text="`(${m.replies.length})`"></span>
+                                                <i class="fa-solid ml-1"
+                                                   :class="m.ShowReplies.value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                            </button>
+                                        </template>
+
+                                        <button x-cloak x-show="isLoggedIn()" type="button" @click="setReply(m)"
+                                                title="Reply">
+                                            <span class="font-semibold text-xs text-4">Reply</span>
+                                        </button>
+                                    </div>
+
+                                    <template x-if="isAdmin()">
+                                        <article class="relative">
+                                            <button type="button" title="Admin tools"
+                                                    @click="m.ShowAdminTools.toggle(true)"
+                                                    class="text-amber-400 uppercase text-sm hover:bg-gray-100 dark:hover:bg-gray-600 w-8 h-8 rounded-full">
+                                                <i class="fa-solid fa-bolt"></i>
+                                            </button>
+                                            <div x-cloak x-show="m.ShowAdminTools.value"
+                                                 @click.outside="m.ShowAdminTools.toggle(false)"
+                                                 class="tum-live-menu absolute right-0 bottom-full z-[60] w-32">
+                                                <button @click="deleteMessage(m.ID)"
+                                                        title="Delete Message" class="tum-live-menu-item">
+                                                    <i class="fas fa-ban text-danger mr-3"></i>
+                                                    <span class="text-4 font-light">Delete</span>
+                                                </button>
+                                                {{if $course.ModeratedChatEnabled}}
+                                                    <button x-cloak x-show="!m.visible"
+                                                            @click="approveMessage(m.ID)"
+                                                            title="Approve Message" class="tum-live-menu-item">
+                                                        <i class="fa-solid fa-spell-check mr-3"></i>
+                                                        <span class="text-4 font-light">Approve</span>
+                                                    </button>
+                                                    <button x-cloak x-show="m.visible && !m.admin"
+                                                            @click="retractMessage(m.ID)"
+                                                            title="Retract Message" class="tum-live-menu-item">
+                                                        <i class="fa-solid fa-rotate-left mr-3"></i>
+                                                        <span class="text-4 font-light">Retract</span>
+                                                    </button>
+                                                {{end}}
+                                                <template x-if="!m.resolved">
+                                                    <button @click="resolveMessage(m.ID)"
+                                                            title="Resolve Message" class="tum-live-menu-item">
+                                                        <i class="fas fa-check text-success mr-3"></i>
+                                                        <span class="text-4 font-light">Resolve</span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </article>
+                                    </template>
+                                </div>
+
+
+                                <!-- replies -->
+                                <article x-cloak x-show="m.ShowReplies.value"
+                                         class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
+                                    <template x-for="reply in m.replies">
+                                        <section class="grid gap-y-1">
+                                            <div>
+                                                <span x-show="reply.admin"
+                                                      class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
+                                                <span class="text-2 font-semibold" x-text="reply.name"
+                                                      :style="'color:'+reply.color"></span>
+                                                <span x-show="!reply.visible" class="text-xs text-5 font-light">This message is currently only visible to you and admins.</span>
+                                            </div>
+                                            <div class="flex">
+                                                <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex-grow">
+                                                    <div class="flex justify-between">
+                                                        <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="reply.message"></span>
+                                                        <span class="hidden group-hover:inline text-xs text-5 font-light mt-auto"
+                                                              x-text="reply.friendlyCreatedAt()"></span>
+                                                    </div>
+                                                </div>
+                                                {{if $course.ModeratedChatEnabled}}
+                                                    <template x-if="isAdmin()">
+                                                        <button x-cloak x-show="!reply.visible"
+                                                                @click="approveMessage(reply.ID)"
+                                                                title="Approve Message"
+                                                                class="tum-live-icon-button shrink mx-2">
+                                                            <i class="fa-solid fa-spell-check"></i>
+                                                        </button>
+                                                    </template>
+                                                {{end}}
+                                            </div>
+                                        </section>
+                                    </template>
+                                </article>
+                            </section>
+                        </template>
+                    </div>
+                    <article class="grid gap-2 sticky bottom-3">
+                        <section x-cloak x-show="unreadMessages" class="flex justify-center">
+                            <button type="button" @click="scrollToBottom()"
+                                    class="tum-live-badge flex items-center space-x-2 text-xs uppercase font-semibold shadow text-white bg-blue-500 dark:bg-indigo-600">
+                                <i class="fas fa-arrow-down"></i>
+                                New messages
+                            </button>
+                        </section>
+                        <section x-cloak x-show="hasServerMessage()" class="flex justify-center">
+                            <div class="tum-live-badge flex items-center space-x-2 text-sm shadow text-white bg-rose-500 dark:bg-rose-800">
+                                <i class="fa-solid fa-robot"></i>
+                                <span x-text="serverMessage.msg"></span>
+                                <button type="button" @click="hideServerMessage()">
+                                    <i class="fa-solid fa-close"></i>
+                                </button>
+                            </div>
+                        </section>
+                    </article>
+                </article>
+
+                <article x-data="interaction.chatPromptContext({{$stream.ID}})"
+                         class="rounded-lg dark:border-gray-800 z-50"
+                         :class="(!reply.isNoReply() || users.hasSuggestions() || emojis.hasSuggestions()) && 'shadow-lg border'">
+
+                    <template x-if="!reply.isNoReply()">
+                        <article class="text-3 grid gap-2 px-3 pt-2 pb-4 text-sm">
+                            <div class="flex justify-between items-center">
+                                <div class="font-semibold">
+                                    <i class="fa-solid fa-reply mr-2"></i>
+                                    <span x-text="`Replying to @${reply.message.name}:`"></span>
+                                </div>
+                                <button type="button"
+                                        class="tum-live-icon-button p-2"
+                                        @click="cancelReply();">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div class="flex">
+                                <span x-show="reply.message.admin"
+                                      class="h-fit fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
+                                <span class="text-2 font-semibold mr-2" x-text="`${reply.message.name}:`"
+                                      :style="'color:'+reply.message.color"></span>
+                                <span class="w-5/6 overflow-wrap-anywhere" x-html="reply.message.message"
+                                      x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))"></span>
+                            </div>
+                        </article>
+                    </template>
+
+                    <section x-cloak x-show="users.hasSuggestions()" id="chat-user-list" tabindex="-1"
+                             @keypress="(e) => keypressAlphanumeric(e)" @keyup.backspace="backspace()"
+                             @keyup.up="users.prev()" @keyup.down="users.next()"
+                             @keyup.enter="addAddressee(users.selected())"
+                             class="max-h-56 overflow-y-hidden w-full pt-1 pb-2 px-2 space-y-1 outline-none">
+                        <template x-for="(user, i) in users.suggestions">
+                            <button type="button" @click="addAddressee(user)"
+                                    :class="users.index === i ? 'bg-gray-100 dark:bg-gray-600' : ''"
+                                    class="text-xs text-3 flex w-full items-center justify-between p-2 rounded hover:cursor-pointer hover:bg-gray-100 hover:dark:bg-gray-600">
+                                <span class="font-semibold" x-text="user.name"></span>
+                                <span x-show="users.index === i">&#9166;</span>
+                            </button>
+                        </template>
+                    </section>
+                    <section x-cloak x-show="emojis.hasSuggestions()" id="chat-emoji-list" tabindex="-1"
+                             @keypress="(e) => keypressAlphanumeric(e)" @keyup.backspace="backspace()"
+                             @keyup.up="emojis.prev()" @keyup.down="emojis.next()"
+                             @keyup.enter="addEmoji(emojis.selected().emoji)"
+                             class="py-1 px-2 outline-none">
+                        <template x-for="(emoji, i) in emojis.suggestions">
+                            <button type="button" @click="addEmoji(emoji.emoji)"
+                                    :title="`:${emoji.short_names[0]}:`" x-text="emoji.emoji"
+                                    :class="emojis.index === i ? 'bg-gray-100 dark:bg-gray-600' : ''"
+                                    class="cursor-pointer mr-1 h-8 w-8 rounded text-xl hover:bg-gray-100 hover:dark:bg-gray-600">
+                            </button>
+                        </template>
+                    </section>
+                    <article class="flex flex-col space-y-2 px-3 border-t dark:border-gray-800 py-2 font-light">
+                        <label class="grow">
+                            <textarea id="chat-input" type="text" spellcheck="true" maxlength="1000"
+                                   @keyup="keyup()"
+                                   @keyup.enter="send(event)"
+                                   @keyup.esc="cancelReply()"
+                                   :disabled="!isLoggedIn()"
+                                   x-model="message"
+                                   :placeholder="!isConnected() ? 'Reconnecting to chat...' : isLoggedIn() ? 'Send a message' : 'Log in to chat'"
+                                   class="tum-live-border border-b bg-transparent text-sm font-normal placeholder:text-sm focus:outline-none py-1 w-full"
+                                      autocomplete="off"></textarea>
+                        </label>
+                        <section class="flex justify-between">
+                            <div class="relative">
+                                <button type="button" @click="showOptions.toggle()" class="text-sm">
+                                    <i class="fa-solid fa-gear"></i>
+                                </button>
+                                <article x-cloak x-show="showOptions.value"
+                                         class="tum-live-menu absolute w-56 bottom-full"
+                                         @click.outside="showOptions.toggle(false)">
+                                    <template x-if="!isPopOut()">
+                                        <button type="button" @click="openPopOut()" class="tum-live-menu-item">
+                                            <i class="fa-solid fa-arrow-up-right-from-square w-8 mr-2"></i>
+                                            Pop-out chat
+                                        </button>
+                                    </template>
+                                    {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
+                                        <section class="tum-live-menu-item">
+                                            <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
+                                                   x-model="isAnonymous" :disabled="!isLoggedIn()">
+                                            <label for="anonymous" title="Don't show my name."
+                                                   class="flex hover:cursor-pointer">
+                                                <i class="fas fa-ghost flex items-center justify-center w-8 mr-2"></i>
+                                                Send anonymously
+                                            </label>
+                                        </section>
+                                    {{end}}
+                                </article>
+                            </div>
+                            <div class="text-sm">
+                                <div x-cloak x-show="!isConnected()">
+                                    <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"
+                                         viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                                              fill="currentColor"/>
+                                        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                                              fill="currentFill"/>
+                                    </svg>
+                                </div>
+                                <button x-cloak x-show="isConnected()"
+                                        type="button" tabindex="-1" @click="send()"
+                                        class="tum-live-button tum-live-button-primary"
+                                        title="Send message"
+                                        :disabled="!isLoggedIn()">
+                                    Send
+                                    <i class="fa-solid fa-paper-plane ml-2"></i>
+                                </button>
+                            </div>
+                        </section>
+                    </article>
+                </article>
+            </article>
+        </template>
+        <template x-if="isPolls()">
+            <article x-data="interaction.pollContext({{$stream.ID}})" class="flex relative flex-col text-1 h-full">
+                <header class="tum-live-bg tum-live-border flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 border-b"
+                        style="min-height: 3rem;">
+                    <template x-if="isAdmin() && activePoll  && !showCreateUI.value">
+                        <button type="button" @click="showCreateUI.toggle();" tabindex="-1"
+                                class="tum-live-button tum-live-button-primary"
+                                title="New Poll">
+                            <span>New Poll</span>
+                        </button>
+                    </template>
+                    <button type="button"
+                            @click="showChat()"
+                            class="tum-live-button tum-live-button-tertiary ml-auto">Chat
+                    </button>
+                </header>
+                <template x-if="hasActivePoll()">
+                    <article
+                            class="tum-live-bg rounded-lg border-2 border-blue-500/50 dark:border-indigo-600/50 p-2 space-y-2 m-3">
+                        <div class="flex items-center text-lg border-b dark:border-gray-800 py-1 px-2">
+                            <span class="font-bold" x-text="activePoll.question"></span>
+                        </div>
+                        <template x-for="option in activePoll.options" :key="option.ID">
+                            <div>
+                                <template x-if="isAdmin()">
+                                    <div class="mb-3 pl-3 pr-3">
+                                        <div class="flex justify-between pr-2">
+                                            <span class="text-sm flex items-end" x-text="option.answer"></span>
+                                            <span class="text-xs flex items-end"
+                                                  x-text="option.votes + ' Votes'"></span>
+                                        </div>
+                                        <div :style="`width: ${activePoll.getOptionWidth(option)};`"
+                                             class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600"></div>
+                                    </div>
+                                </template>
+                                <template x-if="!isAdmin()">
+                                    <button class="flex items-center px-2 pb-1"
+                                            @click="activePoll.selected = option.ID"
+                                            :disabled="activePoll.submitted !== 0">
+                                        <i class=""
+                                           :class="(option.ID === activePoll.selected || activePoll.submitted === option.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                                        <span x-text="option.answer" class="ml-2 text-sm"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+                        <div class="flex justify-end pt-2 text-xs">
+                            <template x-if="isAdmin()">
+                                <button class="tum-live-button tum-live-button-primary"
+                                        @click="closeActivePoll()"
+                                        title="Close poll">
+                                    Publish & Close
+                                </button>
+                            </template>
+                            <template x-if="!isAdmin()">
+                                <button class="tum-live-button tum-live-button-primary"
+                                        x-text="activePoll.submitted !== 0 ? 'Answer submitted' : 'Send Answer'"
+                                        @click="submitPollOptionVote(activePoll.selected)"
+                                        :disabled="activePoll.selected === null || activePoll.submitted !== 0"
+                                        title="Send Answer">
+                                </button>
+                            </template>
+                        </div>
+                    </article>
+                </template>
+                <article class="grid gap-3 overflow-y-scroll p-3">
+                    <template x-if="history.length > 0">
+                        <template x-for="(poll,_) in history" :key="poll.ID">
+                            <div class="rounded-lg border dark:border-gray-800">
+                                <div class="flex items-center border-b dark:border-gray-800 py-1 px-2">
+                                    <span class="text-sm font-bold my-auto" x-text="poll.question"></span>
+                                </div>
+                                <div class="pt-2">
+                                    <template x-for="option in poll.options" :key="option.ID">
+                                        <div class="mb-3 pl-3 pr-3">
+                                            <div class="flex justify-between pr-2">
+                                                <span class="text-sm flex items-end" x-text="option.answer"></span>
+                                                <span class="text-xs flex items-end"
+                                                      x-text="option.votes + ' Votes'"></span>
+                                            </div>
+                                            <div :style="`width: ${poll.getOptionWidth(option)};`"
+                                                 class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </article>
+                <template x-if="showCreateUI.value">
+                    <article
+                            class="tum-live-bg tum-live-border static bottom-0 w-full px-2 pb-2 shadow-lg border rounded-lg">
+                        <header class="flex justify-end p-1">
+                            <button class="tum-live-icon-button text-xs p-2"
+                                    @click="cancelPoll()"
+                                    title="Cancel Poll"
+                                    tabindex="-1"
+                                    type="button">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </header>
+                        <section
+                                class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
+                            <label class="w-full">
+                    <textarea
+                            id="pollQuestion" spellcheck="true"
+                            class="bg-transparent w-full h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm focus:outline-none"
+                            maxlength="500"
+                            x-model="newPoll.question"
+                            autocomplete="off"
+                            placeholder="Write a Poll-Question ..."></textarea>
+                            </label>
+                        </section>
+                        <section>
+                            <template x-for="(option, index) in newPoll.options" :key="index">
+                                <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
+                                    <label class="w-full">
+                                        <input :id="$id('poll-answer')"
+                                               placeholder="Write a Poll-Answer ..." maxlength="240"
+                                               spellcheck="true"
+                                               x-model="option.answer"
+                                               class="bg-transparent w-full py-2 px-4 border-0 text-sm font-normal placeholder:text-sm focus:outline-none">
+                                    </label>
+
+                                    <button class="tum-live-icon-button text-xs px-3"
+                                            :disabled="newPoll.onlyOneOption()"
+                                            @click="newPoll.removeOption(index)"
+                                            tabindex="-1"
+                                            type="button"
+                                            title="Remove Poll Option">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </section>
+                        <div class="flex justify-between space-x-3">
+                            <button type="button" @click="startPoll()" tabindex="-1"
+                                    class="tum-live-button tum-live-button-primary grow"
+                                    title="Start Poll"
+                                    :disabled="newPoll.isValid()">
+                                <span class="font-semibold text-xs">Start Poll</span>
+                            </button>
+                            <button type="button" tabindex="-1"
+                                    class="tum-live-button tum-live-button-secondary"
+                                    @click="newPoll.addEmptyOption()"
+                                    title="Add Poll Answer">
+                                <i class="fas fa-plus m-auto"></i>
+                                Add option
+                            </button>
+                        </div>
+                    </article>
+                </template>
+            </article>
+        </template>
+{{end}}

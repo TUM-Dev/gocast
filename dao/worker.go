@@ -2,7 +2,8 @@ package dao
 
 import (
 	"context"
-	"github.com/joschahenningsen/TUM-Live/model"
+
+	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 )
 

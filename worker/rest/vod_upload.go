@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/joschahenningsen/TUM-Live/worker/worker"
+	"github.com/TUM-Dev/gocast/worker/worker"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"

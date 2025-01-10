@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,6 +56,10 @@ const (
 	PreferredName UserSettingType = iota + 1
 	Greeting
 	CustomPlaybackSpeeds
+	SeekingTime
+	UserDefinedSpeeds
+	AutoSkip
+	DefaultMode
 )
 
 type UserSetting struct {
@@ -61,11 +67,11 @@ type UserSetting struct {
 
 	UserID uint            `gorm:"not null"`
 	Type   UserSettingType `gorm:"not null"`
-	Value  string          `gorm:"not null"` //json encoded setting
+	Value  string          `gorm:"not null"` // json encoded setting
 }
 
 // GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
-func (u User) GetPreferredName() string {
+func (u *User) GetPreferredName() string {
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName {
 			return setting.Value
@@ -79,6 +85,8 @@ type PlaybackSpeedSetting struct {
 	Enabled bool    `json:"enabled"`
 }
 
+type CustomSpeeds []float32
+
 type PlaybackSpeedSettings []PlaybackSpeedSetting
 
 func (s PlaybackSpeedSettings) GetEnabled() (res []float32) {
@@ -87,6 +95,16 @@ func (s PlaybackSpeedSettings) GetEnabled() (res []float32) {
 			res = append(res, setting.Speed)
 		}
 	}
+	return res
+}
+
+func (u *User) GetEnabledPlaybackSpeeds() (res []float32) {
+	// Possibly, this could be collapsed into a single line, but readibility suffers.
+	res = append(res, u.GetPlaybackSpeeds().GetEnabled()...)
+	res = append(res, u.GetCustomSpeeds()...)
+	sort.SliceStable(res, func(i, j int) bool {
+		return res[i] < res[j]
+	})
 	return res
 }
 
@@ -120,8 +138,24 @@ func (u *User) GetPlaybackSpeeds() (speeds PlaybackSpeedSettings) {
 	return defaultPlaybackSpeeds
 }
 
+func (u *User) GetCustomSpeeds() (speeds CustomSpeeds) {
+	if u == nil {
+		return []float32{}
+	}
+	for _, setting := range u.Settings {
+		if setting.Type == UserDefinedSpeeds {
+			err := json.Unmarshal([]byte(setting.Value), &speeds)
+			if err != nil {
+				break
+			}
+			return speeds
+		}
+	}
+	return []float32{}
+}
+
 // GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
-func (u User) GetPreferredGreeting() string {
+func (u *User) GetPreferredGreeting() string {
 	for _, setting := range u.Settings {
 		if setting.Type == Greeting {
 			return setting.Value
@@ -130,14 +164,78 @@ func (u User) GetPreferredGreeting() string {
 	return "Moin"
 }
 
+// GetSeekingTime returns the seeking time preference for the user.
+// If the user is nil, the default seeking time of 15 seconds is returned.
+func (u *User) GetSeekingTime() int {
+	// Check if the user is nil
+	if u == nil {
+		return 15
+	}
+	// Check if the setting type is SeekingTime
+	for _, setting := range u.Settings {
+		if setting.Type == SeekingTime {
+			// Attempt to convert the setting value from string to an integer
+			seekingTime, err := strconv.Atoi(setting.Value)
+			if err != nil {
+				break
+			}
+			return seekingTime
+		}
+	}
+	// If no seeking time setting is found, return the default seeking time
+	return 15
+}
+
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
-func (u User) PreferredNameChangeAllowed() bool {
+func (u *User) PreferredNameChangeAllowed() bool {
 	for _, setting := range u.Settings {
 		if setting.Type == PreferredName && time.Since(setting.UpdatedAt) < time.Hour*24*30*3 {
 			return false
 		}
 	}
 	return true
+}
+
+// AutoSkipSetting wraps whether auto skip is enabled in JSON
+type AutoSkipSetting struct {
+	Enabled bool `json:"enabled"`
+}
+
+// GetAutoSkipEnabled returns whether the user has enabled auto skip
+func (u *User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
+	for _, setting := range u.Settings {
+		if setting.Type == AutoSkip {
+			var a AutoSkipSetting
+			err := json.Unmarshal([]byte(setting.Value), &a)
+			if err != nil {
+				return AutoSkipSetting{Enabled: false}, err
+			}
+			return a, nil
+		}
+	}
+	return AutoSkipSetting{Enabled: false}, nil
+}
+
+// DefaultModeSetting wraps whether the default stream mode for the user is beta
+type DefaultModeSetting struct {
+	Beta bool `json:"beta"`
+}
+
+func (u *User) GetDefaultMode() (DefaultModeSetting, error) {
+	if u == nil {
+		return DefaultModeSetting{Beta: false}, nil
+	}
+	for _, setting := range u.Settings {
+		if setting.Type == DefaultMode {
+			var m DefaultModeSetting
+			err := json.Unmarshal([]byte(setting.Value), &m)
+			if err != nil {
+				return DefaultModeSetting{Beta: false}, err
+			}
+			return m, nil
+		}
+	}
+	return DefaultModeSetting{Beta: false}, nil
 }
 
 type argonParams struct {
@@ -161,8 +259,12 @@ func (u *User) IsAdminOfCourse(course Course) bool {
 	return u.Role == AdminType || course.UserID == u.ID
 }
 
+// IsEligibleToWatchCourse checks if the user is allowed to access the course
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
-	if course.Visibility == "loggedin" || course.Visibility == "public" {
+	if u == nil {
+		return course.Visibility == "public" || course.Visibility == "hidden"
+	}
+	if course.Visibility == "public" || course.Visibility == "hidden" || course.Visibility == "loggedin" {
 		return true
 	}
 	for _, invCourse := range u.Courses {
@@ -173,8 +275,13 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	return u.IsAdminOfCourse(course)
 }
 
+// IsEligibleToSearchForCourse is a stricter version of IsEligibleToWatchCourse; in case of hidden course, it returns true only when the user is an admin of the course
+func (u *User) IsEligibleToSearchForCourse(course Course) bool {
+	return u.IsEligibleToWatchCourse(course) && course.Visibility != "hidden" || u.IsAdminOfCourse(course)
+}
+
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
-	var cMap = make(map[uint]Course)
+	cMap := make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
 			cMap[c.ID] = c
@@ -190,6 +297,58 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 		cRes = append(cRes, c)
 	}
 	return cRes
+}
+
+// AdministeredCoursesForSemesters returns all courses, that the user is a course admin of, in the given semester range or semesters
+func (u *User) AdministeredCoursesForSemesters(semesters []Semester) []Course {
+	var semester Semester
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsInRangeOfSemesters(semesters) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+// AdministeredCoursesBetweenSemesters returns all courses, that the user is a course admin of, between firstSemester and lasSemester
+func (u *User) AdministeredCoursesBetweenSemesters(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+// CoursesForSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
+func (u *User) CoursesForSemestersWithoutAdministeredCourses(semesters []Semester) []Course {
+	var semester Semester
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsInRangeOfSemesters(semesters) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
+}
+
+// CoursesBetweenSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
+func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
 }
 
 var (
@@ -329,5 +488,5 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if len(u.Name) == 0 {
 		return ErrUsernameNoText
 	}
-	return nil;
+	return nil
 }

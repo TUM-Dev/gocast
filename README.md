@@ -83,7 +83,7 @@ docker run --detach \
 
 ### Install go
 
-- Install **go >=1.18** by following the steps [here](https://go.dev/doc/install)
+- Install **go >=1.21** by following the steps [here](https://go.dev/doc/install)
 - Preferably use [JetBrains GoLand](https://youtu.be/vetAfxQxyJE) and open this project as it simplifies this entire process
 - Go to File -> Settings -> Go -> Go Modules and enable go modules integration.
 - Run `npm i` in the `./web` directory to install the required node modules

@@ -3,8 +3,8 @@ package worker
 import (
 	"context"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/worker/cfg"
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

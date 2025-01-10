@@ -3,14 +3,14 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 )
 
 func configGinDownloadRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -119,7 +119,7 @@ func sendDownloadFile(c *gin.Context, file model.File, tumLiveContext tools.TUML
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
 	}
-	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", uid, file.ID, file.Path))
+	logger.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", uid, file.ID, file.Path))
 	f, err := os.Open(file.Path)
 	if err != nil {
 		_ = c.Error(tools.RequestError{

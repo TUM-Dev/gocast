@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/antchfx/xmlquery"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	log "github.com/sirupsen/logrus"
 )
 
 func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
@@ -15,7 +15,7 @@ func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
 	if err != nil {
 		return CourseInfo{}, fmt.Errorf("GetCourseInformation: Can't LoadURL: %v", err)
 	}
-	var isError = len(xmlquery.Find(doc, "//Error")) != 0
+	isError := len(xmlquery.Find(doc, "//Error")) != 0
 	if isError {
 		return CourseInfo{}, errors.New("course not found")
 	}
@@ -34,11 +34,11 @@ func FetchCourses(daoWrapper dao.DaoWrapper) func() {
 		y, t := GetCurrentSemester()
 		courses, err := daoWrapper.CoursesDao.GetAllCoursesWithTUMIDFromSemester(context.Background(), y, t)
 		if err != nil {
-			log.WithError(err).Error("Could not get courses with TUM online identifier:", err)
+			logger.Error("Could not get courses with TUM online identifier:", "err", err)
 			return
 		}
 		FindStudentsForCourses(courses, daoWrapper.UsersDao)
-		//GetEventsForCourses(courses)
+		// GetEventsForCourses(courses)
 	}
 }
 

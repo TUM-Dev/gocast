@@ -1,0 +1,10 @@
+{{define "close-button"}}
+    <div class="h-fit w-fit">
+        <button type="button" class="transition-colors duration-200 hover:text-gray-600
+            dark:hover:text-white text-gray-400 text-xl w-4" tabindex="0" @click="history.back()">
+            <div class="flex items-center">
+                <i class="icon-cancel"></i>
+            </div>
+        </button>
+    </div>
+{{end}}

@@ -5,18 +5,18 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/voice-service/pb"
-	log "github.com/sirupsen/logrus"
+	"net"
+	"time"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/voice-service/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"net"
-	"time"
 )
 
 type subtitleReceiverServer struct {
@@ -38,10 +38,10 @@ func (s subtitleReceiverServer) Receive(_ context.Context, request *pb.ReceiveRe
 }
 
 func init() {
-	log.Info("starting grpc voice-receiver")
+	logger.Info("starting grpc voice-receiver")
 	lis, err := net.Listen("tcp", ":50053")
 	if err != nil {
-		log.WithError(err).Error("failed to init voice-receiver server")
+		logger.Error("failed to init voice-receiver server", "err", err)
 		return
 	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
@@ -56,7 +56,7 @@ func init() {
 	reflection.Register(grpcServer)
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			logger.Error("failed to serve", "err", err)
 		}
 	}()
 }
@@ -78,6 +78,6 @@ func GetSubtitleGeneratorClient() (SubtitleGeneratorClient, error) {
 func (s SubtitleGeneratorClient) CloseConn() {
 	err := s.ClientConn.Close()
 	if err != nil {
-		log.WithError(err).Error("could not close voice-service connection")
+		logger.Error("could not close voice-service connection", "err", err)
 	}
 }

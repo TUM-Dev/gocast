@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
-    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
+    {{- /*gotype: github.com/TUM-Dev/gocast/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <title>{{$course.Name}} | {{$stream.Name}}</title>
@@ -75,7 +75,8 @@
 </video-js>
 </body>
 <script>
-    watch.initPlayer("video-embedded", false, true, true, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}}, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
+    watch.initPlayer("video-embedded", false, true, true, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}}, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
+
     watch.startWebsocket()
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

@@ -3,19 +3,19 @@ package web
 import (
 	"context"
 	"errors"
-	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/tum"
-	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"html/template"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/RBG-TUM/commons"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 var VersionTag string
@@ -45,7 +45,7 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadPinnedCourses()
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
-		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
+		logger.Error("Could not execute template: 'index.gohtml'", "err", err)
 	}
 }
 
@@ -66,7 +66,7 @@ func (r mainRoutes) InfoPage(id uint, name string) gin.HandlerFunc {
 
 		text, err := r.InfoPageDao.GetById(id)
 		if err != nil {
-			log.WithError(err).Error("Could not get text with id")
+			logger.Error("Could not get text with id", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -88,13 +88,14 @@ type IndexData struct {
 	Courses             []model.Course
 	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
-	Semesters           []dao.Semester
+	Semesters           []model.Semester
 	CurrentYear         int
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
 	CanonicalURL        tools.CanonicalURL
 	Branding            tools.Branding
+	WikiURL             string
 }
 
 func NewIndexData() IndexData {
@@ -102,6 +103,7 @@ func NewIndexData() IndexData {
 		VersionTag:   VersionTag,
 		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
 		Branding:     tools.BrandingCfg,
+		WikiURL:      tools.Cfg.WikiURL,
 	}
 }
 
@@ -114,7 +116,7 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
 		indexData.TUMLiveContext = tumLiveContext
 	} else {
-		log.Warn("could not get TUMLiveContext")
+		logger.Warn("could not get TUMLiveContext")
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
@@ -139,7 +141,7 @@ func (d *IndexData) LoadCurrentNotifications(serverNoticationDao dao.ServerNotif
 	if notifications, err := serverNoticationDao.GetCurrentServerNotifications(); err == nil {
 		d.ServerNotifications = notifications
 	} else if err != gorm.ErrRecordNotFound {
-		log.WithError(err).Warn("could not get server notifications")
+		logger.Warn("could not get server notifications", "err", err)
 	}
 }
 
@@ -174,8 +176,9 @@ func (d *IndexData) LoadSemesters(spanMain *sentry.Span, coursesDao dao.CoursesD
 func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 	streams, err := daoWrapper.GetCurrentLive(context.Background())
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("could not get current live streams")
+		logger.Error("could not get current live streams", "err", err)
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+		return
 	}
 
 	tumLiveContext := d.TUMLiveContext
@@ -203,7 +206,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
 			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 			if err != nil {
-				log.WithError(err).Error(err)
+				logger.Error("Error getting lecture hall by id", "err", err)
 			} else {
 				lectureHall = &lh
 			}
@@ -229,8 +232,7 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 		case model.LecturerType:
 			{
 				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
-				coursesForLecturer, err :=
-					coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
+				coursesForLecturer, err := coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}

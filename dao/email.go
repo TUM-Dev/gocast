@@ -2,9 +2,10 @@ package dao
 
 import (
 	"context"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"gorm.io/gorm"
 	"time"
+
+	"github.com/TUM-Dev/gocast/model"
+	"gorm.io/gorm"
 )
 
 //go:generate mockgen -source=email.go -destination ../mock_dao/email.go

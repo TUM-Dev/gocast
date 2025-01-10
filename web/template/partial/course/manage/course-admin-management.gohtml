@@ -1,5 +1,5 @@
 {{define "course-admin-management"}}
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
+{{- /*gotype: github.com/TUM-Dev/gocast/model.Course*/ -}}
 <div class="form-container-body">
     <h2 class="text-5 text-sm">Add or remove users who can help moderate the chat, plan lectures and manage the course.</h2>
     <table x-data="admin.courseAdminManagement()" x-init="$nextTick (()=>{m.init({{.Model.ID}}, userId)});">

@@ -2,13 +2,14 @@ package api
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func configGinBookmarksRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {

@@ -3,17 +3,17 @@ package web
 import (
 	"embed"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"os"
 	"path"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/Masterminds/sprig/v3"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -27,12 +27,12 @@ var staticFS embed.FS
 
 var templatePaths = []string{
 	"template/*.gohtml",
+	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
 	"template/admin/admin_tabs/*.gohtml",
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
-	"template/partial/stream/chat/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
 	"template/partial/course/manage/create-lecture-form-slides/*.gohtml",
 }
@@ -111,6 +111,9 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/imprint", routes.InfoPage(2, "imprint"))
 	router.GET("/about", routes.InfoPage(3, "about"))
 
+	// search
+	router.GET("/search", routes.SearchPage)
+
 	// admins
 	adminGroup := router.Group("/")
 	adminGroup.GET("/admin/users", routes.AdminPage)
@@ -137,6 +140,7 @@ func configMainRoute(router *gin.Engine) {
 	withStream.Use(tools.InitStream(daoWrapper))
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
+	withStream.GET("/admin/stats/:courseID/:streamID", routes.LectureStatsPage)
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
@@ -153,7 +157,7 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.Use(tools.InitStream(daoWrapper))
 	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
-	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopUpChat)
+	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopOutChat)
 
 	// misc
 	router.GET("/healthcheck", routes.HealthCheck)
@@ -199,7 +203,14 @@ func (r mainRoutes) home(c *gin.Context) {
 	indexData := NewIndexDataWithContext(c)
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
-		log.WithError(err).Errorf("Could not execute template: 'home.gohtml'")
+		logger.Error("Could not execute template: 'home.gohtml'", "err", err)
+	}
+}
+
+func (r mainRoutes) SearchPage(c *gin.Context) {
+	indexData := NewIndexDataWithContext(c)
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "search-page.gohtml", indexData); err != nil {
+		logger.Error("Could not execute template: 'search.gohtml'", "err", err)
 	}
 }
 
@@ -240,7 +251,6 @@ type CacheMetrics struct {
 type ChatData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
 	IndexData       IndexData
-	IsPopUp         bool
 }
 
 type staticFile struct {
@@ -255,6 +265,7 @@ func getDefaultStaticBrandingFiles() []staticFile {
 		{Name: "favicon.ico", Path: "assets/favicon.ico"},
 		{Name: "icons-192.png", Path: "assets/img/icons-192.png"},
 		{Name: "icons-512.png", Path: "assets/img/icons-512.png"},
+		{Name: "thumb-fallback.png", Path: "assets/img/thumb-fallback.png"},
 	}
 }
 

@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/TUM-Dev/gocast/model"
 
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -33,9 +32,11 @@ type CoursesDao interface {
 	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
 	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
 	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
-	GetAvailableSemesters(c context.Context) []Semester
+	GetAvailableSemesters(c context.Context) []model.Semester
 	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
+	// ExecAllCourses executes f on all courses from database without batching
+	ExecAllCourses(f func([]Course))
 
 	UpdateCourse(ctx context.Context, course model.Course) error
 	UpdateCourseMetadata(ctx context.Context, course model.Course)
@@ -70,7 +71,7 @@ func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep
 
 func (d coursesDao) AddAdminToCourse(userID uint, courseID uint) error {
 	defer Cache.Clear()
-	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?)", userID, courseID).Error
+	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?) on duplicate key update user_id = user_id", userID, courseID).Error
 }
 
 // GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
@@ -201,6 +202,7 @@ func (d coursesDao) GetCourseByToken(token string) (course model.Course, err err
 func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.TranscodingProgresses").
+		Preload("Streams.VideoSections").
 		Preload("Streams.Files").
 		Preload("Streams", func(db *gorm.DB) *gorm.DB {
 			return db.Order("streams.start desc")
@@ -218,11 +220,11 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 		return cachedCourses.(model.Course), nil
 	}
 	var course model.Course
-	err := DB.Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
+	err := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start desc")
-	}).Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
+	}).Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year), course, 1, time.Minute)
 	}
@@ -243,11 +245,11 @@ func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year
 	return foundCourses, err
 }
 
-func (d coursesDao) GetAvailableSemesters(c context.Context) []Semester {
+func (d coursesDao) GetAvailableSemesters(c context.Context) []model.Semester {
 	if cached, found := Cache.Get("getAllSemesters"); found {
-		return cached.([]Semester)
+		return cached.([]model.Semester)
 	} else {
-		var semesters []Semester
+		var semesters []model.Semester
 		DB.Raw("SELECT year, teaching_term from courses " +
 			"group by year, teaching_term " +
 			"order by year desc, teaching_term desc").Scan(&semesters)
@@ -281,6 +283,26 @@ func (d coursesDao) GetCourseAdmins(courseID uint) ([]model.User, error) {
 	return admins, err
 }
 
+type Course struct {
+	Name, Slug, TeachingTerm, Visibility string
+	ID                                   uint
+	Year                                 int
+}
+
+// ExecAllCourses executes f on all courses.
+//
+// loads every course into memory
+func (d coursesDao) ExecAllCourses(f func([]Course)) {
+	var res []Course
+	err := DB.Raw(`SELECT id, name, slug, year, teaching_term, visibility
+							FROM courses 
+							WHERE deleted_at IS NULL ORDER BY id`).Scan(&res).Error
+	if err != nil {
+		fmt.Println(err)
+	}
+	f(res)
+}
+
 func (d coursesDao) UpdateCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
@@ -304,20 +326,15 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	for _, stream := range course.Streams {
 		err := DB.Delete(&stream).Error
 		if err != nil {
-			log.WithError(err).Error("Can't delete stream")
+			logger.Error("Can't delete stream", "err", err)
 		}
 	}
 	err := DB.Model(&course).Updates(map[string]interface{}{"vod_enabled": false}).Error
 	if err != nil {
-		log.WithError(err).Error("Can't update course settings when deleting")
+		logger.Error("Can't update course settings when deleting", "err", err)
 	}
 	err = DB.Delete(&course, course.ID).Error
 	if err != nil {
-		log.WithError(err).Error("Can't delete course")
+		logger.Error("Can't delete course", "err", err)
 	}
-}
-
-type Semester struct {
-	TeachingTerm string
-	Year         int
 }

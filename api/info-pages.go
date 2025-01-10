@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
 	"net/http"
 	"strconv"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 )
 
 func configInfoPageRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
@@ -57,7 +58,6 @@ func (r infoPageRoutes) updateText(c *gin.Context) {
 		RawContent: reqBody.RawContent,
 		Type:       reqBody.Type,
 	})
-
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

@@ -7,23 +7,25 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/meilisearch/meilisearch-go"
-	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"os"
 	"time"
+
+	"github.com/meilisearch/meilisearch-go"
+	uuid "github.com/satori/go.uuid"
+	"github.com/spf13/viper"
 )
 
-var Cfg Config
-var Loc *time.Location
+var (
+	Cfg Config
+	Loc *time.Location
+)
 
 func LoadConfig() {
 	initCache()
 	var err error
 	Loc, err = time.LoadLocation("Europe/Berlin")
 	if err != nil {
-		log.WithError(err).Error("tools.config.LoadConfig: can't get time.location")
+		logger.Error("tools.config.LoadConfig: can't get time.location", "err", err)
 	}
 	initConfig()
 }
@@ -39,12 +41,12 @@ func initConfig() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		if errors.Is(err, viper.ConfigFileNotFoundError{}) {
-			log.WithError(err).Warn("tools.config.LoadConfig: can't find config file")
+			logger.Warn("tools.config.LoadConfig: can't find config file", "err", err)
 		} else {
 			panic(fmt.Errorf("fatal error config file: %v", err))
 		}
 	}
-	log.Info("Using Config file ", viper.ConfigFileUsed())
+	logger.Info("Using Config file " + viper.ConfigFileUsed())
 	err = viper.Unmarshal(&Cfg)
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %v", err))
@@ -56,14 +58,14 @@ func initConfig() {
 		viper.Set("workerToken", Cfg.WorkerToken)
 		err = viper.WriteConfig()
 		if err != nil {
-			log.Warn("Can't write out config ", err)
+			logger.Warn("Can't write out config ", "err", err)
 		}
 	}
 	if Cfg.JWTKey == nil {
-		log.Info("Generating new JWT key")
+		logger.Info("Generating new JWT key")
 		JWTKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
 		if err != nil {
-			log.WithError(err).Fatal("Can't generate JWT key")
+			logger.Error("Can't generate JWT key", "err", err)
 		}
 		armoured := string(pem.EncodeToMemory(
 			&pem.Block{
@@ -74,17 +76,20 @@ func initConfig() {
 		viper.Set("jwtKey", armoured)
 		err = viper.WriteConfig()
 		if err != nil {
-			log.Warn("Can't write out config ", err)
+			logger.Warn("Can't write out config ", "err", err)
 		}
 		jwtKey = JWTKey
 	} else {
 		k, _ := pem.Decode([]byte(*Cfg.JWTKey))
 		key, err := x509.ParsePKCS1PrivateKey(k.Bytes)
 		if err != nil {
-			log.WithError(err).Fatal("Can't parse JWT key")
+			logger.Error("Can't parse JWT key", "err", err)
 			return
 		}
 		jwtKey = key
+	}
+	if Cfg.WikiURL == "" {
+		logger.Warn("No Wiki URL found, link cannot be provided on webpage")
 	}
 	// allow overwriting database host with env var, mainly for testing with docker-compose
 	if os.Getenv("DBHOST") != "" {
@@ -168,6 +173,8 @@ type Config struct {
 	} `yaml:"meili"`
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
+	WikiURL        string `yaml:"wikiURL"`
+	RtmpProxyURL   string `yaml:"rtmpProxyURL"`
 }
 
 type MailConfig struct {

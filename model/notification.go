@@ -1,31 +1,31 @@
 package model
 
 import (
+	"html/template"
+
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
-	"html/template"
 )
 
 // NotificationTarget is a User group the Notification is displayed to
 type NotificationTarget int
 
 const (
-	TargetAll      = iota + 1 //TargetAll Is any user, regardless if logged in or not
-	TargetUser                //TargetUser Are all users that are logged in
-	TargetStudent             //TargetStudent Are all users that are logged in and are students
-	TargetLecturer            //TargetLecturer Are all users that are logged in and are lecturers
-	TargetAdmin               //TargetAdmin Are all users that are logged in and are admins
+	TargetAll      = iota + 1 // TargetAll Is any user, regardless if logged in or not
+	TargetUser                // TargetUser Are all users that are logged in
+	TargetStudent             // TargetStudent Are all users that are logged in and are students
+	TargetLecturer            // TargetLecturer Are all users that are logged in and are lecturers
+	TargetAdmin               // TargetAdmin Are all users that are logged in and are admins
 
 )
 
 // Notification is a message (e.g. a feature alert) that is displayed to users
 type Notification struct {
 	Model
-
 	Title  *string            `json:"title,omitempty"`
 	Body   string             `json:"-" gorm:"not null"`
-	Target NotificationTarget `json:"-" gorm:"not null; default:1"`
+	Target NotificationTarget `json:"target" gorm:"not null; default:1"`
 
 	// SanitizedBody is the body of the notification, converted from markdown to HTML
 	SanitizedBody string `json:"body" gorm:"-"`

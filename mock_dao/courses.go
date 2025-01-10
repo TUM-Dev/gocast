@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	dao "github.com/TUM-Dev/gocast/dao"
+	model "github.com/TUM-Dev/gocast/model"
 	gomock "github.com/golang/mock/gomock"
-	dao "github.com/joschahenningsen/TUM-Live/dao"
-	model "github.com/joschahenningsen/TUM-Live/model"
 )
 
 // MockCoursesDao is a mock of CoursesDao interface.
@@ -76,6 +76,18 @@ func (mr *MockCoursesDaoMockRecorder) DeleteCourse(course interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCourse", reflect.TypeOf((*MockCoursesDao)(nil).DeleteCourse), course)
 }
 
+// ExecAllCourses mocks base method.
+func (m *MockCoursesDao) ExecAllCourses(f func([]dao.Course)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExecAllCourses", f)
+}
+
+// ExecAllCourses indicates an expected call of ExecAllCourses.
+func (mr *MockCoursesDaoMockRecorder) ExecAllCourses(f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecAllCourses", reflect.TypeOf((*MockCoursesDao)(nil).ExecAllCourses), f)
+}
+
 // GetAdministeredCoursesByUserId mocks base method.
 func (m *MockCoursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) ([]model.Course, error) {
 	m.ctrl.T.Helper()
@@ -136,10 +148,10 @@ func (mr *MockCoursesDaoMockRecorder) GetAllCoursesWithTUMIDFromSemester(ctx, ye
 }
 
 // GetAvailableSemesters mocks base method.
-func (m *MockCoursesDao) GetAvailableSemesters(c context.Context) []dao.Semester {
+func (m *MockCoursesDao) GetAvailableSemesters(c context.Context) []model.Semester {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAvailableSemesters", c)
-	ret0, _ := ret[0].([]dao.Semester)
+	ret0, _ := ret[0].([]model.Semester)
 	return ret0
 }
 

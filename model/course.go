@@ -3,11 +3,10 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"log"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // SourceMode 0 -> COMB, 1-> PRES, 2 -> CAM
@@ -53,9 +52,10 @@ type CourseDTO struct {
 	NextLecture      StreamDTO
 	LastRecording    StreamDTO
 	Streams          []StreamDTO
+	IsAdmin          bool // Set in API handler
 }
 
-func (c *Course) ToDTO() CourseDTO {
+func (c *Course) ToDTO(u *User) CourseDTO {
 	return CourseDTO{
 		ID:               c.ID,
 		Name:             c.Name,
@@ -64,8 +64,9 @@ func (c *Course) ToDTO() CourseDTO {
 		TeachingTerm:     c.TeachingTerm,
 		Year:             c.Year,
 		DownloadsEnabled: c.DownloadsEnabled,
-		NextLecture:      c.GetNextLecture().ToDTO(),
-		LastRecording:    c.GetLastRecording().ToDTO(),
+		NextLecture:      c.GetNextLecture(u).ToDTO(),
+		LastRecording:    c.GetLastRecording(u).ToDTO(),
+		IsAdmin:          false,
 	}
 }
 
@@ -146,7 +147,7 @@ func (c Course) CanUseSource(lectureHallID uint, sourceType string) bool {
 func (c *Course) SetSourcePreference(pref []SourcePreference) {
 	pBytes, err := json.Marshal(pref)
 	if err != nil {
-		logrus.WithError(err).Error("Could not marshal source preference")
+		logger.Error("Could not marshal source preference", "err", err)
 		return
 	}
 	c.SourcePreferences = string(pBytes)
@@ -217,15 +218,18 @@ func (c Course) NumUsers() int {
 }
 
 // NextLectureHasReachedTimeSlot returns whether the courses next lecture arrived at its timeslot
-func (c Course) NextLectureHasReachedTimeSlot() bool {
-	return c.GetNextLecture().TimeSlotReached()
+func (c Course) NextLectureHasReachedTimeSlot(u *User) bool {
+	return c.GetNextLecture(u).TimeSlotReached()
 }
 
 // GetNextLecture returns the next lecture of the course
-func (c Course) GetNextLecture() Stream {
+func (c Course) GetNextLecture(u *User) Stream {
 	var earliestLecture Stream
 	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
+		if s.Private && (u == nil || !u.IsAdminOfCourse(c)) {
+			continue
+		}
 		if s.Start.Before(earliestLectureDate) && s.End.After(time.Now()) {
 			earliestLectureDate = s.Start
 			earliestLecture = s
@@ -236,10 +240,13 @@ func (c Course) GetNextLecture() Stream {
 
 // GetLastRecording returns the most recent lecture of the course
 // Assumes an ascending order of c.Streams
-func (c Course) GetLastRecording() Stream {
+func (c Course) GetLastRecording(u *User) Stream {
 	var lastLecture Stream
 	now := time.Now()
 	for _, s := range c.Streams {
+		if s.Private && (u == nil || !u.IsAdminOfCourse(c)) {
+			continue
+		}
 		if s.Start.After(now) {
 			return lastLecture
 		}
@@ -274,8 +281,8 @@ func (c Course) GetNextLectureDate() time.Time {
 }
 
 // IsNextLectureSelfStream checks whether the next lecture is a self stream
-func (c Course) IsNextLectureSelfStream() bool {
-	return c.GetNextLecture().IsSelfStream()
+func (c Course) IsNextLectureSelfStream(u *User) bool {
+	return c.GetNextLecture(u).IsSelfStream()
 }
 
 // GetNextLectureDateFormatted returns a JavaScript friendly formatted date string
@@ -315,11 +322,12 @@ func (c Course) IsHidden() bool {
 	return c.Visibility == "hidden"
 }
 
-// AdminJson is the JSON representation of a courses streams for the admin panel
-func (c Course) AdminJson(lhs []LectureHall) []gin.H {
-	var res []gin.H
-	for _, s := range c.Streams {
-		res = append(res, s.getJson(lhs, c))
-	}
-	return res
+// IsLoggedIn returns true if visibility is set to 'loggedin' and false if not
+func (c Course) IsLoggedIn() bool {
+	return c.Visibility == "loggedin"
+}
+
+// IsEnrolled returns true if visibility is set to 'enrolled' and false if not
+func (c Course) IsEnrolled() bool {
+	return c.Visibility == "enrolled"
 }

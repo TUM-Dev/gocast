@@ -2,18 +2,19 @@ package web
 
 import (
 	"errors"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/api"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"html/template"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/api"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {
@@ -22,7 +23,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	var data WatchPageData
 	err := data.Prepare(c, r.LectureHallsDao)
 	if err != nil {
-		log.WithError(err).Error("Can't prepare data for watch page")
+		logger.Error("Can't prepare data for watch page", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
@@ -33,13 +34,13 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	data.IndexData = NewIndexData()
-	if tumLiveContext.Course.DownloadsEnabled && tumLiveContext.Stream.IsDownloadable() {
+	if (tumLiveContext.Course.DownloadsEnabled || tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)) && tumLiveContext.Stream.IsDownloadable() {
 		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, true)
 	} else {
 		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, false)
 	}
 	if err != nil {
-		log.WithError(err).Warn("Can't sign playlists")
+		logger.Warn("Can't sign playlists", "err", err)
 	}
 	data.IndexData.TUMLiveContext = tumLiveContext
 	data.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
@@ -47,7 +48,6 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 
 	data.ChatData.IndexData.TUMLiveContext = foundContext.(tools.TUMLiveContext)
 	data.ChatData.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
-	data.ChatData.IsPopUp = false
 
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
 		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
@@ -85,25 +85,43 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
 
-		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, []uint{tumLiveContext.Stream.ID})
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				log.WithError(err).Warn("Couldn't fetch progress from the database.")
+				logger.Warn("Couldn't fetch progress from the database.", "err", err)
 			}
-		} else {
-			data.Progress = progress
+		} else if len(progress) > 0 {
+			data.Progress = progress[0]
+		}
+
+		// Check if user wants to skip first silence
+		autoSkip, err := tumLiveContext.User.GetAutoSkipEnabled()
+		if err != nil {
+			logger.Error("Couldn't decode user setting", "err", err)
+		} else if autoSkip.Enabled {
+			// The length of the stream may mismatch with the length of the video if it is a self-stream
+			if tumLiveContext.Stream.LectureHallID != 0 {
+				data.Progress.Progress = math.Max(data.Progress.Progress, tumLiveContext.Stream.FirstSilenceAsProgress())
+			}
 		}
 	}
 	if c.Query("restart") == "1" {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
 	}
-	if _, dvr := c.GetQuery("dvr"); dvr {
+	// Check if user wants to use beta stream mode
+	mode, err := tumLiveContext.User.GetDefaultMode()
+	if err != nil {
+		logger.Error("Couldn't decode user setting", "err", err)
+	}
+
+	if _, dvr := c.GetQuery("dvr"); dvr || mode.Beta {
 		data.DVR = "?dvr"
 	} else {
 		data.DVR = ""
 	}
+
 	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = data.Unit.GetDescriptionHTML()
@@ -113,12 +131,12 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	if c.Query("video_only") == "1" {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
 		if err != nil {
-			log.Printf("couldn't render template: %v\n", err)
+			logger.Error("couldn't render template", "err", err)
 		}
 	} else {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", data)
 		if err != nil {
-			log.Printf("couldn't render template: %v\n", err)
+			logger.Error("couldn't render template", "err", err)
 		}
 	}
 }

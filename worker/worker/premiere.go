@@ -2,7 +2,7 @@ package worker
 
 import (
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/cfg"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"

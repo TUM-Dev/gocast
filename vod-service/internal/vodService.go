@@ -3,7 +3,6 @@ package internal
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -22,7 +21,7 @@ type App struct {
 func NewApp() *App {
 	outputDir := os.Getenv("OUTPUT_DIR")
 	if outputDir == "" {
-		log.Fatal("OUTPUT_DIR environment variable not set.")
+		logger.Error("OUTPUT_DIR environment variable not set.")
 	}
 	if !strings.HasSuffix(outputDir, "/") {
 		outputDir += "/"
@@ -67,7 +66,7 @@ func (a *App) uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = io.Copy(tempFile, file)
 	if err != nil {
-		log.Println(err)
+		logger.Error("Error on io copy", "err", err)
 		return
 	}
 	// write this byte array to our temporary file
@@ -82,19 +81,19 @@ func (a *App) packageFile(file, name string) {
 	defer func() {
 		err := os.Remove(file)
 		if err != nil {
-			log.Printf("Error cleaning up file: %v", err)
+			logger.Error("Error cleaning up file", "err", err)
 		}
 	}()
 	name = fileNameIllegal.ReplaceAllString(name, "_")
 	// override eventually existing files
 	err := os.RemoveAll(a.config.outputDir + name)
 	if err != nil {
-		log.Println(err)
+		logger.Error("Error on removing files", "err", err)
 		// try to continue anyway
 	}
 	err = os.MkdirAll(a.config.outputDir+name, os.ModePerm)
 	if err != nil {
-		log.Println(err)
+		logger.Error("Error on creating directories", "err", err)
 		return
 	}
 	c := exec.Command("ffmpeg",

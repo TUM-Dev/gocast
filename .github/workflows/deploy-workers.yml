@@ -6,6 +6,9 @@ on:
     tags:
       - '*'
 
+permissions:
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,11 +27,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/joschahenningsen/tum-live/${{ env.containername }}
+          images: ghcr.io/tum-dev/gocast/${{ env.containername }}
           tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
             type=sha
           flavor: |
             latest=true
+            prefix=
+            suffix=
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
@@ -46,6 +54,6 @@ jobs:
           context: ./${{ matrix.module }}
           pull: true
           push: true
-          build-args: version=${{ steps.vars.outputs.sha_short }}
+          build-args: version=${{ github.ref_name }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

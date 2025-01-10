@@ -12,14 +12,13 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/realtime"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/realtime"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -35,6 +34,12 @@ var allowedReactions = map[string]struct{}{
 	"heart":    {},
 	"eyes":     {},
 }
+
+const (
+	POLL_START_MSG         = "start_poll"
+	POLL_CLOSE_MSG         = "close_active_poll"
+	POLL_PARTICIPATION_MSG = "submit_poll_option_vote"
+)
 
 var routes chatRoutes
 
@@ -57,9 +62,8 @@ func RegisterRealtimeChatChannel() {
 			}
 
 			req, err := parseChatPayload(message)
-
 			if err != nil {
-				log.WithError(err).Warn("could not unmarshal request")
+				logger.Warn("could not unmarshal request", "err", err)
 				return
 			}
 
@@ -83,12 +87,12 @@ func RegisterRealtimeChatChannel() {
 			case "react_to":
 				routes.handleReactTo(tumLiveContext, message.Payload)
 			default:
-				log.WithField("type", req.Type).Warn("unknown websocket request type")
+				logger.Warn("unknown websocket request type", "type", req.Type)
 			}
 		},
 	})
 
-	//delete closed sessions every second
+	// delete closed sessions every second
 	go func() {
 		c := time.Tick(time.Second)
 		for range c {
@@ -115,7 +119,7 @@ type chatRoutes struct {
 func (r chatRoutes) handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 	var req submitPollOptionVote
 	if err := json.Unmarshal(msg, &req); err != nil {
-		log.WithError(err).Warn("could not unmarshal submit poll answer request")
+		logger.Warn("could not unmarshal submit poll answer request", "err", err)
 		return
 	}
 	if ctx.User == nil {
@@ -123,13 +127,14 @@ func (r chatRoutes) handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []b
 	}
 
 	if err := r.ChatDao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
-		log.WithError(err).Warn("could not add poll option vote")
+		logger.Warn("could not add poll option vote", "err", err)
 		return
 	}
 
 	voteCount, _ := r.ChatDao.GetPollOptionVoteCount(req.PollOptionId)
 
 	voteUpdateMap := gin.H{
+		"type":         POLL_PARTICIPATION_MSG,
 		"pollOptionId": req.PollOptionId,
 		"votes":        voteCount,
 	}
@@ -137,7 +142,7 @@ func (r chatRoutes) handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []b
 	if voteUpdateJson, err := json.Marshal(voteUpdateMap); err == nil {
 		broadcastStreamToAdmins(ctx.Stream.ID, voteUpdateJson)
 	} else {
-		log.WithError(err).Warn("could not marshal vote update map")
+		logger.Warn("could not marshal vote update map", "err", err)
 		return
 	}
 }
@@ -151,7 +156,7 @@ func (r chatRoutes) handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 
 	var req startPollReq
 	if err := json.Unmarshal(msg, &req); err != nil {
-		log.WithError(err).Warn("could not unmarshal start poll request")
+		logger.Warn("could not unmarshal start poll request", "err", err)
 		return
 	}
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
@@ -159,14 +164,14 @@ func (r chatRoutes) handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 	}
 
 	if len(req.Question) == 0 {
-		log.Warn("could not create poll with empty question")
+		logger.Warn("could not create poll with empty question")
 		return
 	}
 
 	var pollOptions []model.PollOption
 	for _, answer := range req.PollAnswers {
 		if len(answer) == 0 {
-			log.Warn("could not create poll with empty answer")
+			logger.Warn("could not create poll with empty answer")
 			return
 		}
 		pollOptions = append(pollOptions, model.PollOption{
@@ -191,10 +196,11 @@ func (r chatRoutes) handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 	}
 
 	pollMap := gin.H{
-		"active":      true,
-		"question":    poll.Question,
-		"pollOptions": pollOptionsJson,
-		"submitted":   0,
+		"type":      POLL_START_MSG,
+		"active":    true,
+		"question":  poll.Question,
+		"options":   pollOptionsJson,
+		"submitted": 0,
 	}
 	if pollJson, err := json.Marshal(pollMap); err == nil {
 		broadcastStream(ctx.Stream.ID, pollJson)
@@ -222,8 +228,9 @@ func (r chatRoutes) handleCloseActivePoll(ctx tools.TUMLiveContext) {
 	}
 
 	statsMap := gin.H{
-		"question":          poll.Question,
-		"pollOptionResults": pollOptions,
+		"type":     POLL_CLOSE_MSG,
+		"question": poll.Question,
+		"options":  pollOptions,
 	}
 
 	if statsJson, err := json.Marshal(statsMap); err == nil {
@@ -235,7 +242,7 @@ func (r chatRoutes) handleResolve(ctx tools.TUMLiveContext, msg []byte) {
 	var req wsIdReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
-		log.WithError(err).Warn("could not unmarshal message delete request")
+		logger.Warn("could not unmarshal message delete request", "err", err)
 		return
 	}
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
@@ -244,7 +251,7 @@ func (r chatRoutes) handleResolve(ctx tools.TUMLiveContext, msg []byte) {
 
 	err = r.ChatDao.ResolveChat(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not delete chat")
+		logger.Error("could not delete chat", "err", err)
 	}
 
 	broadcast := gin.H{
@@ -252,7 +259,7 @@ func (r chatRoutes) handleResolve(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
-		log.WithError(err).Error("could not marshal delete message")
+		logger.Error("could not marshal delete message", "err", err)
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -262,7 +269,7 @@ func (r chatRoutes) handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	var req wsIdReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
-		log.WithError(err).Warn("could not unmarshal message delete request")
+		logger.Warn("could not unmarshal message delete request", "err", err)
 		return
 	}
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
@@ -270,14 +277,14 @@ func (r chatRoutes) handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	err = r.ChatDao.DeleteChat(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not delete chat")
+		logger.Error("could not delete chat", "err", err)
 	}
 	broadcast := gin.H{
 		"delete": req.Id,
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
-		log.WithError(err).Error("could not marshal delete message")
+		logger.Error("could not marshal delete message", "err", err)
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -287,7 +294,7 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	var req wsIdReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
-		log.WithError(err).Warn("could not unmarshal message approve request")
+		logger.Warn("could not unmarshal message approve request", "err", err)
 		return
 	}
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
@@ -296,7 +303,7 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 
 	err = r.ChatDao.ApproveChat(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not approve chat")
+		logger.Error("could not approve chat", "err", err)
 		return
 	}
 
@@ -306,7 +313,7 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	 */
 	chat, err := r.ChatDao.GetChat(req.Id, 0)
 	if err != nil {
-		log.WithError(err).Error("could not get chat")
+		logger.Error("could not get chat", "err", err)
 	}
 	broadcast := gin.H{
 		"approve": req.Id,
@@ -314,7 +321,7 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
-		log.WithError(err).Error("could not marshal approve message")
+		logger.Error("could not marshal approve message", "err", err)
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -324,23 +331,23 @@ func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
 	var req wsReactToReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
-		log.WithError(err).Warn("could not unmarshal reactTo request")
+		logger.Warn("could not unmarshal reactTo request", "err", err)
 		return
 	}
 
 	if _, isAllowed := allowedReactions[req.Reaction]; !isAllowed {
-		log.Warn("user tried to add illegal reaction")
+		logger.Warn("user tried to add illegal reaction")
 		return
 	}
 
 	err = r.ChatDao.ToggleReaction(ctx.User.ID, req.wsIdReq.Id, ctx.User.Name, req.Reaction)
 	if err != nil {
-		log.WithError(err).Error("error reacting to message")
+		logger.Error("error reacting to message", "err", err)
 		return
 	}
 	reactions, err := r.ChatDao.GetReactions(req.Id)
 	if err != nil {
-		log.WithError(err).Error("error getting num of chat reactions")
+		logger.Error("error getting num of chat reactions", "err", err)
 		return
 	}
 	broadcast := gin.H{
@@ -349,7 +356,7 @@ func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
-		log.WithError(err).Error("Can't marshal reactions message")
+		logger.Error("Can't marshal reactions message", "err", err)
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -359,7 +366,7 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 	var req wsIdReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
-		log.WithError(err).Warn("could not unmarshal message retract request")
+		logger.Warn("could not unmarshal message retract request", "err", err)
 		return
 	}
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
@@ -368,19 +375,19 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 
 	err = r.ChatDao.RetractChat(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not retract chat")
+		logger.Error("could not retract chat", "err", err)
 		return
 	}
 
 	err = r.ChatDao.RemoveReactions(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not remove reactions from chat")
+		logger.Error("could not remove reactions from chat", "err", err)
 		return
 	}
 
 	chat, err := r.ChatDao.GetChat(req.Id, 0)
 	if err != nil {
-		log.WithError(err).Error("could not get chat")
+		logger.Error("could not get chat", "err", err)
 	}
 	broadcast := gin.H{
 		"retract": req.Id,
@@ -388,7 +395,7 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
-		log.WithError(err).Error("could not marshal retract message")
+		logger.Error("could not marshal retract message", "err", err)
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -397,10 +404,10 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *realtime.Context, msg []byte) {
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
-		log.WithError(err).Error("error unmarshaling chat message")
+		logger.Error("error unmarshalling chat message", "err", err)
 		return
 	}
-	if !ctx.Course.ChatEnabled {
+	if !ctx.Course.ChatEnabled && !ctx.Stream.ChatEnabled {
 		return
 	}
 	uname := ctx.User.GetPreferredName()
@@ -569,7 +576,7 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 		if isAdminOfCourse {
 			voteCount, err = r.ChatDao.GetPollOptionVoteCount(option.ID)
 			if err != nil {
-				log.WithError(err).Warn("could not get poll option vote count")
+				logger.Warn("could not get poll option vote count", "err", err)
 			}
 		}
 
@@ -577,10 +584,10 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"active":      true,
-		"question":    poll.Question,
-		"pollOptions": pollOptions,
-		"submitted":   submitted,
+		"active":    true,
+		"question":  poll.Question,
+		"options":   pollOptions,
+		"submitted": submitted,
 	})
 }
 
@@ -672,7 +679,7 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 				if s.LiveNow { // store stats for livestreams only
 					s.Stats = append(s.Stats, stat)
 					if err := daoWrapper.AddStat(stat); err != nil {
-						log.WithError(err).Error("Saving stat failed")
+						logger.Error("Saving stat failed", "err", err)
 					}
 				}
 			}
@@ -725,7 +732,7 @@ func afterUnsubscribe(id string, joinTime time.Time, recording bool, daoWrapper 
 	if recording && joinTime.Before(time.Now().Add(time.Minute*-5)) {
 		err := daoWrapper.AddVodView(id)
 		if err != nil {
-			log.WithError(err).Error("Can't save vod view")
+			logger.Error("Can't save vod view", "err", err)
 		}
 	}
 }

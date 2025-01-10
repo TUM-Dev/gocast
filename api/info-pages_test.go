@@ -3,18 +3,19 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/Masterminds/sprig/v3"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/mock_dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/testutils"
-	"github.com/matthiasreumann/gomino"
 	"html/template"
 	"net/http"
 	"testing"
+
+	"github.com/Masterminds/sprig/v3"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/mock_dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/testutils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
+	"github.com/matthiasreumann/gomino"
 )
 
 func InfoPagesRouterWrapper(r *gin.Engine) {
@@ -102,7 +103,8 @@ func TestInfoPagesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         req,
 				ExpectedCode: http.StatusOK,
-			}}.
+			},
+		}.
 			Router(InfoPagesRouterWrapper).
 			Method(http.MethodPut).
 			Url(url).

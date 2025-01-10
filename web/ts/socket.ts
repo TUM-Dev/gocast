@@ -1,7 +1,7 @@
 const WS_INITIAL_RETRY_DELAY = 5000;
 const PAGE_LOADED = new Date();
 
-type MessageHandlerFn = (payload: object) => void;
+export type MessageHandlerFn = (payload: object) => void;
 
 const RealtimeMessageTypes = {
     RealtimeMessageTypeSubscribe: "subscribe",

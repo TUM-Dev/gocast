@@ -18,4 +18,8 @@ export class ToggleableElement {
             this.children.forEach((c) => c.toggle(false));
         }
     }
+
+    toggleText(a: string, b: string) {
+        return this.value ? a : b;
+    }
 }

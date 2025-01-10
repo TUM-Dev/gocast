@@ -6,9 +6,7 @@ import (
 	"path/filepath"
 )
 
-var (
-	TUMLiveTemporary = filepath.Join(os.TempDir(), "TUM-Live")
-)
+var TUMLiveTemporary = filepath.Join(os.TempDir(), "TUM-Live")
 
 func LiveThumbnail(streamID string) string {
 	return filepath.Join(TUMLiveTemporary, fmt.Sprintf("%s.jpeg", streamID))

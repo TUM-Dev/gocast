@@ -2,7 +2,7 @@ package tools
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
+
 	"github.com/spf13/viper"
 )
 
@@ -38,7 +38,7 @@ func InitBranding() {
 	err := v.ReadInConfig()
 	if err == nil {
 		err = v.Unmarshal(&branding)
-		log.Info("Using branding.yaml.")
+		logger.Info("Using branding.yaml.")
 		if err != nil {
 			panic(fmt.Errorf("fatal error branding file: %v", err))
 		}

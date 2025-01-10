@@ -1,13 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 )
 
 func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -81,7 +81,7 @@ func (r notificationRoutes) createNotification(c *gin.Context) {
 	}
 	notification.Body = notification.SanitizedBody // reverse json binding
 	if err := r.NotificationsDao.AddNotification(&notification); err != nil {
-		log.Error(err)
+		logger.Error("Error adding notification", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not add notification",
@@ -104,7 +104,7 @@ func (r notificationRoutes) deleteNotification(c *gin.Context) {
 	}
 	err = r.NotificationsDao.DeleteNotification(uint(id))
 	if err != nil {
-		log.WithError(err).Error("error deleting notification")
+		logger.Error("error deleting notification", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "error deleting notification",

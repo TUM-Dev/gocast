@@ -1,7 +1,6 @@
 package realtime
 
 import (
-	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -45,7 +44,7 @@ func (s *ChannelStore) OnMessage(client *Client, message *Message) {
 		return
 	}
 
-	log.WithField("channel", message.Channel).Warn("unknown channel on websocket message")
+	logger.Warn("unknown channel on websocket message", "channel", message.Channel)
 }
 
 func (s *ChannelStore) Subscribe(client *Client, channelPath string) bool {

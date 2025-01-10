@@ -8,7 +8,7 @@
 {{template "server-notification-edit"}}
 {{end}}
 
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/model.ServerNotification*/ -}}
+{{- /*gotype: github.com/TUM-Dev/gocast/model.ServerNotification*/ -}}
 {{define "server-notification-edit"}}
 <form class="form-container" action="/api/serverNotification/{{if .Model.ID}}{{.Model.ID}}{{else}}create{{end}}"
     method="post">

@@ -1,5 +1,4 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
-import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs, { VideoJsPlayer } from "video.js";
 import airplay from "@silvermine/videojs-airplay";
@@ -66,7 +65,7 @@ class PlayerSettings {
             let iOSReady;
             const t: number | undefined = +getQueryParam("t");
             this.player.on("loadedmetadata", () => {
-                if (!isNaN(t) && t) {
+                if (!isNaN(t)) {
                     this.player.currentTime(t);
                     console.log(`⚫️ jump to: ${t}`);
                 }
@@ -74,7 +73,7 @@ class PlayerSettings {
             if (videojs.browser.IS_IOS) {
                 this.player.on("canplaythrough", () => {
                     // Can be executed multiple times during playback
-                    if (!iOSReady && t) {
+                    if (!iOSReady) {
                         this.player.currentTime(t);
                         iOSReady = true;
                     }
@@ -144,6 +143,7 @@ export const initPlayer = function (
     isEmbedded: boolean,
     playbackSpeeds: number[],
     live: boolean,
+    seekingTime: number,
     spriteID?: number,
     spriteInterval?: number,
     streamID?: number,
@@ -170,6 +170,7 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
     }) as any;
 
     const settings = new PlayerSettings(player, live, isEmbedded);
@@ -184,10 +185,10 @@ export const initPlayer = function (
         });
     }
     player.seekButtons({
-        // TODO user preferences, e.g. change to 5s
+        // the user's preferred seeking time will be used for forwards and backwards seeking.
         backIndex: 0,
-        forward: 15,
-        back: 15,
+        forward: seekingTime,
+        back: seekingTime,
     });
 
     player.on("volumechange", function () {
@@ -274,6 +275,12 @@ export const skipSilence = function (options) {
                 }, intervalMillis);
             });
 
+            // Triggered when user seeks
+            players[j].on("seeked", () => {
+                toggleSkipSilence();
+            });
+
+            // Updates if skip silence button be shown
             const toggleSkipSilence = () => {
                 const ctime = players[j].currentTime();
                 let shouldShow = false;
@@ -323,11 +330,12 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let iOSReady = false;
         let intervalMillis = 10000;
         let jumpTo: number;
+        const tParam = +getQueryParam("t");
 
         // Fetch the user's video progress from the database and set the time in the player
         players[j].on("loadedmetadata", () => {
             duration = players[j].duration();
-            jumpTo = +getQueryParam("t") || lastProgress * duration;
+            jumpTo = isNaN(tParam) ? lastProgress * duration : tParam;
             players[j].currentTime(jumpTo);
         });
 
@@ -483,27 +491,6 @@ export const syncPlayers = function () {
     });
 };
 
-/**
- * Registers a time watcher that observes the time of the current player
- * @param callBack call back function responsible for handling player time updates
- * @return callBack function that got registered for listening to player time updates (used to deregister)
- */
-export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void): () => void {
-    const timeWatcherCallBack: () => void = () => {
-        callBack(players[0].currentTime());
-    };
-    players[0]?.on("timeupdate", timeWatcherCallBack);
-    return timeWatcherCallBack;
-};
-
-/**
- * Deregisters a time watching obeserver from the current player
- * @param callBackToDeregister regestered callBack function
- */
-export const deregisterTimeWatcher = function (callBackToDeregister: () => void) {
-    players[0]?.off("timeupdate", callBackToDeregister);
-};
-
 const Component = videojs.getComponent("Component");
 
 export class Titlebar extends Component {
@@ -648,7 +635,7 @@ export type jumpToSettings = {
     S: number | undefined;
 };
 
-export function jumpTo(settings: jumpToSettings) {
+export function jumpTo(settings: jumpToSettings, autoplay = false) {
     if (settings.timeParts) {
         settings.time = new Time(settings.timeParts.hours, settings.timeParts.minutes, settings.timeParts.seconds);
     } else if (settings.Ms) {
@@ -659,6 +646,9 @@ export function jumpTo(settings: jumpToSettings) {
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
             players[j].currentTime(settings.time.toSeconds());
+            if (autoplay && players[j].paused()) {
+                players[j].play();
+            }
         });
     }
 }
@@ -695,21 +685,6 @@ export class SeekLogger {
     }
 }
 
-export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
-    for (let j = 0; j < players.length; j++) {
-        players[j].ready(() => {
-            let timer;
-            (function checkTimestamp() {
-                timer = setTimeout(() => {
-                    highlight(players[j], videoSection);
-                    checkTimestamp();
-                }, 500);
-            })();
-            players[j].on("seeked", () => highlight(players[j], videoSection));
-        });
-    }
-}
-
 export function switchView(baseUrl: string) {
     const isDVR = getQueryParam("dvr") === "";
 
@@ -721,18 +696,6 @@ export function switchView(baseUrl: string) {
         redirectUrl = url.toString();
     }
     window.location.assign(redirectUrl);
-}
-
-function highlight(player, videoSection) {
-    const currentTime = player.currentTime();
-    videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
-        const next = list[i + 1];
-        const sectionSeconds = new Time(section.startHours, section.startMinutes, section.startSeconds).toSeconds();
-        return next === undefined || next === null // if last element and no next exists
-            ? sectionSeconds <= currentTime
-            : sectionSeconds <= currentTime &&
-                  currentTime <= new Time(next.startHours, next.startMinutes, next.startSeconds).toSeconds() - 1;
-    });
 }
 
 function debounce(func, timeout) {

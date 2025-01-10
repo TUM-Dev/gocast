@@ -1,21 +1,21 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/gin-gonic/gin"
 )
 
 func configGinDownloadICSRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	templates, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
-		log.WithError(err).Fatal("could not parse templates")
+		logger.Error("could not parse templates", "err", err)
 		return
 	}
 	routes := downloadICSRoutes{daoWrapper, templates}
@@ -80,7 +80,7 @@ type CalendarEntry struct {
 
 func streamToCalendarEntry(s model.Stream, c model.Course) CalendarEntry {
 	layout := "20060102T150405"
-	var location = ""
+	location := ""
 	if len(s.RoomName) > 0 {
 		location += s.RoomName + " "
 	}

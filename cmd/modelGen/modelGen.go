@@ -28,7 +28,7 @@ func main() {
 	}
 
 	fmt.Println("Generating model...")
-	model_file, err := os.OpenFile(fmt.Sprintf("model/%s.go", d.NamePrivate), os.O_WRONLY|os.O_CREATE, 0644)
+	model_file, err := os.OpenFile(fmt.Sprintf("model/%s.go", d.NamePrivate), os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -46,7 +46,7 @@ func main() {
 
 	fmt.Println("Generating dao...")
 
-	dao_file, err := os.OpenFile(fmt.Sprintf("dao/%s.go", d.NamePrivate), os.O_WRONLY|os.O_CREATE, 0644)
+	dao_file, err := os.OpenFile(fmt.Sprintf("dao/%s.go", d.NamePrivate), os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

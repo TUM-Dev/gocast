@@ -33,14 +33,23 @@
 }
 
 /* Chrome, Safari and Opera */
-#content::-webkit-scrollbar, #notification-list::-webkit-scrollbar, .tum-live-side-navigation::-webkit-scrollbar {
+#chat-box::-webkit-scrollbar, #content::-webkit-scrollbar, #notification-list::-webkit-scrollbar, .tum-live-side-navigation::-webkit-scrollbar,
+#public-courses::-webkit-scrollbar, #user-courses::-webkit-scrollbar{
     display: none;
 }
 
 /* IE, Edge and Firefox */
-#content, #notification-list, .tum-live-side-navigation {
+#chat-box, #content, #notification-list, .tum-live-side-navigation, #public-courses, #user-courses {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+}
+
+.tum-live-border {
+    @apply dark:border-gray-800
+}
+
+#notification-list a{
+    @apply underline;
 }
 
 
@@ -50,7 +59,15 @@
 }
 
 .tum-live-bg-primary {
-    @apply bg-blue-500 dark:bg-indigo-600
+    @apply bg-blue-500 dark:bg-indigo-600 disabled:bg-blue-400/50 disabled:dark:bg-indigo-500/50
+}
+
+.tum-live-border-primary {
+    @apply border-blue-500 dark:border-indigo-600
+}
+
+.tum-live-font-primary {
+    @apply text-blue-500 dark:text-indigo-600
 }
 
 /* Elements */
@@ -63,7 +80,7 @@
 }
 
 .tum-live-button-secondary {
-    @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800
+    @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800;
 }
 
 .tum-live-button-tertiary {
@@ -78,8 +95,12 @@
     @apply bg-gray-800 text-white dark:bg-gray-600
 }
 
+.tum-live-button-muted {
+    @apply bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-700
+}
+
 .tum-live-icon-button {
-    @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
+    @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50 disabled:opacity-20;
 }
 
 .tum-live-input-submit {
@@ -197,7 +218,18 @@
 }
 
 .tum-live-menu .tum-live-menu-item {
-    @apply flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full
+    @apply flex items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full
+}
+
+.tum-live-menu .tum-live-menu-item.active {
+    @apply bg-gray-100 dark:bg-gray-800
+}
+
+.tum-live-menu .tum-live-menu-item .icon-wrapper {
+    width: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 
@@ -351,6 +383,14 @@ label:has(~ .tum-live-input) {
     @apply text-sm rounded-lg bg-amber-500/25 border-l-4 px-3 py-2 border-amber-500
 }
 
+.tum-live-settings-grid{
+    @apply grid gap-y-5 content-start lg:w-3/6 md:w-4/5 w-full p-6 text-3;
+}
+
+.tum-live-settings-grid > section > h2{
+    @apply text-sm text-5 mb-1;
+}
+
 
 .tum-live-footer {
     @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
@@ -358,4 +398,33 @@ label:has(~ .tum-live-input) {
 
 .tum-live-footer a {
     @apply text-sm font-light text-5 md:py-0 py-1
+}
+
+.tum-live-markdown h1, .tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6 {
+    font-weight: bold;
+}
+
+.tum-live-markdown h1 {
+    margin-bottom: 16px;
+}
+
+.tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6 {
+    margin-top: 16px;
+}
+
+.tum-live-markdown ul {
+    list-style-type: disc;
+    padding-left: 16px;
+    padding-bottom: 8px;
+    padding-top: 8px;
+}
+
+.tum-live-markdown a {
+    border-bottom: 1px solid black;
+}
+
+.tum-live-search-result-main {
+    @apply flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1 border border-black dark:border-gray-300 w-full text-black dark:text-gray-300;
+    width: 100%;
+    height: fit-content !important;
 }

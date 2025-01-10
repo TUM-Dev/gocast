@@ -2,8 +2,10 @@ package model
 
 import (
 	"errors"
-	"gorm.io/gorm"
+	"html/template"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // ServerNotification todo: rename to ServerAlert to avoid confusion with Notification
@@ -29,4 +31,8 @@ func (s ServerNotification) FormatFrom() string {
 
 func (s ServerNotification) FormatExpires() string {
 	return s.Expires.Format("2006-01-02 15:04")
+}
+
+func (s ServerNotification) HTML() template.HTML {
+	return template.HTML(s.Text)
 }

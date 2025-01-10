@@ -7,9 +7,9 @@ package mock_dao
 import (
 	reflect "reflect"
 
+	dao "github.com/TUM-Dev/gocast/dao"
+	model "github.com/TUM-Dev/gocast/model"
 	gomock "github.com/golang/mock/gomock"
-	dao "github.com/joschahenningsen/TUM-Live/dao"
-	model "github.com/joschahenningsen/TUM-Live/model"
 )
 
 // MockLectureHallsDao is a mock of LectureHallsDao interface.

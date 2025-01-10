@@ -34,7 +34,7 @@
                                 Selfstreaming
                             </label>
                             {{range .}}
-                                {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.LectureHall*/ -}}
+                                {{- /*gotype: github.com/TUM-Dev/gocast/model.LectureHall*/ -}}
                                 <label class="block">
                                     <input type="checkbox" checked class="lh-toggle" @change="e=>{if ($el.checked){lectureHalls.push({{.Model.ID}})}else{lectureHalls=lectureHalls.filter(i=>i!=={{.Model.ID}})}}">
                                     {{.Name}}

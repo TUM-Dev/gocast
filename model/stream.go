@@ -1,16 +1,18 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"strings"
-	"time"
 )
 
 type Stream struct {
@@ -47,7 +49,7 @@ type Stream struct {
 	Files                 []File `gorm:"foreignKey:StreamID"`
 	ThumbInterval         uint32 `gorm:"default:null"`
 	StreamName            string
-	Duration              uint32           `gorm:"default:null"`
+	Duration              sql.NullInt32    `gorm:"default:null"`
 	StreamWorkers         []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses      []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections         []VideoSection
@@ -87,7 +89,7 @@ func (s Stream) GetVodFiles() []DownloadableVod {
 }
 
 func (s Stream) GetLGThumbnail() (string, error) {
-	var thumbs = map[string]string{}
+	thumbs := map[string]string{}
 	for _, file := range s.Files {
 		if file.Type == FILETYPE_THUMB_LG_CAM_PRES {
 			thumbs["CAM_PRES"] = file.Path
@@ -305,7 +307,7 @@ func (s Stream) Color() string {
 	}
 }
 
-func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
+func (s Stream) GetJson(lhs []LectureHall, course Course) gin.H {
 	var files []gin.H
 	for _, file := range s.Files {
 		files = append(files, gin.H{
@@ -320,6 +322,18 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 			lhName = lh.Name
 			break
 		}
+	}
+
+	var videoSections []gin.H
+	for _, section := range s.VideoSections {
+		videoSections = append(videoSections, gin.H{
+			"id":           section.ID,
+			"description":  section.Description,
+			"startHours":   section.StartHours,
+			"startMinutes": section.StartMinutes,
+			"startSeconds": section.StartSeconds,
+			"fileID":       section.FileID,
+		})
 	}
 
 	return gin.H{
@@ -346,6 +360,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"private":               s.Private,
 		"downloadableVods":      s.GetVodFiles(),
 		"isCopying":             false,
+		"videoSections":         videoSections,
 	}
 }
 
@@ -370,12 +385,18 @@ type StreamDTO struct {
 	Downloads   []DownloadableVod
 	Start       time.Time
 	End         time.Time
+	Duration    int32
+	LectureHall string
 }
 
 func (s Stream) ToDTO() StreamDTO {
 	downloads := []DownloadableVod{}
 	if s.IsDownloadable() {
 		downloads = s.GetVodFiles()
+	}
+	duration := int32(s.End.Sub(s.Start).Seconds())
+	if s.Duration.Valid {
+		duration = s.Duration.Int32
 	}
 	return StreamDTO{
 		ID:          s.ID,
@@ -388,5 +409,22 @@ func (s Stream) ToDTO() StreamDTO {
 		HLSUrl:      s.HLSUrl(),
 		Start:       s.Start,
 		End:         s.End,
+		Duration:    duration,
+		LectureHall: s.RoomCode,
 	}
+}
+
+// FirstSilenceAsProgress returns the end of the first silence as a quotient of the length of the stream
+func (s Stream) FirstSilenceAsProgress() float64 {
+	if len(s.Silences) == 0 {
+		return 0
+	}
+	// Sanity check: first silence at beginning of stream
+	if s.Silences[0].Start != 0 {
+		return 0
+	}
+	duration := s.End.Sub(s.Start).Seconds()
+	p := float64(s.Silences[0].End) / duration
+
+	return p
 }

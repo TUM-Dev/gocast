@@ -3,11 +3,14 @@ package dao
 import (
 	"context"
 	"fmt"
-	"gorm.io/gorm/clause"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/joschahenningsen/TUM-Live/model"
+	"gorm.io/gorm/clause"
+
+	"github.com/TUM-Dev/gocast/model"
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -26,11 +29,12 @@ type StreamsDao interface {
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
 	GetAllStreams() ([]model.Stream, error)
-	ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles))
+	ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error)
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
 	GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error)
+	GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error)
 
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
@@ -211,38 +215,45 @@ func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 }
 
 type StreamWithCourseAndSubtitles struct {
-	Name, Description, TeachingTerm, CourseName, Subtitles string
-	ID, CourseID                                           uint
-	Year                                                   int
+	Name, Description, TeachingTerm, CourseName, Subtitles, Visibility string
+	ID, CourseID, Private                                              uint
+	Year                                                               int
 }
 
-// ExecAllStreamsWithCoursesAndSubtitles executes f on all streams with their courses and subtitles preloaded.
-func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles)) {
+// ExecAllStreamsWithCoursesAndSubtitlesBatched executes f on all streams (batched) with their courses and subtitles preloaded.
+func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles)) {
 	var res []StreamWithCourseAndSubtitles
 	batchNum := 0
 	batchSize := 100
 	var numStreams int64
 	DB.Where("recording").Model(&model.Stream{}).Count(&numStreams)
+	lastSeenId := uint(0)
 	for batchSize*batchNum < int(numStreams) {
 		err := DB.Raw(`WITH sws AS (
 				SELECT streams.id,
                     streams.name,
                     streams.description,
+					streams.private as private,
                     c.id as course_id,
                     c.name as course_name,
                     c.teaching_term,
                     c.year,
+					c.visibility as visibility,
                     s.content as subtitles,
                     IFNULL(s.stream_id, streams.id) as sid
              	FROM streams
                       JOIN courses c ON c.id = streams.course_id
                       LEFT JOIN subtitles s ON streams.id = s.stream_id
-             	WHERE streams.recording AND streams.deleted_at IS NULL
-				LIMIT ? OFFSET ?
+             	WHERE streams.recording AND streams.deleted_at IS NULL AND streams.id > ?
+				ORDER BY streams.id ASC
+				LIMIT ? 
              	)
-			SELECT *, GROUP_CONCAT(subtitles, '\n') AS subtitles FROM sws GROUP BY sid;`, batchSize, batchNum*batchSize).Scan(&res).Error
+			SELECT *, GROUP_CONCAT(subtitles, '\n') AS subtitles FROM sws GROUP BY sid ORDER BY sid;`, lastSeenId, batchSize).Scan(&res).Error
 		if err != nil {
 			fmt.Println(err)
+		}
+		if err == nil {
+			lastSeenId = res[len(res)-1].ID
 		}
 		f(res)
 		batchNum++
@@ -304,6 +315,115 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 	return
 }
 
+// GetSoonStartingStreamInfo returns the stream key, course slug and course name of an upcoming stream.
+func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error) {
+	var results []struct {
+		CourseID  uint
+		StreamKey string
+		ID        string
+		Slug      string
+		Start     time.Time
+		End       time.Time
+	}
+	now := time.Now()
+	query := DB.Table("streams").
+		Select("streams.course_id, streams.stream_key, streams.id, courses.slug, streams.start, streams.end").
+		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
+		Joins("JOIN courses ON courses.id = course_admins.course_id").
+		Where("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
+		Or("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now)      // Streams that just finished in the last 15 minutes
+
+	if slug != "" {
+		query = query.Where("courses.slug = ?", slug)
+	}
+	if year != 0 {
+		query = query.Where("courses.year = ?", year)
+	}
+	if term != "" {
+		query = query.Where("courses.teaching_term = ?", term)
+	}
+
+	err := query.Order("streams.start ASC").Find(&results).Error
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(results) == 0 {
+		stream, course, err := d.CreateOrGetTestStreamAndCourse(user)
+		if err != nil {
+			return "", "", err
+		}
+		return stream.StreamKey, fmt.Sprintf("%s-%d", course.Slug, stream.ID), nil
+	}
+
+	for _, result := range results {
+		if now.After(result.Start) && now.Before(result.End) {
+			return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
+		}
+	}
+
+	result := results[0]
+	return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
+}
+
+// Helper method to fetch test stream and course for current user.
+func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stream, model.Course, error) {
+	course, err := d.CreateOrGetTestCourse(user)
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	var stream model.Stream
+	err = DB.FirstOrCreate(&stream, model.Stream{
+		CourseID:      course.ID,
+		Name:          "Test Stream",
+		Description:   "This is a test stream",
+		LectureHallID: 0,
+	}).Error
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	stream.Start = time.Now().Add(5 * time.Minute)
+	stream.End = time.Now().Add(1 * time.Hour)
+	stream.LiveNow = true
+	stream.Recording = true
+	stream.LiveNowTimestamp = time.Now().Add(5 * time.Minute)
+	stream.Private = true
+	streamKey := uuid.NewV4().String()
+	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
+	stream.LectureHallID = 1
+	err = DB.Save(&stream).Error
+	if err != nil {
+		return model.Stream{}, model.Course{}, err
+	}
+
+	return stream, course, err
+}
+
+// Helper method to fetch test course for current user.
+func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
+	var course model.Course
+	err := DB.FirstOrCreate(&course, model.Course{
+		Name:         "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
+		TeachingTerm: "Test",
+		Slug:         "TESTCOURSE",
+		Year:         1234,
+		Visibility:   "hidden",
+		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
+	}).Error
+	if err != nil {
+		return model.Course{}, err
+	}
+
+	err = CoursesDao.AddAdminToCourse(NewDaoWrapper().CoursesDao, user.ID, course.ID)
+	if err != nil {
+		return model.Course{}, err
+	}
+
+	return course, nil
+}
+
 // SetLectureHall set lecture-halls of streamIds to lectureHallID
 func (d streamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
 	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", lectureHallID).Error
@@ -321,7 +441,8 @@ func (d streamsDao) UpdateStream(stream model.Stream) error {
 		"description":  stream.Description,
 		"start":        stream.Start,
 		"end":          stream.End,
-		"chat_enabled": stream.ChatEnabled}).Error
+		"chat_enabled": stream.ChatEnabled,
+	}).Error
 	return err
 }
 

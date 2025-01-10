@@ -1,9 +1,9 @@
-FROM golang:1.20 as authBuilder
+FROM golang:1.21 as authBuilder
 
 COPY main.go .
 RUN CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o /auth main.go
 
-FROM aler9/rtsp-simple-server:v0.23.4 AS rtsp
+FROM aler9/rtsp-simple-server:v1.0.0 AS rtsp
 
 FROM alpine:3.18
 

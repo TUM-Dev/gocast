@@ -2,17 +2,17 @@ package tools
 
 import (
 	"errors"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools/realtime"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools/realtime"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var templateExecutor TemplateExecutor
@@ -50,13 +50,13 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			return key, nil
 		})
 		if err != nil {
-			log.Info("JWT parsing error: ", err)
+			logger.Info("JWT parsing error: ", "err", err)
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			c.SetCookie("jwt", "", -1, "/", "", false, true)
 			return
 		}
 		if !token.Valid {
-			log.Info("JWT token is not valid")
+			logger.Info("JWT token is not valid")
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			c.SetCookie("jwt", "", -1, "/", "", false, true)
 			return
@@ -90,7 +90,7 @@ func RenderErrorPage(c *gin.Context, status int, message string) {
 		Branding: BrandingCfg,
 	})
 	if err != nil {
-		log.Error(err)
+		logger.Error("Error on executing template error.gohtml", "err", err)
 	}
 	c.Abort()
 }
@@ -371,7 +371,7 @@ func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 		}
 		err = daoWrapper.TokenDao.TokenUsed(t)
 		if err != nil {
-			log.WithError(err).Warn("error marking token as used")
+			logger.Warn("error marking token as used", "err", err)
 			return
 		}
 	}

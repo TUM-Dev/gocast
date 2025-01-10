@@ -2,18 +2,19 @@ package api
 
 import (
 	"errors"
-	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"gorm.io/gorm"
+	"math"
 	"net/http"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"gorm.io/gorm"
+
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 var progressBuff *progressBuffer
@@ -58,7 +59,7 @@ func (b *progressBuffer) run() {
 		time.Sleep(b.interval)
 		err := b.flush()
 		if err != nil {
-			log.WithError(err).Error("Error flushing progress buffer")
+			logger.Error("Error flushing progress buffer", "err", err)
 		}
 	}
 }
@@ -90,9 +91,8 @@ type progressRequest struct {
 func (r progressRoutes) saveProgress(c *gin.Context) {
 	var request progressRequest
 	err := c.BindJSON(&request)
-
 	if err != nil {
-		log.WithError(err).Warn("Could not bind JSON.")
+		logger.Warn("Could not bind JSON.", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -116,10 +116,40 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 		})
 		return
 	}
+
+	stream, err := r.DaoWrapper.StreamsDao.GetStreamByID(c, strconv.FormatUint(uint64(request.StreamID), 10))
+	if err != nil {
+		return
+	}
+
+	watchedToLastSilence := false
+
+	// logger.Debug("Save progress")
+	duration := stream.Duration.Int32
+	if duration == 0 {
+		dur := stream.End.Sub(stream.Start)
+		duration += int32(dur.Seconds()) + int32(dur.Minutes())*60 + int32(dur.Minutes())*60*60
+	}
+	// logger.Debug("Duration", "duration", duration)
+	if duration != 0 && len(stream.Silences) > 0 {
+		lastSilence := slices.MaxFunc(stream.Silences, func(silence model.Silence, other model.Silence) int {
+			return int(silence.End) - int(other.End)
+		})
+
+		// Add a little wiggle time to the end if ffmpeg didn't detect the silence till the end
+		if math.Abs(float64(lastSilence.End-uint(duration))) < 10 {
+			lastSilencePercent := float64(lastSilence.Start) / float64(duration)
+			if request.Progress >= lastSilencePercent {
+				watchedToLastSilence = true
+			}
+		}
+	}
+
 	progressBuff.add(model.StreamProgress{
 		Progress: request.Progress,
 		StreamID: request.StreamID,
 		UserID:   tumLiveContext.User.ID,
+		Watched:  request.Progress > .9 || watchedToLastSilence,
 	})
 }
 
@@ -134,7 +164,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	var request watchedRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		log.WithError(err).Error("Could not bind JSON.")
+		logger.Error("Could not bind JSON.", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -165,7 +195,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	}
 	err = r.ProgressDao.SaveWatchedState(&prog)
 	if err != nil {
-		log.WithError(err).Error("can not mark VoD as watched.")
+		logger.Error("can not mark VoD as watched.", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not mark VoD as watched.",
@@ -204,25 +234,26 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 		ids = append(ids, uint(id))
 	}
 
-	streamProgresses := make([]model.StreamProgress, len(ids))
+	progressResults := make([]model.StreamProgress, len(ids))
+	streamProgresses, err := r.LoadProgress(tumLiveContext.User.ID, ids)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not load progress",
+			Err:           err,
+		})
+		return
+	}
 	for i, id := range ids {
-		p, err := r.LoadProgress(tumLiveContext.User.ID, id)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				streamProgresses[i] = model.StreamProgress{StreamID: id}
-			} else {
-				sentry.CaptureException(err)
-				_ = c.Error(tools.RequestError{
-					Err:           err,
-					Status:        http.StatusInternalServerError,
-					CustomMessage: "can't retrieve streamProgresses for user",
-				})
-				return
+		progressResults[i] = model.StreamProgress{StreamID: id}
+		for _, progress := range streamProgresses {
+			if progress.StreamID == id {
+				progressResults[i].Progress = progress.Progress
+				progressResults[i].Watched = progress.Watched
+				break
 			}
-		} else {
-			streamProgresses[i] = p
 		}
 	}
 
-	c.JSON(http.StatusOK, streamProgresses)
+	c.JSON(http.StatusOK, progressResults)
 }

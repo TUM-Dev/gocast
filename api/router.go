@@ -1,9 +1,9 @@
 package api
 
 import (
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
 )
 
 // ConfigChatRouter configure gin router for chat (without gzip)
@@ -42,7 +42,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configWorkerRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configInfoPageRouter(router, daoWrapper)
-	configGinSearchRouter(router, daoWrapper)
+	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
 	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)
 	configMaintenanceRouter(router, daoWrapper)
