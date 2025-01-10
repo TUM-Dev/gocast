@@ -2,7 +2,7 @@ package actions
 
 import (
 	"context"
-	"github.com/TUM-Dev/gocast/worker/cfg"
+	"fmt"
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"io"
 	"log/slog"
@@ -17,6 +17,17 @@ func (a *ActionProvider) UploadAction() *Action {
 	return &Action{
 		Type: UploadAction,
 		ActionFn: func(ctx context.Context, log *slog.Logger) (context.Context, error) {
+			user, ok := ctx.Value("user").(string)
+			mailAddresse, ok := ctx.Value("mailAddresse").(string)
+			telefon, ok := ctx.Value("telefon").(string)
+			unidir, ok := ctx.Value("unidir").(string)
+			subdir, ok := ctx.Value("subdir").(string)
+			info, ok := ctx.Value("info").(string)
+			uploadUrl, ok := ctx.Value("uploadUrl").(string)
+			if !ok {
+				slog.Error("cannot get values from context ")
+				return ctx, fmt.Errorf("%w: context doesn't contain values", ErrRequiredContextValNotFound)
+			}
 
 			//course := ctx.Value("course").(uint32)
 			stream := ctx.Value("stream").(uint32)
@@ -52,12 +63,12 @@ func (a *ActionProvider) UploadAction() *Action {
 				}
 
 				fields := map[string]string{
-					"benutzer":    cfg.LrzUser,
-					"mailadresse": cfg.LrzMail,
-					"telefon":     cfg.LrzPhone,
-					"unidir":      "tum",
-					"subdir":      cfg.LrzSubDir,
-					"info":        "",
+					"benutzer":    user,
+					"mailadresse": mailAddresse,
+					"telefon":     telefon,
+					"unidir":      unidir,
+					"subdir":      subdir,
+					"info":        info,
 				}
 
 				for name, value := range fields {
@@ -73,7 +84,7 @@ func (a *ActionProvider) UploadAction() *Action {
 					}
 				}
 			}()
-			rsp, err := client.Post(cfg.UploadUrl, writer.FormDataContentType(), r)
+			rsp, err := client.Post(uploadUrl, writer.FormDataContentType(), r)
 			if err == nil && rsp.StatusCode != http.StatusOK {
 				log.Error("Request failed with response code: ", rsp.StatusCode)
 			}
