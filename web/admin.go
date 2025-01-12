@@ -224,7 +224,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c, false)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
