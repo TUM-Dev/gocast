@@ -405,8 +405,14 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 // Helper method to fetch test course for current user.
 func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
+	userName := user.GetPreferredName()
+
+	if userName != "" {
+		userName += "'s "
+	}
+
 	err := DB.FirstOrCreate(&course, model.Course{
-		Name:         user.GetPreferredName() + "'s Test Course",
+		Name:         userName + "Test Course",
 		TeachingTerm: "W",
 		Slug:         "TESTCOURSE",
 		Year:         1234,

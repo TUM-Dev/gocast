@@ -89,14 +89,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	y, t := tum.GetCurrentSemester()
-
-	hasTestCourse := false
-	for _, course := range courses {
-		if course.Year == 1234 {
-			hasTestCourse = true
-			break
-		}
-	}
+	hasTestCourse := tumLiveContext.User.HasTestCourse()
 
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
@@ -278,13 +271,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		}
 	}
 
-	hasTestCourse := false
-	for _, course := range courses {
-		if course.Year == 1234 {
-			hasTestCourse = true
-			break
-		}
-	}
+	hasTestCourse := tumLiveContext.User.HasTestCourse()
 
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,

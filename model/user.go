@@ -351,6 +351,16 @@ func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester S
 	return courses
 }
 
+// hasTestCourse checks if the user has a test course
+func (u *User) HasTestCourse() bool {
+	for _, course := range u.AdministeredCourses {
+		if course.Year == 1234 {
+			return true
+		}
+	}
+	return false
+}
+
 var (
 	ErrInvalidHash         = errors.New("the encoded hash is not in the correct format")
 	ErrIncompatibleVersion = errors.New("incompatible version of argon2")
