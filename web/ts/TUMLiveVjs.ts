@@ -40,7 +40,7 @@ class PlayerSettings {
     }
 
     setVolume() {
-        const volume: number = +PlayerSettings.getFromStorage("volume") ?? this.player.volume();
+        const volume: number = +(PlayerSettings.getFromStorage("volume") ?? this.player.volume());
         this.player.volume(volume);
         console.log(`⚫️ set volume: ${volume}`);
     }
@@ -52,7 +52,7 @@ class PlayerSettings {
     }
 
     setRate() {
-        let persistedRate = +PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate") ?? 1.0;
+        let persistedRate = +(PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate") ?? 1.0);
         persistedRate = persistedRate <= 0 ? 1.0 : persistedRate;
 
         const queryRate: number = +getQueryParam("rate");
@@ -128,7 +128,7 @@ class PlayerSettings {
         window.localStorage.setItem(key, value);
     }
 
-    static getFromStorage(key: string) {
+    static getFromStorage(key: string): string | null {
         return window.localStorage.getItem(key);
     }
 }
