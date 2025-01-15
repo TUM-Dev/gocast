@@ -1,9 +1,9 @@
-package api_v2
+package apiv2
 
 import (
 	"context"
 
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	e "github.com/TUM-Dev/gocast/api_v2/errors"
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"
+	e "github.com/TUM-Dev/gocast/apiv2/errors"
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 )

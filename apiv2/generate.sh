@@ -14,10 +14,13 @@ echo making sure that all artifacts we don\'t need are cleaned up
 rm -f google/api/*.go
 rm -f google/api/*.swagger.json
 
-echo making sure that all artifacts we don\'t need are cleaned up
-rm -rf docs/google docs/protoc-gen-openapiv2 protobuf/google protobuf/protoc-gen-openapiv2
+echo moving the generated docs to the server directory
+mv ./docs/server/apiv2.swagger.json ./server/docs || exit 1
 
-echo maing sure that the generated files are formatted
+echo making sure that all artifacts we don\'t need are cleaned up
+rm -rf docs docs/google docs/protoc-gen-openapiv2 protobuf/google protobuf/protoc-gen-openapiv2
+
+echo making sure that the generated files are formatted
 go fmt server/*.go || exit 1
 goimports -w server/*.go || exit 1
 buf format -w --path server || exit 1

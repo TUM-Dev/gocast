@@ -12,15 +12,15 @@ You can generate the code documentation using `godoc` and find it at [http://loc
 
 ## File structure
 
-All proto messages can be found in `api_v2.proto`.
+All proto messages can be found in `apiv2.proto`.
 The actual endpoints are implemented in `<./endpoint.go>.go`, custom erros in `./errors` and helper functions such as parsers, custom database queries, etc. in `./helpers`.
 
 ## Config
 
-Install protobuf by running `./api_v2/installBuf.sh`.
+Install protobuf by running `./apiv2/installBuf.sh`.
 
 To generate the files in `./protobuf`, run:
-`./api_v2/generate.sh`.
+`./apiv2/generate.sh`.
 
 ## Running the server
 

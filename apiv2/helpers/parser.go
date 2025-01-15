@@ -4,7 +4,7 @@ package helpers
 import (
 	"time"
 
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

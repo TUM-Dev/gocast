@@ -1,14 +1,14 @@
-// Package api_v2 provides API endpoints for the application.
-package api_v2
+// Package apiv2 provides API endpoints for the application.
+package apiv2
 
 import (
 	"context"
 	"errors"
 	"net/http"
 
-	e "github.com/TUM-Dev/gocast/api_v2/errors"
-	h "github.com/TUM-Dev/gocast/api_v2/helpers"
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"
+	e "github.com/TUM-Dev/gocast/apiv2/errors"
+	h "github.com/TUM-Dev/gocast/apiv2/helpers"
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"google.golang.org/protobuf/types/known/emptypb"

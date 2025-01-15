@@ -14,7 +14,7 @@ import (
 	"github.com/soheilhy/cmux"
 
 	"github.com/TUM-Dev/gocast/api"
-	api_v2 "github.com/TUM-Dev/gocast/api_v2/server"
+	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -85,7 +85,7 @@ func GinServer() (err error) {
 	m := cmux.New(l)
 	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
 
-	api2Client := api_v2.New(dao.DB)
+	api2Client := apiv2.New(dao.DB)
 	go func() {
 		if err := api2Client.Run(grpcl); err != nil {
 			logger.Error("can't launch grpc server", "err", err)

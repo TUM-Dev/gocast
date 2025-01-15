@@ -1,4 +1,4 @@
-package api_v2
+package apiv2
 
 //go:generate ./generate.sh
 
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TUM-Dev/gocast/api_v2/protobuf"
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"

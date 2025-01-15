@@ -1,5 +1,5 @@
-// Package api_v2 provides API endpoints for the application.
-package api_v2
+// Package apiv2 provides API endpoints for the application.
+package apiv2
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	e "github.com/TUM-Dev/gocast/api_v2/errors"
+	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/golang-jwt/jwt/v4"
