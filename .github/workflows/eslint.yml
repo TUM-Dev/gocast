@@ -17,4 +17,4 @@ jobs:
         run: npm ci
       - name: Run ESLint
         working-directory: ./web
-        run: npx eslint . --ext .ts,.tsx
+        run: npx eslint .
