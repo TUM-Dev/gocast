@@ -1,0 +1,23 @@
+edition = "2023";
+package protobuf;
+option go_package = "runner/protobuf";
+
+message Notification {
+  oneof data {
+    StreamStartNotification stream_start = 1;
+    StreamEndNotification stream_end = 2;
+  }
+}
+
+message StreamInfo {
+  uint64 id = 1;
+}
+
+message StreamStartNotification {
+  StreamInfo stream = 1;
+  string url = 2;
+}
+
+message StreamEndNotification {
+  StreamInfo stream = 1;
+}
