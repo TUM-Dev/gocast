@@ -4,7 +4,7 @@
   "plugins": [
     "@typescript-eslint"
   ],
-  "ignorePatterns": ["**/*.js"],
+  "ignorePatterns": ["**/*.js", "**/*.go", "**/*.gohtml", "**/*.json"],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
