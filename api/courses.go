@@ -1022,7 +1022,7 @@ func (r coursesRoutes) updateStartEnd(c *gin.Context) {
 	if err = r.StreamsDao.UpdateStream(stream); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "couldn't update lecture Description",
+			CustomMessage: "couldn't update lecture start/end time",
 			Err:           err,
 		})
 		return
