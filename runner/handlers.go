@@ -20,7 +20,7 @@ func contextFromTranscodingReq(req *protobuf.TranscodingRequest, ctx context.Con
 	ctx = context.WithValue(ctx, "course", req.CourseName)
 	ctx = context.WithValue(ctx, "version", req.SourceType)
 	ctx = context.WithValue(ctx, "source", req.DataURL)
-	return context.WithValue(ctx, "Runner", req.RunnerID)
+	return context.WithValue(ctx, "Runner", req.Hostname)
 }
 
 func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
@@ -42,21 +42,21 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 }
 
 func (r *Runner) RequestUpload(ctx context.Context, req *protobuf.UploadRequest) (*protobuf.UploadResponse, error) {
-	r.log.Info("upload request", "jobID", req.RunnerID)
+	r.log.Info("upload request", "jobID", req.Hostname)
 
 	panic("implement me")
 }
 
 func (r *Runner) RequestTranscoding(ctx context.Context, req *protobuf.TranscodingRequest) (*protobuf.TranscodingResponse, error) {
-	r.log.Info("transcoding request", "jobID", req.RunnerID)
+	r.log.Info("transcoding request", "jobID", req.Hostname)
 	r.ReadDiagnostics(5)
 	ctx = context.Background()
 	ctx = contextFromTranscodingReq(req, ctx)
 	ctx = context.WithValue(ctx, "URL", "")
 	ctx = context.WithValue(ctx, "Hostname", r.cfg.Hostname)
 	ctx = context.WithValue(ctx, "ActionID", req.ActionID)
-	if req.GetRunnerID() != r.cfg.Hostname {
-		r.log.Error("transcoding request for wrong hostname", "hostname", req.GetRunnerID(), "expected", r.cfg.Hostname)
+	if req.Hostname != r.cfg.Hostname {
+		r.log.Error("transcoding request for wrong hostname", "hostname", req.Hostname, "expected", r.cfg.Hostname)
 		return nil, errors.New("wrong hostname")
 	}
 	a := []*actions.Action{

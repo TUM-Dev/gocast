@@ -47,6 +47,7 @@ func (g GrpcRunnerServer) Register(ctx context.Context, request *protobuf.Regist
 			Workload: 0,
 		}
 	}
+	runner.Port = int(request.Port)
 	err = g.RunnerDao.Create(ctx, runner)
 	if err != nil {
 		return nil, err
@@ -91,7 +92,7 @@ func (g GrpcRunnerServer) Heartbeat(ctx context.Context, request *protobuf.Heart
 
 func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner, values map[string]interface{}) {
 
-	streamID := values["stream"].(string) //fmt.Sprintf("%f", ctx.Value("stream"))
+	streamID := fmt.Sprintf("%f", values["stream"]) //fmt.Sprintf("%f", ctx.Value("stream"))
 
 	//get the stream and courses from the data bank
 	stream, err := dao.StreamsDao.GetStreamByID(ctx, streamID)
@@ -99,16 +100,16 @@ func StreamRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Runner,
 		logger.Error("Can't get stream", "err", err)
 		return
 	}
-	course, err := dao.CoursesDao.GetCourseById(ctx, values["course"].(uint))
+	course, err := dao.CoursesDao.GetCourseById(ctx, uint(values["course"].(float64)))
 	if err != nil {
 		logger.Error("Can't get course", "err", err)
 		return
 	}
 	//get all other values from the map
-	source := values["source"].(string)     //fmt.Sprintf("%v", ctx.Value("source"))
-	version := values["version"].(string)   //fmt.Sprintf("%v", ctx.Value("version"))
-	actionID := values["actionID"].(string) //fmt.Sprintf("%v", ctx.Value("actionID"))
-	stringEnd := values["end"].(string)     //fmt.Sprintf("%v", ctx.Value("end"))
+	source := fmt.Sprintf("%v", values["source"])     //fmt.Sprintf("%v", ctx.Value("source"))
+	version := fmt.Sprintf("%v", values["version"])   //fmt.Sprintf("%v", ctx.Value("version"))
+	actionID := fmt.Sprintf("%v", values["actionID"]) //fmt.Sprintf("%v", ctx.Value("actionID"))
+	stringEnd := fmt.Sprintf("%v", values["end"])     //fmt.Sprintf("%v", ctx.Value("end"))
 	end, err := time.Parse(time.RFC3339, stringEnd)
 	if err != nil {
 		logger.Error("Can't parse end", "err", err)
@@ -219,7 +220,7 @@ func TranscodingRequest(ctx context.Context, dao dao.DaoWrapper, runner model.Ru
 	resp, err := client.RequestTranscoding(context.Background(), &protobuf.TranscodingRequest{
 		ActionID:   actionID,
 		DataURL:    "",
-		RunnerID:   runner.Hostname,
+		Hostname:   runner.Hostname,
 		StreamName: stream.StreamName,
 		CourseName: course.Name,
 		SourceType: version,
@@ -315,12 +316,63 @@ func (g GrpcRunnerServer) NotifyStreamEnded(ctx context.Context, request *protob
 	stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%v", request.StreamID))
 	if err != nil {
 		return &protobuf.Status{Ok: false}, err
+	} else {
+		go func() {
+			err := handleLightOffSwitch(stream, g.DaoWrapper)
+			if err != nil {
+				logger.Error("Can't handle light off switch", "err", err)
+			}
+			err = g.StreamsDao.SaveEndedState(stream.ID, true)
+			if err != nil {
+				logger.Error("Can't save ended state", "err", err)
+			}
+		}()
 	}
 	//set the stream to ended
-	err = g.StreamsDao.SaveEndedState(stream.ID, true)
+	//Add an ingest if else to remove the ingest server slot
+
+	//set stream to not live
+	err = g.StreamsDao.SetStreamNotLiveById(uint(request.StreamID))
 	if err != nil {
-		return &protobuf.Status{Ok: false}, err
+		logger.Error("Can't set stream not live", "err", err)
 	}
+	NotifyViewersLiveState(stream.ID, false)
+
+	//this part is for setting the stream to the vod playlist location
+	go func() {
+		mutex.Lock()
+		defer mutex.Unlock()
+		if _, err := g.RunnerDao.Get(ctx, request.Hostname); err != nil {
+			logger.Error("Can't get runner", err)
+			return
+		}
+		stream, err := g.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+		if err != nil {
+			logger.Error("Can't get stream", err)
+			return
+		}
+		course, err := g.CoursesDao.GetCourseById(ctx, (uint)(request.CourseID))
+		if err != nil {
+			logger.Error("Can't get course", err)
+			return
+		}
+		stream.Recording = true
+		stream.Private = course.VodPrivate
+		switch request.Version {
+		case "CAM":
+			stream.PlaylistUrlCAM = request.HLSUrl
+		case "PRES":
+			stream.PlaylistUrlPRES = request.HLSUrl
+		default:
+			stream.PlaylistUrl = request.HLSUrl
+		}
+		if err = g.StreamsDao.SaveStream(&stream); err != nil {
+			logger.Error("Can't save stream", err)
+			return
+		}
+	}()
+
+	//change the stream playlist to the vod playlist
 	return &protobuf.Status{Ok: true}, nil
 }
 
@@ -677,6 +729,8 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 		logger.Error("Can't unmarshal json", err)
 		return err
 	}
+	values["actionID"] = action.ID
+	logger.Info("assigning runner")
 
 	switch action.Type {
 	case "stream":
@@ -684,7 +738,6 @@ func AssignRunnerAction(dao dao.DaoWrapper, action *model.Action) error {
 		action.SetToRunning()
 		break
 	}
-	logger.Info("runner counts", "count", len(action.AllRunners))
 	err = dao.ActionDao.UpdateAction(ctx, action)
 	if err != nil {
 		logger.Error("Can't update action", err)

@@ -14,7 +14,7 @@ type RunnerDao interface {
 	// Get Runner by hostname
 	Get(context.Context, string) (*model.Runner, error)
 
-	// Get all Runners in an array
+	// GetAll Runners in an array
 	GetAll(context.Context) ([]model.Runner, error)
 
 	// Create a new Runner for the database

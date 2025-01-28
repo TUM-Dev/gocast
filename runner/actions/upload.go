@@ -98,7 +98,7 @@ func (a *ActionProvider) UploadAction() *Action {
 			a.Server.NotifyVoDUploadFinished(ctx, &protobuf.VoDUploadFinished{
 				HLSUrl:       url,
 				StreamID:     stream,
-				RunnerID:     "",
+				Hostname:     "",
 				SourceType:   "",
 				ThumbnailUrl: "",
 			})

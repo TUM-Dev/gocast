@@ -18,7 +18,7 @@ service ToRunner {
 
 message UploadRequest{
   string ActionID = 1;
-  string RunnerID = 2;
+  string Hostname = 2;
   string HLSUrl = 3;
   string SourceType = 4;
   string CourseName = 5;
@@ -34,7 +34,7 @@ message UploadResponse{
 
 message ThumbnailRequest{
   string ActionID = 1;
-  string RunnerID = 2;
+  string Hostname = 2;
   string HLSUrl = 3;
   string SourceType = 4;
   string CourseName = 5;
@@ -49,7 +49,7 @@ message ThumbnailResponse{
 
 message TranscodingRequest{
   string ActionID = 1;
-  string RunnerID = 2;
+  string Hostname = 2;
   string SourceType = 3;
   string CourseName = 4;
   string DataURL = 5;
@@ -140,13 +140,13 @@ service FromRunner {
 }
 
 message ActionFinished{
-  string RunnerID = 1;
+  string Hostname = 1;
   string ActionID = 2;
   string type = 3;
 }
 
 message StreamInfoForUploadRequest{
-  string RunnerID = 1;
+  string Hostname = 1;
   uint32 UploadKey = 2;
 }
 
@@ -161,7 +161,7 @@ message StreamInfoForUploadResponse{
 }
 
 message VoDUploadFinished{
-  string RunnerID = 1;
+  string Hostname = 1;
   uint32 StreamID = 2;
   string HLSUrl = 3;
   string SourceType = 4;
@@ -169,7 +169,7 @@ message VoDUploadFinished{
 }
 
 message SilenceResults{
-  string RunnerID = 1;
+  string Hostname = 1;
   uint32 StreamID = 2;
   repeated uint32 starts = 3 [packed = true];
   repeated uint32 ends = 4 [packed = true];
@@ -185,14 +185,15 @@ message StreamStarted {
 }
 
 message StreamEnded{
-  string RunnerID = 1;
+  string Hostname = 1;
   uint32 StreamID = 2;
   uint32 CourseID = 3;
   string Version = 4;
+  string HLSUrl = 5;
 }
 
 message ThumbnailsFinished{
-  string RunnerID = 1;
+  string Hostname = 1;
   uint32 StreamID = 2;
   string FilePath = 3;
   uint32 Interval = 4;
@@ -202,7 +203,7 @@ message ThumbnailsFinished{
 }
 
 message TranscodingFailureNotification{
-  string RunnerID = 1;
+  string  Hostname = 1;
   uint32 StreamID = 2;
   string Version = 3;
   string FilePath = 4;
