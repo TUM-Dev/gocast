@@ -65,6 +65,21 @@ func (mr *MockStreamsDaoMockRecorder) ClearWorkersForStream(stream interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearWorkersForStream", reflect.TypeOf((*MockStreamsDao)(nil).ClearWorkersForStream), stream)
 }
 
+// CreateOrGetTestCourse mocks base method.
+func (m *MockStreamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOrGetTestCourse", user)
+	ret0, _ := ret[0].(model.Course)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateOrGetTestCourse indicates an expected call of CreateOrGetTestCourse.
+func (mr *MockStreamsDaoMockRecorder) CreateOrGetTestCourse(user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrGetTestCourse", reflect.TypeOf((*MockStreamsDao)(nil).CreateOrGetTestCourse), user)
+}
+
 // CreateStream mocks base method.
 func (m *MockStreamsDao) CreateStream(stream *model.Stream) error {
 	m.ctrl.T.Helper()

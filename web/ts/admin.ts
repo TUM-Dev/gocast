@@ -214,3 +214,13 @@ export function impersonate(userID: number): Promise<boolean> {
         return r.status === StatusCodes.OK;
     });
 }
+
+export async function createTestCourse() {
+    await postData("/api/createTestCourse", {}).then((data) => {
+        if (data.status === StatusCodes.OK) {
+            showMessage("Test course was created successfully. Reload the page to see it.");
+        } else {
+            showMessage("There was an error creating the test course: " + data.body);
+        }
+    });
+}

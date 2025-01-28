@@ -51,6 +51,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			lecturers.Use(tools.AtLeastLecturer)
 			lecturers.POST("/courseInfo", routes.courseInfo)
 			lecturers.POST("/createCourse", routes.createCourse)
+			lecturers.POST("/createTestCourse", routes.createTestCourse)
 			lecturers.GET("/searchCourse", routes.searchCourse)
 		}
 
@@ -1437,6 +1438,21 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 
 	// send id to client for further requests
 	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
+}
+
+func (r coursesRoutes) createTestCourse(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	_, err := r.StreamsDao.CreateOrGetTestCourse(tumLiveContext.User)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Couldn't save course. Please reach out to us.",
+			Err:           err,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func (r coursesRoutes) deleteCourseByToken(c *gin.Context) {

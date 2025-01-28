@@ -32,7 +32,7 @@ type CoursesDao interface {
 	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
 	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
 	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
-	GetAvailableSemesters(c context.Context) []model.Semester
+	GetAvailableSemesters(c context.Context, includeTestSemester bool) []model.Semester
 	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
 	// ExecAllCourses executes f on all courses from database without batching
@@ -245,17 +245,29 @@ func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year
 	return foundCourses, err
 }
 
-func (d coursesDao) GetAvailableSemesters(c context.Context) []model.Semester {
+func (d coursesDao) GetAvailableSemesters(c context.Context, includeTestSemester bool) []model.Semester {
+	var semesters []model.Semester
+
 	if cached, found := Cache.Get("getAllSemesters"); found {
-		return cached.([]model.Semester)
+		semesters = cached.([]model.Semester)
 	} else {
-		var semesters []model.Semester
 		DB.Raw("SELECT year, teaching_term from courses " +
-			"group by year, teaching_term " +
-			"order by year desc, teaching_term desc").Scan(&semesters)
+			"GROUP BY year, teaching_term " +
+			"ORDER BY year desc, teaching_term desc").Scan(&semesters)
 		Cache.SetWithTTL("getAllSemesters", semesters, 1, time.Hour)
-		return semesters
 	}
+	if includeTestSemester {
+		return semesters // returns all semesters including test -> e.g., for courses tab in 'https://tum.live/admin'
+	}
+	var filtered []model.Semester
+	for _, semester := range semesters {
+		if semester.Year != 1234 {
+			filtered = append(filtered, semester)
+		}
+	}
+
+	// returns actual semesters for 'https://tum.live/'
+	return filtered
 }
 
 // GetCourseByShortLink returns the course associated with the given short link (e.g. EIDI2022)

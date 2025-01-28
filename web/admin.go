@@ -87,8 +87,10 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			logger.Warn("could not get all server notifications", "err", err)
 		}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	y, t := tum.GetCurrentSemester()
+	hasTestCourse := tumLiveContext.User.HasTestCourse()
+
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
 			Users:               users,
@@ -104,6 +106,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
+			HasTestCourse:       hasTestCourse,
 		})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
@@ -221,7 +224,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
@@ -260,13 +263,16 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	for i := range tumLiveContext.Course.Streams {
 		err := tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, true)
 		if err != nil {
 			logger.Error("could not set signed playlist for admin page", "err", err)
 		}
 	}
+
+	hasTestCourse := tumLiveContext.User.HasTestCourse()
+
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
@@ -280,6 +286,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 			IngestBase:   tools.Cfg.IngestBase,
 			LectureHalls: lectureHalls,
 		},
+		HasTestCourse: hasTestCourse,
 	})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
@@ -342,6 +349,7 @@ type AdminPageData struct {
 	Tokens              TokensData
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
+	HasTestCourse       bool
 }
 
 func (apd AdminPageData) UsersAsJson() string {
