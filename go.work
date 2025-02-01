@@ -7,4 +7,5 @@ use (
 	./worker
 	./worker/edge
 	vod-service
+	runner
 )

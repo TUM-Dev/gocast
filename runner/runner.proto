@@ -1,0 +1,47 @@
+edition = "2023";
+package protobuf;
+option go_package = "runner/protobuf";
+
+import "google/protobuf/timestamp.proto";
+
+service ToRunner {
+  // Requests a stream from a lecture hall
+  rpc RequestStream (StreamRequest) returns (StreamResponse) {}
+}
+
+enum StreamVersion {
+  UNSPECIFIED = 0;
+  COMBINED = 1;
+  CAMERA = 2;
+  PRESENTATION = 3;
+}
+
+message StreamRequest {
+  uint64 stream_id = 1;
+  StreamVersion version = 2;
+  google.protobuf.Timestamp end = 3;
+  string ffmpeg_global_options = 4; // optional e.g. -rtsp_transport tcp
+  string ffmpeg_input_options = 5; // optional
+  string ffmpeg_output_options = 6; // e.g. -c:a copy -c:v copy
+  string input = 7; // e.g. rtsp://user:password@host:port/rtsp_path
+}
+
+
+message StreamResponse {
+  string jobID = 1;
+}
+
+// FromRunner service defines communication from runners to gocast
+service FromRunner {
+  // Register is a request to the server to join the runners pool.
+  rpc Register (RegisterRequest) returns (RegisterResponse) {}
+}
+
+message RegisterRequest {
+  string hostname = 1;
+  int32 port = 2;
+}
+
+message RegisterResponse {
+  string ID = 1;
+}
