@@ -20,19 +20,25 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	API_HealthCheck_FullMethodName        = "/protobuf.API/healthCheck"
-	API_GetUser_FullMethodName            = "/protobuf.API/getUser"
-	API_ResetPassword_FullMethodName      = "/protobuf.API/resetPassword"
-	API_UpdateUserSettings_FullMethodName = "/protobuf.API/updateUserSettings"
-	API_ExportPersonalData_FullMethodName = "/protobuf.API/exportPersonalData"
-	API_GetSemesters_FullMethodName       = "/protobuf.API/getSemesters"
-	API_GetLiveStreams_FullMethodName     = "/protobuf.API/getLiveStreams"
-	API_GetPublicCourses_FullMethodName   = "/protobuf.API/getPublicCourses"
-	API_GetCourseBySlug_FullMethodName    = "/protobuf.API/getCourseBySlug"
-	API_GetUserCourses_FullMethodName     = "/protobuf.API/getUserCourses"
-	API_GetPinnedCourses_FullMethodName   = "/protobuf.API/getPinnedCourses"
-	API_GetPinForCourse_FullMethodName    = "/protobuf.API/GetPinForCourse"
-	API_PinCourse_FullMethodName          = "/protobuf.API/PinCourse"
+	API_HealthCheck_FullMethodName            = "/protobuf.API/healthCheck"
+	API_GetUser_FullMethodName                = "/protobuf.API/getUser"
+	API_ResetPassword_FullMethodName          = "/protobuf.API/resetPassword"
+	API_UpdateUserSettings_FullMethodName     = "/protobuf.API/updateUserSettings"
+	API_ExportPersonalData_FullMethodName     = "/protobuf.API/exportPersonalData"
+	API_GetSemesters_FullMethodName           = "/protobuf.API/getSemesters"
+	API_GetLiveStreams_FullMethodName         = "/protobuf.API/getLiveStreams"
+	API_GetPublicCourses_FullMethodName       = "/protobuf.API/getPublicCourses"
+	API_GetCourseBySlug_FullMethodName        = "/protobuf.API/getCourseBySlug"
+	API_GetUserCourses_FullMethodName         = "/protobuf.API/getUserCourses"
+	API_GetPinnedCourses_FullMethodName       = "/protobuf.API/getPinnedCourses"
+	API_GetPinForCourse_FullMethodName        = "/protobuf.API/GetPinForCourse"
+	API_PinCourse_FullMethodName              = "/protobuf.API/PinCourse"
+	API_AddBookmark_FullMethodName            = "/protobuf.API/AddBookmark"
+	API_GetBookmarks_FullMethodName           = "/protobuf.API/GetBookmarks"
+	API_UpdateBookmark_FullMethodName         = "/protobuf.API/UpdateBookmark"
+	API_DeleteBookmark_FullMethodName         = "/protobuf.API/DeleteBookmark"
+	API_GetNotifications_FullMethodName       = "/protobuf.API/GetNotifications"
+	API_GetServerNotifications_FullMethodName = "/protobuf.API/GetServerNotifications"
 )
 
 // APIClient is the client API for API service.
@@ -52,6 +58,12 @@ type APIClient interface {
 	GetPinnedCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error)
 	GetPinForCourse(ctx context.Context, in *GetPinForCourseRequest, opts ...grpc.CallOption) (*GetPinForCourseResponse, error)
 	PinCourse(ctx context.Context, in *PinCourseRequest, opts ...grpc.CallOption) (*PinCourseResponse, error)
+	AddBookmark(ctx context.Context, in *AddBookmarkRequest, opts ...grpc.CallOption) (*AddBookmarkResponse, error)
+	GetBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
+	UpdateBookmark(ctx context.Context, in *UpdateBookmarkRequest, opts ...grpc.CallOption) (*UpdateBookmarkResponse, error)
+	DeleteBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNotificationsResponse, error)
+	GetServerNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServerNotificationsResponse, error)
 }
 
 type aPIClient struct {
@@ -192,6 +204,66 @@ func (c *aPIClient) PinCourse(ctx context.Context, in *PinCourseRequest, opts ..
 	return out, nil
 }
 
+func (c *aPIClient) AddBookmark(ctx context.Context, in *AddBookmarkRequest, opts ...grpc.CallOption) (*AddBookmarkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddBookmarkResponse)
+	err := c.cc.Invoke(ctx, API_AddBookmark_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBookmarksResponse)
+	err := c.cc.Invoke(ctx, API_GetBookmarks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) UpdateBookmark(ctx context.Context, in *UpdateBookmarkRequest, opts ...grpc.CallOption) (*UpdateBookmarkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateBookmarkResponse)
+	err := c.cc.Invoke(ctx, API_UpdateBookmark_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) DeleteBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, API_DeleteBookmark_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNotificationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetNotificationsResponse)
+	err := c.cc.Invoke(ctx, API_GetNotifications_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetServerNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServerNotificationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetServerNotificationsResponse)
+	err := c.cc.Invoke(ctx, API_GetServerNotifications_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations must embed UnimplementedAPIServer
 // for forward compatibility.
@@ -209,6 +281,12 @@ type APIServer interface {
 	GetPinnedCourses(context.Context, *emptypb.Empty) (*GetPinnedCoursesResponse, error)
 	GetPinForCourse(context.Context, *GetPinForCourseRequest) (*GetPinForCourseResponse, error)
 	PinCourse(context.Context, *PinCourseRequest) (*PinCourseResponse, error)
+	AddBookmark(context.Context, *AddBookmarkRequest) (*AddBookmarkResponse, error)
+	GetBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
+	UpdateBookmark(context.Context, *UpdateBookmarkRequest) (*UpdateBookmarkResponse, error)
+	DeleteBookmark(context.Context, *DeleteBookmarkRequest) (*emptypb.Empty, error)
+	GetNotifications(context.Context, *emptypb.Empty) (*GetNotificationsResponse, error)
+	GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error)
 	mustEmbedUnimplementedAPIServer()
 }
 
@@ -257,6 +335,24 @@ func (UnimplementedAPIServer) GetPinForCourse(context.Context, *GetPinForCourseR
 }
 func (UnimplementedAPIServer) PinCourse(context.Context, *PinCourseRequest) (*PinCourseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PinCourse not implemented")
+}
+func (UnimplementedAPIServer) AddBookmark(context.Context, *AddBookmarkRequest) (*AddBookmarkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddBookmark not implemented")
+}
+func (UnimplementedAPIServer) GetBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBookmarks not implemented")
+}
+func (UnimplementedAPIServer) UpdateBookmark(context.Context, *UpdateBookmarkRequest) (*UpdateBookmarkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBookmark not implemented")
+}
+func (UnimplementedAPIServer) DeleteBookmark(context.Context, *DeleteBookmarkRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteBookmark not implemented")
+}
+func (UnimplementedAPIServer) GetNotifications(context.Context, *emptypb.Empty) (*GetNotificationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNotifications not implemented")
+}
+func (UnimplementedAPIServer) GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServerNotifications not implemented")
 }
 func (UnimplementedAPIServer) mustEmbedUnimplementedAPIServer() {}
 func (UnimplementedAPIServer) testEmbeddedByValue()             {}
@@ -513,6 +609,114 @@ func _API_PinCourse_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_AddBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddBookmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).AddBookmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_AddBookmark_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).AddBookmark(ctx, req.(*AddBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetBookmarks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBookmarksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetBookmarks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetBookmarks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetBookmarks(ctx, req.(*GetBookmarksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_UpdateBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBookmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).UpdateBookmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_UpdateBookmark_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).UpdateBookmark(ctx, req.(*UpdateBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_DeleteBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBookmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).DeleteBookmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_DeleteBookmark_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).DeleteBookmark(ctx, req.(*DeleteBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetNotifications_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetNotifications(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetServerNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetServerNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetServerNotifications_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetServerNotifications(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -571,6 +775,30 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PinCourse",
 			Handler:    _API_PinCourse_Handler,
+		},
+		{
+			MethodName: "AddBookmark",
+			Handler:    _API_AddBookmark_Handler,
+		},
+		{
+			MethodName: "GetBookmarks",
+			Handler:    _API_GetBookmarks_Handler,
+		},
+		{
+			MethodName: "UpdateBookmark",
+			Handler:    _API_UpdateBookmark_Handler,
+		},
+		{
+			MethodName: "DeleteBookmark",
+			Handler:    _API_DeleteBookmark_Handler,
+		},
+		{
+			MethodName: "GetNotifications",
+			Handler:    _API_GetNotifications_Handler,
+		},
+		{
+			MethodName: "GetServerNotifications",
+			Handler:    _API_GetServerNotifications_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

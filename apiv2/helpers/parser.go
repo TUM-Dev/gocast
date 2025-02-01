@@ -16,7 +16,7 @@ func ParseUserToProto(u *model.User) *protobuf.User {
 		Name:                u.Name,
 		Email:               u.Email.String,
 		MatriculationNumber: u.MatriculationNumber,
-		LrzID:               u.LrzID,
+		LrzId:               u.LrzID,
 		Role:                uint32(u.Role),
 		Settings:            []*protobuf.UserSetting{},
 	}
@@ -48,8 +48,8 @@ func ParseBookmarkToProto(b model.Bookmark) *protobuf.Bookmark {
 		Hours:       uint32(b.Hours),
 		Minutes:     uint32(b.Minutes),
 		Seconds:     uint32(b.Seconds),
-		UserID:      uint32(b.UserID),
-		StreamID:    uint32(b.StreamID),
+		UserId:      uint32(b.UserID),
+		StreamId:    uint32(b.StreamID),
 	}
 }
 
@@ -66,8 +66,8 @@ func ParseCourseToProto(c model.Course, u *model.User) *protobuf.Course {
 			Year:         uint32(c.Year),
 			TeachingTerm: c.TeachingTerm,
 		},
-		TUMOnlineIdentifier:     c.TUMOnlineIdentifier,
-		VODEnabled:              c.VODEnabled,
+		TumOnlineIdentifier:     c.TUMOnlineIdentifier,
+		VodEnabled:              c.VODEnabled,
 		DownloadsEnabled:        c.DownloadsEnabled,
 		ChatEnabled:             c.ChatEnabled,
 		AnonymousChatEnabled:    c.AnonymousChatEnabled,
@@ -75,8 +75,8 @@ func ParseCourseToProto(c model.Course, u *model.User) *protobuf.Course {
 		VodChatEnabled:          c.VodChatEnabled,
 		CameraPresetPreferences: c.CameraPresetPreferences,
 		SourcePreferences:       c.SourcePreferences,
-		LastRecordingID:         uint32(lastRecordingID),
-		NextLectureID:           uint32(nextLectureID),
+		LastRecordingId:         uint32(lastRecordingID),
+		NextLectureId:           uint32(nextLectureID),
 	}
 }
 
@@ -97,18 +97,18 @@ func ParseStreamToProto(stream model.Stream, downloads []model.DownloadableVod) 
 		Id:               uint32(stream.ID),
 		Name:             stream.Name,
 		Description:      stream.Description,
-		CourseID:         uint32(stream.CourseID),
+		CourseId:         uint32(stream.CourseID),
 		Start:            timestamppb.New(stream.Start),
 		End:              timestamppb.New(stream.End),
 		ChatEnabled:      stream.ChatEnabled,
 		RoomName:         stream.RoomName,
 		RoomCode:         stream.RoomCode,
 		EventTypeName:    stream.EventTypeName,
-		TUMOnlineEventID: uint32(stream.TUMOnlineEventID),
+		TumOnlineEventId: uint32(stream.TUMOnlineEventID),
 		SeriesIdentifier: stream.SeriesIdentifier,
 		PlaylistUrl:      stream.PlaylistUrl,
-		PlaylistUrlPRES:  stream.PlaylistUrlPRES,
-		PlaylistUrlCAM:   stream.PlaylistUrlCAM,
+		PlaylistUrlPres:  stream.PlaylistUrlPRES,
+		PlaylistUrlCam:   stream.PlaylistUrlCAM,
 		LiveNow:          liveNow,
 		LiveNowTimestamp: timestamppb.New(stream.LiveNowTimestamp),
 		Recording:        stream.Recording,
@@ -119,7 +119,7 @@ func ParseStreamToProto(stream model.Stream, downloads []model.DownloadableVod) 
 		EndOffset:        uint32(stream.EndOffset),
 		IsPlanned:        stream.IsPlanned(),
 		IsComingUp:       stream.IsComingUp(),
-		HLSUrl:           stream.HLSUrl(),
+		HlsUrl:           stream.HLSUrl(),
 	}
 
 	if stream.Duration.Valid {
@@ -143,6 +143,24 @@ func ParseLectureHallToProto(lh *model.LectureHall) *protobuf.LectureHall {
 func ParseDownloadToProto(download model.DownloadableVod) *protobuf.Download {
 	return &protobuf.Download{
 		FriendlyName: download.FriendlyName,
-		DownloadURL:  download.DownloadURL,
+		DownloadUrl:  download.DownloadURL,
+	}
+}
+
+func ParseNotificationToProto(notification model.Notification) *protobuf.Notification {
+	return &protobuf.Notification{
+		Title:     *notification.Title,
+		Body:      notification.Body,
+		Target:    protobuf.NotificationTarget(notification.Target),
+		CreatedAt: timestamppb.New(notification.CreatedAt),
+	}
+}
+
+func ParseServerNotificationToProto(notification model.ServerNotification) *protobuf.ServerNotification {
+	return &protobuf.ServerNotification{
+		Text:    notification.Text,
+		Warn:    notification.Warn,
+		Start:   timestamppb.New(notification.Start),
+		Expires: timestamppb.New(notification.Expires),
 	}
 }

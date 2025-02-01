@@ -31,6 +31,237 @@
     "application/json"
   ],
   "paths": {
+    "/api/v2/bookmarks": {
+      "get": {
+        "summary": "Get bookmarks by stream ID.",
+        "description": "Retrieves bookmarks by stream ID.",
+        "operationId": "API_GetBookmarks",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetBookmarksResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Bookmarks"
+        ]
+      },
+      "post": {
+        "summary": "Add a bookmark.",
+        "description": "Adds a new bookmark.",
+        "operationId": "API_AddBookmark",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufAddBookmarkResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "minutes",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "seconds",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Bookmarks"
+        ]
+      }
+    },
+    "/api/v2/bookmarks/{id}": {
+      "delete": {
+        "summary": "Delete a bookmark.",
+        "description": "Deletes a bookmark.",
+        "operationId": "API_DeleteBookmark",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Bookmarks"
+        ]
+      },
+      "put": {
+        "summary": "Update a bookmark.",
+        "description": "Updates an existing bookmark.",
+        "operationId": "API_UpdateBookmark",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufUpdateBookmarkResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "minutes",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "seconds",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Bookmarks"
+        ]
+      }
+    },
+    "/api/v2/notifications": {
+      "get": {
+        "summary": "Get notifications.",
+        "description": "Retrieves notifications for the current user.",
+        "operationId": "API_GetNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetNotificationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v2/server-notifications": {
+      "get": {
+        "summary": "Get server notifications.",
+        "description": "Retrieves current server notifications.",
+        "operationId": "API_GetServerNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetServerNotificationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
     "/courses": {
       "get": {
         "summary": "Get public courses.",
@@ -448,6 +679,14 @@
         }
       }
     },
+    "protobufAddBookmarkResponse": {
+      "type": "object",
+      "properties": {
+        "bookmark": {
+          "$ref": "#/definitions/protobufBookmark"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -479,11 +718,11 @@
           "type": "integer",
           "format": "int64"
         },
-        "userID": {
+        "userId": {
           "type": "integer",
           "format": "int64"
         },
-        "streamID": {
+        "streamId": {
           "type": "integer",
           "format": "int64"
         }
@@ -536,10 +775,10 @@
         "semester": {
           "$ref": "#/definitions/protobufSemester"
         },
-        "TUMOnlineIdentifier": {
+        "tumOnlineIdentifier": {
           "type": "string"
         },
-        "VODEnabled": {
+        "vodEnabled": {
           "type": "boolean"
         },
         "downloadsEnabled": {
@@ -570,11 +809,11 @@
         "sourcePreferences": {
           "type": "string"
         },
-        "lastRecordingID": {
+        "lastRecordingId": {
           "type": "integer",
           "format": "int64"
         },
-        "nextLectureID": {
+        "nextLectureId": {
           "type": "integer",
           "format": "int64"
         }
@@ -604,7 +843,7 @@
         "friendlyName": {
           "type": "string"
         },
-        "downloadURL": {
+        "downloadUrl": {
           "type": "string"
         }
       }
@@ -653,6 +892,18 @@
         }
       }
     },
+    "protobufGetBookmarksResponse": {
+      "type": "object",
+      "properties": {
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBookmark"
+          }
+        }
+      }
+    },
     "protobufGetCourseBySlugResponse": {
       "type": "object",
       "properties": {
@@ -669,6 +920,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufCourseStream"
+          }
+        }
+      }
+    },
+    "protobufGetNotificationsResponse": {
+      "type": "object",
+      "properties": {
+        "notifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufNotification"
           }
         }
       }
@@ -720,6 +983,18 @@
         }
       }
     },
+    "protobufGetServerNotificationsResponse": {
+      "type": "object",
+      "properties": {
+        "serverNotifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufServerNotification"
+          }
+        }
+      }
+    },
     "protobufGetUserCoursesResponse": {
       "type": "object",
       "properties": {
@@ -767,6 +1042,35 @@
         }
       }
     },
+    "protobufNotification": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/protobufNotificationTarget"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "protobufNotificationTarget": {
+      "type": "string",
+      "enum": [
+        "TARGET_ALL",
+        "TARGET_USER",
+        "TARGET_STUDENT",
+        "TARGET_LECTURER",
+        "TARGET_ADMIN"
+      ],
+      "default": "TARGET_ALL"
+    },
     "protobufPinCourseResponse": {
       "type": "object",
       "properties": {
@@ -803,6 +1107,25 @@
         }
       }
     },
+    "protobufServerNotification": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "warn": {
+          "type": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "protobufStream": {
       "type": "object",
       "properties": {
@@ -816,7 +1139,7 @@
         "description": {
           "type": "string"
         },
-        "courseID": {
+        "courseId": {
           "type": "integer",
           "format": "int64"
         },
@@ -840,7 +1163,7 @@
         "eventTypeName": {
           "type": "string"
         },
-        "TUMOnlineEventID": {
+        "tumOnlineEventId": {
           "type": "integer",
           "format": "int64"
         },
@@ -850,10 +1173,10 @@
         "playlistUrl": {
           "type": "string"
         },
-        "playlistUrlPRES": {
+        "playlistUrlPres": {
           "type": "string"
         },
-        "playlistUrlCAM": {
+        "playlistUrlCam": {
           "type": "string"
         },
         "liveNow": {
@@ -901,8 +1224,16 @@
         "isComingUp": {
           "type": "boolean"
         },
-        "HLSUrl": {
+        "hlsUrl": {
           "type": "string"
+        }
+      }
+    },
+    "protobufUpdateBookmarkResponse": {
+      "type": "object",
+      "properties": {
+        "bookmark": {
+          "$ref": "#/definitions/protobufBookmark"
         }
       }
     },
@@ -949,7 +1280,7 @@
         "matriculationNumber": {
           "type": "string"
         },
-        "lrzID": {
+        "lrzId": {
           "type": "string"
         },
         "role": {
