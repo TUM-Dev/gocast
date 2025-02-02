@@ -4,19 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net"
+	"os"
+	"time"
+
 	"github.com/google/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/reflection"
+
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/actions"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
 	"github.com/tum-dev/gocast/runner/protobuf"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/reflection"
-	"log/slog"
-	"net"
-	"os"
-	"time"
 )
 
 type envConfig struct {
@@ -43,7 +45,7 @@ type Runner struct {
 	stats *vmstat.VmStat
 
 	StartTime time.Time
-	protobuf.UnimplementedToRunnerServer
+	protobuf.UnimplementedRunnerServiceServer
 
 	notifications chan *protobuf.Notification
 }
@@ -113,7 +115,7 @@ func (r *Runner) InitApiGrpc() {
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	protobuf.RegisterToRunnerServer(grpcServer, r)
+	protobuf.RegisterRunnerServiceServer(grpcServer, r)
 
 	reflection.Register(grpcServer)
 	if err := grpcServer.Serve(lis); err != nil {

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	log "log/slog"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -13,13 +14,6 @@ import (
 
 	"github.com/soheilhy/cmux"
 
-	"github.com/TUM-Dev/gocast/api"
-	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/TUM-Dev/gocast/web"
 	"github.com/dgraph-io/ristretto"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -29,6 +23,15 @@ import (
 	"github.com/pkg/profile"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/api"
+	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/runner_manager"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/TUM-Dev/gocast/web"
 )
 
 var VersionTag = "development"
@@ -209,6 +212,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Runner{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -233,6 +237,13 @@ func main() {
 		logger.Error("Error risretto.NewCache", "err", err)
 	}
 	dao.Cache = *cache
+
+	m := runner_manager.New(dao.NewDaoWrapper())
+	log.Info("running runner manager")
+	err = m.Run()
+	if err != nil {
+		log.Error("Failed to start runner manager", "err", err)
+	}
 
 	// init meili search index settings
 	go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()

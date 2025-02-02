@@ -4,7 +4,7 @@ option go_package = "runner/protobuf";
 
 import "google/protobuf/timestamp.proto";
 
-service ToRunner {
+service RunnerService {
   // Requests a stream from a lecture hall
   rpc RequestStream (StreamRequest) returns (StreamResponse) {}
 }
@@ -31,8 +31,8 @@ message StreamResponse {
   string jobID = 1;
 }
 
-// FromRunner service defines communication from runners to gocast
-service FromRunner {
+// RunnerManagerService service defines communication from runners to gocast
+service RunnerManagerService {
   // Register is a request to the server to join the runners pool.
   rpc Register (RegisterRequest) returns (RegisterResponse) {}
 }

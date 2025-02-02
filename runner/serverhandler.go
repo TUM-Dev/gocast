@@ -2,14 +2,16 @@ package runner
 
 import (
 	"context"
-	"github.com/tum-dev/gocast/runner/config"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-	"github.com/tum-dev/gocast/runner/protobuf"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"os"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
 const registerRetries = 5
@@ -29,7 +31,7 @@ func (r *Runner) RegisterWithGocast(retries int) {
 	}
 	_, err = con.Register(context.Background(), &protobuf.RegisterRequest{Hostname: ptr.Take(config.Config.Hostname), Port: ptr.Take(int32(config.Config.Port))})
 	if err != nil {
-		r.log.Warn("error registering with gocast", "error", err, "sleeping(s)", registerRetries-retries)
+		r.log.Error("error registering with gocast", "error", err, "sleeping(s)", registerRetries-retries)
 		time.Sleep(time.Second * time.Duration(registerRetries-retries))
 		r.RegisterWithGocast(retries - 1)
 		return
@@ -37,11 +39,11 @@ func (r *Runner) RegisterWithGocast(retries int) {
 }
 
 // dialIn connects to manager instance and returns a client
-func (r *Runner) dialIn() (protobuf.FromRunnerClient, error) {
+func (r *Runner) dialIn() (protobuf.RunnerManagerServiceClient, error) {
 	credentials := insecure.NewCredentials()
 	conn, err := grpc.Dial(config.Config.GocastServer, grpc.WithTransportCredentials(credentials))
 	if err != nil {
 		return nil, err
 	}
-	return protobuf.NewFromRunnerClient(conn), nil
+	return protobuf.NewRunnerManagerServiceClient(conn), nil
 }
