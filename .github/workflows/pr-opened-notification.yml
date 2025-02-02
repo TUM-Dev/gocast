@@ -1,0 +1,26 @@
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+    name: Send message via Matrix
+    if: ${{ !github.event.pull_request.draft && !(startsWith(github.event.sender.login, 'dependabot') || startsWith(github.event.sender.login, 'renovate')) }}
+    steps:
+      - name: Send message to test channel
+        id: matrix-chat-message
+        uses: fadenb/matrix-chat-message@v0.0.6
+        with:
+          homeserver: 'matrix.org'
+          token: ${{ secrets.MATRIX_TOKEN }}
+          channel: '!LRZZJaApdaBVjDzdpj:in.tum.de'
+          message: |
+            🫳🎁 Pull request ready for review by ${{ github.event.sender.login }}:
+            
+            ## ${{ github.event.pull_request.title }}
+            
+            Please leave your review here: https://github.com/TUM-Dev/gocast/pull/${{ github.event.number }}
