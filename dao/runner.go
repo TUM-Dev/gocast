@@ -18,8 +18,8 @@ type RunnerDao interface {
 	// Create a new Runner for the database
 	Create(context.Context, *model.Runner) error
 
-	// Delete a Runner by id.
-	Delete(context.Context, uint) error
+	// Delete a Runner by hostname.
+	Delete(context.Context, string) error
 }
 
 type runnerDao struct {
@@ -43,7 +43,7 @@ func (d runnerDao) Create(c context.Context, it *model.Runner) error {
 	}).Create(it).Error
 }
 
-// Delete a Runner by id.
-func (d runnerDao) Delete(c context.Context, id uint) error {
-	return d.db.WithContext(c).Delete(&model.Runner{}, id).Error
+// Delete a Runner by hostname.
+func (d runnerDao) Delete(c context.Context, hostname string) error {
+	return d.db.WithContext(c).Where("hostname = ?", hostname).Delete(&model.Runner{}).Error
 }
