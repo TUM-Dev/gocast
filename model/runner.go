@@ -9,7 +9,6 @@ import (
 // Runner represents a runner handling streams, converting videos,
 // extracting silence from audios, creating thumbnails, etc.
 type Runner struct {
-	// Hostname is the hostname of the runner
 	Hostname string `gorm:"column:hostname;primaryKey;unique;not null"`
 	// Port is the port, the runners gRPC server listens on.
 	Port uint32 `gorm:"column:port;not null"`
