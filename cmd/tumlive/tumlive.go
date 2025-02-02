@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	log "log/slog"
 	"net"
 	"net/http"
@@ -38,8 +37,8 @@ var VersionTag = "development"
 
 type initializer func()
 
-var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-	Level: slog.LevelDebug,
+var logger = log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
+	Level: log.LevelDebug,
 })).With("service", "main")
 
 var initializers = []initializer{
