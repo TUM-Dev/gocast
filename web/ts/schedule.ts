@@ -51,7 +51,7 @@ const opts = {
             e.el.title = e.el.title + " Location: " + eventLocation;
             // if stream spans multiple days and therefore item doesn't include start and end time, insert custom start to end
             if (e.el.getElementsByClassName("fc-event-time")[0] === undefined) {
-                const timeElem = document.createElement("div")
+                const timeElem = document.createElement("div");
                 timeElem.className = "fc-event-time";
                 timeElem.innerHTML = "12:00 - 12:00";
                 const parent = e.el.getElementsByClassName("fc-event-title-container")[0];
