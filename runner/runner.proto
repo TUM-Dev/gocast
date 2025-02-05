@@ -30,7 +30,6 @@ message StreamRequest {
   string input = 7; // e.g. rtsp://user:password@host:port/rtsp_path
 }
 
-
 message StreamResponse {
   string job_id = 1;
 }
