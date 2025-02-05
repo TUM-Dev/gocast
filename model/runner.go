@@ -1,14 +1,19 @@
 package model
 
+<<<<<<< HEAD
 import (
 	"time"
 
 	"gorm.io/gorm"
 )
+=======
+import "gorm.io/gorm"
+>>>>>>> dev
 
 // Runner represents a runner handling streams, converting videos,
 // extracting silence from audios, creating thumbnails, etc.
 type Runner struct {
+<<<<<<< HEAD
 	// Hostname is the hostname of the runner
 	Hostname string `gorm:"column:hostname;primaryKey;unique;not null"`
 	// Port is the port, the runners gRPC server listens on.
@@ -24,6 +29,10 @@ type Runner struct {
 	// It's updated through heartbeats and used to select
 	// the runner with the least workload for new jobs.
 	JobCount uint64 `gorm:"column:job_count;not null;default:0"`
+=======
+	Hostname string `gorm:"column:hostname;primaryKey;unique;not null"`
+	Port     uint32 `gorm:"column:port;not null"`
+>>>>>>> dev
 }
 
 // TableName returns the name of the table for the Runner model in the database.
@@ -32,8 +41,13 @@ func (*Runner) TableName() string {
 }
 
 // BeforeCreate returns an error, if Runner r is invalid
+<<<<<<< HEAD
 func (r *Runner) BeforeCreate(tx *gorm.DB) error {
 	r.LastSeen = time.Now()
+=======
+func (r *Runner) BeforeCreate(tx *gorm.DB) (err error) {
+	// this method currently is a noop
+>>>>>>> dev
 	return nil
 }
 
