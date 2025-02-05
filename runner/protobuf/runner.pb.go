@@ -211,6 +211,87 @@ func (x *StreamResponse) GetJobId() string {
 	return ""
 }
 
+type StreamEndRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	JobId *string `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+}
+
+func (x *StreamEndRequest) Reset() {
+	*x = StreamEndRequest{}
+	mi := &file_runner_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamEndRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamEndRequest) ProtoMessage() {}
+
+func (x *StreamEndRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamEndRequest.ProtoReflect.Descriptor instead.
+func (*StreamEndRequest) Descriptor() ([]byte, []int) {
+	return file_runner_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *StreamEndRequest) GetJobId() string {
+	if x != nil && x.JobId != nil {
+		return *x.JobId
+	}
+	return ""
+}
+
+type StreamEndResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *StreamEndResponse) Reset() {
+	*x = StreamEndResponse{}
+	mi := &file_runner_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamEndResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamEndResponse) ProtoMessage() {}
+
+func (x *StreamEndResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamEndResponse.ProtoReflect.Descriptor instead.
+func (*StreamEndResponse) Descriptor() ([]byte, []int) {
+	return file_runner_proto_rawDescGZIP(), []int{3}
+}
+
 type RegisterRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -222,7 +303,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_runner_proto_msgTypes[2]
+	mi := &file_runner_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -234,7 +315,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[2]
+	mi := &file_runner_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -247,7 +328,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{2}
+	return file_runner_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RegisterRequest) GetHostname() string {
@@ -272,7 +353,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_runner_proto_msgTypes[3]
+	mi := &file_runner_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -284,7 +365,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[3]
+	mi := &file_runner_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -297,7 +378,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{3}
+	return file_runner_proto_rawDescGZIP(), []int{5}
 }
 
 var File_runner_proto protoreflect.FileDescriptor
@@ -330,7 +411,11 @@ var file_runner_proto_rawDesc = []byte{
 	0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x22, 0x27,
 	0x0a, 0x0e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
 	0x12, 0x15, 0x0a, 0x06, 0x6a, 0x6f, 0x62, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x05, 0x6a, 0x6f, 0x62, 0x49, 0x64, 0x22, 0x41, 0x0a, 0x0f, 0x52, 0x65, 0x67, 0x69, 0x73,
+	0x52, 0x05, 0x6a, 0x6f, 0x62, 0x49, 0x64, 0x22, 0x29, 0x0a, 0x10, 0x53, 0x74, 0x72, 0x65, 0x61,
+	0x6d, 0x45, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x15, 0x0a, 0x06, 0x6a,
+	0x6f, 0x62, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6a, 0x6f, 0x62,
+	0x49, 0x64, 0x22, 0x13, 0x0a, 0x11, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x45, 0x6e, 0x64, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x41, 0x0a, 0x0f, 0x52, 0x65, 0x67, 0x69, 0x73,
 	0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x68, 0x6f,
 	0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x68, 0x6f,
 	0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x02,
@@ -344,12 +429,17 @@ var file_runner_proto_rawDesc = []byte{
 	0x15, 0x53, 0x54, 0x52, 0x45, 0x41, 0x4d, 0x5f, 0x56, 0x45, 0x52, 0x53, 0x49, 0x4f, 0x4e, 0x5f,
 	0x43, 0x41, 0x4d, 0x45, 0x52, 0x41, 0x10, 0x02, 0x12, 0x1f, 0x0a, 0x1b, 0x53, 0x54, 0x52, 0x45,
 	0x41, 0x4d, 0x5f, 0x56, 0x45, 0x52, 0x53, 0x49, 0x4f, 0x4e, 0x5f, 0x50, 0x52, 0x45, 0x53, 0x45,
-	0x4e, 0x54, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x03, 0x32, 0x55, 0x0a, 0x0d, 0x52, 0x75, 0x6e,
-	0x6e, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x44, 0x0a, 0x0d, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x17, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
-	0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x4e, 0x54, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x03, 0x32, 0xa4, 0x01, 0x0a, 0x0d, 0x52, 0x75,
+	0x6e, 0x6e, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x44, 0x0a, 0x0d, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x17, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x12, 0x4d, 0x0a, 0x10, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x53, 0x74, 0x72, 0x65,
+	0x61, 0x6d, 0x45, 0x6e, 0x64, 0x12, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x45, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72,
+	0x65, 0x61, 0x6d, 0x45, 0x6e, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
 	0x32, 0x9f, 0x01, 0x0a, 0x14, 0x52, 0x75, 0x6e, 0x6e, 0x65, 0x72, 0x4d, 0x61, 0x6e, 0x61, 0x67,
 	0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x43, 0x0a, 0x08, 0x52, 0x65, 0x67,
 	0x69, 0x73, 0x74, 0x65, 0x72, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
@@ -378,28 +468,32 @@ func file_runner_proto_rawDescGZIP() []byte {
 }
 
 var file_runner_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_runner_proto_goTypes = []any{
 	(StreamVersion)(0),            // 0: protobuf.StreamVersion
 	(*StreamRequest)(nil),         // 1: protobuf.StreamRequest
 	(*StreamResponse)(nil),        // 2: protobuf.StreamResponse
-	(*RegisterRequest)(nil),       // 3: protobuf.RegisterRequest
-	(*RegisterResponse)(nil),      // 4: protobuf.RegisterResponse
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
-	(*Notification)(nil),          // 6: protobuf.Notification
-	(*NotificationResponse)(nil),  // 7: protobuf.NotificationResponse
+	(*StreamEndRequest)(nil),      // 3: protobuf.StreamEndRequest
+	(*StreamEndResponse)(nil),     // 4: protobuf.StreamEndResponse
+	(*RegisterRequest)(nil),       // 5: protobuf.RegisterRequest
+	(*RegisterResponse)(nil),      // 6: protobuf.RegisterResponse
+	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(*Notification)(nil),          // 8: protobuf.Notification
+	(*NotificationResponse)(nil),  // 9: protobuf.NotificationResponse
 }
 var file_runner_proto_depIdxs = []int32{
 	0, // 0: protobuf.StreamRequest.version:type_name -> protobuf.StreamVersion
-	5, // 1: protobuf.StreamRequest.end:type_name -> google.protobuf.Timestamp
+	7, // 1: protobuf.StreamRequest.end:type_name -> google.protobuf.Timestamp
 	1, // 2: protobuf.RunnerService.RequestStream:input_type -> protobuf.StreamRequest
-	3, // 3: protobuf.RunnerManagerService.Register:input_type -> protobuf.RegisterRequest
-	6, // 4: protobuf.RunnerManagerService.Notify:input_type -> protobuf.Notification
-	2, // 5: protobuf.RunnerService.RequestStream:output_type -> protobuf.StreamResponse
-	4, // 6: protobuf.RunnerManagerService.Register:output_type -> protobuf.RegisterResponse
-	7, // 7: protobuf.RunnerManagerService.Notify:output_type -> protobuf.NotificationResponse
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
+	3, // 3: protobuf.RunnerService.RequestStreamEnd:input_type -> protobuf.StreamEndRequest
+	5, // 4: protobuf.RunnerManagerService.Register:input_type -> protobuf.RegisterRequest
+	8, // 5: protobuf.RunnerManagerService.Notify:input_type -> protobuf.Notification
+	2, // 6: protobuf.RunnerService.RequestStream:output_type -> protobuf.StreamResponse
+	4, // 7: protobuf.RunnerService.RequestStreamEnd:output_type -> protobuf.StreamEndResponse
+	6, // 8: protobuf.RunnerManagerService.Register:output_type -> protobuf.RegisterResponse
+	9, // 9: protobuf.RunnerManagerService.Notify:output_type -> protobuf.NotificationResponse
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name
@@ -417,7 +511,7 @@ func file_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_runner_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

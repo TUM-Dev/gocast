@@ -10,6 +10,7 @@ option go_package = "runner/protobuf";
 service RunnerService {
   // Requests a stream from a lecture hall
   rpc RequestStream (StreamRequest) returns (StreamResponse) {}
+  rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
 }
 
 enum StreamVersion {
@@ -33,7 +34,15 @@ message StreamResponse {
   string job_id = 1;
 }
 
-// RunnerManagerService service defines communication from runners to gocast
+message StreamEndRequest {
+  string job_id = 1;
+}
+
+message StreamEndResponse {
+  
+}
+
+  // RunnerManagerService service defines communication from runners to gocast
 service RunnerManagerService {
   // Register is a request to the server to join the runners pool.
   rpc Register (RegisterRequest) returns (RegisterResponse) {}

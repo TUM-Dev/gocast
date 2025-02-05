@@ -43,7 +43,7 @@ func main() {
 	r.Drain()
 
 	//let drainage propagate
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second)
 
 	if currentCount == 0 {
 		slog.Info("No jobs left, shutting down")

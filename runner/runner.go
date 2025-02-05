@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -155,20 +157,25 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 	job := uuid.New().String()
 	r.JobCount <- 1
 	r.jobs[job] = cancel
-	defer func() {
-		cancel()
-		delete(r.jobs, job)
-		r.JobCount <- -1
-	}()
 	go func() {
+		defer func() {
+			cancel()
+			delete(r.jobs, job)
+			r.JobCount <- -1
+		}()
 		for _, action := range a {
-			err := action(c, r.log, r.notifications, data)
-			if err != nil {
-				r.log.Error("action error", "error", err)
-			}
-			if errors.Is(err, actions.ErrAborted) {
-				r.log.Info("action can't continue")
-				return
+			for {
+				log := r.log.With("action", getFunctionName(action)).With("job", job)
+				err := action(c, log, r.notifications, data)
+				if err != nil {
+					log.Error("action error", "error", err) // use action specific logger
+					if errors.Is(err, actions.ErrAborted) {
+						log.Info("action can't continue")
+						break // escape retry loop on unrecoverable error
+					}
+				} else {
+					break // escape retry loop on no error
+				}
 			}
 		}
 	}()
@@ -205,4 +212,8 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 		}
 		return nil
 	}
+}
+
+func getFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }

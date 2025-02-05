@@ -105,6 +105,14 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 			return nil, status.Errorf(codes.Internal, "update runner: %v", err)
 		}
 		return &protobuf.NotificationResponse{}, nil
+	case *protobuf.Notification_StreamStart:
+		log.Info("received stream start from runner")
+		// passing for now, not implemented.
+		return &protobuf.NotificationResponse{}, nil
+	case *protobuf.Notification_StreamEnd:
+		log.Info("received stream end from runner")
+		// passing for now, not implemented.
+		return &protobuf.NotificationResponse{}, nil
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
