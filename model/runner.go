@@ -6,13 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-<<<<<<< HEAD
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
-
 // Runner represents a runner handling streams, converting videos,
 // extracting silence from audios, creating thumbnails, etc.
 type Runner struct {
