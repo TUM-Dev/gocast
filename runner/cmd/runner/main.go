@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/tum-dev/gocast/runner"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/tum-dev/gocast/runner"
 )
 
 // V (Version) is bundled into binary with -ldflags "-X ..."

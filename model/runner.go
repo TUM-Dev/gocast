@@ -1,8 +1,9 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Runner represents a runner handling streams, converting videos,
@@ -21,9 +22,9 @@ func (*Runner) TableName() string {
 }
 
 // BeforeCreate returns an error, if Runner r is invalid
-func (r *Runner) BeforeCreate(tx *gorm.DB) (err error) {
+func (r *Runner) BeforeCreate(tx *gorm.DB) error {
 	r.LastSeen = time.Now()
-	return
+	return nil
 }
 
 // AfterFind runs after the Runner is fetched from the db
