@@ -186,17 +186,15 @@ func (r *Runner) handleNotifications() {
 			ctx := context.Background()
 			err := retry.Do(ctx, b, r.sendNotification(n))
 			if err != nil {
-				slog.Error("failed to send notification", "error", err)
+				r.log.Error("failed to send notification", "error", err)
 			}
 		}()
 	}
 }
 
 func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2 context.Context) error {
-	ret := 0
 	return func(ctx context.Context) error {
-		slog.Debug("send notification", "notification", notification, "r", ret)
-		ret++
+		r.log.Debug("send notification", "notification", notification)
 		conn, err := r.dialIn()
 		if err != nil {
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))

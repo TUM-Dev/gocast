@@ -92,7 +92,7 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
-		log.Info("Heartbeat", "d", notification)
+		log.Debug("Heartbeat", "d", notification)
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
