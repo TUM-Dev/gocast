@@ -9,15 +9,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-<<<<<<< HEAD
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-=======
-	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/reflection"
->>>>>>> dev
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -93,7 +88,6 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	}
 	return &protobuf.RegisterResponse{}, nil
 }
-<<<<<<< HEAD
 
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
@@ -115,5 +109,3 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
 }
-=======
->>>>>>> dev
