@@ -1,8 +1,10 @@
 edition = "2023";
+
 package protobuf;
-option go_package = "runner/protobuf";
 
 import "google/protobuf/timestamp.proto";
+
+option go_package = "runner/protobuf";
 
 service RunnerService {
   // Requests a stream from a lecture hall
@@ -10,10 +12,10 @@ service RunnerService {
 }
 
 enum StreamVersion {
-  UNSPECIFIED = 0;
-  COMBINED = 1;
-  CAMERA = 2;
-  PRESENTATION = 3;
+  STREAM_VERSION_UNSPECIFIED = 0;
+  STREAM_VERSION_COMBINED = 1;
+  STREAM_VERSION_CAMERA = 2;
+  STREAM_VERSION_PRESENTATION = 3;
 }
 
 message StreamRequest {
@@ -26,9 +28,8 @@ message StreamRequest {
   string input = 7; // e.g. rtsp://user:password@host:port/rtsp_path
 }
 
-
 message StreamResponse {
-  string jobID = 1;
+  string job_id = 1;
 }
 
 // RunnerManagerService service defines communication from runners to gocast
@@ -43,5 +44,4 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
-  string ID = 1;
 }
