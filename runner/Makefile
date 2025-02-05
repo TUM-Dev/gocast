@@ -33,4 +33,4 @@ run:
 
 .PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run && protolint lint runner.proto notifications.proto
