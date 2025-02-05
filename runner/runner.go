@@ -10,10 +10,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/sethvargo/go-retry"
-
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-retry"
 	"google.golang.org/grpc"
