@@ -3,6 +3,7 @@ edition = "2023";
 package protobuf;
 
 import "google/protobuf/timestamp.proto";
+import "notifications.proto";
 
 option go_package = "runner/protobuf";
 
@@ -36,6 +37,9 @@ message StreamResponse {
 service RunnerManagerService {
   // Register is a request to the server to join the runners pool.
   rpc Register (RegisterRequest) returns (RegisterResponse) {}
+
+  // Notify sends a notification to gocast
+  rpc Notify (Notification) returns (NotificationResponse) {}
 }
 
 message RegisterRequest {

@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -43,7 +44,7 @@ func (r *Runner) dialIn() (protobuf.RunnerManagerServiceClient, error) {
 	credentials := insecure.NewCredentials()
 	conn, err := grpc.Dial(config.Config.GocastServer, grpc.WithTransportCredentials(credentials))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dialIn: %w", err)
 	}
 	return protobuf.NewRunnerManagerServiceClient(conn), nil
 }

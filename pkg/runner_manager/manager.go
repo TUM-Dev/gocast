@@ -3,6 +3,8 @@ package runner_manager
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	log "log/slog"
 	"net"
 	"strings"
@@ -85,4 +87,25 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 		return nil, fmt.Errorf("create runner: %v", err)
 	}
 	return &protobuf.RegisterResponse{}, nil
+}
+
+func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
+	switch notification.Data.(type) {
+	case *protobuf.Notification_Heartbeat:
+		log.Info("Heartbeat", "d", notification)
+		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
+		if err != nil {
+			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
+		}
+		runner.LastSeen = time.Now()
+		runner.Draining = notification.GetHeartbeat().GetDraining()
+		runner.JobCount = notification.GetHeartbeat().GetJobCount()
+		err = m.dao.RunnerDao.Update(ctx, &runner)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "update runner: %v", err)
+		}
+		return &protobuf.NotificationResponse{}, nil
+	default:
+		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
+	}
 }

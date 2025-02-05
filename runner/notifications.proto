@@ -6,6 +6,7 @@ message Notification {
   oneof data {
     StreamStartNotification stream_start = 1;
     StreamEndNotification stream_end = 2;
+    HeartbeatNotification heartbeat = 3;
   }
 }
 
@@ -20,4 +21,14 @@ message StreamStartNotification {
 
 message StreamEndNotification {
   StreamInfo stream = 1;
+}
+
+message HeartbeatNotification {
+  string hostname = 1;
+  bool draining = 2;
+  uint64 job_count = 3;
+}
+
+message NotificationResponse {
+
 }

@@ -124,6 +124,7 @@ var RunnerService_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	RunnerManagerService_Register_FullMethodName = "/protobuf.RunnerManagerService/Register"
+	RunnerManagerService_Notify_FullMethodName   = "/protobuf.RunnerManagerService/Notify"
 )
 
 // RunnerManagerServiceClient is the client API for RunnerManagerService service.
@@ -134,6 +135,8 @@ const (
 type RunnerManagerServiceClient interface {
 	// Register is a request to the server to join the runners pool.
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	// Notify sends a notification to gocast
+	Notify(ctx context.Context, in *Notification, opts ...grpc.CallOption) (*NotificationResponse, error)
 }
 
 type runnerManagerServiceClient struct {
@@ -154,6 +157,16 @@ func (c *runnerManagerServiceClient) Register(ctx context.Context, in *RegisterR
 	return out, nil
 }
 
+func (c *runnerManagerServiceClient) Notify(ctx context.Context, in *Notification, opts ...grpc.CallOption) (*NotificationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotificationResponse)
+	err := c.cc.Invoke(ctx, RunnerManagerService_Notify_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RunnerManagerServiceServer is the server API for RunnerManagerService service.
 // All implementations must embed UnimplementedRunnerManagerServiceServer
 // for forward compatibility.
@@ -162,6 +175,8 @@ func (c *runnerManagerServiceClient) Register(ctx context.Context, in *RegisterR
 type RunnerManagerServiceServer interface {
 	// Register is a request to the server to join the runners pool.
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	// Notify sends a notification to gocast
+	Notify(context.Context, *Notification) (*NotificationResponse, error)
 	mustEmbedUnimplementedRunnerManagerServiceServer()
 }
 
@@ -174,6 +189,9 @@ type UnimplementedRunnerManagerServiceServer struct{}
 
 func (UnimplementedRunnerManagerServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedRunnerManagerServiceServer) Notify(context.Context, *Notification) (*NotificationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Notify not implemented")
 }
 func (UnimplementedRunnerManagerServiceServer) mustEmbedUnimplementedRunnerManagerServiceServer() {}
 func (UnimplementedRunnerManagerServiceServer) testEmbeddedByValue()                              {}
@@ -214,6 +232,24 @@ func _RunnerManagerService_Register_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RunnerManagerService_Notify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Notification)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RunnerManagerServiceServer).Notify(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RunnerManagerService_Notify_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RunnerManagerServiceServer).Notify(ctx, req.(*Notification))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RunnerManagerService_ServiceDesc is the grpc.ServiceDesc for RunnerManagerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -224,6 +260,10 @@ var RunnerManagerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _RunnerManagerService_Register_Handler,
+		},
+		{
+			MethodName: "Notify",
+			Handler:    _RunnerManagerService_Notify_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
