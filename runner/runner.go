@@ -147,7 +147,6 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to serve", "error", err)
 		os.Exit(1)
 	}
-
 }
 
 func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
