@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -92,7 +91,7 @@ func (r *Runner) Run() {
 	go func() {
 		err := r.hlsServer.Start()
 		if err != nil {
-
+			r.log.Error("error starting hls server", "error", err)
 		}
 	}()
 
@@ -148,7 +147,6 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to serve", "error", err)
 		os.Exit(1)
 	}
-
 }
 
 func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
@@ -169,7 +167,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 				err := action(c, log, r.notifications, data)
 				if err != nil {
 					log.Error("action error", "error", err) // use action specific logger
-					if errors.Is(err, actions.ErrAborted) {
+					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
 						break // escape retry loop on unrecoverable error
 					}
@@ -216,4 +214,14 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 
 func getFunctionName(i interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
+
+// Cleanup is called on force shutdown while actions are still running.
+// it cancels all running actions
+func (r *Runner) Cleanup() {
+	for _, cancelFunc := range r.jobs {
+		cancelFunc()
+	}
+	// sleep 1 second longer than our commands default waitDelay
+	time.Sleep(time.Second * 11)
 }

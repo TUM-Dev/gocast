@@ -1,12 +1,16 @@
 package actions
 
-import "fmt"
-
-var ErrAborted = &abortingError{err: fmt.Errorf("aborted")}
+var _ isAbortingError = (*abortingError)(nil)
 
 type abortingError struct {
-	err error
+	error
 }
+
+type isAbortingError interface {
+	IsAbortingError()
+}
+
+func (e *abortingError) IsAbortingError() {}
 
 // AbortingError marks an error as aborting, thus skipping all following actions.
 func AbortingError(err error) error {
@@ -18,13 +22,18 @@ func AbortingError(err error) error {
 
 // Unwrap implements error wrapping.
 func (e *abortingError) Unwrap() error {
-	return e.err
+	return e.error
 }
 
 // Error returns the error string.
 func (e *abortingError) Error() string {
-	if e.err == nil {
+	if e.error == nil {
 		return "aborting: <nil>"
 	}
-	return "aborting: " + e.err.Error()
+	return "aborting: " + e.error.Error()
+}
+
+func IsAbortingError(err error) bool {
+	_, ok := err.(isAbortingError)
+	return ok
 }

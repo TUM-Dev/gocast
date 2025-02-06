@@ -17,6 +17,9 @@ import (
 )
 
 func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notification, d map[string]any) error {
+	if ctx.Err() != nil {
+		return AbortingError(ctx.Err())
+	}
 	streamID, ok := d["streamID"].(uint64)
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream id in context"))
@@ -57,7 +60,9 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 			},
 		},
 	}
-	args := strings.Split(globalOpts, " ")
+
+	args := []string{"-nostdin", "-y"} // noninteractive mode
+	args = append(args, strings.Split(globalOpts, " ")...)
 	args = append(args, "-t", fmt.Sprintf("%.0f", time.Until(streamEnd).Seconds()))
 	if inputOpts != "" {
 		args = append(args, strings.Split(inputOpts, " ")...)
@@ -65,7 +70,11 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	args = append(args, "-i", input)
 	args = append(args, strings.Split(outputOpts, " ")...)
 	args = append(args, strings.Split(`-f hls -hls_time 2 -hls_playlist_type event -hls_flags append_list -hls_segment_filename `+liveRecDir+"/%05d.ts "+liveRecDir+"/playlist.m3u8", " ")...)
+
 	command := exec.CommandContext(ctx, "ffmpeg", args...)
+	// give ffmpeg 10 seconds on sigterm (context cancellation) to shut down before sending sigkill.
+	command.WaitDelay = 10 * time.Second
+
 	log.Info("starting ffmpeg", "command", command.String())
 	stderr, err := command.StderrPipe()
 	if err != nil {
@@ -76,6 +85,7 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 		for scanner.Scan() {
 			log.Info("ffmpeg log", "stream", "stderr", "msg", scanner.Text())
 		}
+		log.Info("ffmpeg logstream ended", "stream", "stderr")
 	}()
 	stdo, err := command.StdoutPipe()
 	if err != nil {
@@ -86,6 +96,7 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 		for scanner.Scan() {
 			log.Info("ffmpeg log", "stream", "stdout", "msg", scanner.Text())
 		}
+		log.Info("ffmpeg logstream ended", "stream", "stdout")
 	}()
 	err = command.Run()
 	if err != nil {

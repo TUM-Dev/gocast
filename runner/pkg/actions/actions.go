@@ -2,8 +2,9 @@ package actions
 
 import (
 	"context"
-	"github.com/tum-dev/gocast/runner/protobuf"
 	"log/slog"
+
+	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
 // Action represents a computation the runner executes.

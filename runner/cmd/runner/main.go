@@ -14,9 +14,6 @@ import (
 var V = "dev"
 
 func main() {
-	// ...
-
-	// Init EnvConfig
 	r := runner.NewRunner(V)
 	go r.Run()
 
@@ -44,6 +41,14 @@ func main() {
 
 	//let drainage propagate
 	time.Sleep(time.Second)
+
+	go func() {
+		<-osSignal
+		// second signal, force shutdown
+		slog.Info("Received second signal, shutting down immediately")
+		r.Cleanup()
+		os.Exit(1)
+	}()
 
 	if currentCount == 0 {
 		slog.Info("No jobs left, shutting down")
