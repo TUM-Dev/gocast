@@ -181,7 +181,6 @@ func (r *Runner) handleNotifications() {
 	b = retry.WithMaxRetries(10, b)
 
 	for n := range r.notifications {
-		n := n // pin in loop
 		go func() {
 			ctx := context.Background()
 			err := retry.Do(ctx, b, r.sendNotification(n))
