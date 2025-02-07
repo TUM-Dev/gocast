@@ -148,8 +148,13 @@ func ParseDownloadToProto(download model.DownloadableVod) *protobuf.Download {
 }
 
 func ParseNotificationToProto(notification model.Notification) *protobuf.Notification {
+	var title string
+	if notification.Title != nil {
+		title = *notification.Title
+	}
+
 	return &protobuf.Notification{
-		Title:     *notification.Title,
+		Title:     title,
 		Body:      notification.Body,
 		Target:    protobuf.NotificationTarget(notification.Target),
 		CreatedAt: timestamppb.New(notification.CreatedAt),
