@@ -39,10 +39,9 @@ message StreamEndRequest {
 }
 
 message StreamEndResponse {
-  
 }
 
-  // RunnerManagerService service defines communication from runners to gocast
+// RunnerManagerService service defines communication from runners to gocast
 service RunnerManagerService {
   // Register is a request to the server to join the runners pool.
   rpc Register (RegisterRequest) returns (RegisterResponse) {}

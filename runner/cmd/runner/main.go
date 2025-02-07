@@ -20,7 +20,6 @@ func main() {
 	shouldShutdown := false // set to true once we receive a shutdown signal
 
 	currentCount := 0
-
 	go func() {
 		for {
 			currentCount += <-r.JobCount // count Job start/stop
