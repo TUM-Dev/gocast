@@ -1,11 +1,13 @@
 package main
 
 import (
-	"github.com/tum-dev/gocast/runner"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/tum-dev/gocast/runner"
 )
 
 // V (Version) is bundled into binary with -ldflags "-X ..."
@@ -21,12 +23,13 @@ func main() {
 	shouldShutdown := false // set to true once we receive a shutdown signal
 
 	currentCount := 0
+
 	go func() {
 		for {
 			currentCount += <-r.JobCount // count Job start/stop
-			slog.Info("current action count", "count", currentCount)
+			slog.Info("current job count", "count", currentCount)
 			if shouldShutdown && currentCount == 0 { // if we should shut down and no jobs are running, exit.
-				slog.Info("No actions left, shutting down")
+				slog.Info("No jobs left, shutting down")
 				os.Exit(0)
 			}
 		}
@@ -39,6 +42,9 @@ func main() {
 	shouldShutdown = true
 	r.Drain()
 
+	//let drainage propagate
+	time.Sleep(time.Second * 10)
+
 	if currentCount == 0 {
 		slog.Info("No jobs left, shutting down")
 		os.Exit(0)
@@ -46,5 +52,4 @@ func main() {
 
 	blocking := make(chan struct{})
 	_ = <-blocking
-
 }

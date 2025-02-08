@@ -26,5 +26,5 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	jID := r.RunAction(a, data)
 	r.log.Info("job added", "ID", jID)
 
-	return &protobuf.StreamResponse{JobID: ptr.Take(jID)}, nil
+	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
 }
