@@ -2,6 +2,7 @@ syntax = "proto3";
 package protobuf;
 
 import "google/api/annotations.proto";
+import "google/api/httpbody.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -109,15 +110,6 @@ service API {
 
   // COURSE ENDPOINTS (./course.go)
 
-  rpc getLiveStreams(google.protobuf.Empty) returns (GetLiveStreamsResponse) {
-    option (google.api.http) = {get: "/streams/live"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Courses"
-      summary: "Get currently live courses with stream."
-      description: "Retrieves the currently live courses with their streams."
-    };
-  }
-
   rpc getPublicCourses(GetPublicCoursesRequest) returns (GetPublicCoursesResponse) {
     option (google.api.http) = {get: "/courses"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -156,7 +148,16 @@ service API {
     };
   }
 
-  rpc GetPinForCourse(GetPinForCourseRequest) returns (GetPinForCourseResponse) {
+  rpc getLiveCourses(google.protobuf.Empty) returns (GetLiveCoursesResponse) {
+    option (google.api.http) = {get: "/courses/live"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get currently live courses with streams."
+      description: "Retrieves the currently live courses with their streams."
+    };
+  }
+
+  rpc getPinForCourse(GetPinForCourseRequest) returns (GetPinForCourseResponse) {
     option (google.api.http) = {get: "/courses/{course_id}/pin"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
@@ -165,7 +166,7 @@ service API {
     };
   }
 
-  rpc PinCourse(PinCourseRequest) returns (PinCourseResponse) {
+  rpc pinCourse(PinCourseRequest) returns (PinCourseResponse) {
     option (google.api.http) = {
       post: "/courses/{course_id}/pin"
       body: "*"
@@ -177,10 +178,57 @@ service API {
     };
   }
 
+  // STREAM ENDPOINTS (./stream.go)
+
+  rpc getStream(GetStreamRequest) returns (CourseStream) {
+    option (google.api.http) = {get: "/streams/{stream_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get stream and course by stream ID."
+      description: "Retrieves a stream and its course by its stream ID."
+    };
+  }
+
+  rpc getVideoSections(GetVideoSectionsRequest) returns (GetVideoSectionsResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/sections"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get video sections."
+      description: "Retrieves the video sections for a stream."
+    };
+  }
+
+  rpc getStreamPlaylist(GetStreamPlaylistRequest) returns (GetStreamPlaylistResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/playlist"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get stream playlist."
+      description: "Retrieves the playlist for a stream."
+    };
+  }
+
+  rpc getSubtitles(GetSubtitlesRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/streams/{stream_id}/subtitles/{lang}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get subtitles."
+      description: "Retrieves the subtitles for a stream in a specific language."
+    };
+  }
+
+  rpc getThumbs(GetThumbsRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/streams/{stream_id}/thumbs"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get thumbs."
+      description: "Retrieves the thumbs for a stream."
+    };
+  }
+
   // BOOKMARK ENDPOINTS (./bookmark.go)
 
-  rpc AddBookmark(AddBookmarkRequest) returns (AddBookmarkResponse) {
-    option (google.api.http) = {post: "/api/v2/bookmarks"};
+  rpc addBookmark(AddBookmarkRequest) returns (AddBookmarkResponse) {
+    option (google.api.http) = {post: "/bookmarks"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Bookmarks"
       summary: "Add a bookmark."
@@ -188,8 +236,8 @@ service API {
     };
   }
 
-  rpc GetBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
-    option (google.api.http) = {get: "/api/v2/bookmarks"};
+  rpc getBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse) {
+    option (google.api.http) = {get: "/bookmarks"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Bookmarks"
       summary: "Get bookmarks by stream ID."
@@ -197,8 +245,8 @@ service API {
     };
   }
 
-  rpc UpdateBookmark(UpdateBookmarkRequest) returns (UpdateBookmarkResponse) {
-    option (google.api.http) = {put: "/api/v2/bookmarks/{id}"};
+  rpc updateBookmark(UpdateBookmarkRequest) returns (UpdateBookmarkResponse) {
+    option (google.api.http) = {put: "/bookmarks/{bookmark_id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Bookmarks"
       summary: "Update a bookmark."
@@ -206,8 +254,8 @@ service API {
     };
   }
 
-  rpc DeleteBookmark(DeleteBookmarkRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/api/v2/bookmarks/{id}"};
+  rpc deleteBookmark(DeleteBookmarkRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/bookmarks/{bookmark_id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Bookmarks"
       summary: "Delete a bookmark."
@@ -217,8 +265,8 @@ service API {
 
   // NOTIFICATION ENDPOINTS (./notification.go)
 
-  rpc GetNotifications(google.protobuf.Empty) returns (GetNotificationsResponse) {
-    option (google.api.http) = {get: "/api/v2/notifications"};
+  rpc getNotifications(google.protobuf.Empty) returns (GetNotificationsResponse) {
+    option (google.api.http) = {get: "/notifications"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notifications"
       summary: "Get notifications."
@@ -226,8 +274,8 @@ service API {
     };
   }
 
-  rpc GetServerNotifications(google.protobuf.Empty) returns (GetServerNotificationsResponse) {
-    option (google.api.http) = {get: "/api/v2/server-notifications"};
+  rpc getServerNotifications(google.protobuf.Empty) returns (GetServerNotificationsResponse) {
+    option (google.api.http) = {get: "/server-notifications"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notifications"
       summary: "Get server notifications."
@@ -333,7 +381,7 @@ message Chat {
 ///////////////////////////////
 
 message Bookmark {
-  uint32 id = 1;
+  uint32 bookmark_id = 1;
   string description = 2;
   uint32 hours = 3;
   uint32 minutes = 4;
@@ -359,7 +407,7 @@ message AddBookmarkRequest {
 }
 
 message UpdateBookmarkRequest {
-  uint32 id = 1;
+  uint32 bookmark_id = 1;
   string description = 2;
   uint32 hours = 3;
   uint32 minutes = 4;
@@ -367,7 +415,7 @@ message UpdateBookmarkRequest {
 }
 
 message DeleteBookmarkRequest {
-  uint32 id = 1;
+  uint32 bookmark_id = 1;
 }
 
 ///////////////////////////////
@@ -441,9 +489,8 @@ message PinCourseRequest {
 ///////////////////////////////
 /////// COURSE_RESPONSE ///////
 ///////////////////////////////
-
-message GetLiveStreamsResponse {
-  repeated CourseStream streams = 1;
+message GetLiveCoursesResponse {
+  repeated CourseStream live_courses = 1;
 }
 
 message GetPublicCoursesResponse {
@@ -534,6 +581,80 @@ message Stream {
   string hls_url = 32;
 }
 
+message StreamPlaylistEntry {
+  uint32 stream_id = 1;
+  string course_slug = 2;
+  string stream_name = 3;
+  bool live_now = 4;
+  bool watched = 5;
+  google.protobuf.Timestamp start = 6;
+  StreamProgress stream_progress = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message StreamProgress {
+  uint32 stream_id = 1;
+  float progress = 2;
+  bool watched = 3;
+}
+
+message VideoSection {
+  string description = 1;
+  uint32 start_hours = 2;
+  uint32 start_minutes = 3;
+  uint32 start_seconds = 4;
+  uint32 stream_id = 5;
+  uint32 file_id = 6;
+}
+
+enum VideoType {
+  COMB = 0;
+  PRES = 1;
+  CAM = 2;
+}
+
+///////////////////////////////
+/////// STREAM_REQUEST ////////
+///////////////////////////////
+
+message GetStreamRequest {
+  uint32 stream_id = 1;
+}
+
+message GetVideoSectionsRequest {
+  uint32 stream_id = 1;
+}
+
+message GetSubtitlesRequest {
+  uint32 stream_id = 1;
+  string lang = 2;
+}
+
+message GetStreamPlaylistRequest {
+  uint32 stream_id = 1;
+}
+
+message GetThumbsRequest {
+  uint32 stream_id = 1;
+  optional VideoType thumb_type = 2;
+}
+
+///////////////////////////////
+/////// STREAM_RESPONSE ///////
+///////////////////////////////
+
+message GetVideoSectionsResponse {
+  repeated VideoSection sections = 1;
+}
+
+message GetSubtitlesResponse {
+  string content = 1;
+}
+
+message GetStreamPlaylistResponse {
+  repeated StreamPlaylistEntry entries = 1;
+}
+
 ///////////////////////////////
 ////// DOWNLOAD_MESSAGE ///////
 ///////////////////////////////
@@ -547,7 +668,7 @@ message Download {
 //// NOTIFICATION_MESSAGE /////
 ///////////////////////////////
 
-message Notification {
+message UserGroupNotification {
   string title = 1;
   string body = 2;
   NotificationTarget target = 3;
@@ -574,7 +695,7 @@ enum NotificationTarget {
 ///////////////////////////////
 
 message GetNotificationsResponse {
-  repeated Notification notifications = 1;
+  repeated UserGroupNotification notifications = 1;
 }
 
 message GetServerNotificationsResponse {

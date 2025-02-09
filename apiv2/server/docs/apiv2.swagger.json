@@ -31,11 +31,11 @@
     "application/json"
   ],
   "paths": {
-    "/api/v2/bookmarks": {
+    "/bookmarks": {
       "get": {
         "summary": "Get bookmarks by stream ID.",
         "description": "Retrieves bookmarks by stream ID.",
-        "operationId": "API_GetBookmarks",
+        "operationId": "API_getBookmarks",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -66,7 +66,7 @@
       "post": {
         "summary": "Add a bookmark.",
         "description": "Adds a new bookmark.",
-        "operationId": "API_AddBookmark",
+        "operationId": "API_addBookmark",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -122,11 +122,11 @@
         ]
       }
     },
-    "/api/v2/bookmarks/{id}": {
+    "/bookmarks/{bookmarkId}": {
       "delete": {
         "summary": "Delete a bookmark.",
         "description": "Deletes a bookmark.",
-        "operationId": "API_DeleteBookmark",
+        "operationId": "API_deleteBookmark",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -144,7 +144,7 @@
         },
         "parameters": [
           {
-            "name": "id",
+            "name": "bookmarkId",
             "in": "path",
             "required": true,
             "type": "integer",
@@ -158,7 +158,7 @@
       "put": {
         "summary": "Update a bookmark.",
         "description": "Updates an existing bookmark.",
-        "operationId": "API_UpdateBookmark",
+        "operationId": "API_updateBookmark",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -175,7 +175,7 @@
         },
         "parameters": [
           {
-            "name": "id",
+            "name": "bookmarkId",
             "in": "path",
             "required": true,
             "type": "integer",
@@ -211,54 +211,6 @@
         ],
         "tags": [
           "Bookmarks"
-        ]
-      }
-    },
-    "/api/v2/notifications": {
-      "get": {
-        "summary": "Get notifications.",
-        "description": "Retrieves notifications for the current user.",
-        "operationId": "API_GetNotifications",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufGetNotificationsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "Notifications"
-        ]
-      }
-    },
-    "/api/v2/server-notifications": {
-      "get": {
-        "summary": "Get server notifications.",
-        "description": "Retrieves current server notifications.",
-        "operationId": "API_GetServerNotifications",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufGetServerNotificationsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "Notifications"
         ]
       }
     },
@@ -340,6 +292,30 @@
         ]
       }
     },
+    "/courses/live": {
+      "get": {
+        "summary": "Get currently live courses with streams.",
+        "description": "Retrieves the currently live courses with their streams.",
+        "operationId": "API_getLiveCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetLiveCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/pinned": {
       "get": {
         "summary": "Get pinned courses.",
@@ -368,7 +344,7 @@
       "get": {
         "summary": "Get pin for course.",
         "description": "Checks if the user has pinned the course.",
-        "operationId": "API_GetPinForCourse",
+        "operationId": "API_getPinForCourse",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -399,7 +375,7 @@
       "post": {
         "summary": "Pin or unpin a course.",
         "description": "Pins or unpins a course for the user.",
-        "operationId": "API_PinCourse",
+        "operationId": "API_pinCourse",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -427,7 +403,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/APIPinCourseBody"
+              "$ref": "#/definitions/APIpinCourseBody"
             }
           }
         ],
@@ -481,6 +457,30 @@
         ]
       }
     },
+    "/notifications": {
+      "get": {
+        "summary": "Get notifications.",
+        "description": "Retrieves notifications for the current user.",
+        "operationId": "API_getNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetNotificationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
     "/semesters": {
       "get": {
         "summary": "Get available semesters.",
@@ -502,6 +502,30 @@
         },
         "tags": [
           "Semesters"
+        ]
+      }
+    },
+    "/server-notifications": {
+      "get": {
+        "summary": "Get server notifications.",
+        "description": "Retrieves current server notifications.",
+        "operationId": "API_getServerNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetServerNotificationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
         ]
       }
     },
@@ -529,16 +553,16 @@
         ]
       }
     },
-    "/streams/live": {
+    "/streams/{streamId}": {
       "get": {
-        "summary": "Get currently live courses with stream.",
-        "description": "Retrieves the currently live courses with their streams.",
-        "operationId": "API_getLiveStreams",
+        "summary": "Get stream and course by stream ID.",
+        "description": "Retrieves a stream and its course by its stream ID.",
+        "operationId": "API_getStream",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/protobufGetLiveStreamsResponse"
+              "$ref": "#/definitions/protobufCourseStream"
             }
           },
           "default": {
@@ -548,8 +572,167 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
         "tags": [
-          "Courses"
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/playlist": {
+      "get": {
+        "summary": "Get stream playlist.",
+        "description": "Retrieves the playlist for a stream.",
+        "operationId": "API_getStreamPlaylist",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetStreamPlaylistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/sections": {
+      "get": {
+        "summary": "Get video sections.",
+        "description": "Retrieves the video sections for a stream.",
+        "operationId": "API_getVideoSections",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetVideoSectionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/subtitles/{lang}": {
+      "get": {
+        "summary": "Get subtitles.",
+        "description": "Retrieves the subtitles for a stream in a specific language.",
+        "operationId": "API_getSubtitles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiHttpBody"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "lang",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/thumbs": {
+      "get": {
+        "summary": "Get thumbs.",
+        "description": "Retrieves the thumbs for a stream.",
+        "operationId": "API_getThumbs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiHttpBody"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "thumbType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "COMB",
+              "PRES",
+              "CAM"
+            ],
+            "default": "COMB"
+          }
+        ],
+        "tags": [
+          "Streams"
         ]
       }
     },
@@ -671,13 +854,36 @@
     }
   },
   "definitions": {
-    "APIPinCourseBody": {
+    "APIpinCourseBody": {
       "type": "object",
       "properties": {
         "pin": {
           "type": "boolean"
         }
       }
+    },
+    "apiHttpBody": {
+      "type": "object",
+      "properties": {
+        "contentType": {
+          "type": "string",
+          "description": "The HTTP Content-Type header value specifying the content type of the body."
+        },
+        "data": {
+          "type": "string",
+          "format": "byte",
+          "description": "The HTTP request/response body as raw binary."
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          },
+          "description": "Application specific response metadata. Must be set in the first response\nfor streaming APIs."
+        }
+      },
+      "description": "Message that represents an arbitrary HTTP body. It should only be used for\npayload formats that can't be represented as JSON, such as raw binary or\nan HTML page.\n\n\nThis message can be used both in streaming and non-streaming API methods in\nthe request as well as the response.\n\nIt can be used as a top-level request field, which is convenient if one\nwants to extract parameters from either the URL or HTTP template into the\nrequest fields and also want access to the raw HTTP body.\n\nExample:\n\n    message GetResourceRequest {\n      // A unique request id.\n      string request_id = 1;\n\n      // The raw HTTP body is bound to this field.\n      google.api.HttpBody http_body = 2;\n\n    }\n\n    service ResourceService {\n      rpc GetResource(GetResourceRequest)\n        returns (google.api.HttpBody);\n      rpc UpdateResource(google.api.HttpBody)\n        returns (google.protobuf.Empty);\n\n    }\n\nExample with streaming methods:\n\n    service CaldavService {\n      rpc GetCalendar(stream google.api.HttpBody)\n        returns (stream google.api.HttpBody);\n      rpc UpdateCalendar(stream google.api.HttpBody)\n        returns (stream google.api.HttpBody);\n\n    }\n\nUse of this type only changes how the request and response bodies are\nhandled, all other features will continue to work unchanged."
     },
     "protobufAddBookmarkResponse": {
       "type": "object",
@@ -691,15 +897,17 @@
       "type": "object",
       "properties": {
         "@type": {
-          "type": "string"
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "protobufBookmark": {
       "type": "object",
       "properties": {
-        "id": {
+        "bookmarkId": {
           "type": "integer",
           "format": "int64"
         },
@@ -912,17 +1120,18 @@
         }
       }
     },
-    "protobufGetLiveStreamsResponse": {
+    "protobufGetLiveCoursesResponse": {
       "type": "object",
       "properties": {
-        "streams": {
+        "liveCourses": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufCourseStream"
           }
         }
-      }
+      },
+      "title": "/////////////////////////////\n///// COURSE_RESPONSE ///////\n/////////////////////////////"
     },
     "protobufGetNotificationsResponse": {
       "type": "object",
@@ -931,7 +1140,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/protobufNotification"
+            "$ref": "#/definitions/protobufUserGroupNotification"
           }
         }
       }
@@ -995,6 +1204,18 @@
         }
       }
     },
+    "protobufGetStreamPlaylistResponse": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStreamPlaylistEntry"
+          }
+        }
+      }
+    },
     "protobufGetUserCoursesResponse": {
       "type": "object",
       "properties": {
@@ -1012,6 +1233,18 @@
       "properties": {
         "user": {
           "$ref": "#/definitions/protobufUser"
+        }
+      }
+    },
+    "protobufGetVideoSectionsResponse": {
+      "type": "object",
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufVideoSection"
+          }
         }
       }
     },
@@ -1039,24 +1272,6 @@
             "type": "object",
             "$ref": "#/definitions/protobufCameraPreset"
           }
-        }
-      }
-    },
-    "protobufNotification": {
-      "type": "object",
-      "properties": {
-        "title": {
-          "type": "string"
-        },
-        "body": {
-          "type": "string"
-        },
-        "target": {
-          "$ref": "#/definitions/protobufNotificationTarget"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },
@@ -1229,6 +1444,54 @@
         }
       }
     },
+    "protobufStreamPlaylistEntry": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "courseSlug": {
+          "type": "string"
+        },
+        "streamName": {
+          "type": "string"
+        },
+        "liveNow": {
+          "type": "boolean"
+        },
+        "watched": {
+          "type": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "streamProgress": {
+          "$ref": "#/definitions/protobufStreamProgress"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "protobufStreamProgress": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "progress": {
+          "type": "number",
+          "format": "float"
+        },
+        "watched": {
+          "type": "boolean"
+        }
+      }
+    },
     "protobufUpdateBookmarkResponse": {
       "type": "object",
       "properties": {
@@ -1328,6 +1591,24 @@
         }
       }
     },
+    "protobufUserGroupNotification": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/protobufNotificationTarget"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "protobufUserSetting": {
       "type": "object",
       "properties": {
@@ -1347,6 +1628,43 @@
         "CUSTOM_PLAYBACK_SPEEDS"
       ],
       "default": "PREFERRED_NAME"
+    },
+    "protobufVideoSection": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "startHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startMinutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startSeconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fileId": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufVideoType": {
+      "type": "string",
+      "enum": [
+        "COMB",
+        "PRES",
+        "CAM"
+      ],
+      "default": "COMB"
     },
     "protobufVideoView": {
       "type": "object",
