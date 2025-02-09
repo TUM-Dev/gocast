@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
@@ -94,4 +95,37 @@ func (a *API) getUserFromClaims(ctx context.Context, claims *tools.JWTClaims) (*
 	}
 
 	return &user, nil
+}
+
+type StreamRequest interface {
+	GetStreamId() uint32
+}
+
+// Checks if the user is allowed to access the stream and course and returns the user, stream and course
+func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamRequest) (*model.User, model.Stream, model.Course, error) {
+	stream := model.Stream{}
+	course := model.Course{}
+	user, err := a.getCurrent(ctx)
+	if err != nil {
+		return nil, stream, course, e.WithStatus(http.StatusUnauthorized, err)
+	}
+
+	stream, err = a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stream, course, e.WithStatus(http.StatusNotFound, err)
+		}
+		return nil, stream, course, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	course, err = a.dao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return nil, stream, course, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	if !user.IsEligibleToWatchCourse(course) {
+		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not eligible to access course content"))
+	}
+
+	return user, stream, course, nil
 }
