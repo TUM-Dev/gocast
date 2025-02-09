@@ -15,9 +15,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetLiveStreams retrieves the currently live streams.
-func (a *API) GetLiveStreams(ctx context.Context, req *emptypb.Empty) (*protobuf.GetLiveStreamsResponse, error) {
-	a.log.Info("GetLiveStreams")
+// GetLiveCourses retrieves the currently live courses and their streams.
+func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf.GetLiveCoursesResponse, error) {
+	a.log.Info("GetLiveCourses")
 
 	streams, err := a.dao.GetCurrentLive(context.Background())
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -73,7 +73,7 @@ func (a *API) GetLiveStreams(ctx context.Context, req *emptypb.Empty) (*protobuf
 		})
 	}
 
-	return &protobuf.GetLiveStreamsResponse{Streams: resp}, nil
+	return &protobuf.GetLiveCoursesResponse{LiveCourses: resp}, nil
 }
 
 // GetPublicCourses retrieves the public courses for a given semester.
