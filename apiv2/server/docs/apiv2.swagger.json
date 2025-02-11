@@ -555,7 +555,7 @@
     },
     "/streams/progress": {
       "get": {
-        "summary": "Get watch progress batch.",
+        "summary": "Get watch progress for a batch of streams.",
         "description": "Retrieves all watch progresses for the current user.",
         "operationId": "API_getProgressBatch",
         "responses": {
@@ -574,11 +574,15 @@
         },
         "parameters": [
           {
-            "name": "streamId",
+            "name": "streamIds",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int64"
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [

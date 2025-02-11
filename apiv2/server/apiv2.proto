@@ -231,7 +231,7 @@ service API {
     option (google.api.http) = {get: "/streams/progress"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Streams"
-      summary: "Get watch progress batch."
+      summary: "Get watch progress for a batch of streams."
       description: "Retrieves all watch progresses for the current user."
     };
   }
@@ -658,7 +658,7 @@ message GetStreamPlaylistRequest {
 }
 
 message GetProgressBatchRequest {
-  uint32 stream_id = 1;
+  repeated uint32 stream_ids = 1;
 }
 
 message UpdateProgressRequest {

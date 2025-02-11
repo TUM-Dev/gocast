@@ -138,7 +138,7 @@ func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesReques
 	}, nil
 }
 
-// GetProgressBatch returns a batch of watch progresses for the current user
+// GetProgressBatch returns a batch of watch progresses for a list of streams for the current user
 func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBatchRequest) (*protobuf.GetProgressBatchResponse, error) {
 	a.log.Info("GetProgressBatch")
 
@@ -147,14 +147,27 @@ func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBat
 		return nil, err
 	}
 
+	ids := req.StreamIds
+	if len(ids) == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("No stream IDs provided"))
+	}
+
 	progressResults := make([]*protobuf.StreamProgress, 0)
 	progressBatch, err := a.dao.GetProgressesForUser(user.ID)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	// Filter progresses for requested stream IDs
+	idSet := make(map[uint32]struct{}, len(ids))
+	for _, id := range ids {
+		idSet[id] = struct{}{}
+	}
+
 	for _, progress := range progressBatch {
-		progressResults = append(progressResults, h.ParseStreamProgressToProto(progress))
+		if _, found := idSet[uint32(progress.StreamID)]; found {
+			progressResults = append(progressResults, h.ParseStreamProgressToProto(progress))
+		}
 	}
 
 	return &protobuf.GetProgressBatchResponse{ProgressBatch: progressResults}, nil
@@ -199,7 +212,8 @@ func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*h
 
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return nil, e.WithStatus(http.StatusInternalServerError, err)
+			a.log.Error("Can't read live thumbnail", "err", err)
+			return nil, e.WithStatus(http.StatusInternalServerError, errors.New("Can't read live thumbnail"))
 		}
 
 		return &httpbody.HttpBody{
@@ -211,11 +225,12 @@ func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*h
 	if req.ThumbType == nil {
 		thumb, err := stream.GetLGThumbnail()
 		if err != nil {
-			return nil, e.WithStatus(http.StatusNotFound, errors.New("Large Thumbnail not found"))
+			return nil, e.WithStatus(http.StatusNotFound, err)
 		}
 		data, err := os.ReadFile(thumb)
 		if err != nil {
-			return nil, e.WithStatus(http.StatusInternalServerError, err)
+			a.log.Error("Can't read large thumbnail", "err", err)
+			return nil, e.WithStatus(http.StatusInternalServerError, errors.New("Can't read large thumbnail"))
 		}
 		return &httpbody.HttpBody{
 			ContentType: "image/jpeg",
@@ -226,11 +241,12 @@ func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*h
 	videoType := model.VideoType(req.GetThumbType().String())
 	thumb, err := stream.GetLGThumbnailForVideoType(videoType)
 	if err != nil {
-		return nil, e.WithStatus(http.StatusNotFound, errors.New("Large Thumbnail not found"))
+		return nil, e.WithStatus(http.StatusNotFound, err)
 	}
 	data, err := os.ReadFile(thumb)
 	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		a.log.Error("Can't read thumbnail", "err", err)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("Can't read thumbnail"))
 	}
 	return &httpbody.HttpBody{
 		ContentType: "image/jpeg",
