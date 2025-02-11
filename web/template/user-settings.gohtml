@@ -175,19 +175,19 @@
             <input class="w-auto" type="radio" name="lectureView" value="Presentation" id="view1" x-model="currentView"
                    :checked="currentView==='Presentation'"
                    @change="global.updatePreference(global.UserSetting.LectureView, currentView).then((r) => {err=r})">
-            <label for="greeting1">Presentation Only</label><br>
+            <label for="view1">Presentation Only</label><br>
             <input class="w-auto" type="radio" name="lectureView" value="Camera" id="view2" x-model="currentView"
                    :checked="currentView==='Camera'"
                    @change="global.updatePreference(global.UserSetting.LectureView, currentView).then((r) => {err=r;})">
-            <label for="greeting2">Camera Only</label><br>
+            <label for="view2">Camera Only</label><br>
             <input class="w-auto" type="radio" name="lectureView" value="Split" id="view3" x-model="currentView"
                    :checked="currentView==='Split'"
                    @change="global.updatePreference(global.UserSetting.LectureView, currentView).then((r) => {err=r})">
-            <label for="greeting1">Splitview</label><br>
+            <label for="view3">Splitview</label><br>
             <input class="w-auto" type="radio" name="lectureView" value="Combined" id="view4" x-model="currentView"
                    :checked="currentView==='Combined'"
                    @change="global.updatePreference(global.UserSetting.LectureView, currentView).then((r) => {err=r;})">
-            <label for="greeting2">Combined View</label>
+            <label for="view4">Combined View</label>
         </section>
 
         <section>
