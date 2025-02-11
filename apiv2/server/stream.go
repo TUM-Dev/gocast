@@ -138,6 +138,52 @@ func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesReques
 	}, nil
 }
 
+// GetProgressBatch returns a batch of watch progresses for the current user
+func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBatchRequest) (*protobuf.GetProgressBatchResponse, error) {
+	a.log.Info("GetProgressBatch")
+
+	user, err := a.getCurrent(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	progressResults := make([]*protobuf.StreamProgress, 0)
+	progressBatch, err := a.dao.GetProgressesForUser(user.ID)
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	for _, progress := range progressBatch {
+		progressResults = append(progressResults, h.ParseStreamProgressToProto(progress))
+	}
+
+	return &protobuf.GetProgressBatchResponse{ProgressBatch: progressResults}, nil
+}
+
+// UpdateProgress updates the watch progress for a stream
+func (a *API) UpdateProgress(ctx context.Context, req *protobuf.UpdateProgressRequest) (*protobuf.StreamProgress, error) {
+	a.log.Info("UpdateProgress")
+
+	user, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	progress := model.StreamProgress{
+		StreamID: stream.ID,
+		UserID:   user.ID,
+		Progress: float64(req.Progress),
+		Watched:  req.Watched,
+	}
+
+	err = a.dao.SaveProgresses([]model.StreamProgress{progress}) // Only support one progress update at a time for now
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	return h.ParseStreamProgressToProto(progress), nil
+}
+
 // GetThumbs returns the thumbnails for a stream
 func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*httpbody.HttpBody, error) {
 	a.log.Info("GetThumbs")

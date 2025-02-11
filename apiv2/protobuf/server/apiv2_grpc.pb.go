@@ -39,6 +39,8 @@ const (
 	API_GetStreamPlaylist_FullMethodName      = "/protobuf.API/getStreamPlaylist"
 	API_GetSubtitles_FullMethodName           = "/protobuf.API/getSubtitles"
 	API_GetThumbs_FullMethodName              = "/protobuf.API/getThumbs"
+	API_GetProgressBatch_FullMethodName       = "/protobuf.API/getProgressBatch"
+	API_UpdateProgress_FullMethodName         = "/protobuf.API/updateProgress"
 	API_AddBookmark_FullMethodName            = "/protobuf.API/addBookmark"
 	API_GetBookmarks_FullMethodName           = "/protobuf.API/getBookmarks"
 	API_UpdateBookmark_FullMethodName         = "/protobuf.API/updateBookmark"
@@ -69,6 +71,8 @@ type APIClient interface {
 	GetStreamPlaylist(ctx context.Context, in *GetStreamPlaylistRequest, opts ...grpc.CallOption) (*GetStreamPlaylistResponse, error)
 	GetSubtitles(ctx context.Context, in *GetSubtitlesRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 	GetThumbs(ctx context.Context, in *GetThumbsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
+	GetProgressBatch(ctx context.Context, in *GetProgressBatchRequest, opts ...grpc.CallOption) (*GetProgressBatchResponse, error)
+	UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*StreamProgress, error)
 	AddBookmark(ctx context.Context, in *AddBookmarkRequest, opts ...grpc.CallOption) (*AddBookmarkResponse, error)
 	GetBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
 	UpdateBookmark(ctx context.Context, in *UpdateBookmarkRequest, opts ...grpc.CallOption) (*UpdateBookmarkResponse, error)
@@ -265,6 +269,26 @@ func (c *aPIClient) GetThumbs(ctx context.Context, in *GetThumbsRequest, opts ..
 	return out, nil
 }
 
+func (c *aPIClient) GetProgressBatch(ctx context.Context, in *GetProgressBatchRequest, opts ...grpc.CallOption) (*GetProgressBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProgressBatchResponse)
+	err := c.cc.Invoke(ctx, API_GetProgressBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*StreamProgress, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StreamProgress)
+	err := c.cc.Invoke(ctx, API_UpdateProgress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aPIClient) AddBookmark(ctx context.Context, in *AddBookmarkRequest, opts ...grpc.CallOption) (*AddBookmarkResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AddBookmarkResponse)
@@ -347,6 +371,8 @@ type APIServer interface {
 	GetStreamPlaylist(context.Context, *GetStreamPlaylistRequest) (*GetStreamPlaylistResponse, error)
 	GetSubtitles(context.Context, *GetSubtitlesRequest) (*httpbody.HttpBody, error)
 	GetThumbs(context.Context, *GetThumbsRequest) (*httpbody.HttpBody, error)
+	GetProgressBatch(context.Context, *GetProgressBatchRequest) (*GetProgressBatchResponse, error)
+	UpdateProgress(context.Context, *UpdateProgressRequest) (*StreamProgress, error)
 	AddBookmark(context.Context, *AddBookmarkRequest) (*AddBookmarkResponse, error)
 	GetBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
 	UpdateBookmark(context.Context, *UpdateBookmarkRequest) (*UpdateBookmarkResponse, error)
@@ -416,6 +442,12 @@ func (UnimplementedAPIServer) GetSubtitles(context.Context, *GetSubtitlesRequest
 }
 func (UnimplementedAPIServer) GetThumbs(context.Context, *GetThumbsRequest) (*httpbody.HttpBody, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetThumbs not implemented")
+}
+func (UnimplementedAPIServer) GetProgressBatch(context.Context, *GetProgressBatchRequest) (*GetProgressBatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProgressBatch not implemented")
+}
+func (UnimplementedAPIServer) UpdateProgress(context.Context, *UpdateProgressRequest) (*StreamProgress, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateProgress not implemented")
 }
 func (UnimplementedAPIServer) AddBookmark(context.Context, *AddBookmarkRequest) (*AddBookmarkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddBookmark not implemented")
@@ -780,6 +812,42 @@ func _API_GetThumbs_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetProgressBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProgressBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetProgressBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetProgressBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetProgressBatch(ctx, req.(*GetProgressBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_UpdateProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).UpdateProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_UpdateProgress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).UpdateProgress(ctx, req.(*UpdateProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _API_AddBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddBookmarkRequest)
 	if err := dec(in); err != nil {
@@ -966,6 +1034,14 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getThumbs",
 			Handler:    _API_GetThumbs_Handler,
+		},
+		{
+			MethodName: "getProgressBatch",
+			Handler:    _API_GetProgressBatch_Handler,
+		},
+		{
+			MethodName: "updateProgress",
+			Handler:    _API_UpdateProgress_Handler,
 		},
 		{
 			MethodName: "addBookmark",

@@ -16,7 +16,9 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
       "The shiny new gocast API!\nThis API is designed to be a "
       "user-friendly and easy-to-use interface for third party "
       "services.\nIt provides access to all non-administrative "
-      "features of the GoCast platform."
+      "features of the GoCast platform.\nMake sure to log in to "
+      "TUM-Live before making any requests that need "
+      "authentication via these docs."
     contact: {
       name: "TUM-Developers - gocast"
       url: "https://github.com/TUM-Dev/gocast"
@@ -203,7 +205,7 @@ service API {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Streams"
       summary: "Get stream playlist."
-      description: "Retrieves the playlist for a stream."
+      description: "Retrieves the playlist for a stream including watch progress."
     };
   }
 
@@ -222,6 +224,27 @@ service API {
       tags: "Streams"
       summary: "Get thumbs."
       description: "Retrieves the thumbs for a stream."
+    };
+  }
+
+  rpc getProgressBatch(GetProgressBatchRequest) returns (GetProgressBatchResponse) {
+    option (google.api.http) = {get: "/streams/progress"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get watch progress batch."
+      description: "Retrieves all watch progresses for the current user."
+    };
+  }
+
+  rpc updateProgress(UpdateProgressRequest) returns (StreamProgress) {
+    option (google.api.http) = {
+      patch: "/streams/{stream_id}/progress"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Update watch progress for stream."
+      description: "Updates the watch progress of a stream for the current user."
     };
   }
 
@@ -634,6 +657,16 @@ message GetStreamPlaylistRequest {
   uint32 stream_id = 1;
 }
 
+message GetProgressBatchRequest {
+  uint32 stream_id = 1;
+}
+
+message UpdateProgressRequest {
+  uint32 stream_id = 1;
+  float progress = 2;
+  bool watched = 3;
+}
+
 message GetThumbsRequest {
   uint32 stream_id = 1;
   optional VideoType thumb_type = 2;
@@ -653,6 +686,10 @@ message GetSubtitlesResponse {
 
 message GetStreamPlaylistResponse {
   repeated StreamPlaylistEntry entries = 1;
+}
+
+message GetProgressBatchResponse {
+  repeated StreamProgress progress_batch = 1;
 }
 
 ///////////////////////////////
