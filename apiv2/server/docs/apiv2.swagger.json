@@ -481,6 +481,84 @@
         ]
       }
     },
+    "/progress": {
+      "get": {
+        "summary": "Get watch progress for a batch of streams.",
+        "description": "Retrieves all watch progresses for the current user.",
+        "operationId": "API_getProgressBatch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetProgressBatchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamIds",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
+    "/progress/{streamId}": {
+      "patch": {
+        "summary": "Update watch progress for stream.",
+        "description": "Updates the watch progress of a stream for the current user.",
+        "operationId": "API_updateProgress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufStreamProgress"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/APIupdateProgressBody"
+            }
+          }
+        ],
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
     "/semesters": {
       "get": {
         "summary": "Get available semesters.",
@@ -553,43 +631,6 @@
         ]
       }
     },
-    "/streams/progress": {
-      "get": {
-        "summary": "Get watch progress for a batch of streams.",
-        "description": "Retrieves all watch progresses for the current user.",
-        "operationId": "API_getProgressBatch",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufGetProgressBatchResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "streamIds",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "int64"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "Streams"
-        ]
-      }
-    },
     "/streams/{streamId}": {
       "get": {
         "summary": "Get stream and course by stream ID.",
@@ -649,47 +690,6 @@
             "required": true,
             "type": "integer",
             "format": "int64"
-          }
-        ],
-        "tags": [
-          "Streams"
-        ]
-      }
-    },
-    "/streams/{streamId}/progress": {
-      "patch": {
-        "summary": "Update watch progress for stream.",
-        "description": "Updates the watch progress of a stream for the current user.",
-        "operationId": "API_updateProgress",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufStreamProgress"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "streamId",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/APIupdateProgressBody"
-            }
           }
         ],
         "tags": [

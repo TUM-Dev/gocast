@@ -227,10 +227,12 @@ service API {
     };
   }
 
+  // PROGRESS ENDPOINTS (./progress.go)
+
   rpc getProgressBatch(GetProgressBatchRequest) returns (GetProgressBatchResponse) {
-    option (google.api.http) = {get: "/streams/progress"};
+    option (google.api.http) = {get: "/progress"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Streams"
+      tags: "Progress"
       summary: "Get watch progress for a batch of streams."
       description: "Retrieves all watch progresses for the current user."
     };
@@ -238,11 +240,11 @@ service API {
 
   rpc updateProgress(UpdateProgressRequest) returns (StreamProgress) {
     option (google.api.http) = {
-      patch: "/streams/{stream_id}/progress"
+      patch: "/progress/{stream_id}"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Streams"
+      tags: "Progress"
       summary: "Update watch progress for stream."
       description: "Updates the watch progress of a stream for the current user."
     };
@@ -657,16 +659,6 @@ message GetStreamPlaylistRequest {
   uint32 stream_id = 1;
 }
 
-message GetProgressBatchRequest {
-  repeated uint32 stream_ids = 1;
-}
-
-message UpdateProgressRequest {
-  uint32 stream_id = 1;
-  float progress = 2;
-  bool watched = 3;
-}
-
 message GetThumbsRequest {
   uint32 stream_id = 1;
   optional VideoType thumb_type = 2;
@@ -687,6 +679,28 @@ message GetSubtitlesResponse {
 message GetStreamPlaylistResponse {
   repeated StreamPlaylistEntry entries = 1;
 }
+
+///////////////////////////////
+/////// PROGRESS_MESSAGE //////
+///////////////////////////////
+
+message GetProgressBatchRequest {
+  repeated uint32 stream_ids = 1;
+}
+
+///////////////////////////////
+////// PROGRESS_REQUEST ///////
+///////////////////////////////
+
+message UpdateProgressRequest {
+  uint32 stream_id = 1;
+  float progress = 2;
+  bool watched = 3;
+}
+
+///////////////////////////////
+////// PROGRESS_RESPONSE //////
+///////////////////////////////
 
 message GetProgressBatchResponse {
   repeated StreamProgress progress_batch = 1;

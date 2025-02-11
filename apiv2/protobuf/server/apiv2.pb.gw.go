@@ -1226,7 +1226,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetProgressBatch", runtime.WithHTTPPathPattern("/streams/progress"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetProgressBatch", runtime.WithHTTPPathPattern("/progress"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1246,7 +1246,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/UpdateProgress", runtime.WithHTTPPathPattern("/streams/{stream_id}/progress"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/UpdateProgress", runtime.WithHTTPPathPattern("/progress/{stream_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1730,7 +1730,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetProgressBatch", runtime.WithHTTPPathPattern("/streams/progress"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetProgressBatch", runtime.WithHTTPPathPattern("/progress"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1747,7 +1747,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/UpdateProgress", runtime.WithHTTPPathPattern("/streams/{stream_id}/progress"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/UpdateProgress", runtime.WithHTTPPathPattern("/progress/{stream_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1884,8 +1884,8 @@ var (
 	pattern_API_GetStreamPlaylist_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"streams", "stream_id", "playlist"}, ""))
 	pattern_API_GetSubtitles_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"streams", "stream_id", "subtitles", "lang"}, ""))
 	pattern_API_GetThumbs_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"streams", "stream_id", "thumbs"}, ""))
-	pattern_API_GetProgressBatch_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"streams", "progress"}, ""))
-	pattern_API_UpdateProgress_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"streams", "stream_id", "progress"}, ""))
+	pattern_API_GetProgressBatch_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"progress"}, ""))
+	pattern_API_UpdateProgress_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"progress", "stream_id"}, ""))
 	pattern_API_AddBookmark_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"bookmarks"}, ""))
 	pattern_API_GetBookmarks_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"bookmarks"}, ""))
 	pattern_API_UpdateBookmark_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"bookmarks", "bookmark_id"}, ""))
