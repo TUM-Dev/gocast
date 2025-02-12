@@ -13,11 +13,12 @@ import (
 	"time"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
-func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notification, d map[string]any) error {
+func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notification, d map[string]any, metrics *metrics.Broker) error {
 	if ctx.Err() != nil {
 		return AbortingError(ctx.Err())
 	}
@@ -50,6 +51,11 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 		return AbortingError(fmt.Errorf("no input in context"))
 	}
 	log = log.With("stream_id", streamID)
+
+	metrics.Streams.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
+	defer func() {
+		metrics.Streams.With(metrics.With().Stream(streamID).Source(input).L()).Dec()
+	}()
 
 	// e.g. ./storage/live/1/STREAM_VERSION_COMBINED
 	liveRecDir := path.Join(config.Config.SegmentPath, fmt.Sprintf("%d", streamID), streamVersion)
@@ -96,6 +102,7 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	go logCmdPipe(log, stdo, []any{"stream", streamID, "logStream", "stdout"})
 	err = command.Run()
 	if err != nil {
+		metrics.StreamErrors.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
 		return err
 	}
 	return nil

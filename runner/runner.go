@@ -18,6 +18,7 @@ import (
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/actions"
+	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
@@ -51,6 +52,7 @@ type Runner struct {
 	protobuf.UnimplementedRunnerServiceServer
 
 	notifications chan *protobuf.Notification
+	Metrics       *metrics.Broker
 }
 
 func NewRunner(v string) *Runner {
@@ -70,6 +72,7 @@ func NewRunner(v string) *Runner {
 		stats:         vmstats,
 		StartTime:     start,
 		notifications: make(chan *protobuf.Notification),
+		Metrics:       metrics.NewBroker(),
 	}
 }
 
@@ -85,7 +88,8 @@ func (r *Runner) Run() {
 		config.Config.Port = p
 	}
 	r.log.Info("using port", "port", config.Config.Port)
-
+	
+	go r.Metrics.Run()
 	go r.handleNotifications()
 	go r.InitApiGrpc()
 	go func() {
@@ -147,7 +151,6 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to serve", "error", err)
 		os.Exit(1)
 	}
-
 }
 
 func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
@@ -165,7 +168,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 		for _, action := range a {
 			for {
 				log := r.log.With("action", getFunctionName(action)).With("job", job)
-				err := action(c, log, r.notifications, data)
+				err := action(c, log, r.notifications, data, r.Metrics)
 				if err != nil {
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
