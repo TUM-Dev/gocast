@@ -15,7 +15,7 @@ var Config struct {
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
 	Version      string `env:"VERSION" envDefault:"dev"`
-	EdgeServer   string `env:"EDGE_SERVER" envDefault:"localhost:50057"`
+	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:50057"`
 }
 
 func init() {

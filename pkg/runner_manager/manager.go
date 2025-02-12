@@ -113,6 +113,9 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		log.Info("received stream end from runner")
 		// passing for now, not implemented.
 		return &protobuf.NotificationResponse{}, nil
+	case *protobuf.Notification_VodReady:
+		log.Info("vodReady", "payload", notification.GetVodReady())
+		return &protobuf.NotificationResponse{}, nil
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}

@@ -38,14 +38,14 @@ func NewBroker(options ...Option) *Broker {
 			Subsystem: "stream",
 			Name:      "n_streams",
 			Help:      "Number of active streams",
-		}, []string{"stream_id", "input"}),
+		}, []string{"stream_id", "source"}),
 
 		StreamErrors: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "runner",
 			Subsystem: "stream",
 			Name:      "n_errors",
 			Help:      "Number of stream ffmpeg errors",
-		}, []string{"stream_id", "input"}),
+		}, []string{"stream_id", "source"}),
 	}
 	for _, option := range options {
 		option(b)
