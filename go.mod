@@ -1,8 +1,6 @@
 module github.com/TUM-Dev/gocast
 
-go 1.22.0
-
-toolchain go1.23.4
+go 1.24.0
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4

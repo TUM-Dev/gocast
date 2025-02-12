@@ -2,11 +2,12 @@ package runner
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -90,7 +91,7 @@ func (r *Runner) Run() {
 	go func() {
 		err := r.hlsServer.Start()
 		if err != nil {
-
+			r.log.Error("error starting hls server", "error", err)
 		}
 	}()
 
@@ -155,20 +156,25 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 	job := uuid.New().String()
 	r.JobCount <- 1
 	r.jobs[job] = cancel
-	defer func() {
-		cancel()
-		delete(r.jobs, job)
-		r.JobCount <- -1
-	}()
 	go func() {
+		defer func() {
+			cancel()
+			delete(r.jobs, job)
+			r.JobCount <- -1
+		}()
 		for _, action := range a {
-			err := action(c, r.log, r.notifications, data)
-			if err != nil {
-				r.log.Error("action error", "error", err)
-			}
-			if errors.Is(err, actions.ErrAborted) {
-				r.log.Info("action can't continue")
-				return
+			for {
+				log := r.log.With("action", getFunctionName(action)).With("job", job)
+				err := action(c, log, r.notifications, data)
+				if err != nil {
+					log.Error("action error", "error", err) // use action specific logger
+					if actions.IsAbortingError(err) {
+						log.Info("action can't continue")
+						break // escape retry loop on unrecoverable error
+					}
+				} else {
+					break // escape retry loop on no error
+				}
 			}
 		}
 	}()
@@ -204,4 +210,18 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 		}
 		return nil
 	}
+}
+
+func getFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
+
+// Cleanup is called on force shutdown while actions are still running.
+// it cancels all running actions
+func (r *Runner) Cleanup() {
+	for _, cancelFunc := range r.jobs {
+		cancelFunc()
+	}
+	// sleep 1 second longer than our commands default waitDelay
+	time.Sleep(time.Second * 11)
 }
