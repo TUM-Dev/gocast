@@ -8,6 +8,7 @@ package protobuf
 
 import (
 	context "context"
+	httpbody "google.golang.org/genproto/googleapis/api/httpbody"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -26,19 +27,26 @@ const (
 	API_UpdateUserSettings_FullMethodName     = "/protobuf.API/updateUserSettings"
 	API_ExportPersonalData_FullMethodName     = "/protobuf.API/exportPersonalData"
 	API_GetSemesters_FullMethodName           = "/protobuf.API/getSemesters"
-	API_GetLiveStreams_FullMethodName         = "/protobuf.API/getLiveStreams"
 	API_GetPublicCourses_FullMethodName       = "/protobuf.API/getPublicCourses"
 	API_GetCourseBySlug_FullMethodName        = "/protobuf.API/getCourseBySlug"
 	API_GetUserCourses_FullMethodName         = "/protobuf.API/getUserCourses"
 	API_GetPinnedCourses_FullMethodName       = "/protobuf.API/getPinnedCourses"
-	API_GetPinForCourse_FullMethodName        = "/protobuf.API/GetPinForCourse"
-	API_PinCourse_FullMethodName              = "/protobuf.API/PinCourse"
-	API_AddBookmark_FullMethodName            = "/protobuf.API/AddBookmark"
-	API_GetBookmarks_FullMethodName           = "/protobuf.API/GetBookmarks"
-	API_UpdateBookmark_FullMethodName         = "/protobuf.API/UpdateBookmark"
-	API_DeleteBookmark_FullMethodName         = "/protobuf.API/DeleteBookmark"
-	API_GetNotifications_FullMethodName       = "/protobuf.API/GetNotifications"
-	API_GetServerNotifications_FullMethodName = "/protobuf.API/GetServerNotifications"
+	API_GetLiveCourses_FullMethodName         = "/protobuf.API/getLiveCourses"
+	API_GetPinForCourse_FullMethodName        = "/protobuf.API/getPinForCourse"
+	API_PinCourse_FullMethodName              = "/protobuf.API/pinCourse"
+	API_GetStream_FullMethodName              = "/protobuf.API/getStream"
+	API_GetVideoSections_FullMethodName       = "/protobuf.API/getVideoSections"
+	API_GetStreamPlaylist_FullMethodName      = "/protobuf.API/getStreamPlaylist"
+	API_GetSubtitles_FullMethodName           = "/protobuf.API/getSubtitles"
+	API_GetThumbs_FullMethodName              = "/protobuf.API/getThumbs"
+	API_GetProgressBatch_FullMethodName       = "/protobuf.API/getProgressBatch"
+	API_UpdateProgress_FullMethodName         = "/protobuf.API/updateProgress"
+	API_AddBookmark_FullMethodName            = "/protobuf.API/addBookmark"
+	API_GetBookmarks_FullMethodName           = "/protobuf.API/getBookmarks"
+	API_UpdateBookmark_FullMethodName         = "/protobuf.API/updateBookmark"
+	API_DeleteBookmark_FullMethodName         = "/protobuf.API/deleteBookmark"
+	API_GetNotifications_FullMethodName       = "/protobuf.API/getNotifications"
+	API_GetServerNotifications_FullMethodName = "/protobuf.API/getServerNotifications"
 )
 
 // APIClient is the client API for API service.
@@ -51,13 +59,20 @@ type APIClient interface {
 	UpdateUserSettings(ctx context.Context, in *UpdateUserSettingsRequest, opts ...grpc.CallOption) (*UpdateUserSettingsResponse, error)
 	ExportPersonalData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExportPersonalDataResponse, error)
 	GetSemesters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSemestersResponse, error)
-	GetLiveStreams(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveStreamsResponse, error)
 	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(ctx context.Context, in *GetCourseBySlugRequest, opts ...grpc.CallOption) (*GetCourseBySlugResponse, error)
 	GetUserCourses(ctx context.Context, in *GetUserCoursesRequest, opts ...grpc.CallOption) (*GetUserCoursesResponse, error)
 	GetPinnedCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error)
+	GetLiveCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveCoursesResponse, error)
 	GetPinForCourse(ctx context.Context, in *GetPinForCourseRequest, opts ...grpc.CallOption) (*GetPinForCourseResponse, error)
 	PinCourse(ctx context.Context, in *PinCourseRequest, opts ...grpc.CallOption) (*PinCourseResponse, error)
+	GetStream(ctx context.Context, in *GetStreamRequest, opts ...grpc.CallOption) (*CourseStream, error)
+	GetVideoSections(ctx context.Context, in *GetVideoSectionsRequest, opts ...grpc.CallOption) (*GetVideoSectionsResponse, error)
+	GetStreamPlaylist(ctx context.Context, in *GetStreamPlaylistRequest, opts ...grpc.CallOption) (*GetStreamPlaylistResponse, error)
+	GetSubtitles(ctx context.Context, in *GetSubtitlesRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
+	GetThumbs(ctx context.Context, in *GetThumbsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
+	GetProgressBatch(ctx context.Context, in *GetProgressBatchRequest, opts ...grpc.CallOption) (*GetProgressBatchResponse, error)
+	UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*StreamProgress, error)
 	AddBookmark(ctx context.Context, in *AddBookmarkRequest, opts ...grpc.CallOption) (*AddBookmarkResponse, error)
 	GetBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
 	UpdateBookmark(ctx context.Context, in *UpdateBookmarkRequest, opts ...grpc.CallOption) (*UpdateBookmarkResponse, error)
@@ -134,16 +149,6 @@ func (c *aPIClient) GetSemesters(ctx context.Context, in *emptypb.Empty, opts ..
 	return out, nil
 }
 
-func (c *aPIClient) GetLiveStreams(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveStreamsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetLiveStreamsResponse)
-	err := c.cc.Invoke(ctx, API_GetLiveStreams_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *aPIClient) GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetPublicCoursesResponse)
@@ -184,6 +189,16 @@ func (c *aPIClient) GetPinnedCourses(ctx context.Context, in *emptypb.Empty, opt
 	return out, nil
 }
 
+func (c *aPIClient) GetLiveCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveCoursesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLiveCoursesResponse)
+	err := c.cc.Invoke(ctx, API_GetLiveCourses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aPIClient) GetPinForCourse(ctx context.Context, in *GetPinForCourseRequest, opts ...grpc.CallOption) (*GetPinForCourseResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetPinForCourseResponse)
@@ -198,6 +213,76 @@ func (c *aPIClient) PinCourse(ctx context.Context, in *PinCourseRequest, opts ..
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PinCourseResponse)
 	err := c.cc.Invoke(ctx, API_PinCourse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetStream(ctx context.Context, in *GetStreamRequest, opts ...grpc.CallOption) (*CourseStream, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseStream)
+	err := c.cc.Invoke(ctx, API_GetStream_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetVideoSections(ctx context.Context, in *GetVideoSectionsRequest, opts ...grpc.CallOption) (*GetVideoSectionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVideoSectionsResponse)
+	err := c.cc.Invoke(ctx, API_GetVideoSections_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetStreamPlaylist(ctx context.Context, in *GetStreamPlaylistRequest, opts ...grpc.CallOption) (*GetStreamPlaylistResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStreamPlaylistResponse)
+	err := c.cc.Invoke(ctx, API_GetStreamPlaylist_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetSubtitles(ctx context.Context, in *GetSubtitlesRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(httpbody.HttpBody)
+	err := c.cc.Invoke(ctx, API_GetSubtitles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetThumbs(ctx context.Context, in *GetThumbsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(httpbody.HttpBody)
+	err := c.cc.Invoke(ctx, API_GetThumbs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) GetProgressBatch(ctx context.Context, in *GetProgressBatchRequest, opts ...grpc.CallOption) (*GetProgressBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProgressBatchResponse)
+	err := c.cc.Invoke(ctx, API_GetProgressBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) UpdateProgress(ctx context.Context, in *UpdateProgressRequest, opts ...grpc.CallOption) (*StreamProgress, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StreamProgress)
+	err := c.cc.Invoke(ctx, API_UpdateProgress_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -274,13 +359,20 @@ type APIServer interface {
 	UpdateUserSettings(context.Context, *UpdateUserSettingsRequest) (*UpdateUserSettingsResponse, error)
 	ExportPersonalData(context.Context, *emptypb.Empty) (*ExportPersonalDataResponse, error)
 	GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error)
-	GetLiveStreams(context.Context, *emptypb.Empty) (*GetLiveStreamsResponse, error)
 	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(context.Context, *GetCourseBySlugRequest) (*GetCourseBySlugResponse, error)
 	GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error)
 	GetPinnedCourses(context.Context, *emptypb.Empty) (*GetPinnedCoursesResponse, error)
+	GetLiveCourses(context.Context, *emptypb.Empty) (*GetLiveCoursesResponse, error)
 	GetPinForCourse(context.Context, *GetPinForCourseRequest) (*GetPinForCourseResponse, error)
 	PinCourse(context.Context, *PinCourseRequest) (*PinCourseResponse, error)
+	GetStream(context.Context, *GetStreamRequest) (*CourseStream, error)
+	GetVideoSections(context.Context, *GetVideoSectionsRequest) (*GetVideoSectionsResponse, error)
+	GetStreamPlaylist(context.Context, *GetStreamPlaylistRequest) (*GetStreamPlaylistResponse, error)
+	GetSubtitles(context.Context, *GetSubtitlesRequest) (*httpbody.HttpBody, error)
+	GetThumbs(context.Context, *GetThumbsRequest) (*httpbody.HttpBody, error)
+	GetProgressBatch(context.Context, *GetProgressBatchRequest) (*GetProgressBatchResponse, error)
+	UpdateProgress(context.Context, *UpdateProgressRequest) (*StreamProgress, error)
 	AddBookmark(context.Context, *AddBookmarkRequest) (*AddBookmarkResponse, error)
 	GetBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
 	UpdateBookmark(context.Context, *UpdateBookmarkRequest) (*UpdateBookmarkResponse, error)
@@ -315,9 +407,6 @@ func (UnimplementedAPIServer) ExportPersonalData(context.Context, *emptypb.Empty
 func (UnimplementedAPIServer) GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSemesters not implemented")
 }
-func (UnimplementedAPIServer) GetLiveStreams(context.Context, *emptypb.Empty) (*GetLiveStreamsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLiveStreams not implemented")
-}
 func (UnimplementedAPIServer) GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPublicCourses not implemented")
 }
@@ -330,11 +419,35 @@ func (UnimplementedAPIServer) GetUserCourses(context.Context, *GetUserCoursesReq
 func (UnimplementedAPIServer) GetPinnedCourses(context.Context, *emptypb.Empty) (*GetPinnedCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPinnedCourses not implemented")
 }
+func (UnimplementedAPIServer) GetLiveCourses(context.Context, *emptypb.Empty) (*GetLiveCoursesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLiveCourses not implemented")
+}
 func (UnimplementedAPIServer) GetPinForCourse(context.Context, *GetPinForCourseRequest) (*GetPinForCourseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPinForCourse not implemented")
 }
 func (UnimplementedAPIServer) PinCourse(context.Context, *PinCourseRequest) (*PinCourseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PinCourse not implemented")
+}
+func (UnimplementedAPIServer) GetStream(context.Context, *GetStreamRequest) (*CourseStream, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStream not implemented")
+}
+func (UnimplementedAPIServer) GetVideoSections(context.Context, *GetVideoSectionsRequest) (*GetVideoSectionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVideoSections not implemented")
+}
+func (UnimplementedAPIServer) GetStreamPlaylist(context.Context, *GetStreamPlaylistRequest) (*GetStreamPlaylistResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStreamPlaylist not implemented")
+}
+func (UnimplementedAPIServer) GetSubtitles(context.Context, *GetSubtitlesRequest) (*httpbody.HttpBody, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubtitles not implemented")
+}
+func (UnimplementedAPIServer) GetThumbs(context.Context, *GetThumbsRequest) (*httpbody.HttpBody, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetThumbs not implemented")
+}
+func (UnimplementedAPIServer) GetProgressBatch(context.Context, *GetProgressBatchRequest) (*GetProgressBatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProgressBatch not implemented")
+}
+func (UnimplementedAPIServer) UpdateProgress(context.Context, *UpdateProgressRequest) (*StreamProgress, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateProgress not implemented")
 }
 func (UnimplementedAPIServer) AddBookmark(context.Context, *AddBookmarkRequest) (*AddBookmarkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddBookmark not implemented")
@@ -483,24 +596,6 @@ func _API_GetSemesters_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_GetLiveStreams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(APIServer).GetLiveStreams(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: API_GetLiveStreams_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).GetLiveStreams(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _API_GetPublicCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPublicCoursesRequest)
 	if err := dec(in); err != nil {
@@ -573,6 +668,24 @@ func _API_GetPinnedCourses_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_GetLiveCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetLiveCourses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetLiveCourses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetLiveCourses(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _API_GetPinForCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPinForCourseRequest)
 	if err := dec(in); err != nil {
@@ -605,6 +718,132 @@ func _API_PinCourse_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(APIServer).PinCourse(ctx, req.(*PinCourseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStreamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetStream(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetStream_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetStream(ctx, req.(*GetStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetVideoSections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVideoSectionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetVideoSections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetVideoSections_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetVideoSections(ctx, req.(*GetVideoSectionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetStreamPlaylist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStreamPlaylistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetStreamPlaylist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetStreamPlaylist_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetStreamPlaylist(ctx, req.(*GetStreamPlaylistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetSubtitles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSubtitlesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetSubtitles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetSubtitles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetSubtitles(ctx, req.(*GetSubtitlesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetThumbs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetThumbsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetThumbs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetThumbs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetThumbs(ctx, req.(*GetThumbsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_GetProgressBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProgressBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).GetProgressBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_GetProgressBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).GetProgressBatch(ctx, req.(*GetProgressBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_UpdateProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).UpdateProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: API_UpdateProgress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).UpdateProgress(ctx, req.(*UpdateProgressRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -749,10 +988,6 @@ var API_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _API_GetSemesters_Handler,
 		},
 		{
-			MethodName: "getLiveStreams",
-			Handler:    _API_GetLiveStreams_Handler,
-		},
-		{
 			MethodName: "getPublicCourses",
 			Handler:    _API_GetPublicCourses_Handler,
 		},
@@ -769,35 +1004,67 @@ var API_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _API_GetPinnedCourses_Handler,
 		},
 		{
-			MethodName: "GetPinForCourse",
+			MethodName: "getLiveCourses",
+			Handler:    _API_GetLiveCourses_Handler,
+		},
+		{
+			MethodName: "getPinForCourse",
 			Handler:    _API_GetPinForCourse_Handler,
 		},
 		{
-			MethodName: "PinCourse",
+			MethodName: "pinCourse",
 			Handler:    _API_PinCourse_Handler,
 		},
 		{
-			MethodName: "AddBookmark",
+			MethodName: "getStream",
+			Handler:    _API_GetStream_Handler,
+		},
+		{
+			MethodName: "getVideoSections",
+			Handler:    _API_GetVideoSections_Handler,
+		},
+		{
+			MethodName: "getStreamPlaylist",
+			Handler:    _API_GetStreamPlaylist_Handler,
+		},
+		{
+			MethodName: "getSubtitles",
+			Handler:    _API_GetSubtitles_Handler,
+		},
+		{
+			MethodName: "getThumbs",
+			Handler:    _API_GetThumbs_Handler,
+		},
+		{
+			MethodName: "getProgressBatch",
+			Handler:    _API_GetProgressBatch_Handler,
+		},
+		{
+			MethodName: "updateProgress",
+			Handler:    _API_UpdateProgress_Handler,
+		},
+		{
+			MethodName: "addBookmark",
 			Handler:    _API_AddBookmark_Handler,
 		},
 		{
-			MethodName: "GetBookmarks",
+			MethodName: "getBookmarks",
 			Handler:    _API_GetBookmarks_Handler,
 		},
 		{
-			MethodName: "UpdateBookmark",
+			MethodName: "updateBookmark",
 			Handler:    _API_UpdateBookmark_Handler,
 		},
 		{
-			MethodName: "DeleteBookmark",
+			MethodName: "deleteBookmark",
 			Handler:    _API_DeleteBookmark_Handler,
 		},
 		{
-			MethodName: "GetNotifications",
+			MethodName: "getNotifications",
 			Handler:    _API_GetNotifications_Handler,
 		},
 		{
-			MethodName: "GetServerNotifications",
+			MethodName: "getServerNotifications",
 			Handler:    _API_GetServerNotifications_Handler,
 		},
 	},

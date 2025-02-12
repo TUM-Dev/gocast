@@ -39,7 +39,7 @@ func (a *API) GetNotifications(ctx context.Context, req *emptypb.Empty) (*protob
 	}
 
 	resp := &protobuf.GetNotificationsResponse{
-		Notifications: make([]*protobuf.Notification, len(notifications)),
+		Notifications: make([]*protobuf.UserGroupNotification, len(notifications)),
 	}
 
 	for i, notification := range notifications {

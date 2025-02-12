@@ -43,7 +43,7 @@ func ParseUserSettingToProto(setting model.UserSetting) *protobuf.UserSetting {
 // ParseBookmarkToProto converts a Bookmark model to its protobuf representation.
 func ParseBookmarkToProto(b model.Bookmark) *protobuf.Bookmark {
 	return &protobuf.Bookmark{
-		Id:          uint32(b.ID),
+		BookmarkId:  uint32(b.ID),
 		Description: b.Description,
 		Hours:       uint32(b.Hours),
 		Minutes:     uint32(b.Minutes),
@@ -147,13 +147,13 @@ func ParseDownloadToProto(download model.DownloadableVod) *protobuf.Download {
 	}
 }
 
-func ParseNotificationToProto(notification model.Notification) *protobuf.Notification {
+func ParseNotificationToProto(notification model.Notification) *protobuf.UserGroupNotification {
 	var title string
 	if notification.Title != nil {
 		title = *notification.Title
 	}
 
-	return &protobuf.Notification{
+	return &protobuf.UserGroupNotification{
 		Title:     title,
 		Body:      notification.Body,
 		Target:    protobuf.NotificationTarget(notification.Target),
@@ -167,5 +167,26 @@ func ParseServerNotificationToProto(notification model.ServerNotification) *prot
 		Warn:    notification.Warn,
 		Start:   timestamppb.New(notification.Start),
 		Expires: timestamppb.New(notification.Expires),
+	}
+}
+
+// ParseStreamProgressToProto converts a StreamProgress model to its protobuf representation.
+func ParseStreamProgressToProto(progress model.StreamProgress) *protobuf.StreamProgress {
+	return &protobuf.StreamProgress{
+		StreamId: uint32(progress.StreamID),
+		Progress: float32(progress.Progress),
+		Watched:  progress.Watched,
+	}
+}
+
+// ParseVideoSectionToProto converts a VideoSection model to its protobuf representation.
+func ParseVideoSectionToProto(section model.VideoSection) *protobuf.VideoSection {
+	return &protobuf.VideoSection{
+		Description:  section.Description,
+		StartHours:   uint32(section.StartHours),
+		StartMinutes: uint32(section.StartMinutes),
+		StartSeconds: uint32(section.StartSeconds),
+		StreamId:     uint32(section.StreamID),
+		FileId:       uint32(section.FileID),
 	}
 }

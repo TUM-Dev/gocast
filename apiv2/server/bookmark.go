@@ -73,7 +73,7 @@ func (a *API) UpdateBookmark(ctx context.Context, req *protobuf.UpdateBookmarkRe
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	bookmark, err := a.dao.BookmarkDao.GetByID(uint(req.Id))
+	bookmark, err := a.dao.BookmarkDao.GetByID(uint(req.BookmarkId))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, e.WithStatus(http.StatusNotFound, errors.New("Invalid bookmark ID"))
@@ -107,7 +107,7 @@ func (a *API) DeleteBookmark(ctx context.Context, req *protobuf.DeleteBookmarkRe
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	bookmark, err := a.dao.BookmarkDao.GetByID(uint(req.Id))
+	bookmark, err := a.dao.BookmarkDao.GetByID(uint(req.BookmarkId))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, e.WithStatus(http.StatusNotFound, errors.New("Invalid bookmark ID"))
@@ -119,7 +119,7 @@ func (a *API) DeleteBookmark(ctx context.Context, req *protobuf.DeleteBookmarkRe
 		return nil, e.WithStatus(http.StatusForbidden, errors.New("Logged in user is not the creator of the bookmark"))
 	}
 
-	err = a.dao.BookmarkDao.Delete(uint(req.Id))
+	err = a.dao.BookmarkDao.Delete(uint(req.BookmarkId))
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
