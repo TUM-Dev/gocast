@@ -82,6 +82,21 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		}
 	}
 
+	if c.Param("version") == "" {
+		switch tumLiveContext.User.GetPreferredView() {
+		case "Presentation":
+
+			c.Redirect(http.StatusFound, c.Request.RequestURI+"/PRES")
+
+		case "Camera":
+			c.Redirect(http.StatusFound, c.Request.RequestURI+"/CAM")
+		case "Combined":
+			c.Redirect(http.StatusFound, c.Request.RequestURI+"/COMB")
+		case "Split":
+			c.Redirect(http.StatusFound, c.Request.RequestURI+"/SPLIT")
+		}
+	}
+
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
 
