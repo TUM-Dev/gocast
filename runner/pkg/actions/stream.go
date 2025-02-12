@@ -29,6 +29,10 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream end in context"))
 	}
+	streamVersion, ok := d["streamVersion"].(string)
+	if !ok {
+		return AbortingError(fmt.Errorf("no stream end in context"))
+	}
 	globalOpts, ok := d["globalOpts"].(string)
 	if !ok {
 		globalOpts = ""
@@ -46,7 +50,9 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 		return AbortingError(fmt.Errorf("no input in context"))
 	}
 	log = log.With("stream_id", streamID)
-	liveRecDir := path.Join(config.Config.SegmentPath, fmt.Sprintf("%d", streamID))
+
+	// e.g. ./storage/live/1/STREAM_VERSION_COMBINED
+	liveRecDir := path.Join(config.Config.SegmentPath, fmt.Sprintf("%d", streamID), streamVersion)
 	err := os.MkdirAll(liveRecDir, os.ModePerm)
 	if err != nil {
 		return AbortingError(err)
@@ -98,7 +104,7 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 func logCmdPipe(log *slog.Logger, pipe io.ReadCloser, fields []any) {
 	scanner := bufio.NewScanner(pipe)
 	for scanner.Scan() {
-		log.Info("ffmpeg log", append([]any{"msg", scanner.Text()}, fields)...)
+		log.Info("ffmpeg log", append([]any{"msg", scanner.Text()}, fields...)...)
 	}
 	log.Info("ffmpeg logstream ended", fields)
 }

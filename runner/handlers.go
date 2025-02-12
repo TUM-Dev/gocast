@@ -15,12 +15,13 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	ctx = context.Background()
 
 	data := map[string]any{
-		"streamID":   req.GetStreamId(),
-		"streamEnd":  req.End.AsTime(),
-		"globalOpts": req.GetFfmpegGlobalOptions(),
-		"inputOpts":  req.GetFfmpegInputOptions(),
-		"outputOpts": req.GetFfmpegOutputOptions(),
-		"input":      req.GetInput(),
+		"streamID":      req.GetStreamId(),
+		"streamVersion": protobuf.StreamVersion_name[int32(req.GetVersion())],
+		"streamEnd":     req.End.AsTime(),
+		"globalOpts":    req.GetFfmpegGlobalOptions(),
+		"inputOpts":     req.GetFfmpegInputOptions(),
+		"outputOpts":    req.GetFfmpegOutputOptions(),
+		"input":         req.GetInput(),
 	}
 	r.log.Info("RequestStream data constructed", "data", data)
 	a := []actions.Action{
