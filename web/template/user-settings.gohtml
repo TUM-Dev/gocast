@@ -170,7 +170,7 @@
             </span>
         </section>
 
-        <section x-data="{ currentView: 'Combined'}">
+        <section x-data="{ currentView: {{toJson .TUMLiveContext.User.GetPreferredView}} }">
             <h2>Preferred Lecture View</h2>
             <input class="w-auto" type="radio" name="lectureView" value="Presentation" id="view1" x-model="currentView"
                    :checked="currentView==='Presentation'"
