@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -80,27 +81,24 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if err != nil {
 		return err
 	}
-	go func() {
-		scanner := bufio.NewScanner(stderr)
-		for scanner.Scan() {
-			log.Info("ffmpeg log", "stream", "stderr", "msg", scanner.Text())
-		}
-		log.Info("ffmpeg logstream ended", "stream", "stderr")
-	}()
+	go logCmdPipe(log, stderr, []any{"stream", streamID, "logStream", "stderr"})
+
 	stdo, err := command.StdoutPipe()
 	if err != nil {
 		return err
 	}
-	go func() {
-		scanner := bufio.NewScanner(stdo)
-		for scanner.Scan() {
-			log.Info("ffmpeg log", "stream", "stdout", "msg", scanner.Text())
-		}
-		log.Info("ffmpeg logstream ended", "stream", "stdout")
-	}()
+	go logCmdPipe(log, stdo, []any{"stream", streamID, "logStream", "stdout"})
 	err = command.Run()
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func logCmdPipe(log *slog.Logger, pipe io.ReadCloser, fields []any) {
+	scanner := bufio.NewScanner(pipe)
+	for scanner.Scan() {
+		log.Info("ffmpeg log", append([]any{"msg", scanner.Text()}, fields)...)
+	}
+	log.Info("ffmpeg logstream ended", fields)
 }
