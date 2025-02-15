@@ -357,10 +357,11 @@ func (s Stream) GetJson(lhs []LectureHall, course Course) gin.H {
 		"start":                    s.Start,
 		"end":                      s.End,
 		"isChatEnabled":            s.ChatEnabled,
-		"isCustomThumbnailEnabled": s.CustomThumbnailEnabled,
+    "isCustomThumbnailEnabled": s.CustomThumbnailEnabled,
 		"courseSlug":               course.Slug,
 		"private":                  s.Private,
 		"downloadableVods":         s.GetVodFiles(),
+		"isCopying":                false,
 		"videoSections":            videoSections,
 	}
 }

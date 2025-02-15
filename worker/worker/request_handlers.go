@@ -218,7 +218,7 @@ func cancelCmd(cmd *exec.Cmd) {
 
 func HandleStreamRequest(request *pb.StreamRequest) {
 	log.WithField("request", request).Info("Request to stream")
-	// setup context with relevant information to pass to other subprocesses
+	//setup context with relevant information to pass to other subprocesses
 	streamCtx := &StreamContext{
 		streamId:      request.GetStreamID(),
 		sourceUrl:     "rtsp://" + request.GetSourceUrl(),
@@ -341,10 +341,18 @@ func HandleUploadRestReq(streamInfo *pb.GetStreamInfoForUploadResponse, localFil
 		log.Debugf("Wrong container: %s, converting", container)
 	}
 
-	if codec, err := getCodec(localFile); err != nil {
+	if codec, err := getCodec(localFile, "video"); err != nil {
 		log.WithError(err).Warn("Error getting codec")
 		needsConversion = true
 	} else if codec != "h264" {
+		needsConversion = true
+		log.Debugf("wrong codec: %s, converting", codec)
+	}
+
+	if codec, err := getCodec(localFile, "audio"); err != nil {
+		log.WithError(err).Warn("Error getting codec")
+		needsConversion = true
+	} else if codec != "aac" {
 		needsConversion = true
 		log.Debugf("wrong codec: %s, converting", codec)
 	}
@@ -475,7 +483,7 @@ type StreamContext struct {
 	discardVoD   bool   // whether the VoD should be discarded
 
 	// calculated after stream:
-	duration      uint32 // duration of the stream in seconds
+	duration      uint32 //duration of the stream in seconds
 	thumbInterval uint32 // interval between thumbnails in seconds
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful

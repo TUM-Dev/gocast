@@ -12,7 +12,7 @@
         <div class="flex justify-between">
             <div class="flex">
                 {{- /*buttons header left*/ -}}
-                <button @click="admin.deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id))"
+                <button @click="admin.deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id)); selectedLectures = []"
                         :disabled="selectedLectures.length == 0" class="btn mt-2">
                     Delete
                     <b x-text="selectedLectures.length.toString()"></b>
