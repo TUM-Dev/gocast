@@ -56,11 +56,7 @@ func MkVOD(_ context.Context, _ *slog.Logger, notify chan *protobuf.Notification
 			if err != nil {
 				return AbortingError(fmt.Errorf("open recording playlist: %w", err))
 			}
-			srcPlstB, err := io.ReadAll(srcPlst)
-			if err != nil {
-				return AbortingError(fmt.Errorf("read recording playlist: %w", err))
-			}
-			dstPlstS := vodFromEventPlst(string(srcPlstB))
+			dstPlstS := vodFromEventPlst(srcPlst)
 			dstPlst, err := os.Create(path.Join(vodDir, entry.Name()))
 			if err != nil {
 				return AbortingError(fmt.Errorf("create vod playlist: %w", err))
@@ -112,11 +108,11 @@ func copyFile(sourcePath, destPath string) error {
 }
 
 // vodFromEventPlst modifies an HLS playlist from EVENT to VOD
-func vodFromEventPlst(playlist string) string {
+func vodFromEventPlst(playlist io.Reader) string {
 	var lines []string
 	hasEndlist := false
 
-	scanner := bufio.NewScanner(strings.NewReader(playlist))
+	scanner := bufio.NewScanner(playlist)
 	for scanner.Scan() {
 		line := scanner.Text()
 

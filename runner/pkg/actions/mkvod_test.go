@@ -1,6 +1,9 @@
 package actions
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestConvertHLSPlaylist(t *testing.T) {
 	input := `#EXTM3U
@@ -19,7 +22,7 @@ func TestConvertHLSPlaylist(t *testing.T) {
 00000.ts
 #EXT-X-ENDLIST`
 
-	output := vodFromEventPlst(input)
+	output := vodFromEventPlst(strings.NewReader(input))
 	if output != expected {
 		t.Errorf("Expected:\n%s\nGot:\n%s", expected, output)
 	}
