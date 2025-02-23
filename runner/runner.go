@@ -88,7 +88,7 @@ func (r *Runner) Run() {
 		config.Config.Port = p
 	}
 	r.log.Info("using port", "port", config.Config.Port)
-	
+
 	go r.Metrics.Run()
 	go r.handleNotifications()
 	go r.InitApiGrpc()
@@ -168,7 +168,10 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 		for _, action := range a {
 			for {
 				log := r.log.With("action", getFunctionName(action)).With("job", job)
+				log.Info("running action")
+				s := time.Now()
 				err := action(c, log, r.notifications, data, r.Metrics)
+				log.Info("action completed", "duration", time.Since(s).String())
 				if err != nil {
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {

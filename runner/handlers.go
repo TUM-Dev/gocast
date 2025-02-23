@@ -27,6 +27,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	a := []actions.Action{
 		actions.Stream,
 		actions.StreamEnd,
+		actions.MkVOD,
 	}
 
 	jID := r.RunAction(a, data)
