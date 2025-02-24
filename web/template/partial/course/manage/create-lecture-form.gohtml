@@ -39,9 +39,28 @@
             <div x-show="currentTab === -1" x-data="{ progress: { COMB: 0, PRES: null, CAM: null } }" @voduploadprogress.window="(e) => (progress = e.detail)">
                 <h3>Your lecture is being created ...</h3>
                 <ul x-show="formData.vodup" class="mt-2">
-                    <li>Combined Video: <b x-text="progress.COMB === null ? 'skipped' : `${progress.COMB}%`"></b></li>
-                    <li>Presentation Video: <b x-text="progress.PRES === null ? 'skipped' : `${progress.PRES}%`"></b></li>
-                    <li>Camera Video: <b x-text="progress.CAM === null ? 'skipped' : `${progress.CAM}%`"></b></li>
+                    {{/*<li>Combined Video: <b x-text="progress.COMB === null ? 'skipped' : `${progress.COMB}%`"></b></li>*/}}
+                    <li>Combined Video:
+                        <div x-data="{ currentVal: progress.COMB, minVal: 0, maxVal: 100 }" class="flex h-4 w-full overflow-hidden rounded-radius bg-surface-alt dark:bg-surface-dark-alt" role="progressbar" aria-label="default progress bar" :aria-valuenow="currentVal" :aria-valuemin="minVal" :aria-valuemax="maxVal">
+                            <div class="h-full rounded-radius bg-blue-600 p-0.5 text-center text-xs font-semibold leading-none text-on-primary dark:bg-blue-800 dark:text-on-primary-dark" :style="{ width: progress.COMB !== null ? `${progress.COMB}%` : '0%' }">
+                                <span x-text="progress.COMB === null ? 'skipped' : `${progress.COMB}%`"></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>Presentation Video:
+                        <div x-data="{ currentVal: progress.PRES, minVal: 0, maxVal: 100 }" class="flex h-4 w-full overflow-hidden rounded-radius bg-surface-alt dark:bg-surface-dark-alt" role="progressbar" aria-label="default progress bar" :aria-valuenow="currentVal" :aria-valuemin="minVal" :aria-valuemax="maxVal">
+                            <div class="h-full rounded-radius bg-blue-600 p-0.5 text-center text-xs font-semibold leading-none text-on-primary dark:bg-blue-800 dark:text-on-primary-dark" :style="{ width: progress.PRES !== null ? `${progress.PRES}%` : '0%' }">
+                                <span x-text="progress.PRES === null ? 'skipped' : `${progress.PRES}%`"></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>Camera Video: 
+                        <div x-data="{ currentVal: progress.CAM, minVal: 0, maxVal: 100 }" class="flex h-4 w-full overflow-hidden rounded-radius bg-surface-alt dark:bg-surface-dark-alt" role="progressbar" aria-label="default progress bar" :aria-valuenow="currentVal" :aria-valuemin="minVal" :aria-valuemax="maxVal">
+                            <div class="h-full rounded-radius bg-blue-600 p-0.5 text-center text-xs font-semibold leading-none text-on-primary dark:bg-blue-800 dark:text-on-primary-dark" :style="{ width: progress.CAM !== null ? `${progress.CAM}%` : '0%' }">
+                                <span x-text="progress.CAM === null ? 'skipped' : `${progress.CAM}%`"></span>
+                            </div>
+                        </div>
+                    </li>
                 </ul>
             </div>
 
