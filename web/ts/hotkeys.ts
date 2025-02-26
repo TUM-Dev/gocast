@@ -49,8 +49,14 @@ const handleSeek = (forward: boolean) => (player, event) => {
 
 const handleVolume = (up: boolean, step = 0.05) =>
     function (player) {
+        const oldVolume = player.volume();
+        console.log(oldVolume);
         player.volume(clamp(player.volume() + (up ? step : -step), 0, 1));
         player.muted(false);
+        // only show icon overlay when volume has actually changed
+        if ((up && oldVolume < 1.) || (!up && oldVolume > 0)) {
+            return volumeIcon(up);
+        }
     };
 
 const volumeIcon = (up: boolean) => (player) =>
@@ -141,12 +147,10 @@ export const defaultOptions = {
         volumeUp: {
             match: ["ArrowUp", "Up"],
             handle: handleVolume(true),
-            icon: volumeIcon(true),
         },
         volumeDown: {
             match: ["ArrowDown", "Down"],
             handle: handleVolume(false),
-            icon: volumeIcon(false),
         },
         increasePlaybackRate: {
             match: [">"],
