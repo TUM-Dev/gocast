@@ -50,7 +50,6 @@ const handleSeek = (forward: boolean) => (player, event) => {
 const handleVolume = (up: boolean, step = 0.05) =>
     function (player) {
         const oldVolume = player.volume();
-        console.log(oldVolume);
         player.volume(clamp(player.volume() + (up ? step : -step), 0, 1));
         player.muted(false);
         // only show icon overlay when volume has actually changed
