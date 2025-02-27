@@ -30,53 +30,38 @@ class PlayerSettings {
         this.isEmbedded = isEmbedded;
     }
 
-    initShortcutsWhenMouseOn(seekingTime: number) {
+    initControlTexts(seekingTime: number) {
         const controlBar = this.player.getChild("controlBar");
 
         // Set seek back/forward control text
-        controlBar.children()[0].controlText(`Seek back ${seekingTime} seconds (J/j)`);
-        controlBar.children()[2].controlText(`Seek forward ${seekingTime} seconds (L/l)`);
+        controlBar.children()[0].controlText(`Seek back ${seekingTime} seconds (j)`);
+        controlBar.children()[2].controlText(`Seek forward ${seekingTime} seconds (l)`);
 
-        // function to update play/pause toggle control text
-        // when playing text should be pause(k), when pause text should be play(k)
-        function updatePlayToggleControlText() {
-            const playToggle = controlBar.getChild("PlayToggle");
-            const text = !this.player.paused() ? "Pause (K/k)" : "Play (K/k)";
-            playToggle.controlText(text);
-        }
+        // Set initial text for play/pause, mute/unmute, fullscreen when the player is ready
+        this.updatePlayControlText();
+        this.updateMuteControlText();
+        this.updateFullscreenControlText();
+    }
 
-        // function to update mute/unmute toggle control text
-        function updateMuteToggleControlText() {
-            const muteToggle = controlBar.getChild("VolumePanel").getChild("MuteToggle");
-            const text = this.player.muted() ? "Unmute (M/m)" : "Mute (M/m)";
-            muteToggle.controlText(text);
-        }
+    // function to update play/pause control text to pause(k) when playing and play(k) else
+    updatePlayControlText() {
+        const playToggle = this.player.getChild("controlBar").getChild("PlayToggle");
+        const text = !this.player.paused() ? "Pause (k)" : "Play (k)";
+        playToggle.controlText(text);
+    }
 
-        // Set initial text for play/pause and mute/unmute when the player is ready
-        this.player.ready(() => {
-            // Call the update functions
-            updatePlayToggleControlText.call(this);
-            updateMuteToggleControlText.call(this);
-        });
+    // function to update mute/unmute control text
+    updateMuteControlText() {
+        const muteToggle = this.player.getChild("controlBar").getChild("VolumePanel").getChild("MuteToggle");
+        const text = this.player.muted() ? "Unmute (m)" : "Mute (m)";
+        muteToggle.controlText(text);
+    }
 
-        // Listen for play/pause event
-        this.player.on(["play", "pause"], () => {
-            updatePlayToggleControlText.call(this);
-        });
-
-        // Listen for mute/unmute event
-        this.player.on("volumechange", () => {
-            updateMuteToggleControlText.call(this);
-        });
-
-        // Set fullscreen toggle control text
-        controlBar.getChild("FullscreenToggle").controlText("Fullscreen (F/f)");
-        // Listen for fullscreen/exit fullscreen event
-        this.player.on("fullscreenchange", () => {
-            const fullscreenToggle = controlBar.getChild("FullscreenToggle");
-            const text = document.fullscreenElement ? "Exit Fullscreen (F)" : "Fullscreen (F)";
-            fullscreenToggle.controlText(text);
-        });
+    // function to update fullscreen/exit fullscreen control text
+    updateFullscreenControlText() {
+        const fullscreenToggle = this.player.getChild("controlBar").getChild("FullscreenToggle");
+        const text = document.fullscreenElement ? "Exit Fullscreen (f)" : "Fullscreen (f)";
+        fullscreenToggle.controlText(text);
     }
 
     initTrackbars(streamID: number) {
@@ -247,6 +232,15 @@ export const initPlayer = function (
     player.on("ratechange", function () {
         settings.storeRate();
     });
+    player.on(["play", "pause"], function () {
+        settings.updatePlayControlText();
+    });
+    player.on("volumechange", function () {
+        settings.updateMuteControlText();
+    });
+    player.on("fullscreenchange", function (){
+        settings.updateFullscreenControlText();
+    });
 
     // When catching up to live, resume at normal speed
     player.liveTracker.on("liveedgechange", function (evt) {
@@ -272,7 +266,7 @@ export const initPlayer = function (
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
         settings.addOverlayIcon();
-        settings.initShortcutsWhenMouseOn(seekingTime);
+        settings.initControlTexts(seekingTime);
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
