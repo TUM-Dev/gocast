@@ -238,7 +238,7 @@ export const initPlayer = function (
     player.on("volumechange", function () {
         settings.updateMuteControlText();
     });
-    player.on("fullscreenchange", function (){
+    player.on("fullscreenchange", function () {
         settings.updateFullscreenControlText();
     });
 
