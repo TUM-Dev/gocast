@@ -28,7 +28,6 @@
           rel="stylesheet">
     <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
-    <link rel="stylesheet" href="/static/assets/css/keyboard-shortcuts.css">
     <style>[x-cloak] {
             display: none !important;
         }</style>
@@ -123,32 +122,30 @@
                                 <p>Settings</p>
                             </a>
                             <script src="static/assets/keyboard-shortcuts-helper.js"></script>
-                            <div class="tum-live-menu-item" onclick="openKeyboardShortcutsPopup()" style="cursor: pointer;">
+                            <div class="tum-live-menu-item" @click="openKeyboardShortcutsPopup();" style="cursor: pointer;">
                                 <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
                                     <i class="fa-solid fa-keyboard mr-3"></i>
                                 </div>
                                 <p>Keyboard Shortcuts</p>
                             </div>
-                            <div id="keyboardShortcutsPopup" class="overlay" style="display: none;">
-                                <div class="popup"
-                                     :style="{ 'background-color': $store.theme.activeTheme === 'light' ? 'white' :  'rgba(22, 27, 34, 1)' }">
-                                <h2>
-                                        Keyboard Shortcuts
-                                        <span class="closeButton" onclick="closeKeyboardShortcutsPopup()"> <i class="icon-cancel"></i> </span>
+                            <div id="keyboardShortcutsPopup" class="tum-live-popup-container overlay" style="display: none;">
+                                <div class="tum-live-popup tum-live-bg" >
+                                    <h2>Keyboard Shortcuts
+                                        <i class="icon-cancel" @click="closeKeyboardShortcutsPopup();"></i>
                                     </h2>
                                     <ul>
-                                        <li><strong>Toggle play/pause</strong> <b1> K / k / SPACEBAR</b1></li>
-                                        <li><strong>Mute/Unmute</strong><b1> M / m</b1></li>
-                                        <li><strong>Open/Exit toggle fullscreen</strong><b1> F / f</b1></li>
-                                        <li><strong>Seek forward</strong><b1> L / l / ArrowRight / Right</b1></li>
-                                        <li><strong>Seek backwards</strong><b1> J / j / ArrowLeft / Left</b1></li>
-                                        <li><strong>Volume up</strong><b1> ArrowUp / Up</b1></li>
-                                        <li><strong>Volume down</strong><b1> ArrowDown / Down</b1></li>
-                                        <li><strong>Increase playback rate</strong><b1> <</b1></li>
-                                        <li><strong>Decrease playback rate</strong><b1> ></b1></li>
-                                        <li><strong>Seek to specific point in the video (7 advances to 70% of duration)</strong><b1> 0...9</b1></li>
-                                        <li><strong>Skip silence</strong><b1> S / s</b1></li>
-                                        <li><strong>Close any kind of popup - e.g. popup chat, popup keyboard shortcuts etc.</strong><b1> ESCAPE</b1></li>
+                                        <li><strong>Toggle play/pause</strong> <b> K / k / SPACEBAR</b></li>
+                                        <li><strong>Mute/Unmute</strong><b> M / m</b></li>
+                                        <li><strong>Open/Exit toggle fullscreen</strong><b> F / f</b></li>
+                                        <li><strong>Seek forward</strong><b> L / l / ArrowRight / Right</b></li>
+                                        <li><strong>Seek backwards</strong><b> J / j / ArrowLeft / Left</b></li>
+                                        <li><strong>Volume up</strong><b> ArrowUp / Up</b></li>
+                                        <li><strong>Volume down</strong><b> ArrowDown / Down</b></li>
+                                        <li><strong>Increase playback rate</strong><b> <</b></li>
+                                        <li><strong>Decrease playback rate</strong><b> ></b></li>
+                                        <li><strong>Seek to specific point in the video (7 advances to 70% of duration)</strong><b> 0...9</b></li>
+                                        <li><strong>Skip silence</strong><b> S / s</b></li>
+                                        <li><strong>Close any kind of popup - e.g. popup chat, popup keyboard shortcuts etc.</strong><b> ESCAPE</b></li>
                                     </ul>
                                 </div>
                             </div>
