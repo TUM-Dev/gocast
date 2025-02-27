@@ -53,7 +53,7 @@ const handleVolume = (up: boolean, step = 0.05) =>
         player.volume(clamp(player.volume() + (up ? step : -step), 0, 1));
         player.muted(false);
         // only show icon overlay when volume has actually changed
-        if ((up && oldVolume < 1.) || (!up && oldVolume > 0)) {
+        if ((up && oldVolume < 1) || (!up && oldVolume > 0)) {
             return volumeIcon(up);
         }
     };
