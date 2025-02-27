@@ -122,16 +122,16 @@
                                 <p>Settings</p>
                             </a>
                             <script src="static/assets/keyboard-shortcuts-helper.js"></script>
-                            <div class="tum-live-menu-item" @click="openKeyboardShortcutsPopup();" style="cursor: pointer;">
+                            <div class="tum-live-menu-item" @click="$refs.keyboardShortcutsPopup.style.display='flex';" style="cursor: pointer;">
                                 <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
                                     <i class="fa-solid fa-keyboard mr-3"></i>
                                 </div>
                                 <p>Keyboard Shortcuts</p>
                             </div>
-                            <div id="keyboardShortcutsPopup" class="tum-live-popup-container overlay" style="display: none;">
-                                <div class="tum-live-popup tum-live-bg" >
+                            <div x-ref="keyboardShortcutsPopup" class="tum-live-popup-container overlay" style="display: none" @keydown.escape.window="$refs.keyboardShortcutsPopup.style.display='none';console.log('sdfsdf');">
+                                <div class="tum-live-popup tum-live-bg">
                                     <h2>Keyboard Shortcuts
-                                        <i class="icon-cancel" @click="closeKeyboardShortcutsPopup();"></i>
+                                        <i class="icon-cancel" @click="$refs.keyboardShortcutsPopup.style.display='none';"></i>
                                     </h2>
                                     <ul>
                                         <li><strong>Toggle play/pause</strong> <b> K / k / SPACEBAR</b></li>
