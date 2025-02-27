@@ -417,7 +417,7 @@ label:has(~ .tum-live-input) {
 }
 
 .tum-live-popup-container {
-    @apply hidden fixed top-0 left-0 w-full h-full items-center justify-center bg-black/50;
+    @apply flex fixed top-0 left-0 w-full h-full items-center justify-center bg-black/50;
 }
 
 .tum-live-popup {

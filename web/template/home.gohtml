@@ -80,7 +80,7 @@
                             <p class="font-semibold">Signed in as</p>
                             <span>@{{$user.Name}}</span>
                         </header>
-                        <nav class="d-grid gap-3 font-light">
+                        <nav class="d-grid gap-3 font-light" x-data="{showPopup: false}">
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
                                    class="tum-live-menu-item">
@@ -121,17 +121,16 @@
                                 </div>
                                 <p>Settings</p>
                             </a>
-                            <script src="static/assets/keyboard-shortcuts-helper.js"></script>
-                            <div class="tum-live-menu-item" @click="$refs.keyboardShortcutsPopup.style.display='flex';" style="cursor: pointer;">
+                            <div class="tum-live-menu-item" @click="showPopup=true;" style="cursor: pointer;">
                                 <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
                                     <i class="fa-solid fa-keyboard mr-3"></i>
                                 </div>
                                 <p>Keyboard Shortcuts</p>
                             </div>
-                            <div x-ref="keyboardShortcutsPopup" class="tum-live-popup-container overlay" style="display: none" @keydown.escape.window="$refs.keyboardShortcutsPopup.style.display='none';console.log('sdfsdf');">
-                                <div class="tum-live-popup tum-live-bg">
+                            <div x-ref="keyboardShortcutsPopup" x-show="showPopup" class="tum-live-popup-container overlay" @keydown.escape.window="showPopup=false;">
+                                <div class="tum-live-popup tum-live-bg" @click.outside="showPopup=false;">
                                     <h2>Keyboard Shortcuts
-                                        <i class="icon-cancel" @click="$refs.keyboardShortcutsPopup.style.display='none';"></i>
+                                        <i class="icon-cancel" @click="showPopup=false;"></i>
                                     </h2>
                                     <ul>
                                         <li><strong>Toggle play/pause</strong> <b> K / k / SPACEBAR</b></li>
