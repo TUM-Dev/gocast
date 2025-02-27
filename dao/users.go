@@ -19,6 +19,7 @@ type UsersDao interface {
 	CreateUser(ctx context.Context, user *model.User) (err error)
 	DeleteUser(ctx context.Context, uid uint) (err error)
 	SearchUser(query string) (users []model.User, err error)
+	SearchUserWithRole(query string, role uint64) (users []model.User, err error)
 	IsUserAdmin(ctx context.Context, uid uint) (res bool, err error)
 	GetUserByEmail(ctx context.Context, email string) (user model.User, err error)
 	GetAllAdminsAndLecturers(users *[]model.User) (err error)
@@ -67,6 +68,12 @@ func (d usersDao) DeleteUser(ctx context.Context, uid uint) (err error) {
 func (d usersDao) SearchUser(query string) (users []model.User, err error) {
 	q := "%" + query + "%"
 	res := DB.Where("UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?)", q, q, q).Limit(10).Preload("Settings").Find(&users)
+	return users, res.Error
+}
+
+func (d usersDao) SearchUserWithRole(query string, role uint64) (users []model.User, err error) {
+	q := "%" + query + "%"
+	res := DB.Where("role = ? AND (UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?))", role, q, q, q).Limit(10).Preload("Settings").Find(&users)
 	return users, res.Error
 }
 
@@ -157,29 +164,27 @@ func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) erro
 func (d usersDao) UpsertUser(user *model.User) error {
 	var foundUser *model.User
 	err := DB.Model(&model.User{}).Where("matriculation_number = ?", user.MatriculationNumber).First(&foundUser).Error
-	if err == nil && foundUser != nil {
-		// User found: update
-		user.Model = foundUser.Model
-		foundUser.LrzID = user.LrzID
-		foundUser.Name = user.Name
-		if user.Role != 0 {
-			foundUser.Role = user.Role
-		}
-		err := DB.Save(foundUser).Error
-		if err != nil {
-			return err
-		}
-		return nil
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// User not found, try create
+		err = DB.Create(&user).Error
+		return fmt.Errorf("create user failed: %w", err)
+	} else if err != nil {
+		return fmt.Errorf("lookup user by matriculation_number failed: %w", err)
 	}
-	// user not found, create:
-	user.Role = model.StudentType
-	err = DB.
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "matriculation_number"}},
-			DoUpdates: clause.Assignments(map[string]interface{}{"name": user.Name}),
-		}).
-		Create(&user).Error
-	return err
+
+	// User found: update
+	user.Model = foundUser.Model
+	foundUser.LrzID = user.LrzID
+	foundUser.Name = user.Name
+	if user.Role != 0 {
+		foundUser.Role = user.Role
+	}
+	err = DB.Save(foundUser).Error
+	if err != nil {
+		return fmt.Errorf("update user failed: %w", err)
+	}
+	return nil
 }
 
 func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {

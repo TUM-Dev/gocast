@@ -42,7 +42,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configWorkerRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configInfoPageRouter(router, daoWrapper)
-	configGinSearchRouter(router, daoWrapper)
+	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
 	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)
 	configMaintenanceRouter(router, daoWrapper)

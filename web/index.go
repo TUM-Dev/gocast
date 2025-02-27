@@ -88,13 +88,14 @@ type IndexData struct {
 	Courses             []model.Course
 	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
-	Semesters           []dao.Semester
+	Semesters           []model.Semester
 	CurrentYear         int
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
 	CanonicalURL        tools.CanonicalURL
 	Branding            tools.Branding
+	WikiURL             string
 }
 
 func NewIndexData() IndexData {
@@ -102,6 +103,7 @@ func NewIndexData() IndexData {
 		VersionTag:   VersionTag,
 		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
 		Branding:     tools.BrandingCfg,
+		WikiURL:      tools.Cfg.WikiURL,
 	}
 }
 
@@ -165,7 +167,7 @@ func (d *IndexData) SetYearAndTerm(c *gin.Context) {
 
 // LoadSemesters Load available Semesters from the database into the IndexData object
 func (d *IndexData) LoadSemesters(spanMain *sentry.Span, coursesDao dao.CoursesDao) {
-	d.Semesters = coursesDao.GetAvailableSemesters(spanMain.Context())
+	d.Semesters = coursesDao.GetAvailableSemesters(spanMain.Context(), false)
 }
 
 // LoadLivestreams Load non-hidden, currently live streams into the IndexData object.
@@ -176,6 +178,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Error("could not get current live streams", "err", err)
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+		return
 	}
 
 	tumLiveContext := d.TUMLiveContext
@@ -191,7 +194,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
 		if courseForLiveStream.Visibility == "enrolled" {
-			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
@@ -281,18 +284,6 @@ type CourseStream struct {
 	Course      model.Course
 	Stream      model.Stream
 	LectureHall *model.LectureHall
-}
-
-func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
-	if user != nil {
-		for _, c := range user.Courses {
-			if c.ID == course.ID {
-				return true
-			}
-		}
-		return user.IsEligibleToWatchCourse(course)
-	}
-	return false
 }
 
 func sortCourses(courses []model.Course) {

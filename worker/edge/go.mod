@@ -3,7 +3,7 @@ module github.com/TUM-Dev/gocast/worker/edge
 go 1.21
 
 require (
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/prometheus/client_golang v1.16.0
 )
 

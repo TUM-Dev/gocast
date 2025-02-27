@@ -218,11 +218,18 @@
 }
 
 .tum-live-menu .tum-live-menu-item {
-    @apply flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full
+    @apply flex items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full
 }
 
 .tum-live-menu .tum-live-menu-item.active {
     @apply bg-gray-100 dark:bg-gray-800
+}
+
+.tum-live-menu .tum-live-menu-item .icon-wrapper {
+    width: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 
@@ -442,4 +449,10 @@ label:has(~ .tum-live-input) {
 
 .tum-live-popup b {
     @apply font-bold;
+}
+
+.tum-live-search-result-main {
+    @apply flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1 border border-black dark:border-gray-300 w-full text-black dark:text-gray-300;
+    width: 100%;
+    height: fit-content !important;
 }

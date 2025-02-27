@@ -13,14 +13,25 @@ func TestGetDuration(t *testing.T) {
 	}
 }
 
-func TestGetCodec(t *testing.T) {
-	codec, err := getCodec("testvid.mp4")
+func TestGetVideoCodec(t *testing.T) {
+	codec, err := getCodec("testvid.mp4", "video")
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 	if codec != "h264" {
 		t.Errorf("codec should be h264 but is %s", codec)
+	}
+}
+
+func TestGetAudioCodec(t *testing.T) {
+	codec, err := getCodec("testvid.mp4", "audio")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if codec != "aac" {
+		t.Errorf("codec should be aac but is %s", codec)
 	}
 }
 

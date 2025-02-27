@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/seekingTime", routes.updateSeekingTime)
 	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
 	router.POST("/api/users/settings/autoSkip", routes.updateAutoSkip)
+	router.POST("/api/users/settings/defaultMode", routes.updateDefaultMode)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
@@ -126,21 +128,36 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 }
 
 func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err error) {
-	q := c.Query("q")
-	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
-	q = reg.ReplaceAllString(q, "")
-	if len(q) < 3 {
+	query := c.Query("q")
+	roleQuery := c.Query("r")
+	reg := regexp.MustCompile("[^a-zA-Z0-9 ]+")
+	query = reg.ReplaceAllString(query, "")
+	// make the search work with empty query but selected role
+	if len(query) < 3 && (roleQuery == "-1" || roleQuery == "") {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "query too short (minimum length is 3)",
 		})
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
-	users, err = r.UsersDao.SearchUser(q)
+	if roleQuery == "" || roleQuery == "-1" {
+		users, err = r.UsersDao.SearchUser(query)
+	} else {
+		role, err := strconv.ParseUint(roleQuery, 10, 64)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "could not parse role",
+				Err:           err,
+			})
+			return nil, err
+		}
+		users, err = r.UsersDao.SearchUserWithRole(query, role)
+	}
 	if err != nil && err != gorm.ErrRecordNotFound {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not search user",
+			CustomMessage: "cannot search for user's",
 			Err:           err,
 		})
 		return nil, err
@@ -729,10 +746,11 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 	if u == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
+			CustomMessage: "login required for updating user settings",
 		})
 		return
 	}
+
 	var req struct{ Value model.AutoSkipSetting }
 	if err := c.BindJSON(&req); err != nil {
 		_ = c.Error(tools.RequestError{
@@ -745,6 +763,31 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 
 	settingBytes, _ := json.Marshal(req.Value)
 	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.AutoSkip, Value: string(settingBytes)})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+// updateDefaultMode updates whether the default stream mode for a user should be "beta"
+func (r usersRoutes) updateDefaultMode(c *gin.Context) {
+	u := getUserFromContext(c)
+	var req struct{ Value model.DefaultModeSetting }
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body to request",
+			Err:           err,
+		})
+		return
+	}
+
+	settingBytes, _ := json.Marshal(req.Value)
+	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.DefaultMode, Value: string(settingBytes)})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

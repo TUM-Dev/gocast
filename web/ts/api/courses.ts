@@ -9,6 +9,8 @@ type DownloadableVOD = {
     readonly DownloadURL: string;
 };
 
+const MS_IN_DAY = 1000 * 60 * 60 * 24;
+
 export class Stream implements Identifiable {
     readonly ID: number;
     readonly Name: string;
@@ -116,6 +118,10 @@ export class Stream implements Identifiable {
             "November",
             "December",
         ][this.StartDate().getMonth()];
+    }
+
+    public GetWeekNumber(dateOfFirstWeek: Date): number {
+        return Math.floor((this.StartDate().getTime() - dateOfFirstWeek.getTime()) / MS_IN_DAY / 7) + 1;
     }
 
     private static TimeOf(d: string): string {

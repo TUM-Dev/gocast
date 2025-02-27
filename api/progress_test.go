@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -29,7 +30,7 @@ func TestProgressReport(t *testing.T) {
 
 		req := progressRequest{
 			StreamID: uint(1),
-			Progress: 0,
+			Progress: float64(.5),
 		}
 
 		gomino.TestCases{
@@ -51,7 +52,19 @@ func TestProgressReport(t *testing.T) {
 				ExpectedCode: http.StatusForbidden,
 			},
 			"success": {
-				Router:       ProgressRouterWrapper,
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), "1").
+								Return(model.Stream{Duration: sql.NullInt32{Int32: int32(20)}}, nil)
+							return streamsMock
+						}(),
+					}
+					configProgressRouter(r, wrapper)
+				},
 				Body:         req,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusOK,

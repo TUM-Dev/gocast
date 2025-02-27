@@ -15,6 +15,7 @@ main
 
 # binary
 bin
+storage
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
@@ -29,6 +30,7 @@ bin
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/copilot/
 
 # Generated files
 .idea/**/contentModel.xml

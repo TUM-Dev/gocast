@@ -10,8 +10,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
+
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 // Matrix strategy
@@ -121,8 +122,11 @@ func (m *Matrix) sendMessageRequest(url string, body io.Reader) error {
 		return err
 	}
 	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf(fmt.Sprintf("received status code %d instead of %d.", response.StatusCode, http.StatusOK))
+		return fmt.Errorf("received status code %d instead of %d", response.StatusCode, http.StatusOK)
 	}
 	return err
 }
@@ -143,7 +147,7 @@ func (m *Matrix) getAuthToken() (string, error) {
 		return "", err
 	}
 	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf(fmt.Sprintf("received status code %d instead of %d.", response.StatusCode, http.StatusOK))
+		return "", fmt.Errorf("received status code %d instead of %d", response.StatusCode, http.StatusOK)
 	}
 	loginResponse := loginResponse{}
 	err = json.NewDecoder(response.Body).Decode(&loginResponse)

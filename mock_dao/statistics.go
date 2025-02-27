@@ -139,6 +139,96 @@ func (mr *MockStatisticsDaoMockRecorder) GetCourseStatsWeekdays(courseID interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseStatsWeekdays", reflect.TypeOf((*MockStatisticsDao)(nil).GetCourseStatsWeekdays), courseID)
 }
 
+// GetLectureNumLiveViews mocks base method.
+func (m *MockStatisticsDao) GetLectureNumLiveViews(streamID uint) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLectureNumLiveViews", streamID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLectureNumLiveViews indicates an expected call of GetLectureNumLiveViews.
+func (mr *MockStatisticsDaoMockRecorder) GetLectureNumLiveViews(streamID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureNumLiveViews", reflect.TypeOf((*MockStatisticsDao)(nil).GetLectureNumLiveViews), streamID)
+}
+
+// GetLectureNumVodViews mocks base method.
+func (m *MockStatisticsDao) GetLectureNumVodViews(streamID uint) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLectureNumVodViews", streamID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLectureNumVodViews indicates an expected call of GetLectureNumVodViews.
+func (mr *MockStatisticsDaoMockRecorder) GetLectureNumVodViews(streamID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureNumVodViews", reflect.TypeOf((*MockStatisticsDao)(nil).GetLectureNumVodViews), streamID)
+}
+
+// GetLectureNumVodViewsPerDay mocks base method.
+func (m *MockStatisticsDao) GetLectureNumVodViewsPerDay(streamID uint) ([]dao.Stat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLectureNumVodViewsPerDay", streamID)
+	ret0, _ := ret[0].([]dao.Stat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLectureNumVodViewsPerDay indicates an expected call of GetLectureNumVodViewsPerDay.
+func (mr *MockStatisticsDaoMockRecorder) GetLectureNumVodViewsPerDay(streamID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureNumVodViewsPerDay", reflect.TypeOf((*MockStatisticsDao)(nil).GetLectureNumVodViewsPerDay), streamID)
+}
+
+// GetLectureStats mocks base method.
+func (m *MockStatisticsDao) GetLectureStats(courseID, lectureID uint) ([]dao.Stat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLectureStats", courseID, lectureID)
+	ret0, _ := ret[0].([]dao.Stat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLectureStats indicates an expected call of GetLectureStats.
+func (mr *MockStatisticsDaoMockRecorder) GetLectureStats(courseID, lectureID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureStats", reflect.TypeOf((*MockStatisticsDao)(nil).GetLectureStats), courseID, lectureID)
+}
+
+// GetLectureStatsHourly mocks base method.
+func (m *MockStatisticsDao) GetLectureStatsHourly(courseID, streamID uint) ([]dao.Stat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLectureStatsHourly", courseID, streamID)
+	ret0, _ := ret[0].([]dao.Stat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLectureStatsHourly indicates an expected call of GetLectureStatsHourly.
+func (mr *MockStatisticsDaoMockRecorder) GetLectureStatsHourly(courseID, streamID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureStatsHourly", reflect.TypeOf((*MockStatisticsDao)(nil).GetLectureStatsHourly), courseID, streamID)
+}
+
+// GetLectureStatsWeekdays mocks base method.
+func (m *MockStatisticsDao) GetLectureStatsWeekdays(courseID, streamID uint) ([]dao.Stat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLectureStatsWeekdays", courseID, streamID)
+	ret0, _ := ret[0].([]dao.Stat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLectureStatsWeekdays indicates an expected call of GetLectureStatsWeekdays.
+func (mr *MockStatisticsDaoMockRecorder) GetLectureStatsWeekdays(courseID, streamID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureStatsWeekdays", reflect.TypeOf((*MockStatisticsDao)(nil).GetLectureStatsWeekdays), courseID, streamID)
+}
+
 // GetStreamNumLiveViews mocks base method.
 func (m *MockStatisticsDao) GetStreamNumLiveViews(streamID uint) (int, error) {
 	m.ctrl.T.Helper()

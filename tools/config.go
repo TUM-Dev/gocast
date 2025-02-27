@@ -88,6 +88,9 @@ func initConfig() {
 		}
 		jwtKey = key
 	}
+	if Cfg.WikiURL == "" {
+		logger.Warn("No Wiki URL found, link cannot be provided on webpage")
+	}
 	// allow overwriting database host with env var, mainly for testing with docker-compose
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
@@ -170,6 +173,8 @@ type Config struct {
 	} `yaml:"meili"`
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
+	WikiURL        string `yaml:"wikiURL"`
+	RtmpProxyURL   string `yaml:"rtmpProxyURL"`
 }
 
 type MailConfig struct {

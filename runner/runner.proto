@@ -1,0 +1,53 @@
+edition = "2023";
+
+package protobuf;
+
+import "google/protobuf/timestamp.proto";
+import "commons.proto";
+import "notifications.proto";
+
+option go_package = "runner/protobuf";
+
+service RunnerService {
+  // Requests a stream from a lecture hall
+  rpc RequestStream (StreamRequest) returns (StreamResponse) {}
+  rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+}
+
+message StreamRequest {
+  uint64 stream_id = 1;
+  StreamVersion version = 2;
+  google.protobuf.Timestamp end = 3;
+  string ffmpeg_global_options = 4; // optional e.g. -rtsp_transport tcp
+  string ffmpeg_input_options = 5; // optional
+  string ffmpeg_output_options = 6; // e.g. -c:a copy -c:v copy
+  string input = 7; // e.g. rtsp://user:password@host:port/rtsp_path
+}
+
+message StreamResponse {
+  string job_id = 1;
+}
+
+message StreamEndRequest {
+  string job_id = 1;
+}
+
+message StreamEndResponse {
+}
+
+// RunnerManagerService service defines communication from runners to gocast
+service RunnerManagerService {
+  // Register is a request to the server to join the runners pool.
+  rpc Register (RegisterRequest) returns (RegisterResponse) {}
+
+  // Notify sends a notification to gocast
+  rpc Notify (Notification) returns (NotificationResponse) {}
+}
+
+message RegisterRequest {
+  string hostname = 1;
+  int32 port = 2;
+}
+
+message RegisterResponse {
+}

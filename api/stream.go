@@ -342,6 +342,10 @@ func (r streamRoutes) getStream(c *gin.Context) {
 
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
+	user := tumLiveContext.User
+	if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"course":      course.Name,
@@ -370,10 +374,15 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 	}
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	user := tumLiveContext.User
+	course, _ := r.GetCourseById(context.Background(), tumLiveContext.Course.ID)
 
 	// Create mapping of stream id to progress for all progresses of user
 	var streamIDs []uint
 	for _, stream := range tumLiveContext.Course.Streams {
+		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+			continue
+		}
 		streamIDs = append(streamIDs, stream.ID)
 	}
 	streamProgresses := make(map[uint]model.StreamProgress)
@@ -388,6 +397,9 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 
 	var result []StreamPlaylistEntry
 	for _, stream := range tumLiveContext.Course.Streams {
+		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+			continue
+		}
 		result = append(result, StreamPlaylistEntry{
 			StreamID:       stream.ID,
 			CourseSlug:     tumLiveContext.Course.Slug,

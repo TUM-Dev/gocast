@@ -25,11 +25,11 @@ linters:
   fast: false
 
 run:
-  go: '1.21'
+  go: '1.24'
   timeout: 10m
-  skip-dirs:
-    - node_modules
-    - template
+#  skip-dirs:
+#    - node_modules
+#    - template
 
 linters-settings:
   stylecheck:
@@ -42,8 +42,6 @@ linters-settings:
     ignore-generated-header: false
     severity: warning
     confidence: 0.8
-    errorCode: 1
-    warningCode: 1
     rules:
       - name: blank-imports
       - name: context-as-argument
@@ -67,14 +65,17 @@ linters-settings:
       - name: modifies-value-receiver
   gofumpt:
     extra-rules: false
-    lang-version: "1.21"
+    #lang-version: "1.21"
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   new: true
   new-from-rev: dev
-  fix: false 
+  fix: false
+  exclude-dirs:
+    - node_modules
+    - template
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go
@@ -86,3 +87,7 @@ issues:
         - gosec
         - unparam
         - staticcheck
+
+output:
+  formats:
+    - format: colored-line-number

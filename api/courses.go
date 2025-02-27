@@ -51,6 +51,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			lecturers.Use(tools.AtLeastLecturer)
 			lecturers.POST("/courseInfo", routes.courseInfo)
 			lecturers.POST("/createCourse", routes.createCourse)
+			lecturers.POST("/createTestCourse", routes.createTestCourse)
 			lecturers.GET("/searchCourse", routes.searchCourse)
 		}
 
@@ -81,6 +82,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				stream.Use(tools.InitStream(daoWrapper))
 				stream.GET("/transcodingProgress", routes.getTranscodingProgress)
+				stream.POST("/copy", routes.copyStream)
 			}
 
 			stats := courses.Group("/stats")
@@ -140,6 +142,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 
 	livestreams := make([]CourseStream, 0)
 
+	user := tumLiveContext.User
 	for _, stream := range streams {
 		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
 
@@ -149,12 +152,16 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
 		if courseForLiveStream.Visibility == "enrolled" {
-			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
-		// Only show hidden streams to admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		// Only show hidden streams to course admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
+			continue
+		}
+		// Only show private streams to course admins
+		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
 			continue
 		}
 		var lectureHall *model.LectureHall
@@ -175,7 +182,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		}
 
 		livestreams = append(livestreams, CourseStream{
-			Course:      courseForLiveStream.ToDTO(),
+			Course:      courseForLiveStream.ToDTO(user),
 			Stream:      stream.ToDTO(),
 			LectureHall: lectureHall.ToDTO(),
 			Viewers:     viewers,
@@ -213,9 +220,10 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 		courses = commons.Unique(public, func(c model.Course) uint { return c.ID })
 	}
 
+	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, len(courses))
 	for i, course := range courses {
-		resp[i] = course.ToDTO()
+		resp[i] = course.ToDTO(user)
 	}
 
 	c.JSON(http.StatusOK, resp)
@@ -254,10 +262,12 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 
 	sortCourses(courses)
 	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+
+	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(courses))
 	for _, course := range courses {
 		if !course.IsHidden() {
-			resp = append(resp, course.ToDTO())
+			resp = append(resp, course.ToDTO(user))
 		}
 	}
 
@@ -275,10 +285,11 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	}
 
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
+	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
 		if !course.IsHidden() {
-			resp = append(resp, course.ToDTO())
+			resp = append(resp, course.ToDTO(user))
 		}
 	}
 
@@ -353,9 +364,17 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 
 	if (course.IsLoggedIn() && tumLiveContext.User == nil) || (course.IsEnrolled() && !tumLiveContext.User.IsEligibleToWatchCourse(course)) {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
-	streams := course.Streams
+	user := tumLiveContext.User
+	var streams []model.Stream
+	for _, stream := range course.Streams {
+		if !stream.Private || (user != nil && user.IsAdminOfCourse(course)) {
+			streams = append(streams, stream)
+		}
+	}
+
 	streamsDTO := make([]model.StreamDTO, len(streams))
 	for i, s := range streams {
 		err := tools.SetSignedPlaylists(&s, &model.User{
@@ -380,23 +399,11 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		}
 	}
 
-	courseDTO := course.ToDTO()
+	courseDTO := course.ToDTO(tumLiveContext.User)
 	courseDTO.Streams = streamsDTO
 	courseDTO.IsAdmin = isAdmin
 
 	c.JSON(http.StatusOK, courseDTO)
-}
-
-func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
-	if user != nil {
-		for _, c := range user.Courses {
-			if c.ID == course.ID {
-				return true
-			}
-		}
-		return user.IsEligibleToWatchCourse(course)
-	}
-	return false
 }
 
 func (r coursesRoutes) createVOD(c *gin.Context) {
@@ -1043,7 +1050,7 @@ func (r coursesRoutes) fetchLectures(c *gin.Context) {
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
-	streams := tlctx.Course.AdminJson(lectureHalls)
+	streams := tools.AdminCourseJson(tlctx.Course, lectureHalls, tlctx.User)
 
 	c.JSON(http.StatusOK, gin.H{
 		"streams": streams,
@@ -1433,6 +1440,21 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
 }
 
+func (r coursesRoutes) createTestCourse(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	_, err := r.StreamsDao.CreateOrGetTestCourse(tumLiveContext.User)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Couldn't save course. Please reach out to us.",
+			Err:           err,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 func (r coursesRoutes) deleteCourseByToken(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
@@ -1538,6 +1560,62 @@ type copyCourseRequest struct {
 	Semester string
 	Year     string
 	YearW    string
+}
+
+func (r coursesRoutes) copyStream(c *gin.Context) {
+	type req struct {
+		TargetCourse uint `json:"targetCourse"`
+		Move         bool `json:"move"`
+	}
+	var request req
+	err := c.BindJSON(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
+		return
+	}
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	isAdmin := tlctx.User.Role == model.AdminType
+
+	if !isAdmin {
+		targetCourseAdmins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(request.TargetCourse)
+		if err != nil {
+			logger.Error("Error getting course admins", "err", err)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't determine admins of target course",
+				Err:           err,
+			})
+		}
+		for _, admin := range targetCourseAdmins {
+			if admin.ID == tlctx.User.ID {
+				isAdmin = true
+				break
+			}
+		}
+	}
+	if !isAdmin {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "you are not admin of the target course",
+		})
+		return
+	}
+
+	stream := tlctx.Stream
+	stream.Model = gorm.Model{}
+	stream.CourseID = request.TargetCourse
+	err = r.StreamsDao.CreateStream(stream)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't save stream",
+			Err:           err,
+		})
+	}
+	if request.Move {
+		r.StreamsDao.DeleteStream(strconv.Itoa(int(tlctx.Stream.ID)))
+	}
 }
 
 func (r coursesRoutes) copyCourse(c *gin.Context) {

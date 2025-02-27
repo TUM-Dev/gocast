@@ -2,24 +2,33 @@
     <div class="mb-4">
         <label x-show="formData.premiere || formData.vodup && !loading">
             <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
-            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                   x-on:change="updateFiles('COMB', Object.values($event.target.files))">
+            <label class="flex">
+                <input x-ref="fileSelection1" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                       x-on:change="updateFiles('COMB', Object.values($event.target.files));">
+                <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('COMB', []);$refs.fileSelection1.value = '';"></button>
+            </label>
         </label>
     </div>
 
     <div class="mb-4">
         <label x-show="formData.premiere || formData.vodup && !loading">
             <span class="text-sm text-5">Presentation Video (mp4, if possible h264)</span>
-            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                   x-on:change="updateFiles('PRES', Object.values($event.target.files))">
+            <label class="flex">
+                <input x-ref="fileSelection2" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                       x-on:change="updateFiles('PRES', Object.values($event.target.files));">
+                <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('PRES', []);$refs.fileSelection2.value = '';"></button>
+            </label>
         </label>
     </div>
 
     <div>
         <label x-show="formData.premiere || formData.vodup && !loading">
             <span class="text-sm text-5">Camera Video (mp4, if possible h264)</span>
-            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                   x-on:change="updateFiles('CAM', Object.values($event.target.files))">
+            <label class="flex">
+                <input x-ref="fileSelection3" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                       x-on:change="updateFiles('CAM', Object.values($event.target.files));">
+                <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('CAM', []);$refs.fileSelection3.value = '';"></button>
+            </label>
         </label>
     </div>
 {{end}}

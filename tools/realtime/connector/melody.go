@@ -9,6 +9,8 @@ import (
 
 func NewMelodyConnector() *realtime.Connector {
 	melodyInstance := melody.New()
+	melodyInstance.Config.MaxMessageSize = 1200
+	// 1200 bytes allow a little more than 1000 chars.
 	connector := realtime.NewConnector(
 		func(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error {
 			return melodyInstance.HandleRequestWithKeys(writer, request, properties)
