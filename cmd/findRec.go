@@ -12,9 +12,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-  "github.com/TUM-Dev/gocast/dao"
-  "github.com/TUM-Dev/gocast/model"
-  "github.com/TUM-Dev/gocast/tools"
+  	"github.com/TUM-Dev/gocast/dao"
+  	"github.com/TUM-Dev/gocast/model"
+  	"github.com/TUM-Dev/gocast/tools"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
-  dao.DB = db
+  	dao.DB = db
 
 	var stream Stream
 	if err := db.Preload("StreamWorkers").First(&stream, streamID).Error; err != nil {
