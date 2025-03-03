@@ -156,7 +156,7 @@ export const initPlayer = function (
     const player = videojs(id, {
         liveui: true,
         fluid: fluid,
-        playbackRates: playbackSpeeds,
+        playbackRates: playbackSpeeds.filter((rate) => rate <= 2 || !videojs.browser.IS_SAFARI),
         html5: {
             reloadSourceOnError: true,
             vhs: {
