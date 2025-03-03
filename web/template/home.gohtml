@@ -121,7 +121,7 @@
                                 </div>
                                 <p>Keyboard Shortcuts</p>
                             </div>
-                            <div x-ref="keyboardShortcutsPopup" x-show="showPopup" class="tum-live-popup-container overlay" @keydown.escape.window="showPopup=false;">
+                            <div x-ref="keyboardShortcutsPopup" x-cloak x-show="showPopup" class="tum-live-popup-container overlay" @keydown.escape.window="showPopup=false;">
                                 <div class="tum-live-popup tum-live-bg" @click.outside="showPopup=false;">
                                     <h2>Keyboard Shortcuts
                                         <i class="icon-cancel" @click="showPopup=false;"></i>
