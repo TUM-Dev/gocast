@@ -174,9 +174,10 @@
             </a>
         </div>
     </div>
+    {{if le .TUMLiveContext.Course.Year 2022}}
     <p class="text-5 mx-auto w-4/5 block"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured
         from June 28th 2021
-        onwards.</p>
+        onwards.</p> {{end}}
     <script>
         admin.loadStats("activity-live", "courseGeneralStatsLive");
         admin.loadStats("activity-vod", "courseGeneralStatsVod");
