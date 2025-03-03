@@ -28,6 +28,8 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 		actions.Stream,
 		actions.StreamEnd,
 		actions.MkVOD,
+		actions.ProbeVodHealth,
+		actions.Cleanup,
 	}
 
 	jID := r.RunAction(a, data)
@@ -37,10 +39,14 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 }
 
 func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
-	cancel, ok := r.jobs[req.GetJobId()]
-	if ok {
-		cancel()
-		return nil, nil
+	contexts, ok := r.jobs[req.GetJobId()]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "stream not found")
 	}
-	return nil, status.Errorf(codes.NotFound, "stream not found")
+	cf, err := contexts.GetStreamCancelFunc()
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "action cancelation not possible: %s", err)
+	}
+	cf()
+	return nil, nil
 }

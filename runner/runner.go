@@ -42,7 +42,7 @@ type Runner struct {
 
 	draining bool
 	JobCount chan int
-	jobs     map[string]context.CancelFunc
+	jobs     map[string]jobContexts
 
 	hlsServer *HLSServer
 
@@ -53,6 +53,10 @@ type Runner struct {
 
 	notifications chan *protobuf.Notification
 	Metrics       *metrics.Broker
+}
+type jobContexts struct {
+	parent  context.CancelFunc
+	actions map[string]context.CancelFunc
 }
 
 func NewRunner(v string) *Runner {
@@ -66,7 +70,7 @@ func NewRunner(v string) *Runner {
 	return &Runner{
 		log:           log,
 		JobCount:      make(chan int),
-		jobs:          make(map[string]context.CancelFunc),
+		jobs:          make(map[string]jobContexts),
 		draining:      false,
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer")),
 		stats:         vmstats,
@@ -158,7 +162,9 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 	c, cancel := context.WithCancel(context.Background())
 	job := uuid.New().String()
 	r.JobCount <- 1
-	r.jobs[job] = cancel
+	r.jobs[job] = jobContexts{
+		parent: cancel,
+	}
 	go func() {
 		defer func() {
 			cancel()
@@ -166,12 +172,13 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 			r.JobCount <- -1
 		}()
 		for _, action := range a {
+			log := r.log.With("action", getFunctionName(action)).With("job", job)
 			for {
-				log := r.log.With("action", getFunctionName(action)).With("job", job)
-				log.Info("running action")
-				s := time.Now()
-				err := action(c, log, r.notifications, data, r.Metrics)
-				log.Info("action completed", "duration", time.Since(s).String())
+				if c.Err() != nil {
+					slog.Info("skipping action, parent context done.", "reason", c.Err().Error(), "job", job)
+					return
+				}
+				err := r.runSingularAction(c, action, data, log, job)
 				if err != nil {
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
@@ -179,7 +186,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 						break // escape retry loop on unrecoverable error
 					}
 				} else {
-					break // escape retry loop on no error
+					return // Action done without error
 				}
 			}
 		}
@@ -225,9 +232,32 @@ func getFunctionName(i interface{}) string {
 // Cleanup is called on force shutdown while actions are still running.
 // it cancels all running actions
 func (r *Runner) Cleanup() {
-	for _, cancelFunc := range r.jobs {
-		cancelFunc()
+	for _, job := range r.jobs {
+		job.parent()
 	}
 	// sleep 1 second longer than our commands default waitDelay
 	time.Sleep(time.Second * 11)
+}
+
+func (r *Runner) runSingularAction(ctx context.Context, action actions.Action, data map[string]any, log *slog.Logger, job string) error {
+	c, cancel := context.WithCancel(ctx)
+	r.jobs[job].actions[getFunctionName(action)] = cancel
+	defer delete(r.jobs[job].actions, getFunctionName(action))
+	defer cancel()
+	log.Info("running action")
+	s := time.Now()
+	err := action(c, log, r.notifications, data, r.Metrics)
+	log.Info("action completed", "duration", time.Since(s).String())
+	return err
+}
+
+// GetStreamCancelFunc returns the cancel func of the stream action or an error if it doesn't exist.
+func (c *jobContexts) GetStreamCancelFunc() (context.CancelFunc, error) {
+	fName := getFunctionName(actions.Stream(nil, nil, nil, nil, nil))
+	for i, cancelFunc := range c.actions {
+		if i == fName {
+			return cancelFunc, nil
+		}
+	}
+	return nil, fmt.Errorf("no stream cancel func in contexts")
 }

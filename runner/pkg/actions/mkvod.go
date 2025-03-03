@@ -36,8 +36,10 @@ func MkVOD(_ context.Context, _ *slog.Logger, notify chan *protobuf.Notification
 	}
 
 	vodDir := path.Join(config.Config.StoragePath, fmt.Sprintf("%d", streamID), streamVersion)
+	d["vodDir"] = vodDir
+
 	err := os.MkdirAll(vodDir, os.ModePerm)
-	if err != nil {
+	if err != nil && !os.IsExist(err) {
 		return AbortingError(fmt.Errorf("create VOD directory: %w", err))
 	}
 
