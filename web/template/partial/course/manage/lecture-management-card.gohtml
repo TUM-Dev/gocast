@@ -223,7 +223,7 @@
             </div>
         </div>
 
-        <button x-show="uiEditMode == 0 && !isCopying"
+        <button x-show="uiEditMode == 0 && !lecture.isCopying"
                 @click="startSingleEdit(); closeMoreDropdown();"
                 class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-b">
             <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>
