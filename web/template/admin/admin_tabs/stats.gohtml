@@ -75,7 +75,7 @@
         </a>
     </div>
 </div>
-{{if le .TUMLiveContext.Course.Year 2022}}
+{{if or (le .TUMLiveContext.Course.Year 2022) (eq .TUMLiveContext.Course.Model.ID 0)}} <!-- CourseID is 0 when statistics are server-wide -->
 <p class="text-5 mx-auto w-4/5 block"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured
     from June 28th 2021
     onwards.</p>{{end}}
