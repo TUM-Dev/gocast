@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
+	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-  	"github.com/TUM-Dev/gocast/dao"
-  	"github.com/TUM-Dev/gocast/model"
-  	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func main() {
@@ -23,6 +24,8 @@ func main() {
 	}
 
 	streamID := os.Args[1]
+
+	gormJSONLogger := slogGorm.New()
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
@@ -38,18 +41,22 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
-  	dao.DB = db
+	dao.DB = db
 
-	var stream Stream
+	var stream model.Stream
+	var course model.Course
+
 	if err := db.Preload("StreamWorkers").First(&stream, streamID).Error; err != nil {
 		log.Fatal("Stream not found:", err)
+	}
+	if err := db.First(&course, stream.CourseID).Error; err != nil {
+		log.Fatal("Course not found:", err)
 	}
 
 	year, month, day := stream.Start.Date()
 
 	searchDate := fmt.Sprintf("%04d-%02d-%02d", year, month, day)
-  // TODO: Need to find slug
-	streamSlug := stream.StreamName
+	slug := course.Slug
 	directories := []string{
 		"/var/lib/docker/volumes/live_recordings/_data",
 		"/srv/cephfs/livestream/TUM-Live/needs-fix",
@@ -62,7 +69,7 @@ func main() {
 			if err == nil {
 				files := strings.Split(string(output), "\n")
 				for _, file := range files {
-					if strings.Contains(file, searchDate) && strings.Contains(file, streamSlug) {
+					if strings.Contains(file, searchDate) && strings.Contains(file, slug) {
 						fmt.Printf("File found on %s in %s: %s\n", worker.Host, dir, file)
 					}
 				}
