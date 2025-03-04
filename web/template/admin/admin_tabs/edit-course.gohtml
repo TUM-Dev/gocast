@@ -23,32 +23,38 @@
                 role="alert">
                 Course was created successfully.
             </div>
-        {{if (eq $course.TeachingTerm "Test")}}
-        <div class="p-3 text-md border border-blue-500 text-blue-500 bg-blue-100 dark:bg-blue-200 dark:border-blue-700 dark:text-blue-700 rounded-lg flex items-center" role="alert">
-            <div class="flex-shrink-0">
-                <i class="fa-solid fa-info-circle text-4 text-blue-500 dark:text-blue-700"></i>
-            </div>
-            <div class="ml-3" x-init="console.log('currentYear: {{$currentYear}}', 'currentTerm: {{$currentTerm}}', 'courseYear: {{$course.Year}}', 'courseTerm: {{$course.TeachingTerm}}')">
-                <div class="font-bold">Info: Test Course</div>
-                <div class="text-sm">
-                    This course is your personal test course. It will not be shown in the course overview to students and is only visible to you as an admin. <br>
+            {{if (eq $course.Year 1234)}}
+                <div x-data="{ show: true }" x-show="show" class="p-3 text-md border border-blue-500 text-blue-500 bg-blue-100 dark:bg-blue-200 dark:border-blue-700 dark:text-blue-700 rounded-lg flex items-center" role="alert">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-info-circle text-4 text-blue-500 dark:text-blue-700"></i>
+                    </div>
+                    <div class="ml-3" x-init="console.log('currentYear: {{$currentYear}}', 'currentTerm: {{$currentTerm}}', 'courseYear: {{$course.Year}}', 'courseTerm: {{$course.TeachingTerm}}')">
+                        <div class="font-bold">Info: Test Course</div>
+                        <div class="text-sm">
+                            This course is your personal test course. It will not be shown in the course overview to students and is only visible to you as an admin. <br>
+                        </div>
+                    </div>
+                    <button @click="show = false" class="ml-auto text-blue-500 dark:text-blue-700">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
                 </div>
-            </div>
-        </div>
-        {{else if or (ne $course.TeachingTerm $currentTerm) (ne $course.Year $currentYear)}}
-        <div class="p-3 text-md border bg-yellow-100 border-yellow-600 text-yellow-600 dark:bg-yellow-200 dark:border-yellow-700 dark:text-yellow-700 rounded-lg flex items-center" role="alert">
-            <div class="flex-shrink-0">
-                <i class="fa-solid fa-warning text-4 text-yellow-500 dark:text-yellow-700"></i>
-            </div>
-            <div class="ml-3" x-init="console.log('currentYear: {{$currentYear}}', 'currentTerm: {{$currentTerm}}', 'courseYear: {{$course.Year}}', 'courseTerm: {{$course.TeachingTerm}}')">
-                <div class="font-bold">Warning: Outdated Semester</div>
-                <div class="text-sm">
-                    This course is not from the current semester and might not be shown in the course overview to students. <br>
-                    If this is a recurring course, please select the course from the current semester and year.
+            {{else if or (ne $course.TeachingTerm $currentTerm) (ne $course.Year $currentYear)}}
+                <div x-data="{ show: true }" x-show="show" class="p-3 text-md border bg-yellow-100 border-yellow-600 text-yellow-600 dark:bg-yellow-200 dark:border-yellow-700 dark:text-yellow-700 rounded-lg flex items-center" role="alert">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-warning text-4 text-yellow-500 dark:text-yellow-700"></i>
+                    </div>
+                    <div class="ml-3" x-init="console.log('currentYear: {{$currentYear}}', 'currentTerm: {{$currentTerm}}', 'courseYear: {{$course.Year}}', 'courseTerm: {{$course.TeachingTerm}}')">
+                        <div class="font-bold">Warning: Outdated Semester</div>
+                        <div class="text-sm">
+                            This course is not from the current semester and might not be shown in the course overview to students. <br>
+                            If this is a recurring course, please select the course from the current semester and year.
+                        </div>
+                    </div>
+                    <button @click="show = false" class="ml-auto text-yellow-600 dark:text-yellow-700">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
                 </div>
-            </div>
-        </div>
-        {{end}}
+            {{end}}
         </div>
 
         <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"

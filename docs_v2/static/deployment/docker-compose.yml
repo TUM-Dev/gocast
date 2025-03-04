@@ -1,0 +1,184 @@
+version: '3.8'
+
+services:
+
+  # See (https://tumlive-docs.pages.dev/docs/deployment/add-worker)
+  worker:
+    image: ghcr.io/tum-dev/gocast/worker:latest
+    networks:
+      - default
+    environment:
+      - Token=<your-organization-token> # TODO: replace this with your organization JWT
+      - MainBase=live.rbg.tum.de
+      - Host={{.Node.Hostname}}
+      - Address=<your-worker-address> # TODO: replace this with the address of your worker (e.g. https://worker.example.com or http://123.123.123.123)
+      - LrzUser=
+      - LrzMail=
+      - LrzPhone=
+      - LrzSubDir=RBG
+      - LrzUploadUrl=<your-vod-service-addr>:8089 # TODO: replace this with the address of your vod service (e.g. http://vodservice:8089)
+      - LogLevel=debug
+      - PersistDir=/persist
+      - VodURLTemplate=<your-edge-server-addr>/vod/%s.mp4/playlist.m3u8 # TODO: replace this with the address of your edge server (e.g. https://edge.example.com)
+    ports:
+      - target: 1935
+        published: 1935
+        mode: host
+        protocol: tcp
+      - target: 8060
+        published: 8060
+        protocol: tcp
+        mode: host
+      - target: 50051
+        published: 50051
+        protocol: tcp
+        mode: host
+      # Uncomment the following lines if the Worker and the Edge server are in different networks
+      # - target: 8085 # The port on which the workers provides its HLS files to the Edge server
+      #   published: 8085
+      #   mode: host
+      #   protocol: tcp
+    volumes:
+      - /path/to/recordings:/recordings
+      - /path/to/persist:/persist
+      - /path/to/mass:/mass
+      - /path/to/workerlog:/var/log/stream
+    deploy:
+      mode: global # replicate to every node
+      placement:
+        constraints:
+          - "node.labels.worker==true"
+      restart_policy:
+        condition: on-failure
+  
+  # See (https://tumlive-docs.pages.dev/docs/deployment/add-runner)
+  runner:
+    image: ghcr.io/tum-dev/gocast/runner:latest
+    networks:
+      - default
+    environment:
+      - LOG_FMT=txt
+      - LOG_LEVEL=debug
+      - PORT=50057
+      - GOCAST_SERVER=live.rbg.tum.de:50056
+      - REALHOST={{.Node.Hostname}}
+      - VERSION=dev
+      - TOKEN=<your-organization-token> # TODO: replace this with your organization JWT
+    ports:
+      - target: 8187
+        published: 8187
+        protocol: tcp
+        mode: host
+      # Uncomment the following lines to expose the Runner to the public
+      # - target: 50057
+      #   published: 50057
+      #   protocol: tcp
+      #   mode: host
+    volumes:
+      - /path/to/recordings:/recordings
+      - /path/to/persist:/persist
+      - /path/to/mass:/mass
+      - /path/to/workerlog:/var/log/stream
+    deploy:
+      mode: global # replicate to every node
+      placement:
+        constraints:
+          - "node.labels.worker==true"
+      restart_policy:
+        condition: on-failure
+
+  # See (https://tumlive-docs.pages.dev/docs/deployment/add-vodservice)
+  vodservice:
+    image: ghcr.io/tum-dev/gocast/vod-service:1.4.9
+    networks:
+      - default
+    ports:
+      - target: 8089
+        published: 8089
+        protocol: tcp
+        mode: host
+    environment:
+      - OUTPUT_DIR=/out
+    volumes:
+      - /path/to/vod:/out
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - "node.labels.worker==true"
+
+  # See (https://tumlive-docs.pages.dev/docs/deployment/setup-edge)
+  edge:
+    image: ghcr.io/tum-dev/gocast/worker-edge:latest
+    networks:
+      - default
+    ports:
+      - target: 8090
+        published: 80
+        mode: host
+        protocol: tcp
+      - target: 8443
+        published: 443
+        mode: host
+        protocol: tcp
+    environment:
+      - CERT_DIR=/cert/
+      - VOD_DIR=/vod/
+      - MAIN_INSTANCE=https://live.rbg.tum.de
+      - ADMIN_TOKEN=123 # TODO: replace this with a random secret only known to your team (this can be used to access video files without the usually required JWT)
+      - PORT=8090
+    volumes:
+      - /path/to/vod:/vod
+      - /path/to/cert:/cert # needs to contain fullchain.pem and privkey.pem
+    deploy:
+      mode: global
+      endpoint_mode: dnsrr
+      placement:
+        constraints:
+          - "node.labels.edge==true"
+  
+  # The following services are optional and only needed if you want to use the whisper transcriber
+  voice-service:
+    image: ghcr.io/tum-dev/tum-live-voice-service-nvidia:0.0.5
+    volumes:
+      - /path/to/mass:/mass
+    networks:
+      - default
+    deploy:
+      resources:
+        reservations:
+          generic_resources:
+            - discrete_resource_spec:
+                kind: 'gpu'
+                value: 0
+      mode: global
+      placement:
+        constraints:
+          - "node.labels.voiceservice==true"
+    environment:
+      - TRANSCRIBER=whisper
+      - WHISPER_MODEL=medium
+      - MAX_WORKERS=1
+      - DEBUG=1
+      - REC_HOST=tumlive
+      - REC_PORT=50053
+    ports:
+      - target: 50055
+        published: 50055
+        protocol: tcp
+        mode: host
+
+volumes:
+  recordings:
+  persist:
+  mass:
+  workerlog:
+  vod:
+  cert:
+
+networks:
+  default:
+    driver: overlay
+  host:
+    name: host
+    external: true

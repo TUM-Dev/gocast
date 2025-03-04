@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 3840 2160" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g id="TUMlive" transform="matrix(1.76809,0,0,1.76809,-130.555,-1308)">
+        <g>
+            <g id="Logo_of_the_Technical_University_of_Munich.svg" transform="matrix(4.10033,0,0,4.10033,910.635,1262.37)">
+                <g transform="matrix(1,0,0,1,-204.08,-106.233)">
+                    <clipPath id="_clip1">
+                        <rect x="0" y="0" width="408.16" height="212.467"/>
+                    </clipPath>
+                    <g clip-path="url(#_clip1)">
+                        <path id="path6" d="M156.555,0L156.555,173.328L201.284,173.328L201.284,0L408.16,0L408.16,212.467L369.021,212.467L369.021,39.139L324.292,39.139L324.292,212.467L285.153,212.467L285.153,39.139L240.423,39.139L240.423,212.467L117.416,212.467L117.416,39.139L78.277,39.139L78.277,212.467L39.139,212.467L39.139,39.139L0,39.139L0,0L156.555,0Z" style="fill:#3070b3;fill-rule:nonzero;"/>
+                    </g>
+                </g>
+            </g>
+            <g transform="matrix(0.56876,0,0,0.56876,429.531,787.115)">
+                <g>
+                    <g transform="matrix(0.960757,0,0,0.859682,-502.471,174.616)">
+                        <g>
+                            <path d="M3769.81,2002.61C3812.68,2002.61 3847.43,1963.77 3847.43,1915.86L3847.43,1403.62C3847.43,1355.71 3812.68,1316.87 3769.81,1316.87L2447.41,1316.87C2404.54,1316.87 2369.78,1355.71 2369.78,1403.62L2369.78,1915.86C2369.78,1963.77 2404.54,2002.61 2447.41,2002.61L3769.81,2002.61ZM3692.18,1829.1L2525.04,1829.1C2525.04,1829.1 2525.04,1490.38 2525.04,1490.38C2525.04,1490.38 3692.18,1490.38 3692.18,1490.38C3692.18,1614.8 3692.18,1829.1 3692.18,1829.1L3692.18,1829.1Z" style="fill:#e5312b;"/>
+                            <rect x="2447.41" y="1403.62" width="1322.4" height="512.234" style="fill:#e74431;"/>
+                            <rect x="2447.41" y="1403.62" width="1322.4" height="512.234" style="fill:#e5312b;"/>
+                        </g>
+                    </g>
+                    <g transform="matrix(1.0684,0,0,1.0684,-3419.75,3.39245)">
+                        <g transform="matrix(577.263,0,0,577.263,4891.51,1701.84)">
+                            <path d="M0.069,-0.714L0.226,-0.714L0.226,-0.132L0.574,-0.132L0.574,-0L0.069,-0L0.069,-0.714Z" style="fill:#fff;fill-rule:nonzero;"/>
+                        </g>
+                        <g transform="matrix(577.263,0,0,577.263,5233.82,1701.84)">
+                            <rect x="0.069" y="-0.714" width="0.157" height="0.714" style="fill:#fff;fill-rule:nonzero;"/>
+                        </g>
+                        <g transform="matrix(577.263,0,0,577.263,5404.12,1701.84)">
+                            <path d="M0.401,-0L0.224,-0L-0.008,-0.714L0.154,-0.714L0.313,-0.212L0.315,-0.212L0.476,-0.714L0.638,-0.714L0.401,-0Z" style="fill:#fff;fill-rule:nonzero;"/>
+                        </g>
+                        <g transform="matrix(577.263,0,0,577.263,5767.79,1701.84)">
+                            <path d="M0.069,-0.714L0.603,-0.714L0.603,-0.582L0.226,-0.582L0.226,-0.429L0.572,-0.429L0.572,-0.307L0.226,-0.307L0.226,-0.132L0.611,-0.132L0.611,-0L0.069,-0L0.069,-0.714Z" style="fill:#fff;fill-rule:nonzero;"/>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+    <g id="TUMlive1" serif:id="TUMlive">
+    </g>
+</svg>

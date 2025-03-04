@@ -2,8 +2,9 @@ package dao
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ type StreamsDao interface {
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
 	GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error)
 	GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error)
+	CreateOrGetTestCourse(user *model.User) (model.Course, error)
 
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
@@ -318,20 +320,21 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 
 // GetSoonStartingStreamInfo returns the stream key, course slug and course name of an upcoming stream.
 func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error) {
-	var result struct {
+	var results []struct {
 		CourseID  uint
 		StreamKey string
 		ID        string
 		Slug      string
+		Start     time.Time
+		End       time.Time
 	}
 	now := time.Now()
 	query := DB.Table("streams").
-		Select("streams.course_id, streams.stream_key, streams.id, courses.slug").
+		Select("streams.course_id, streams.stream_key, streams.id, courses.slug, streams.start, streams.end").
 		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
 		Joins("JOIN courses ON courses.id = course_admins.course_id").
-		Where("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
-		Or("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now).     // Streams that just finished in the last 15 minutes
-		Order("streams.start ASC")
+		Where("courses.year != 1234 AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
+		Or("courses.year != 1234 AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now)      // Streams that just finished in the last 15 minutes
 
 	if slug != "" {
 		query = query.Where("courses.slug = ?", slug)
@@ -343,19 +346,26 @@ func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, yea
 		query = query.Where("courses.teaching_term = ?", term)
 	}
 
-	err := query.Limit(1).Scan(&result).Error
-	if err == gorm.ErrRecordNotFound || result.StreamKey == "" || result.ID == "" || result.Slug == "" {
+	err := query.Order("streams.start ASC").Find(&results).Error
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(results) == 0 {
 		stream, course, err := d.CreateOrGetTestStreamAndCourse(user)
 		if err != nil {
 			return "", "", err
 		}
 		return stream.StreamKey, fmt.Sprintf("%s-%d", course.Slug, stream.ID), nil
 	}
-	if err != nil {
-		logger.Error("Error getting soon starting stream: %v", slog.String("err", err.Error()))
-		return "", "", err
+
+	for _, result := range results {
+		if now.After(result.Start) && now.Before(result.End) {
+			return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
+		}
 	}
 
+	result := results[0]
 	return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
 }
 
@@ -397,10 +407,21 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 // Helper method to fetch test course for current user.
 func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
+	userName := user.GetPreferredName()
+
+	if userName != "" {
+		userName += "'s "
+	}
+
+	// Hash the user ID to create a unique slug withouth exposing the user ID
+	hasher := sha256.New()
+	hasher.Write([]byte(fmt.Sprintf("%d", user.ID)))
+	hashedUserID := hex.EncodeToString(hasher.Sum(nil))
+
 	err := DB.FirstOrCreate(&course, model.Course{
-		Name:         "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
-		TeachingTerm: "Test",
-		Slug:         "TESTCOURSE",
+		Name:         userName + "Test Course",
+		TeachingTerm: "W",
+		Slug:         "TEST-" + hashedUserID,
 		Year:         1234,
 		Visibility:   "hidden",
 		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary

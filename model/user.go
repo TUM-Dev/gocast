@@ -259,6 +259,19 @@ func (u *User) IsAdminOfCourse(course Course) bool {
 	return u.Role == AdminType || course.UserID == u.ID
 }
 
+// IsAllowedToWatchPrivateCourse checks if the user is allowed to watch a private course.
+func (u *User) IsAllowedToWatchPrivateCourse(course Course) bool {
+	if u != nil {
+		for _, c := range u.Courses {
+			if c.ID == course.ID {
+				return true
+			}
+		}
+		return u.IsEligibleToWatchCourse(course)
+	}
+	return false
+}
+
 // IsEligibleToWatchCourse checks if the user is allowed to access the course
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	if u == nil {
@@ -349,6 +362,16 @@ func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester S
 		}
 	}
 	return courses
+}
+
+// hasTestCourse checks if the user has a test course
+func (u *User) HasTestCourse() bool {
+	for _, course := range u.AdministeredCourses {
+		if course.Year == 1234 {
+			return true
+		}
+	}
+	return false
 }
 
 var (

@@ -1,0 +1,81 @@
+---
+title: "2. VoD Service"
+sidebar_position: 7
+description: "The VoD Service exposes a simple HTTP interface that accepts file uploads and packages them to a HLS stream in a configured location."
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# VoD Service
+
+The VoD Service exposes a simple HTTP interface that accepts file uploads and packages them to a HLS stream in a configured location. This stream may then be distributed by the TUM-Live/worker/edge module.
+
+:::info
+Keep in mind: The input file is not re-encoded, if its codec or format is infeasible for browsers, so will the HLS stream be.
+:::
+
+## Create VoD Service
+
+<Tabs
+  defaultValue="docker"
+  values={[
+    {label: 'Docker', value: 'docker'},
+    {label: 'Manually', value: 'manually'},
+  ]
+}>
+
+<TabItem value="docker">
+
+Start the VoD Service:
+:::note
+Make sure that `path/to/vod` is a writable directory of your shared storage.
+:::
+
+```sh
+docker run -d -p 8089:8089 -e OUTPUT_DIR=/out -v /path/to/vod:/out ghcr.io/tum-dev/gocast/vod-service:latest
+```
+
+</TabItem>
+
+<TabItem value="manually">
+
+1. Clone the GoCast repository:
+   ```sh
+   git clone https://github.com/tum-Dev/gocast
+   ```
+2. Change into the VoD Service directory:
+
+   ```sh
+   cd gocast && cd vod-service
+   ```
+
+3. Start the VoD Service:
+   ```sh
+   TODO
+   ```
+
+</TabItem>
+
+</Tabs>
+
+## Test VoD Service
+
+To test that the VoD Service is working as expected, upload a sample video ...
+
+```sh
+curl -F 'filename=@/path/to/Exiting_video.mp4' http://localhost:8089
+```
+
+... and check if it has been saved correctly at the expected location:
+
+```sh
+ls -lah /path/to/vod/Exiting_video.mp4/
+> -r--r-- 1 root   root   3.9K Jan  6 19:11 playlist.m3u8
+> -r--r-- 1 root   root   4.2M Jan  6 19:11 segment0000.ts
+> -r--r-- 1 root   root   3.3M Jan  6 19:11 segment0001.ts
+> -r--r-- 1 root   root   4.8M Jan  6 19:11 segment0002.ts
+> -r--r-- 1 root   root   3.4M Jan  6 19:11 segment0003.ts
+> -r--r-- 1 root   root   4.3M Jan  6 19:11 segment0004.ts
+> -r--r-- 1 root   root   4.5M Jan  6 19:11 segment0005.ts
+```
