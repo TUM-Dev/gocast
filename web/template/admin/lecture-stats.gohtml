@@ -81,9 +81,10 @@
                 </a>-->
             </div>
         </div>
-        <!--<p class="text-5 mx-auto w-4/5 block"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured
+        {{if le .Lecture.Start.Year 2021}}
+        <p class="text-5 mx-auto w-4/5 block"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured
             from June 28th 2021
-            onwards.</p>-->
+            onwards.</p>{{end}}
         <script>
             admin.loadLectureStats("lecture", "lectureLiveStats", "{{.Lecture.Model.ID}}");
             admin.loadLectureStats("day", "weekdays", "{{.Lecture.Model.ID}}");
