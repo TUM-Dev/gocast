@@ -512,6 +512,12 @@
                                                                     <div class="absolute tum-live-menu py-px bottom-full right-0 h-fit overflow-hidden z-50 w-56">
                                                                         {{if $user}}
                                                                             <button type="button"
+                                                                                    @click=""
+                                                                                    class="tum-live-menu-item">
+                                                                                <i class="fa-solid fa-pencil-square mr-4"></i>
+                                                                                <span class="block">Edit personal lecture title</span>
+                                                                            </button>
+                                                                            <button type="button"
                                                                                     @click="vod.Progress.ToggleWatched()"
                                                                                     class="tum-live-menu-item">
                                                                                 <i class="fa-solid mr-4"
