@@ -124,6 +124,10 @@ export class Stream implements Identifiable {
         return Math.floor((this.StartDate().getTime() - dateOfFirstWeek.getTime()) / MS_IN_DAY / 7) + 1;
     }
 
+    public updatePersonalLectureTitle(newLectureTitle: string): void {
+        this.Name = newLectureTitle;
+    }
+
     private static TimeOf(d: string): string {
         return new Date(d).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
     }

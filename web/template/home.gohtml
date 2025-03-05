@@ -482,15 +482,21 @@
                                                                     </div>
                                                                 </div>
                                                             </a>
-                                                            <div class="relative flex justify-between px-1 min-h-[32px]">
+                                                            <div class="relative flex justify-between px-1 min-h-[32px]" x-data=" {showLectureTitleInput:false, personalVodTitle:vod.Name} ">
                                                                 <div class="w-full">
-                                                                    <template x-if="vod.HasName()">
+                                                                    <template x-if="vod.HasName() && !showLectureTitleInput">
                                                                         <a class="title overflow-hidden"
                                                                            :href="course.WatchURL(vod.ID)"
                                                                            :title="vod.Name"
                                                                            x-text="vod.Name">
-
                                                                         </a>
+                                                                    </template>
+                                                                    <template x-if="showLectureTitleInput">
+                                                                        <input class="tum-live-input-sm" type="text"
+                                                                               x-model="personalVodTitle" maxlength="80" autofocus
+                                                                               @click.outside="vod.updatePersonalLectureTitle(personalVodTitle);showLectureTitleInput=false"
+                                                                               @keydown.enter="vod.updatePersonalLectureTitle(personalVodTitle);showLectureTitleInput=false"
+                                                                               @keydown.escape="personalVodTitle=vod.Name;showLectureTitleInput=false">
                                                                     </template>
                                                                     <template x-if="vod.HasName()">
                                                                     <span class="date text-sm"
@@ -512,7 +518,7 @@
                                                                     <div class="absolute tum-live-menu py-px bottom-full right-0 h-fit overflow-hidden z-50 w-56">
                                                                         {{if $user}}
                                                                             <button type="button"
-                                                                                    @click=""
+                                                                                    @click="showLectureTitleInput=true;vod.Dropdown.value=false;"
                                                                                     class="tum-live-menu-item">
                                                                                 <i class="fa-solid fa-pencil-square mr-4"></i>
                                                                                 <span class="block">Edit personal lecture title</span>

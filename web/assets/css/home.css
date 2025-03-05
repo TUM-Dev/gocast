@@ -370,6 +370,14 @@
     @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
 }
 
+.tum-live-input-sm {
+    @apply w-full h-7 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+}
+
+.tum-live-input-sm:focus{
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
+}
+
 label:has(~ .tum-live-input) {
     @apply text-sm text-5 font-light mb-2;
 }
