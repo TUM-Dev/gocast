@@ -156,7 +156,8 @@ export const initPlayer = function (
     const player = videojs(id, {
         liveui: true,
         fluid: fluid,
-        playbackRates: playbackSpeeds,
+        // restrict clickable playbackRates to <= 2.0 if on Safari, because higher rates cause weird behaviour (see issue #1222)
+        playbackRates: playbackSpeeds.filter((rate) => rate <= 2 || !videojs.browser.IS_SAFARI),
         html5: {
             reloadSourceOnError: true,
             vhs: {
