@@ -1,30 +1,26 @@
 package model
 
 import (
+	"errors"
 	"gorm.io/gorm"
 )
 
-// UserDefinedLectureTitle represents todo...
+// UserDefinedLectureTitle represents a custom lecture title for a stream by one user
 type UserDefinedLectureTitle struct {
-
-	// todo. Please specify column, type and not null (if required):
-	// Name string `gorm:"column:name;type:text;not null;default:'unnamed'"`
 	UserID   string `gorm:"primaryKey" json:"userId"`
 	StreamID string `gorm:"primaryKey" json:"streamId"`
-	Title    string `gorm:"type:varchar(255)" json:"title"`
+	Title    string `gorm:"type:varchar(256)" json:"title"`
 }
 
-// TableName returns the name of the table for the UserDefinedLectureTitle model in the database.
-func (*UserDefinedLectureTitle) TableName() string {
-	return "user_defined_lecture_titles" // todo
-}
+var (
+	ErrTitleTooLong = errors.New("title is too long")
+)
 
-// BeforeCreate todo
+// BeforeCreate is a GORM hook that is called before a new user is created.
+// UserDefinedLectureTitle will not be saved if the title is too long
 func (u *UserDefinedLectureTitle) BeforeCreate(tx *gorm.DB) (err error) {
-	return nil
-}
-
-// AfterFind todo
-func (u *UserDefinedLectureTitle) AfterFind(tx *gorm.DB) (err error) {
+	if len(u.Title) > 256 {
+		return ErrTitleTooLong
+	}
 	return nil
 }

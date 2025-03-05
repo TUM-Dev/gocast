@@ -12,31 +12,31 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockUser_defined_lecture_titlesDao is a mock of User_defined_lecture_titlesDao interface.
-type MockUser_defined_lecture_titlesDao struct {
+// MockUserDefinedLectureTitlesDao is a mock of UserDefinedLectureTitlesDao interface.
+type MockUserDefinedLectureTitlesDao struct {
 	ctrl     *gomock.Controller
-	recorder *MockUser_defined_lecture_titlesDaoMockRecorder
+	recorder *MockUserDefinedLectureTitlesDaoMockRecorder
 }
 
-// MockUser_defined_lecture_titlesDaoMockRecorder is the mock recorder for MockUser_defined_lecture_titlesDao.
-type MockUser_defined_lecture_titlesDaoMockRecorder struct {
-	mock *MockUser_defined_lecture_titlesDao
+// MockUserDefinedLectureTitlesDaoMockRecorder is the mock recorder for MockUserDefinedLectureTitlesDao.
+type MockUserDefinedLectureTitlesDaoMockRecorder struct {
+	mock *MockUserDefinedLectureTitlesDao
 }
 
-// NewMockUser_defined_lecture_titlesDao creates a new mock instance.
-func NewMockUser_defined_lecture_titlesDao(ctrl *gomock.Controller) *MockUser_defined_lecture_titlesDao {
-	mock := &MockUser_defined_lecture_titlesDao{ctrl: ctrl}
-	mock.recorder = &MockUser_defined_lecture_titlesDaoMockRecorder{mock}
+// NewMockUserDefinedLectureTitlesDao creates a new mock instance.
+func NewMockUserDefinedLectureTitlesDao(ctrl *gomock.Controller) *MockUserDefinedLectureTitlesDao {
+	mock := &MockUserDefinedLectureTitlesDao{ctrl: ctrl}
+	mock.recorder = &MockUserDefinedLectureTitlesDaoMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockUser_defined_lecture_titlesDao) EXPECT() *MockUser_defined_lecture_titlesDaoMockRecorder {
+func (m *MockUserDefinedLectureTitlesDao) EXPECT() *MockUserDefinedLectureTitlesDaoMockRecorder {
 	return m.recorder
 }
 
 // Create mocks base method.
-func (m *MockUser_defined_lecture_titlesDao) Create(arg0 context.Context, arg1 *model.UserDefinedLectureTitle) error {
+func (m *MockUserDefinedLectureTitlesDao) Create(arg0 context.Context, arg1 *model.UserDefinedLectureTitle) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -44,36 +44,50 @@ func (m *MockUser_defined_lecture_titlesDao) Create(arg0 context.Context, arg1 *
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockUser_defined_lecture_titlesDaoMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUser_defined_lecture_titlesDao)(nil).Create), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Create), arg0, arg1)
 }
 
 // Delete mocks base method.
-func (m *MockUser_defined_lecture_titlesDao) Delete(arg0 context.Context, arg1 uint) error {
+func (m *MockUserDefinedLectureTitlesDao) Delete(arg0 context.Context, arg1, arg2 uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
+	ret := m.ctrl.Call(m, "Delete", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockUser_defined_lecture_titlesDaoMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Delete(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUser_defined_lecture_titlesDao)(nil).Delete), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Delete), arg0, arg1, arg2)
 }
 
 // Get mocks base method.
-func (m *MockUser_defined_lecture_titlesDao) Get(arg0 context.Context, arg1 uint) (model.UserDefinedLectureTitle, error) {
+func (m *MockUserDefinedLectureTitlesDao) Get(arg0 context.Context, arg1, arg2 uint) (model.UserDefinedLectureTitle, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0, arg1)
+	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2)
 	ret0, _ := ret[0].(model.UserDefinedLectureTitle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockUser_defined_lecture_titlesDaoMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Get(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUser_defined_lecture_titlesDao)(nil).Get), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Get), arg0, arg1, arg2)
+}
+
+// UpdateOrCreate mocks base method.
+func (m *MockUserDefinedLectureTitlesDao) UpdateOrCreate(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateOrCreate", c, userLectureTitle)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateOrCreate indicates an expected call of UpdateOrCreate.
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) UpdateOrCreate(c, userLectureTitle interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrCreate", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).UpdateOrCreate), c, userLectureTitle)
 }

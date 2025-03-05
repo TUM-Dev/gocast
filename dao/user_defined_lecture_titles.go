@@ -10,13 +10,16 @@ import (
 
 type UserDefinedLectureTitlesDao interface {
 	// Get UserDefinedLectureTitle by ID
-	Get(context.Context, uint) (model.UserDefinedLectureTitle, error)
+	Get(context.Context, uint, uint) (model.UserDefinedLectureTitle, error)
 
 	// Create a new UserDefinedLectureTitle for the database
 	Create(context.Context, *model.UserDefinedLectureTitle) error
 
 	// Delete a UserDefinedLectureTitle by id.
-	Delete(context.Context, uint) error
+	Delete(context.Context, uint, uint) error
+
+	// UpdateOrCreate updates the entry if it exists, creates it else
+	UpdateOrCreate(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error
 }
 
 type userDefinedLectureTitlesDao struct {
@@ -27,9 +30,9 @@ func NewUserDefinedLectureTitlesDao() UserDefinedLectureTitlesDao {
 	return userDefinedLectureTitlesDao{db: DB}
 }
 
-// Get a userDefinedLectureTitlesDao by id.
-func (d userDefinedLectureTitlesDao) Get(c context.Context, id uint) (res model.UserDefinedLectureTitle, err error) {
-	return res, d.db.WithContext(c).First(&res, id).Error
+// Get a userDefinedLectureTitlesDao by userID and streamID
+func (d userDefinedLectureTitlesDao) Get(c context.Context, userID uint, streamID uint) (res model.UserDefinedLectureTitle, err error) {
+	return res, d.db.WithContext(c).First(&res, "user_id = ? AND stream_id = ?", userID, streamID).Error
 }
 
 // Create a userDefinedLectureTitlesDao.
@@ -38,6 +41,11 @@ func (d userDefinedLectureTitlesDao) Create(c context.Context, it *model.UserDef
 }
 
 // Delete a userDefinedLectureTitlesDao by id.
-func (d userDefinedLectureTitlesDao) Delete(c context.Context, id uint) error {
-	return d.db.WithContext(c).Delete(&model.UserDefinedLectureTitle{}, id).Error
+func (d userDefinedLectureTitlesDao) Delete(c context.Context, userID uint, streamID uint) error {
+	return d.db.WithContext(c).Delete(&model.UserDefinedLectureTitle{}, "user_id = ? AND stream_id = ?", userID, streamID).Error
+}
+
+// UpdateOrCreate updates the entry if it exists, creates it else
+func (d userDefinedLectureTitlesDao) UpdateOrCreate(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error {
+	return d.db.WithContext(c).Save(userLectureTitle).Error
 }
