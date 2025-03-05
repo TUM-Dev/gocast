@@ -212,6 +212,7 @@ func main() {
 		&model.TranscodingFailure{},
 		&model.Email{},
 		&model.Runner{},
+		&model.UserDefinedLectureTitle{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

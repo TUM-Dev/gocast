@@ -53,8 +53,9 @@ type Stream struct {
 	StreamWorkers         []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses      []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections         []VideoSection
-	TranscodingProgresses []TranscodingProgress `gorm:"foreignKey:StreamID"`
-	Private               bool                  `gorm:"not null;default:false"`
+	TranscodingProgresses []TranscodingProgress     `gorm:"foreignKey:StreamID"`
+	Private               bool                      `gorm:"not null;default:false"`
+	CustomLectureTitles   []UserDefinedLectureTitle `gorm:"foreignKey:StreamID" json:"-"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
