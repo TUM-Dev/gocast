@@ -13,7 +13,7 @@ const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
 export class Stream implements Identifiable {
     readonly ID: number;
-    readonly Name: string;
+    Name: string;
     readonly IsRecording: boolean;
     readonly IsPlanned: boolean;
     readonly IsComingUp: boolean;
