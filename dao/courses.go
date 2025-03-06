@@ -243,7 +243,7 @@ func (d coursesDao) GetCourseBySlugYearTermUser(ctx context.Context, slug string
 		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start desc")
-	}).Preload("Streams.CustomLectureTitles", "userID = ?", userID).
+	}).Preload("Streams.CustomLectureTitles", "user_id = ?", userID).
 		Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearTermUser%v%v%v%v", slug, term, year, userID), course, 1, time.Minute)
