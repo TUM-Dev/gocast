@@ -13,7 +13,8 @@ const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
 export class Stream implements Identifiable {
     readonly ID: number;
-    Name: string;
+    readonly Name: string;
+    CustomName: string;
     readonly IsRecording: boolean;
     readonly IsPlanned: boolean;
     readonly IsComingUp: boolean;
@@ -30,7 +31,7 @@ export class Stream implements Identifiable {
     Thumbnail?: HTMLImageElement;
 
     public HasName(): boolean {
-        return this.Name !== "";
+        return this.Name !== "" || this.CustomName !== "";
     }
 
     public FriendlyDateStart(): string {
@@ -42,6 +43,10 @@ export class Stream implements Identifiable {
             hour: "2-digit",
             minute: "2-digit",
         });
+    }
+
+    public DisplayName(): string {
+        return this.CustomName === "" ? this.Name : this.CustomName;
     }
 
     public StartDate(): Date {
@@ -125,7 +130,8 @@ export class Stream implements Identifiable {
     }
 
     public updatePersonalLectureTitle(newLectureTitle: string): void {
-        this.Name = newLectureTitle;
+        this.CustomName = newLectureTitle;
+        console.log(this.CustomName);
     }
 
     private static TimeOf(d: string): string {

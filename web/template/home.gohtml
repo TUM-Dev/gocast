@@ -482,13 +482,13 @@
                                                                     </div>
                                                                 </div>
                                                             </a>
-                                                            <div class="relative flex justify-between px-1 min-h-[32px]" x-data=" {showLectureTitleInput:false, personalVodTitle:vod.Name} ">
+                                                            <div class="relative flex justify-between px-1 min-h-[32px]" x-data=" {showLectureTitleInput:false, personalVodTitle:vod.DisplayName()} ">
                                                                 <div class="w-full">
                                                                     <template x-if="vod.HasName() && !showLectureTitleInput">
                                                                         <a class="title overflow-hidden"
                                                                            :href="course.WatchURL(vod.ID)"
-                                                                           :title="vod.Name"
-                                                                           x-text="vod.Name">
+                                                                           :title="vod.DisplayName()"
+                                                                           x-text="vod.DisplayName()">
                                                                         </a>
                                                                     </template>
                                                                     <template x-if="showLectureTitleInput">
@@ -496,7 +496,7 @@
                                                                                x-model="personalVodTitle" maxlength="80" autofocus
                                                                                @click.outside="vod.updatePersonalLectureTitle(personalVodTitle);showLectureTitleInput=false"
                                                                                @keydown.enter="vod.updatePersonalLectureTitle(personalVodTitle);showLectureTitleInput=false"
-                                                                               @keydown.escape="personalVodTitle=vod.Name;showLectureTitleInput=false">
+                                                                               @keydown.escape="personalVodTitle=vod.DisplayName();showLectureTitleInput=false">
                                                                     </template>
                                                                     <template x-if="vod.HasName()">
                                                                     <span class="date text-sm"
@@ -686,7 +686,7 @@
                                             <template x-if="livestream.Stream.HasName()">
                                                 <a class="title"
                                                    :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
-                                                   x-text="livestream.Stream.Name"></a>
+                                                   x-text="livestream.Stream.DisplayName()"></a>
                                             </template>
                                             <span class="date text-sm" x-text="livestream.Stream.UntilString()"></span>
                                         </div>
@@ -805,7 +805,7 @@
                                                :class="course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"></a>
                                             <template x-if="course.LastRecording.HasName()">
                                                 <a class="title" :href="course.LastRecordingURL()"
-                                                   x-text="course.LastRecording.Name"></a>
+                                                   x-text="course.LastRecording.DisplayName()"></a>
                                             </template>
                                             <span class="date text-xs"
                                                   x-text="course.LastRecording.FriendlyDateStart()"></span>
