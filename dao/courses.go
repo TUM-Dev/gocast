@@ -30,6 +30,7 @@ type CoursesDao interface {
 	GetCourseById(ctx context.Context, id uint) (course model.Course, err error)
 	GetInvitedUsersForCourse(course *model.Course) error
 	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
+	GetCourseBySlugYearTermUser(ctx context.Context, slug string, term string, year int, userID uint) (model.Course, error)
 	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
 	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
 	GetAvailableSemesters(c context.Context, includeTestSemester bool) []model.Semester
@@ -227,6 +228,25 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 	}).Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year), course, 1, time.Minute)
+	}
+	return course, err
+}
+
+// GetCourseBySlugYearTermUser loads courses with streams preloaded. Difference to GetCourseBySlugYearAndTerm: personal lecture titles of user are loaded as well
+func (d coursesDao) GetCourseBySlugYearTermUser(ctx context.Context, slug string, term string, year int, userID uint) (model.Course, error) {
+	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearTerm%v%v%v%v", slug, term, year, userID))
+	if found {
+		return cachedCourses.(model.Course), nil
+	}
+	var course model.Course
+	err := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
+		return db.Order("unit_start desc")
+	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start desc")
+	}).Preload("Streams.CustomLectureTitles", "userID = ?", userID).
+		Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
+	if err == nil {
+		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearTermUser%v%v%v%v", slug, term, year, userID), course, 1, time.Minute)
 	}
 	return course, err
 }

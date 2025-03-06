@@ -221,6 +221,21 @@ func (mr *MockCoursesDaoMockRecorder) GetCourseBySlugYearAndTerm(ctx, slug, term
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseBySlugYearAndTerm", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseBySlugYearAndTerm), ctx, slug, term, year)
 }
 
+// GetCourseBySlugYearTermUser mocks base method.
+func (m *MockCoursesDao) GetCourseBySlugYearTermUser(ctx context.Context, slug, term string, year int, userID uint) (model.Course, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCourseBySlugYearTermUser", ctx, slug, term, year, userID)
+	ret0, _ := ret[0].(model.Course)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCourseBySlugYearTermUser indicates an expected call of GetCourseBySlugYearTermUser.
+func (mr *MockCoursesDaoMockRecorder) GetCourseBySlugYearTermUser(ctx, slug, term, year, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseBySlugYearTermUser", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseBySlugYearTermUser), ctx, slug, term, year, userID)
+}
+
 // GetCourseByToken mocks base method.
 func (m *MockCoursesDao) GetCourseByToken(token string) (model.Course, error) {
 	m.ctrl.T.Helper()

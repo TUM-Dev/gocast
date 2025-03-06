@@ -378,6 +378,7 @@ func (s Stream) Attachments() []File {
 type StreamDTO struct {
 	ID          uint
 	Name        string
+	CustomName  string
 	Description string
 	IsRecording bool
 	IsPlanned   bool
@@ -399,9 +400,14 @@ func (s Stream) ToDTO() StreamDTO {
 	if s.Duration.Valid {
 		duration = s.Duration.Int32
 	}
+	customLectureName := ""
+	if len(s.CustomLectureTitles) > 0 {
+		customLectureName = s.CustomLectureTitles[0].Title
+	}
 	return StreamDTO{
 		ID:          s.ID,
 		Name:        s.Name,
+		CustomName:  customLectureName,
 		Description: s.Description,
 		IsRecording: s.Recording,
 		IsPlanned:   s.IsPlanned(),

@@ -344,7 +344,14 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		Streams []model.StreamDTO
 	}
 
-	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
+	user := tumLiveContext.User
+	var course model.Course
+	var err error
+	if user == nil {
+		course, err = r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
+	} else {
+		course, err = r.CoursesDao.GetCourseBySlugYearTermUser(c, uri.Slug, query.Term, query.Year, user.ID)
+	}
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{
@@ -367,7 +374,6 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		return
 	}
 
-	user := tumLiveContext.User
 	var streams []model.Stream
 	for _, stream := range course.Streams {
 		if !stream.Private || (user != nil && user.IsAdminOfCourse(course)) {
