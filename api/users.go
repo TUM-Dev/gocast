@@ -845,7 +845,7 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 	}
 	personalLectureNames, err := r.UserDefinedLectureTitlesDao.GetByUser(u.ID)
 	if err != nil {
-		personalLectureNames = []model.UserDefinedLectureTitle{}
+		personalLectureNames = []dao.UserDefinedLectureTitlePersonalData{}
 	}
 	for _, personalLectureName := range personalLectureNames {
 		if personalLectureName.Title != "" {

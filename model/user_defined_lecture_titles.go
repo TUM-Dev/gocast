@@ -11,7 +11,7 @@ type UserDefinedLectureTitle struct {
 	UserID     uint   `gorm:"primaryKey" json:"userId"`
 	StreamID   uint   `gorm:"primaryKey" json:"streamId"`
 	Title      string `gorm:"type:varchar(256)" json:"title"`
-	CourseName string `json:"courseName"`
+	CourseName string `gorm:"-" json:"courseName"`
 }
 
 // BeforeCreate is a GORM hook that is called before a new user is created.

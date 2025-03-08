@@ -11,7 +11,7 @@ type UserDefinedLectureTitlesDao interface {
 	// Get UserDefinedLectureTitle by ID
 	Get(uint, uint) (model.UserDefinedLectureTitle, error)
 	// GetByUser get all personal lecture titles for one user
-	GetByUser(uint) ([]model.UserDefinedLectureTitle, error)
+	GetByUser(uint) ([]UserDefinedLectureTitlePersonalData, error)
 
 	// Create a new UserDefinedLectureTitle for the database
 	Create(*model.UserDefinedLectureTitle) error
@@ -36,12 +36,16 @@ func (d userDefinedLectureTitlesDao) Get(userID uint, streamID uint) (res model.
 	return res, d.db.First(&res, "user_id = ? AND stream_id = ?", userID, streamID).Error
 }
 
-func (d userDefinedLectureTitlesDao) GetByUser(userId uint) (res []model.UserDefinedLectureTitle, err error) {
-	return res, d.db.Joins("JOIN streams s ON s.id = user_defined_lecture_titles.stream_id").
-		Joins("JOIN courses c on c.id = s.course_id").
-		Where("user_defined_lecture_titles.user_id = ?", userId).
-		Select("stream_id, title, c.name AS CourseName").
-		Find(&res).Error
+type UserDefinedLectureTitlePersonalData struct {
+	StreamID          uint
+	Title, CourseName string
+}
+
+func (d userDefinedLectureTitlesDao) GetByUser(userId uint) (res []UserDefinedLectureTitlePersonalData, err error) {
+	return res, d.db.Raw(`SELECT stream_id AS StreamID, title AS Title, c.name as CourseName
+		FROM user_defined_lecture_titles u JOIN streams s ON u.stream_id = s.id
+			JOIN courses c ON s.course_id = c.id
+		WHERE u.user_id = ?`, userId).Scan(&res).Error
 }
 
 // Create a userDefinedLectureTitlesDao.
