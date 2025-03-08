@@ -10,6 +10,8 @@ import (
 type UserDefinedLectureTitlesDao interface {
 	// Get UserDefinedLectureTitle by ID
 	Get(uint, uint) (model.UserDefinedLectureTitle, error)
+	// GetByUser get all personal lecture titles for one user
+	GetByUser(uint) ([]model.UserDefinedLectureTitle, error)
 
 	// Create a new UserDefinedLectureTitle for the database
 	Create(*model.UserDefinedLectureTitle) error
@@ -32,6 +34,14 @@ func NewUserDefinedLectureTitlesDao() UserDefinedLectureTitlesDao {
 // Get a userDefinedLectureTitlesDao by userID and streamID
 func (d userDefinedLectureTitlesDao) Get(userID uint, streamID uint) (res model.UserDefinedLectureTitle, err error) {
 	return res, d.db.First(&res, "user_id = ? AND stream_id = ?", userID, streamID).Error
+}
+
+func (d userDefinedLectureTitlesDao) GetByUser(userId uint) (res []model.UserDefinedLectureTitle, err error) {
+	return res, d.db.Joins("JOIN streams s ON s.id = user_defined_lecture_titles.stream_id").
+		Joins("JOIN courses c on c.id = s.course_id").
+		Where("user_defined_lecture_titles.user_id = ?", userId).
+		Select("stream_id, title, c.name AS CourseName").
+		Find(&res).Error
 }
 
 // Create a userDefinedLectureTitlesDao.

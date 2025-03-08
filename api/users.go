@@ -843,6 +843,20 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 			CreatedAt time.Time `json:"created_at"`
 		}{chat.StreamID, chat.Message, chat.CreatedAt})
 	}
+	personalLectureNames, err := r.UserDefinedLectureTitlesDao.GetByUser(u.ID)
+	if err != nil {
+		personalLectureNames = []model.UserDefinedLectureTitle{}
+	}
+	for _, personalLectureName := range personalLectureNames {
+		if personalLectureName.Title != "" {
+			resp.PersonalLectureNames = append(resp.PersonalLectureNames, struct {
+				StreamId            uint   `json:"stream_id,omitempty"`
+				PersonalLectureName string `json:"personal_lecture_name,omitempty"`
+				CourseName          string `json:"course_name,omitempty"`
+			}{personalLectureName.StreamID, personalLectureName.Title, personalLectureName.CourseName})
+		}
+	}
+
 	c.Header("Content-Disposition:", `attachment; filename="personal_data.json"`)
 	c.Header("Content-Type", "application/json;charset=utf-8")
 	marshal, err := json.MarshalIndent(resp, "", "    ")
@@ -921,6 +935,11 @@ type personalData struct {
 		Message   string    `json:"message,omitempty"`
 		CreatedAt time.Time `json:"created_at"`
 	} `json:"chats,omitempty"`
+	PersonalLectureNames []struct {
+		StreamId            uint   `json:"stream_id,omitempty"`
+		PersonalLectureName string `json:"personal_lecture_name,omitempty"`
+		CourseName          string `json:"course_name,omitempty"`
+	} `json:"personalLectureNames,omitempty"`
 }
 
 type deleteUserRequest struct {
