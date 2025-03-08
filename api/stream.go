@@ -45,6 +45,11 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 			streamById.GET("/playlist", routes.getStreamPlaylist)
 
+			withUser := streamById.Use(tools.LoggedIn)
+			{
+				withUser.PUT("/personalLectureName", routes.changePersonalLectureName)
+			}
+
 			thumbs := streamById.Group("/thumbs")
 			{
 				thumbs.GET(":fid", routes.getThumbs)
@@ -893,4 +898,52 @@ func (r streamRoutes) updateChatEnabled(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
 		return
 	}
+}
+
+type changePersonalLectureNameRequest struct {
+	PersonalLectureName string `json:"personalLectureName"`
+}
+
+func (r streamRoutes) changePersonalLectureName(c *gin.Context) {
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	streamIdAsString := c.Param("streamID")
+	streamId, err := strconv.ParseUint(streamIdAsString, 10, 32)
+	if err != nil {
+		logger.Error("can not parse stream id in request url", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not parse stream id in request url",
+			Err:           err,
+		})
+		return
+	}
+
+	var update changePersonalLectureNameRequest
+	err = c.BindJSON(&update)
+	if err != nil {
+		logger.Error("failed to bind personal lecture name JSON", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	err = r.UserDefinedLectureTitlesDao.Upsert(&model.UserDefinedLectureTitle{
+		UserID:   ctx.User.ID,
+		StreamID: uint(streamId),
+		Title:    update.PersonalLectureName,
+	})
+	if err != nil {
+		logger.Error("failed to upsert personal lecture name", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not upsert personal lecture name",
+			Err:           err,
+		})
+		return
+	}
+
 }

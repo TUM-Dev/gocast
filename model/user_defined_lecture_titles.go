@@ -7,8 +7,8 @@ import (
 
 // UserDefinedLectureTitle represents a custom lecture title for a stream by one user
 type UserDefinedLectureTitle struct {
-	UserID   string `gorm:"primaryKey" json:"userId"`
-	StreamID string `gorm:"primaryKey" json:"streamId"`
+	UserID   uint   `gorm:"primaryKey" json:"userId"`
+	StreamID uint   `gorm:"primaryKey" json:"streamId"`
 	Title    string `gorm:"type:varchar(256)" json:"title"`
 }
 

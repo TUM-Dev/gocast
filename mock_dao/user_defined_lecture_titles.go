@@ -5,7 +5,6 @@
 package mock_dao
 
 import (
-	context "context"
 	reflect "reflect"
 
 	model "github.com/TUM-Dev/gocast/model"
@@ -36,58 +35,58 @@ func (m *MockUserDefinedLectureTitlesDao) EXPECT() *MockUserDefinedLectureTitles
 }
 
 // Create mocks base method.
-func (m *MockUserDefinedLectureTitlesDao) Create(arg0 context.Context, arg1 *model.UserDefinedLectureTitle) error {
+func (m *MockUserDefinedLectureTitlesDao) Create(arg0 *model.UserDefinedLectureTitle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
+	ret := m.ctrl.Call(m, "Create", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Create), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Create), arg0)
 }
 
 // Delete mocks base method.
-func (m *MockUserDefinedLectureTitlesDao) Delete(arg0 context.Context, arg1, arg2 uint) error {
+func (m *MockUserDefinedLectureTitlesDao) Delete(arg0, arg1 uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Delete(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Delete), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Delete), arg0, arg1)
 }
 
 // Get mocks base method.
-func (m *MockUserDefinedLectureTitlesDao) Get(arg0 context.Context, arg1, arg2 uint) (model.UserDefinedLectureTitle, error) {
+func (m *MockUserDefinedLectureTitlesDao) Get(arg0, arg1 uint) (model.UserDefinedLectureTitle, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Get", arg0, arg1)
 	ret0, _ := ret[0].(model.UserDefinedLectureTitle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Get(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Get), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Get), arg0, arg1)
 }
 
 // Upsert mocks base method.
-func (m *MockUserDefinedLectureTitlesDao) Upsert(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error {
+func (m *MockUserDefinedLectureTitlesDao) Upsert(userLectureTitle *model.UserDefinedLectureTitle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", c, userLectureTitle)
+	ret := m.ctrl.Call(m, "Upsert", userLectureTitle)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Upsert(c, userLectureTitle interface{}) *gomock.Call {
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Upsert(userLectureTitle interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Upsert), c, userLectureTitle)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Upsert), userLectureTitle)
 }
