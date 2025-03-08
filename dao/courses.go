@@ -234,7 +234,7 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 
 // GetCourseBySlugYearTermUser loads courses with streams preloaded. Difference to GetCourseBySlugYearAndTerm: personal lecture titles of user are loaded as well
 func (d coursesDao) GetCourseBySlugYearTermUser(ctx context.Context, slug string, term string, year int, userID uint) (model.Course, error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearTerm%v%v%v%v", slug, term, year, userID))
+	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearTermUser%v%v%v%v", slug, term, year, userID))
 	if found {
 		return cachedCourses.(model.Course), nil
 	}
