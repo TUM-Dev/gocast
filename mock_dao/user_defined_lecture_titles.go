@@ -78,16 +78,16 @@ func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Get(arg0, arg1, arg2 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Get), arg0, arg1, arg2)
 }
 
-// UpdateOrCreate mocks base method.
-func (m *MockUserDefinedLectureTitlesDao) UpdateOrCreate(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error {
+// Upsert mocks base method.
+func (m *MockUserDefinedLectureTitlesDao) Upsert(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOrCreate", c, userLectureTitle)
+	ret := m.ctrl.Call(m, "Upsert", c, userLectureTitle)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateOrCreate indicates an expected call of UpdateOrCreate.
-func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) UpdateOrCreate(c, userLectureTitle interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Upsert(c, userLectureTitle interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrCreate", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).UpdateOrCreate), c, userLectureTitle)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Upsert), c, userLectureTitle)
 }

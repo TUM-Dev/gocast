@@ -18,8 +18,8 @@ type UserDefinedLectureTitlesDao interface {
 	// Delete a UserDefinedLectureTitle by id.
 	Delete(context.Context, uint, uint) error
 
-	// UpdateOrCreate updates the entry if it exists, creates it else
-	UpdateOrCreate(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error
+	// Upsert updates the entry if it exists, inserts it else
+	Upsert(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error
 }
 
 type userDefinedLectureTitlesDao struct {
@@ -45,7 +45,7 @@ func (d userDefinedLectureTitlesDao) Delete(c context.Context, userID uint, stre
 	return d.db.WithContext(c).Delete(&model.UserDefinedLectureTitle{}, "user_id = ? AND stream_id = ?", userID, streamID).Error
 }
 
-// UpdateOrCreate updates the entry if it exists, creates it else
-func (d userDefinedLectureTitlesDao) UpdateOrCreate(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error {
+// Upsert updates the entry if it exists, inserts it else
+func (d userDefinedLectureTitlesDao) Upsert(c context.Context, userLectureTitle *model.UserDefinedLectureTitle) error {
 	return d.db.WithContext(c).Save(userLectureTitle).Error
 }
