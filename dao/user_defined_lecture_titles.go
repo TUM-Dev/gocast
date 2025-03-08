@@ -14,7 +14,7 @@ type UserDefinedLectureTitlesDao interface {
 	// Create a new UserDefinedLectureTitle for the database
 	Create(*model.UserDefinedLectureTitle) error
 
-	// Delete a UserDefinedLectureTitle by id.
+	// Delete a UserDefinedLectureTitle by user and stream id.
 	Delete(uint, uint) error
 
 	// Upsert updates the entry if it exists, inserts it else

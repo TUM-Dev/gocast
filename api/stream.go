@@ -931,6 +931,19 @@ func (r streamRoutes) changePersonalLectureName(c *gin.Context) {
 		return
 	}
 
+	if update.PersonalLectureName == "" {
+		err = r.UserDefinedLectureTitlesDao.Delete(ctx.User.ID, uint(streamId))
+		if err != nil {
+			logger.Error("failed to delete personal lecture name", "err", err)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not delete personal lecture name",
+				Err:           err,
+			})
+		}
+		return
+	}
+
 	err = r.UserDefinedLectureTitlesDao.Upsert(&model.UserDefinedLectureTitle{
 		UserID:   ctx.User.ID,
 		StreamID: uint(streamId),
