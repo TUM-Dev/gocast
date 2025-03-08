@@ -487,7 +487,7 @@
                                                                     <template x-if="vod.HasName() && !showLectureTitleInput">
                                                                         <a class="title overflow-hidden"
                                                                            :href="course.WatchURL(vod.ID)"
-                                                                           :title="vod.DisplayName()"
+                                                                           :title="vod.Name"
                                                                            x-text="vod.DisplayName()">
                                                                         </a>
                                                                     </template>
@@ -686,7 +686,7 @@
                                             <template x-if="livestream.Stream.HasName()">
                                                 <a class="title"
                                                    :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
-                                                   x-text="livestream.Stream.DisplayName()"></a>
+                                                   x-text="livestream.Stream.Name"></a>
                                             </template>
                                             <span class="date text-sm" x-text="livestream.Stream.UntilString()"></span>
                                         </div>

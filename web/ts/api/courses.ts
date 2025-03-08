@@ -3,6 +3,7 @@ import { Progress } from "./progress";
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { same_day } from "../utilities/time-utils";
 import { CustomURL } from "../utilities/url";
+import {putData} from "../global";
 
 type DownloadableVOD = {
     readonly FriendlyName: string;
@@ -131,7 +132,12 @@ export class Stream implements Identifiable {
 
     public updatePersonalLectureTitle(newLectureTitle: string): void {
         this.CustomName = newLectureTitle;
-        console.log(this.CustomName);
+        putData(`/api/stream/${this.ID}/personalLectureName/`, { personalLectureName: newLectureTitle})
+            .then((resp) => {
+                if (!resp.ok) {
+                    console.error(Error(resp.statusText));
+                }
+            });
     }
 
     private static TimeOf(d: string): string {
