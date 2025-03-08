@@ -2,7 +2,7 @@ package model
 
 import (
 	"errors"
-	
+
 	"gorm.io/gorm"
 )
 

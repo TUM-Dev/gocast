@@ -945,5 +945,4 @@ func (r streamRoutes) changePersonalLectureName(c *gin.Context) {
 		})
 		return
 	}
-
 }
