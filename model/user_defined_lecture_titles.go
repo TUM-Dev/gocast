@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	
 	"gorm.io/gorm"
 )
 
@@ -12,15 +13,11 @@ type UserDefinedLectureTitle struct {
 	Title    string `gorm:"type:varchar(256)" json:"title"`
 }
 
-var (
-	ErrTitleTooLong = errors.New("title is too long")
-)
-
 // BeforeCreate is a GORM hook that is called before a new user is created.
 // UserDefinedLectureTitle will not be saved if the title is too long
 func (u *UserDefinedLectureTitle) BeforeCreate(tx *gorm.DB) (err error) {
 	if len(u.Title) > 256 {
-		return ErrTitleTooLong
+		return errors.New("title is too long")
 	}
 	return nil
 }
