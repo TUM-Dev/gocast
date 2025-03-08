@@ -137,7 +137,7 @@ export class Stream implements Identifiable {
                 if (!resp.ok) {
                     console.error(Error(resp.statusText));
                 }
-            }
+            },
         );
     }
 

@@ -367,7 +367,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023).
+								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextStudent.User.ID).
 								Return(model.Course{}, gorm.ErrRecordNotFound).
 								AnyTimes()
 							return mock
@@ -385,7 +385,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023).
+								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextStudent.User.ID).
 								Return(model.Course{}, errors.New("")).
 								AnyTimes()
 							return mock
@@ -403,7 +403,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023).
+								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextAdmin.User.ID).
 								Return(testutils.CourseTensNet, nil).
 								AnyTimes()
 							return mock
@@ -442,7 +442,7 @@ func TestCoursesCRUD(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, testutils.TUMLiveContextStudent.User.ID).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							return coursesMock
@@ -468,7 +468,7 @@ func TestCoursesCRUD(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, testutils.TUMLiveContextAdmin.User.ID).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
