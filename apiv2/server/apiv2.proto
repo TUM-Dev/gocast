@@ -604,6 +604,7 @@ message Stream {
   bool is_planned = 30;
   bool is_coming_up = 31;
   string hls_url = 32;
+  string custom_lecture_title = 33;
 }
 
 message StreamPlaylistEntry {

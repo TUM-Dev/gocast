@@ -130,6 +130,10 @@ func ParseStreamToProto(stream model.Stream, downloads []model.DownloadableVod) 
 		s.Downloads = append(s.Downloads, ParseDownloadToProto(download))
 	}
 
+	if len(stream.CustomLectureTitles) > 0 {
+		s.CustomLectureTitle = stream.CustomLectureTitles[0].Title
+	}
+
 	return s
 }
 

@@ -1543,6 +1543,9 @@
         },
         "hlsUrl": {
           "type": "string"
+        },
+        "customLectureTitle": {
+          "type": "string"
         }
       }
     },

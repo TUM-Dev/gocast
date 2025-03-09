@@ -128,7 +128,7 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 		term = req.Term
 	}
 
-	course, err := a.dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, term, year)
+	course, err := a.dao.GetCourseBySlugYearTermUser(context.Background(), req.Slug, term, year, user.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, e.WithStatus(http.StatusNotFound, errors.New("can't find course"))
