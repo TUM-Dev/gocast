@@ -367,7 +367,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextStudent.User.ID).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextStudent.User.ID).
 								Return(model.Course{}, gorm.ErrRecordNotFound).
 								AnyTimes()
 							return mock
@@ -385,7 +385,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextStudent.User.ID).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextStudent.User.ID).
 								Return(model.Course{}, errors.New("")).
 								AnyTimes()
 							return mock
@@ -403,7 +403,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextAdmin.User.ID).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023, testutils.TUMLiveContextAdmin.User.ID).
 								Return(testutils.CourseTensNet, nil).
 								AnyTimes()
 							return mock
@@ -442,7 +442,7 @@ func TestCoursesCRUD(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, testutils.TUMLiveContextStudent.User.ID).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, testutils.TUMLiveContextStudent.User.ID).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							return coursesMock
@@ -468,7 +468,7 @@ func TestCoursesCRUD(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearTermUser(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, testutils.TUMLiveContextAdmin.User.ID).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, testutils.TUMLiveContextAdmin.User.ID).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -622,7 +622,7 @@ func TestCoursesCRUD(t *testing.T) {
 							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020, gomock.Any()).
 								Return(model.Course{}, nil).
 								AnyTimes()
 							return coursesMock
@@ -642,7 +642,7 @@ func TestCoursesCRUD(t *testing.T) {
 							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020, gomock.Any()).
 								Return(model.Course{}, errors.New("")).
 								AnyTimes()
 							coursesMock.
@@ -667,11 +667,11 @@ func TestCoursesCRUD(t *testing.T) {
 							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
 							first := coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020, gomock.Any()).
 								Return(model.Course{}, errors.New("")).Times(1)
 							second := coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020, gomock.Any()).
 								Return(newCourse, errors.New("")).Times(1)
 
 							gomock.InOrder(first, second)
@@ -780,7 +780,7 @@ func TestCoursesCRUD(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -818,7 +818,7 @@ func TestCoursesCRUD(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -927,7 +927,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -970,7 +970,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -1822,7 +1822,7 @@ func TestAdminFunctions(t *testing.T) {
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
 									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm,
-									testutils.CourseFPV.Year).
+									testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -1926,7 +1926,7 @@ func TestAdminFunctions(t *testing.T) {
 							coursesMock.
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
-									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -1957,7 +1957,7 @@ func TestAdminFunctions(t *testing.T) {
 							coursesMock.
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
-									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -2015,7 +2015,7 @@ func TestAdminFunctions(t *testing.T) {
 							coursesMock.
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
-									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -2102,7 +2102,7 @@ func TestAdminFunctions(t *testing.T) {
 							coursesMock.
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
-									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -2131,7 +2131,7 @@ func TestAdminFunctions(t *testing.T) {
 							coursesMock.
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
-									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -2160,7 +2160,7 @@ func TestAdminFunctions(t *testing.T) {
 							coursesMock.
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
-									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.
@@ -2190,7 +2190,7 @@ func TestAdminFunctions(t *testing.T) {
 							coursesMock.
 								EXPECT().
 								GetCourseBySlugYearAndTerm(gomock.Any(),
-									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+									testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							coursesMock.

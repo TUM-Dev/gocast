@@ -49,7 +49,7 @@ func TestDownloadICS(t *testing.T) {
 							courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							courseMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), slug, term, year).
+								GetCourseBySlugYearAndTerm(gomock.Any(), slug, term, year, gomock.Any()).
 								Return(model.Course{}, errors.New("")).
 								AnyTimes()
 							return courseMock
@@ -67,7 +67,7 @@ func TestDownloadICS(t *testing.T) {
 							courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							courseMock.
 								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), slug, term, year).
+								GetCourseBySlugYearAndTerm(gomock.Any(), slug, term, year, gomock.Any()).
 								Return(testutils.CourseFPV, nil).
 								AnyTimes()
 							return courseMock

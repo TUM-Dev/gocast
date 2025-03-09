@@ -596,7 +596,7 @@ func GetCoursesMock(t *testing.T) dao.CoursesDao {
 		AnyTimes()
 	coursesMock.
 		EXPECT().
-		GetCourseBySlugYearAndTerm(gomock.Any(), CourseFPV.Slug, CourseFPV.TeachingTerm, CourseFPV.Year).
+		GetCourseBySlugYearAndTerm(gomock.Any(), CourseFPV.Slug, CourseFPV.TeachingTerm, CourseFPV.Year, gomock.Any()).
 		Return(CourseFPV, nil).
 		AnyTimes()
 	coursesMock.

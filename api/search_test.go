@@ -331,10 +331,10 @@ func getCoursesMock(t *testing.T) *mock_dao.MockCoursesDao {
 	mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 	for _, course := range testutils.AllCoursesForSearchTests {
 		mock.EXPECT().GetCourseById(gomock.Any(), course.ID).Return(course, nil).AnyTimes()
-		mock.EXPECT().GetCourseBySlugYearAndTerm(gomock.Any(), course.Slug, course.TeachingTerm, course.Year).Return(course, nil).AnyTimes()
+		mock.EXPECT().GetCourseBySlugYearAndTerm(gomock.Any(), course.Slug, course.TeachingTerm, course.Year, gomock.Any()).Return(course, nil).AnyTimes()
 	}
 	mock.EXPECT().GetCourseById(gomock.Any(), gomock.Any()).Return(model.Course{}, errors.New("whoops")).AnyTimes()
-	mock.EXPECT().GetCourseBySlugYearAndTerm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(model.Course{}, errors.New("whoops")).AnyTimes()
+	mock.EXPECT().GetCourseBySlugYearAndTerm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(model.Course{}, errors.New("whoops")).AnyTimes()
 	return mock
 }
 
