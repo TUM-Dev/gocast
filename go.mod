@@ -1,8 +1,6 @@
 module github.com/TUM-Dev/gocast
 
-go 1.22.0
-
-toolchain go1.23.2
+go 1.24.0
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
@@ -49,9 +47,12 @@ require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
 	github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789
 	github.com/asticode/go-astisub v0.32.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.25.1
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/orandin/slog-gorm v1.4.0
+	github.com/soheilhy/cmux v0.1.5
+	google.golang.org/genproto/googleapis/api v0.0.0-20250102185135-69823020774d
 )
 
 require (
@@ -76,6 +77,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.58.0 // indirect
+	go.opentelemetry.io/otel v1.33.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.13.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect

@@ -40,7 +40,7 @@ class PlayerSettings {
     }
 
     setVolume() {
-        const volume: number = +(PlayerSettings.getFromStorage("volume") ?? this.player.volume());
+        const volume: number = +PlayerSettings.getFromStorage("volume") ?? this.player.volume();
         this.player.volume(volume);
         console.log(`⚫️ set volume: ${volume}`);
     }
@@ -52,7 +52,7 @@ class PlayerSettings {
     }
 
     setRate() {
-        let persistedRate = +(PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate") ?? 1.0);
+        let persistedRate = +PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate") ?? 1.0;
         persistedRate = persistedRate <= 0 ? 1.0 : persistedRate;
 
         const queryRate: number = +getQueryParam("rate");
@@ -128,7 +128,7 @@ class PlayerSettings {
         window.localStorage.setItem(key, value);
     }
 
-    static getFromStorage(key: string): string | null {
+    static getFromStorage(key: string) {
         return window.localStorage.getItem(key);
     }
 }
@@ -156,7 +156,8 @@ export const initPlayer = function (
     const player = videojs(id, {
         liveui: true,
         fluid: fluid,
-        playbackRates: playbackSpeeds,
+        // restrict clickable playbackRates to <= 2.0 if on Safari, because higher rates cause weird behaviour (see issue #1222)
+        playbackRates: playbackSpeeds.filter((rate) => rate <= 2 || !videojs.browser.IS_SAFARI),
         html5: {
             reloadSourceOnError: true,
             vhs: {
