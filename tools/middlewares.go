@@ -145,7 +145,7 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 				c.AbortWithStatus(http.StatusBadRequest)
 				return
 			}
-			foundCourse, err := wrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
+			foundCourse, err := wrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt, 0)
 			if err != nil {
 				c.Status(http.StatusNotFound)
 				RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)

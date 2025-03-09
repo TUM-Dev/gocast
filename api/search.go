@@ -262,7 +262,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			}
 
 			for _, meiliCourse := range meiliCourses {
-				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year)
+				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year, 0)
 				if err == nil && user.IsEligibleToSearchForCourse(course) {
 					res.Hits = append(res.Hits, meiliCourse)
 				}
@@ -543,7 +543,7 @@ func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse stri
 		}
 		length := len(courseString)
 		year, _ := strconv.Atoi(courseString[length-5 : length-1])
-		course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, courseString[:length-5], courseString[length-1:], year)
+		course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, courseString[:length-5], courseString[length-1:], year, 0)
 		if err != nil {
 			return nil, 1
 		}

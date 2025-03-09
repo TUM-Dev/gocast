@@ -344,14 +344,14 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		Streams []model.StreamDTO
 	}
 
+	userId := uint(0)
 	user := tumLiveContext.User
+	if user != nil {
+		userId = user.ID
+	}
 	var course model.Course
 	var err error
-	if user == nil {
-		course, err = r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
-	} else {
-		course, err = r.CoursesDao.GetCourseBySlugYearTermUser(c, uri.Slug, query.Term, query.Year, user.ID)
-	}
+	course, err = r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year, userId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{
@@ -1383,7 +1383,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	} else {
 		semester = "S"
 	}
-	_, err = r.CoursesDao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year)
+	_, err = r.CoursesDao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year, 0)
 	if err == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusConflict,
@@ -1426,7 +1426,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		})
 		return
 	}
-	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
+	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year, 0)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

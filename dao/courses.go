@@ -29,8 +29,7 @@ type CoursesDao interface {
 	GetCourseByToken(token string) (course model.Course, err error)
 	GetCourseById(ctx context.Context, id uint) (course model.Course, err error)
 	GetInvitedUsersForCourse(course *model.Course) error
-	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
-	GetCourseBySlugYearTermUser(ctx context.Context, slug string, term string, year int, userID uint) (model.Course, error)
+	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int, userID uint) (model.Course, error)
 	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
 	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
 	GetAvailableSemesters(c context.Context, includeTestSemester bool) []model.Semester
@@ -215,38 +214,34 @@ func (d coursesDao) GetInvitedUsersForCourse(course *model.Course) error {
 	return DB.Preload("Users", "role = ?", model.GenericType).Find(course).Error
 }
 
-func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year))
-	if found {
-		return cachedCourses.(model.Course), nil
+// GetCourseBySlugYearAndTerm gets course by slug, year, term from database. Preloads personal lecture titles if userID is not 0
+func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int, userID uint) (model.Course, error) {
+	var cacheKey string
+	if userID == 0 {
+		cacheKey = fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year)
+	} else {
+		cacheKey = fmt.Sprintf("courseBySlugYearTermUser%v%v%v%v", slug, term, year, userID)
 	}
-	var course model.Course
-	err := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
-		return db.Order("unit_start desc")
-	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start desc")
-	}).Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
-	if err == nil {
-		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year), course, 1, time.Minute)
-	}
-	return course, err
-}
 
-// GetCourseBySlugYearTermUser loads courses with streams preloaded. Difference to GetCourseBySlugYearAndTerm: personal lecture titles of user are loaded as well
-func (d coursesDao) GetCourseBySlugYearTermUser(ctx context.Context, slug string, term string, year int, userID uint) (model.Course, error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearTermUser%v%v%v%v", slug, term, year, userID))
+	cachedCourses, found := Cache.Get(cacheKey)
 	if found {
 		return cachedCourses.(model.Course), nil
 	}
+
 	var course model.Course
-	err := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
+	query := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start desc")
-	}).Preload("Streams.CustomLectureTitles", "user_id = ?", userID).
-		Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
+	}).Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year)
+
+	if userID != 0 {
+		query = query.Preload("Streams.CustomLectureTitles", "user_id = ?", userID)
+	}
+
+	err := query.First(&course).Error
 	if err == nil {
-		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearTermUser%v%v%v%v", slug, term, year, userID), course, 1, time.Minute)
+		Cache.SetWithTTL(cacheKey, course, 1, time.Minute)
 	}
 	return course, err
 }

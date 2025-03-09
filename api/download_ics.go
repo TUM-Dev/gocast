@@ -39,7 +39,7 @@ func (r downloadICSRoutes) downloadICS(c *gin.Context) {
 		return
 	}
 
-	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, slug, term, year)
+	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, slug, term, year, 0)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
