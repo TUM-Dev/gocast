@@ -27,7 +27,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.32.0
 	google.golang.org/grpc v1.69.2
-	google.golang.org/protobuf v1.36.2
+	google.golang.org/protobuf v1.36.5
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 	mvdan.cc/xurls/v2 v2.6.0
@@ -52,7 +52,8 @@ require (
 	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/soheilhy/cmux v0.1.5
-	google.golang.org/genproto/googleapis/api v0.0.0-20250102185135-69823020774d
+	github.com/tum-dev/gocast/runner v0.0.0-20250308142330-47c43aea97cd
+	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb
 )
 
 require (
@@ -82,7 +83,7 @@ require (
 	golang.org/x/arch v0.13.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250106144421-5f5ef82da422 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250227231956-55c901821b1e // indirect
 )
 
 require (
