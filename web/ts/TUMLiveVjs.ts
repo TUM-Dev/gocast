@@ -45,24 +45,24 @@ class PlayerSettings {
         this.player.volume(volume);
         console.log(`⚫️ set volume: ${volume}`);
     }
-    
+
     setMuted() {
         const storedMuted = PlayerSettings.getFromStorage("muted");
         const muted: string = storedMuted !== null ? storedMuted : String(this.player.muted());
         this.player.muted("true" === muted);
         console.log(`⚫️ set muted: ${muted}`);
     }
-    
+
     setRate() {
         const storedRate = PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate");
         let persistedRate = storedRate !== null ? +storedRate : 1.0;
         persistedRate = persistedRate <= 0 ? 1.0 : persistedRate;
-    
+
         const queryRate: number = +getQueryParam("rate");
         console.log(`⚫️ set ${this.isLive ? "live" : "vod"} rate: ${queryRate || persistedRate}`);
         this.player.playbackRate(queryRate || persistedRate);
     }
-    
+
     jumpTo() {
         if (this.isLive) {
             let iOSReady;
