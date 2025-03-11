@@ -485,12 +485,15 @@
                                                             <div class="relative flex justify-between px-1 min-h-[32px]">
                                                                 <div class="w-full">
                                                                     <template x-if="vod.HasName()">
-                                                                        <a class="title overflow-hidden"
-                                                                           :href="course.WatchURL(vod.ID)"
-                                                                           :title="vod.Name"
-                                                                           x-text="vod.Name">
-
-                                                                        </a>
+                                                                        <div class="flex">
+                                                                            <i title="This lecture is hidden" x-show="!vod.IsPubliclyVisible"
+                                                                               class="fas fa-eye-slash px-1" style="line-height:revert"></i>
+                                                                            <a class="title overflow-hidden"
+                                                                               :href="course.WatchURL(vod.ID)"
+                                                                               :title="vod.Name"
+                                                                               x-text="vod.Name">
+                                                                            </a>
+                                                                        </div>
                                                                     </template>
                                                                     <template x-if="vod.HasName()">
                                                                     <span class="date text-sm"
@@ -498,10 +501,15 @@
                                                                     </template>
 
                                                                     <template x-if="!vod.HasName()">
-                                                                        <a :class="isListView() ? 'title overflow-hidden' : ''" :href="course.WatchURL(vod.ID)">
-                                                                        <span class="date" :class="isListView() ? '' : 'text-sm'"   
-                                                                              x-text="vod.FriendlyDateStart()"></span>
-                                                                        </a>
+                                                                        <div>
+                                                                            <i title="This lecture is hidden" x-show="!vod.IsPubliclyVisible"
+                                                                               class="fas fa-eye-slash px-1" style="line-height:revert"></i>
+                                                                            <a :class="isListView() ? 'title overflow-hidden' : ''"
+                                                                               :href="course.WatchURL(vod.ID)">
+                                                                            <span class="date" :class="isListView() ? '' : 'text-sm'"
+                                                                                  x-text="vod.FriendlyDateStart()"></span>
+                                                                            </a>
+                                                                        </div>
                                                                     </template>
                                                                 </div>
                                                                 <button type="button" @click="vod.Dropdown.toggle()"
