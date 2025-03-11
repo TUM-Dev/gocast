@@ -50,7 +50,7 @@ require (
 	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/matthiasreumann/gomino v0.0.2
-	github.com/meilisearch/meilisearch-go v0.31.0
+	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/soheilhy/cmux v0.1.5
 	github.com/tum-dev/gocast/runner v0.0.0-20250309031139-45dc3616df3f
