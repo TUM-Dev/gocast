@@ -344,7 +344,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 		Streams []model.StreamDTO
 	}
 
-	userId := uint(0)
+	var userId uint
 	user := tumLiveContext.User
 	if user != nil {
 		userId = user.ID

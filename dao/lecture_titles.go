@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=user_defined_lecture_titles.go -destination ../mock_dao/user_defined_lecture_titles.go
+//go:generate mockgen -source=lecture_titles.go -destination ../mock_dao/lecture_titles.go
 
 type UserDefinedLectureTitlesDao interface {
 	// Get UserDefinedLectureTitle by ID
