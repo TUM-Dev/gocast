@@ -34,20 +34,6 @@ func (m *MockUserDefinedLectureTitlesDao) EXPECT() *MockUserDefinedLectureTitles
 	return m.recorder
 }
 
-// Create mocks base method.
-func (m *MockUserDefinedLectureTitlesDao) Create(arg0 *model.UserDefinedLectureTitle) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Create indicates an expected call of Create.
-func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Create(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Create), arg0)
-}
-
 // Delete mocks base method.
 func (m *MockUserDefinedLectureTitlesDao) Delete(arg0, arg1 uint) error {
 	m.ctrl.T.Helper()
@@ -77,16 +63,16 @@ func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Get(arg0, arg1 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Get), arg0, arg1)
 }
 
-// Upsert mocks base method.
-func (m *MockUserDefinedLectureTitlesDao) Upsert(userLectureTitle *model.UserDefinedLectureTitle) error {
+// Save mocks base method.
+func (m *MockUserDefinedLectureTitlesDao) Save(userLectureTitle *model.UserDefinedLectureTitle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", userLectureTitle)
+	ret := m.ctrl.Call(m, "Save", userLectureTitle)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert.
-func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Upsert(userLectureTitle interface{}) *gomock.Call {
+// Save indicates an expected call of Save.
+func (mr *MockUserDefinedLectureTitlesDaoMockRecorder) Save(userLectureTitle interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Upsert), userLectureTitle)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockUserDefinedLectureTitlesDao)(nil).Save), userLectureTitle)
 }

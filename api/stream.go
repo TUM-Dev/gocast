@@ -944,7 +944,7 @@ func (r streamRoutes) changePersonalLectureName(c *gin.Context) {
 		return
 	}
 
-	err = r.UserDefinedLectureTitlesDao.Upsert(&model.UserDefinedLectureTitle{
+	err = r.UserDefinedLectureTitlesDao.Save(&model.UserDefinedLectureTitle{
 		UserID:   ctx.User.ID,
 		StreamID: uint(streamId),
 		Title:    update.PersonalLectureName,

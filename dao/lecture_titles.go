@@ -3,6 +3,7 @@ package dao
 import (
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 //go:generate mockgen -source=lecture_titles.go -destination ../mock_dao/lecture_titles.go
@@ -11,14 +12,11 @@ type UserDefinedLectureTitlesDao interface {
 	// Get UserDefinedLectureTitle by ID
 	Get(uint, uint) (model.UserDefinedLectureTitle, error)
 
-	// Create a new UserDefinedLectureTitle for the database
-	Create(*model.UserDefinedLectureTitle) error
-
 	// Delete a UserDefinedLectureTitle by user and stream id.
 	Delete(uint, uint) error
 
-	// Upsert updates the entry if it exists, inserts it else
-	Upsert(userLectureTitle *model.UserDefinedLectureTitle) error
+	// Save updates the entry if it exists, inserts it else
+	Save(userLectureTitle *model.UserDefinedLectureTitle) error
 }
 
 type userDefinedLectureTitlesDao struct {
@@ -34,17 +32,15 @@ func (d userDefinedLectureTitlesDao) Get(userID uint, streamID uint) (res model.
 	return res, d.db.First(&res, "user_id = ? AND stream_id = ?", userID, streamID).Error
 }
 
-// Create a userDefinedLectureTitlesDao.
-func (d userDefinedLectureTitlesDao) Create(it *model.UserDefinedLectureTitle) error {
-	return d.db.Create(it).Error
-}
-
 // Delete a userDefinedLectureTitlesDao by id.
 func (d userDefinedLectureTitlesDao) Delete(userID uint, streamID uint) error {
 	return d.db.Delete(&model.UserDefinedLectureTitle{}, "user_id = ? AND stream_id = ?", userID, streamID).Error
 }
 
-// Upsert updates the entry if it exists, inserts it else
-func (d userDefinedLectureTitlesDao) Upsert(userLectureTitle *model.UserDefinedLectureTitle) error {
-	return d.db.Save(userLectureTitle).Error
+// Save updates the entry if it exists, inserts it else
+func (d userDefinedLectureTitlesDao) Save(userLectureTitle *model.UserDefinedLectureTitle) error {
+	return d.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}, {Name: "stream_id"}}, // key column,
+		DoUpdates: clause.AssignmentColumns([]string{"title"}),             // column needed to be updated
+	}).Create(userLectureTitle).Error
 }
