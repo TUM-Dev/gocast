@@ -376,19 +376,20 @@ func (s Stream) Attachments() []File {
 }
 
 type StreamDTO struct {
-	ID          uint
-	Name        string
-	CustomName  string
-	Description string
-	IsRecording bool
-	IsPlanned   bool
-	IsComingUp  bool
-	HLSUrl      string
-	Downloads   []DownloadableVod
-	Start       time.Time
-	End         time.Time
-	Duration    int32
-	LectureHall string
+	ID                uint
+	Name              string
+	CustomName        string
+	Description       string
+	IsRecording       bool
+	IsPlanned         bool
+	IsComingUp        bool
+	HLSUrl            string
+	Downloads         []DownloadableVod
+	Start             time.Time
+	End               time.Time
+	Duration          int32
+	LectureHall       string
+	IsPubliclyVisible bool
 }
 
 func (s Stream) ToDTO() StreamDTO {
@@ -401,18 +402,19 @@ func (s Stream) ToDTO() StreamDTO {
 		duration = s.Duration.Int32
 	}
 	return StreamDTO{
-		ID:          s.ID,
-		Name:        s.Name,
-		Description: s.Description,
-		IsRecording: s.Recording,
-		IsPlanned:   s.IsPlanned(),
-		IsComingUp:  s.IsComingUp(),
-		Downloads:   downloads,
-		HLSUrl:      s.HLSUrl(),
-		Start:       s.Start,
-		End:         s.End,
-		Duration:    duration,
-		LectureHall: s.RoomCode,
+		ID:                s.ID,
+		Name:              s.Name,
+		Description:       s.Description,
+		IsRecording:       s.Recording,
+		IsPlanned:         s.IsPlanned(),
+		IsComingUp:        s.IsComingUp(),
+		Downloads:         downloads,
+		HLSUrl:            s.HLSUrl(),
+		Start:             s.Start,
+		End:               s.End,
+		Duration:          duration,
+		LectureHall:       s.RoomCode,
+		IsPubliclyVisible: !s.Private,
 	}
 }
 

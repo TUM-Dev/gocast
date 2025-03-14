@@ -25,6 +25,7 @@ export class Stream implements Identifiable {
     readonly Start: string;
     readonly Downloads: DownloadableVOD[];
     readonly Duration: number;
+    readonly IsPubliclyVisible: boolean; // may be false for admin
 
     Progress?: Progress;
 
