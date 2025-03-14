@@ -400,14 +400,9 @@ func (s Stream) ToDTO() StreamDTO {
 	if s.Duration.Valid {
 		duration = s.Duration.Int32
 	}
-	customLectureName := ""
-	if len(s.CustomLectureTitles) > 0 {
-		customLectureName = s.CustomLectureTitles[0].Title
-	}
 	return StreamDTO{
 		ID:          s.ID,
 		Name:        s.Name,
-		CustomName:  customLectureName,
 		Description: s.Description,
 		IsRecording: s.Recording,
 		IsPlanned:   s.IsPlanned(),

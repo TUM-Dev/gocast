@@ -395,6 +395,10 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 			return
 		}
 		streamsDTO[i] = s.ToDTO()
+		// Double check that custom lecture title has the right userId and add it to the streamDTO
+		if len(s.CustomLectureTitles) > 0 && s.CustomLectureTitles[0].UserID == userId {
+			streamsDTO[i].CustomName = s.CustomLectureTitles[0].Title
+		}
 	}
 
 	isAdmin := course.UserID == query.UserID
