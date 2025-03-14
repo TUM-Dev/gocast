@@ -950,10 +950,10 @@ func (r streamRoutes) changePersonalLectureName(c *gin.Context) {
 		Title:    update.PersonalLectureName,
 	})
 	if err != nil {
-		logger.Error("failed to upsert personal lecture name", "err", err)
+		logger.Error("failed to save personal lecture name", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not upsert personal lecture name",
+			CustomMessage: "can not save personal lecture name",
 			Err:           err,
 		})
 		return
