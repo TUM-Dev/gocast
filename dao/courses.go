@@ -220,7 +220,7 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 	if userID == 0 {
 		cacheKey = fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year)
 	} else {
-		cacheKey = fmt.Sprintf("courseBySlugYearTermUser%v%v%v%v", slug, term, year, userID)
+		cacheKey = fmt.Sprintf("courseBySlugYearTermUser%v%v%v-%v", slug, term, year, userID)
 	}
 
 	cachedCourses, found := Cache.Get(cacheKey)
