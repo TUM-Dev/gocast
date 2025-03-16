@@ -229,6 +229,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/meilisearch/meilisearch-go v0.26.0 h1:6IdFC9S53gEp7FMkt99swIFyEZE+4TwJAgen3eQdw40=
 github.com/meilisearch/meilisearch-go v0.26.0/go.mod h1:SxuSqDcPBIykjWz1PX+KzsYzArNLSCadQodWs8extS0=
+github.com/meilisearch/meilisearch-go v0.31.0 h1:yZRhY1qJqdH8h6GFZALGtkDLyj8f9v5aJpsNMyrUmnY=
+github.com/meilisearch/meilisearch-go v0.31.0/go.mod h1:aNtyuwurDg/ggxQIcKqWH6G9g2ptc8GyY7PLY4zMn/g=
 github.com/microcosm-cc/bluemonday v1.0.27 h1:MpEUotklkwCSLeH+Qdx1VJgNqLlpY2KXwXFM08ygZfk=
 github.com/microcosm-cc/bluemonday v1.0.27/go.mod h1:jFi9vgW+H7c3V0lb6nR74Ib/DIB5OBs92Dimizgw2cA=
 github.com/mitchellh/copystructure v1.2.0 h1:vpKXTN4ewci03Vljg/q9QvCGUDttBOGBIa15WveJJGw=
