@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/TUM-Dev/gocast/model"
@@ -23,6 +24,15 @@ type MeiliStream struct {
 	CourseID     uint   `json:"courseID"`
 	Private      uint   `json:"private"`
 	Visibility   string `json:"visibility"` // corresponds to the visibility of the course
+}
+
+type MeiliCustomTitleStream struct {
+	ID           string `json:"ID"`
+	StreamID     uint   `json:"streamID"`
+	UserID       uint   `json:"userID"`
+	Title        string `json:"title"`
+	Year         int    `json:"year"`
+	TeachingTerm string `json:"semester"`
 }
 
 type MeiliSubtitles struct {
@@ -113,7 +123,7 @@ func (m *MeiliExporter) Export() {
 				}
 
 				if len(meiliSubtitles) > 0 {
-					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, "ID")
+					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, "userID")
 					if err != nil {
 						logger.Error("issue adding subtitles to meili", "err", err)
 					}
@@ -126,10 +136,34 @@ func (m *MeiliExporter) Export() {
 		}
 	})
 
+	index = m.c.Index("STREAMSCUSTOMTITLE")
+	_, err = index.DeleteAllDocuments()
+	if err != nil {
+		logger.Warn("could not delete all old custom lecture titles in meili", "err", err)
+	}
+
+	m.d.UserDefinedLectureTitlesDao.ExecAllCustomLectureTitlesBatched(func(streams []dao.StreamWithCustomLectureTitle, baseId uint) {
+		meilistreams := make([]MeiliCustomTitleStream, len(streams))
+		for i, stream := range streams {
+			meilistreams[i] = MeiliCustomTitleStream{
+				ID:           strconv.FormatUint(uint64(stream.StreamID), 10) + "-" + strconv.FormatUint(uint64(stream.UserID), 10),
+				UserID:       stream.UserID,
+				StreamID:     stream.StreamID,
+				Title:        stream.Title,
+				Year:         stream.Year,
+				TeachingTerm: stream.TeachingTerm,
+			}
+		}
+		_, err := index.AddDocuments(&meilistreams, "ID")
+		if err != nil {
+			logger.Error("issue adding documents to meili", "err", err)
+		}
+	})
+
 	coursesIndex := m.c.Index("COURSES")
 	_, err = coursesIndex.DeleteAllDocuments()
 	if err != nil {
-		logger.Warn("could not delete all old courses", "err", err)
+		logger.Warn("could not delete all old courses in meili", "err", err)
 	}
 
 	m.d.CoursesDao.ExecAllCourses(func(courses []dao.Course) {
@@ -170,6 +204,14 @@ func (m *MeiliExporter) SetIndexSettings() {
 	_, err = index.UpdateSynonyms(&synonyms)
 	if err != nil {
 		logger.Error("could not set synonyms for meili index STREAMS", "err", err)
+	}
+
+	_, err = m.c.Index("STREAMSCUSTOMTITLE").UpdateSettings(&meilisearch.Settings{
+		FilterableAttributes: []string{"year", "semester", "userID"},
+		SearchableAttributes: []string{"title"},
+	})
+	if err != nil {
+		logger.Error("could not set settings for meili index STREAMSCUSTOMTITLE", "err", err)
 	}
 
 	_, err = m.c.Index("SUBTITLES").UpdateSettings(&meilisearch.Settings{

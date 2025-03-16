@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"fmt"
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -17,6 +18,8 @@ type UserDefinedLectureTitlesDao interface {
 
 	// Save updates the entry if it exists, inserts it else
 	Save(userLectureTitle *model.UserDefinedLectureTitle) error
+
+	ExecAllCustomLectureTitlesBatched(f func([]StreamWithCustomLectureTitle, uint))
 }
 
 type userDefinedLectureTitlesDao struct {
@@ -43,4 +46,43 @@ func (d userDefinedLectureTitlesDao) Save(userLectureTitle *model.UserDefinedLec
 		Columns:   []clause.Column{{Name: "user_id"}, {Name: "stream_id"}}, // key column,
 		DoUpdates: clause.AssignmentColumns([]string{"title"}),             // column needed to be updated
 	}).Create(userLectureTitle).Error
+}
+
+type StreamWithCustomLectureTitle struct {
+	StreamID, UserID    uint
+	Title, TeachingTerm string
+	Year                int
+}
+
+// ExecAllCustomLectureTitlesBatched executes f on all streams (batched) with their courses and subtitles preloaded.
+func (d userDefinedLectureTitlesDao) ExecAllCustomLectureTitlesBatched(f func([]StreamWithCustomLectureTitle, uint)) {
+	var res []StreamWithCustomLectureTitle
+	batchNum := uint(0)
+	batchSize := uint(1000)
+	var numLectureTitles int64
+	DB.Model(&model.UserDefinedLectureTitle{}).Count(&numLectureTitles)
+	var lastSeenStreamId, lastSeenUserId uint
+	for int(batchSize)*int(batchNum) < int(numLectureTitles) {
+		err := DB.Raw(`
+				SELECT s.user_id, 
+				       s.stream_id, 
+				       s.title, 
+				       c.year, 
+				       c.teaching_term
+             	FROM user_defined_lecture_titles s 
+             		  JOIN streams ON streams.id = s.stream_id
+                      JOIN courses c ON c.id = streams.course_id
+                WHERE s.user_id > ? AND s.stream_id > ?
+				ORDER BY s.user_id, s.stream_id ASC
+				LIMIT ? `, lastSeenUserId, lastSeenStreamId, batchSize).Scan(&res).Error
+		if err != nil {
+			fmt.Println(err)
+		}
+		if err == nil && len(res) > 0 {
+			lastSeenUserId = res[len(res)-1].UserID
+			lastSeenStreamId = res[len(res)-1].StreamID
+		}
+		f(res, batchSize*batchNum+1)
+		batchNum++
+	}
 }
