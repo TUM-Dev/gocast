@@ -35,7 +35,7 @@ func (d *meiliSearchFunctions) SearchSubtitles(q string, streamID uint) *meilise
 	return response
 }
 
-func getCourseWideSubtitleSearchRequest(q string, limit int64, streamFilter string) meilisearch.SearchRequest {
+func getCourseWideSubtitleSearchRequest(q string, limit int64, streamFilter string) *meilisearch.SearchRequest {
 	req := meilisearch.SearchRequest{
 		IndexUID:             "SUBTITLES",
 		Query:                q,
@@ -43,10 +43,10 @@ func getCourseWideSubtitleSearchRequest(q string, limit int64, streamFilter stri
 		Filter:               streamFilter,
 		AttributesToRetrieve: []string{"streamID", "timestamp", "textPrev", "text", "textNext"},
 	}
-	return req
+	return &req
 }
 
-func getStreamsSearchRequest(q string, limit int64, streamFilter string) meilisearch.SearchRequest {
+func getStreamsSearchRequest(q string, limit int64, streamFilter string) *meilisearch.SearchRequest {
 	req := meilisearch.SearchRequest{
 		IndexUID:             "STREAMS",
 		Query:                q,
@@ -54,10 +54,10 @@ func getStreamsSearchRequest(q string, limit int64, streamFilter string) meilise
 		Filter:               streamFilter,
 		AttributesToRetrieve: []string{"ID", "name", "description", "courseName", "year", "semester"},
 	}
-	return req
+	return &req
 }
 
-func getCoursesSearchRequest(q string, limit int64, courseFilter string) meilisearch.SearchRequest {
+func getCoursesSearchRequest(q string, limit int64, courseFilter string) *meilisearch.SearchRequest {
 	req := meilisearch.SearchRequest{
 		IndexUID:             "COURSES",
 		Query:                q,
@@ -65,7 +65,7 @@ func getCoursesSearchRequest(q string, limit int64, courseFilter string) meilise
 		Filter:               courseFilter,
 		AttributesToRetrieve: []string{"name", "slug", "year", "semester"},
 	}
-	return req
+	return &req
 }
 
 // Search passes search requests on to MeiliSearch instance and returns the results
@@ -78,7 +78,7 @@ func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, cou
 	}
 
 	bitOperator := 1
-	var reqs []meilisearch.SearchRequest
+	var reqs []*meilisearch.SearchRequest
 
 	for i := 0; i < 4; i++ {
 		switch searchType & bitOperator {
