@@ -52,7 +52,18 @@ func getStreamsSearchRequest(q string, limit int64, streamFilter string) *meilis
 		Query:                q,
 		Limit:                limit + 2,
 		Filter:               streamFilter,
-		AttributesToRetrieve: []string{"ID", "name", "description", "courseName", "year", "semester"},
+		AttributesToRetrieve: []string{"userID", "streamID", "year", "semester", "year"},
+	}
+	return &req
+}
+
+func getCustomStreamsSearchRequest(q string, limit int64, customStreamFilter string) *meilisearch.SearchRequest {
+	req := meilisearch.SearchRequest{
+		IndexUID:             "STREAMSCUSTOMTITLE",
+		Query:                q,
+		Limit:                limit + 2,
+		Filter:               customStreamFilter,
+		AttributesToRetrieve: []string{"userID", "streamID", "title", "year", "semester"},
 	}
 	return &req
 }
