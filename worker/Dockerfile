@@ -1,4 +1,5 @@
-FROM amd64/golang:1.21-alpine3.18 as builder
+FROM amd64/golang:1.24.1-alpine3.21 as builder
+
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/worker
 COPY . .
