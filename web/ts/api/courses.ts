@@ -133,7 +133,7 @@ export class Stream implements Identifiable {
 
     public updatePersonalLectureTitle(newLectureTitle: string): void {
         this.CustomName = newLectureTitle;
-        putData(`/api/stream/${this.ID}/personalLectureName/`, { personalLectureName: newLectureTitle }).then(
+        putData(`/api/stream/${this.ID}/personalLectureName`, { personalLectureName: newLectureTitle }).then(
             (resp) => {
                 if (!resp.ok) {
                     console.error(Error(resp.statusText));
