@@ -195,7 +195,7 @@ func (c Config) GetMeiliClient() (meilisearch.ServiceManager, error) {
 	if c.Meili == nil {
 		return nil, ErrMeiliNotConfigured
 	}
-	return meilisearch.New(c.Meili.Host), nil
+	return meilisearch.New(c.Meili.Host, meilisearch.WithAPIKey(c.Meili.ApiKey)), nil
 }
 
 var jwtKey *rsa.PrivateKey
