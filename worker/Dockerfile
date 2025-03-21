@@ -1,4 +1,5 @@
-FROM amd64/golang:1.21-alpine3.18 as builder
+FROM amd64/golang:1.24.1-alpine3.21 AS builder
+
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/worker
 COPY . .
@@ -8,7 +9,7 @@ RUN GO111MODULE=on go mod download
 ARG version=dev
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '-static' -X main.VersionTag=${version}" -o /worker cmd/worker/worker.go
 
-FROM aler9/rtsp-simple-server:latest as rtsp
+FROM aler9/rtsp-simple-server:latest AS rtsp
 
 FROM alpine:3.18
 ADD entrypoint.sh /entrypoint.sh
