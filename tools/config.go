@@ -191,11 +191,11 @@ func (Config) GetJWTKey() *rsa.PrivateKey {
 
 var ErrMeiliNotConfigured = errors.New("meilisearch is not configured")
 
-func (c Config) GetMeiliClient() (*meilisearch.Client, error) {
+func (c Config) GetMeiliClient() (meilisearch.ServiceManager, error) {
 	if c.Meili == nil {
 		return nil, ErrMeiliNotConfigured
 	}
-	return meilisearch.NewClient(meilisearch.ClientConfig{Host: c.Meili.Host, APIKey: c.Meili.ApiKey}), nil
+	return meilisearch.New(c.Meili.Host, meilisearch.WithAPIKey(c.Meili.ApiKey)), nil
 }
 
 var jwtKey *rsa.PrivateKey
