@@ -42,7 +42,7 @@ require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
 	github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789
 	github.com/asticode/go-astisub v0.34.0
-	github.com/dgraph-io/ristretto v0.1.0
+	github.com/dgraph-io/ristretto v0.2.0
 	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/matthiasreumann/gomino v0.0.2
@@ -52,8 +52,8 @@ require (
 	github.com/tum-dev/gocast/runner v0.0.0-20250309031139-45dc3616df3f
 	golang.org/x/crypto v0.36.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250313205543-e70fdf4c4cb4
-	google.golang.org/grpc v1.70.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/grpc v1.71.0
+	google.golang.org/protobuf v1.36.6
 	gorm.io/gorm v1.25.12
 )
 
