@@ -42,7 +42,7 @@ require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
 	github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789
 	github.com/asticode/go-astisub v0.34.0
-	github.com/dgraph-io/ristretto v0.2.0
+	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dgraph-io/ristretto/v2 v2.1.0
 	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
