@@ -50,7 +50,11 @@ require (
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/soheilhy/cmux v0.1.5
 	github.com/tum-dev/gocast/runner v0.0.0-20250309031139-45dc3616df3f
+	golang.org/x/crypto v0.36.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250313205543-e70fdf4c4cb4
+	google.golang.org/grpc v1.70.0
+	google.golang.org/protobuf v1.36.5
+	gorm.io/gorm v1.25.12
 )
 
 require (
