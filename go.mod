@@ -6,7 +6,7 @@ require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/antchfx/xmlquery v1.4.4
-	github.com/dgraph-io/ristretto v0.2.0
+	github.com/dgraph-io/ristretto/v2 v2.1.0
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.31.1
 	github.com/gin-contrib/gzip v1.2.2
@@ -43,6 +43,7 @@ require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
 	github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789
 	github.com/asticode/go-astisub v0.34.0
+	github.com/dgraph-io/ristretto v0.1.0
 	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/matthiasreumann/gomino v0.0.2
@@ -69,6 +70,7 @@ require (
 	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/golang/glog v1.2.3 // indirect
 	github.com/google/pprof v0.0.0-20241210010833-40e02aabc2ad // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
