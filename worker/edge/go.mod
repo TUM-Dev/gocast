@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/prometheus/client_golang v1.21.1
 )
 
