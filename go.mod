@@ -14,7 +14,7 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.1.3
 	github.com/go-ldap/ldap/v3 v3.4.10
 	github.com/go-sql-driver/mysql v1.9.1
-	github.com/golang-jwt/jwt/v4 v4.5.2
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jinzhu/now v1.1.5
 	github.com/microcosm-cc/bluemonday v1.0.27
@@ -45,6 +45,7 @@ require (
 	github.com/dgraph-io/ristretto v0.2.0
 	github.com/dgraph-io/ristretto/v2 v2.1.0
 	github.com/getsentry/sentry-go/gin v0.31.1
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.31.0
