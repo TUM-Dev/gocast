@@ -7,9 +7,9 @@ import { loadAndSetTrackbars } from "./track-bars";
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
 
-require("videojs-sprite-thumbnails");
-require("videojs-seek-buttons");
-require("videojs-contrib-quality-levels");
+import "videojs-sprite-thumbnails";
+import "videojs-seek-buttons";
+import "videojs-contrib-quality-levels";
 
 const Button = videojs.getComponent("Button");
 
