@@ -41,7 +41,8 @@ require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
 	github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789
 	github.com/asticode/go-astisub v0.34.0
-	github.com/dgraph-io/ristretto v0.2.0
+	github.com/dgraph-io/ristretto v0.1.0
+	github.com/dgraph-io/ristretto/v2 v2.1.0
 	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
@@ -70,6 +71,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
+	github.com/golang/glog v1.2.4 // indirect
 	github.com/google/pprof v0.0.0-20241210010833-40e02aabc2ad // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
