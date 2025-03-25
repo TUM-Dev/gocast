@@ -3,15 +3,15 @@ package tools
 import (
 	"time"
 
-	"github.com/dgraph-io/ristretto"
+	"github.com/dgraph-io/ristretto/v2"
 )
 
-var cache *ristretto.Cache
+var cache *ristretto.Cache[string, any]
 
 func initCache() {
-	c, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e6,     // number of keys to track frequency of (1M).
-		MaxCost:     1 << 29, // 1 << 29 == 1/2GB Cost of cache
+	c, err := ristretto.NewCache[string, any](&ristretto.Config[string, any]{
+		NumCounters: 1e6,
+		MaxCost:     1 << 29,
 		BufferItems: 64,
 	})
 	if err != nil {
