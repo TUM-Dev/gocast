@@ -19,6 +19,23 @@ func NewMeiliSearchFunctions() MeiliSearchInterface {
 	return &meiliSearchFunctions{}
 }
 
+type MeiliSearchRequestBundle struct {
+	SearchRequests          []*meilisearch.SearchRequest
+	FederatedSearchRequests []*meilisearch.MultiSearchRequest
+}
+
+type MeiliSearchResponseBundle struct {
+	SearchResponses         []*meilisearch.SearchResponse
+	FederatedSearchRequests []*meilisearch.MultiSearchResponse
+}
+
+const (
+	CourseWideSubtitleSearchType = 1 << iota
+	StreamSearchType
+	CustomStreamSearchType
+	CourseSearchType
+)
+
 func (d *meiliSearchFunctions) SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {
@@ -52,7 +69,7 @@ func getStreamsSearchRequest(q string, limit int64, streamFilter string) *meilis
 		Query:                q,
 		Limit:                limit + 2,
 		Filter:               streamFilter,
-		AttributesToRetrieve: []string{"userID", "streamID", "year", "semester", "year"},
+		AttributesToRetrieve: []string{"ID", "name", "description", "courseName", "year", "semester"},
 	}
 	return &req
 }
@@ -89,24 +106,29 @@ func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, cou
 	}
 
 	bitOperator := 1
-	var reqs []*meilisearch.SearchRequest
+	reqs := MeiliSearchRequestBundle{
+		SearchRequests:          []*meilisearch.SearchRequest{},
+		FederatedSearchRequests: []*meilisearch.MultiSearchRequest{},
+	}
 
 	for i := 0; i < 4; i++ {
 		switch searchType & bitOperator {
-		case 0:
+		case CourseWideSubtitleSearchType:
+			reqs.SearchRequests = append(reqs.SearchRequests, getCourseWideSubtitleSearchRequest(q, limit, subtitleFilter))
+		case StreamSearchType:
+			reqs.SearchRequests = append(reqs.SearchRequests, getStreamsSearchRequest(q, limit, streamFilter))
+		case CustomStreamSearchType:
 			break
-		case 1:
-			reqs = append(reqs, getCourseWideSubtitleSearchRequest(q, limit, subtitleFilter))
-		case 2:
-			reqs = append(reqs, getStreamsSearchRequest(q, limit, streamFilter))
-		case 4:
-			reqs = append(reqs, getCoursesSearchRequest(q, limit, courseFilter))
+		case CourseSearchType:
+			reqs.SearchRequests = append(reqs.SearchRequests, getCoursesSearchRequest(q, limit, courseFilter))
+		default:
+			break
 		}
 		bitOperator <<= 1
 	}
 
 	// multisearch Request
-	response, err := c.MultiSearch(&meilisearch.MultiSearchRequest{Queries: reqs})
+	response, err := c.MultiSearch(&meilisearch.MultiSearchRequest{Queries: reqs.SearchRequests})
 	if err != nil {
 		logger.Error("could not search in meili", "err", err)
 		return nil
