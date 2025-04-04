@@ -7,6 +7,7 @@ package mock_tools
 import (
 	reflect "reflect"
 
+	tools "github.com/TUM-Dev/gocast/tools"
 	gomock "github.com/golang/mock/gomock"
 	meilisearch "github.com/meilisearch/meilisearch-go"
 )
@@ -35,17 +36,17 @@ func (m *MockMeiliSearchInterface) EXPECT() *MockMeiliSearchInterfaceMockRecorde
 }
 
 // Search mocks base method.
-func (m *MockMeiliSearchInterface) Search(q string, limit int64, searchType int, courseFilter, streamFilter, subtitleFilter string) *meilisearch.MultiSearchResponse {
+func (m *MockMeiliSearchInterface) Search(q string, limit int64, searchType int, courseFilter, streamFilter, customStreamFilter, subtitleFilter string) *tools.MeiliSearchResponseBundle {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", q, limit, searchType, courseFilter, streamFilter, subtitleFilter)
-	ret0, _ := ret[0].(*meilisearch.MultiSearchResponse)
+	ret := m.ctrl.Call(m, "Search", q, limit, searchType, courseFilter, streamFilter, customStreamFilter, subtitleFilter)
+	ret0, _ := ret[0].(*tools.MeiliSearchResponseBundle)
 	return ret0
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockMeiliSearchInterfaceMockRecorder) Search(q, limit, searchType, courseFilter, streamFilter, subtitleFilter interface{}) *gomock.Call {
+func (mr *MockMeiliSearchInterfaceMockRecorder) Search(q, limit, searchType, courseFilter, streamFilter, customStreamFilter, subtitleFilter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockMeiliSearchInterface)(nil).Search), q, limit, searchType, courseFilter, streamFilter, subtitleFilter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockMeiliSearchInterface)(nil).Search), q, limit, searchType, courseFilter, streamFilter, customStreamFilter, subtitleFilter)
 }
 
 // SearchSubtitles mocks base method.
