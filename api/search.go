@@ -106,7 +106,7 @@ func (r searchRoutes) search(c *gin.Context) {
 				return
 			}
 		}
-		res = r.m.Search(query, int64(limit), streamSearchType+tools.CourseWideSubtitleSearchType, "", meiliStreamFilter(c, user, model.Semester{}, courses), "", meiliSubtitleFilter(user, courses))
+		res = r.m.Search(query, int64(limit), streamSearchType+tools.CourseWideSubtitleSearchType, "", meiliStreamFilter(c, user, model.Semester{}, courses), meiliCustomStreamTitleFilter(c, user, model.Semester{}, courses), meiliSubtitleFilter(user, courses))
 		if res == nil {
 			logger.Warn("meilisearch did not return any search result")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -160,7 +160,7 @@ func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query st
 		isSingleSemesterSearch, singleSemester := determineSingleSemester(firstSemester, lastSemester, semesters)
 		if !courseSearchOnly && isSingleSemesterSearch {
 			// single semester search
-			res = m.Search(query, limit, tools.CourseSearchType+streamSearchType, meiliCourseFilter(c, user, singleSemester, singleSemester, nil), meiliStreamFilter(c, user, singleSemester, nil), "", "")
+			res = m.Search(query, limit, tools.CourseSearchType+streamSearchType, meiliCourseFilter(c, user, singleSemester, singleSemester, nil), meiliStreamFilter(c, user, singleSemester, nil), meiliCustomStreamTitleFilter(c, user, singleSemester, nil), "")
 		} else {
 			// multiple semester or course only search
 			res = m.Search(query, limit, tools.CourseSearchType, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "", "")
@@ -365,6 +365,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 
 			meiliStream.CourseSlug = course.Slug
 			meiliStream.CourseName = course.Name
+			meiliStream.Description = stream.Description
 			if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
 				federatedRes.Hits = append(federatedRes.Hits, meiliStream)
 			}
@@ -443,6 +444,16 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 		return semesterFilter
 	}
 	return fmt.Sprintf("(%s AND %s)", permissionFilter, semesterFilter)
+}
+
+// meiliCustomStreamTitleFilter returns a filter conforming to MeiliSearch filter format that can be used for filtering streams with custom lecture titles
+//
+// Checking eligibility to search for courses and validation of model.Semester format is the caller's responsibility
+func meiliCustomStreamTitleFilter(c *gin.Context, user *model.User, semester model.Semester, courses []model.Course) string {
+	if courses != nil {
+		return fmt.Sprintf("courseID IN %s AND userID = %d", courseSliceToString(courses), user.ID)
+	}
+	return fmt.Sprintf("year = %d AND semester = \"%s\" AND userID = %d", semester.Year, semester.TeachingTerm, user.ID)
 }
 
 // meiliCourseFilter returns a filter conforming to MeiliSearch filter format that can be used for filtering courses

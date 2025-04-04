@@ -33,6 +33,7 @@ type MeiliCustomTitleStream struct {
 	Title        string `json:"name"`
 	Year         int    `json:"year"`
 	TeachingTerm string `json:"semester"`
+	CourseID     uint   `json:"courseID"`
 }
 
 type MeiliSubtitles struct {
@@ -156,6 +157,7 @@ func (m *MeiliExporter) Export() {
 				Title:        stream.Title,
 				Year:         stream.Year,
 				TeachingTerm: stream.TeachingTerm,
+				CourseID:     stream.CourseID,
 			}
 		}
 		_, err := index.AddDocuments(&meilistreams, "ID")
@@ -211,7 +213,7 @@ func (m *MeiliExporter) SetIndexSettings() {
 	}
 
 	_, err = m.c.Index("STREAMSCUSTOMTITLE").UpdateSettings(&meilisearch.Settings{
-		FilterableAttributes: []string{"year", "semester", "userID"},
+		FilterableAttributes: []string{"year", "semester", "userID", "courseID"},
 		SearchableAttributes: []string{"name"},
 	})
 	if err != nil {

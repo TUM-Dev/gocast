@@ -49,9 +49,9 @@ func (d userDefinedLectureTitlesDao) Save(userLectureTitle *model.UserDefinedLec
 }
 
 type StreamWithCustomLectureTitle struct {
-	StreamID, UserID    uint
-	Title, TeachingTerm string
-	Year                int
+	StreamID, UserID, CourseID uint
+	Title, TeachingTerm        string
+	Year                       int
 }
 
 // ExecAllCustomLectureTitlesBatched executes f on all streams (batched) with their courses and subtitles preloaded.
@@ -66,7 +66,8 @@ func (d userDefinedLectureTitlesDao) ExecAllCustomLectureTitlesBatched(f func([]
 		err := DB.Raw(`
 				SELECT s.user_id, 
 				       s.stream_id, 
-				       s.title, 
+				       s.title,
+				       streams.course_id,
 				       c.year, 
 				       c.teaching_term
              	FROM user_defined_lecture_titles s 
