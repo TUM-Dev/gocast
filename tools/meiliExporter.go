@@ -15,7 +15,7 @@ import (
 )
 
 type MeiliStream struct {
-	ID           uint   `json:"ID"`
+	ID           uint   `json:"streamID"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 	CourseName   string `json:"courseName"`
@@ -30,7 +30,7 @@ type MeiliCustomTitleStream struct {
 	ID           string `json:"ID"`
 	StreamID     uint   `json:"streamID"`
 	UserID       uint   `json:"userID"`
-	Title        string `json:"title"`
+	Title        string `json:"name"`
 	Year         int    `json:"year"`
 	TeachingTerm string `json:"semester"`
 }
@@ -79,6 +79,10 @@ func (m *MeiliExporter) Export() {
 	_, err := index.DeleteAllDocuments()
 	if err != nil {
 		logger.Warn("could not delete all old streams", "err", err)
+	}
+	_, _ = index.UpdateIndex("streamID") // this line only needed to change the name of the primary key, can be deleted after one run
+	if err != nil {
+		return
 	}
 	_, err = m.c.Index("SUBTITLES").DeleteAllDocuments()
 	if err != nil {
@@ -130,7 +134,7 @@ func (m *MeiliExporter) Export() {
 				}
 			}
 		}
-		_, err := index.AddDocuments(&meilistreams, "ID")
+		_, err := index.AddDocuments(&meilistreams, "streamID")
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
@@ -208,7 +212,7 @@ func (m *MeiliExporter) SetIndexSettings() {
 
 	_, err = m.c.Index("STREAMSCUSTOMTITLE").UpdateSettings(&meilisearch.Settings{
 		FilterableAttributes: []string{"year", "semester", "userID"},
-		SearchableAttributes: []string{"title"},
+		SearchableAttributes: []string{"name"},
 	})
 	if err != nil {
 		logger.Error("could not set settings for meili index STREAMSCUSTOMTITLE", "err", err)

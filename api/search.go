@@ -82,8 +82,14 @@ func (r searchRoutes) searchCourses(c *gin.Context) {
 
 func (r searchRoutes) search(c *gin.Context) {
 	user, query, limit := getDefaultParameters(c)
+	var streamSearchType int
+	if user == nil {
+		streamSearchType = tools.StreamSearchType
+	} else {
+		streamSearchType = tools.CustomStreamSearchType
+	}
 
-	var res *meilisearch.MultiSearchResponse
+	var res *tools.MeiliSearchResponseBundle
 	if courseParam := c.Query("course"); courseParam != "" {
 		courses, errorCode := parseCourses(c, r.DaoWrapper, courseParam)
 		if errorCode == 2 {
@@ -100,7 +106,7 @@ func (r searchRoutes) search(c *gin.Context) {
 				return
 			}
 		}
-		res = r.m.Search(query, int64(limit), 3, "", meiliStreamFilter(c, user, model.Semester{}, courses), meiliSubtitleFilter(user, courses))
+		res = r.m.Search(query, int64(limit), streamSearchType+tools.CourseWideSubtitleSearchType, "", meiliStreamFilter(c, user, model.Semester{}, courses), "", meiliSubtitleFilter(user, courses))
 		if res == nil {
 			logger.Warn("meilisearch did not return any search result")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -109,24 +115,32 @@ func (r searchRoutes) search(c *gin.Context) {
 		checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, true)
 		c.JSON(http.StatusOK, responseToMap(res))
 		return
-	}
-
-	res, err := semesterSearchHelper(c, r.m, query, int64(limit), user, false)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	} else {
+		res, err := semesterSearchHelper(c, r.m, query, int64(limit), user, false)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		if res == nil {
+			logger.Warn("meilisearch did not return any search result")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
+		c.JSON(http.StatusOK, responseToMap(res))
 		return
 	}
-	if res == nil {
-		logger.Warn("meilisearch did not return any search result")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
-	c.JSON(http.StatusOK, responseToMap(res))
 }
 
-func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query string, limit int64, user *model.User, courseSearchOnly bool) (*meilisearch.MultiSearchResponse, error) {
-	var res *meilisearch.MultiSearchResponse
+func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query string, limit int64, user *model.User, courseSearchOnly bool) (*tools.MeiliSearchResponseBundle, error) {
+	var streamSearchType int
+	if user == nil {
+		streamSearchType = tools.StreamSearchType
+	} else {
+		streamSearchType = tools.CustomStreamSearchType
+	}
+
+	var res *tools.MeiliSearchResponseBundle
 	firstSemesterParam := c.Query("firstSemester")
 	lastSemesterParam := c.Query("lastSemester")
 	semestersParam := c.Query("semester")
@@ -146,17 +160,17 @@ func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query st
 		isSingleSemesterSearch, singleSemester := determineSingleSemester(firstSemester, lastSemester, semesters)
 		if !courseSearchOnly && isSingleSemesterSearch {
 			// single semester search
-			res = m.Search(query, limit, 6, meiliCourseFilter(c, user, singleSemester, singleSemester, nil), meiliStreamFilter(c, user, singleSemester, nil), "")
+			res = m.Search(query, limit, tools.CourseSearchType+streamSearchType, meiliCourseFilter(c, user, singleSemester, singleSemester, nil), meiliStreamFilter(c, user, singleSemester, nil), "", "")
 		} else {
 			// multiple semester or course only search
-			res = m.Search(query, limit, 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
+			res = m.Search(query, limit, tools.CourseSearchType, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "", "")
 		}
 		return res, nil
 	}
 
 	sem1 := model.Semester{TeachingTerm: "S"}
 	sem2 := model.Semester{TeachingTerm: "W", Year: 3000}
-	return m.Search(query, limit, 4, meiliCourseFilter(c, user, sem1, sem2, nil), "", ""), nil
+	return m.Search(query, limit, tools.CourseSearchType, meiliCourseFilter(c, user, sem1, sem2, nil), "", "", ""), nil
 }
 
 type SearchCourseDTO struct {
@@ -167,9 +181,10 @@ type SearchCourseDTO struct {
 }
 
 type SearchStreamDTO struct {
-	ID           uint   `json:"ID"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
+	ID           uint   `json:"streamID"`
+	UserID       uint   `json:"UserID,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Description  string `json:"description,omitempty"`
 	CourseName   string `json:"courseName"`
 	Year         int    `json:"year"`
 	TeachingTerm string `json:"semester"`
@@ -197,7 +212,7 @@ type SearchSubtitlesDTO struct {
 // ---
 // canSearchHiddenCourses indicates whether the response may include streams or subtitles of a hidden course
 // should only be true when the user has explicitly named the hidden course he wants to search through in the url params
-func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse, canSearchHiddenCourses bool) {
+func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *tools.MeiliSearchResponseBundle, canSearchHiddenCourses bool) {
 	var userEligibleToSeeResultsOfHiddenCourse func(course model.Course) bool
 	if canSearchHiddenCourses {
 		userEligibleToSeeResultsOfHiddenCourse = user.IsEligibleToWatchCourse
@@ -205,12 +220,12 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 		userEligibleToSeeResultsOfHiddenCourse = user.IsEligibleToSearchForCourse
 	}
 
-	for i, res := range response.Results {
+	for i, res := range response.SearchResponses {
 		switch res.IndexUID {
 		case "STREAMS":
 			hits := res.Hits
 			res.Hits = []any{}
-			response.Results[i] = meilisearch.SearchResponse{}
+			response.SearchResponses[i] = meilisearch.SearchResponse{}
 
 			var meiliStreams []SearchStreamDTO
 			temp, err := json.Marshal(hits)
@@ -243,11 +258,11 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 					break
 				}
 			}
-			response.Results[i] = res
+			response.SearchResponses[i] = res
 		case "COURSES":
 			hits := res.Hits
 			res.Hits = []any{}
-			response.Results[i] = meilisearch.SearchResponse{}
+			response.SearchResponses[i] = meilisearch.SearchResponse{}
 
 			var meiliCourses []SearchCourseDTO
 			temp, err := json.Marshal(hits)
@@ -271,11 +286,11 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 					break
 				}
 			}
-			response.Results[i] = res
+			response.SearchResponses[i] = res
 		case "SUBTITLES":
 			hits := res.Hits
 			res.Hits = []any{}
-			response.Results[i] = meilisearch.SearchResponse{}
+			response.SearchResponses[i] = meilisearch.SearchResponse{}
 
 			var meiliSubtitles []SearchSubtitlesDTO
 			temp, err := json.Marshal(hits)
@@ -314,10 +329,51 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 					break
 				}
 			}
-			response.Results[i] = res
+			response.SearchResponses[i] = res
 		default:
 			continue
 		}
+	}
+	// check federated stream search request
+	federatedRes := response.StreamFederatedSearchResponse
+	if len(federatedRes.Hits) > 0 {
+		hits := federatedRes.Hits
+		federatedRes.Hits = []any{}
+		response.StreamFederatedSearchResponse = meilisearch.MultiSearchResponse{}
+
+		var meiliStreams []SearchStreamDTO
+		temp, err := json.Marshal(hits)
+		if err != nil { // shouldn't happen
+			logger.Warn("federated meilisearch response post processing streams json marshaling error", "err", err)
+			return
+		}
+		err = json.Unmarshal(temp, &meiliStreams)
+		if err != nil { // shouldn't happen
+			logger.Warn("federated meilisearch response streams post processing streams json unmarshaling error", "err", err)
+			return
+		}
+
+		for _, meiliStream := range meiliStreams {
+			stream, err := daoWrapper.StreamsDao.GetStreamByID(c, strconv.FormatUint(uint64(meiliStream.ID), 10))
+			if err != nil {
+				continue
+			}
+			course, err := daoWrapper.CoursesDao.GetCourseById(c, stream.CourseID)
+			if err != nil {
+				continue
+			}
+
+			meiliStream.CourseSlug = course.Slug
+			meiliStream.CourseName = course.Name
+			if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
+				federatedRes.Hits = append(federatedRes.Hits, meiliStream)
+			}
+
+			if len(federatedRes.Hits) >= int(limit) {
+				break
+			}
+		}
+		response.StreamFederatedSearchResponse = federatedRes
 	}
 }
 
@@ -485,13 +541,16 @@ func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
 	return user, query, limit
 }
 
-func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
+func responseToMap(res *tools.MeiliSearchResponseBundle) MeiliSearchMap {
 	msm := make(MeiliSearchMap)
 	if res == nil {
 		return msm
 	}
-	for _, r := range res.Results {
+	for _, r := range res.SearchResponses {
 		msm[r.IndexUID] = r.Hits
+	}
+	if len(res.StreamFederatedSearchResponse.Hits) > 0 {
+		msm["STREAMS"] = res.StreamFederatedSearchResponse.Hits
 	}
 	return msm
 }

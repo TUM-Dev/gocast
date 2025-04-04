@@ -55,12 +55,12 @@
     <!--Stream is inserted from template before-->
     <li role="option" aria-selected="false" class="" tabindex="-1">
         <a class="flex flex-col text-left rounded-lg text-4 border border-gray-400 dark:border-gray-500 text-sm py-1 px-2 mt-1"
-           :href="'/w/' + stream.courseSlug + '/' + stream.ID"
+           :href="'/w/' + stream.courseSlug + '/' + stream.streamID"
            @mousedown="
                 document.getElementById('search-courses').value = '';
                 searcher.searchInput='';
                 searcher.open = false;
-                document.location.href = '/w/' + stream.courseSlug + '/' + stream.ID;">
+                document.location.href = '/w/' + stream.courseSlug + '/' + stream.streamID;">
             <p x-text="stream.name"></p>
         </a>
     </li>
@@ -91,7 +91,7 @@
             <li role="listitem" aria-selected="false" class="pt-1">
                 <p>Streams</p>
             </li>
-            <template x-for="stream in searcher.hits['STREAMS']" :key="stream.ID">
+            <template x-for="stream in searcher.hits['STREAMS']" :key="stream.streamID">
                 {{template "stream-search-card"}}
             </template>
         </div>

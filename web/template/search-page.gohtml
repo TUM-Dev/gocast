@@ -357,7 +357,7 @@
                     <template x-for="stream in searcher.hits.STREAMS">
                         <li role="option" aria-selected="false" tabindex="-1">
                             <a class="tum-live-search-result-main"
-                                :href="'/w/' + stream.courseSlug + '/' + stream.ID">
+                                :href="'/w/' + stream.courseSlug + '/' + stream.streamID">
                                 <p x-text="stream.name"></p>
                                 <div class="px-2"></div>
                                 <p class="text-gray-600 dark:text-gray-400" x-text="stream.courseName"></p>

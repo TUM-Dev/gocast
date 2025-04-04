@@ -10,7 +10,7 @@ import (
 
 type MeiliSearchInterface interface {
 	SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse
-	Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse
+	Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, customStreamFilter string, subtitleFilter string) *MeiliSearchResponseBundle
 }
 
 type meiliSearchFunctions struct{}
@@ -20,19 +20,19 @@ func NewMeiliSearchFunctions() MeiliSearchInterface {
 }
 
 type MeiliSearchRequestBundle struct {
-	SearchRequests          []*meilisearch.SearchRequest
-	FederatedSearchRequests []*meilisearch.MultiSearchRequest
+	SearchRequests               []*meilisearch.SearchRequest
+	StreamFederatedSearchRequest *meilisearch.MultiSearchRequest
 }
 
 type MeiliSearchResponseBundle struct {
-	SearchResponses         []*meilisearch.SearchResponse
-	FederatedSearchRequests []*meilisearch.MultiSearchResponse
+	SearchResponses               []meilisearch.SearchResponse    // all responses of non-federated search requests
+	StreamFederatedSearchResponse meilisearch.MultiSearchResponse // response of the federated request containing custom stream titles and normal streams
 }
 
 const (
 	CourseWideSubtitleSearchType = 1 << iota
-	StreamSearchType
-	CustomStreamSearchType
+	CustomStreamSearchType       // federated search both for custom stream titles and "normal" streams
+	StreamSearchType             // const StreamSearchType must follow directly after CustomStreamSearchType for Search function to work as expected
 	CourseSearchType
 )
 
@@ -67,9 +67,12 @@ func getStreamsSearchRequest(q string, limit int64, streamFilter string) *meilis
 	req := meilisearch.SearchRequest{
 		IndexUID:             "STREAMS",
 		Query:                q,
-		Limit:                limit + 2,
 		Filter:               streamFilter,
-		AttributesToRetrieve: []string{"ID", "name", "description", "courseName", "year", "semester"},
+		AttributesToRetrieve: []string{"streamID", "name", "description", "courseName", "year", "semester"},
+	}
+	// Federated search fails if Limit is set
+	if limit != 0 {
+		req.Limit = limit + 2
 	}
 	return &req
 }
@@ -78,9 +81,12 @@ func getCustomStreamsSearchRequest(q string, limit int64, customStreamFilter str
 	req := meilisearch.SearchRequest{
 		IndexUID:             "STREAMSCUSTOMTITLE",
 		Query:                q,
-		Limit:                limit + 2,
 		Filter:               customStreamFilter,
-		AttributesToRetrieve: []string{"userID", "streamID", "title", "year", "semester"},
+		AttributesToRetrieve: []string{"userID", "streamID", "name", "year", "semester"},
+	}
+	// Federated search fails if Limit is set
+	if limit != 0 {
+		req.Limit = limit + 2
 	}
 	return &req
 }
@@ -98,8 +104,9 @@ func getCoursesSearchRequest(q string, limit int64, courseFilter string) *meilis
 
 // Search passes search requests on to MeiliSearch instance and returns the results
 //
-// searchType specifies bit-wise which indexes should be searched (lowest bit set to 1: Index SUBTITLES | second-lowest bit set to 1: Index STREAMS | third-lowest bit set to 1: Index COURSES)
-func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
+// searchType specifies bit-wise which indexes should be searched, defined by CourseWideSubtitleSearchType, CustomStreamSearchType, StreamSearchType, CourseSearchType.
+// Both StreamSearchTypes are mutually exclusive
+func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, courseFilter string, streamFilter string, customStreamFilter string, subtitleFilter string) *MeiliSearchResponseBundle {
 	c, err := Cfg.GetMeiliClient()
 	if err != nil {
 		return nil
@@ -107,18 +114,24 @@ func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, cou
 
 	bitOperator := 1
 	reqs := MeiliSearchRequestBundle{
-		SearchRequests:          []*meilisearch.SearchRequest{},
-		FederatedSearchRequests: []*meilisearch.MultiSearchRequest{},
+		SearchRequests:               []*meilisearch.SearchRequest{},
+		StreamFederatedSearchRequest: nil,
 	}
 
 	for i := 0; i < 4; i++ {
 		switch searchType & bitOperator {
 		case CourseWideSubtitleSearchType:
 			reqs.SearchRequests = append(reqs.SearchRequests, getCourseWideSubtitleSearchRequest(q, limit, subtitleFilter))
+		case CustomStreamSearchType:
+			reqs.StreamFederatedSearchRequest = &meilisearch.MultiSearchRequest{
+				Federation: &meilisearch.MultiSearchFederation{
+					Limit: limit,
+				},
+				Queries: []*meilisearch.SearchRequest{getStreamsSearchRequest(q, 0, streamFilter), getCustomStreamsSearchRequest(q, 0, customStreamFilter)},
+			}
+			bitOperator <<= 1 // skip appending stream search as non-federated search
 		case StreamSearchType:
 			reqs.SearchRequests = append(reqs.SearchRequests, getStreamsSearchRequest(q, limit, streamFilter))
-		case CustomStreamSearchType:
-			break
 		case CourseSearchType:
 			reqs.SearchRequests = append(reqs.SearchRequests, getCoursesSearchRequest(q, limit, courseFilter))
 		default:
@@ -127,13 +140,28 @@ func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, cou
 		bitOperator <<= 1
 	}
 
-	// multisearch Request
-	response, err := c.MultiSearch(&meilisearch.MultiSearchRequest{Queries: reqs.SearchRequests})
+	responses := MeiliSearchResponseBundle{
+		SearchResponses:               []meilisearch.SearchResponse{},
+		StreamFederatedSearchResponse: meilisearch.MultiSearchResponse{},
+	}
+	// all non-federated requests bundled into one multisearch request
+	res, err := c.MultiSearch(&meilisearch.MultiSearchRequest{Queries: reqs.SearchRequests})
 	if err != nil {
 		logger.Error("could not search in meili", "err", err)
 		return nil
 	}
-	return response
+	responses.SearchResponses = res.Results
+
+	if reqs.StreamFederatedSearchRequest != nil {
+		res, err = c.MultiSearch(reqs.StreamFederatedSearchRequest)
+		if err != nil {
+			logger.Error("could not search in meili", "err", err)
+			return nil
+		}
+		responses.StreamFederatedSearchResponse = *res
+	}
+
+	return &responses
 }
 
 func SearchCourses(q string, filter string) *meilisearch.SearchResponse {
