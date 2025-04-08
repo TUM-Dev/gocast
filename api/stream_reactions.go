@@ -308,7 +308,7 @@ func NotifyAdminsOnReactionPercentages(context context.Context) {
 	streamReactionPercentages := map[uint]map[string]float64{}
 
 	for _, stream := range streams {
-		reactionsRaw, err := daoWrapper.StreamReactionDao.GetByStreamWithinMinutes(context, stream, 2)
+		reactionsRaw, err := daoWrapper.StreamReactionDao.GetByStreamWithinMinutes(context, stream, 2) // TODO: Make this variable for the lecturer
 		if err != nil {
 			logger.Error("could not get reactions for stream", "stream", stream, "err", err)
 			return
