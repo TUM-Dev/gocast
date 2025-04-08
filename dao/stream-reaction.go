@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+	"time"
 )
 
 //go:generate mockgen -source=streamReaction.go -destination ../mock_dao/streamReaction.go
@@ -20,6 +21,8 @@ type StreamReactionDao interface {
 
 	GetByStream(context.Context, uint) ([]model.StreamReaction, error)
 
+	GetByStreamWithinMinutes(context.Context, uint, uint) ([]model.StreamReaction, error)
+
 	GetNumbersOfReactions(context.Context, uint) (map[string]int, error)
 
 	GetLastReactionOfUser(context.Context, uint) (model.StreamReaction, error)
@@ -30,8 +33,8 @@ type streamReactionDao struct {
 }
 
 type reactionCount struct {
-	Reaction string
-	Count    int
+	Reaction string `json:"reaction"`
+	Count    int    `json:"count"`
 }
 
 func NewStreamReactionDao() StreamReactionDao {
@@ -56,6 +59,12 @@ func (d streamReactionDao) Delete(c context.Context, id uint) error {
 // GetByStream gets a StreamReaction by stream.
 func (d streamReactionDao) GetByStream(c context.Context, streamID uint) (res []model.StreamReaction, err error) {
 	return res, d.db.WithContext(c).Where("stream_id = ?", streamID).Find(&res).Error
+}
+
+// GetByStream gets a StreamReaction by stream within the last ... minutes.
+func (d streamReactionDao) GetByStreamWithinMinutes(c context.Context, streamID uint, minutes uint) (res []model.StreamReaction, err error) {
+	time_specified := time.Now().Add(-time.Duration(minutes) * time.Minute)
+	return res, d.db.WithContext(c).Where("stream_id = ? AND created_at > ?", streamID, time_specified.String()).Find(&res).Error
 }
 
 // GetNumbersOfReactions gets the number of reactions grouped by reactions for a stream.

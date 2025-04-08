@@ -111,12 +111,16 @@
                 </div>
             </div>
 
-            <div x-init="watch.liveReactionListener.init('{{$stream.Model.ID}}'); reactions = await watch.getAllowedReactions({{$stream.Model.ID}})"  x-on:reactionupdate.window="e => {console.log(e); highlightedReaction = e.detail.data.reaction; setTimeout(() => {highlightedReaction = ''}, 1000)}"
-            class="w-fit flex flex-row p-5 gap-2" x-data="{reactions: [], highlightedReaction: ''}">
+            <div x-init="watch.liveReactionListener.init('{{$stream.Model.ID}}'); reactions = await watch.getAllowedReactions({{$stream.Model.ID}})" x-on:reactionupdatepercentages.window="e => {percentages = e.detail.data;}" x-on:reactionupdate.window="e => {console.log(e); highlightedReaction = e.detail.data.reaction; setTimeout(() => {highlightedReaction = ''}, 1000)}"
+            class="w-fit flex flex-row p-5 gap-2" x-data="{reactions: [], highlightedReaction: '', percentages: {}}">
                 <!-- Next line is used for tailwind to compile classes -->
                 <span class="hidden opacity-100"></span>
                 <template x-for="reaction in reactions">
-                    <span x-text="reaction" class="text-5xl text-white" :class="highlightedReaction == reaction ? 'opacity-100' : 'opacity-25'"></span>
+                    <div class="flex flex-col items-center">
+                        <span x-text="reaction" class="text-5xl text-white" :class="highlightedReaction == reaction ? 'opacity-100' : 'opacity-25'"></span>
+                        <span x-text="percentages[reaction] ? ((parseFloat(percentages[reaction]) * 100).toFixed(2)).toString() + '%' : '0%'" class="text-white pt-2"></span>
+                    </div>
+
                 </template>
             </div>
 

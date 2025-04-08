@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/TUM-Dev/gocast/dao"
@@ -133,6 +134,15 @@ func RegisterReactionUpdateRealtimeChannel(wrapper dao.DaoWrapper) {
 		OnMessage:     reactionUpdateSetStream,
 	})
 	daoWrapper = wrapper
+
+	go func() {
+		// Notify admins every 5 seconds
+		logger.Info("Starting periodic notification of reaction percentages")
+		for {
+			time.Sleep(5 * time.Second)
+			NotifyAdminsOnReactionPercentages(context.Background())
+		}
+	}()
 }
 
 func reactionUpdateOnUnsubscribe(psc *realtime.Context) {
@@ -281,6 +291,66 @@ func NotifyAdminsOnReaction(streamID uint, reaction string) {
 				if err != nil {
 					logger.Error("can't write reaction to session", "err", err)
 				}
+			}
+		}
+	}
+}
+
+func NotifyAdminsOnReactionPercentages(context context.Context) {
+	liveReactionListenerMutex.Lock()
+	defer liveReactionListenerMutex.Unlock()
+	streams := make([]uint, 0)
+	for _, session := range liveReactionListener {
+		streams = append(streams, session.stream)
+	}
+	liveReactionListenerMutex.Unlock()
+
+	streamReactionPercentages := map[uint]map[string]float64{}
+
+	for _, stream := range streams {
+		reactionsRaw, err := daoWrapper.StreamReactionDao.GetByStreamWithinMinutes(context, stream, 2)
+		if err != nil {
+			logger.Error("could not get reactions for stream", "stream", stream, "err", err)
+			return
+		}
+
+		reactions := make(map[string]int)
+		for _, reaction := range reactionsRaw {
+			reactions[reaction.Reaction]++
+		}
+
+		totalReactions := 0
+		for _, count := range reactions {
+			totalReactions += count
+		}
+		if totalReactions == 0 {
+			logger.Debug("no reactions for stream", "stream", stream)
+			continue
+		}
+
+		streamReactionPercentages[stream] = make(map[string]float64)
+		for reaction, count := range reactions {
+			streamReactionPercentages[stream][reaction] = float64(count) / float64(totalReactions)
+		}
+	}
+
+	// Send the percentages to the admin sessions
+	liveReactionListenerMutex.Lock()
+
+	for _, session := range liveReactionListener {
+		if session.stream == 0 {
+			continue
+		}
+		reactionPercentages := streamReactionPercentages[session.stream]
+		reactionPercentagesMarshaled, err := json.Marshal(reactionPercentages)
+		if err != nil {
+			logger.Error("could not marshal reaction percentages", "err", err)
+			return
+		}
+		for _, s := range session.sessions {
+			err := s.Send([]byte("{\"percentages\": " + string(reactionPercentagesMarshaled) + "}"))
+			if err != nil {
+				logger.Error("can't write reaction percentages to session", "err", err)
 			}
 		}
 	}

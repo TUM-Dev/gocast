@@ -22,6 +22,13 @@ export const liveReactionListener = {
     },
 
     handle(payload: object) {
-        window.dispatchEvent(new CustomEvent("reactionupdate", { detail: { data: payload } }));
+        if(payload["reaction"]) {
+            // TODO: Handle multiple parallel reactions
+            window.dispatchEvent(new CustomEvent("reactionupdate", { detail: { data: payload } }));
+        } else if(payload["percentages"]) {
+            window.dispatchEvent(new CustomEvent("reactionupdatepercentages", { detail: { data: payload["percentages"] } }));
+        }else {
+            console.log(payload);
+        }
     },
 };
