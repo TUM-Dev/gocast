@@ -7,12 +7,10 @@ toolchain go1.24.1
 // Direct dependencies
 require (
 	github.com/getsentry/sentry-go v0.31.1
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/icza/gox v0.2.0
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/joschahenningsen/thumbgen v0.1.2
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v4 v4.25.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.18.0
 	golang.org/x/sync v0.12.0
@@ -45,9 +43,11 @@ require (
 
 require (
 	github.com/felixge/fgprof v0.9.3 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20230811205829-9131a7e9cc17 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/stretchr/testify v1.10.0 // indirect
 	golang.org/x/image v0.11.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 )
