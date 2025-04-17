@@ -204,49 +204,6 @@ export function setHighestQuality() {
     });
 }
 
-export function pauseVideo() {
-    const player = getPlayers()[0];
-    player.pause();
-}
-
-export function seekToLive() {
-    const players = getPlayers();
-    console.log("Seeking to live edge");
-    console.debug(players);
-    players.forEach((player) => {
-        player.liveTracker.seekToLiveEdge();
-    });
-}
-
-function getHighestQualityLevel(qualityLevels : any[]): number {
-    let highestQuality = qualityLevels[0];
-    for(let i = 1; i < qualityLevels.length; i++) {
-        if(qualityLevels[i].height > highestQuality.height) {
-            highestQuality = qualityLevels[i];
-        }
-    }
-    return qualityLevels.indexOf(highestQuality);
-}
-
-export function setHighestQuality() {
-    const players = getPlayers();
-    console.debug(players);
-    players.forEach((player) => {
-        let qualityLevels = (player as any).qualityLevels();
-        let highestQuality = getHighestQualityLevel(qualityLevels.levels_);
-        // Listen to change events for when the player selects a new quality level
-        qualityLevels.on('change', function() {
-            console.debug('Quality Level changed!');
-            console.debug('New level:', qualityLevels[qualityLevels.selectedIndex]);
-        });
-        qualityLevels.trigger({ type: 'change', selectedIndex: highestQuality });
-        qualityLevels.selectedIndex_ = highestQuality;
-        for(let i = 0; i < qualityLevels.length; i++) {
-            qualityLevels[i].enabled = i == highestQuality;
-        }
-    });
-}
-
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
 export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";
