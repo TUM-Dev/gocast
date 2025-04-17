@@ -134,16 +134,16 @@ export class ShareURL {
 }
 
 export async function setupAudioMeter() {
-    console.log("Setting up audio meter")
-    const video = document.getElementsByTagName('video')[0];
-    const audioMeter = document.getElementById('audio-meter');
+    console.log("Setting up audio meter");
+    const video = document.getElementsByTagName("video")[0];
+    const audioMeter = document.getElementById("audio-meter");
     const audioContext = new AudioContext();
     const audioSource = audioContext.createMediaElementSource(video);
     const analyser = audioContext.createAnalyser();
 
     audioSource.connect(analyser);
     analyser.connect(audioContext.destination);
-    console.log("Audio meter setup complete")
+    console.log("Audio meter setup complete");
 
     const bufferLength = analyser.fftSize;
     const frequencyData = new Uint8Array(bufferLength);
@@ -155,14 +155,13 @@ export async function setupAudioMeter() {
         const averageVolume = frequencyData.reduce((sum, value) => sum + value, 0) / bufferLength;
 
         // Update the audio meter (adjust styling as needed)
-        audioMeter.style.width = `${averageVolume / 255 * 100}%`;
+        audioMeter.style.width = `${(averageVolume / 255) * 100}%`;
         audioMeter.style.backgroundColor = `rgb(${averageVolume}, 0, 0)`;
 
         requestAnimationFrame(updateAudioMeter);
     }
 
     updateAudioMeter();
-
 }
 
 export function seekToLive() {
@@ -174,10 +173,11 @@ export function seekToLive() {
     });
 }
 
-function getHighestQualityLevel(qualityLevels : any[]): number {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function getHighestQualityLevel(qualityLevels: any[]): number {
     let highestQuality = qualityLevels[0];
-    for(let i = 1; i < qualityLevels.length; i++) {
-        if(qualityLevels[i].height > highestQuality.height) {
+    for (let i = 1; i < qualityLevels.length; i++) {
+        if (qualityLevels[i].height > highestQuality.height) {
             highestQuality = qualityLevels[i];
         }
     }
@@ -188,16 +188,16 @@ export function setHighestQuality() {
     const players = getPlayers();
     console.debug(players);
     players.forEach((player) => {
-        let qualityLevels = (player as any).qualityLevels();
-        let highestQuality = getHighestQualityLevel(qualityLevels.levels_);
+        const qualityLevels = (player as any).qualityLevels();
+        const highestQuality = getHighestQualityLevel(qualityLevels.levels_);
         // Listen to change events for when the player selects a new quality level
-        qualityLevels.on('change', function() {
-            console.debug('Quality Level changed!');
-            console.debug('New level:', qualityLevels[qualityLevels.selectedIndex]);
+        qualityLevels.on("change", function () {
+            console.debug("Quality Level changed!");
+            console.debug("New level:", qualityLevels[qualityLevels.selectedIndex]);
         });
-        qualityLevels.trigger({ type: 'change', selectedIndex: highestQuality });
+        qualityLevels.trigger({ type: "change", selectedIndex: highestQuality });
         qualityLevels.selectedIndex_ = highestQuality;
-        for(let i = 0; i < qualityLevels.length; i++) {
+        for (let i = 0; i < qualityLevels.length; i++) {
             qualityLevels[i].enabled = i == highestQuality;
         }
     });
