@@ -196,12 +196,17 @@ export function setHighestQuality() {
             console.debug("Quality Level changed!");
             console.debug("New level:", qualityLevels[qualityLevels.selectedIndex]);
         });
-        qualityLevels.trigger({ type: "change", selectedIndex: highestQuality });
+        qualityLevels.trigger({type: "change", selectedIndex: highestQuality});
         qualityLevels.selectedIndex_ = highestQuality;
         for (let i = 0; i < qualityLevels.length; i++) {
             qualityLevels[i].enabled = i == highestQuality;
         }
     });
+}
+
+export function pauseVideo() {
+    const player = getPlayers()[0];
+    player.pause();
 }
 
 export { repeatHeatMap } from "./repeat-heatmap";
