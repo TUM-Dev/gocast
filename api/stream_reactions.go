@@ -157,7 +157,7 @@ func reactionUpdateOnUnsubscribe(psc *realtime.Context) {
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
-	var userId uint = 0
+	var userId uint
 	if tumLiveContext.User != nil {
 		userId = tumLiveContext.User.ID
 	}
@@ -189,7 +189,7 @@ func reactionUpdateOnSubscribe(psc *realtime.Context) {
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
-	var userId uint = 0
+	var userId uint
 	var err error
 
 	if tumLiveContext.User != nil {
@@ -221,7 +221,7 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
-	var userId uint = 0
+	var userId uint
 	var err error
 
 	if tumLiveContext.User != nil {
@@ -242,12 +242,12 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 		return
 	}
 
-	stream, err := daoWrapper.StreamsDao.GetStreamByID(nil, messageObj.StreamID)
+	stream, err := daoWrapper.StreamsDao.GetStreamByID(context.TODO(), messageObj.StreamID)
 	if err != nil {
 		logger.Error("Cant get stream by id", "err", err)
 		return
 	}
-	course, err := daoWrapper.CoursesDao.GetCourseById(nil, stream.CourseID)
+	course, err := daoWrapper.CoursesDao.GetCourseById(context.TODO(), stream.CourseID)
 	if err != nil {
 		logger.Error("Cant get course by id", "err", err)
 		return
@@ -288,7 +288,7 @@ func NotifyAdminsOnReaction(streamID uint, reaction string) {
 	for _, session := range liveReactionListener {
 		if session.stream == streamID {
 			for _, s := range session.sessions {
-				err := s.Send([]byte(reactionMarshaled))
+				err := s.Send(reactionMarshaled)
 				if err != nil {
 					logger.Error("can't write reaction to session", "err", err)
 				}
