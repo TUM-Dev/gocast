@@ -1,7 +1,6 @@
-import {getData, postData} from "../global";
-import {get} from "../utilities/fetch-wrappers";
-import {Realtime, RealtimeMessageTypes} from "../socket";
-
+import { getData, postData } from "../global";
+import { get } from "../utilities/fetch-wrappers";
+import { Realtime, RealtimeMessageTypes } from "../socket";
 
 // Function to add a reaction to a stream
 export function addReaction(reaction: string, streamID: number) {
@@ -18,16 +17,21 @@ export function getAllowedReactions(streamID: number): Promise<string[]> {
 export const liveReactionListener = {
     async init(streamId: string) {
         await Realtime.get().subscribeChannel("reaction-update", this.handle);
-        await Realtime.get().send("reaction-update", {type: RealtimeMessageTypes.RealtimeMessageTypeChannelMessage, payload: {"streamID": streamId}});
+        await Realtime.get().send("reaction-update", {
+            type: RealtimeMessageTypes.RealtimeMessageTypeChannelMessage,
+            payload: { streamID: streamId },
+        });
     },
 
     handle(payload: object) {
-        if(payload["reaction"]) {
+        if (payload["reaction"]) {
             // TODO: Handle multiple parallel reactions
             window.dispatchEvent(new CustomEvent("reactionupdate", { detail: { data: payload } }));
-        } else if(payload["percentages"]) {
-            window.dispatchEvent(new CustomEvent("reactionupdatepercentages", { detail: { data: payload["percentages"] } }));
-        }else {
+        } else if (payload["percentages"]) {
+            window.dispatchEvent(
+                new CustomEvent("reactionupdatepercentages", { detail: { data: payload["percentages"] } }),
+            );
+        } else {
             console.log(payload);
         }
     },
