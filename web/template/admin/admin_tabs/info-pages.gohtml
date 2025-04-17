@@ -27,13 +27,13 @@
                             </div>
                         </div>
                     </div>
-                    <div x-cloak="" x-show="editOpen" class="form-container-body">
+                    <div x-cloak x-show="editOpen" class="form-container-body">
                         <textarea id="content-{{$i}}"
                                   x-model="newContent"
                                   rows="24"
                                   class="p-2 resize-none font-normal outline-0 border-0 bg-transparent text-3">{{$text.RawContent}}</textarea>
                     </div>
-                    <div x-cloak="" x-show="editOpen" class="flex items-center justify-end form-container-footer">
+                    <div x-cloak x-show="editOpen" class="flex items-center justify-end form-container-footer">
                         <button id="save-{{$i}}"
                                 type="reset"
                                 class="btn h-fit mr-2"

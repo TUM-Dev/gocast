@@ -704,6 +704,7 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 		StreamName:   slot.StreamName,
 		IngestServer: server.Url,
 		OutUrl:       server.OutUrl,
+		SelfStream:   stream.IsSelfStream(),
 	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	workers[workerIndex].Workload += 3

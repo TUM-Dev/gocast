@@ -1,0 +1,99 @@
+---
+title: "1. Add a Worker"
+sidebar_position: 4
+description: "Add a Worker."
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Worker
+
+Workers are responsible for recording your lecture halls, transcoding recordings and pushing these to your shared storage.
+
+## Add a Worker to the GoCast network
+
+<Tabs
+  defaultValue="docker"
+  values={[
+    {label: 'Docker', value: 'docker'},
+    {label: 'Manually', value: 'manually'},
+    {label: 'Using a cloud provider', value: 'cloud'},
+  ]
+}>
+<TabItem value="docker">
+
+1. Run the TUM-Live-Worker docker container with the organization token and make sure to include its hostname and address:
+
+   ```sh
+   docker run -d \
+   -p 50051:50051 \
+   -p 8060:8060 \
+   -p 8085:8085 \
+   -p 1935:1935 \
+   -e Token=<your-organization-token> \
+   -e MainBase=live.rbg.tum.de \
+   -e Host=$(hostname) \
+   -e Address=<your-worker-addr>
+   -e LrzUploadUrl=<your-vod-service-addr>:8089 \
+   -e LogLevel=debug \
+   -e PersistDir=/persist \
+   -e VodURLTemplate=<your-edge-server-addr>/vod/%s.mp4/playlist.m3u8 \
+   -v /path/to/recordings:/recordings \
+   -v /path/to/persist:/persist \
+   -v /path/to/mass:/mass \
+   -v /path/to/workerlog:/var/log/stream \
+   ghcr.io/tum-dev/gocast/worker:latest
+   ```
+
+2. _Optional_: Join your docker node cluster:
+   ```sh
+   # Refer to your manager node on which token to use here:
+   docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377
+   ```
+
+</TabItem>
+
+<TabItem value="manually">
+
+1. Clone the GoCast repository:
+   ```sh
+   git clone https://github.com/tum-Dev/gocast
+   ```
+2. Change into the runner directory:
+
+   ```sh
+   cd gocast && cd worker
+   ```
+
+3. Start the Worker with the organization token and make sure to include its hostname:
+   ```sh
+   Token=<your-organization-token> \
+   MainBase=live.rbg.tum.de \
+   Host=$(hostname) \
+   LrzUploadUrl=<your-vod-service-addr>:8089 \
+   LogLevel=debug \
+   PersistDir=/persist \
+   VodURLTemplate=<your-edge-server-addr>/vod/%s.mp4/playlist.m3u8 \
+   go run ./cmd/worker/main.go
+   ```
+
+</TabItem>
+
+<TabItem value="cloud">
+
+    1. Create a new instance on your cloud provider.
+
+    2. Install Docker on the instance.
+
+    3. Follow the instructions for the Docker tab to run the worker and make sure to expose the necessary ports.
+
+</TabItem>
+</Tabs>
+
+## Verify successful deployment
+
+Once a Worker has been added successfully, you should be able to see it in the ["resources"-tab](https://live.rbg.tum.de/admins/organizations) of the admin dashboard.
+
+Here's an example of how it should look, if you added three Workers (one of which didn't start successfully):
+![worker.png](/deployment/workers.png)

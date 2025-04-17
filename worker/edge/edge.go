@@ -23,7 +23,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -35,15 +35,13 @@ var (
 	inflight     = make(map[string]*sync.Mutex)
 
 	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
-	// allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
+	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
 
 var port = ":8089"
 
-var (
-	originPort  = "8085"
-	originProto = "http://"
-)
+var originPort = "8085"
+var originProto = "http://"
 
 var VersionTag = "dev"
 
@@ -230,6 +228,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
+
 			if err != nil {
 				err404Playlists.WithLabelValues(claims.StreamID, claims.Playlist).Inc()
 				w.WriteHeader(http.StatusNotFound)
@@ -374,7 +373,7 @@ func fetchFile(host, file string) error {
 		return fmt.Errorf("parse file path: %s", file)
 	}
 	d := filepath.Dir(diskDir)
-	err = os.MkdirAll(d, 0o755)
+	err = os.MkdirAll(d, 0755)
 	if err != nil {
 		return err
 	}

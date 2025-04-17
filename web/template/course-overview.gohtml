@@ -18,7 +18,7 @@
         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
             <a class="hover:bg-gray-200 dark:hover:bg-gray-600 w-fit mx-2 inline-block rounded px-2 my-auto"
                href="/admin/course/{{$course.Model.ID}}"
-               :title="'Edit course settings'">
+               title="Edit course settings">
                <span class="font-semibold text-lg dark:text-white">
                    <i class="fa-solid w-5 py-2 fa-pen"></i>
                </span>
@@ -125,7 +125,7 @@
                         </button>
                         <a class="hover:bg-gray-200 dark:hover:bg-gray-600 inline-block rounded px-2"
                            href="/api/download_ics/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/events.ics"
-                           :title="'Export lecture dates'"
+                           title="Export lecture dates"
                            x-show="lectures">
                                 <span class="text-sm font-semibold uppercase dark:text-white">
                                     <i class="fa-solid w-5 mr-1 fa-calendar"></i>ics

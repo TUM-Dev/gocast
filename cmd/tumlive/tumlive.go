@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
+	log "log/slog"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -10,13 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/TUM-Dev/gocast/api"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/TUM-Dev/gocast/web"
-	"github.com/dgraph-io/ristretto"
+	"github.com/soheilhy/cmux"
+
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
@@ -25,14 +22,23 @@ import (
 	"github.com/pkg/profile"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/api"
+	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/runner_manager"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/TUM-Dev/gocast/web"
 )
 
 var VersionTag = "development"
 
 type initializer func()
 
-var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-	Level: slog.LevelDebug,
+var logger = log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
+	Level: log.LevelDebug,
 })).With("service", "main")
 
 var initializers = []initializer{
@@ -73,6 +79,21 @@ func GinServer() (err error) {
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
+	l, err := net.Listen("tcp", ":8081")
+	if err != nil {
+		logger.Error("can't listen on port 8081", "err", err)
+	}
+
+	m := cmux.New(l)
+	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+
+	api2Client := apiv2.New(dao.DB)
+	go func() {
+		if err := api2Client.Run(grpcl); err != nil {
+			logger.Error("can't launch grpc server", "err", err)
+		}
+	}()
+
 	liveUpdates := router.Group("/api/pub-sub")
 	api.ConfigRealtimeRouter(liveUpdates)
 
@@ -81,15 +102,19 @@ func GinServer() (err error) {
 	api.ConfigChatRouter(chat)
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.Run(":8081")
-	// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
-	if err != nil {
-		sentry.CaptureException(err)
-		logger.Error("Error starting tumlive", "err", err)
-	}
-	return
+	go func() {
+		err = router.RunListener(m.Match(cmux.Any()))
+		// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
+		if err != nil {
+			sentry.CaptureException(err)
+			logger.Error("Error starting tumlive", "err", err)
+		}
+	}()
+
+	return m.Serve()
 }
 
 var osSignal chan os.Signal
@@ -101,9 +126,6 @@ func main() {
 	go func() {
 		_ = http.ListenAndServe(":8082", nil) // debug endpoint
 	}()
-
-	// log with time, fmt "23.09.2021 10:00:00"
-	// log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 
 	web.VersionTag = VersionTag
 	osSignal = make(chan os.Signal, 1)
@@ -189,6 +211,7 @@ func main() {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.Runner{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -201,9 +224,7 @@ func main() {
 		return
 	}
 
-	// tools.SwitchPreset()
-
-	cache, err := ristretto.NewCache(&ristretto.Config{
+	cache, _ := ristretto.NewCache[string, any](&ristretto.Config[string, any]{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
 		MaxCost:     1 << 30, // maximum cost of cache (1GB).
 		BufferItems: 64,      // number of keys per Get buffer.
@@ -214,7 +235,14 @@ func main() {
 		sentry.Flush(time.Second * 5)
 		logger.Error("Error risretto.NewCache", "err", err)
 	}
-	dao.Cache = *cache
+	dao.Cache = cache
+
+	m := runner_manager.New(dao.NewDaoWrapper())
+	log.Info("running runner manager")
+	err = m.Run()
+	if err != nil {
+		log.Error("Failed to start runner manager", "err", err)
+	}
 
 	// init meili search index settings
 	go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()

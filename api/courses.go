@@ -51,6 +51,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			lecturers.Use(tools.AtLeastLecturer)
 			lecturers.POST("/courseInfo", routes.courseInfo)
 			lecturers.POST("/createCourse", routes.createCourse)
+			lecturers.POST("/createTestCourse", routes.createTestCourse)
 			lecturers.GET("/searchCourse", routes.searchCourse)
 		}
 
@@ -81,6 +82,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				stream.Use(tools.InitStream(daoWrapper))
 				stream.GET("/transcodingProgress", routes.getTranscodingProgress)
+				stream.POST("/copy", routes.copyStream)
 			}
 
 			stats := courses.Group("/stats")
@@ -150,7 +152,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
 		if courseForLiveStream.Visibility == "enrolled" {
-			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
@@ -362,6 +364,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 
 	if (course.IsLoggedIn() && tumLiveContext.User == nil) || (course.IsEnrolled() && !tumLiveContext.User.IsEligibleToWatchCourse(course)) {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	user := tumLiveContext.User
@@ -401,18 +404,6 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	courseDTO.IsAdmin = isAdmin
 
 	c.JSON(http.StatusOK, courseDTO)
-}
-
-func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
-	if user != nil {
-		for _, c := range user.Courses {
-			if c.ID == course.ID {
-				return true
-			}
-		}
-		return user.IsEligibleToWatchCourse(course)
-	}
-	return false
 }
 
 func (r coursesRoutes) createVOD(c *gin.Context) {
@@ -1449,6 +1440,21 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
 }
 
+func (r coursesRoutes) createTestCourse(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	_, err := r.StreamsDao.CreateOrGetTestCourse(tumLiveContext.User)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Couldn't save course. Please reach out to us.",
+			Err:           err,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 func (r coursesRoutes) deleteCourseByToken(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
@@ -1554,6 +1560,62 @@ type copyCourseRequest struct {
 	Semester string
 	Year     string
 	YearW    string
+}
+
+func (r coursesRoutes) copyStream(c *gin.Context) {
+	type req struct {
+		TargetCourse uint `json:"targetCourse"`
+		Move         bool `json:"move"`
+	}
+	var request req
+	err := c.BindJSON(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
+		return
+	}
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	isAdmin := tlctx.User.Role == model.AdminType
+
+	if !isAdmin {
+		targetCourseAdmins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(request.TargetCourse)
+		if err != nil {
+			logger.Error("Error getting course admins", "err", err)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't determine admins of target course",
+				Err:           err,
+			})
+		}
+		for _, admin := range targetCourseAdmins {
+			if admin.ID == tlctx.User.ID {
+				isAdmin = true
+				break
+			}
+		}
+	}
+	if !isAdmin {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "you are not admin of the target course",
+		})
+		return
+	}
+
+	stream := tlctx.Stream
+	stream.Model = gorm.Model{}
+	stream.CourseID = request.TargetCourse
+	err = r.StreamsDao.CreateStream(stream)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't save stream",
+			Err:           err,
+		})
+	}
+	if request.Move {
+		r.StreamsDao.DeleteStream(strconv.Itoa(int(tlctx.Stream.ID)))
+	}
 }
 
 func (r coursesRoutes) copyCourse(c *gin.Context) {

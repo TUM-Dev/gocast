@@ -1,0 +1,78 @@
+---
+title: "Self Streaming 🆕"
+sidebar_position: 4
+description: "Information on how to stream from your own computer."
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+This guide contains information on how to stream from your own computer.
+
+## Gather streaming key.
+
+### Method 1: Using lecturer token (recommended)
+
+- Open the token panel of the admin page ([here](https://live.rbg.tum.de/admin/token)).
+
+- Create a new token by clicking on the `+` button.
+
+- Copy the token and paste it into the streaming software of your choice.
+
+:::danger
+Do not share your token with anyone. It is unique to you and allows access to your streams. If you suspect that your token has been compromised, please delete it and create a new one.
+:::
+
+### Method 2: Using course admin page
+
+- Open the course's admin page
+- Create a stream with the location "self stream" if it doesn't exist already.
+- Navigate to the stream and click `show keys`.
+
+## OBS
+
+:::warning
+Self streaming can be unreliable and we cannot guarantee proper recording of your lecture just yet. In some cases, recordings might be corrupted. **Please save a local copy just in case using the streaming software of your choice.**
+:::
+
+<Tabs>
+<TabItem value="obs" label="OBS">
+
+- Download and install OBS from [here](https://obsproject.com/).
+- Open OBS and click on `Settings` in the bottom right corner.
+- Click on `Stream` in the left sidebar.
+- Select `Custom` from the dropdown menu.
+- Paste the stream key and the stream server from the course's admin page into the `Stream key` and `Stream server` field.
+- Click on `Output` in the left sidebar.
+- Click on `Streaming` in the top menu.
+- Select `Simple` from the `Output Mode` dropdown menu.
+- Insert the following settings:
+- Video Bitrate: 2500 – 4000
+- Audio Bitrate: 192 kbp/s (or 128kbp/s)
+- Video Encoder: x264
+- Please ensure that your output is scaled to 1920x1080.
+
+</TabItem>
+<TabItem value="zoom" label="Zoom">
+
+- Sign in to the Zoom web portal.
+- Click `Meetings`.
+- Click `Schedule a Meeting` and enter the required information to schedule a meeting.
+- Click `Save` to display a set of tabs with advanced options.
+- Click the `Live Streaming` tab, then click `Configure Custom Streaming Service`.
+- Follow the instructions located in the green box, which were provided by your administrator. Contact your administrator if the instructions do not include sufficient information, or enable `Configure live stream during the meeting` to enter the details live.
+- Click `Save` to save your livestreaming settings. The host will be able to livestream this meeting without needing to add these settings after the meeting begins.
+
+</TabItem>
+<TabItem value="teams" label="Teams">
+
+- Open Microsoft Teams and join the meeting or webinar you wish to live stream.
+- Add the `Custom Streaming` app to the meeting.
+- Click `Add` and `Save`.
+- In the right-hand panel that opens, paste the `Stream URL` and `Stream Key`.
+- Click `Start streaming` in the lower right, then select `Allow` in the dialog box when it appears.
+- You’re now live streaming! Share your screen and/or use your cameras and microphones to run your event as you would any normal Microsoft Teams meeting.
+- When you’re finished with the event, you can stop streaming via Teams and YouTube.
+
+</TabItem>
+</Tabs>

@@ -2,8 +2,9 @@ package dao
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -30,12 +31,13 @@ type StreamsDao interface {
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
 	GetAllStreams() ([]model.Stream, error)
-	ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles))
+	ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error)
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
 	GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error)
 	GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error)
+	CreateOrGetTestCourse(user *model.User) (model.Course, error)
 
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
@@ -216,38 +218,45 @@ func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 }
 
 type StreamWithCourseAndSubtitles struct {
-	Name, Description, TeachingTerm, CourseName, Subtitles string
-	ID, CourseID                                           uint
-	Year                                                   int
+	Name, Description, TeachingTerm, CourseName, Subtitles, Visibility string
+	ID, CourseID, Private                                              uint
+	Year                                                               int
 }
 
-// ExecAllStreamsWithCoursesAndSubtitles executes f on all streams with their courses and subtitles preloaded.
-func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles)) {
+// ExecAllStreamsWithCoursesAndSubtitlesBatched executes f on all streams (batched) with their courses and subtitles preloaded.
+func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles)) {
 	var res []StreamWithCourseAndSubtitles
 	batchNum := 0
 	batchSize := 100
 	var numStreams int64
 	DB.Where("recording").Model(&model.Stream{}).Count(&numStreams)
+	lastSeenId := uint(0)
 	for batchSize*batchNum < int(numStreams) {
 		err := DB.Raw(`WITH sws AS (
 				SELECT streams.id,
                     streams.name,
                     streams.description,
+					streams.private as private,
                     c.id as course_id,
                     c.name as course_name,
                     c.teaching_term,
                     c.year,
+					c.visibility as visibility,
                     s.content as subtitles,
                     IFNULL(s.stream_id, streams.id) as sid
              	FROM streams
                       JOIN courses c ON c.id = streams.course_id
                       LEFT JOIN subtitles s ON streams.id = s.stream_id
-             	WHERE streams.recording AND streams.deleted_at IS NULL
-				LIMIT ? OFFSET ?
+             	WHERE streams.recording AND streams.deleted_at IS NULL AND streams.id > ?
+				ORDER BY streams.id ASC
+				LIMIT ? 
              	)
-			SELECT *, GROUP_CONCAT(subtitles, '\n') AS subtitles FROM sws GROUP BY sid;`, batchSize, batchNum*batchSize).Scan(&res).Error
+			SELECT *, GROUP_CONCAT(subtitles, '\n') AS subtitles FROM sws GROUP BY sid ORDER BY sid;`, lastSeenId, batchSize).Scan(&res).Error
 		if err != nil {
 			fmt.Println(err)
+		}
+		if err == nil {
+			lastSeenId = res[len(res)-1].ID
 		}
 		f(res)
 		batchNum++
@@ -311,20 +320,21 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 
 // GetSoonStartingStreamInfo returns the stream key, course slug and course name of an upcoming stream.
 func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error) {
-	var result struct {
+	var results []struct {
 		CourseID  uint
 		StreamKey string
 		ID        string
 		Slug      string
+		Start     time.Time
+		End       time.Time
 	}
 	now := time.Now()
 	query := DB.Table("streams").
-		Select("streams.course_id, streams.stream_key, streams.id, courses.slug").
+		Select("streams.course_id, streams.stream_key, streams.id, courses.slug, streams.start, streams.end").
 		Joins("JOIN course_admins ON course_admins.course_id = streams.course_id").
 		Joins("JOIN courses ON courses.id = course_admins.course_id").
-		Where("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
-		Or("courses.slug != 'TESTCOURSE' AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now).     // Streams that just finished in the last 15 minutes
-		Order("streams.start ASC")
+		Where("courses.year != 1234 AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.start <= ? AND streams.end >= ?)", user.ID, now.Add(15*time.Minute), now). // Streams starting in the next 15 minutes or currently running
+		Or("courses.year != 1234 AND streams.deleted_at IS NULL AND courses.deleted_at IS NULL AND course_admins.user_id = ? AND (streams.end >= ? AND streams.end <= ?)", user.ID, now.Add(-15*time.Minute), now)      // Streams that just finished in the last 15 minutes
 
 	if slug != "" {
 		query = query.Where("courses.slug = ?", slug)
@@ -336,19 +346,26 @@ func (d streamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, yea
 		query = query.Where("courses.teaching_term = ?", term)
 	}
 
-	err := query.Limit(1).Scan(&result).Error
-	if err == gorm.ErrRecordNotFound || result.StreamKey == "" || result.ID == "" || result.Slug == "" {
+	err := query.Order("streams.start ASC").Find(&results).Error
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(results) == 0 {
 		stream, course, err := d.CreateOrGetTestStreamAndCourse(user)
 		if err != nil {
 			return "", "", err
 		}
 		return stream.StreamKey, fmt.Sprintf("%s-%d", course.Slug, stream.ID), nil
 	}
-	if err != nil {
-		logger.Error("Error getting soon starting stream: %v", slog.String("err", err.Error()))
-		return "", "", err
+
+	for _, result := range results {
+		if now.After(result.Start) && now.Before(result.End) {
+			return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
+		}
 	}
 
+	result := results[0]
 	return result.StreamKey, fmt.Sprintf("%s-%s", result.Slug, result.ID), nil
 }
 
@@ -390,10 +407,21 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 // Helper method to fetch test course for current user.
 func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
+	userName := user.GetPreferredName()
+
+	if userName != "" {
+		userName += "'s "
+	}
+
+	// Hash the user ID to create a unique slug withouth exposing the user ID
+	hasher := sha256.New()
+	hasher.Write([]byte(fmt.Sprintf("%d", user.ID)))
+	hashedUserID := hex.EncodeToString(hasher.Sum(nil))
+
 	err := DB.FirstOrCreate(&course, model.Course{
-		Name:         "(" + strconv.Itoa(int(user.ID)) + ") " + user.Name + "'s Test Course",
-		TeachingTerm: "Test",
-		Slug:         "TESTCOURSE",
+		Name:         userName + "Test Course",
+		TeachingTerm: "W",
+		Slug:         "TEST-" + hashedUserID,
 		Year:         1234,
 		Visibility:   "hidden",
 		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
@@ -498,6 +526,7 @@ func (d streamsDao) SavePRESURL(stream *model.Stream, url string) {
 }
 
 func (d streamsDao) ToggleVisibility(streamId uint, private bool) error {
+	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id = ?", streamId).Updates(map[string]interface{}{"private": private}).Error
 }
 

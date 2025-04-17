@@ -1,0 +1,75 @@
+alerts:
+  matrix:
+    homeserver: matrix.org # todo changeme
+    password: password # todo changeme
+    alertRoomID: '!abc:in.tum.de' # todo changeme
+    logRoomID: '!abc123:matrix.org' # todo changeme
+    username: username # todo changeme
+auths:
+  camauth: user:password # todo changeme
+  pwrcrtlauth: user:password # todo changeme
+  smppassword: "password" # todo changeme
+  smpuser: user # todo changeme
+campus:
+  base: https://campus.tum.de/tumonlinej/ws/webservice_v1.0 # todo changeme
+  tokens:
+    - abc123 # todo changeme
+  campusProxy: # new services use this proxy from now on
+    host: campus-proxy.my.domain # todo changeme
+    scheme: https
+  relevantOrgs: # 0 = all
+    - 51897 # cit
+    - 30361 # studentische vertretung
+    - 30290 # fachschaften
+    - 14189 # institut für informatik
+    - 14178 # fakultät für mathematik
+    - 14179 # fakultät für physik
+    - 51267 # tum school of engineering and design
+    - 51900 # tum school of management
+db:
+  database: tumlive
+  password: abc123 # todo changeme
+  user: root
+  host: tumlivedb
+  port: 3306
+ingestbase: rtmp://vmrbg458.in.tum.de/
+jwtkey:
+ldap:
+  useForLogin: true
+  basedn: ou=users,ou=data,ou=prod,ou=iauth,dc=tum,dc=de  # todo changeme
+  password: abc123  # todo changeme
+  url: ldaps://iauth.tum.de:636
+  user: cn=usernameChangeme,ou=bindDNs,ou=iauth,dc=tum,dc=de # todo changeme
+  userdn: cn=%s,ou=users,ou=data,ou=prod,ou=iauth,dc=tum,dc=de  # todo changeme
+saml: # todo changeme
+  idpMetadataURL: https://login.tum.de/idp-metadata.xml
+  idpName: TUM Login
+  idpColor: "#3070B3"
+  cert: /var/lib/cert/live/host:intum:vmrbg451.fullchain.pem
+  privkey: /var/lib/cert/live/host:intum:vmrbg451.privkey.pem
+  entityID: https://live.rbg.tum.de/shib
+  rootURLs:
+    - https://live.rbg.tum.de/shib
+    - https://tum.live/shib
+mail:
+  sender: live@my.domain # todo changeme
+  server: mailrelay.my.domain:25 # todo changeme
+  smimecert: /path/to/mail.p12.crt.pem
+  smimekey: /path/to/mail.p12.key.pem
+paths:
+  mass: /share
+  static: /var/www/public
+  branding: /etc/TUM-Live/branding
+workertoken: abc123 # todo changeme
+weburl: https://live.rbg.tum.de
+monitoring:
+  sentryDSN: https://abc@sentry.com/2 # todo changeme
+  sampleRate: 0.1
+meili:
+  host: http://meilisearch:7700
+  apiKey: abc123 # todo changeme
+vodURLTemplate: "https://edge.live.rbg.tum.de/vod/%s.mp4/playlist.m3u8"
+voiceservice:
+  host: voice-service
+  port: 50055
+canonicalURL: https://live.rbg.tum.de

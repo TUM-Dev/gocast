@@ -14,7 +14,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/dgraph-io/ristretto"
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/matthiasreumann/gomino"
@@ -29,14 +29,14 @@ func CourseRouterWrapper(r *gin.Engine) {
 func TestCoursesCRUD(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	cache, _ := ristretto.NewCache(&ristretto.Config{
+	cache, _ := ristretto.NewCache[string, any](&ristretto.Config[string, any]{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
 		MaxCost:     1 << 30, // maximum cost of cache (1GB).
 		BufferItems: 64,      // number of keys per Get buffer.
 		Metrics:     true,
 	})
 
-	dao.Cache = *cache
+	dao.Cache = cache
 
 	t.Run("GET/api/courses/live", func(t *testing.T) {
 		url := "/api/courses/live"

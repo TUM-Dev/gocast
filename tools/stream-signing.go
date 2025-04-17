@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type JWTPlaylistClaims struct {

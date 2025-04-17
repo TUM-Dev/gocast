@@ -3,6 +3,7 @@ import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
 import { Course, CoursesAPI } from "../api/courses";
 import { AlpineComponent } from "../components/alpine-component";
 import { PinnedUpdate, Tunnel } from "../utilities/tunnels";
+import { updateSearchBarPlaceholder } from "../search";
 
 export function skeleton(): AlpineComponent {
     return {
@@ -77,6 +78,7 @@ export function skeleton(): AlpineComponent {
                 view: View.Course,
                 slug: this.state.slug,
             });
+            updateSearchBarPlaceholder();
         },
 
         switchView(view: View) {
@@ -170,7 +172,7 @@ class PageState {
     constructor(url: URL) {
         this.url = url;
         this.term = url.searchParams.get("term") ?? undefined;
-        this.year = +url.searchParams.get("year") ?? undefined;
+        this.year = url.searchParams.get("year") !== null ? +url.searchParams.get("year") : undefined;
         if (this.year === 0) {
             this.year = undefined;
         }
