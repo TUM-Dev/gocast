@@ -4,17 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"slices"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"slices"
-	"strconv"
-	"sync"
-	"time"
 )
 
 type StreamReactionRoutes struct {
@@ -324,7 +325,7 @@ func NotifyAdminsOnReactionPercentages(context context.Context) {
 			totalReactions += count
 		}
 		if totalReactions == 0 {
-			//logger.Debug("no reactions for stream", "stream", stream)
+			// logger.Debug("no reactions for stream", "stream", stream)
 			continue
 		}
 

@@ -2,9 +2,10 @@ package dao
 
 import (
 	"context"
+	"time"
+
 	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
-	"time"
 )
 
 //go:generate mockgen -source=streamReaction.go -destination ../mock_dao/streamReaction.go
@@ -71,7 +72,6 @@ func (d streamReactionDao) GetByStreamWithinMinutes(c context.Context, streamID 
 func (d streamReactionDao) GetNumbersOfReactions(c context.Context, streamID uint) (map[string]int, error) {
 	var reactionCounts []reactionCount
 	err := d.db.WithContext(c).Model(&model.StreamReaction{}).Where("stream_id = ?", streamID).Group("reaction").Select("reaction, count(reaction) as count").Scan(&reactionCounts).Error
-
 	if err != nil {
 		return nil, err
 	}
