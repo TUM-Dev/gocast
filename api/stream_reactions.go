@@ -324,7 +324,7 @@ func NotifyAdminsOnReactionPercentages(context context.Context) {
 			totalReactions += count
 		}
 		if totalReactions == 0 {
-			logger.Debug("no reactions for stream", "stream", stream)
+			//logger.Debug("no reactions for stream", "stream", stream)
 			continue
 		}
 
