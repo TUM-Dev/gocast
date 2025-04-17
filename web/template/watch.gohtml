@@ -491,6 +491,15 @@
                                title="Watch lecture stats">
                                 <i class="fa-solid fa-chart-simple text-4"></i>
                             </a>
+                            {{if .IndexData.TUMLiveContext.Stream.LiveNow }}
+                            <a
+                                href="/admin/management/{{$course.Model.ID}}/{{$stream.Model.ID}}"
+                                :title="'Open Live Stream Management'">
+                                <i class="fa-solid fa-satellite-dish text-4"></i>
+                            </a>
+                            {{ end }}
+
+                            </a>
                             </div>
                         {{end}}
 
