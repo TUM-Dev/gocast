@@ -58,7 +58,23 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		}
 	}
 
-	if c.Param("version") != "" {
+	if c.Param("version") == "" {
+		if tumLiveContext.User != nil {
+			switch tumLiveContext.User.GetPreferredView() {
+			case "Presentation":
+				c.Redirect(http.StatusFound, c.Request.RequestURI+"/PRES")
+				return
+			case "Camera":
+				c.Redirect(http.StatusFound, c.Request.RequestURI+"/CAM")
+				return
+			case "Split":
+				c.Redirect(http.StatusFound, c.Request.RequestURI+"/SPLIT")
+				return
+			case "Combined":
+				// do nothing, as version=="" implies combined
+			}
+		}
+	} else if c.Param("version") != "" && tumLiveContext.User != nil {
 		data.Version = c.Param("version")
 		if strings.HasPrefix(data.Version, "unit-") {
 			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(tumLiveContext.Stream.Units) {
@@ -79,21 +95,6 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 			data.Version = "CAM"
 			data.IndexData.TUMLiveContext.Stream.PlaylistUrlPRES = ""
 			data.IndexData.TUMLiveContext.Stream.PlaylistUrl = ""
-		}
-	}
-
-	if c.Param("version") == "" {
-		switch tumLiveContext.User.GetPreferredView() {
-		case "Presentation":
-
-			c.Redirect(http.StatusFound, c.Request.RequestURI+"/PRES")
-
-		case "Camera":
-			c.Redirect(http.StatusFound, c.Request.RequestURI+"/CAM")
-		case "Combined":
-			c.Redirect(http.StatusFound, c.Request.RequestURI+"/COMB")
-		case "Split":
-			c.Redirect(http.StatusFound, c.Request.RequestURI+"/SPLIT")
 		}
 	}
 
