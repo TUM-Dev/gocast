@@ -7,9 +7,9 @@ import { loadAndSetTrackbars } from "./track-bars";
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
 
-require("videojs-sprite-thumbnails");
-require("videojs-seek-buttons");
-require("videojs-contrib-quality-levels");
+import "videojs-sprite-thumbnails";
+import "videojs-seek-buttons";
+import "videojs-contrib-quality-levels";
 
 const Button = videojs.getComponent("Button");
 
@@ -40,19 +40,22 @@ class PlayerSettings {
     }
 
     setVolume() {
-        const volume: number = +PlayerSettings.getFromStorage("volume") ?? this.player.volume();
+        const storedVolume = PlayerSettings.getFromStorage("volume");
+        const volume: number = storedVolume !== null ? +storedVolume : this.player.volume();
         this.player.volume(volume);
         console.log(`⚫️ set volume: ${volume}`);
     }
 
     setMuted() {
-        const muted: string = PlayerSettings.getFromStorage("muted") ?? String(this.player.muted());
+        const storedMuted = PlayerSettings.getFromStorage("muted");
+        const muted: string = storedMuted !== null ? storedMuted : String(this.player.muted());
         this.player.muted("true" === muted);
         console.log(`⚫️ set muted: ${muted}`);
     }
 
     setRate() {
-        let persistedRate = +PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate") ?? 1.0;
+        const storedRate = PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate");
+        let persistedRate = storedRate !== null ? +storedRate : 1.0;
         persistedRate = persistedRate <= 0 ? 1.0 : persistedRate;
 
         const queryRate: number = +getQueryParam("rate");
@@ -156,7 +159,8 @@ export const initPlayer = function (
     const player = videojs(id, {
         liveui: true,
         fluid: fluid,
-        playbackRates: playbackSpeeds,
+        // restrict clickable playbackRates to <= 2.0 if on Safari, because higher rates cause weird behaviour (see issue #1222)
+        playbackRates: playbackSpeeds.filter((rate) => rate <= 2 || !videojs.browser.IS_SAFARI),
         html5: {
             reloadSourceOnError: true,
             vhs: {

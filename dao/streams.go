@@ -526,6 +526,7 @@ func (d streamsDao) SavePRESURL(stream *model.Stream, url string) {
 }
 
 func (d streamsDao) ToggleVisibility(streamId uint, private bool) error {
+	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id = ?", streamId).Updates(map[string]interface{}{"private": private}).Error
 }
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/soheilhy/cmux"
 
-	"github.com/dgraph-io/ristretto"
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
@@ -224,7 +224,7 @@ func main() {
 		return
 	}
 
-	cache, err := ristretto.NewCache(&ristretto.Config{
+	cache, _ := ristretto.NewCache[string, any](&ristretto.Config[string, any]{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
 		MaxCost:     1 << 30, // maximum cost of cache (1GB).
 		BufferItems: 64,      // number of keys per Get buffer.
@@ -235,7 +235,7 @@ func main() {
 		sentry.Flush(time.Second * 5)
 		logger.Error("Error risretto.NewCache", "err", err)
 	}
-	dao.Cache = *cache
+	dao.Cache = cache
 
 	m := runner_manager.New(dao.NewDaoWrapper())
 	log.Info("running runner manager")

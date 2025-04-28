@@ -5,8 +5,6 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
 	"log"
 	"mime"
@@ -24,6 +22,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (

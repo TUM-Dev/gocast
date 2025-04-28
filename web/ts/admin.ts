@@ -15,25 +15,27 @@ export class AdminUserList {
     showSearchResults: boolean;
     searchLoading: boolean;
     searchInput: string;
+    roles: number;
 
     constructor(usersAsJson: object[]) {
         this.list = usersAsJson;
         this.rowsPerPage = 10;
         this.showSearchResults = false;
         this.currentIndex = 0;
+        this.searchInput = "";
+        this.roles = -1;
         this.numberOfPages = Math.ceil(this.list.length / this.rowsPerPage);
         this.updateVisibleRows();
     }
 
     async search() {
-        if (this.searchInput.length < 3) {
+        if (this.searchInput.length < 3 && this.roles == -1) {
             this.showSearchResults = false;
             this.updateVisibleRows();
             return;
-        }
-        if (this.searchInput.length > 2) {
+        } else {
             this.searchLoading = true;
-            fetch("/api/searchUser?q=" + this.searchInput)
+            fetch("/api/searchUser?q=" + this.searchInput + "&r=" + this.roles)
                 .then((response) => {
                     this.searchLoading = false;
                     if (!response.ok) {

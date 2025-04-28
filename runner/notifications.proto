@@ -2,11 +2,14 @@ edition = "2023";
 package protobuf;
 option go_package = "runner/protobuf";
 
+import "commons.proto";
+
 message Notification {
   oneof data {
     StreamStartNotification stream_start = 1;
     StreamEndNotification stream_end = 2;
     HeartbeatNotification heartbeat = 3;
+    VODReadyNotification vod_ready = 4;
   }
 }
 
@@ -27,6 +30,12 @@ message HeartbeatNotification {
   string hostname = 1;
   bool draining = 2;
   uint64 job_count = 3;
+}
+
+message VODReadyNotification {
+  StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
+  string url = 3;
 }
 
 message NotificationResponse {

@@ -44,7 +44,7 @@ type MeiliCourse struct {
 }
 
 type MeiliExporter struct {
-	c *meilisearch.Client
+	c meilisearch.ServiceManager
 	d dao.DaoWrapper
 }
 

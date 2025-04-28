@@ -63,7 +63,7 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if err != nil {
 		return AbortingError(err)
 	}
-	d["recording"] = liveRecDir
+	d["recordingDir"] = liveRecDir
 
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_StreamStart{
@@ -113,5 +113,5 @@ func logCmdPipe(log *slog.Logger, pipe io.ReadCloser, fields []any) {
 	for scanner.Scan() {
 		log.Info("ffmpeg log", append([]any{"msg", scanner.Text()}, fields...)...)
 	}
-	log.Info("ffmpeg logstream ended", fields)
+	log.Info("ffmpeg logstream ended", fields...)
 }

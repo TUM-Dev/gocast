@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -128,21 +129,36 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 }
 
 func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err error) {
-	q := c.Query("q")
-	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
-	q = reg.ReplaceAllString(q, "")
-	if len(q) < 3 {
+	query := c.Query("q")
+	roleQuery := c.Query("r")
+	reg := regexp.MustCompile("[^a-zA-Z0-9 ]+")
+	query = reg.ReplaceAllString(query, "")
+	// make the search work with empty query but selected role
+	if len(query) < 3 && (roleQuery == "-1" || roleQuery == "") {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "query too short (minimum length is 3)",
 		})
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
-	users, err = r.UsersDao.SearchUser(q)
+	if roleQuery == "" || roleQuery == "-1" {
+		users, err = r.UsersDao.SearchUser(query)
+	} else {
+		role, err := strconv.ParseUint(roleQuery, 10, 64)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "could not parse role",
+				Err:           err,
+			})
+			return nil, err
+		}
+		users, err = r.UsersDao.SearchUserWithRole(query, role)
+	}
 	if err != nil && err != gorm.ErrRecordNotFound {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not search user",
+			CustomMessage: "cannot search for user's",
 			Err:           err,
 		})
 		return nil, err
