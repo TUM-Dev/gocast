@@ -340,7 +340,10 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         players[j].on("loadedmetadata", () => {
             duration = players[j].duration();
             jumpTo = isNaN(tParam) ? lastProgress * duration : tParam;
-            players[j].currentTime(jumpTo);
+            players[j].one("canplay", () => {
+                players[j].currentTime(jumpTo);
+                console.log(`⚫️ jump to: ${jumpTo}`);
+            });
         });
 
         // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
