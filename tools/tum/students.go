@@ -25,6 +25,7 @@ func FindStudentsForCourses(courses []model.Course, usersDao dao.UsersDao) {
 			logger.Error("FindStudentsForCourses: Can't get Students for course with id", "err", err, "TUMOnlineIdentifier", courses[i].TUMOnlineIdentifier)
 			continue
 		}
+		logger.With("course", courses[i].ID, "nUsers", len(studentIDs)).Debug("Adding users to course")
 		err = usersDao.AddUsersToCourseByTUMIDs(studentIDs, courses[i].ID)
 		if err != nil {
 			logger.Error("FindStudentsForCourses: Can't add users to course", "err", err)
