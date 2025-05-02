@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/antchfx/xmlquery"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/antchfx/xmlquery"
 )
 
 func FindStudentsForCourses(courses []model.Course, usersDao dao.UsersDao) {
@@ -46,9 +47,12 @@ func findStudentsForCourse(courseID string, token string) (obfuscatedIDs []strin
 	if err != nil {
 		return []string{}, fmt.Errorf("findStudentsForCourse: Malformed TUMOnline xml: %v", err)
 	}
-	ids := make([]string, len(res))
-	for i := range res {
-		ids[i] = res[i].SelectAttr("ident")
+	ids := make([]string, 0, len(res))
+	for _, r := range res {
+		found := xmlquery.Find(r, "infoBlock/subBlock[@userDefined='attendance']")
+		if len(found) == 1 && found[0].InnerText() == "J" {
+			ids = append(ids, r.SelectAttr("ident"))
+		}
 	}
 	return ids, nil
 }
