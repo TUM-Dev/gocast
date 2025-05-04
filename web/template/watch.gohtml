@@ -528,6 +528,7 @@
                             </button>
                         {{end}}
 
+                        {{ if not $stream.LiveNow }}
                         <!-- Lecture Stream Playlist -->
                         <button @click="sidebar = (sidebar === watch.SidebarState.Streams ? watch.SidebarState.Hidden : watch.SidebarState.Streams)"
                                 title="Open Playlist"
@@ -535,6 +536,7 @@
                                 class="rounded-lg px-3 py-2 h-fit w-fit">
                             <i class="fa-solid fa-list text-4"></i>
                         </button>
+                        {{ end }}
                     </div>
                 </div>
             </div>
