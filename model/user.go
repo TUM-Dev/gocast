@@ -60,6 +60,7 @@ const (
 	UserDefinedSpeeds
 	AutoSkip
 	DefaultMode
+	LectureView
 )
 
 type UserSetting struct {
@@ -236,6 +237,15 @@ func (u *User) GetDefaultMode() (DefaultModeSetting, error) {
 		}
 	}
 	return DefaultModeSetting{Beta: false}, nil
+}
+
+func (u *User) GetPreferredView() string {
+	for _, setting := range u.Settings {
+		if setting.Type == LectureView {
+			return setting.Value
+		}
+	}
+	return "Combined"
 }
 
 type argonParams struct {
