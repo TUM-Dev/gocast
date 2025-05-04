@@ -74,7 +74,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 				// do nothing, as version=="" implies combined
 			}
 		}
-	} else if c.Param("version") != "" && tumLiveContext.User != nil {
+	} else if tumLiveContext.User != nil {
 		data.Version = c.Param("version")
 		if strings.HasPrefix(data.Version, "unit-") {
 			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(tumLiveContext.Stream.Units) {
