@@ -39,26 +39,26 @@
             <div x-show="currentTab === -1" x-data="{ progress: { COMB: 0, PRES: null, CAM: null } }" @voduploadprogress.window="(e) => (progress = e.detail)">
                 <h3>Your lecture is being created ...</h3>
                 <ul x-show="formData.vodup" class="mt-2">
-                    <li>Combined Video:
-                        <div x-data="{ currentVal: progress.COMB, minVal: 0, maxVal: 100 }" class="flex h-4 w-full overflow-hidden rounded-radius bg-surface-alt dark:bg-surface-dark-alt" role="progressbar" aria-label="default progress bar" :aria-valuenow="currentVal" :aria-valuemin="minVal" :aria-valuemax="maxVal">
-                            <div class="h-full rounded-radius bg-blue-600 p-0.5 text-center text-xs font-semibold leading-none text-on-primary dark:bg-blue-800 dark:text-on-primary-dark" :style="{ width: progress.COMB !== null ? `${progress.COMB}%` : '0%' }">
-                                <span x-text="progress.COMB === null ? 'skipped' : `${progress.COMB}%`"></span>
-                            </div>
-                        </div>
+                    <li class="mb-4">
+                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Combined Video:</span>
+                        <progress x-bind:value="progress.COMB !== null ? progress.COMB : 0" max="100" 
+                            class="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                        </progress>
+                        <span class="block mt-1 text-xs text-gray-500 dark:text-gray-400" x-text="progress.COMB === null ? 'Skipped' : `${progress.COMB}%`"></span>
                     </li>
-                    <li>Presentation Video:
-                        <div x-data="{ currentVal: progress.PRES, minVal: 0, maxVal: 100 }" class="flex h-4 w-full overflow-hidden rounded-radius bg-surface-alt dark:bg-surface-dark-alt" role="progressbar" aria-label="default progress bar" :aria-valuenow="currentVal" :aria-valuemin="minVal" :aria-valuemax="maxVal">
-                            <div class="h-full rounded-radius bg-blue-600 p-0.5 text-center text-xs font-semibold leading-none text-on-primary dark:bg-blue-800 dark:text-on-primary-dark" :style="{ width: progress.PRES !== null ? `${progress.PRES}%` : '0%' }">
-                                <span x-text="progress.PRES === null ? 'skipped' : `${progress.PRES}%`"></span>
-                            </div>
-                        </div>
+                    <li class="mb-4">
+                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Presentation Video:</span>
+                        <progress x-bind:value="progress.PRES !== null ? progress.PRES : 0" max="100" 
+                            class="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                        </progress>
+                        <span class="block mt-1 text-xs text-gray-500 dark:text-gray-400" x-text="progress.PRES === null ? 'Skipped' : `${progress.PRES}%`"></span>
                     </li>
-                    <li>Camera Video: 
-                        <div x-data="{ currentVal: progress.CAM, minVal: 0, maxVal: 100 }" class="flex h-4 w-full overflow-hidden rounded-radius bg-surface-alt dark:bg-surface-dark-alt" role="progressbar" aria-label="default progress bar" :aria-valuenow="currentVal" :aria-valuemin="minVal" :aria-valuemax="maxVal">
-                            <div class="h-full rounded-radius bg-blue-600 p-0.5 text-center text-xs font-semibold leading-none text-on-primary dark:bg-blue-800 dark:text-on-primary-dark" :style="{ width: progress.CAM !== null ? `${progress.CAM}%` : '0%' }">
-                                <span x-text="progress.CAM === null ? 'skipped' : `${progress.CAM}%`"></span>
-                            </div>
-                        </div>
+                    <li class="mb-4">
+                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Camera Video:</span>
+                        <progress x-bind:value="progress.CAM !== null ? progress.CAM : 0" max="100" 
+                            class="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                        </progress>
+                        <span class="block mt-1 text-xs text-gray-500 dark:text-gray-400" x-text="progress.CAM === null ? 'Skipped' : `${progress.CAM}%`"></span>
                     </li>
                 </ul>
             </div>
