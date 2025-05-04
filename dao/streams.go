@@ -407,10 +407,11 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 // Helper method to fetch test course for current user.
 func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
-	userName := user.GetPreferredName()
-
-	if userName != "" {
-		userName += "'s "
+	var userName string
+	if user.LastName != nil {
+		userName = user.Name + " " + *user.LastName + "'s "
+	} else {
+		userName = user.Name + "'s "
 	}
 
 	// Hash the user ID to create a unique slug withouth exposing the user ID
@@ -419,6 +420,7 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 	hashedUserID := hex.EncodeToString(hasher.Sum(nil))
 
 	err := DB.FirstOrCreate(&course, model.Course{
+		UserID:       user.ID,
 		Name:         userName + "Test Course",
 		TeachingTerm: "W",
 		Slug:         "TEST-" + hashedUserID,
