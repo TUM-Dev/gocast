@@ -40,6 +40,7 @@ export function courseContext(slug: string, year: number, term: string, userId: 
         course: new Course() as Course,
 
         courseStreams: new GroupedSmartArray<Stream, number>(),
+        transcodingStreams: [] as Stream[],
         plannedStreams: new Paginator<Stream>([], 3),
         upcomingStreams: new Paginator<Stream>([], 3),
 
@@ -90,6 +91,8 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.loadPinned();
                     this.plannedStreams.set(this.course.Planned.reverse()).reset();
                     this.upcomingStreams.set(this.course.Upcoming).reset();
+                    this.transcodingStreams = this.course.Transcodings;
+                    console.log("Added transcoding streams", this.transcodingStreams);
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID))
                         .then((progresses) => {
                             this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));

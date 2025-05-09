@@ -390,6 +390,7 @@ type StreamDTO struct {
 	IsPubliclyVisible bool
 }
 
+// TODO: Add transcoding progress (currently not updating correctly...)
 func (s Stream) ToDTO() StreamDTO {
 	downloads := []DownloadableVod{}
 	if s.IsDownloadable() {

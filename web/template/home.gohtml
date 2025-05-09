@@ -405,7 +405,7 @@
                         </section>
                     </template>
 
-                    <template x-if="courseStreams.hasElements()">
+                    <template x-if="courseStreams.hasElements() || transcodingStreams.length > 0">
                         <section class="tum-live-course-view-item"
                                  :class="plannedStreams.hasElements() ? 'col-span-2' : 'col-span-full'">
                             <header>
@@ -440,6 +440,59 @@
                                     </button>
                                 </section>
                             </header>
+                            <section>
+                                <template x-if="transcodingStreams.length > 0">
+                                    <article class="grid">
+                                        <section class="tum-live-course-view-item col-span-full">
+                                            <section class="tum-live-transcoding">
+                                                <h5 class="font-bold">Current Transcodings</h5>
+                                                <template x-for="stream in transcodingStreams" :key="stream.ID">
+                                                    <article
+                                                            class="tum-live-stream group sm:col-span-1 w-1/5"
+                                                            @click.outside="vod.Dropdown.toggle(false)">
+                                                        <div class="block mb-2">
+                                                            <div :style="`background: url('/api/stream/${stream.ID}/thumbs/vod'), url('/thumb-fallback.png'); background-size: cover;`"
+                                                                 class="aspect-video tum-live-thumbnail flex items-center justify-center"
+                                                                 x-show="!isListView()">
+                                                                <span class="loader w-1/5"></span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="relative flex justify-between px-1 min-h-[32px]">
+                                                            <div class="w-full">
+                                                                <template x-if="stream.HasName()">
+                                                                    <div class="flex">
+                                                                        <i title="This lecture is hidden" x-show="!stream.IsPubliclyVisible"
+                                                                           class="fas fa-eye-slash px-1" style="line-height:revert"></i>
+                                                                        <p class="title overflow-hidden"
+                                                                           :title="stream.Name"
+                                                                           x-text="stream.Name">
+                                                                        </p>
+                                                                    </div>
+                                                                </template>
+                                                                <template x-if="stream.HasName()">
+                                                                        <span class="date text-sm"
+                                                                              x-text="stream.FriendlyDateStart()"></span>
+                                                                </template>
+
+                                                                <template x-if="!stream.HasName()">
+                                                                    <div>
+                                                                        <i title="This lecture is hidden" x-show="!stream.IsPubliclyVisible"
+                                                                           class="fas fa-eye-slash px-1" style="line-height:revert"></i>
+                                                                        <p :class="isListView() ? 'title overflow-hidden' : ''">
+                                                                                <span class="date" :class="isListView() ? '' : 'text-sm'"
+                                                                                      x-text="stream.FriendlyDateStart()"></span>
+                                                                        </p>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </article>
+                                                </template>
+                                            </section>
+                                        </section>
+                                    </article>
+                                </template>
+                            </section>
                             <section>
                                 <template x-if="courseStreams.hasElements()">
                                     <article class="grid">
