@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/actions"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
@@ -33,7 +32,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	jID := r.RunAction(a, data)
 	r.log.Info("job added", "ID", jID)
 
-	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
+	return &protobuf.StreamResponse{JobId: jID}, nil
 }
 
 func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {

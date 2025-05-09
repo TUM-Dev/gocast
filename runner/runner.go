@@ -20,7 +20,6 @@ import (
 	"github.com/tum-dev/gocast/runner/pkg/actions"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -53,6 +52,7 @@ type Runner struct {
 
 	notifications chan *protobuf.Notification
 	Metrics       *metrics.Broker
+	Version       string
 }
 
 func NewRunner(v string) *Runner {
@@ -73,6 +73,7 @@ func NewRunner(v string) *Runner {
 		StartTime:     start,
 		notifications: make(chan *protobuf.Notification),
 		Metrics:       metrics.NewBroker(),
+		Version:       v,
 	}
 }
 
@@ -107,9 +108,10 @@ func (r *Runner) Run() {
 			r.notifications <- &protobuf.Notification{
 				Data: &protobuf.Notification_Heartbeat{
 					Heartbeat: &protobuf.HeartbeatNotification{
-						Hostname: ptr.Take(config.Config.Hostname),
-						Draining: ptr.Take(r.draining),
-						JobCount: ptr.Take(uint64(len(r.jobs))),
+						Hostname: config.Config.Hostname,
+						Draining: r.draining,
+						JobCount: uint64(len(r.jobs)),
+						Version:  r.Version,
 					},
 				},
 			}
@@ -123,8 +125,8 @@ func (r *Runner) Drain() {
 	r.notifications <- &protobuf.Notification{
 		Data: &protobuf.Notification_Heartbeat{
 			Heartbeat: &protobuf.HeartbeatNotification{
-				Hostname: ptr.Take(config.Config.Hostname),
-				Draining: ptr.Take(r.draining),
+				Hostname: config.Config.Hostname,
+				Draining: r.draining,
 			},
 		},
 	}

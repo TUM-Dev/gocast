@@ -82,6 +82,7 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	err := m.dao.RunnerDao.Create(ctx, &model.Runner{
 		Hostname: req.GetHostname(),
 		Port:     uint32(req.GetPort()),
+		Version:  req.GetVersion(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create runner: %v", err)

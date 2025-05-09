@@ -20,7 +20,7 @@ func StreamEnd(_ context.Context, _ *slog.Logger, notify chan *protobuf.Notifica
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_StreamEnd{
 			StreamEnd: &protobuf.StreamEndNotification{
-				Stream: &protobuf.StreamInfo{Id: &streamID},
+				Stream: &protobuf.StreamInfo{Id: streamID},
 			},
 		},
 	}

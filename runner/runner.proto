@@ -1,4 +1,4 @@
-edition = "2023";
+syntax = "proto3";
 
 package protobuf;
 
@@ -47,6 +47,7 @@ service RunnerManagerService {
 message RegisterRequest {
   string hostname = 1;
   int32 port = 2;
+  string version = 3;
 }
 
 message RegisterResponse {
