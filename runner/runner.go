@@ -111,7 +111,6 @@ func (r *Runner) Run() {
 						Hostname: config.Config.Hostname,
 						Draining: r.draining,
 						JobCount: uint64(len(r.jobs)),
-						Version:  r.Version,
 					},
 				},
 			}
