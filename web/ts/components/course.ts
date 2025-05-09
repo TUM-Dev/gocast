@@ -92,7 +92,6 @@ export function courseContext(slug: string, year: number, term: string, userId: 
                     this.plannedStreams.set(this.course.Planned.reverse()).reset();
                     this.upcomingStreams.set(this.course.Upcoming).reset();
                     this.transcodingStreams = this.course.Transcodings;
-                    console.log("Added transcoding streams", this.transcodingStreams);
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID))
                         .then((progresses) => {
                             this.course.Recordings.forEach((s: Stream, i) => (s.Progress = progresses[i]));

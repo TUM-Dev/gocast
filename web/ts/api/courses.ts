@@ -159,10 +159,11 @@ export class Course implements Identifiable {
         c.NextLecture = obj.NextLecture ? Object.assign(new Stream(), obj.NextLecture) : undefined;
         c.LastRecording = obj.LastRecording ? Object.assign(new Stream(), obj.LastRecording) : undefined;
         c.Streams = obj.Streams ? obj.Streams.map((s) => Object.assign(new Stream(), s)) : [];
-        c.Transcodings = c.Streams.filter((s) => !s.IsRecording && !s.IsPlanned && !s.IsComingUp && s.HLSUrl != null && s.HLSUrl !== "");
         c.Recordings = c.Streams.filter((s) => s.IsRecording);
         c.Planned = c.Streams.filter((s) => s.IsPlanned);
         c.Upcoming = c.Streams.filter((s) => s.IsComingUp);
+        c.Transcodings = c.Streams.filter((s) => !s.IsRecording && !s.IsPlanned && !s.IsComingUp && s.HLSUrl != null && s.HLSUrl !== ""
+            && !c.includes(s) && !c.Recordings.includes(s) && !c.Planned.includes(s) && !c.Upcoming.includes(s));
         return c;
     }
 
