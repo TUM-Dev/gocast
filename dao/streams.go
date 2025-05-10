@@ -395,7 +395,8 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 	streamKey := uuid.NewV4().String()
 	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
 	stream.RoomName = "Selfstream"
-	err = DB.Save(&stream).Error
+	stream.LectureHallID = 0
+	err = d.SaveStream(&stream)
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
 	}
@@ -426,6 +427,8 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 		Year:         1234,
 		Visibility:   "hidden",
 		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
+		LivePrivate:  true,
+		VodPrivate:   true,
 	}).Error
 	if err != nil {
 		return model.Course{}, err
@@ -560,6 +563,7 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		Duration:         vod.Duration,
 		ThumbInterval:    vod.ThumbInterval,
 		Private:          vod.Private,
+		LectureHallID:    vod.LectureHallID,
 	}).Error
 	return err
 }
