@@ -378,10 +378,9 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 
 	var stream model.Stream
 	err = DB.FirstOrCreate(&stream, model.Stream{
-		CourseID:      course.ID,
-		Name:          "Test Stream",
-		Description:   "This is a test stream",
-		LectureHallID: 0,
+		CourseID:    course.ID,
+		Name:        "Test Stream",
+		Description: "This is a test stream",
 	}).Error
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
@@ -395,7 +394,6 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 	stream.Private = true
 	streamKey := uuid.NewV4().String()
 	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
-	stream.LectureHallID = 0
 	stream.RoomName = "Selfstream"
 	err = DB.Save(&stream).Error
 	if err != nil {
