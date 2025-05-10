@@ -564,6 +564,7 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		ThumbInterval:    vod.ThumbInterval,
 		Private:          vod.Private,
 		LectureHallID:    vod.LectureHallID,
+		StreamKey:        vod.StreamKey,
 	}).Error
 	return err
 }
