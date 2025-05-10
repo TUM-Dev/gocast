@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	"github.com/TUM-Dev/gocast/worker/pb"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/pb"
+	log "github.com/sirupsen/logrus"
 )
 
 func buildCommand(niceness int, infile string, outfile string, tune string, crf int, self bool) *exec.Cmd {
@@ -26,7 +27,7 @@ func buildCommand(niceness int, infile string, outfile string, tune string, crf 
 		c = append(c, "-tune", tune)
 	}
 	if self {
-		c = append(c, "-probesize 25M -analyzeduration 50M")
+		c = append(c, "-probesize", "25M", "-analyzeduration", "50M")
 	}
 	c = append(c, "-c:a", "aac", "-b:a", "128k", "-crf", fmt.Sprintf("%d", crf), outfile)
 	return exec.Command("nice", c...)
