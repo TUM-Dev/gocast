@@ -395,7 +395,8 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 	stream.Private = true
 	streamKey := uuid.NewV4().String()
 	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
-	stream.LectureHallID = 1
+	stream.LectureHallID = 0
+	stream.RoomName = "Selfstream"
 	err = DB.Save(&stream).Error
 	if err != nil {
 		return model.Stream{}, model.Course{}, err

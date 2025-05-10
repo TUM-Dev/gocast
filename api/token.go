@@ -190,5 +190,5 @@ func (r *tokenRoutes) fetchStreamKey(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"url": "" + tools.Cfg.IngestBase + "/" + courseSlug + "?secret=" + streamKey + "/" + courseSlug})
+	c.JSON(http.StatusOK, gin.H{"url": "" + tools.Cfg.IngestBase + courseSlug + "?secret=" + streamKey + "/" + courseSlug})
 }
