@@ -103,7 +103,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			LectureHalls:        lectureHalls,
 			Page:                page,
 			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
-			Runners:             RunnersData{Runners: runners},
+			Runners:             RunnersData{Runners: runners, RunnersJson: toJson(runners)},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
@@ -161,7 +161,27 @@ type WorkersData struct {
 }
 
 type RunnersData struct {
-	Runners []model.Runner
+	Runners     []model.Runner
+	RunnersJson string
+}
+
+func toJson(runners []model.Runner) string {
+	type runnerData struct {
+		model.Runner
+		Alive bool `json:"Alive"`
+	}
+	runnersData := make([]runnerData, len(runners))
+	for i, runner := range runners {
+		runnersData[i] = runnerData{
+			Runner: runner,
+			Alive:  runner.Alive(),
+		}
+	}
+	ret, err := json.Marshal(runnersData)
+	if err != nil {
+		return ""
+	}
+	return string(ret)
 }
 
 type TokensData struct {

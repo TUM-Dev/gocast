@@ -5,7 +5,7 @@
             <table class="table-auto w-full col-span-full">
                 <thead>
                 <tr class="text-2 uppercase text-left">
-                    <th class="pr-5"></th>
+                    <th class="px-5">    </th>
                     <th class="py-3 pr-6 text-left">Name</th>
                     <th class="py-3 px-6 text-left">Status</th>
                     <th class="py-3 px-6 text-left">Workload</th>
@@ -13,28 +13,35 @@
                     <th class="py-3 px-6 text-left">Actions</th>
                 </tr>
                 </thead>
-                <tbody class="text-3">
-                    {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
-                    {{range $runner := .Runners}}
-                        <tr class="border-gray-500" x-data="{open: false}">
-                            <td><a @click="open = !open;"><i class="fa-solid" :class="open ? 'fa-chevron-down' : 'fa-chevron-right'"></i></a></td>
-                            <td class="pt-3 px-6">
+                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
+                <tbody class="text-3" x-data="{ runners: {{ .RunnersJson }} , runnersOpen: {} }">
+                    <template x-for="runner in runners" :key="runner.Hostname" x-init="runnersOpen[runner.Hostname] = false">
+                        <tr class="border-gray-500">
+                            <td><a @click="runnersOpen[runner.Hostname] = !runnersOpen[runner.Hostname];"><i class="fa-solid text-xs pt-3" :class="runnersOpen[runner.Hostname] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></a></td>
+                            <td class="pt-3 pr-6">
                                 <div class="font-semibold text-1">
-                                    {{$runner.Hostname}}
-                                    <span class="font-normal text-4">@{{$runner.Version}}</span>
+                                    <span x-text="runner.Hostname"></span>
+                                    <span class="font-normal text-4">@</span>
+                                    <span x-text="runner.Version" class="font-normal text-4"></span>
                                 </div>
                             </td>
-                            <td class="px-6">{{if $runner.Alive}}
-                                <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
-                                <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}
+                            <td class="px-6">
+                                <template x-if="runner.Alive">
+                                    <span  class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>
+                                </template>
+                                <template x-if="!runner.Alive" >
+                                    <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>
+                                </template>
                             </td>
-                            <td class="px-6 text-left whitespace-nowrap">
+                            <td class="px-6 text-center whitespace-nowrap">
+                                <span x-text="runner.JobCount"></span>
+                                <span> Jobs</span>
                             </td>
                             <td class="px-6">
                                 <!-- following text tag is generated with ChatGPT -->
                                 <p class="text-white"
                                    x-data="{
-                                     rawTime: '{{ .TimeOfRegister }}',
+                                     rawTime: runner.TimeOfRegister,
                                      time: null,
                                      diffText: '',
                                      getTimeAgo() {
@@ -53,7 +60,7 @@
                                        for (const interval of intervals) {
                                          const count = Math.floor(diff / interval.seconds);
                                          if (count >= 1) {
-                                           return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`;
+                                           return `${count} ${interval.label}${count !== 1 ? 's' : ''}`;
                                          }
                                        }
 
@@ -65,6 +72,7 @@
                                          clean = rawTime.replace(/ [A-Z]{3,}$/, '');
                                          time = new Date(clean);
                                          diffText = getTimeAgo();
+                                         setInterval(function() {diffText = getTimeAgo();}, 60000);
                                        "
                                    x-text="diffText"
                                 ></p>
@@ -77,8 +85,20 @@
                                    <i class="fas fa-trash"></i>
                                 </button>
                             </td>
+                    </template>
+                    <template x-for="runner in runners" :key="runner.Hostname">
+                        <tr x-show="runnersOpen[runner.Hostname]">
+                            <td></td>
+                            <td colspan="5" class="text-sm">
+                                <div>
+                                    <p><strong>Last Seen:</strong> <span x-text="runner.LastSeen"></span></p>
+                                    <p><strong>Draining:</strong> <span x-text="runner.Draining"></span></p>
+                                    <p><strong>Job Count:</strong> <span x-text="runner.JobCount"></span></p>
+                                </div>
+                            </td>
                         </tr>
-                    {{end}}
+                    </template>
+
                 </tbody>
             </table>
         </div>
