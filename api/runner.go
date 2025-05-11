@@ -166,7 +166,6 @@ func liveRunnerPageUpdateOnMessage(psc *realtime.Context, message *realtime.Mess
 				switch msgMap["task"] {
 				case "aliveStatusUpdate":
 					doAliveStatusUpdate(psc)
-					break
 				default:
 					logger.Error("Unknown message type", "type", msgMap["task"])
 				}
