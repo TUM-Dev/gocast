@@ -104,7 +104,7 @@ func (r *Realtime) messageHandler(c *Client, msg []byte) {
 func (r *Realtime) CloseAll() {
 	// Close all clients
 	logger.Info("closing all websocket channels")
-	for id, _ := range r.connector.clients.clients {
+	for id := range r.connector.clients.clients {
 		r.channels.UnsubscribeAll(id)
 	}
 }

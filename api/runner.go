@@ -3,15 +3,15 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"slices"
+	"sync"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"slices"
-
-	"sync"
 )
 
 const (
@@ -139,7 +139,7 @@ func liveRunnerPageUpdateOnMessage(psc *realtime.Context, message *realtime.Mess
 		logger.Error("Message or context is nil")
 		return
 	}
-	//logger.Info("Received message on live runner page update channel", "message", message.Payload)
+	// logger.Info("Received message on live runner page update channel", "message", message.Payload)
 	ctx, _ := psc.Client.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
