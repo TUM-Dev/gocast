@@ -202,8 +202,9 @@ func reactionUpdateOnSubscribe(psc *realtime.Context) {
 
 	liveReactionListenerMutex.Lock()
 	defer liveReactionListenerMutex.Unlock()
-	if liveReactionListener[userId] != nil {
-		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{append(liveUpdateListener[userId].sessions, psc), liveReactionListener[userId].stream}
+	existing := liveReactionListener[userId]
+	if existing != nil {
+		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{append(existing.sessions, psc), liveReactionListener[userId].stream}
 	} else {
 		liveReactionListener[userId] = &liveReactionAdminSessionsWrapper{[]*realtime.Context{psc}, 0}
 	}
