@@ -38,14 +38,17 @@ export class Realtime {
         this.debug("🔵 Send", { type, channel, payload });
     }
 
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     private async waitForReadyState(callback: any) {
-        if(this.ws.readyState === 1) {
-            callback()
+        if (this.ws.readyState === 1) {
+            callback();
         } else {
-            let that = this;
-            setTimeout(function() {
-                that.waitForReadyState(callback);
-            }.bind(this), 5000);
+            setTimeout(
+                function () {
+                    this.waitForReadyState(callback);
+                }.bind(this),
+                5000,
+            );
         }
     }
 
@@ -56,10 +59,12 @@ export class Realtime {
             type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
         });
         // Check if channel already subscribed
-        this.waitForReadyState(function() {
-            this.subscribedChannels.push(channel);
-            this.debug("Subscribed", channel);
-        }.bind(this))
+        this.waitForReadyState(
+            function () {
+                this.subscribedChannels.push(channel);
+                this.debug("Subscribed", channel);
+            }.bind(this),
+        );
     }
 
     public async unsubscribeChannel(channel: string, { unregisterHandler = true }) {

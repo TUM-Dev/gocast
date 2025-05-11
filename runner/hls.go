@@ -21,6 +21,6 @@ func (h *HLSServer) Start() error {
 }
 
 func (h *HLSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Access-Control-Allow-Origin", "*")
+	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	h.fs.ServeHTTP(w, r)
 }
