@@ -15,8 +15,17 @@
                 </thead>
                 {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
                 <tbody class="text-3" x-data="{ runners: {{ .RunnersJson }} , runnersOpen: {} }">
-                    <template x-for="runner in runners" :key="runner.Hostname" x-init="runnersOpen[runner.Hostname] = false">
-                        <tr class="border-gray-500">
+                    <template x-for="runner in runners" :key="runner.Hostname">
+                        <tr class="border-gray-500" x-init="runnersOpen[runner.Hostname] = false"
+                            x-on:runner-alive-status-update.window="e => {
+                                for (const runner of runners) {
+                                    if (e.detail.runners[runner.Hostname] !== undefined) {
+                                        runner.Alive = e.detail.runners[runner.Hostname].alive;
+                                        runner.JobCount = e.detail.runners[runner.Hostname].jobCount;
+                                    }
+                                }
+                            }"
+                        >
                             <td><a @click="runnersOpen[runner.Hostname] = !runnersOpen[runner.Hostname];"><i class="fa-solid text-xs pt-3" :class="runnersOpen[runner.Hostname] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></a></td>
                             <td class="pt-3 pr-6">
                                 <div class="font-semibold text-1">
@@ -78,10 +87,10 @@
                                 ></p>
                             </td>
                             <td x-data class="px-6">
-                                <button @click="admin.deleteWorker('').then(() => window.location.reload())"
+                                <button @click="admin.deleteRunner(runner.Hostname).then(() => window.location.reload())"
                                    class="text-5 hover:text-1 items-center justify-center"
                                    type="button"
-                                   title="Delete Worker">
+                                   title="Delete Runner">
                                    <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -91,16 +100,18 @@
                             <td></td>
                             <td colspan="5" class="text-sm">
                                 <div>
-                                    <p><strong>Last Seen:</strong> <span x-text="runner.LastSeen"></span></p>
-                                    <p><strong>Draining:</strong> <span x-text="runner.Draining"></span></p>
-                                    <p><strong>Job Count:</strong> <span x-text="runner.JobCount"></span></p>
+                                    <p><strong>Some information:</strong> <span>Information to be added (e.g. a list of currently running jobs)</span></p>
+                                    <!--<p><strong>Draining:</strong> <span x-text="runner.Draining"></span></p>
+                                    <p><strong>Job Count:</strong> <span x-text="runner.JobCount"></span></p>-->
                                 </div>
                             </td>
                         </tr>
                     </template>
-
                 </tbody>
             </table>
+            <!-- Just for initializing things div-->
+            <template x-init="admin.liveRunnerUpdateListener.init()"></template>
+            <template x-init="admin.periodicAskForAliveStatus()"></template>
         </div>
     </div>
 {{end}}

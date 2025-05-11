@@ -100,3 +100,11 @@ func (r *Realtime) messageHandler(c *Client, msg []byte) {
 		logger.Warn("unknown pubsub websocket request type", "type", req.Type)
 	}
 }
+
+func (r *Realtime) CloseAll() {
+	// Close all clients
+	logger.Info("closing all websocket channels")
+	for id, _ := range r.connector.clients.clients {
+		r.channels.UnsubscribeAll(id)
+	}
+}

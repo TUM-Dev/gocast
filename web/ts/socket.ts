@@ -3,7 +3,7 @@ const PAGE_LOADED = new Date();
 
 export type MessageHandlerFn = (payload: object) => void;
 
-const RealtimeMessageTypes = {
+export const RealtimeMessageTypes = {
     RealtimeMessageTypeSubscribe: "subscribe",
     RealtimeMessageTypeUnsubscribe: "unsubscribe",
     RealtimeMessageTypeChannelMessage: "message",
@@ -38,14 +38,28 @@ export class Realtime {
         this.debug("🔵 Send", { type, channel, payload });
     }
 
+    private async waitForReadyState(callback: any) {
+        if(this.ws.readyState === 1) {
+            callback()
+        } else {
+            let that = this;
+            setTimeout(function() {
+                that.waitForReadyState(callback);
+            }.bind(this), 5000);
+        }
+    }
+
     public async subscribeChannel(channel: string, handler?: MessageHandlerFn) {
         await this.lazyInit();
         if (handler) this.registerHandler(channel, handler);
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
         });
-        this.subscribedChannels.push(channel);
-        this.debug("Subscribed", channel);
+        // Check if channel already subscribed
+        this.waitForReadyState(function() {
+            this.subscribedChannels.push(channel);
+            this.debug("Subscribed", channel);
+        }.bind(this))
     }
 
     public async unsubscribeChannel(channel: string, { unregisterHandler = true }) {
