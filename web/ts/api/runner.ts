@@ -13,9 +13,9 @@ export const liveRunnerUpdateListener = {
                 let runners = {}
                 for (let runner of payload["statuses"]) {
                     runners[runner["runner"]] = {alive: runner["status"], jobCount: runner["jobCount"]};
-                    console.log(runner)
+                    // console.log(runner)
                 }
-                console.log("Dispatching event", runners);
+                // console.log("Dispatching event", runners);
                 window.dispatchEvent(new CustomEvent("runner-alive-status-update", {
                     detail: {
                         runners: runners,
