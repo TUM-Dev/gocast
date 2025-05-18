@@ -11,9 +11,10 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
-	log "github.com/sirupsen/logrus"
 )
 
 func buildCommand(niceness int, infile string, outfile string, tune string, crf int, self bool) *exec.Cmd {
@@ -97,7 +98,18 @@ func transcode(streamCtx *StreamContext) error {
 
 	err = cmd.Wait()
 	if err != nil {
-		log.WithFields(log.Fields{"output": output}).Error("Transcoding failed")
+		host, err := os.Hostname()
+		if err != nil {
+			host = "unknown"
+		}
+		log.WithFields(log.Fields{
+			"output":  output,
+			"course":  streamCtx.courseSlug,
+			"stream":  streamCtx.streamId,
+			"variant": streamCtx.streamVersion,
+			"worker":  host,
+			"cmd":     cmd.String(),
+		}).Error("Transcoding failed")
 		return fmt.Errorf("transcode stream: %w", fmt.Errorf("%w: %s", err, output))
 	} else {
 		log.WithField("stream", streamCtx.getStreamName()).Info("Transcoding finished")
