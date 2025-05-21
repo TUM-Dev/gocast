@@ -6,7 +6,7 @@
 TUMs lecture streaming service, currently serving up to 100 courses every semester with up to 2000 active students.
 
 Features include:
-- Automatic lecture scheduling and access management coupled with [CAMPUSOnline](https://www.tugraz.at/tu-graz/organisationsstruktur/serviceeinrichtungen-und-stabsstellen/campusonline/)
+- Automatic lecture scheduling and access management coupled with [CAMPUSOnline](https://www.campusonline.tugraz.at)
 - Livestreaming from lecture halls
   - Support for Extron SMPs and automatic backup recordings on them.
   - Support for preset management on ip cameras
