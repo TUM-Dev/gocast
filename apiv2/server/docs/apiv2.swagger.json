@@ -18,7 +18,7 @@
       "name": "API"
     }
   ],
-  "host": "localhost:8081",
+  "host": "tum.live",
   "basePath": "/api/v2",
   "schemes": [
     "http",
