@@ -186,6 +186,7 @@ export const initPlayer = function (
             url: `/api/stream/${streamID}/thumbs/${spriteID}`,
             width: 160,
             height: 90,
+            columns: 17,
         });
     }
     player.seekButtons({
