@@ -14,6 +14,8 @@ export function mainContext(year: number, term: string) {
         liveToday: [] as Course[],
         recently: new AutoPaginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
 
+        loaded: false,
+
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
@@ -52,6 +54,7 @@ export function mainContext(year: number, term: string) {
                     this.recently.reset().preload();
                 })
                 .finally(() => {
+                    this.loaded = true;
                     console.log("🌑 init recently", this.recently);
                     console.log("🌑 init live today", this.liveToday);
                 });
