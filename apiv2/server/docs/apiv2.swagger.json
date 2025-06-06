@@ -631,9 +631,9 @@
         ]
       }
     },
-    "/streams/{streamId}": {
+    "/streams/{slug}/{streamId}": {
       "get": {
-        "summary": "Get stream and course by stream ID.",
+        "summary": "Get stream and course by course slug and stream ID.",
         "description": "Retrieves a stream and its course by its stream ID.",
         "operationId": "API_getStream",
         "responses": {
@@ -652,6 +652,12 @@
         },
         "parameters": [
           {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
             "name": "streamId",
             "in": "path",
             "required": true,
@@ -664,9 +670,9 @@
         ]
       }
     },
-    "/streams/{streamId}/playlist": {
+    "/streams/{slug}/{streamId}/playlist": {
       "get": {
-        "summary": "Get stream playlist.",
+        "summary": "Get stream playlist by course slug and stream ID.",
         "description": "Retrieves the playlist for a stream including watch progress.",
         "operationId": "API_getStreamPlaylist",
         "responses": {
@@ -685,6 +691,12 @@
         },
         "parameters": [
           {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
             "name": "streamId",
             "in": "path",
             "required": true,
@@ -697,9 +709,9 @@
         ]
       }
     },
-    "/streams/{streamId}/sections": {
+    "/streams/{slug}/{streamId}/sections": {
       "get": {
-        "summary": "Get video sections.",
+        "summary": "Get video sections by course slug and stream ID.",
         "description": "Retrieves the video sections for a stream.",
         "operationId": "API_getVideoSections",
         "responses": {
@@ -718,6 +730,12 @@
         },
         "parameters": [
           {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
             "name": "streamId",
             "in": "path",
             "required": true,
@@ -730,9 +748,9 @@
         ]
       }
     },
-    "/streams/{streamId}/subtitles/{lang}": {
+    "/streams/{slug}/{streamId}/subtitles/{lang}": {
       "get": {
-        "summary": "Get subtitles.",
+        "summary": "Get subtitles by course slug, stream ID, and language.",
         "description": "Retrieves the subtitles for a stream in a specific language.",
         "operationId": "API_getSubtitles",
         "responses": {
@@ -750,6 +768,12 @@
           }
         },
         "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
           {
             "name": "streamId",
             "in": "path",
@@ -769,9 +793,9 @@
         ]
       }
     },
-    "/streams/{streamId}/thumbs": {
+    "/streams/{slug}/{streamId}/thumbs": {
       "get": {
-        "summary": "Get thumbs.",
+        "summary": "Get thumbs by course slug, stream ID, and optional thumb type.",
         "description": "Retrieves the thumbs for a stream.",
         "operationId": "API_getThumbs",
         "responses": {
@@ -789,6 +813,12 @@
           }
         },
         "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
           {
             "name": "streamId",
             "in": "path",
