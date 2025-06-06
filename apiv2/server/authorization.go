@@ -101,7 +101,6 @@ type StreamRequest interface {
 	GetStreamId() uint32
 }
 
-// Checks if the user is allowed to access the stream and course and returns the user, stream and course
 func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamRequest) (*model.User, model.Stream, model.Course, error) {
 	stream := model.Stream{}
 	course := model.Course{}
@@ -117,6 +116,16 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 	course, err = a.dao.GetCourseById(ctx, stream.CourseID)
 	if err != nil {
 		return nil, stream, course, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	// Only check slug if request requires it
+	type slugGetter interface {
+		GetSlug() string
+	}
+	if r, ok := req.(slugGetter); ok {
+		if r.GetSlug() != course.Slug {
+			return nil, stream, course, e.WithStatus(http.StatusBadRequest, errors.New("slug does not match course"))
+		}
 	}
 
 	user, _ := a.getCurrent(ctx)
