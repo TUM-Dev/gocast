@@ -82,7 +82,7 @@ const file_commons_proto_rawDesc = "" +
 	"\x1aSTREAM_VERSION_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17STREAM_VERSION_COMBINED\x10\x01\x12\x19\n" +
 	"\x15STREAM_VERSION_CAMERA\x10\x02\x12\x1f\n" +
-	"\x1bSTREAM_VERSION_PRESENTATION\x10\x03B\x11Z\x0frunner/protobufb\x06proto3"
+	"\x1bSTREAM_VERSION_PRESENTATION\x10\x03B\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
 
 var (
 	file_commons_proto_rawDescOnce sync.Once

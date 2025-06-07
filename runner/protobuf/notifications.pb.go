@@ -112,19 +112,19 @@ type isNotification_Data interface {
 }
 
 type Notification_StreamStart struct {
-	StreamStart *StreamStartNotification `protobuf:"bytes,1,opt,name=stream_start,json=streamStart,proto3,oneof"`
+	StreamStart *StreamStartNotification `protobuf:"bytes,1,opt,name=stream_start,json=streamStart,oneof"`
 }
 
 type Notification_StreamEnd struct {
-	StreamEnd *StreamEndNotification `protobuf:"bytes,2,opt,name=stream_end,json=streamEnd,proto3,oneof"`
+	StreamEnd *StreamEndNotification `protobuf:"bytes,2,opt,name=stream_end,json=streamEnd,oneof"`
 }
 
 type Notification_Heartbeat struct {
-	Heartbeat *HeartbeatNotification `protobuf:"bytes,3,opt,name=heartbeat,proto3,oneof"`
+	Heartbeat *HeartbeatNotification `protobuf:"bytes,3,opt,name=heartbeat,oneof"`
 }
 
 type Notification_VodReady struct {
-	VodReady *VODReadyNotification `protobuf:"bytes,4,opt,name=vod_ready,json=vodReady,proto3,oneof"`
+	VodReady *VODReadyNotification `protobuf:"bytes,4,opt,name=vod_ready,json=vodReady,oneof"`
 }
 
 func (*Notification_StreamStart) isNotification_Data() {}
@@ -137,7 +137,7 @@ func (*Notification_VodReady) isNotification_Data() {}
 
 type StreamInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            *uint64                `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -173,16 +173,16 @@ func (*StreamInfo) Descriptor() ([]byte, []int) {
 }
 
 func (x *StreamInfo) GetId() uint64 {
-	if x != nil {
-		return x.Id
+	if x != nil && x.Id != nil {
+		return *x.Id
 	}
 	return 0
 }
 
 type StreamStartNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream,proto3" json:"stream,omitempty"`
-	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
+	Url           *string                `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -225,15 +225,15 @@ func (x *StreamStartNotification) GetStream() *StreamInfo {
 }
 
 func (x *StreamStartNotification) GetUrl() string {
-	if x != nil {
-		return x.Url
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
 }
 
 type StreamEndNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream,proto3" json:"stream,omitempty"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -277,9 +277,9 @@ func (x *StreamEndNotification) GetStream() *StreamInfo {
 
 type HeartbeatNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hostname      string                 `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	Draining      bool                   `protobuf:"varint,2,opt,name=draining,proto3" json:"draining,omitempty"`
-	JobCount      uint64                 `protobuf:"varint,3,opt,name=job_count,json=jobCount,proto3" json:"job_count,omitempty"`
+	Hostname      *string                `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty"`
+	Draining      *bool                  `protobuf:"varint,2,opt,name=draining" json:"draining,omitempty"`
+	JobCount      *uint64                `protobuf:"varint,3,opt,name=job_count,json=jobCount" json:"job_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -315,31 +315,31 @@ func (*HeartbeatNotification) Descriptor() ([]byte, []int) {
 }
 
 func (x *HeartbeatNotification) GetHostname() string {
-	if x != nil {
-		return x.Hostname
+	if x != nil && x.Hostname != nil {
+		return *x.Hostname
 	}
 	return ""
 }
 
 func (x *HeartbeatNotification) GetDraining() bool {
-	if x != nil {
-		return x.Draining
+	if x != nil && x.Draining != nil {
+		return *x.Draining
 	}
 	return false
 }
 
 func (x *HeartbeatNotification) GetJobCount() uint64 {
-	if x != nil {
-		return x.JobCount
+	if x != nil && x.JobCount != nil {
+		return *x.JobCount
 	}
 	return 0
 }
 
 type VODReadyNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream,proto3" json:"stream,omitempty"`
-	StreamVersion StreamVersion          `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,proto3,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
-	Url           string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
+	StreamVersion *StreamVersion         `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
+	Url           *string                `protobuf:"bytes,3,opt,name=url" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -382,15 +382,15 @@ func (x *VODReadyNotification) GetStream() *StreamInfo {
 }
 
 func (x *VODReadyNotification) GetStreamVersion() StreamVersion {
-	if x != nil {
-		return x.StreamVersion
+	if x != nil && x.StreamVersion != nil {
+		return *x.StreamVersion
 	}
 	return StreamVersion_STREAM_VERSION_UNSPECIFIED
 }
 
 func (x *VODReadyNotification) GetUrl() string {
-	if x != nil {
-		return x.Url
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
 }
@@ -459,7 +459,7 @@ const file_notifications_proto_rawDesc = "" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x10\n" +
 	"\x03url\x18\x03 \x01(\tR\x03url\"\x16\n" +
-	"\x14NotificationResponseB\x11Z\x0frunner/protobufb\x06proto3"
+	"\x14NotificationResponseB\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
 
 var (
 	file_notifications_proto_rawDescOnce sync.Once

@@ -24,13 +24,13 @@ const (
 
 type StreamRequest struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
-	StreamId            uint64                 `protobuf:"varint,1,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
-	Version             StreamVersion          `protobuf:"varint,2,opt,name=version,proto3,enum=protobuf.StreamVersion" json:"version,omitempty"`
-	End                 *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
-	FfmpegGlobalOptions string                 `protobuf:"bytes,4,opt,name=ffmpeg_global_options,json=ffmpegGlobalOptions,proto3" json:"ffmpeg_global_options,omitempty"` // optional e.g. -rtsp_transport tcp
-	FfmpegInputOptions  string                 `protobuf:"bytes,5,opt,name=ffmpeg_input_options,json=ffmpegInputOptions,proto3" json:"ffmpeg_input_options,omitempty"`    // optional
-	FfmpegOutputOptions string                 `protobuf:"bytes,6,opt,name=ffmpeg_output_options,json=ffmpegOutputOptions,proto3" json:"ffmpeg_output_options,omitempty"` // e.g. -c:a copy -c:v copy
-	Input               string                 `protobuf:"bytes,7,opt,name=input,proto3" json:"input,omitempty"`                                                          // e.g. rtsp://user:password@host:port/rtsp_path
+	StreamId            *uint64                `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
+	Version             *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
+	End                 *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end" json:"end,omitempty"`
+	FfmpegGlobalOptions *string                `protobuf:"bytes,4,opt,name=ffmpeg_global_options,json=ffmpegGlobalOptions" json:"ffmpeg_global_options,omitempty"` // optional e.g. -rtsp_transport tcp
+	FfmpegInputOptions  *string                `protobuf:"bytes,5,opt,name=ffmpeg_input_options,json=ffmpegInputOptions" json:"ffmpeg_input_options,omitempty"`    // optional
+	FfmpegOutputOptions *string                `protobuf:"bytes,6,opt,name=ffmpeg_output_options,json=ffmpegOutputOptions" json:"ffmpeg_output_options,omitempty"` // e.g. -c:a copy -c:v copy
+	Input               *string                `protobuf:"bytes,7,opt,name=input" json:"input,omitempty"`                                                          // e.g. rtsp://user:password@host:port/rtsp_path
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -66,15 +66,15 @@ func (*StreamRequest) Descriptor() ([]byte, []int) {
 }
 
 func (x *StreamRequest) GetStreamId() uint64 {
-	if x != nil {
-		return x.StreamId
+	if x != nil && x.StreamId != nil {
+		return *x.StreamId
 	}
 	return 0
 }
 
 func (x *StreamRequest) GetVersion() StreamVersion {
-	if x != nil {
-		return x.Version
+	if x != nil && x.Version != nil {
+		return *x.Version
 	}
 	return StreamVersion_STREAM_VERSION_UNSPECIFIED
 }
@@ -87,36 +87,36 @@ func (x *StreamRequest) GetEnd() *timestamppb.Timestamp {
 }
 
 func (x *StreamRequest) GetFfmpegGlobalOptions() string {
-	if x != nil {
-		return x.FfmpegGlobalOptions
+	if x != nil && x.FfmpegGlobalOptions != nil {
+		return *x.FfmpegGlobalOptions
 	}
 	return ""
 }
 
 func (x *StreamRequest) GetFfmpegInputOptions() string {
-	if x != nil {
-		return x.FfmpegInputOptions
+	if x != nil && x.FfmpegInputOptions != nil {
+		return *x.FfmpegInputOptions
 	}
 	return ""
 }
 
 func (x *StreamRequest) GetFfmpegOutputOptions() string {
-	if x != nil {
-		return x.FfmpegOutputOptions
+	if x != nil && x.FfmpegOutputOptions != nil {
+		return *x.FfmpegOutputOptions
 	}
 	return ""
 }
 
 func (x *StreamRequest) GetInput() string {
-	if x != nil {
-		return x.Input
+	if x != nil && x.Input != nil {
+		return *x.Input
 	}
 	return ""
 }
 
 type StreamResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	JobId         *string                `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -152,15 +152,15 @@ func (*StreamResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *StreamResponse) GetJobId() string {
-	if x != nil {
-		return x.JobId
+	if x != nil && x.JobId != nil {
+		return *x.JobId
 	}
 	return ""
 }
 
 type StreamEndRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	JobId         *string                `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -196,8 +196,8 @@ func (*StreamEndRequest) Descriptor() ([]byte, []int) {
 }
 
 func (x *StreamEndRequest) GetJobId() string {
-	if x != nil {
-		return x.JobId
+	if x != nil && x.JobId != nil {
+		return *x.JobId
 	}
 	return ""
 }
@@ -240,9 +240,9 @@ func (*StreamEndResponse) Descriptor() ([]byte, []int) {
 
 type RegisterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hostname      string                 `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	Port          int32                  `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	Version       string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	Hostname      *string                `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty"`
+	Port          *int32                 `protobuf:"varint,2,opt,name=port" json:"port,omitempty"`
+	Version       *string                `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -278,22 +278,22 @@ func (*RegisterRequest) Descriptor() ([]byte, []int) {
 }
 
 func (x *RegisterRequest) GetHostname() string {
-	if x != nil {
-		return x.Hostname
+	if x != nil && x.Hostname != nil {
+		return *x.Hostname
 	}
 	return ""
 }
 
 func (x *RegisterRequest) GetPort() int32 {
-	if x != nil {
-		return x.Port
+	if x != nil && x.Port != nil {
+		return *x.Port
 	}
 	return 0
 }
 
 func (x *RegisterRequest) GetVersion() string {
-	if x != nil {
-		return x.Version
+	if x != nil && x.Version != nil {
+		return *x.Version
 	}
 	return ""
 }
@@ -362,7 +362,7 @@ const file_runner_proto_rawDesc = "" +
 	"\x10RequestStreamEnd\x12\x1a.protobuf.StreamEndRequest\x1a\x1b.protobuf.StreamEndResponse\"\x002\x9f\x01\n" +
 	"\x14RunnerManagerService\x12C\n" +
 	"\bRegister\x12\x19.protobuf.RegisterRequest\x1a\x1a.protobuf.RegisterResponse\"\x00\x12B\n" +
-	"\x06Notify\x12\x16.protobuf.Notification\x1a\x1e.protobuf.NotificationResponse\"\x00B\x11Z\x0frunner/protobufb\x06proto3"
+	"\x06Notify\x12\x16.protobuf.Notification\x1a\x1e.protobuf.NotificationResponse\"\x00B\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
 
 var (
 	file_runner_proto_rawDescOnce sync.Once
