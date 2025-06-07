@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"log/slog"
 
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
@@ -20,7 +21,7 @@ func StreamEnd(_ context.Context, _ *slog.Logger, notify chan *protobuf.Notifica
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_StreamEnd{
 			StreamEnd: &protobuf.StreamEndNotification{
-				Stream: &protobuf.StreamInfo{Id: streamID},
+				Stream: &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 			},
 		},
 	}

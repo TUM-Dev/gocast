@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"io"
 	"log/slog"
 	"os"
@@ -67,8 +68,8 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_StreamStart{
 			StreamStart: &protobuf.StreamStartNotification{
-				Stream: &protobuf.StreamInfo{Id: streamID},
-				Url:    fmt.Sprintf("%s/%s/%s/%d.m3u8", config.Config.EdgeServer, config.Config.Hostname, liveRecDir, streamID),
+				Stream: &protobuf.StreamInfo{Id: ptr.Take(streamID)},
+				Url:    ptr.Take(fmt.Sprintf("%s/%s/%s/%d.m3u8", config.Config.EdgeServer, config.Config.Hostname, liveRecDir, streamID)),
 			},
 		},
 	}
