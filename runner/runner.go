@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"log/slog"
 	"net"
 	"os"
@@ -20,7 +21,6 @@ import (
 	"github.com/tum-dev/gocast/runner/pkg/actions"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -53,6 +53,7 @@ type Runner struct {
 
 	notifications chan *protobuf.Notification
 	Metrics       *metrics.Broker
+	Version       string
 }
 
 func NewRunner(v string) *Runner {
@@ -73,6 +74,7 @@ func NewRunner(v string) *Runner {
 		StartTime:     start,
 		notifications: make(chan *protobuf.Notification),
 		Metrics:       metrics.NewBroker(),
+		Version:       v,
 	}
 }
 

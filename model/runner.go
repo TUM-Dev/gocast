@@ -24,6 +24,8 @@ type Runner struct {
 	// It's updated through heartbeats and used to select
 	// the runner with the least workload for new jobs.
 	JobCount uint64 `gorm:"column:job_count;not null;default:0"`
+	// Version is the version of the runner.
+	Version string `gorm:"column:version;not null;default:'dev'"`
 }
 
 // TableName returns the name of the table for the Runner model in the database.

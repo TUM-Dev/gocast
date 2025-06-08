@@ -2,12 +2,12 @@ package runner
 
 import (
 	"context"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/actions"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 

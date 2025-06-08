@@ -1,4 +1,5 @@
-edition = "2023";
+edition = "2023";;
+
 package protobuf;
 option go_package = "runner/protobuf";
 
