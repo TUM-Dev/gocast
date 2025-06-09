@@ -108,7 +108,7 @@ export async function createLectureHall(
         camIP,
         combIP,
         cameraIp,
-        pwrCtrlIp
+        pwrCtrlIp,
     }).then((e) => {
         return e.status === StatusCodes.OK;
     });
