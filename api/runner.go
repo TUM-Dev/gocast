@@ -10,7 +10,6 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,8 +21,8 @@ const (
 var (
 	liveRunnerPageUpdateListenerMutex sync.RWMutex
 	liveRunnerPageUpdateListener      map[uint]*liveRunnerPageUpdateSessionsWrapper
-        // TODO: Refactor
-	daoWrapper                        dao.DaoWrapper
+	// TODO: Refactor
+	daoWrapper dao.DaoWrapper
 )
 
 type liveRunnerPageUpdateSessionsWrapper struct {
@@ -50,7 +49,7 @@ func liveRunnerPageUpdateOnUnsubscribe(psc *realtime.Context) {
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -87,7 +86,7 @@ func liveRunnerPageUpdateOnSubscribe(psc *realtime.Context) {
 
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 
@@ -141,10 +140,14 @@ func liveRunnerPageUpdateOnMessage(psc *realtime.Context, message *realtime.Mess
 		return
 	}
 	// logger.Info("Received message on live runner page update channel", "message", message.Payload)
-	ctx, _ := psc.Client.Get("ctx") // get gin context
+	ctx, exists := psc.Client.Get("ctx") // get gin context
+	if !exists {
+		logger.Error("Could not get context from client")
+		return
+	}
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -187,7 +190,7 @@ func doAliveStatusUpdate(psc *realtime.Context) {
 	ctx, _ := psc.Client.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context)
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 
