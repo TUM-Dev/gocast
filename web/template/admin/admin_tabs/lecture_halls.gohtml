@@ -10,6 +10,7 @@
             saved:false,
             savingFailed:false,
             name: '{{$lectureHall.Name}}',
+            streamProtocol{{$lectureHall.Model.ID}}: '{{$lectureHall.StreamProtocol}}',
             presIp: '{{$lectureHall.PresIP}}',
             camIp: '{{$lectureHall.CamIP}}',
             combIp: '{{$lectureHall.CombIP}}',
@@ -25,7 +26,22 @@
 
             <div class="form-container-body grid grid-cols-3 gap-3 p-4">
                 <h2 class="text-sm text-4 col-span-full">Sources</h2>
-                <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-5 col-span-full">
+                <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-6 col-span-full">
+                    <li>
+                        <span class="text-sm text-5">Protocol</span>
+                        <div class="flex flex-col">
+                            <div>
+                                <input type="radio" @change="changed=true" x-model="streamProtocol{{$lectureHall.Model.ID}}"
+                                       value="1" id="rtmp{{$lectureHall.Model.ID}}">
+                                <label class="text-sm text-5" for="rtmp{{$lectureHall.Model.ID}}">rtmp</label>
+                            </div>
+                            <div>
+                                <input type="radio" @change="changed=true" x-model="streamProtocol{{$lectureHall.Model.ID}}"
+                                       value="2" id="srt{{$lectureHall.Model.ID}}">
+                                <label class="text-sm text-5" for="srt{{$lectureHall.Model.ID}}">srt</label>
+                            </div>
+                        </div>
+                    </li>
                     <li>
                         <span class="text-sm text-5">Presentation</span>
                         <input class="tl-input" type="text" @keyup="changed=true " x-model="presIp"
@@ -89,7 +105,7 @@
             Error updating lecture hall
         </span>
                 <button class="btn" @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
+                body: JSON.stringify({streamProtocol: streamProtocol{{$lectureHall.Model.ID}}, presIp: presIp, camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
                                     .then(r => {
                                         saved = r.status === 200
                                         savingFailed = !saved

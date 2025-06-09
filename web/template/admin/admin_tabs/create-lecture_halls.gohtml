@@ -13,13 +13,24 @@
         <div class="border-b py-2 px-5 dark:border-gray-800">
             <h6 class="text-3 font-bold">New Lecture-Hall</h6>
         </div>
-        <form x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}" @submit.prevent="
-                    success = await admin.createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
+        <form x-data="{name:'', streamProtocol: 1, combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}" @submit.prevent="
+                    success = await admin.createLectureHall(name, streamProtocol, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
                     setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);" class="grid gap-3 px-5 py-4 ">
             <div class="text-sm">
                 <label for="name" class="block text-5">Name</label>
                 <input type="text" x-model="name" id="lh-form-name" placeholder="FMI_HS1" autofocus="" required
                     class="tl-input mt-3" />
+            </div>
+            <div class="text-sm flex flex-row gap-3">
+                <span class="block text-5">Protocol</span>
+                <div class="flex flex-row gap-1">
+                    <input type="radio" x-model="streamProtocol" value="1" id="lh-form-stream-rtmp"
+                        class="tl-radio" />
+                    <label class="text-sm text-5" for="lh-form-stream-rtmp">rtmp</label>
+                    <input type="radio" x-model="streamProtocol" value="2" id="lh-form-stream-rtmp"
+                           class="tl-radio" />
+                    <label class="text-sm text-5" for="lh-form-stream-rtmp">srt</label>
+                </div>
             </div>
             <div class="text-sm">
                 <label for="name" class="block text-5">Presentation</label>

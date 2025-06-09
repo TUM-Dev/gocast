@@ -47,11 +47,12 @@ type lectureHallRoutes struct {
 }
 
 type updateLectureHallReq struct {
-	CamIp     string `json:"camIp"`
-	CombIp    string `json:"combIp"`
-	PresIP    string `json:"presIp"`
-	CameraIp  string `json:"cameraIp"`
-	PwrCtrlIp string `json:"pwrCtrlIp"`
+	StreamProtocol string `json:"streamProtocol"`
+	CamIp          string `json:"camIp"`
+	CombIp         string `json:"combIp"`
+	PresIP         string `json:"presIp"`
+	CameraIp       string `json:"cameraIp"`
+	PwrCtrlIp      string `json:"pwrCtrlIp"`
 }
 
 func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
@@ -84,6 +85,18 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 		})
 		return
 	}
+	protocolNumber, err := strconv.Atoi(req.StreamProtocol)
+	if err != nil {
+		logger.Debug("Invalid stream protocol", "protocol", req.StreamProtocol, "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid stream protocol",
+			Err:           err,
+		})
+		return
+	}
+	lectureHall.StreamProtocol = model.StreamProtocol(protocolNumber)
+	logger.Debug("New stream protocol", "protocol", lectureHall.StreamProtocol)
 	lectureHall.CamIP = req.CamIp
 	lectureHall.CombIP = req.CombIp
 	lectureHall.PresIP = req.PresIP
@@ -357,6 +370,7 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 	var req createLectureHallRequest
 	err := c.BindJSON(&req)
 	if err != nil {
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -365,22 +379,24 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 		return
 	}
 	r.LectureHallsDao.CreateLectureHall(model.LectureHall{
-		Name:      req.Name,
-		CombIP:    req.CombIP,
-		PresIP:    req.PresIP,
-		CamIP:     req.CamIP,
-		CameraIP:  req.CameraIP,
-		PwrCtrlIp: req.PwrCtrlIP,
+		Name:           req.Name,
+		StreamProtocol: model.StreamProtocol(req.StreamProtocol),
+		CombIP:         req.CombIP,
+		PresIP:         req.PresIP,
+		CamIP:          req.CamIP,
+		CameraIP:       req.CameraIP,
+		PwrCtrlIp:      req.PwrCtrlIP,
 	})
 }
 
 type createLectureHallRequest struct {
-	Name      string `json:"name"`
-	CombIP    string `json:"combIP"`
-	PresIP    string `json:"presIP"`
-	CamIP     string `json:"camIP"`
-	CameraIP  string `json:"cameraIP"`
-	PwrCtrlIP string `json:"pwrCtrlIp"`
+	Name           string `json:"name"`
+	StreamProtocol int    `json:"streamProtocol"` // 1 = rtmp, 2 = srt
+	CombIP         string `json:"combIP"`
+	PresIP         string `json:"presIP"`
+	CamIP          string `json:"camIP"`
+	CameraIP       string `json:"cameraIP"`
+	PwrCtrlIP      string `json:"pwrCtrlIp"`
 }
 
 type setLectureHallRequest struct {

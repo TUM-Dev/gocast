@@ -94,13 +94,14 @@ export class AdminUserList {
 
 export async function createLectureHall(
     name: string,
+    streamProtocol: number,
     combIP: string,
     presIP: string,
     camIP: string,
     cameraIp: string,
     pwrCtrlIp: string,
 ) {
-    return postData("/api/createLectureHall", { name, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
+    return postData("/api/createLectureHall", { name, streamProtocol, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
         return e.status === StatusCodes.OK;
     });
 }
