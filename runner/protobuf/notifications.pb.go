@@ -112,19 +112,19 @@ type isNotification_Data interface {
 }
 
 type Notification_StreamStart struct {
-	StreamStart *StreamStartNotification `protobuf:"bytes,1,opt,name=stream_start,json=streamStart,proto3,oneof"`
+	StreamStart *StreamStartNotification `protobuf:"bytes,1,opt,name=stream_start,json=streamStart,oneof"`
 }
 
 type Notification_StreamEnd struct {
-	StreamEnd *StreamEndNotification `protobuf:"bytes,2,opt,name=stream_end,json=streamEnd,proto3,oneof"`
+	StreamEnd *StreamEndNotification `protobuf:"bytes,2,opt,name=stream_end,json=streamEnd,oneof"`
 }
 
 type Notification_Heartbeat struct {
-	Heartbeat *HeartbeatNotification `protobuf:"bytes,3,opt,name=heartbeat,proto3,oneof"`
+	Heartbeat *HeartbeatNotification `protobuf:"bytes,3,opt,name=heartbeat,oneof"`
 }
 
 type Notification_VodReady struct {
-	VodReady *VODReadyNotification `protobuf:"bytes,4,opt,name=vod_ready,json=vodReady,proto3,oneof"`
+	VodReady *VODReadyNotification `protobuf:"bytes,4,opt,name=vod_ready,json=vodReady,oneof"`
 }
 
 func (*Notification_StreamStart) isNotification_Data() {}
@@ -173,8 +173,8 @@ func (*StreamInfo) Descriptor() ([]byte, []int) {
 }
 
 func (x *StreamInfo) GetId() uint64 {
-	if x != nil {
-		return x.Id
+	if x != nil && x.Id != nil {
+		return *x.Id
 	}
 	return 0
 }
@@ -225,8 +225,8 @@ func (x *StreamStartNotification) GetStream() *StreamInfo {
 }
 
 func (x *StreamStartNotification) GetUrl() string {
-	if x != nil {
-		return x.Url
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
 }
@@ -315,22 +315,22 @@ func (*HeartbeatNotification) Descriptor() ([]byte, []int) {
 }
 
 func (x *HeartbeatNotification) GetHostname() string {
-	if x != nil {
-		return x.Hostname
+	if x != nil && x.Hostname != nil {
+		return *x.Hostname
 	}
 	return ""
 }
 
 func (x *HeartbeatNotification) GetDraining() bool {
-	if x != nil {
-		return x.Draining
+	if x != nil && x.Draining != nil {
+		return *x.Draining
 	}
 	return false
 }
 
 func (x *HeartbeatNotification) GetJobCount() uint64 {
-	if x != nil {
-		return x.JobCount
+	if x != nil && x.JobCount != nil {
+		return *x.JobCount
 	}
 	return 0
 }
@@ -382,15 +382,15 @@ func (x *VODReadyNotification) GetStream() *StreamInfo {
 }
 
 func (x *VODReadyNotification) GetStreamVersion() StreamVersion {
-	if x != nil {
-		return x.StreamVersion
+	if x != nil && x.StreamVersion != nil {
+		return *x.StreamVersion
 	}
 	return StreamVersion_STREAM_VERSION_UNSPECIFIED
 }
 
 func (x *VODReadyNotification) GetUrl() string {
-	if x != nil {
-		return x.Url
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
 }
