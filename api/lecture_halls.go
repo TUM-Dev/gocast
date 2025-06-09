@@ -47,7 +47,7 @@ type lectureHallRoutes struct {
 }
 
 type updateLectureHallReq struct {
-	StreamProtocol string `json:"streamProtocol"`
+	StreamProtocol int    `json:"streamProtocol"`
 	CamIp          string `json:"camIp"`
 	CombIp         string `json:"combIp"`
 	PresIP         string `json:"presIp"`
@@ -85,17 +85,7 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 		})
 		return
 	}
-	protocolNumber, err := strconv.Atoi(req.StreamProtocol)
-	if err != nil {
-		logger.Debug("Invalid stream protocol", "protocol", req.StreamProtocol, "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid stream protocol",
-			Err:           err,
-		})
-		return
-	}
-	lectureHall.StreamProtocol = model.StreamProtocol(protocolNumber)
+	lectureHall.StreamProtocol = model.StreamProtocol(req.StreamProtocol)
 	logger.Debug("New stream protocol", "protocol", lectureHall.StreamProtocol)
 	lectureHall.CamIP = req.CamIp
 	lectureHall.CombIP = req.CombIp
@@ -378,23 +368,9 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 		})
 		return
 	}
-	protocolNumber, err := strconv.Atoi(req.StreamProtocol)
-	if err != nil {
-		if req.StreamProtocol == "" {
-			protocolNumber = 1 // default to rtmp
-		} else {
-			logger.Error("Invalid stream protocol", "protocol", req.StreamProtocol, "err", err)
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
-				CustomMessage: "invalid stream protocol",
-				Err:           err,
-			})
-			return
-		}
-	}
 	r.LectureHallsDao.CreateLectureHall(model.LectureHall{
 		Name:           req.Name,
-		StreamProtocol: model.StreamProtocol(protocolNumber),
+		StreamProtocol: model.StreamProtocol(req.StreamProtocol),
 		CombIP:         req.CombIP,
 		PresIP:         req.PresIP,
 		CamIP:          req.CamIP,
@@ -405,7 +381,7 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 
 type createLectureHallRequest struct {
 	Name           string `json:"name"`
-	StreamProtocol string `json:"streamProtocol"` // 1 = rtmp, 2 = srt
+	StreamProtocol int    `json:"streamProtocol"` // 1 = rtmp, 2 = srt
 	CombIP         string `json:"combIP"`
 	PresIP         string `json:"presIP"`
 	CamIP          string `json:"camIP"`

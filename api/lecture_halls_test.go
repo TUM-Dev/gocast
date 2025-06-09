@@ -35,7 +35,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 
 		body := createLectureHallRequest{
 			Name:           "LH1",
-			StreamProtocol: "1",
+			StreamProtocol: 1,
 			CombIP:         "0.0.0.0",
 			PresIP:         "0.0.0.0",
 			CamIP:          "0.0.0.0",
@@ -150,7 +150,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
-				Body:         updateLectureHallReq{CamIp: "0.0.0.0", StreamProtocol: "1"},
+				Body:         updateLectureHallReq{CamIp: "0.0.0.0", StreamProtocol: 1},
 			},
 			"success": {
 				Router: func(r *gin.Engine) {
@@ -174,7 +174,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-				Body:         updateLectureHallReq{CamIp: "0.0.0.0", StreamProtocol: "1"},
+				Body:         updateLectureHallReq{CamIp: "0.0.0.0", StreamProtocol: 1},
 			},
 		}.
 			Router(LectureHallRouterWrapper(t)).
