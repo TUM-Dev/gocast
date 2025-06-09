@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"log/slog"
 	"os"
 	"time"
@@ -29,8 +30,8 @@ func (r *Runner) RegisterWithGocast(retries int) {
 		r.RegisterWithGocast(retries - 1)
 		return
 	}
-	_, err = con.Register(context.Background(), &protobuf.RegisterRequest{Hostname: config.Config.Hostname, Port: int32(config.Config.Port), Version: r.Version})
-	if err != nil {
+	_, err = con.Register(context.Background(), &protobuf.RegisterRequest{Hostname: ptr.Take(config.Config.Hostname), Port: ptr.Take(int32(config.Config.Port)), Version: ptr.Take(r.Version)})
+  if err != nil {
 		r.log.Error("error registering with gocast", "error", err, "sleeping(s)", registerRetries-retries)
 		time.Sleep(time.Second * time.Duration(registerRetries-retries))
 		r.RegisterWithGocast(retries - 1)

@@ -1,7 +1,7 @@
 {{define "course-admin-management"}}
 {{- /*gotype: github.com/TUM-Dev/gocast/model.Course*/ -}}
-<div class="form-container-body">
-    <h2 class="text-5 text-sm">Add or remove users who can help moderate the chat, plan lectures and manage the course.</h2>
+<div class="form-container-body w-full">
+    <h2 class="text-5 text-sm text-wrap w-full">Add or remove users who can help moderate the chat, plan lectures and manage the course.</h2>
     <table x-data="admin.courseAdminManagement()" x-init="$nextTick (()=>{m.init({{.Model.ID}}, userId)});">
         <thead>
             <tr>
@@ -43,18 +43,27 @@
                     <input class="tl-input" type="text" placeholder="ga21tum" x-model="m.search" @keyup="m.searchUsers()">
                 </td>
             </tr>
-            <template x-for="user in m.searchResult" :key="user.id">
+            <template x-if="m.searchResult.length > 0">
+                <template x-for="user in m.searchResult" :key="user.id">
+                    <tr>
+                        <td class="p-2 whitespace-nowrap">
+                            <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
+                        </td>
+                        <td class="p-2 whitespace-nowrap">
+                            <div class="text-left" x-text="user.login"></div>
+                        </td>
+                        <td class="p-2 whitespace-nowrap text-center">
+                            <button class="hover:text-blue-700 w-4 transform hover:scale-110" title="Add Moderator">
+                                <i @click="m.addAdmin(user.id)" class="fas fa-plus"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </template>
+            </template>
+            <template x-if="m.searchResult.length === 0 && m.search.length > 0">
                 <tr>
-                    <td class="p-2 whitespace-nowrap">
-                        <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
-                    </td>
-                    <td class="p-2 whitespace-nowrap">
-                        <div class="text-left" x-text="user.login"></div>
-                    </td>
-                    <td class="p-2 whitespace-nowrap text-center">
-                        <button class="hover:text-blue-700 w-4 transform hover:scale-110" title="Add Moderator">
-                            <i @click="m.addAdmin(user.id)" class="fas fa-plus"></i>
-                        </button>
+                    <td colspan="3" class="p-2 whitespace-nowrap text-center text-red-700 font-bold">
+                        <i class="w-full text-wrap">No users found with given login name (name-lookup only works for users who’ve logged in at least once before)</i>
                     </td>
                 </tr>
             </template>

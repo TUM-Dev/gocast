@@ -378,10 +378,9 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 
 	var stream model.Stream
 	err = DB.FirstOrCreate(&stream, model.Stream{
-		CourseID:      course.ID,
-		Name:          "Test Stream",
-		Description:   "This is a test stream",
-		LectureHallID: 0,
+		CourseID:    course.ID,
+		Name:        "Test Stream",
+		Description: "This is a test stream",
 	}).Error
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
@@ -395,8 +394,9 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 	stream.Private = true
 	streamKey := uuid.NewV4().String()
 	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
-	stream.LectureHallID = 1
-	err = DB.Save(&stream).Error
+	stream.RoomName = "Selfstream"
+	stream.LectureHallID = 0
+	err = d.SaveStream(&stream)
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
 	}
@@ -427,6 +427,8 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 		Year:         1234,
 		Visibility:   "hidden",
 		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
+		LivePrivate:  true,
+		VodPrivate:   true,
 	}).Error
 	if err != nil {
 		return model.Course{}, err
@@ -561,6 +563,8 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		Duration:         vod.Duration,
 		ThumbInterval:    vod.ThumbInterval,
 		Private:          vod.Private,
+		LectureHallID:    vod.LectureHallID,
+		StreamKey:        vod.StreamKey,
 	}).Error
 	return err
 }

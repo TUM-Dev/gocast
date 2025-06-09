@@ -105,12 +105,8 @@ type StreamRequest interface {
 func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamRequest) (*model.User, model.Stream, model.Course, error) {
 	stream := model.Stream{}
 	course := model.Course{}
-	user, err := a.getCurrent(ctx)
-	if err != nil {
-		return nil, stream, course, e.WithStatus(http.StatusUnauthorized, err)
-	}
 
-	stream, err = a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
+	stream, err := a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, stream, course, e.WithStatus(http.StatusNotFound, err)
@@ -123,8 +119,13 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 		return nil, stream, course, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	user, _ := a.getCurrent(ctx)
 	if !user.IsEligibleToWatchCourse(course) {
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not eligible to access course content"))
+	}
+
+	if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access private stream"))
 	}
 
 	return user, stream, course, nil

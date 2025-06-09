@@ -137,7 +137,7 @@ func (*Notification_VodReady) isNotification_Data() {}
 
 type StreamInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            *uint64                `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -181,8 +181,8 @@ func (x *StreamInfo) GetId() uint64 {
 
 type StreamStartNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream,proto3" json:"stream,omitempty"`
-	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
+	Url           *string                `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -233,7 +233,7 @@ func (x *StreamStartNotification) GetUrl() string {
 
 type StreamEndNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream,proto3" json:"stream,omitempty"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -277,9 +277,9 @@ func (x *StreamEndNotification) GetStream() *StreamInfo {
 
 type HeartbeatNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hostname      string                 `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	Draining      bool                   `protobuf:"varint,2,opt,name=draining,proto3" json:"draining,omitempty"`
-	JobCount      uint64                 `protobuf:"varint,3,opt,name=job_count,json=jobCount,proto3" json:"job_count,omitempty"`
+	Hostname      *string                `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty"`
+	Draining      *bool                  `protobuf:"varint,2,opt,name=draining" json:"draining,omitempty"`
+	JobCount      *uint64                `protobuf:"varint,3,opt,name=job_count,json=jobCount" json:"job_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -337,9 +337,9 @@ func (x *HeartbeatNotification) GetJobCount() uint64 {
 
 type VODReadyNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream,proto3" json:"stream,omitempty"`
-	StreamVersion StreamVersion          `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,proto3,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
-	Url           string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
+	StreamVersion *StreamVersion         `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
+	Url           *string                `protobuf:"bytes,3,opt,name=url" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -459,7 +459,7 @@ const file_notifications_proto_rawDesc = "" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x10\n" +
 	"\x03url\x18\x03 \x01(\tR\x03url\"\x16\n" +
-	"\x14NotificationResponseB\x11Z\x0frunner/protobufb\x06proto3"
+	"\x14NotificationResponseB\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
 
 var (
 	file_notifications_proto_rawDescOnce sync.Once

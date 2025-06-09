@@ -33,7 +33,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     HTTPS
   ]
   base_path: "/api/v2"
-  host: "localhost:8081"
+  host: "tum.live"
   consumes: "application/json"
   produces: "application/json"
 };

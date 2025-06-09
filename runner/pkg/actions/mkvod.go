@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"io"
 	"log/slog"
 	"net/url"
