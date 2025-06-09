@@ -20,6 +20,7 @@ func ConfigRealtimeRouter(router *gin.RouterGroup) {
 
 	// Register Channels
 	RegisterLiveUpdateRealtimeChannel()
+	RegisterLiveRunnerPageUpdateRealtimeChannel(daoWrapper)
 	RegisterRealtimeChatChannel()
 }
 
@@ -40,6 +41,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configServerNotificationsRoutes(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configWorkerRouter(router, daoWrapper)
+	configRunnerRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configInfoPageRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())

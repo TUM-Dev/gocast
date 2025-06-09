@@ -121,6 +121,7 @@ var osSignal chan os.Signal
 
 func main() {
 	initAll(initializers)
+	defer api.RealtimeInstance.CloseAll()
 
 	defer profile.Start(profile.MemProfile).Stop()
 	go func() {

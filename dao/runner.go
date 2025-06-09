@@ -44,8 +44,8 @@ func (d runnerDao) Get(c context.Context, hostname string) (res model.Runner, er
 // Create a Runner.
 func (d runnerDao) Create(c context.Context, it *model.Runner) error {
 	return d.db.WithContext(c).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "hostname"}},                   // key column
-		DoUpdates: clause.AssignmentColumns([]string{"port", "version"}), // column needed to be updated
+		Columns:   []clause.Column{{Name: "hostname"}},                                       // key column
+		DoUpdates: clause.AssignmentColumns([]string{"port", "version", "time_of_register"}), // column needed to be updated
 	}).Create(it).Error
 }
 
