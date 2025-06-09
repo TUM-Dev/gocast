@@ -378,9 +378,23 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 		})
 		return
 	}
+	protocolNumber, err := strconv.Atoi(req.StreamProtocol)
+	if err != nil {
+		if req.StreamProtocol == "" {
+			protocolNumber = 1 // default to rtmp
+		} else {
+			logger.Error("Invalid stream protocol", "protocol", req.StreamProtocol, "err", err)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "invalid stream protocol",
+				Err:           err,
+			})
+			return
+		}
+	}
 	r.LectureHallsDao.CreateLectureHall(model.LectureHall{
 		Name:           req.Name,
-		StreamProtocol: model.StreamProtocol(req.StreamProtocol),
+		StreamProtocol: model.StreamProtocol(protocolNumber),
 		CombIP:         req.CombIP,
 		PresIP:         req.PresIP,
 		CamIP:          req.CamIP,
@@ -391,7 +405,7 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 
 type createLectureHallRequest struct {
 	Name           string `json:"name"`
-	StreamProtocol int    `json:"streamProtocol"` // 1 = rtmp, 2 = srt
+	StreamProtocol string `json:"streamProtocol"` // 1 = rtmp, 2 = srt
 	CombIP         string `json:"combIP"`
 	PresIP         string `json:"presIP"`
 	CamIP          string `json:"camIP"`
