@@ -22,6 +22,7 @@ const (
 var (
 	liveRunnerPageUpdateListenerMutex sync.RWMutex
 	liveRunnerPageUpdateListener      map[uint]*liveRunnerPageUpdateSessionsWrapper
+        // TODO: Refactor
 	daoWrapper                        dao.DaoWrapper
 )
 
