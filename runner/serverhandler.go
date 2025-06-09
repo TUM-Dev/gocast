@@ -31,7 +31,7 @@ func (r *Runner) RegisterWithGocast(retries int) {
 		return
 	}
 	_, err = con.Register(context.Background(), &protobuf.RegisterRequest{Hostname: ptr.Take(config.Config.Hostname), Port: ptr.Take(int32(config.Config.Port)), Version: ptr.Take(r.Version)})
-  if err != nil {
+	if err != nil {
 		r.log.Error("error registering with gocast", "error", err, "sleeping(s)", registerRetries-retries)
 		time.Sleep(time.Second * time.Duration(registerRetries-retries))
 		r.RegisterWithGocast(retries - 1)
