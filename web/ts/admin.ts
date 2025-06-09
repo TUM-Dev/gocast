@@ -101,7 +101,15 @@ export async function createLectureHall(
     cameraIp: string,
     pwrCtrlIp: string,
 ) {
-    return postData("/api/createLectureHall", { name, streamProtocol, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
+    return postData("/api/createLectureHall", {
+        name,
+        streamProtocol,
+        presIP,
+        camIP,
+        combIP,
+        cameraIp,
+        pwrCtrlIp
+    }).then((e) => {
         return e.status === StatusCodes.OK;
     });
 }
