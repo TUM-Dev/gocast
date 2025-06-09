@@ -78,9 +78,9 @@ func MkVOD(_ context.Context, _ *slog.Logger, notify chan *protobuf.Notification
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_VodReady{
 			VodReady: &protobuf.VODReadyNotification{
-				Stream:        &protobuf.StreamInfo{Id: streamID},
-				StreamVersion: protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion]),
-				Url:           vodUrl,
+				Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
+				StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
+				Url:           ptr.Take(vodUrl),
 			},
 		},
 	}

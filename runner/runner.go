@@ -109,9 +109,9 @@ func (r *Runner) Run() {
 			r.notifications <- &protobuf.Notification{
 				Data: &protobuf.Notification_Heartbeat{
 					Heartbeat: &protobuf.HeartbeatNotification{
-						Hostname: config.Config.Hostname,
-						Draining: r.draining,
-						JobCount: uint64(len(r.jobs)),
+						Hostname: ptr.Take(config.Config.Hostname),
+						Draining: ptr.Take(r.draining),
+						JobCount: ptr.Take(uint64(len(r.jobs))),
 					},
 				},
 			}
@@ -125,8 +125,8 @@ func (r *Runner) Drain() {
 	r.notifications <- &protobuf.Notification{
 		Data: &protobuf.Notification_Heartbeat{
 			Heartbeat: &protobuf.HeartbeatNotification{
-				Hostname: config.Config.Hostname,
-				Draining: r.draining,
+				Hostname: ptr.Take(config.Config.Hostname),
+				Draining: ptr.Take(r.draining),
 			},
 		},
 	}

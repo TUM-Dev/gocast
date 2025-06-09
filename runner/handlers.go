@@ -33,7 +33,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	jID := r.RunAction(a, data)
 	r.log.Info("job added", "ID", jID)
 
-	return &protobuf.StreamResponse{JobId: jID}, nil
+	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
 }
 
 func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
