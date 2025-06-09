@@ -11,6 +11,10 @@ export const liveRunnerUpdateListener = {
         switch (payload["task"]) {
             case "aliveStatusUpdate": {
                 const runners = {};
+                if (!payload["statuses"]) {
+                    console.warn("No runners found in payload", payload);
+                    return;
+                }
                 for (const runner of payload["statuses"]) {
                     runners[runner["runner"]] = { alive: runner["status"], jobCount: runner["jobCount"] };
                     // console.log(runner)
