@@ -14,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/protobuf"
@@ -57,7 +55,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 
 	for _, entry := range recordingContent {
 		if entry.IsDir() {
-			log.Warn("found dir in recordingDir, skipping", "name", entry.Name())
+			logger.Warn("found dir in recordingDir, skipping", "name", entry.Name())
 			continue
 		}
 		if entry.Name() == "playlist.m3u8" {
@@ -84,7 +82,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 
 func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, streamPath, vodDir string, playlistName string) error {
 	input := "-i " + streamPath
-	options := "-c copy -f hls -hls-time 240 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
+	options := "-c copy -f hls -hls_time 240 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
 
 	args := strings.Split(input, " ")
 	args = append(args, strings.Split(options, " ")...)
@@ -93,7 +91,7 @@ func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, st
 	// give ffmpeg 10 seconds on sigterm (context cancellation) to shut down before sending sigkill.
 	command.WaitDelay = 10 * time.Second
 
-	log.Info("starting ffmpeg", "command", command.String())
+	logger.Info("starting ffmpeg", "command", command.String())
 	stderr, err := command.StderrPipe()
 	if err != nil {
 		return err
