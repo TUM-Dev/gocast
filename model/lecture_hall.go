@@ -7,7 +7,7 @@ type LectureHall struct {
 
 	Name           string         `gorm:"not null"`            // as in smp (e.g. room_00_13_009A)
 	FullName       string         `gorm:"not null"`            // e.g. '5613.EG.009A (00.13.009A, Seminarraum), Boltzmannstr. 3(5613), 85748 Garching b. München'
-	StreamProtocol StreamProtocol `gorm:"not null; default:1"` // 1 = rtmp, 2 = srt
+	StreamProtocol StreamProtocol `gorm:"not null; default:1"` // 1 = rtsp, 2 = srt
 	CombIP         string
 	PresIP         string
 	CamIP          string
@@ -24,7 +24,7 @@ type LectureHall struct {
 type StreamProtocol uint
 
 const (
-	RTMP StreamProtocol = iota + 1
+	RTSP StreamProtocol = iota + 1
 	SRT
 )
 
