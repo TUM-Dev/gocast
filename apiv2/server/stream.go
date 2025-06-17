@@ -21,7 +21,7 @@ import (
 func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*protobuf.CourseStream, error) {
 	a.log.Info("GetStream")
 
-	_, stream, course, err := a.authorizeUserForStreamCourse(ctx, req)
+	user, stream, course, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*p
 
 	return &protobuf.CourseStream{
 		Course:      h.ParseCourseToProto(course, nil),
-		Stream:      h.ParseStreamToProto(stream, nil),
+		Stream:      h.ParseStreamToProto(stream, course, user),
 		LectureHall: h.ParseLectureHallToProto(lectureHall),
 	}, nil
 }

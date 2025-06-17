@@ -67,7 +67,7 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 
 		resp = append(resp, &protobuf.CourseStream{
 			Course:      h.ParseCourseToProto(courseForLiveStream, user),
-			Stream:      h.ParseStreamToProto(stream, nil),
+			Stream:      h.ParseStreamToProto(stream, courseForLiveStream, user),
 			LectureHall: h.ParseLectureHallToProto(lectureHall),
 			// Viewers:     viewers,
 		})
@@ -140,10 +140,10 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 
-	streams := make([]*protobuf.Stream, len(course.Streams))
-	for i, stream := range course.Streams {
+	streams := make([]*protobuf.Stream, 0, len(course.Streams))
+	for _, stream := range course.Streams {
 		if !stream.Private || user.IsAdminOfCourse(course) {
-			streams[i] = h.ParseStreamToProto(stream, nil)
+			streams = append(streams, h.ParseStreamToProto(stream, course, user))
 		}
 	}
 
