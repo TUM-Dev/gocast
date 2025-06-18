@@ -28,8 +28,6 @@ func (r StreamReactionRoutes) allowedReactions(c *gin.Context) {
 }
 
 func (r StreamReactionRoutes) addReaction(c *gin.Context) {
-	cooldownSeconds := 10
-
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	user := tumLiveContext.User
 	stream := tumLiveContext.Stream
@@ -74,7 +72,7 @@ func (r StreamReactionRoutes) addReaction(c *gin.Context) {
 		return
 	}
 
-	// TODO: This can be modified to allow different reactions for different streams
+	// This can be modified to allow different reactions for different streams
 	if !slices.Contains(tools.Cfg.AllowedReactions, reaction.Reaction) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -84,7 +82,8 @@ func (r StreamReactionRoutes) addReaction(c *gin.Context) {
 	}
 
 	lastReaction, _ := r.DaoWrapper.StreamReactionDao.GetLastReactionOfUser(c, user.ID)
-	if lastReaction.Reaction != "" && lastReaction.CreatedAt.Add(time.Duration(cooldownSeconds)*time.Second).After(time.Now()) {
+	// This contains the cooldown logic, to change this value change the time.Duration(10) to the desired cooldown time
+	if lastReaction.Reaction != "" && lastReaction.CreatedAt.Add(time.Duration(10)*time.Second).After(time.Now()) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusTooManyRequests,
 			CustomMessage: "cooldown not over",
