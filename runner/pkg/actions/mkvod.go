@@ -35,8 +35,6 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 		return AbortingError(fmt.Errorf("no recordingDir in context"))
 	}
 
-	logger = logger.With("stream_id", streamID)
-
 	metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Inc()
 	defer func() {
 		metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Dec()

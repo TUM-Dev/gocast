@@ -155,7 +155,7 @@ func (r *Runner) InitApiGrpc() {
 	}
 }
 
-func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
+func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog.Logger) string {
 	// create new context to avoid cancellation on grpc request termination
 	c, cancel := context.WithCancel(context.Background())
 	job := uuid.New().String()
@@ -169,7 +169,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 		}()
 		for _, action := range a {
 			for {
-				log := r.log.With("action", getFunctionName(action)).With("job", job)
+				log := logger.With("action", getFunctionName(action)).With("job", job)
 				log.Info("running action")
 				s := time.Now()
 				err := action(c, log, r.notifications, data, r.Metrics)
