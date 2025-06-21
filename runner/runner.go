@@ -163,7 +163,8 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 	job := uuid.New().String()
 	r.JobCount <- 1
 	r.jobs[job] = jobContexts{
-		parent: cancel,
+		parent:  cancel,
+		actions: make(map[string]context.CancelFunc, len(a)),
 	}
 	go func() {
 		defer func() {
@@ -253,7 +254,9 @@ func (r *Runner) runSingularAction(ctx context.Context, action actions.Action, d
 
 // GetStreamCancelFunc returns the cancel func of the stream action or an error if it doesn't exist.
 func (c *jobContexts) GetStreamCancelFunc() (context.CancelFunc, error) {
-	fName := getFunctionName(actions.Stream(nil, nil, nil, nil, nil))
+	fName := getFunctionName(actions.Stream(context.Background(), nil, nil, nil, nil))
+	fmt.Println(fName)
+	fmt.Println(c.actions)
 	for i, cancelFunc := range c.actions {
 		if i == fName {
 			return cancelFunc, nil
