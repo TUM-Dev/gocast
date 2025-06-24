@@ -50,7 +50,6 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if !ok {
 		return AbortingError(fmt.Errorf("no input in context"))
 	}
-	log = log.With("stream_id", streamID)
 
 	metrics.Streams.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
 	defer func() {
