@@ -331,3 +331,8 @@ func (c Course) IsLoggedIn() bool {
 func (c Course) IsEnrolled() bool {
 	return c.Visibility == "enrolled"
 }
+
+// IsPublic returns true if visibility is set to 'public' and false if not
+func (c Course) IsPublic() bool {
+	return c.Visibility == "public"
+}

@@ -147,17 +147,17 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
 
 		// only show streams for logged-in users if they are logged in
-		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
+		if courseForLiveStream.IsLoggedIn() && tumLiveContext.User == nil {
 			continue
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.Visibility == "enrolled" {
+		if courseForLiveStream.IsEnrolled() {
 			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
 		// Only show hidden streams to course admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
+		if courseForLiveStream.IsHidden() && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
 			continue
 		}
 		// Only show private streams to course admins
