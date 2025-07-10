@@ -2,12 +2,12 @@ package runner
 
 import (
 	"context"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/actions"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
@@ -30,7 +30,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 		actions.MkVOD,
 	}
 
-	jID := r.RunAction(a, data)
+	jID := r.RunAction(a, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
 	r.log.Info("job added", "ID", jID)
 
 	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil

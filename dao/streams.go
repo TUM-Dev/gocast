@@ -378,10 +378,9 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 
 	var stream model.Stream
 	err = DB.FirstOrCreate(&stream, model.Stream{
-		CourseID:      course.ID,
-		Name:          "Test Stream",
-		Description:   "This is a test stream",
-		LectureHallID: 0,
+		CourseID:    course.ID,
+		Name:        "Test Stream",
+		Description: "This is a test stream",
 	}).Error
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
@@ -395,8 +394,9 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 	stream.Private = true
 	streamKey := uuid.NewV4().String()
 	stream.StreamKey = strings.ReplaceAll(streamKey, "-", "")
-	stream.LectureHallID = 1
-	err = DB.Save(&stream).Error
+	stream.RoomName = "Selfstream"
+	stream.LectureHallID = 0
+	err = d.SaveStream(&stream)
 	if err != nil {
 		return model.Stream{}, model.Course{}, err
 	}
@@ -407,10 +407,11 @@ func (d streamsDao) CreateOrGetTestStreamAndCourse(user *model.User) (model.Stre
 // Helper method to fetch test course for current user.
 func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error) {
 	var course model.Course
-	userName := user.GetPreferredName()
-
-	if userName != "" {
-		userName += "'s "
+	var userName string
+	if user.LastName != nil {
+		userName = user.Name + " " + *user.LastName + "'s "
+	} else {
+		userName = user.Name + "'s "
 	}
 
 	// Hash the user ID to create a unique slug withouth exposing the user ID
@@ -419,12 +420,15 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 	hashedUserID := hex.EncodeToString(hasher.Sum(nil))
 
 	err := DB.FirstOrCreate(&course, model.Course{
+		UserID:       user.ID,
 		Name:         userName + "Test Course",
 		TeachingTerm: "W",
 		Slug:         "TEST-" + hashedUserID,
 		Year:         1234,
 		Visibility:   "hidden",
 		VODEnabled:   false, // TODO: Change to VODEnabled: true for default testcourse if necessary
+		LivePrivate:  true,
+		VodPrivate:   true,
 	}).Error
 	if err != nil {
 		return model.Course{}, err
@@ -559,6 +563,8 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		Duration:         vod.Duration,
 		ThumbInterval:    vod.ThumbInterval,
 		Private:          vod.Private,
+		LectureHallID:    vod.LectureHallID,
+		StreamKey:        vod.StreamKey,
 	}).Error
 	return err
 }

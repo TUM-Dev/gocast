@@ -120,6 +120,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/lectureHalls", routes.AdminPage)
 	adminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
 	adminGroup.GET("/admin/workers", routes.AdminPage)
+	adminGroup.GET("/admin/runners", routes.AdminPage)
 	adminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	adminGroup.GET("/admin/server-stats", routes.AdminPage)
 	adminGroup.GET("/admin/course-import", routes.AdminPage)

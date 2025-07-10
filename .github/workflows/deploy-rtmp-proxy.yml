@@ -1,4 +1,4 @@
-name: Build & Deploy Workers
+name: Build & Deploy rtmp-proxy
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: ["worker", "worker/edge", "vod-service"]
+        module: ["rtmp-proxy"]
 
     steps:
       - name: get container name

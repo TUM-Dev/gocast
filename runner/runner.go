@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"fmt"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"log/slog"
 	"net"
 	"os"
@@ -20,7 +21,6 @@ import (
 	"github.com/tum-dev/gocast/runner/pkg/actions"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -53,6 +53,7 @@ type Runner struct {
 
 	notifications chan *protobuf.Notification
 	Metrics       *metrics.Broker
+	Version       string
 }
 
 func NewRunner(v string) *Runner {
@@ -73,6 +74,7 @@ func NewRunner(v string) *Runner {
 		StartTime:     start,
 		notifications: make(chan *protobuf.Notification),
 		Metrics:       metrics.NewBroker(),
+		Version:       v,
 	}
 }
 
@@ -153,7 +155,7 @@ func (r *Runner) InitApiGrpc() {
 	}
 }
 
-func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
+func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog.Logger) string {
 	// create new context to avoid cancellation on grpc request termination
 	c, cancel := context.WithCancel(context.Background())
 	job := uuid.New().String()
@@ -167,7 +169,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any) string {
 		}()
 		for _, action := range a {
 			for {
-				log := r.log.With("action", getFunctionName(action)).With("job", job)
+				log := logger.With("action", getFunctionName(action)).With("job", job)
 				log.Info("running action")
 				s := time.Now()
 				err := action(c, log, r.notifications, data, r.Metrics)

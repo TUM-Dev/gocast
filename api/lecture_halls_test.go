@@ -34,12 +34,13 @@ func TestLectureHallsCRUD(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		body := createLectureHallRequest{
-			Name:      "LH1",
-			CombIP:    "0.0.0.0",
-			PresIP:    "0.0.0.0",
-			CamIP:     "0.0.0.0",
-			CameraIP:  "0.0.0.0",
-			PwrCtrlIP: "0.0.0.0",
+			Name:           "LH1",
+			StreamProtocol: 1,
+			CombIP:         "0.0.0.0",
+			PresIP:         "0.0.0.0",
+			CamIP:          "0.0.0.0",
+			CameraIP:       "0.0.0.0",
+			PwrCtrlIP:      "0.0.0.0",
 		}
 
 		gomino.TestCases{

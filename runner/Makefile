@@ -9,7 +9,7 @@ protoGen:
 
 .PHONY: build
 build: deps
-	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/runner/main.go
+	go build -o main -ldflags="-X 'main.V=$(VERSION)'" cmd/runner/main.go
 
 .PHONY: deps
 deps:

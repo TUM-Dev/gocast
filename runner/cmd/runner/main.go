@@ -39,7 +39,7 @@ func main() {
 	shouldShutdown = true
 	r.Drain()
 
-	//let drainage propagate
+	// let drainage propagate
 	time.Sleep(time.Second)
 
 	go func() {

@@ -5,8 +5,9 @@ import "gorm.io/gorm"
 type LectureHall struct {
 	gorm.Model
 
-	Name           string `gorm:"not null"` // as in smp (e.g. room_00_13_009A)
-	FullName       string `gorm:"not null"` // e.g. '5613.EG.009A (00.13.009A, Seminarraum), Boltzmannstr. 3(5613), 85748 Garching b. München'
+	Name           string         `gorm:"not null"`            // as in smp (e.g. room_00_13_009A)
+	FullName       string         `gorm:"not null"`            // e.g. '5613.EG.009A (00.13.009A, Seminarraum), Boltzmannstr. 3(5613), 85748 Garching b. München'
+	StreamProtocol StreamProtocol `gorm:"not null; default:1"` // 1 = rtsp, 2 = srt
 	CombIP         string
 	PresIP         string
 	CamIP          string
@@ -19,6 +20,13 @@ type LectureHall struct {
 	LiveLightIndex int    // id of power outlet for live light
 	ExternalURL    string
 }
+
+type StreamProtocol uint
+
+const (
+	RTSP StreamProtocol = iota + 1
+	SRT
+)
 
 type CameraType uint
 

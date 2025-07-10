@@ -11,7 +11,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     strategy:
-      matrix: { dir: ['./...', './worker', './worker/edge'] }
+      matrix: { dir: ['./...', './worker', './worker/edge', './runner'] }
     steps:
       - uses: actions/setup-go@v5
         with:

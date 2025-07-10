@@ -13,9 +13,10 @@ import (
 
 // Broker manages Prometheus metrics.
 type Broker struct {
-	port         int
-	Streams      *prometheus.GaugeVec
-	StreamErrors *prometheus.CounterVec
+	port                 int
+	Streams              *prometheus.GaugeVec
+	StreamErrors         *prometheus.CounterVec
+	ConvertingProgresses *prometheus.GaugeVec
 }
 
 // Option represents a functional option for configuring a Broker.
@@ -45,7 +46,14 @@ func NewBroker(options ...Option) *Broker {
 			Subsystem: "stream",
 			Name:      "n_errors",
 			Help:      "Number of stream ffmpeg errors",
-		}, []string{"stream_id", "source"}),
+		}, []string{"stream_id"}),
+
+		ConvertingProgresses: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "runner",
+			Subsystem: "converting",
+			Name:      "n_converting",
+			Help:      "Number of streams currently being converted",
+		}, []string{"stream_id"}),
 	}
 	for _, option := range options {
 		option(b)

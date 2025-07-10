@@ -23,6 +23,9 @@ type RunnerDao interface {
 
 	// Update a Runner by hostname.
 	Update(context.Context, *model.Runner) error
+
+	// Get a list of all Runners.
+	GetAll(context.Context) ([]model.Runner, error)
 }
 
 type runnerDao struct {
@@ -41,8 +44,8 @@ func (d runnerDao) Get(c context.Context, hostname string) (res model.Runner, er
 // Create a Runner.
 func (d runnerDao) Create(c context.Context, it *model.Runner) error {
 	return d.db.WithContext(c).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "hostname"}},        // key column
-		DoUpdates: clause.AssignmentColumns([]string{"port"}), // column needed to be updated
+		Columns:   []clause.Column{{Name: "hostname"}},                                       // key column
+		DoUpdates: clause.AssignmentColumns([]string{"port", "version", "time_of_register"}), // column needed to be updated
 	}).Create(it).Error
 }
 
@@ -54,4 +57,11 @@ func (d runnerDao) Delete(c context.Context, hostname string) error {
 // Update a Runner
 func (d runnerDao) Update(c context.Context, it *model.Runner) error {
 	return d.db.WithContext(c).Save(it).Error
+}
+
+// GetAll returns all Runners
+func (d runnerDao) GetAll(c context.Context) ([]model.Runner, error) {
+	var runners []model.Runner
+	err := d.db.WithContext(c).Find(&runners).Error
+	return runners, err
 }

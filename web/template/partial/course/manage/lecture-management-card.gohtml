@@ -33,6 +33,11 @@
                             class="bg-indigo-500 rounded px-2 py-0 font-semibold">
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
+                        <span class="rounded-sm bg-red-500 text-red-200 block p-4">
+                            Self-Streaming is an experimental feature. By using it, you acknowledge, that a local
+                            copy during the stream is <b>absolutely necessary</b> to ensure the availability of the
+                            lecture in case something fails during processing of your stream.
+                        </span>
                         <span class="font-semibold">Stream Server:</span>
                         <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"

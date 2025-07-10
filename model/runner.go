@@ -17,6 +17,8 @@ type Runner struct {
 	// if the runner wasn't seen in more than 5 seconds, it's considered dead
 	// and won't be assigned further jobs.
 	LastSeen time.Time `gorm:"column:last_seen;"`
+	// TimeOfRegister is the timestamp of the register message.
+	TimeOfRegister time.Time `gorm:"column:time_of_register;"`
 	// Draining is true if the runner is shutting down.
 	// In this case, no further jobs will be assigned.
 	Draining bool `gorm:"column:draining;not null;default:false"`
@@ -24,6 +26,8 @@ type Runner struct {
 	// It's updated through heartbeats and used to select
 	// the runner with the least workload for new jobs.
 	JobCount uint64 `gorm:"column:job_count;not null;default:0"`
+	// Version is the version of the runner.
+	Version string `gorm:"column:version;not null;default:'dev'"`
 }
 
 // TableName returns the name of the table for the Runner model in the database.
@@ -41,4 +45,9 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) error {
 func (r *Runner) AfterFind(tx *gorm.DB) (err error) {
 	// this method currently is a noop
 	return nil
+}
+
+// Alive returns true if the runner is alive
+func (r *Runner) Alive() bool {
+	return r.LastSeen.Add(5 * time.Second).After(time.Now())
 }

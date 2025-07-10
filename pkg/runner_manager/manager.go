@@ -80,8 +80,10 @@ func (m *Manager) Run() error {
 func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
 	log.Info("Register Runner", "d", req)
 	err := m.dao.RunnerDao.Create(ctx, &model.Runner{
-		Hostname: req.GetHostname(),
-		Port:     uint32(req.GetPort()),
+		Hostname:       req.GetHostname(),
+		Port:           uint32(req.GetPort()),
+		TimeOfRegister: time.Now(),
+		Version:        req.GetVersion(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create runner: %v", err)
