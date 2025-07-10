@@ -160,14 +160,15 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			return
 		}
 		// check if course is accessible by user:
-		if course.IsPublic() || course.IsHidden() || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
+		switch {
+		case course.IsPublic(), course.IsHidden(), tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course):
 			tumLiveContext.Course = &course
 			c.Set("TUMLiveContext", tumLiveContext)
-		} else if tumLiveContext.User == nil {
+		case tumLiveContext.User == nil:
 			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 			c.Abort()
 			return
-		} else {
+		default:
 			c.Status(http.StatusForbidden)
 			RenderErrorPage(c, http.StatusForbidden, ForbiddenCourseAccess)
 		}
