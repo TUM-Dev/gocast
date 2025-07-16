@@ -253,11 +253,7 @@ func (d *IndexData) LoadPinnedCourses() {
 	if d.TUMLiveContext.User != nil {
 		pinnedCourses = d.TUMLiveContext.User.PinnedCourses
 		for i := range pinnedCourses {
-			if d.TUMLiveContext.User.IsEligibleToSearchForCourse(pinnedCourses[i]) {
-				pinnedCourses[i].Pinned = false
-			} else {
-				pinnedCourses[i].Pinned = true
-			}
+			pinnedCourses[i].Pinned = d.TUMLiveContext.User.IsEligibleToSearchForCourse(pinnedCourses[i])
 		}
 		sortCourses(pinnedCourses)
 		d.PinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
