@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -240,6 +241,45 @@ func (r mainRoutes) LectureStatsPage(c *gin.Context) {
 	}
 }
 
+func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	indexData := NewIndexData()
+	indexData.TUMLiveContext = tumLiveContext
+	stream := tumLiveContext.Stream
+
+	if stream == nil {
+		tools.RenderErrorPage(c, http.StatusNotFound, "Lecture not found")
+		return
+	}
+
+	if !stream.LiveNow {
+		tools.RenderErrorPage(c, http.StatusNotFound, "Lecture is not live")
+		return
+	}
+
+	if c.Query("restart") == "1" {
+		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
+		return
+	}
+
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-live-management.gohtml", LiveLectureManagementData{
+		IndexData: indexData,
+		Lecture:   *tumLiveContext.Stream,
+		ChatData: ChatData{
+			IsAdminOfCourse: tumLiveContext.UserIsAdmin(),
+			IndexData:       indexData,
+		},
+	}); err != nil {
+		sentry.CaptureException(err)
+	}
+}
+
 func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -421,4 +461,10 @@ type LectureUnitsPageData struct {
 type LectureStatsPageData struct {
 	IndexData IndexData
 	Lecture   model.Stream
+}
+
+type LiveLectureManagementData struct {
+	IndexData IndexData
+	Lecture   model.Stream
+	ChatData  ChatData
 }
