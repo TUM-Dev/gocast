@@ -2,8 +2,10 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"time"
 
 	"gorm.io/gorm"
@@ -330,4 +332,14 @@ func (c Course) IsLoggedIn() bool {
 // IsEnrolled returns true if visibility is set to 'enrolled' and false if not
 func (c Course) IsEnrolled() bool {
 	return c.Visibility == "enrolled"
+}
+
+var courseSlugRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_]{1,150}$`)
+
+// BeforeSave returns an error if the course to be inserted is invalid
+func (c *Course) BeforeSave(tx *gorm.DB) (err error) {
+	if !courseSlugRegex.MatchString(c.Slug) {
+		return errors.New("invalid course slug")
+	}
+	return nil
 }
