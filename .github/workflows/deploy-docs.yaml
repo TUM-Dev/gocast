@@ -30,7 +30,7 @@ jobs:
         working-directory: ./docs_v2
       
       - name: Upload Build Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./docs_v2/build
 
