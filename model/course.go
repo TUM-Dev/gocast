@@ -337,6 +337,7 @@ func (c Course) IsEnrolled() bool {
 // IsPublic returns true if visibility is set to 'public' and false if not
 func (c Course) IsPublic() bool {
 	return c.Visibility == "public"
+}
 
 var courseSlugRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_]{1,150}$`)
 
