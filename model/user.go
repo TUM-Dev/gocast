@@ -285,9 +285,9 @@ func (u *User) IsAllowedToWatchPrivateCourse(course Course) bool {
 // IsEligibleToWatchCourse checks if the user is allowed to access the course
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	if u == nil {
-		return course.Visibility == "public" || course.Visibility == "hidden"
+		return course.IsPublic() || course.IsHidden()
 	}
-	if course.Visibility == "public" || course.Visibility == "hidden" || course.Visibility == "loggedin" {
+	if course.IsPublic() || course.IsHidden() || course.IsLoggedIn() {
 		return true
 	}
 	for _, invCourse := range u.Courses {
@@ -300,7 +300,7 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 
 // IsEligibleToSearchForCourse is a stricter version of IsEligibleToWatchCourse; in case of hidden course, it returns true only when the user is an admin of the course
 func (u *User) IsEligibleToSearchForCourse(course Course) bool {
-	return u.IsEligibleToWatchCourse(course) && course.Visibility != "hidden" || u.IsAdminOfCourse(course)
+	return u.IsEligibleToWatchCourse(course) && !course.IsHidden() || u.IsAdminOfCourse(course)
 }
 
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {

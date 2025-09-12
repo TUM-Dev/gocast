@@ -189,17 +189,17 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		courseForLiveStream, _ := daoWrapper.GetCourseById(context.Background(), stream.CourseID)
 
 		// only show streams for logged in users if they are logged in
-		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
+		if courseForLiveStream.IsLoggedIn() && tumLiveContext.User == nil {
 			continue
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.Visibility == "enrolled" {
+		if courseForLiveStream.IsEnrolled() {
 			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
 		// Only show hidden streams to admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		if courseForLiveStream.IsHidden() && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
 			continue
 		}
 		var lectureHall *model.LectureHall

@@ -31,17 +31,17 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 		courseForLiveStream, _ := a.dao.GetCourseById(context.Background(), stream.CourseID)
 
 		// only show streams for logged-in users if they are logged in
-		if courseForLiveStream.Visibility == "loggedin" && user == nil {
+		if courseForLiveStream.IsLoggedIn() && user == nil {
 			continue
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.Visibility == "enrolled" {
+		if courseForLiveStream.IsEnrolled() {
 			if !user.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
 		// Only show hidden streams to course admins
-		if courseForLiveStream.Visibility == "hidden" && (user == nil || !user.IsAdminOfCourse(courseForLiveStream)) {
+		if courseForLiveStream.IsHidden() && (user == nil || !user.IsAdminOfCourse(courseForLiveStream)) {
 			continue
 		}
 		// Only show private streams to course admins

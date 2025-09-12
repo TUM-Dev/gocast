@@ -160,14 +160,15 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			return
 		}
 		// check if course is accessible by user:
-		if course.Visibility == "public" || course.Visibility == "hidden" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
+		switch {
+		case course.IsPublic(), course.IsHidden(), tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course):
 			tumLiveContext.Course = &course
 			c.Set("TUMLiveContext", tumLiveContext)
-		} else if tumLiveContext.User == nil {
+		case tumLiveContext.User == nil:
 			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 			c.Abort()
 			return
-		} else {
+		default:
 			c.Status(http.StatusForbidden)
 			RenderErrorPage(c, http.StatusForbidden, ForbiddenCourseAccess)
 		}
@@ -217,7 +218,7 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if course.Visibility != "public" && course.Visibility != "hidden" {
+		if !course.IsPublic() && !course.IsHidden() {
 			if tumLiveContext.User == nil {
 				c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 				c.Abort()
@@ -277,7 +278,7 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
 			return realtime.NewError(http.StatusForbidden, "forbidden to see course")
 		}
-		if course.Visibility != "public" && course.Visibility != "hidden" {
+		if !course.IsPublic() && !course.IsHidden() {
 			if tumLiveContext.User == nil {
 				return realtime.NewError(http.StatusForbidden, "course only visible for logged in users")
 			} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {

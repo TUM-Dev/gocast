@@ -87,12 +87,12 @@ func (r downloadRoutes) download(c *gin.Context) {
 			_ = c.Error(dlErr)
 			return
 		}
-		if course.Visibility == "loggedin" || course.Visibility == "enrolled" {
+		if course.IsLoggedIn() || course.IsEnrolled() {
 			if tumLiveContext.User == nil {
 				_ = c.Error(dlErr)
 				return
 			}
-			if course.Visibility == "enrolled" {
+			if course.IsEnrolled() {
 				if !tumLiveContext.User.IsEligibleToWatchCourse(course) {
 					_ = c.Error(dlErr)
 					return
