@@ -2,8 +2,10 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"time"
 
 	"gorm.io/gorm"
@@ -335,4 +337,13 @@ func (c Course) IsEnrolled() bool {
 // IsPublic returns true if visibility is set to 'public' and false if not
 func (c Course) IsPublic() bool {
 	return c.Visibility == "public"
+
+var courseSlugRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_]{1,150}$`)
+
+// BeforeSave returns an error if the course to be inserted is invalid
+func (c *Course) BeforeSave(tx *gorm.DB) (err error) {
+	if !courseSlugRegex.MatchString(c.Slug) {
+		return errors.New("invalid course slug")
+	}
+	return nil
 }

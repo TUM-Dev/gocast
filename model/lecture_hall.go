@@ -1,6 +1,12 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+	"net/netip"
+	"net/url"
+
+	"gorm.io/gorm"
+)
 
 type LectureHall struct {
 	gorm.Model
@@ -64,4 +70,30 @@ func (l *LectureHall) ToDTO() *LectureHallDTO {
 		Name:        l.Name,
 		ExternalURL: l.ExternalURL,
 	}
+}
+
+// BeforeSave returns an error if either source is invalid.
+func (l *LectureHall) BeforeSave(*gorm.DB) error {
+	_, err := netip.ParseAddr(l.CameraIP)
+	if err != nil {
+		return fmt.Errorf("invalid camera IP address: %s", l.CameraIP)
+	}
+	u, err := url.Parse(l.CombIP)
+	if err != nil {
+		return fmt.Errorf("invalid comb URL: %s", u)
+	}
+	l.CombIP = u.String() // save parsed (and urlencoded) URL to database
+
+	u, err = url.Parse(l.CamIP)
+	if err != nil {
+		return fmt.Errorf("invalid cam URL: %s", u)
+	}
+	l.CamIP = u.String()
+
+	u, err = url.Parse(l.PresIP)
+	if err != nil {
+		return fmt.Errorf("invalid pres URL: %s", u)
+	}
+	l.PresIP = u.String()
+	return nil
 }

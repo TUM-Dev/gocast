@@ -288,7 +288,7 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
-		if !course.IsHidden() {
+		if tumLiveContext.User.IsEligibleToSearchForCourse(course) {
 			resp = append(resp, course.ToDTO(user))
 		}
 	}

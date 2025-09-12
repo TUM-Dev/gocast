@@ -49,7 +49,7 @@
                                required
                                placeholder="eidi"
                                :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"
-                               @input="slug = slug.replace(/[^A-Za-z0-9\-_.+()~]/g, '')"/>
+                               @input="slug = slug.replace(/[^A-Za-z0-9\-_]/g, '')"/>
                     </div>
                     {{template "semester-selection"}}
                 </form>
