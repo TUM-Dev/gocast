@@ -1,12 +1,21 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // Job represents todo...
 type Job struct {
 	gorm.Model
 
-	Actions []Action `gorm:"foreignKey:JobId;"` //
+	Actions []Action `gorm:"foreignKey:JobId;"`
+
+	Runner    string
+	StartTime time.Time `gorm:"default:null"`
+	EndTime   time.Time `gorm:"default:null"`
+	Failed    bool
 
 	// todo. Please specify column, type and not null (if required):
 	// Name string `gorm:"column:name;type:text;not null;default:'unnamed'"`
@@ -14,7 +23,7 @@ type Job struct {
 
 // TableName returns the name of the table for the Job model in the database.
 func (*Job) TableName() string {
-	return "job" // todo
+	return "jobs" // todo
 }
 
 // BeforeCreate todo
