@@ -40,7 +40,7 @@ var (
 
 var port = ":8089"
 
-var originPort = "8085"
+var originPort = "8187"
 var originProto = "http://"
 
 var VersionTag = "dev"
@@ -301,6 +301,8 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		_, _ = writer.Write([]byte("404 - Not Found"))
 		return
 	}
+
+	writer.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
 
 	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
 

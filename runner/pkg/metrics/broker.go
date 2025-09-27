@@ -46,7 +46,7 @@ func NewBroker(options ...Option) *Broker {
 			Subsystem: "stream",
 			Name:      "n_errors",
 			Help:      "Number of stream ffmpeg errors",
-		}, []string{"stream_id"}),
+		}, []string{"stream_id", "source"}),
 
 		ConvertingProgresses: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "runner",
