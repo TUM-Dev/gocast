@@ -155,7 +155,10 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
 	case *protobuf.Notification_StreamEnd:
 		log.Debug("streamEnd", "payload", notification.GetStreamEnd())
-		m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStreamEnd().GetStream().GetId()))
+		err := m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStreamEnd().GetStream().GetId()))
+		if err != nil {
+			return nil, err
+		}
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_VodReady:
 		log.Debug("vodReady", "payload", notification.GetVodReady())
