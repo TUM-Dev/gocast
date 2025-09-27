@@ -5,10 +5,11 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/camera"
-	"github.com/getsentry/sentry-go"
 )
 
 //go:generate mockgen -source=presets.go -destination ../mock_tools/presets.go
@@ -35,6 +36,8 @@ func (p presetUtility) ProvideCamera(ctype model.CameraType, ip string) (camera.
 		return camera.NewAxisCam(ip, Cfg.Auths.CamAuth), nil
 	case model.Panasonic:
 		return camera.NewPanasonicCam(ip, nil), nil
+	case model.Sony_SRG_A40:
+		return camera.NewSonySRG(ip, Cfg.Auths.CamAuthSony), nil
 	}
 	return nil, errors.New("invalid camera type")
 }
