@@ -154,8 +154,6 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	case *protobuf.Notification_StreamStart:
 		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
 	case *protobuf.Notification_StreamEnd:
-		log.Info("received stream end from runner")
-		// passing for now, not implemented.
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_VodReady:
 		log.Info("vodReady", "payload", notification.GetVodReady())
@@ -175,7 +173,8 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 			stream.PlaylistUrlCAM = notification.GetVodReady().GetUrl()
 			break
 		}
-		err = m.dao.StreamsDao.UpdateStream(stream)
+		stream.Recording = true
+		err = m.dao.StreamsDao.SaveStream(&stream)
 		if err != nil {
 			return nil, err
 		}

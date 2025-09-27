@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"io"
 	"log/slog"
 	"net/url"
@@ -13,6 +12,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
@@ -62,7 +63,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 		}
 	}
 
-	vodUrl, err := url.JoinPath(config.Config.EdgeServer, fmt.Sprintf("%d", streamID), streamVersion, "playlist.m3u8")
+	vodUrl, err := url.JoinPath(config.Config.EdgeServer, "vod", fmt.Sprintf("%d", streamID), streamVersion, "playlist.m3u8")
 	if err != nil {
 		return fmt.Errorf("join vod url: %w", err)
 	}
