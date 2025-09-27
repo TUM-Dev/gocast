@@ -159,6 +159,26 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_VodReady:
 		log.Info("vodReady", "payload", notification.GetVodReady())
+		streamId := notification.GetVodReady().Stream.GetId()
+		stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
+		if err != nil {
+			return nil, err
+		}
+		switch *notification.GetVodReady().StreamVersion {
+		case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+			stream.PlaylistUrl = notification.GetVodReady().GetUrl()
+			break
+		case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+			stream.PlaylistUrlPRES = notification.GetVodReady().GetUrl()
+			break
+		case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+			stream.PlaylistUrlCAM = notification.GetVodReady().GetUrl()
+			break
+		}
+		err = m.dao.StreamsDao.UpdateStream(stream)
+		if err != nil {
+			return nil, err
+		}
 		return &protobuf.NotificationResponse{}, nil
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
