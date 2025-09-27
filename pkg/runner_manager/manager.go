@@ -201,7 +201,17 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	if err != nil {
 		return err
 	}
-	m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
+	switch req.GetStreamVersion() {
+	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+		m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
+		break
+	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+		m.dao.StreamsDao.SavePRESURL(&stream, *req.Url)
+		break
+	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+		m.dao.StreamsDao.SaveCAMURL(&stream, *req.Url)
+		break
+	}
 	return nil
 }
 
