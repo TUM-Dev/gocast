@@ -80,19 +80,19 @@ func (l *LectureHall) BeforeSave(*gorm.DB) error {
 	}
 	u, err := url.Parse(l.CombIP)
 	if err != nil {
-		return fmt.Errorf("invalid comb URL: %s", u)
+		return fmt.Errorf("invalid comb URL: %w", err)
 	}
 	l.CombIP = u.String() // save parsed (and urlencoded) URL to database
 
 	u, err = url.Parse(l.CamIP)
 	if err != nil {
-		return fmt.Errorf("invalid cam URL: %s", u)
+		return fmt.Errorf("invalid cam URL: %w", err)
 	}
 	l.CamIP = u.String()
 
 	u, err = url.Parse(l.PresIP)
 	if err != nil {
-		return fmt.Errorf("invalid pres URL: %s", u)
+		return fmt.Errorf("invalid pres URL: %w", err)
 	}
 	l.PresIP = u.String()
 	return nil

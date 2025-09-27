@@ -11,9 +11,10 @@ import (
 
 	"gorm.io/gorm/clause"
 
-	"github.com/TUM-Dev/gocast/model"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate mockgen -source=streams.go -destination ../mock_dao/streams.go
@@ -23,6 +24,7 @@ type StreamsDao interface {
 	AddVodView(id string) error
 
 	GetDueStreamsForWorkers() []model.Stream
+	GetDueStreamsForRunners() ([]model.Stream, error)
 	GetDuePremieresForWorkers() []model.Stream
 	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
 	GetUnitByID(id string) (model.StreamUnit, error)
@@ -68,6 +70,17 @@ type StreamsDao interface {
 
 type streamsDao struct {
 	db *gorm.DB
+}
+
+func (d streamsDao) GetDueStreamsForRunners() ([]model.Stream, error) {
+	var res []model.Stream
+	err := DB.Debug().Model(&model.Stream{}).
+		Joins("JOIN courses c ON c.id = streams.course_id").
+		Joins("JOIN lecture_halls lh on streams.lecture_hall_id = lh.id").
+		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
+			"AND live_now = false AND recording = false AND lh.stream_protocol = 2 AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
+		Scan(&res).Error
+	return res, err
 }
 
 func (d streamsDao) GetTranscodingProgressByVersion(v model.StreamVersion, streamId uint) (p model.TranscodingProgress, err error) {
@@ -117,13 +130,14 @@ func (d streamsDao) AddVodView(id string) error {
 	return err
 }
 
-// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
+// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall by a worker.
 func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
 		Joins("JOIN courses c ON c.id = streams.course_id").
+		Joins("JOIN lecture_halls lh on streams.lecture_hall_id = lh.id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
+			"AND live_now = false AND recording = false AND lh.stream_protocol = 1 AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
 		Scan(&res)
 	return res
 }
@@ -178,7 +192,6 @@ func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.
 			return db.Order("unit_start asc")
 		}).First(&res, "id = ?", id).Error
 	if err != nil {
-		fmt.Printf("error getting stream by id: %v\n", err)
 		return res, err
 	}
 	Cache.SetWithTTL(fmt.Sprintf("streambyid%v", id), res, 1, time.Second*10)

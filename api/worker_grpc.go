@@ -20,11 +20,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/camera"
-	"github.com/TUM-Dev/gocast/worker/pb"
 	"github.com/getsentry/sentry-go"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
@@ -35,6 +30,12 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/camera"
+	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
 var mutex = sync.Mutex{}

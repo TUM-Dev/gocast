@@ -5,17 +5,21 @@ import (
 	"fmt"
 	log "log/slog"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
@@ -36,6 +40,46 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 
 // Option is a func that applies configuration to the Manager
 type Option func(m *Manager)
+
+func (m *Manager) TriggerDueStreams() error {
+	log.Info("Triggering due streams")
+	ctx := context.Background()
+	streams, err := m.dao.GetDueStreamsForRunners()
+	log.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+
+	for _, s := range streams {
+		lh, err := m.dao.GetLectureHallByID(s.LectureHallID)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("GetLectureHallByID: %w", err))
+			continue
+		}
+		client, err := m.getClient(ctx)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("getClient: %w", err))
+		}
+		resp, err := client.RequestStream(ctx, &protobuf.StreamRequest{
+			StreamId:            ptr.Take(uint64(s.ID)),
+			Version:             ptr.Take(protobuf.StreamVersion_STREAM_VERSION_COMBINED),
+			End:                 timestamppb.New(s.End),
+			FfmpegOutputOptions: ptr.Take("-c:a copy -c:v copy"),
+			Input:               ptr.Take(fmt.Sprintf("srt://%s", lh.CombIP)),
+		})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("RequestStream: %w", err))
+			continue
+		}
+		log.With("stream", s.ID, "job", resp.JobId).Info("started Stream")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to start stream: %v", errs)
+	}
+	return nil
+}
 
 // WithListenAddr sets the address the Manager listens on for gRPC connections from the Runner.
 // If not applied, the default is used (:50056)
@@ -108,9 +152,7 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		}
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_StreamStart:
-		log.Info("received stream start from runner")
-		// passing for now, not implemented.
-		return &protobuf.NotificationResponse{}, nil
+		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
 	case *protobuf.Notification_StreamEnd:
 		log.Info("received stream end from runner")
 		// passing for now, not implemented.
@@ -121,4 +163,29 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
+}
+
+func (m *Manager) getClient(ctx context.Context) (protobuf.RunnerServiceClient, error) {
+	r, err := m.dao.RunnerDao.GetAvailable(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get Available Runner: %w", err)
+	}
+	conn, err := dialRunner(ctx, r)
+	if err != nil {
+		return nil, fmt.Errorf("dialRunner: %w", err)
+	}
+	return protobuf.NewRunnerServiceClient(conn), nil
+}
+
+func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNotification) error {
+	stream, err := m.dao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
+	if err != nil {
+		return err
+	}
+	m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
+	return nil
+}
+
+func dialRunner(ctx context.Context, runner model.Runner) (*grpc.ClientConn, error) {
+	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 }

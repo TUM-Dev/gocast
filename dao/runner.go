@@ -24,8 +24,11 @@ type RunnerDao interface {
 	// Update a Runner by hostname.
 	Update(context.Context, *model.Runner) error
 
-	// Get a list of all Runners.
+	// GetAll gets a list of all Runners.
 	GetAll(context.Context) ([]model.Runner, error)
+
+	// GetAvailable returns the runner that currently runs the lease jobs and is not draining
+	GetAvailable(context.Context) (model.Runner, error)
 }
 
 type runnerDao struct {
@@ -34,6 +37,10 @@ type runnerDao struct {
 
 func NewRunnerDao() RunnerDao {
 	return runnerDao{db: DB}
+}
+
+func (d runnerDao) GetAvailable(ctx context.Context) (runner model.Runner, err error) {
+	return runner, d.db.WithContext(ctx).Model(model.Runner{}).Order("job_count DESC").Where("draining = 0").Find(&runner).Error
 }
 
 // Get a Runner by id.
