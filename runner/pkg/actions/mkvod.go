@@ -81,7 +81,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 
 func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, streamPath, vodDir string, playlistName string) error {
 	input := "-i " + streamPath
-	options := "-c copy -f hls -hls_time 240 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
+	options := "-c copy -f hls -hls_time 20 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
 
 	args := strings.Split(input, " ")
 	args = append(args, strings.Split(options, " ")...)
