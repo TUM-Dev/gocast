@@ -13,7 +13,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=users.go -destination ../mock_dao/users.go
+//go:generate go tool mockgen -source=users.go -destination ../mock_dao/users.go
 
 type UsersDao interface {
 	AreUsersEmpty(ctx context.Context) (isEmpty bool, err error)

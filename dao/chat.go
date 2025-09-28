@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=chat.go -destination ../mock_dao/chat.go
+//go:generate go tool mockgen -source=chat.go -destination ../mock_dao/chat.go
 
 type ChatDao interface {
 	AddChatPollOptionVote(pollOptionId uint, userId uint) error

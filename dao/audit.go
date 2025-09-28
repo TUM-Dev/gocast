@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=audit.go -destination ../mock_dao/audit.go
+//go:generate go tool mockgen -source=audit.go -destination ../mock_dao/audit.go
 
 type AuditDao interface {
 	// Create a new audit for the database

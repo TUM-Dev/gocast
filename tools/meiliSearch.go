@@ -6,7 +6,7 @@ import (
 	"github.com/meilisearch/meilisearch-go"
 )
 
-//go:generate mockgen -source=meiliSearch.go -destination ../mock_tools/meiliSearch.go
+//go:generate go tool mockgen -source=meiliSearch.go -destination ../mock_tools/meiliSearch.go
 
 type MeiliSearchInterface interface {
 	SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse

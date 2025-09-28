@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=file.go -destination ../mock_dao/file.go
+//go:generate go tool mockgen -source=file.go -destination ../mock_dao/file.go
 
 type FileDao interface {
 	NewFile(f *model.File) error

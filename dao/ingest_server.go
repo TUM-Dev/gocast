@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=ingest_server.go -destination ../mock_dao/ingest_server.go
+//go:generate go tool mockgen -source=ingest_server.go -destination ../mock_dao/ingest_server.go
 
 type IngestServerDao interface {
 	SaveSlot(slot model.StreamName)

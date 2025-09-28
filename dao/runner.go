@@ -9,7 +9,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=runner.go -destination ../mock_dao/runner.go
+//go:generate go tool mockgen -source=runner.go -destination ../mock_dao/runner.go
 
 type RunnerDao interface {
 	// Get Runner by ID

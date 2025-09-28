@@ -17,7 +17,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=streams.go -destination ../mock_dao/streams.go
+//go:generate go tool mockgen -source=streams.go -destination ../mock_dao/streams.go
 
 type StreamsDao interface {
 	CreateStream(stream *model.Stream) error

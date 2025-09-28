@@ -12,7 +12,7 @@ import (
 	"github.com/icholy/digest"
 )
 
-//go:generate mockgen -source=camera.go -destination ../../mock_tools/mock_camera/camera.go
+//go:generate go tool mockgen -source=camera.go -destination ../../mock_tools/mock_camera/camera.go
 
 type Cam interface {
 	// SetPreset moves the camera to the preset identified by preset.

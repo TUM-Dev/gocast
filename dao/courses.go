@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=courses.go -destination ../mock_dao/courses.go
+//go:generate go tool mockgen -source=courses.go -destination ../mock_dao/courses.go
 
 type CoursesDao interface {
 	CreateCourse(ctx context.Context, course *model.Course, keep bool) error
