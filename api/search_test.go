@@ -10,16 +10,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+	"github.com/matthiasreumann/gomino"
+	"github.com/meilisearch/meilisearch-go"
+	"go.uber.org/mock/gomock"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/mock_tools"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/mock/gomock"
-	"github.com/matthiasreumann/gomino"
-	"github.com/meilisearch/meilisearch-go"
 )
 
 func SearchRouterWrapper(r *gin.Engine) {

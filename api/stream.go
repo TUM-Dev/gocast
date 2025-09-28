@@ -13,15 +13,16 @@ import (
 
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/bot"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 )
 
 const (
@@ -625,15 +626,13 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 			Err:           err,
 		})
 		return
-	} else {
-		go func() {
-			err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
-			if err != nil {
-				logger.Error("failed to generate video section images", "err", err)
-			}
-		}()
 	}
-
+	go func() {
+		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
+		if err != nil {
+			logger.Error("failed to generate video section images", "err", err)
+		}
+	}()
 	c.Status(http.StatusAccepted)
 }
 
@@ -790,14 +789,15 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 		return
 	}
 
-	playlist := ""
-	if stream.PlaylistUrl != "" {
+	var playlist string
+	switch {
+	case stream.PlaylistUrl != "":
 		playlist = stream.PlaylistUrl
-	} else if stream.PlaylistUrlCAM != "" {
-		playlist = stream.PlaylistUrlCAM
-	} else if stream.PlaylistUrlPRES != "" {
+	case stream.PlaylistUrlPRES != "":
 		playlist = stream.PlaylistUrlPRES
-	} else {
+	case stream.PlaylistUrlCAM != "":
+		playlist = stream.PlaylistUrlCAM
+	default:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "no playlist found",

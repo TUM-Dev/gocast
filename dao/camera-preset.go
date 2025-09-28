@@ -1,8 +1,9 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate go tool mockgen -source=camera-preset.go -destination ../mock_dao/camera-preset.go
@@ -19,7 +20,7 @@ func NewCameraPresetDao() CameraPresetDao {
 	return cameraPresetDao{db: DB}
 }
 
-func (d cameraPresetDao) GetDefaultCameraPreset(lectureHallID uint) (res model.CameraPreset, err error) {
-	err = DB.Debug().First(&res, "lecture_hall_id = ? AND is_default", lectureHallID).Error
-	return
+func (d cameraPresetDao) GetDefaultCameraPreset(lectureHallID uint) (model.CameraPreset, error) {
+	var res model.CameraPreset
+	return res, DB.First(&res, "lecture_hall_id = ? AND is_default", lectureHallID).Error
 }

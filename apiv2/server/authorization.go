@@ -8,12 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	e "github.com/TUM-Dev/gocast/apiv2/errors"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/metadata"
 	"gorm.io/gorm"
+
+	e "github.com/TUM-Dev/gocast/apiv2/errors"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 // getCurrent retrieves the current user based on the context.
@@ -102,8 +103,8 @@ type StreamRequest interface {
 }
 
 func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamRequest) (*model.User, model.Stream, model.Course, error) {
-	stream := model.Stream{}
-	course := model.Course{}
+	var stream model.Stream
+	var course model.Course
 
 	stream, err := a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
 	if err != nil {

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"database/sql"
@@ -303,7 +302,7 @@ func (u *User) IsEligibleToSearchForCourse(course Course) bool {
 	return u.IsEligibleToWatchCourse(course) && !course.IsHidden() || u.IsAdminOfCourse(course)
 }
 
-func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
+func (u *User) CoursesForSemester(year int, term string) []Course {
 	cMap := make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
@@ -374,7 +373,7 @@ func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester S
 	return courses
 }
 
-// hasTestCourse checks if the user has a test course
+// HasTestCourse checks if the user has a test course
 func (u *User) HasTestCourse() bool {
 	for _, course := range u.AdministeredCourses {
 		if course.Year == 1234 {

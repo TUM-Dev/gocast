@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools/realtime"
 )
 
 var templateExecutor TemplateExecutor
@@ -66,10 +67,8 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 		if err != nil {
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			return
-		} else {
-			c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
-			return
 		}
+		c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 	}
 }
 
@@ -125,7 +124,8 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		tumLiveContext := foundContext.(TUMLiveContext)
 		// Get course based on context:
 		var course model.Course
-		if c.Param("courseID") != "" {
+		switch {
+		case c.Param("courseID") != "":
 			cIDInt, err := strconv.ParseInt(c.Param("courseID"), 10, 32)
 			if err != nil {
 				c.AbortWithStatus(http.StatusBadRequest)
@@ -138,7 +138,7 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			} else {
 				course = foundCourse
 			}
-		} else if c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "" {
+		case c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "":
 			y := c.Param("year")
 			yInt, err := strconv.Atoi(y)
 			if err != nil {
@@ -152,7 +152,7 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			} else {
 				course = foundCourse
 			}
-		} else {
+		default:
 			c.Status(http.StatusNotFound)
 			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
 		}
@@ -263,9 +263,8 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 			foundStream, err := wrapper.StreamsDao.GetStreamByID(c, context.Param("streamID"))
 			if err != nil {
 				return realtime.NewError(http.StatusNotFound, "stream not found")
-			} else {
-				stream = foundStream
 			}
+			stream = foundStream
 		} else {
 			return realtime.NewError(http.StatusNotFound, "stream not found")
 		}

@@ -6,13 +6,14 @@ import (
 	"errors"
 	"net/http"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+	"gorm.io/gorm"
+
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"gorm.io/gorm"
 )
 
 // GetLiveCourses retrieves the currently live courses and their streams.
@@ -174,15 +175,15 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 
 	switch user.Role {
 	case model.AdminType:
-		courses = a.dao.GetAllCoursesForSemester(year, term, context.Background())
+		courses = a.dao.GetAllCoursesForSemester(ctx, year, term)
 	case model.LecturerType:
-		courses = user.CoursesForSemester(year, term, context.Background())
+		courses = user.CoursesForSemester(year, term)
 		coursesForLecturer, err := a.dao.GetAdministeredCoursesByUserId(context.Background(), user.ID, term, year)
 		if err == nil {
 			courses = append(courses, coursesForLecturer...)
 		}
 	default:
-		courses = user.CoursesForSemester(year, term, context.Background())
+		courses = user.CoursesForSemester(year, term)
 	}
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)

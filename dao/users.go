@@ -157,9 +157,8 @@ func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) erro
 	defer Cache.Clear()
 	if pin {
 		return DB.Model(&user).Association("PinnedCourses").Append(&course)
-	} else {
-		return DB.Model(&user).Association("PinnedCourses").Delete(&course)
 	}
+	return DB.Model(&user).Association("PinnedCourses").Delete(&course)
 }
 
 func (d usersDao) UpsertUser(user *model.User) error {

@@ -9,17 +9,18 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/dgraph-io/ristretto/v2"
+	"github.com/gin-gonic/gin"
+	"github.com/matthiasreumann/gomino"
+	"github.com/u2takey/go-utils/uuid"
+	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/dgraph-io/ristretto/v2"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/mock/gomock"
-	"github.com/matthiasreumann/gomino"
-	"github.com/u2takey/go-utils/uuid"
-	"gorm.io/gorm"
 )
 
 func CourseRouterWrapper(r *gin.Engine) {
@@ -296,7 +297,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetAllCoursesForSemester(2023, "S", gomock.Any()).
+								GetAllCoursesForSemester(gomock.Any(), 2023, "S").
 								Return([]model.Course{testutils.CourseGBS, testutils.CourseFPV}).
 								AnyTimes()
 							return mock
@@ -2238,7 +2239,7 @@ func TestLectureHallsById(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 
-		var sourceMode model.SourceMode = 0
+		var sourceMode model.SourceMode
 		response := []lhResp{
 			{
 				LectureHallName: testutils.LectureHall.Name,

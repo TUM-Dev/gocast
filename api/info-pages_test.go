@@ -8,14 +8,15 @@ import (
 	"testing"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/gin-gonic/gin"
+	"github.com/matthiasreumann/gomino"
+	"go.uber.org/mock/gomock"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/mock/gomock"
-	"github.com/matthiasreumann/gomino"
 )
 
 func InfoPagesRouterWrapper(r *gin.Engine) {

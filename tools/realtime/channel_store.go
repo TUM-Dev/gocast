@@ -13,6 +13,7 @@ func (s *ChannelStore) init() {
 	s.channels = map[string]*Channel{}
 }
 
+// Register registers a handler on path
 func (s *ChannelStore) Register(path string, handlers ChannelHandlers) *Channel {
 	channel := Channel{
 		path:        strings.Split(path, channelPathSep),
@@ -24,6 +25,7 @@ func (s *ChannelStore) Register(path string, handlers ChannelHandlers) *Channel 
 	return &channel
 }
 
+// Get retrieves a channel for a path
 func (s *ChannelStore) Get(path string) (bool, *Channel, map[string]string) {
 	if channel, ok := s.channels[path]; ok {
 		return true, channel, map[string]string{}
@@ -38,6 +40,7 @@ func (s *ChannelStore) Get(path string) (bool, *Channel, map[string]string) {
 	return false, nil, nil
 }
 
+// OnMessage is called when a message is received on the websocket
 func (s *ChannelStore) OnMessage(client *Client, message *Message) {
 	if ok, channel, _ := s.Get(message.Channel); ok {
 		channel.HandleMessage(client, message)
@@ -47,6 +50,7 @@ func (s *ChannelStore) OnMessage(client *Client, message *Message) {
 	logger.Warn("unknown channel on websocket message", "channel", message.Channel)
 }
 
+// Subscribe subscribes the client to the channelPath
 func (s *ChannelStore) Subscribe(client *Client, channelPath string) bool {
 	if found, channel, params := s.Get(channelPath); found {
 		channel.Subscribe(&Context{
@@ -60,6 +64,7 @@ func (s *ChannelStore) Subscribe(client *Client, channelPath string) bool {
 	return false
 }
 
+// Unsubscribe removes a client from a channel
 func (s *ChannelStore) Unsubscribe(clientId string, channelPath string) bool {
 	if found, channel, _ := s.Get(channelPath); found {
 		return channel.Unsubscribe(clientId, channelPath)
@@ -67,6 +72,7 @@ func (s *ChannelStore) Unsubscribe(clientId string, channelPath string) bool {
 	return false
 }
 
+// UnsubscribeAll removes a client from all channels
 func (s *ChannelStore) UnsubscribeAll(clientId string) {
 	for _, channel := range s.channels {
 		channel.UnsubscribeAllPaths(clientId)

@@ -11,9 +11,10 @@ import (
 	"github.com/getsentry/sentry-go"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -279,11 +280,10 @@ func getFileHandler(file staticFile) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			c.File(pathToFile)
 		}
-	} else {
-		// Use Default with embedded FS
-		// p := file.Path // Copy bc. file is pointer
-		return func(c *gin.Context) {
-			c.FileFromFS(file.Path, http.FS(staticFS))
-		}
+	}
+	// Use Default with embedded FS
+	// p := file.Path // Copy bc. file is pointer
+	return func(c *gin.Context) {
+		c.FileFromFS(file.Path, http.FS(staticFS))
 	}
 }

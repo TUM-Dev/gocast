@@ -8,8 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/icholy/digest"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate go tool mockgen -source=camera.go -destination ../../mock_tools/mock_camera/camera.go
@@ -57,7 +58,9 @@ func makeAuthenticatedRequest(auth *string, method string, body string, url stri
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() {
+		_ = res.Body.Close()
+	}()
 
 	bts, err := io.ReadAll(res.Body)
 	if err != nil {

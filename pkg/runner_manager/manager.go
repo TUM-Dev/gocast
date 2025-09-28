@@ -113,7 +113,9 @@ func (m *Manager) Run() error {
 	protobuf.RegisterRunnerManagerServiceServer(grpcServer, m)
 	reflection.Register(grpcServer)
 	go func(listener net.Listener) {
-		defer listener.Close()
+		defer func() {
+			_ = listener.Close()
+		}()
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Error("failed to serve runner manager", "err", err)
 		}
@@ -170,13 +172,10 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		switch *notification.GetVodReady().StreamVersion {
 		case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
 			stream.PlaylistUrl = notification.GetVodReady().GetUrl()
-			break
 		case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
 			stream.PlaylistUrlPRES = notification.GetVodReady().GetUrl()
-			break
 		case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
 			stream.PlaylistUrlCAM = notification.GetVodReady().GetUrl()
-			break
 		}
 		stream.Recording = true
 		err = m.dao.StreamsDao.SaveStream(&stream)
@@ -209,13 +208,10 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	switch req.GetStreamVersion() {
 	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
 		m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
-		break
 	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
 		m.dao.StreamsDao.SavePRESURL(&stream, *req.Url)
-		break
 	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
 		m.dao.StreamsDao.SaveCAMURL(&stream, *req.Url)
-		break
 	}
 	return nil
 }
