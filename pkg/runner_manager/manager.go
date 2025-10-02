@@ -64,21 +64,21 @@ func (m *Manager) TriggerDueStreams() error {
 			errs = append(errs, fmt.Errorf("getClient: %w", err))
 		}
 
-		resp, err := m.requestStreamVersion(ctx, s, client, lh.CombIP)
+		resp, err := m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
 		if err != nil && !errors.Is(err, errNotNoLectureSource) {
 			errs = append(errs, fmt.Errorf("RequestStream COMB: %w", err))
 			continue
 		}
 		log.With("stream", s.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
 
-		resp, err = m.requestStreamVersion(ctx, s, client, lh.PresIP)
+		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
 		if err != nil && !errors.Is(err, errNotNoLectureSource) {
 			errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
 			continue
 		}
 		log.With("stream", s.ID, "job", resp.JobId, "version", model.PRES).Info("started Stream")
 
-		resp, err = m.requestStreamVersion(ctx, s, client, lh.CamIP)
+		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
 		if err != nil && !errors.Is(err, errNotNoLectureSource) {
 			errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
 			continue
@@ -228,14 +228,21 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 
 var errNotNoLectureSource = fmt.Errorf("no source configured for this lecture hall ip")
 
-func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, client protobuf.RunnerServiceClient, ip string) (*protobuf.StreamResponse, error) {
-	if ip == "" {
-		// not configured for this lecture hall
-		return &protobuf.StreamResponse{}, errNotNoLectureSource
+func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, client protobuf.RunnerServiceClient, lh model.LectureHall, version protobuf.StreamVersion) (*protobuf.StreamResponse, error) {
+	var ip string
+	switch version {
+	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+		ip = lh.CombIP
+	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+		ip = lh.CamIP
+	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+		ip = lh.PresIP
+	default:
+		return nil, fmt.Errorf("invalid stream version %v", version)
 	}
 	return client.RequestStream(ctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
-		Version:             ptr.Take(protobuf.StreamVersion_STREAM_VERSION_COMBINED),
+		Version:             ptr.Take(version),
 		End:                 timestamppb.New(s.End),
 		FfmpegOutputOptions: ptr.Take("-c:a copy -c:v copy"),
 		Input:               ptr.Take(fmt.Sprintf("srt://%s", ip)),
