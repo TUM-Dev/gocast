@@ -18,11 +18,11 @@ type ServerNotification struct {
 	Expires time.Time `gorm:"not null"`
 }
 
-func (s ServerNotification) BeforeCreate(tx *gorm.DB) (err error) {
+func (s ServerNotification) BeforeCreate(tx *gorm.DB) error {
 	if s.Expires.Before(s.Start) {
-		err = errors.New("can't save notification where expires is before start")
+		return errors.New("can't save notification where expires is before start")
 	}
-	return
+	return nil
 }
 
 func (s ServerNotification) FormatFrom() string {

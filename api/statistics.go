@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
 )
 
 type statReq struct {
@@ -190,9 +191,8 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 				Err:           err,
 			})
 			return
-		} else {
-			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
+		c.JSON(http.StatusOK, gin.H{"res": res})
 	case "vodViews":
 		var res int
 		var err error
@@ -209,9 +209,8 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 				Err:           err,
 			})
 			return
-		} else {
-			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
+		c.JSON(http.StatusOK, gin.H{"res": res})
 	case "liveViews":
 		var res int
 		var err error
@@ -228,9 +227,8 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 				Err:           err,
 			})
 			return
-		} else {
-			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
+		c.JSON(http.StatusOK, gin.H{"res": res})
 	case "allDays":
 		{
 			var res []dao.Stat
@@ -248,17 +246,16 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 					Err:           err,
 				})
 				return
-			} else {
-				resp := chartJs{
-					ChartType: "bar",
-					Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
-					Options:   newChartJsOptions(),
-				}
-				resp.Data.Datasets[0].Label = "views"
-				resp.Data.Datasets[0].Data = res
-				resp.Data.Datasets[0].BackgroundColor = "#d12a5c"
-				c.JSON(http.StatusOK, resp)
 			}
+			resp := chartJs{
+				ChartType: "bar",
+				Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+				Options:   newChartJsOptions(),
+			}
+			resp.Data.Datasets[0].Label = "views"
+			resp.Data.Datasets[0].Data = res
+			resp.Data.Datasets[0].BackgroundColor = "#d12a5c"
+			c.JSON(http.StatusOK, resp)
 		}
 	default:
 		_ = c.Error(tools.RequestError{
@@ -386,14 +383,14 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 			if err != nil {
 				logger.Warn("GetCourseNumVodViews failed", "err", err, "courseId", cid)
 			} else {
-				quickStats = append(quickStats, dao.Stat{X: "Vod Views", Y: int(vodViews)})
+				quickStats = append(quickStats, dao.Stat{X: "Vod Views", Y: vodViews})
 			}
 
 			liveViews, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
 			if err != nil {
 				logger.Warn("GetCourseNumLiveViews failed", "err", err, "courseId", cid)
 			} else {
-				quickStats = append(quickStats, dao.Stat{X: "Live Views", Y: int(liveViews)})
+				quickStats = append(quickStats, dao.Stat{X: "Live Views", Y: liveViews})
 			}
 			result = result.AddDataEntry(&tools.ExportDataEntry{
 				Name:  interval,

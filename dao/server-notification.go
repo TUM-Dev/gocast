@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=server-notification.go -destination ../mock_dao/server-notification.go
+//go:generate go tool mockgen -source=server-notification.go -destination ../mock_dao/server-notification.go
 
 type ServerNotificationDao interface {
 	CreateServerNotification(notification model.ServerNotification) error

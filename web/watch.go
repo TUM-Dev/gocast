@@ -8,13 +8,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {

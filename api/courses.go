@@ -17,15 +17,16 @@ import (
 	"time"
 
 	"github.com/RBG-TUM/commons"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
 )
 
 func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -248,15 +249,15 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
-			courses = r.GetAllCoursesForSemester(year, term, c)
+			courses = r.GetAllCoursesForSemester(c, year, term)
 		case model.LecturerType:
-			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
+			courses = tumLiveContext.User.CoursesForSemester(year, term)
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
 			if err == nil {
 				courses = append(courses, coursesForLecturer...)
 			}
 		default:
-			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
+			courses = tumLiveContext.User.CoursesForSemester(year, term)
 		}
 	}
 
@@ -338,12 +339,6 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	if query.Year == 0 || query.Term == "" {
 		query.Year, query.Term = tum.GetCurrentSemester()
 	}
-
-	type Response struct {
-		Course  model.CourseDTO
-		Streams []model.StreamDTO
-	}
-
 	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

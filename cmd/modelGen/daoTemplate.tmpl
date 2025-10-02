@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source={{.NamePrivate}}.go -destination ../mock_dao/{{.NamePrivate}}.go
+//go:generate go tool mockgen -source={{.NamePrivate}}.go -destination ../mock_dao/{{.NamePrivate}}.go
 
 type {{.NameExported}}Dao interface {
 	// Get {{.NameExported}} by ID

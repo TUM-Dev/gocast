@@ -224,7 +224,7 @@ func (s Stream) HLSUrl() string {
 		hls = fmt.Sprintf("%s?wowzaplaystart=%d&wowzaplayduration=%d", s.PlaylistUrl, s.StartOffset, s.EndOffset)
 	}
 
-	return strings.Replace(hls, "quality", "", -1)
+	return strings.ReplaceAll(hls, "quality", "")
 }
 
 type silence struct {
@@ -282,10 +282,10 @@ func (s Stream) ParsableLiveNowTimestamp() string {
 }
 
 func (s Stream) FriendlyNextDate() string {
-	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
+	if now.With(s.Start).EndOfDay().Equal(now.EndOfDay()) {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
-	if now.With(s.Start).EndOfDay() == now.With(time.Now().Add(time.Hour*24)).EndOfDay() {
+	if now.With(s.Start).EndOfDay().Equal(now.With(time.Now().Add(time.Hour * 24)).EndOfDay()) {
 		return fmt.Sprintf("Tomorrow, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
 	return s.Start.Format("Mon, January 02. 15:04")
@@ -293,18 +293,18 @@ func (s Stream) FriendlyNextDate() string {
 
 // Color returns the ui color of the stream that indicates it's status
 func (s Stream) Color() string {
-	if s.Recording {
+	switch {
+	case s.Recording:
 		if s.Private {
 			return "gray-500"
 		}
 		return "success"
-	} else if s.LiveNow {
+	case s.LiveNow:
 		return "danger"
-	} else if s.IsPast() {
+	case s.IsPast():
 		return "warn"
-	} else {
-		return "info"
 	}
+	return "info"
 }
 
 func (s Stream) GetJson(lhs []LectureHall, course Course) gin.H {

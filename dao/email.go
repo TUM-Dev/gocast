@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=email.go -destination ../mock_dao/email.go
+//go:generate go tool mockgen -source=email.go -destination ../mock_dao/email.go
 
 type EmailDao interface {
 	// Get Email by ID

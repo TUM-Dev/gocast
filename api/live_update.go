@@ -6,13 +6,14 @@ import (
 	"sync"
 
 	"github.com/RBG-TUM/commons"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -47,7 +48,7 @@ func liveUpdateOnUnsubscribe(psc *realtime.Context) {
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
-	var userId uint = 0
+	var userId uint
 	if tumLiveContext.User != nil {
 		userId = tumLiveContext.User.ID
 	}
@@ -80,7 +81,7 @@ func liveUpdateOnSubscribe(psc *realtime.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
 	var userCourses []model.Course
-	var userId uint = 0
+	var userId uint
 	var err error
 	year, term := tum.GetCurrentSemester()
 

@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//go:generate mockgen -source=video-seek.go -destination ../mock_dao/video-seek.go
+//go:generate go tool mockgen -source=video-seek.go -destination ../mock_dao/video-seek.go
 
 const maxChunksPerVideo = 150
 

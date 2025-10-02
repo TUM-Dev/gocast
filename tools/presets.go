@@ -11,7 +11,7 @@ import (
 	"github.com/getsentry/sentry-go"
 )
 
-//go:generate mockgen -source=presets.go -destination ../mock_tools/presets.go
+//go:generate go tool mockgen -source=presets.go -destination ../mock_tools/presets.go
 
 type PresetUtility interface {
 	FetchCameraPresets(context.Context)

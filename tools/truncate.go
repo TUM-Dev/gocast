@@ -54,13 +54,15 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 		visibleCharacterMaxReached := false
 		entityDetected := false
 
+	outer:
 		for localOffset, runeValue := range string(buf[bufPtr:]) {
 			offset = localOffset
 
-			if runeValue == '<' {
+			switch {
+			case runeValue == '<':
 				// Start of tag.
-				break
-			} else if runeValue == '&' {
+				break outer
+			case runeValue == '&':
 				// Possible start of HTML Entity
 				loc := EntityExpr.FindIndex(buf[bufPtr+localOffset:])
 				if loc != nil && loc[0] == 0 {
@@ -68,10 +70,10 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 					entityDetected = true
 					offset += loc[1] - 1 // Now pointing to ;
 				}
-				visible += 1
-			} else if unicode.IsPrint(runeValue) && !unicode.IsSpace(runeValue) {
+				visible++
+			case unicode.IsPrint(runeValue) && !unicode.IsSpace(runeValue):
 				// Printable, non-space character. Increment visible count.
-				visible += 1
+				visible++
 			}
 
 			// Check if the limit of visible characters has been reached.
@@ -97,7 +99,7 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 		// If an entity was detected, continue scanning for next tag
 		if entityDetected {
 			// Advance past the ;
-			bufPtr += 1
+			bufPtr++
 			continue
 		}
 

@@ -17,7 +17,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=streams.go -destination ../mock_dao/streams.go
+//go:generate go tool mockgen -source=streams.go -destination ../mock_dao/streams.go
 
 type StreamsDao interface {
 	CreateStream(stream *model.Stream) error
@@ -85,7 +85,7 @@ func (d streamsDao) GetDueStreamsForRunners() ([]model.Stream, error) {
 
 func (d streamsDao) GetTranscodingProgressByVersion(v model.StreamVersion, streamId uint) (p model.TranscodingProgress, err error) {
 	err = DB.Where("version = ? AND stream_id = ?", v, streamId).First(&p).Error
-	return
+	return p, err
 }
 
 func NewStreamsDao() StreamsDao {
@@ -121,11 +121,9 @@ func (d streamsDao) AddVodView(id string) error {
 			}
 			err = tx.Create(&stat).Error
 			return err
-		} else {
-			stat.Viewers += 1
-			err = tx.Save(&stat).Error
-			return err
 		}
+		stat.Viewers++
+		return tx.Save(&stat).Error
 	})
 	return err
 }
@@ -317,18 +315,22 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 	queriedStreams := DB.Table("streams").Where("course_id = ? and private = false and deleted_at is NULL", courseID)
 	result := queriedStreams.
 		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
-		Order("start asc").      // order by ascending start time, this is also the order that is used in the course page.
+		Order("start asc").
 		Session(&gorm.Session{}) // Session is required to scan multiple times
+	// order by ascending start time, this is also the order that is used in the course page.
 
 	if err = result.Scan(&streams).Error; err != nil {
-		return
+		return nil, err
 	}
 	err = result.Scan(&watchedStates).Error
+	if err != nil {
+		return nil, err
+	}
 	// Updates the watch state for each stream to compensate for split query.
 	for i := range streams {
 		streams[i].Watched = watchedStates[i].Watched
 	}
-	return
+	return streams, nil
 }
 
 // GetSoonStartingStreamInfo returns the stream key, course slug and course name of an upcoming stream.
@@ -429,10 +431,14 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 
 	// Hash the user ID to create a unique slug withouth exposing the user ID
 	hasher := sha256.New()
-	hasher.Write([]byte(fmt.Sprintf("%d", user.ID)))
+	_, err := fmt.Fprintf(hasher, "%d", user.ID)
+	if err != nil {
+		return course, err
+	}
+
 	hashedUserID := hex.EncodeToString(hasher.Sum(nil))
 
-	err := DB.FirstOrCreate(&course, model.Course{
+	err = DB.FirstOrCreate(&course, model.Course{
 		UserID:       user.ID,
 		Name:         userName + "Test Course",
 		TeachingTerm: "W",

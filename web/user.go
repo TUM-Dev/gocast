@@ -6,11 +6,12 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/gin-gonic/gin"
 )
 
 type userSettingsData struct {
@@ -91,7 +92,7 @@ func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) 
 	if u, err := usersDao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &tools.SessionData{u.ID, nil}
+			return &tools.SessionData{Userid: u.ID, SamlSubjectID: nil}
 		}
 		return nil
 	}
@@ -116,7 +117,7 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 			return nil, err
 		}
 
-		return &tools.SessionData{user.ID, nil}, nil
+		return &tools.SessionData{Userid: user.ID, SamlSubjectID: nil}, nil
 	}
 
 	return nil, err
@@ -168,23 +169,21 @@ func (r mainRoutes) CreatePasswordPage(c *gin.Context) {
 			logger.Error("error setting password.", "err", err)
 			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
-		} else {
-			err := r.UsersDao.UpdateUser(u)
-			if err != nil {
-				logger.Error("CreatePasswordPage: Can't update user", "err", err)
-			}
-			r.UsersDao.DeleteResetKey(c.Param("key"))
-			c.Redirect(http.StatusFound, "/")
 		}
-		return
-	} else {
-		_, err := r.UsersDao.GetUserByResetKey(c.Param("key"))
+		err = r.UsersDao.UpdateUser(u)
 		if err != nil {
-			c.Redirect(http.StatusFound, "/")
-			return
+			logger.Error("CreatePasswordPage: Can't update user", "err", err)
 		}
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
+		r.UsersDao.DeleteResetKey(c.Param("key"))
+		c.Redirect(http.StatusFound, "/")
+		return
 	}
+	_, err := r.UsersDao.GetUserByResetKey(c.Param("key"))
+	if err != nil {
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
 }
 
 // NewLoginPageData returns a new struct LoginPageData with the Error value err

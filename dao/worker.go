@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=worker.go -destination ../mock_dao/worker.go
+//go:generate go tool mockgen -source=worker.go -destination ../mock_dao/worker.go
 
 type WorkerDao interface {
 	CreateWorker(worker *model.Worker) error
