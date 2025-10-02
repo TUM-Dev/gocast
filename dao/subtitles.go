@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=subtitles.go -destination ../mock_dao/subtitles.go
+//go:generate go tool mockgen -source=subtitles.go -destination ../mock_dao/subtitles.go
 
 type SubtitlesDao interface {
 	// Get Subtitles by ID

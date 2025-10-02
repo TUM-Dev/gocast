@@ -12,12 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -154,8 +155,15 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 			return nil, err
 		}
 		users, err = r.UsersDao.SearchUserWithRole(query, role)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "could not search user",
+				Err:           err,
+			})
+		}
 	}
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "cannot search for user's",
@@ -283,15 +291,16 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	userName := c.PostForm("newUserFirstName")
 	userEmail := c.PostForm("newUserEmail")
 
-	if batchUsers != "" {
+	switch {
+	case batchUsers != "":
 		go r.addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
-	} else if userName != "" && userEmail != "" {
+	case userName != "" && userEmail != "":
 		r.addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
-	} else {
+	default:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "invalid form",

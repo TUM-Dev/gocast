@@ -108,6 +108,9 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 		metrics.StreamErrors.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
 		return err
 	}
+	if streamEnd.After(time.Now()) {
+		return fmt.Errorf("ffmpeg terminated before stream end")
+	}
 	return nil
 }
 

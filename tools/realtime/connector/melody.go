@@ -3,10 +3,12 @@ package connector
 import (
 	"net/http"
 
-	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/gabstv/melody"
+
+	"github.com/TUM-Dev/gocast/tools/realtime"
 )
 
+// NewMelodyConnector creates a *realtime.Connector with Melody as underlying transport
 func NewMelodyConnector() *realtime.Connector {
 	melodyInstance := melody.New()
 	melodyInstance.Config.MaxMessageSize = 1200

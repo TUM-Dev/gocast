@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"io"
 	"log/slog"
 	"net/url"
@@ -13,6 +12,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
@@ -62,7 +63,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 		}
 	}
 
-	vodUrl, err := url.JoinPath(config.Config.EdgeServer, fmt.Sprintf("%d", streamID), streamVersion, "playlist.m3u8")
+	vodUrl, err := url.JoinPath(config.Config.EdgeServer, "vod", fmt.Sprintf("%d", streamID), streamVersion, "playlist.m3u8")
 	if err != nil {
 		return fmt.Errorf("join vod url: %w", err)
 	}
@@ -80,7 +81,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 
 func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, streamPath, vodDir string, playlistName string) error {
 	input := "-i " + streamPath
-	options := "-c copy -f hls -hls_time 240 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
+	options := "-c copy -f hls -hls_time 20 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
 
 	args := strings.Split(input, " ")
 	args = append(args, strings.Split(options, " ")...)

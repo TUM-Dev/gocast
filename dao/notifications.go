@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=notifications.go -destination ../mock_dao/notifications.go
+//go:generate go tool mockgen -source=notifications.go -destination ../mock_dao/notifications.go
 
 type NotificationsDao interface {
 	AddNotification(notification *model.Notification) error

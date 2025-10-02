@@ -1,11 +1,12 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=file.go -destination ../mock_dao/file.go
+//go:generate go tool mockgen -source=file.go -destination ../mock_dao/file.go
 
 type FileDao interface {
 	NewFile(f *model.File) error
@@ -30,7 +31,7 @@ func (d fileDao) NewFile(f *model.File) error {
 
 func (d fileDao) GetFileById(id string) (f model.File, err error) {
 	err = DB.Where("id = ?", id).First(&f).Error
-	return
+	return f, err
 }
 
 func (d fileDao) UpdateFile(id string, f *model.File) error {
@@ -43,7 +44,7 @@ func (d fileDao) DeleteFile(id uint) error {
 
 func (d fileDao) CountVoDFiles() (count int64, err error) {
 	err = DB.Model(&model.File{}).Where("type = ?", model.FILETYPE_VOD).Count(&count).Error
-	return
+	return count, err
 }
 
 func (d fileDao) SetThumbnail(streamId uint, thumb model.File) error {

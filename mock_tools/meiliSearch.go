@@ -12,7 +12,7 @@ package mock_tools
 import (
 	reflect "reflect"
 
-	meilisearch_go "github.com/meilisearch/meilisearch-go"
+	meilisearch "github.com/meilisearch/meilisearch-go"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,10 +41,10 @@ func (m *MockMeiliSearchInterface) EXPECT() *MockMeiliSearchInterfaceMockRecorde
 }
 
 // Search mocks base method.
-func (m *MockMeiliSearchInterface) Search(q string, limit int64, searchType int, courseFilter, streamFilter, subtitleFilter string) *meilisearch_go.MultiSearchResponse {
+func (m *MockMeiliSearchInterface) Search(q string, limit int64, searchType int, courseFilter, streamFilter, subtitleFilter string) *meilisearch.MultiSearchResponse {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Search", q, limit, searchType, courseFilter, streamFilter, subtitleFilter)
-	ret0, _ := ret[0].(*meilisearch_go.MultiSearchResponse)
+	ret0, _ := ret[0].(*meilisearch.MultiSearchResponse)
 	return ret0
 }
 
@@ -55,10 +55,10 @@ func (mr *MockMeiliSearchInterfaceMockRecorder) Search(q, limit, searchType, cou
 }
 
 // SearchSubtitles mocks base method.
-func (m *MockMeiliSearchInterface) SearchSubtitles(q string, streamID uint) *meilisearch_go.SearchResponse {
+func (m *MockMeiliSearchInterface) SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchSubtitles", q, streamID)
-	ret0, _ := ret[0].(*meilisearch_go.SearchResponse)
+	ret0, _ := ret[0].(*meilisearch.SearchResponse)
 	return ret0
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/meilisearch/meilisearch-go"
 )
 
-//go:generate mockgen -source=meiliSearch.go -destination ../mock_tools/meiliSearch.go
+//go:generate go tool mockgen -source=meiliSearch.go -destination ../mock_tools/meiliSearch.go
 
 type MeiliSearchInterface interface {
 	SearchSubtitles(q string, streamID uint) *meilisearch.SearchResponse
@@ -80,10 +80,11 @@ func (d *meiliSearchFunctions) Search(q string, limit int64, searchType int, cou
 	bitOperator := 1
 	var reqs []*meilisearch.SearchRequest
 
+outer:
 	for i := 0; i < 4; i++ {
 		switch searchType & bitOperator {
 		case 0:
-			break
+			break outer
 		case 1:
 			reqs = append(reqs, getCourseWideSubtitleSearchRequest(q, limit, subtitleFilter))
 		case 2:

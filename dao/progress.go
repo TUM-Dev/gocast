@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//go:generate mockgen -source=progress.go -destination ../mock_dao/progress.go
+//go:generate go tool mockgen -source=progress.go -destination ../mock_dao/progress.go
 
 var Progress = NewProgressDao()
 

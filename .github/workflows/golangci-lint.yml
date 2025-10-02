@@ -21,7 +21,7 @@ jobs:
         working-directory: ./web
         run: npm ci
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           only-new-issues: true

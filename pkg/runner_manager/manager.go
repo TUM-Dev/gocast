@@ -2,6 +2,7 @@ package runner_manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	log "log/slog"
 	"net"
@@ -62,18 +63,27 @@ func (m *Manager) TriggerDueStreams() error {
 		if err != nil {
 			errs = append(errs, fmt.Errorf("getClient: %w", err))
 		}
-		resp, err := client.RequestStream(ctx, &protobuf.StreamRequest{
-			StreamId:            ptr.Take(uint64(s.ID)),
-			Version:             ptr.Take(protobuf.StreamVersion_STREAM_VERSION_COMBINED),
-			End:                 timestamppb.New(s.End),
-			FfmpegOutputOptions: ptr.Take("-c:a copy -c:v copy"),
-			Input:               ptr.Take(fmt.Sprintf("srt://%s", lh.CombIP)),
-		})
-		if err != nil {
-			errs = append(errs, fmt.Errorf("RequestStream: %w", err))
+
+		resp, err := m.requestStreamVersion(ctx, s, client, lh.CombIP)
+		if err != nil && !errors.Is(err, errNotNoLectureSource) {
+			errs = append(errs, fmt.Errorf("RequestStream COMB: %w", err))
 			continue
 		}
-		log.With("stream", s.ID, "job", resp.JobId).Info("started Stream")
+		log.With("stream", s.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
+
+		resp, err = m.requestStreamVersion(ctx, s, client, lh.PresIP)
+		if err != nil && !errors.Is(err, errNotNoLectureSource) {
+			errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
+			continue
+		}
+		log.With("stream", s.ID, "job", resp.JobId, "version", model.PRES).Info("started Stream")
+
+		resp, err = m.requestStreamVersion(ctx, s, client, lh.CamIP)
+		if err != nil && !errors.Is(err, errNotNoLectureSource) {
+			errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
+			continue
+		}
+		log.With("stream", s.ID, "job", resp.JobId, "version", model.CAM).Info("started Stream")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to start stream: %v", errs)
@@ -113,7 +123,9 @@ func (m *Manager) Run() error {
 	protobuf.RegisterRunnerManagerServiceServer(grpcServer, m)
 	reflection.Register(grpcServer)
 	go func(listener net.Listener) {
-		defer listener.Close()
+		defer func() {
+			_ = listener.Close()
+		}()
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Error("failed to serve runner manager", "err", err)
 		}
@@ -154,11 +166,32 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	case *protobuf.Notification_StreamStart:
 		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
 	case *protobuf.Notification_StreamEnd:
-		log.Info("received stream end from runner")
-		// passing for now, not implemented.
+		log.Debug("streamEnd", "payload", notification.GetStreamEnd())
+		err := m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStreamEnd().GetStream().GetId()))
+		if err != nil {
+			return nil, err
+		}
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_VodReady:
-		log.Info("vodReady", "payload", notification.GetVodReady())
+		log.Debug("vodReady", "payload", notification.GetVodReady())
+		streamId := notification.GetVodReady().Stream.GetId()
+		stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
+		if err != nil {
+			return nil, err
+		}
+		switch *notification.GetVodReady().StreamVersion {
+		case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+			stream.PlaylistUrl = notification.GetVodReady().GetUrl()
+		case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+			stream.PlaylistUrlPRES = notification.GetVodReady().GetUrl()
+		case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+			stream.PlaylistUrlCAM = notification.GetVodReady().GetUrl()
+		}
+		stream.Recording = true
+		err = m.dao.StreamsDao.SaveStream(&stream)
+		if err != nil {
+			return nil, err
+		}
 		return &protobuf.NotificationResponse{}, nil
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
@@ -182,8 +215,31 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	if err != nil {
 		return err
 	}
-	m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
+	switch req.GetStreamVersion() {
+	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+		m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
+	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+		m.dao.StreamsDao.SavePRESURL(&stream, *req.Url)
+	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+		m.dao.StreamsDao.SaveCAMURL(&stream, *req.Url)
+	}
 	return nil
+}
+
+var errNotNoLectureSource = fmt.Errorf("no source configured for this lecture hall ip")
+
+func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, client protobuf.RunnerServiceClient, ip string) (*protobuf.StreamResponse, error) {
+	if ip == "" {
+		// not configured for this lecture hall
+		return &protobuf.StreamResponse{}, errNotNoLectureSource
+	}
+	return client.RequestStream(ctx, &protobuf.StreamRequest{
+		StreamId:            ptr.Take(uint64(s.ID)),
+		Version:             ptr.Take(protobuf.StreamVersion_STREAM_VERSION_COMBINED),
+		End:                 timestamppb.New(s.End),
+		FfmpegOutputOptions: ptr.Take("-c:a copy -c:v copy"),
+		Input:               ptr.Take(fmt.Sprintf("srt://%s", ip)),
+	})
 }
 
 func dialRunner(ctx context.Context, runner model.Runner) (*grpc.ClientConn, error) {
