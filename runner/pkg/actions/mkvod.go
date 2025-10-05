@@ -29,7 +29,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	}
 	streamVersion, ok := d["streamVersion"].(string)
 	if !ok {
-		return AbortingError(fmt.Errorf("no stream end in context"))
+		return AbortingError(fmt.Errorf("no stream version in context"))
 	}
 	recordingDir, ok := d["recordingDir"].(string)
 	if !ok {
@@ -37,9 +37,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	}
 
 	metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Inc()
-	defer func() {
-		metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Dec()
-	}()
+	defer metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Dec()
 
 	vodDir := path.Join(config.Config.StoragePath, fmt.Sprintf("%d", streamID), streamVersion)
 	err := os.MkdirAll(vodDir, os.ModePerm)
@@ -47,21 +45,11 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 		return AbortingError(fmt.Errorf("create VOD directory: %w", err))
 	}
 
-	recordingContent, err := os.ReadDir(recordingDir)
+	err = convertStream(ctx, logger, streamID, path.Join(recordingDir, "playlist.m3u8"), vodDir, "playlist.m3u8")
 	if err != nil {
-		return AbortingError(fmt.Errorf("read recordingDir: %w", err))
+		return AbortingError(fmt.Errorf("convert stream: %w", err))
 	}
-
-	for _, entry := range recordingContent {
-		if entry.IsDir() {
-			logger.Warn("found dir in recordingDir, skipping", "name", entry.Name())
-			continue
-		}
-		if entry.Name() == "playlist.m3u8" {
-			err = convertStream(ctx, logger, streamID, path.Join(recordingDir, entry.Name()), vodDir, entry.Name())
-			continue
-		}
-	}
+	d["vodPath"] = path.Join(vodDir, "playlist.m3u8")
 
 	vodUrl, err := url.JoinPath(config.Config.EdgeServer, "vod", fmt.Sprintf("%d", streamID), streamVersion, "playlist.m3u8")
 	if err != nil {
@@ -81,7 +69,7 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 
 func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, streamPath, vodDir string, playlistName string) error {
 	input := "-i " + streamPath
-	options := "-c copy -f hls -hls_time 20 -hls_playlist_type event -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
+	options := "-c copy -f hls -hls_time 20 -hls_playlist_type vod -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
 
 	args := strings.Split(input, " ")
 	args = append(args, strings.Split(options, " ")...)
@@ -104,11 +92,9 @@ func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, st
 	go logCmdPipe(logger, stdo, []any{"stream", streamID, "logStream", "stdout"})
 	err = command.Run()
 	if err != nil {
-		logger.Error("ffmpeg command failed", "error", err)
-	} else {
-		logger.Info("ffmpeg converting completed successfully", "stream_id", streamID)
+		return fmt.Errorf("ffmpeg failed: %w", err)
 	}
-	return err
+	return nil
 }
 
 // vodFromEventPlst modifies an HLS playlist from EVENT to VOD
