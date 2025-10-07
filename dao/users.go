@@ -13,7 +13,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=users.go -destination ../mock_dao/users.go
+//go:generate go tool mockgen -source=users.go -destination ../mock_dao/users.go
 
 type UsersDao interface {
 	AreUsersEmpty(ctx context.Context) (isEmpty bool, err error)
@@ -157,9 +157,8 @@ func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) erro
 	defer Cache.Clear()
 	if pin {
 		return DB.Model(&user).Association("PinnedCourses").Append(&course)
-	} else {
-		return DB.Model(&user).Association("PinnedCourses").Delete(&course)
 	}
+	return DB.Model(&user).Association("PinnedCourses").Delete(&course)
 }
 
 func (d usersDao) UpsertUser(user *model.User) error {

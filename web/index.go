@@ -9,13 +9,14 @@ import (
 	"strconv"
 
 	"github.com/RBG-TUM/commons"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 var VersionTag string
@@ -228,17 +229,17 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 	if d.TUMLiveContext.User != nil {
 		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
-			courses = coursesDao.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+			courses = coursesDao.GetAllCoursesForSemester(spanMain.Context(), d.CurrentYear, d.CurrentTerm)
 		case model.LecturerType:
 			{
-				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm)
 				coursesForLecturer, err := coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}
 			}
 		default:
-			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm)
 		}
 	}
 

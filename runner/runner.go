@@ -3,13 +3,14 @@ package runner
 import (
 	"context"
 	"fmt"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"log/slog"
 	"net"
 	"os"
 	"reflect"
 	"runtime"
 	"time"
+
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-retry"
@@ -69,7 +70,7 @@ func NewRunner(v string) *Runner {
 		JobCount:      make(chan int),
 		jobs:          make(map[string]context.CancelFunc),
 		draining:      false,
-		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer")),
+		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
 		stats:         vmstats,
 		StartTime:     start,
 		notifications: make(chan *protobuf.Notification),

@@ -6,8 +6,8 @@ type VideoType string
 
 const (
 	VideoTypeCombined     VideoType = "COMB"
-	VideoTypePresentation           = "PRES"
-	VideoTypeCamera                 = "CAM"
+	VideoTypePresentation VideoType = "PRES"
+	VideoTypeCamera       VideoType = "CAM"
 )
 
 func (v VideoType) Valid() bool {

@@ -23,7 +23,7 @@ type InfoPage struct {
 }
 
 func (mt InfoPage) Render() template.HTML {
-	var renderedContent template.HTML = ""
+	var renderedContent template.HTML
 	switch mt.Type {
 	case INFOPAGE_MARKDOWN:
 		unsafe := blackfriday.Run([]byte(mt.RawContent))

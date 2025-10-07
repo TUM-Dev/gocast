@@ -10,14 +10,15 @@ import (
 	"time"
 
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
+	"github.com/gin-gonic/gin"
+	"github.com/matthiasreumann/gomino"
+	"go.uber.org/mock/gomock"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
-	"github.com/matthiasreumann/gomino"
 )
 
 func LectureHallRouterWrapper(t *testing.T) func(r *gin.Engine) {

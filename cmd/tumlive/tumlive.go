@@ -251,7 +251,7 @@ func main() {
 	mailer := tools.NewMailer(dao.NewDaoWrapper(), tools.Cfg.Mail.MaxMailsPerMinute)
 	go mailer.Run()
 
-	initCron()
+	initCron(m)
 	go func() {
 		err = GinServer()
 		if err != nil {
@@ -263,7 +263,7 @@ func main() {
 	keepAlive()
 }
 
-func initCron() {
+func initCron(m *runner_manager.Manager) {
 	daoWrapper := dao.NewDaoWrapper()
 	tools.InitCronService()
 	// Fetch students every 12 hours
@@ -274,6 +274,12 @@ func initCron() {
 	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
 	// Look for due streams and notify workers about them
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
+	_ = tools.Cron.AddFunc("triggerDueStreamsRunner", func() {
+		err := m.TriggerDueStreams()
+		if err != nil {
+			log.With("err", err).Error("Can't run streams with runner")
+		}
+	}, "0-59 * * * *")
 	// update courses available
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
 	// export data to meili search

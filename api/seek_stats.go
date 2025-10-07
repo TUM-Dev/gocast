@@ -3,8 +3,9 @@ package api
 import (
 	"net/http"
 
-	"github.com/TUM-Dev/gocast/dao"
 	"github.com/gin-gonic/gin"
+
+	"github.com/TUM-Dev/gocast/dao"
 )
 
 // progressRoutes contains a DaoWrapper object and all route functions dangle from it.
@@ -66,7 +67,7 @@ func (r seekStatsRoutes) getSeek(c *gin.Context) {
 
 		if chunk.Hits > 0 {
 			totalHits += int(chunk.Hits)
-			nonZeroChunks += 1
+			nonZeroChunks++
 		}
 	}
 

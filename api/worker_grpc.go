@@ -17,14 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TUM-Dev/gocast/tools/pathprovider"
-
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/camera"
-	"github.com/TUM-Dev/gocast/worker/pb"
 	"github.com/getsentry/sentry-go"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
@@ -35,6 +28,14 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/tools/pathprovider"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/camera"
+	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
 var mutex = sync.Mutex{}
@@ -206,33 +207,33 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFinished) (*pb.Status, error) {
 	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
-	} else {
-		stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
-		if err != nil {
-			logger.Error("Can't find stream to set not live", "err", err)
-		} else {
-			go func() {
-				err := handleLightOffSwitch(stream, s.DaoWrapper)
-				if err != nil {
-					logger.Error("Can't handle light off switch", "err", err)
-				}
-				err = s.StreamsDao.SaveEndedState(stream.ID, true)
-				if err != nil {
-					logger.Error("Can't set stream done", "err", err)
-				}
-			}()
-		}
-		err = s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
-		if err != nil {
-			logger.Error("Can't remove stream from streamName", "err", err)
-		}
-
-		err = s.StreamsDao.SetStreamNotLiveById(uint(request.StreamID))
-		if err != nil {
-			logger.Error("Can't set stream not live", "err", err)
-		}
-		NotifyViewersLiveState(uint(request.StreamID), false)
 	}
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+	if err != nil {
+		logger.Error("Can't find stream to set not live", "err", err)
+	} else {
+		go func() {
+			err := handleLightOffSwitch(stream, s.DaoWrapper)
+			if err != nil {
+				logger.Error("Can't handle light off switch", "err", err)
+			}
+			err = s.StreamsDao.SaveEndedState(stream.ID, true)
+			if err != nil {
+				logger.Error("Can't set stream done", "err", err)
+			}
+		}()
+	}
+	err = s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
+	if err != nil {
+		logger.Error("Can't remove stream from streamName", "err", err)
+	}
+
+	err = s.StreamsDao.SetStreamNotLiveById(uint(request.StreamID))
+	if err != nil {
+		logger.Error("Can't set stream not live", "err", err)
+	}
+	NotifyViewersLiveState(uint(request.StreamID), false)
+
 	return &pb.Status{Ok: true}, nil
 }
 
@@ -344,23 +345,23 @@ func handleLightOffSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error 
 
 // SendHeartBeat receives heartbeat messages sent by workers
 func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.Status, error) {
-	if worker, err := s.DaoWrapper.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+	w, err := s.DaoWrapper.GetWorkerByID(ctx, request.GetWorkerID())
+	if err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
-	} else {
-		worker.Workload = uint(request.Workload)
-		worker.LastSeen = time.Now()
-		worker.Status = strings.Join(request.Jobs, ", ")
-		worker.CPU = request.CPU
-		worker.Memory = request.Memory
-		worker.Disk = request.Disk
-		worker.Uptime = request.Uptime
-		worker.Version = request.Version
-		err := s.DaoWrapper.SaveWorker(worker)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.Status{Ok: true}, nil
 	}
+	w.Workload = uint(request.Workload)
+	w.LastSeen = time.Now()
+	w.Status = strings.Join(request.Jobs, ", ")
+	w.CPU = request.CPU
+	w.Memory = request.Memory
+	w.Disk = request.Disk
+	w.Uptime = request.Uptime
+	w.Version = request.Version
+	err = s.DaoWrapper.SaveWorker(w)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.Status{Ok: true}, nil
 }
 
 // NotifyTranscodingFinished receives and handles messages from workers about finished transcoding
@@ -657,7 +658,7 @@ func isHlsUrlOk(url string) bool {
 	if err != nil {
 		return false
 	}
-	re, _ := regexp.Compile(`chunklist.*\.m3u8`)
+	re := regexp.MustCompile(`chunklist.*\.m3u8`)
 	x := re.Find(all)
 	if x == nil {
 		return false
@@ -720,7 +721,7 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 	conn, err := dialIn(workers[workerIndex])
 	if err != nil {
 		logger.Error("Unable to dial server", "err", err)
-		workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+		workers[workerIndex].Workload-- // decrease workers load only by one (backoff)
 		return
 	}
 	client := pb.NewToWorkerClient(conn)
@@ -728,7 +729,7 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 	resp, err := client.RequestStream(context.Background(), &req)
 	if err != nil || !resp.Ok {
 		logger.Error("could not assign stream!", "err", err)
-		workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+		workers[workerIndex].Workload-- // decrease workers load only by one (backoff)
 	}
 	endConnection(conn)
 }
@@ -821,7 +822,7 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		if err != nil {
 			logger.Error("Unable to dial server", "err", err)
 			endConnection(conn)
-			workers[workerIndex].Workload -= 1
+			workers[workerIndex].Workload--
 			continue
 		}
 		client := pb.NewToWorkerClient(conn)
@@ -829,7 +830,7 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		resp, err := client.RequestPremiere(context.Background(), &req)
 		if err != nil || !resp.Ok {
 			logger.Error("could not assign premiere!", "err", err)
-			workers[workerIndex].Workload -= 1
+			workers[workerIndex].Workload--
 		}
 		endConnection(conn)
 	}
@@ -861,16 +862,15 @@ func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 				continue
 			}
 			client := pb.NewToWorkerClient(conn)
-			workers[workerIndex].Workload += 1
+			workers[workerIndex].Workload++
 			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
-				workers[workerIndex].Workload -= 1
+				workers[workerIndex].Workload--
 				logger.Error("Could not generate live preview", "err", err)
 				endConnection(conn)
 				continue
 			}
-			workers[workerIndex].Workload -= 1
+			workers[workerIndex].Workload--
 		}
-		return
 	}
 }
 
@@ -895,7 +895,9 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 	_, err = file.Write(resp.GetLiveThumb())
 	return err
 }

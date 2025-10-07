@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=statistics.go -destination ../mock_dao/statistics.go
+//go:generate go tool mockgen -source=statistics.go -destination ../mock_dao/statistics.go
 
 type StatisticsDao interface {
 	AddStat(stat model.Stat) error

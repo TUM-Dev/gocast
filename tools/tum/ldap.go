@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-ldap/ldap/v3"
+
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 var ErrLdapBadAuth = errors.New("login failed")
@@ -30,7 +31,9 @@ func LoginWithTumCredentials(username string, password string) (*LdapResp, error
 	if err != nil {
 		return nil, err
 	}
-	defer l.Close()
+	defer func() {
+		_ = l.Close()
+	}()
 
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)
@@ -102,7 +105,9 @@ func FindUserWithEmail(email string) (*model.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer l.Close()
+	defer func() {
+		_ = l.Close()
+	}()
 
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)

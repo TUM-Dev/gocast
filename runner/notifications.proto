@@ -21,6 +21,7 @@ message StreamInfo {
 message StreamStartNotification {
   StreamInfo stream = 1;
   string url = 2;
+  StreamVersion stream_version = 3;
 }
 
 message StreamEndNotification {
