@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TUM-Dev/gocast/web"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -46,6 +47,13 @@ func (m *Manager) TriggerDueStreams() error {
 	log.Info("Triggering due streams")
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
+	if web.VersionTag == "development" {
+		workerStreams := m.dao.GetDueStreamsForWorkers()
+		for _, stream := range workerStreams {
+			streams = append(streams, stream)
+		}
+	}
+
 	log.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
 	if err != nil {
 		return err
@@ -71,19 +79,21 @@ func (m *Manager) TriggerDueStreams() error {
 		}
 		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
 
-		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
-		if err != nil && !errors.Is(err, errNotNoLectureSource) {
-			errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
-			continue
-		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
+		if !s.IsSelfStream() {
+			resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
+			if err != nil && !errors.Is(err, errNotNoLectureSource) {
+				errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
+				continue
+			}
+			log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
 
-		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
-		if err != nil && !errors.Is(err, errNotNoLectureSource) {
-			errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
-			continue
+			resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
+			if err != nil && !errors.Is(err, errNotNoLectureSource) {
+				errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
+				continue
+			}
+			log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
 		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to start stream: %v", errs)
@@ -240,12 +250,47 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 	default:
 		return nil, fmt.Errorf("invalid stream version %v", version)
 	}
+
+	var outputOptions string
+	if !s.IsSelfStream() {
+		switch lh.StreamProtocol {
+		case model.RTSP:
+			outputOptions = "-c:a copy -c:v copy -rtsp_transport tcp -preset veryfast -tune zerolatency"
+			break
+		case model.SRT:
+			outputOptions = "-c:a copy -c:v copy -preset veryfast -tune zerolatency"
+			break
+		}
+	} else {
+		outputOptions = "-c:v libx264 -preset veryfast -c:a aac -ar 44100 -b:a 128k -b:v 5k"
+	}
+
+	var input string
+	if !s.IsSelfStream() {
+		switch lh.StreamProtocol {
+		case model.RTSP:
+			input = fmt.Sprintf("rtsp://%s", ip)
+			break
+		case model.SRT:
+			input = fmt.Sprintf("srt://%s", ip)
+			break
+		default:
+			return nil, fmt.Errorf("invalid stream protocol %v", lh.StreamProtocol)
+		}
+	} else {
+		// Lecture is Selfstream
+		course, err := m.dao.CoursesDao.GetCourseById(ctx, s.CourseID)
+		if err != nil {
+			return nil, err
+		}
+		input = fmt.Sprintf("rtmp://localhost/%s", course.Slug)
+	}
 	return client.RequestStream(ctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
 		Version:             ptr.Take(version),
 		End:                 timestamppb.New(s.End),
-		FfmpegOutputOptions: ptr.Take("-c:a copy -c:v copy"),
-		Input:               ptr.Take(fmt.Sprintf("srt://%s", ip)),
+		FfmpegOutputOptions: ptr.Take(outputOptions),
+		Input:               ptr.Take(input),
 	})
 }
 
