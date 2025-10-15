@@ -23,7 +23,7 @@ func (r *Runner) RegisterWithGocast(retries int) {
 		r.log.Error("no more retries left, can't connect to gocast")
 		os.Exit(1)
 	}
-	con, err := r.dialIn()
+	con, err := DialIn()
 	if err != nil {
 		r.log.Warn("error connecting to gocast", "error", err, "sleeping(s)", registerRetries-retries)
 		time.Sleep(time.Second * time.Duration(registerRetries-retries))
@@ -39,12 +39,12 @@ func (r *Runner) RegisterWithGocast(retries int) {
 	}
 }
 
-// dialIn connects to manager instance and returns a client
-func (r *Runner) dialIn() (protobuf.RunnerManagerServiceClient, error) {
+// DialIn connects to manager instance and returns a client
+func DialIn() (protobuf.RunnerManagerServiceClient, error) {
 	credentials := insecure.NewCredentials()
 	conn, err := grpc.Dial(config.Config.GocastServer, grpc.WithTransportCredentials(credentials))
 	if err != nil {
-		return nil, fmt.Errorf("dialIn: %w", err)
+		return nil, fmt.Errorf("DialIn: %w", err)
 	}
 	return protobuf.NewRunnerManagerServiceClient(conn), nil
 }

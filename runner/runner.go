@@ -10,10 +10,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-retry"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -96,6 +95,7 @@ func (r *Runner) Run() {
 	go r.Metrics.Run()
 	go r.handleNotifications()
 	go r.InitApiGrpc()
+	go r.InitApi(":8060")
 	go func() {
 		err := r.hlsServer.Start()
 		if err != nil {
@@ -210,7 +210,7 @@ func (r *Runner) handleNotifications() {
 func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2 context.Context) error {
 	return func(ctx context.Context) error {
 		r.log.Debug("send notification", "notification", notification)
-		conn, err := r.dialIn()
+		conn, err := DialIn()
 		if err != nil {
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
