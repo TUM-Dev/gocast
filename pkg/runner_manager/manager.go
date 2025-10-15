@@ -49,9 +49,8 @@ func (m *Manager) TriggerDueStreams() error {
 	streams, err := m.dao.GetDueStreamsForRunners()
 	if web.VersionTag == "development" {
 		workerStreams := m.dao.GetDueStreamsForWorkers()
-		for _, stream := range workerStreams {
-			streams = append(streams, stream)
-		}
+		streams = append(streams, workerStreams...)
+
 	}
 
 	log.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
@@ -256,10 +255,8 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		switch lh.StreamProtocol {
 		case model.RTSP:
 			outputOptions = "-c:a copy -c:v copy -rtsp_transport tcp -preset veryfast -tune zerolatency"
-			break
 		case model.SRT:
 			outputOptions = "-c:a copy -c:v copy -preset veryfast -tune zerolatency"
-			break
 		}
 	} else {
 		outputOptions = "-c:v libx264 -preset veryfast -c:a aac -ar 44100 -b:a 128k -b:v 5k"
@@ -270,10 +267,8 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		switch lh.StreamProtocol {
 		case model.RTSP:
 			input = fmt.Sprintf("rtsp://%s", ip)
-			break
 		case model.SRT:
 			input = fmt.Sprintf("srt://%s", ip)
-			break
 		default:
 			return nil, fmt.Errorf("invalid stream protocol %v", lh.StreamProtocol)
 		}
