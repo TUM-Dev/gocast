@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	model "github.com/TUM-Dev/gocast/model"
-	gomock "github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 // MockStreamReactionDao is a mock of StreamReactionDao interface.
