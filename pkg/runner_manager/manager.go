@@ -77,21 +77,19 @@ func (m *Manager) TriggerDueStreams() error {
 		}
 		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
 
-		if !s.IsSelfStream() {
-			resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
-			if err != nil && !errors.Is(err, errNotNoLectureSource) {
-				errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
-				continue
-			}
-			log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
-
-			resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
-			if err != nil && !errors.Is(err, errNotNoLectureSource) {
-				errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
-				continue
-			}
-			log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
+		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
+		if err != nil && !errors.Is(err, errNotNoLectureSource) {
+			errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
+			continue
 		}
+		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
+
+		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
+		if err != nil && !errors.Is(err, errNotNoLectureSource) {
+			errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
+			continue
+		}
+		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to start stream: %v", errs)

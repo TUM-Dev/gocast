@@ -8,7 +8,7 @@ import (
 
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 	Level: slog.LevelDebug,
-})).With("service", "bot")
+})).With("service", "netutil")
 
 // GetFreePort returns a free port for tcp use.
 func GetFreePort() (port int, err error) {
