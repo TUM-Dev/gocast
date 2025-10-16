@@ -119,7 +119,6 @@ const (
 var (
 	liveReactionListenerMutex sync.RWMutex
 	liveReactionListener      = map[uint]*liveReactionAdminSessionsWrapper{}
-	daoWrapper                dao.DaoWrapper
 )
 
 type liveReactionAdminSessionsWrapper struct {
@@ -127,13 +126,12 @@ type liveReactionAdminSessionsWrapper struct {
 	stream   uint
 }
 
-func RegisterReactionUpdateRealtimeChannel(wrapper dao.DaoWrapper) {
+func RegisterReactionUpdateRealtimeChannel() {
 	RealtimeInstance.RegisterChannel(ReactionUpdateRoomName, realtime.ChannelHandlers{
 		OnSubscribe:   reactionUpdateOnSubscribe,
 		OnUnsubscribe: reactionUpdateOnUnsubscribe,
 		OnMessage:     reactionUpdateSetStream,
 	})
-	daoWrapper = wrapper
 
 	go func() {
 		// Notify admins every 5 seconds
