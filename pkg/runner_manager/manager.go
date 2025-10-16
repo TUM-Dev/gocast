@@ -50,7 +50,6 @@ func (m *Manager) TriggerDueStreams() error {
 	if web.VersionTag == "development" {
 		workerStreams := m.dao.GetDueStreamsForWorkers()
 		streams = append(streams, workerStreams...)
-
 	}
 
 	log.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
