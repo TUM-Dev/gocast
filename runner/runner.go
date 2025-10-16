@@ -26,6 +26,7 @@ import (
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
+//nolint:all
 type envConfig struct {
 	LogFmt       string `env:"LOG_FMT" envDefault:"txt"`
 	LogLevel     string `env:"LOG_LEVEL" envDefault:"debug"`

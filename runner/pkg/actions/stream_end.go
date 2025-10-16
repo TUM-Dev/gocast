@@ -3,9 +3,9 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"log/slog"
 
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )

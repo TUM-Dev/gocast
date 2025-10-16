@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TUM-Dev/gocast/web"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -46,6 +47,12 @@ func (m *Manager) TriggerDueStreams() error {
 	log.Info("Triggering due streams")
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
+	// TODO: Remove this when turning off workers
+	if web.VersionTag == "development" {
+		workerStreams := m.dao.GetDueStreamsForWorkers()
+		streams = append(streams, workerStreams...)
+	}
+
 	log.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
 	if err != nil {
 		return err
@@ -240,12 +247,41 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 	default:
 		return nil, fmt.Errorf("invalid stream version %v", version)
 	}
+
+	var outputOptions = "-c:v libx264 -preset veryfast -c:a aac -ar 44100 -b:a 128k -b:v 5000k"
+	if !s.IsSelfStream() {
+		switch lh.StreamProtocol {
+		case model.RTSP:
+			outputOptions = "-c:a copy -c:v copy -rtsp_transport tcp -preset veryfast -tune zerolatency"
+		case model.SRT:
+			outputOptions = "-c:a copy -c:v copy -preset veryfast -tune zerolatency"
+		}
+	}
+
+	var input string
+	if !s.IsSelfStream() {
+		switch lh.StreamProtocol {
+		case model.RTSP:
+			input = fmt.Sprintf("rtsp://%s", ip)
+		case model.SRT:
+			input = fmt.Sprintf("srt://%s", ip)
+		default:
+			return nil, fmt.Errorf("invalid stream protocol %v", lh.StreamProtocol)
+		}
+	} else {
+		// Lecture is Selfstream
+		course, err := m.dao.CoursesDao.GetCourseById(ctx, s.CourseID)
+		if err != nil {
+			return nil, err
+		}
+		input = fmt.Sprintf("rtmp://localhost/%s", course.Slug)
+	}
 	return client.RequestStream(ctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
 		Version:             ptr.Take(version),
 		End:                 timestamppb.New(s.End),
-		FfmpegOutputOptions: ptr.Take("-c:a copy -c:v copy"),
-		Input:               ptr.Take(fmt.Sprintf("srt://%s", ip)),
+		FfmpegOutputOptions: ptr.Take(outputOptions),
+		Input:               ptr.Take(input),
 	})
 }
 
