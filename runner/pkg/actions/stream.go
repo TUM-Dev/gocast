@@ -87,7 +87,6 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	args = append(args, strings.Split(outputOpts, " ")...)
 	args = append(args, strings.Split(`-f hls -hls_time 2 -hls_playlist_type event -hls_flags append_list -hls_segment_filename `+liveRecDir+"/%05d.ts "+liveRecDir+"/playlist.m3u8", " ")...)
 
-	fmt.Printf("Running command: ffmpeg %s\n", strings.Join(args, " "))
 	command := exec.CommandContext(ctx, "ffmpeg", args...)
 	// give ffmpeg 10 seconds on sigterm (context cancellation) to shut down before sending sigkill.
 	command.WaitDelay = 10 * time.Second
