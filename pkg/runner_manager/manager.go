@@ -253,7 +253,7 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		return nil, fmt.Errorf("invalid stream version %v", version)
 	}
 
-	var outputOptions = "-c:v libx264 -preset veryfast -c:a aac -ar 44100 -b:a 128k -b:v 5000k"
+	var outputOptions = "-c:v libx264 -preset veryfast -tune zerolatency -c:a aac -ar 44100 -b:a 128k -g 60 -b:v 4000k"
 	if !s.IsSelfStream() {
 		switch lh.StreamProtocol {
 		case model.RTSP:

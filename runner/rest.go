@@ -13,12 +13,22 @@ import (
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
-type SafeStreams struct {
-	mutex   sync.Mutex
-	streams map[string]bool
+type SafeStreamStructStream struct {
+	Ip        string
+	StreamKey string
+	Slug      string
+	Retries   int
 }
 
-var safeStreams SafeStreams
+type SafeStreamStruct struct {
+	mutex   sync.Mutex
+	streams map[string]SafeStreamStructStream
+}
+
+var SafeStreams = SafeStreamStruct{
+	mutex:   sync.Mutex{},
+	streams: make(map[string]SafeStreamStructStream),
+}
 
 type OnStartReq struct {
 	Ip       string `json:"ip"`
@@ -65,25 +75,31 @@ func onPublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = client.RequestSelfStream(context.Background(), &protobuf.SelfStreamRequest{
-		Hostname:   &config.Config.Hostname,
-		StreamKey:  &streamKey,
-		CourseSlug: &slug,
-	})
-	if err != nil {
-		log.Error(err)
-		http.Error(w, "Authentication failed for SendSelfStreamRequest", http.StatusForbidden)
-		return
-	}
-
 	go func() {
-		safeStreams.mutex.Lock()
-		if running, ok := safeStreams.streams[streamKey]; ok && running {
+		SafeStreams.mutex.Lock()
+		if safeStreamStruct, ok := SafeStreams.streams[slug]; ok && safeStreamStruct.StreamKey == streamKey {
 			log.Debug("onPublish: already running")
-			safeStreams.mutex.Unlock()
+			SafeStreams.mutex.Unlock()
 			return
 		}
-		safeStreams.mutex.Unlock()
+		SafeStreams.streams[slug] = SafeStreamStructStream{
+			Ip:        req.Ip,
+			StreamKey: streamKey,
+			Slug:      slug,
+			Retries:   0,
+		}
+		SafeStreams.mutex.Unlock()
+
+		_, err = client.RequestSelfStream(context.Background(), &protobuf.SelfStreamRequest{
+			Hostname:   &config.Config.Hostname,
+			StreamKey:  &streamKey,
+			CourseSlug: &slug,
+		})
+		if err != nil {
+			log.Error(err)
+			http.Error(w, "Authentication failed for SendSelfStreamRequest", http.StatusForbidden)
+			return
+		}
 	}()
 }
 
