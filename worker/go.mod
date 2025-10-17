@@ -36,18 +36,16 @@ require (
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/u2takey/go-utils v0.3.1
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 )
 
 require (
+	github.com/ebitengine/purego v0.9.0 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20230811205829-9131a7e9cc17 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/shoenig/go-m1cpu v0.1.6 // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/image v0.11.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 )
