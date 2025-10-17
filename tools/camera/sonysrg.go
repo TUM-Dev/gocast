@@ -40,7 +40,7 @@ func (s SonySRG) TakeSnapshot(outDir string) (filename string, err error) {
 		auth = nil
 	}
 
-	// oneshotimage1 acquires JPEGs as still images from codec images corresponding to ImageCodec1 (Video Stream 1)
+	// oneshotimage1 takes JPEGs as still images from codec images corresponding to ImageCodec1 (Video Stream 1)
 	logger.Info(fmt.Sprintf("%s/oneshotimage1", s.addr))
 	resp, err := makeAuthenticatedRequest(auth, "GET", "", fmt.Sprintf("http://%s/oneshotimage1", s.addr))
 	if err != nil {
