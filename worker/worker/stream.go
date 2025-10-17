@@ -28,19 +28,25 @@ func stream(streamCtx *StreamContext) {
 
 		// todo: too much duplication
 		if strings.Contains(streamCtx.sourceUrl, "rtsp") {
-			cmd = exec.Command(
-				"sh", "-c",
-				`ffmpeg -hide_banner -nostats -rtsp_transport tcp -t `+fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds())+ // timeout ffmpeg when stream is finished
-					" -i "+fmt.Sprintf(streamCtx.sourceUrl)+
-					` -map 0 -c copy -f mpegts - -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k `+
-					`-f flv `+fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName)+" >> "+streamCtx.getRecordingFileName())
+			timeout := fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds())
+			cmdStr := fmt.Sprintf(
+				`ffmpeg -hide_banner -nostats -rtsp_transport tcp -t %s -i %s -map 0 -c copy -f mpegts - -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k -f flv %s >> %s`,
+				timeout,
+				streamCtx.sourceUrl,
+				fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName),
+				streamCtx.getRecordingFileName(),
+			)
+			cmd = exec.Command("sh", "-c", cmdStr)
 		} else {
-			cmd = exec.Command(
-				"sh", "-c",
-				`ffmpeg -hide_banner -nostats -rw_timeout 5000000 -t `+fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds())+ // timeout ffmpeg when stream is finished
-					" -i "+fmt.Sprintf(streamCtx.sourceUrl)+
-					` -map 0 -c copy -f mpegts - -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k `+
-					`-f flv `+fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName)+" >> "+streamCtx.getRecordingFileName())
+			timeout := fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds())
+			cmdStr := fmt.Sprintf(
+				`ffmpeg -hide_banner -nostats -rw_timeout 5000000 -t %s -i %s -map 0 -c copy -f mpegts - -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k -f flv %s >> %s`,
+				timeout,
+				streamCtx.sourceUrl,
+				fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName),
+				streamCtx.getRecordingFileName(),
+			)
+			cmd = exec.Command("sh", "-c", cmdStr)
 		}
 		// persist stream command in context, so it can be killed later
 		streamCtx.streamCmd = cmd
