@@ -50,6 +50,9 @@ func (r *Runner) InitApi(addr string) {
 }
 
 func (r *Runner) onPublish(w http.ResponseWriter, request *http.Request) {
+	if request.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
 	var req OnStartReq
 
 	err := json.NewDecoder(request.Body).Decode(&req)
