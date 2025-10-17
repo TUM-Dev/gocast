@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"os"
 	"path"
+	"time"
 
 	"github.com/tum-dev/gocast/runner/pkg/ffmpeg"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
@@ -24,11 +26,11 @@ func CheckVoD(ctx context.Context, logger *slog.Logger, _ chan *protobuf.Notific
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream version in context"))
 	}
-	recording, ok := d["recordingDir"].(string)
+	recordingDir, ok := d["recordingDir"].(string)
 	if !ok {
 		return AbortingError(fmt.Errorf("no recordingDir in context"))
 	}
-	recording = path.Join(recording, "playlist.m3u8")
+	recording := path.Join(recordingDir, "playlist.m3u8")
 	vod, ok := d["vodPath"].(string)
 	if !ok {
 		return AbortingError(fmt.Errorf("no vodPath in context"))
@@ -57,5 +59,20 @@ func CheckVoD(ctx context.Context, logger *slog.Logger, _ chan *protobuf.Notific
 	}
 	isHealthy = true
 	logger.With("stream", streamID, "stream_version", streamVersion).Info("CheckVoD successful")
+
+	duration, err := time.ParseDuration(fmt.Sprintf("%ds", liveDuration))
+	if err != nil {
+		return AbortingError(err)
+	}
+	filename := fmt.Sprintf(".del-%s", time.Now().Add(duration).Format(time.RFC3339))
+	file, err := os.Create(path.Join(recordingDir, filename))
+	if err != nil {
+		return AbortingError(err)
+	}
+	err = file.Close()
+	if err != nil {
+		return AbortingError(err)
+	}
+
 	return nil
 }
