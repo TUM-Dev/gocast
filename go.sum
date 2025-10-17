@@ -319,6 +319,8 @@ github.com/tum-dev/gocast/runner v0.0.0-20250914222211-d6f2ea63901b h1:lDgKsq49l
 github.com/tum-dev/gocast/runner v0.0.0-20250914222211-d6f2ea63901b/go.mod h1:5rS7DMijSCJhoJZsvLbughhCUtuOYdJNV2dFyaydInk=
 github.com/tum-dev/gocast/runner v0.0.0-20251017055428-3f7d31506b21 h1:0Dl/X3O4LfxjmUzmdWkctwxdJvlKL/C6CGcnaeLtdZQ=
 github.com/tum-dev/gocast/runner v0.0.0-20251017055428-3f7d31506b21/go.mod h1:5rS7DMijSCJhoJZsvLbughhCUtuOYdJNV2dFyaydInk=
+github.com/tum-dev/gocast/runner v0.0.0-20251017070229-156fcf6b62e3 h1:kX/OS83APAui2loAcG0kmEtwmpPP4xejo5xpx1zPtUo=
+github.com/tum-dev/gocast/runner v0.0.0-20251017070229-156fcf6b62e3/go.mod h1:FvjTcgHpq6qPe+9BOMFZfCSbniK83t10rNrYeXV7ew4=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/u2takey/go-utils v0.3.1 h1:TaQTgmEZZeDHQFYfd+AdUT1cT4QJgJn/XVPELhHw4ys=
