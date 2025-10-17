@@ -60,7 +60,7 @@ func CheckVoD(ctx context.Context, logger *slog.Logger, _ chan *protobuf.Notific
 	isHealthy = true
 	logger.With("stream", streamID, "stream_version", streamVersion).Info("CheckVoD successful")
 
-	duration, err := time.ParseDuration(fmt.Sprintf("%ds", liveDuration))
+	duration, err := time.ParseDuration(fmt.Sprintf("%.0fs", liveDuration))
 	if err != nil {
 		return AbortingError(err)
 	}
