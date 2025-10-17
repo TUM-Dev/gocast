@@ -14,7 +14,7 @@ var Config struct {
 	SegmentPath  string `env:"SEGMENT_PATH" envDefault:"storage/live"`
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
-	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:50057"`
+	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:8089"`
 }
 
 func init() {

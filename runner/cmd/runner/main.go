@@ -56,5 +56,6 @@ func main() {
 	}
 
 	blocking := make(chan struct{})
+	//nolint:all
 	_ = <-blocking
 }

@@ -17,6 +17,7 @@ type Broker struct {
 	Streams              *prometheus.GaugeVec
 	StreamErrors         *prometheus.CounterVec
 	ConvertingProgresses *prometheus.GaugeVec
+	ConvertingErrors     *prometheus.CounterVec
 }
 
 // Option represents a functional option for configuring a Broker.
@@ -54,6 +55,12 @@ func NewBroker(options ...Option) *Broker {
 			Name:      "n_converting",
 			Help:      "Number of streams currently being converted",
 		}, []string{"stream_id"}),
+		ConvertingErrors: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "runner",
+			Subsystem: "converting",
+			Name:      "n_converting_errs",
+			Help:      "Number of failures during conversion",
+		}, []string{"stream_id", "stream_version"}),
 	}
 	for _, option := range options {
 		option(b)
@@ -96,5 +103,11 @@ func (b LabelBuilder) Stream(streamID uint64) LabelBuilder {
 // Source adds a "source" label to LabelBuilder.
 func (b LabelBuilder) Source(source string) LabelBuilder {
 	b["source"] = source
+	return b
+}
+
+// StreamVersion adds a "stream_version" label to LabelBuilder.
+func (b LabelBuilder) StreamVersion(version string) LabelBuilder {
+	b["stream_version"] = version
 	return b
 }
