@@ -43,17 +43,16 @@ type OnStartReq struct {
 
 // InitApi creates routes for the api consumed by mediamtx and TUM-Live
 func (r *Runner) InitApi(addr string) {
-	//http.HandleFunc("/", defaultHandler)
-	http.HandleFunc("/on_publish", onPublish)
+	http.HandleFunc("/on_publish", r.onPublish)
 	// this endpoint should **not** be exposed to the public!
-	//http.HandleFunc("/upload", handleUpload)
+	// TODO: Add Upload endpoint
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-func onPublish(w http.ResponseWriter, r *http.Request) {
+func (r *Runner) onPublish(w http.ResponseWriter, request *http.Request) {
 	var req OnStartReq
 
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(request.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Could not decode request", http.StatusBadRequest)
 	}
@@ -64,43 +63,41 @@ func onPublish(w http.ResponseWriter, r *http.Request) {
 
 	streamKey, slug, err := mustGetStreamInfo(req)
 	if err != nil {
-		log.WithFields(log.Fields{"request": r.Form}).WithError(err).Warn("onPublish: bad request")
+		log.WithFields(log.Fields{"request": request.Form}).WithError(err).Warn("onPublish: bad request")
 		http.Error(w, "Could not retrieve stream info", http.StatusBadRequest)
 		return
 	}
 
-	client, err := DialIn()
+	client, err := r.dialIn()
 	if err != nil {
 		log.Error("onPublish: could not connect to server")
 		return
 	}
 
-	go func() {
-		SafeStreams.mutex.Lock()
-		if safeStreamStruct, ok := SafeStreams.streams[slug]; ok && safeStreamStruct.StreamKey == streamKey {
-			log.Debug("onPublish: already running")
-			SafeStreams.mutex.Unlock()
-			return
-		}
-		SafeStreams.streams[slug] = SafeStreamStructStream{
-			Ip:        req.Ip,
-			StreamKey: streamKey,
-			Slug:      slug,
-			Retries:   0,
-		}
+	SafeStreams.mutex.Lock()
+	if safeStreamStruct, ok := SafeStreams.streams[slug]; ok && safeStreamStruct.StreamKey == streamKey {
+		log.Debug("onPublish: already running")
 		SafeStreams.mutex.Unlock()
+		return
+	}
+	SafeStreams.streams[slug] = SafeStreamStructStream{
+		Ip:        req.Ip,
+		StreamKey: streamKey,
+		Slug:      slug,
+		Retries:   0,
+	}
+	SafeStreams.mutex.Unlock()
 
-		_, err = client.RequestSelfStream(context.Background(), &protobuf.SelfStreamRequest{
-			Hostname:   &config.Config.Hostname,
-			StreamKey:  &streamKey,
-			CourseSlug: &slug,
-		})
-		if err != nil {
-			log.Error(err)
-			http.Error(w, "Authentication failed for SendSelfStreamRequest", http.StatusForbidden)
-			return
-		}
-	}()
+	_, err = client.RequestSelfStream(context.Background(), &protobuf.SelfStreamRequest{
+		Hostname:   &config.Config.Hostname,
+		StreamKey:  &streamKey,
+		CourseSlug: &slug,
+	})
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "Authentication failed for SendSelfStreamRequest", http.StatusForbidden)
+		return
+	}
 }
 
 // mustGetStreamInfo gets the stream key and slug from mediamtx requests and aborts with bad request if something is wrong

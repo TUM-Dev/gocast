@@ -11,7 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/web"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -19,28 +23,26 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-	"github.com/tum-dev/gocast/runner/protobuf"
 )
-
-var logger = log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
-	Level: log.LevelDebug,
-})).With("service", "runner_manager")
 
 // Manager manages communication with runners and handles job distribution
 type Manager struct {
 	dao        dao.DaoWrapper
 	listenAddr string
+	logger     *log.Logger
 
 	protobuf.UnimplementedRunnerManagerServiceServer
 }
 
 // New returns a new instance of Manager with the given Options
 func New(dao dao.DaoWrapper, opts ...Option) *Manager {
-	m := Manager{dao: dao, listenAddr: ":50056"}
+	m := Manager{
+		dao:        dao,
+		listenAddr: ":50056",
+		logger: log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
+			Level: log.LevelDebug,
+		})).With("service", "runner_manager"),
+	}
 	m.applyOpts(opts)
 	return &m
 }
@@ -49,7 +51,7 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 type Option func(m *Manager)
 
 func (m *Manager) TriggerDueStreams() error {
-	log.Info("Triggering due streams")
+	m.logger.Info("Triggering due streams")
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
 	// TODO: Remove this when turning off workers
@@ -58,7 +60,7 @@ func (m *Manager) TriggerDueStreams() error {
 		streams = append(streams, workerStreams...)
 	}
 
-	log.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
+	m.logger.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
 	if err != nil {
 		return err
 	}
@@ -81,21 +83,21 @@ func (m *Manager) TriggerDueStreams() error {
 			errs = append(errs, fmt.Errorf("RequestStream COMB: %w", err))
 			continue
 		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
+		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
 
 		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
 		if err != nil && !errors.Is(err, errNotNoLectureSource) {
 			errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
 			continue
 		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
+		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
 
 		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
 		if err != nil && !errors.Is(err, errNotNoLectureSource) {
 			errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
 			continue
 		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
+		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to start stream: %v", errs)
@@ -139,14 +141,14 @@ func (m *Manager) Run() error {
 			_ = listener.Close()
 		}()
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Error("failed to serve runner manager", "err", err)
+			m.logger.Error("failed to serve runner manager", "err", err)
 		}
 	}(lis)
 	return nil
 }
 
 func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
-	log.Info("Register Runner", "d", req)
+	m.logger.Info("Register Runner", "d", req)
 	err := m.dao.RunnerDao.Create(ctx, &model.Runner{
 		Hostname:       req.GetHostname(),
 		Port:           uint32(req.GetPort()),
@@ -162,7 +164,7 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
-		log.Debug("Heartbeat", "d", notification)
+		m.logger.Debug("Heartbeat", "d", notification)
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
@@ -178,14 +180,14 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	case *protobuf.Notification_StreamStart:
 		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
 	case *protobuf.Notification_StreamEnd:
-		log.Debug("streamEnd", "payload", notification.GetStreamEnd())
+		m.logger.Debug("streamEnd", "payload", notification.GetStreamEnd())
 		err := m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStreamEnd().GetStream().GetId()))
 		if err != nil {
 			return nil, err
 		}
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_VodReady:
-		log.Debug("vodReady", "payload", notification.GetVodReady())
+		m.logger.Debug("vodReady", "payload", notification.GetVodReady())
 		streamId := notification.GetVodReady().Stream.GetId()
 		stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
 		if err != nil {
@@ -292,15 +294,15 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 }
 
 func (m *Manager) RequestSelfStream(ctx context.Context, request *protobuf.SelfStreamRequest) (*protobuf.SelfStreamResponse, error) {
-	if _, err := m.dao.RunnerDao.Get(ctx, *request.Hostname); err != nil {
-		logger.Warn("Could not find runner for selfstream", "hostname", *request.Hostname)
+	if _, err := m.dao.RunnerDao.Get(ctx, request.GetHostname()); err != nil {
+		m.logger.Warn("Could not find runner for selfstream", "hostname", request.GetHostname())
 		return nil, err
 	}
 
-	if *request.StreamKey == "" {
+	if request.GetStreamKey() == "" {
 		return nil, errors.New("no stream key")
 	}
-	stream, err := m.dao.StreamsDao.GetStreamByKey(ctx, *request.StreamKey)
+	stream, err := m.dao.StreamsDao.GetStreamByKey(ctx, request.GetStreamKey())
 	if err != nil {
 		return nil, err
 	}
@@ -308,27 +310,27 @@ func (m *Manager) RequestSelfStream(ctx context.Context, request *protobuf.SelfS
 	if err != nil {
 		return nil, err
 	}
-	if *request.CourseSlug != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
-		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), *request.CourseSlug)
+	if request.GetCourseSlug() != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
+		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), request.GetCourseSlug())
 	}
 	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
-		logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)
+		m.logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)
 		return nil, errors.New("stream rejected")
 	}
 
 	client, err := m.getClient(ctx)
 	if err != nil {
-		logger.Error("Could not get client", "err", err)
+		m.logger.Error("Could not get client", "err", err)
 		return nil, err
 	}
 
 	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
 	if err != nil && !errors.Is(err, errNotNoLectureSource) {
-		logger.Error("Could not start selfstream", "err", err)
+		m.logger.Error("Could not start selfstream", "err", err)
 		return nil, err
 	}
-	log.With("stream", stream.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
+	m.logger.With("stream", stream.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
 	return &protobuf.SelfStreamResponse{}, nil
 }
 

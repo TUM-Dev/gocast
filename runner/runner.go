@@ -210,7 +210,7 @@ func (r *Runner) handleNotifications() {
 func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2 context.Context) error {
 	return func(ctx context.Context) error {
 		r.log.Debug("send notification", "notification", notification)
-		conn, err := DialIn()
+		conn, err := r.dialIn()
 		if err != nil {
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
