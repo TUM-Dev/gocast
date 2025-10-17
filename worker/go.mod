@@ -21,7 +21,6 @@ require (
 require (
 	github.com/makasim/sentryhook v0.5.0
 	github.com/pkg/profile v1.7.0
-	github.com/shirou/gopsutil/v3 v3.23.2
 	github.com/shirou/gopsutil/v4 v4.25.9
 )
 
