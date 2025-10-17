@@ -1,6 +1,6 @@
 module github.com/TUM-Dev/gocast/worker
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.1
 
@@ -13,7 +13,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.18.0
-	golang.org/x/sync v0.12.0
+	golang.org/x/sync v0.17.0
 	google.golang.org/grpc v1.71.0
 	google.golang.org/protobuf v1.36.6
 )
@@ -36,9 +36,9 @@ require (
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/u2takey/go-utils v0.3.1
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 )
 
 require (
