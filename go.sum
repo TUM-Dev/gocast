@@ -19,6 +19,8 @@ github.com/RBG-TUM/go-anel-pwrctrl v1.0.0 h1:8V7MV6oyg+sQzSRWhEfgg9FcOaQMGBreOh3
 github.com/RBG-TUM/go-anel-pwrctrl v1.0.0/go.mod h1:6c2j1rcryE6BWphhJtGb+yXFIGRzmIXi+31TjE9Cft4=
 github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921 h1:c4RdbLP4UftJQOV2Q6XrXC2ScWSEqN/ojBD9ava5LR8=
 github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921/go.mod h1:UuXuuqgljQbgtLAw5NY+VcThXAwO6UISn6U3s4TJx8k=
+github.com/TUM-Dev/CampusProxy/client v0.0.0-20250907134856-9d3b4d5385a2 h1:Vhm6wJPvZ0Nk3iHDQN+UG76ohrdQSjPk4n8rZSkVQeg=
+github.com/TUM-Dev/CampusProxy/client v0.0.0-20250907134856-9d3b4d5385a2/go.mod h1:qe20bP95RlrcgxRfQPS2s/4tUh/3o4zecrqqJH4QvSE=
 github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789 h1:GiN5onO6CzFaE6K3P8Gnx0ozFuiyans3utxp8/mW17I=
 github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789/go.mod h1:OrBv27wcOJTc4Kwx/h3KBEouAGEwLz38lzh94rlPLlw=
 github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa h1:LHTHcTQiSGT7VVbI0o4wBRNQIgn917usHWOd6VAffYI=
