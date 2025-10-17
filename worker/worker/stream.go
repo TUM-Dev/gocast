@@ -46,7 +46,7 @@ func stream(streamCtx *StreamContext) {
 		// Create a new pgid for the new process, so we don't kill the parent process when ending the stream
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-		err = cmd<.Run()
+		err = cmd.Run()
 		if recordFile != nil {
 			_ = recordFile.Close()
 		}
