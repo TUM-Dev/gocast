@@ -1,34 +1,82 @@
 {{define "lecture-media-slide"}}
-    <div class="mb-4">
-        <label x-show="formData.premiere || formData.vodup && !loading">
-            <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
-            <label class="flex">
-                <input x-ref="fileSelection1" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
-                       x-on:change="updateFiles('COMB', Object.values($event.target.files));">
-                <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('COMB', []);$refs.fileSelection1.value = '';"></button>
-            </label>
-        </label>
+    {{- /* Batch/Multi-lecture Upload UI (for vodup) */ -}}
+    <div x-show="formData.vodup && !loading" class="space-y-6">
+        <template x-for="(lecture, index) in formData.batchLectures" :key="index">
+            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200" x-text="`${index + 1}. ${lecture.title || 'Untitled Lecture'}`"></h3>
+                
+                <div class="mb-4">
+                    <label>
+                        <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
+                        <label class="flex">
+                            <input type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                                   x-on:change="updateBatchLectureFiles(index, 'COMB', Object.values($event.target.files));">
+                            <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" 
+                                    @click="updateBatchLectureFiles(index, 'COMB', []);$event.target.previousElementSibling.value = '';"></button>
+                        </label>
+                    </label>
+                </div>
+
+                <div class="mb-4">
+                    <label>
+                        <span class="text-sm text-5">Presentation Video (mp4, if possible h264)</span>
+                        <label class="flex">
+                            <input type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                                   x-on:change="updateBatchLectureFiles(index, 'PRES', Object.values($event.target.files));">
+                            <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" 
+                                    @click="updateBatchLectureFiles(index, 'PRES', []);$event.target.previousElementSibling.value = '';"></button>
+                        </label>
+                    </label>
+                </div>
+
+                <div>
+                    <label>
+                        <span class="text-sm text-5">Camera Video (mp4, if possible h264)</span>
+                        <label class="flex">
+                            <input type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                                   x-on:change="updateBatchLectureFiles(index, 'CAM', Object.values($event.target.files));">
+                            <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" 
+                                    @click="updateBatchLectureFiles(index, 'CAM', []);$event.target.previousElementSibling.value = '';"></button>
+                        </label>
+                    </label>
+                </div>
+            </div>
+        </template>
     </div>
 
-    <div class="mb-4">
-        <label x-show="formData.premiere || formData.vodup && !loading">
-            <span class="text-sm text-5">Presentation Video (mp4, if possible h264)</span>
-            <label class="flex">
-                <input x-ref="fileSelection2" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
-                       x-on:change="updateFiles('PRES', Object.values($event.target.files));">
-                <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('PRES', []);$refs.fileSelection2.value = '';"></button>
+    {{- /* Other Modes (Premiere/Record) */ -}}
+    <div x-show="!formData.vodup">
+        <div class="mb-4">
+            <label x-show="formData.premiere || formData.vodup && !loading">
+                <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
+                <label class="flex">
+                    <input x-ref="fileSelection1" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                           x-on:change="updateFiles('COMB', Object.values($event.target.files));">
+                    <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('COMB', []);$refs.fileSelection1.value = '';"></button>
+                </label>
             </label>
-        </label>
-    </div>
+        </div>
 
-    <div>
-        <label x-show="formData.premiere || formData.vodup && !loading">
-            <span class="text-sm text-5">Camera Video (mp4, if possible h264)</span>
-            <label class="flex">
-                <input x-ref="fileSelection3" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
-                       x-on:change="updateFiles('CAM', Object.values($event.target.files));">
-                <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('CAM', []);$refs.fileSelection3.value = '';"></button>
+        <div class="mb-4">
+            <label x-show="formData.premiere || formData.vodup && !loading">
+                <span class="text-sm text-5">Presentation Video (mp4, if possible h264)</span>
+                <label class="flex">
+                    <input x-ref="fileSelection2" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                           x-on:change="updateFiles('PRES', Object.values($event.target.files));">
+                    <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('PRES', []);$refs.fileSelection2.value = '';"></button>
+                </label>
             </label>
-        </label>
+        </div>
+
+        <div>
+            <label x-show="formData.premiere || formData.vodup && !loading">
+                <span class="text-sm text-5">Camera Video (mp4, if possible h264)</span>
+                <label class="flex">
+                    <input x-ref="fileSelection3" type="file" accept="video/mp4" class="btn tl-choose-file mt-2 mx-2 w-full"
+                           x-on:change="updateFiles('CAM', Object.values($event.target.files));">
+                    <button type="button" title="Deselect File" class="fa fa-trash mt-2 mx-2" @click="updateFiles('CAM', []);$refs.fileSelection3.value = '';"></button>
+                </label>
+            </label>
+        </div>
     </div>
 {{end}}
