@@ -13,6 +13,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/web"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
@@ -282,7 +283,7 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		if err != nil {
 			return nil, err
 		}
-		input = fmt.Sprintf("rtmp://localhost/%s-%d", course.Slug, s.ID)
+		input = fmt.Sprintf("rtmp://%s/%s-%d", tools.Cfg.RtmpProxyService, course.Slug, s.ID)
 	}
 	return client.RequestStream(ctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
