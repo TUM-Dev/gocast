@@ -48,7 +48,10 @@ func (r *selfstreamRoutes) onPublish(c *gin.Context) {
 
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, errors.New("could not decode request"))
+		err = c.AbortWithError(http.StatusBadRequest, errors.New("could not decode request"))
+		if err != nil {
+			logger.Error("Error when aborting request")
+		}
 		return
 	}
 
@@ -59,27 +62,39 @@ func (r *selfstreamRoutes) onPublish(c *gin.Context) {
 	streamKey, slug, err := mustGetStreamInfo(req)
 	if err != nil {
 		logger.With("request", c.Request.Form).With("err", err).Warn("onPublish: bad request")
-		c.AbortWithError(http.StatusBadRequest, errors.New("could not retrieve stream info"))
+		err = c.AbortWithError(http.StatusBadRequest, errors.New("could not retrieve stream info"))
+		if err != nil {
+			logger.Error("Error when aborting request")
+		}
 		return
 	}
 
 	stream, err := r.daoWrapper.StreamsDao.GetStreamByKey(c, streamKey)
 	if err != nil {
 		logger.Error("onPublish: failed to get stream key")
-		c.AbortWithError(http.StatusInternalServerError, errors.New("could not retrieve stream key"))
+		err = c.AbortWithError(http.StatusInternalServerError, errors.New("could not retrieve stream key"))
+		if err != nil {
+			logger.Error("Error when aborting request")
+		}
 		return
 	}
 
 	course, err := r.daoWrapper.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		logger.Error("onPublish: failed to get course id")
-		c.AbortWithError(http.StatusInternalServerError, errors.New("could not retrieve course id"))
+		err = c.AbortWithError(http.StatusInternalServerError, errors.New("could not retrieve course id"))
+		if err != nil {
+			logger.Error("Error when aborting request")
+		}
 		return
 	}
 
 	if slug != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
 		logger.Error("onPublish: slug mismatch")
-		c.AbortWithError(http.StatusForbidden, errors.New("authentication failed"))
+		err = c.AbortWithError(http.StatusForbidden, errors.New("authentication failed"))
+		if err != nil {
+			logger.Error("Error when aborting request")
+		}
 		return
 	}
 
@@ -90,7 +105,10 @@ func (r *selfstreamRoutes) onPublish(c *gin.Context) {
 	err = r.manager.RequestSelfStream(c, stream)
 	if err != nil {
 		logger.Error("Failed to start stream on runners")
-		c.AbortWithError(http.StatusInternalServerError, errors.New("Failed to request stream"))
+		err = c.AbortWithError(http.StatusInternalServerError, errors.New("Failed to request stream"))
+		if err != nil {
+			logger.Error("Error when aborting request")
+		}
 		return
 	}
 	c.Status(http.StatusOK)
