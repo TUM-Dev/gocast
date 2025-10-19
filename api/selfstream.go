@@ -10,7 +10,6 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 type selfstreamRoutes struct {
@@ -59,7 +58,7 @@ func (r *selfstreamRoutes) onPublish(c *gin.Context) {
 
 	streamKey, slug, err := mustGetStreamInfo(req)
 	if err != nil {
-		logger.With(log.Fields{"request": c.Request.Form}).With("err", err).Warn("onPublish: bad request")
+		logger.With("request", c.Request.Form).With("err", err).Warn("onPublish: bad request")
 		c.AbortWithError(http.StatusBadRequest, errors.New("could not retrieve stream info"))
 		return
 	}
