@@ -42,18 +42,8 @@ service RunnerManagerService {
 
   // Notify sends a notification to gocast
   rpc Notify (Notification) returns (NotificationResponse) {}
-
-  // Request a selfstream from the runner
-  rpc RequestSelfStream (SelfStreamRequest) returns (SelfStreamResponse) {}
 }
 
-message SelfStreamRequest {
-  string hostname = 1;
-  string streamKey = 2;
-  string courseSlug = 3;
-}
-
-message SelfStreamResponse {}
 
 message RegisterRequest {
   string hostname = 1;

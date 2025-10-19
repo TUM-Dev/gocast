@@ -238,102 +238,6 @@ func (*StreamEndResponse) Descriptor() ([]byte, []int) {
 	return file_runner_proto_rawDescGZIP(), []int{3}
 }
 
-type SelfStreamRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hostname      *string                `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty"`
-	StreamKey     *string                `protobuf:"bytes,2,opt,name=streamKey" json:"streamKey,omitempty"`
-	CourseSlug    *string                `protobuf:"bytes,3,opt,name=courseSlug" json:"courseSlug,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SelfStreamRequest) Reset() {
-	*x = SelfStreamRequest{}
-	mi := &file_runner_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SelfStreamRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SelfStreamRequest) ProtoMessage() {}
-
-func (x *SelfStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SelfStreamRequest.ProtoReflect.Descriptor instead.
-func (*SelfStreamRequest) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *SelfStreamRequest) GetHostname() string {
-	if x != nil && x.Hostname != nil {
-		return *x.Hostname
-	}
-	return ""
-}
-
-func (x *SelfStreamRequest) GetStreamKey() string {
-	if x != nil && x.StreamKey != nil {
-		return *x.StreamKey
-	}
-	return ""
-}
-
-func (x *SelfStreamRequest) GetCourseSlug() string {
-	if x != nil && x.CourseSlug != nil {
-		return *x.CourseSlug
-	}
-	return ""
-}
-
-type SelfStreamResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SelfStreamResponse) Reset() {
-	*x = SelfStreamResponse{}
-	mi := &file_runner_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SelfStreamResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SelfStreamResponse) ProtoMessage() {}
-
-func (x *SelfStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SelfStreamResponse.ProtoReflect.Descriptor instead.
-func (*SelfStreamResponse) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{5}
-}
-
 type RegisterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Hostname      *string                `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty"`
@@ -345,7 +249,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_runner_proto_msgTypes[6]
+	mi := &file_runner_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -357,7 +261,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[6]
+	mi := &file_runner_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -370,7 +274,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{6}
+	return file_runner_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RegisterRequest) GetHostname() string {
@@ -402,7 +306,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_runner_proto_msgTypes[7]
+	mi := &file_runner_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -414,7 +318,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[7]
+	mi := &file_runner_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +331,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{7}
+	return file_runner_proto_rawDescGZIP(), []int{5}
 }
 
 var File_runner_proto protoreflect.FileDescriptor
@@ -447,14 +351,7 @@ const file_runner_proto_rawDesc = "" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\")\n" +
 	"\x10StreamEndRequest\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\x13\n" +
-	"\x11StreamEndResponse\"m\n" +
-	"\x11SelfStreamRequest\x12\x1a\n" +
-	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x1c\n" +
-	"\tstreamKey\x18\x02 \x01(\tR\tstreamKey\x12\x1e\n" +
-	"\n" +
-	"courseSlug\x18\x03 \x01(\tR\n" +
-	"courseSlug\"\x14\n" +
-	"\x12SelfStreamResponse\"[\n" +
+	"\x11StreamEndResponse\"[\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x18\n" +
@@ -462,11 +359,10 @@ const file_runner_proto_rawDesc = "" +
 	"\x10RegisterResponse2\xa4\x01\n" +
 	"\rRunnerService\x12D\n" +
 	"\rRequestStream\x12\x17.protobuf.StreamRequest\x1a\x18.protobuf.StreamResponse\"\x00\x12M\n" +
-	"\x10RequestStreamEnd\x12\x1a.protobuf.StreamEndRequest\x1a\x1b.protobuf.StreamEndResponse\"\x002\xf1\x01\n" +
+	"\x10RequestStreamEnd\x12\x1a.protobuf.StreamEndRequest\x1a\x1b.protobuf.StreamEndResponse\"\x002\x9f\x01\n" +
 	"\x14RunnerManagerService\x12C\n" +
 	"\bRegister\x12\x19.protobuf.RegisterRequest\x1a\x1a.protobuf.RegisterResponse\"\x00\x12B\n" +
-	"\x06Notify\x12\x16.protobuf.Notification\x1a\x1e.protobuf.NotificationResponse\"\x00\x12P\n" +
-	"\x11RequestSelfStream\x12\x1b.protobuf.SelfStreamRequest\x1a\x1c.protobuf.SelfStreamResponse\"\x00B\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
+	"\x06Notify\x12\x16.protobuf.Notification\x1a\x1e.protobuf.NotificationResponse\"\x00B\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
 
 var (
 	file_runner_proto_rawDescOnce sync.Once
@@ -480,39 +376,35 @@ func file_runner_proto_rawDescGZIP() []byte {
 	return file_runner_proto_rawDescData
 }
 
-var file_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_runner_proto_goTypes = []any{
 	(*StreamRequest)(nil),         // 0: protobuf.StreamRequest
 	(*StreamResponse)(nil),        // 1: protobuf.StreamResponse
 	(*StreamEndRequest)(nil),      // 2: protobuf.StreamEndRequest
 	(*StreamEndResponse)(nil),     // 3: protobuf.StreamEndResponse
-	(*SelfStreamRequest)(nil),     // 4: protobuf.SelfStreamRequest
-	(*SelfStreamResponse)(nil),    // 5: protobuf.SelfStreamResponse
-	(*RegisterRequest)(nil),       // 6: protobuf.RegisterRequest
-	(*RegisterResponse)(nil),      // 7: protobuf.RegisterResponse
-	(StreamVersion)(0),            // 8: protobuf.StreamVersion
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
-	(*Notification)(nil),          // 10: protobuf.Notification
-	(*NotificationResponse)(nil),  // 11: protobuf.NotificationResponse
+	(*RegisterRequest)(nil),       // 4: protobuf.RegisterRequest
+	(*RegisterResponse)(nil),      // 5: protobuf.RegisterResponse
+	(StreamVersion)(0),            // 6: protobuf.StreamVersion
+	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(*Notification)(nil),          // 8: protobuf.Notification
+	(*NotificationResponse)(nil),  // 9: protobuf.NotificationResponse
 }
 var file_runner_proto_depIdxs = []int32{
-	8,  // 0: protobuf.StreamRequest.version:type_name -> protobuf.StreamVersion
-	9,  // 1: protobuf.StreamRequest.end:type_name -> google.protobuf.Timestamp
-	0,  // 2: protobuf.RunnerService.RequestStream:input_type -> protobuf.StreamRequest
-	2,  // 3: protobuf.RunnerService.RequestStreamEnd:input_type -> protobuf.StreamEndRequest
-	6,  // 4: protobuf.RunnerManagerService.Register:input_type -> protobuf.RegisterRequest
-	10, // 5: protobuf.RunnerManagerService.Notify:input_type -> protobuf.Notification
-	4,  // 6: protobuf.RunnerManagerService.RequestSelfStream:input_type -> protobuf.SelfStreamRequest
-	1,  // 7: protobuf.RunnerService.RequestStream:output_type -> protobuf.StreamResponse
-	3,  // 8: protobuf.RunnerService.RequestStreamEnd:output_type -> protobuf.StreamEndResponse
-	7,  // 9: protobuf.RunnerManagerService.Register:output_type -> protobuf.RegisterResponse
-	11, // 10: protobuf.RunnerManagerService.Notify:output_type -> protobuf.NotificationResponse
-	5,  // 11: protobuf.RunnerManagerService.RequestSelfStream:output_type -> protobuf.SelfStreamResponse
-	7,  // [7:12] is the sub-list for method output_type
-	2,  // [2:7] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	6, // 0: protobuf.StreamRequest.version:type_name -> protobuf.StreamVersion
+	7, // 1: protobuf.StreamRequest.end:type_name -> google.protobuf.Timestamp
+	0, // 2: protobuf.RunnerService.RequestStream:input_type -> protobuf.StreamRequest
+	2, // 3: protobuf.RunnerService.RequestStreamEnd:input_type -> protobuf.StreamEndRequest
+	4, // 4: protobuf.RunnerManagerService.Register:input_type -> protobuf.RegisterRequest
+	8, // 5: protobuf.RunnerManagerService.Notify:input_type -> protobuf.Notification
+	1, // 6: protobuf.RunnerService.RequestStream:output_type -> protobuf.StreamResponse
+	3, // 7: protobuf.RunnerService.RequestStreamEnd:output_type -> protobuf.StreamEndResponse
+	5, // 8: protobuf.RunnerManagerService.Register:output_type -> protobuf.RegisterResponse
+	9, // 9: protobuf.RunnerManagerService.Notify:output_type -> protobuf.NotificationResponse
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_runner_proto_init() }
@@ -528,7 +420,7 @@ func file_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_proto_rawDesc), len(file_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

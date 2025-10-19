@@ -14,7 +14,6 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/web"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"google.golang.org/grpc"
@@ -56,7 +55,7 @@ func (m *Manager) TriggerDueStreams() error {
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
 	// TODO: Remove this when turning off workers
-	if web.VersionTag == "development" {
+	if false { // TODO: For testing you have to change this
 		workerStreams := m.dao.GetDueStreamsForWorkers()
 		streams = append(streams, workerStreams...)
 	}
@@ -283,7 +282,7 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		if err != nil {
 			return nil, err
 		}
-		input = fmt.Sprintf("rtmp://%s/%s-%d", tools.Cfg.RtmpProxyService, course.Slug, s.ID)
+		input = fmt.Sprintf("%s/%s-%d", tools.Cfg.IngestBase, course.Slug, s.ID)
 	}
 	return client.RequestStream(ctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
@@ -294,45 +293,26 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 	})
 }
 
-func (m *Manager) RequestSelfStream(ctx context.Context, request *protobuf.SelfStreamRequest) (*protobuf.SelfStreamResponse, error) {
-	if _, err := m.dao.RunnerDao.Get(ctx, request.GetHostname()); err != nil {
-		m.logger.Warn("Could not find runner for selfstream", "hostname", request.GetHostname())
-		return nil, err
-	}
-
-	if request.GetStreamKey() == "" {
-		return nil, errors.New("no stream key")
-	}
-	stream, err := m.dao.StreamsDao.GetStreamByKey(ctx, request.GetStreamKey())
-	if err != nil {
-		return nil, err
-	}
-	course, err := m.dao.CoursesDao.GetCourseById(ctx, stream.CourseID)
-	if err != nil {
-		return nil, err
-	}
-	if request.GetCourseSlug() != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
-		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), request.GetCourseSlug())
-	}
+func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) error {
 	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
 		m.logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)
-		return nil, errors.New("stream rejected")
+		return errors.New("stream rejected")
 	}
 
 	client, err := m.getClient(ctx)
 	if err != nil {
 		m.logger.Error("Could not get client", "err", err)
-		return nil, err
+		return err
 	}
 
 	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
 	if err != nil && !errors.Is(err, errNotNoLectureSource) {
 		m.logger.Error("Could not start selfstream", "err", err)
-		return nil, err
+		return err
 	}
 	m.logger.With("stream", stream.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
-	return &protobuf.SelfStreamResponse{}, nil
+	return nil
 }
 
 func dialRunner(ctx context.Context, runner model.Runner) (*grpc.ClientConn, error) {

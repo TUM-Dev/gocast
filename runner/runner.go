@@ -95,7 +95,6 @@ func (r *Runner) Run() {
 	go r.Metrics.Run()
 	go r.handleNotifications()
 	go r.InitApiGrpc()
-	go r.InitApi(":8060")
 	go func() {
 		err := r.hlsServer.Start()
 		if err != nil {
