@@ -42,6 +42,7 @@ type OnStartReq struct {
 }
 
 // InitApi creates routes for the api consumed by mediamtx and TUM-Live
+// TODO: Move this to TUM-Live, so everything is handeled by the main instance
 func (r *Runner) InitApi(addr string) {
 	http.HandleFunc("/on_publish", r.onPublish)
 	// this endpoint should **not** be exposed to the public!
