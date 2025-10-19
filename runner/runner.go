@@ -96,6 +96,7 @@ func (r *Runner) Run() {
 	go r.Metrics.Run()
 	go r.handleNotifications()
 	go r.InitApiGrpc()
+	go r.livestreamCleanup()
 	go func() {
 		err := r.hlsServer.Start()
 		if err != nil {
