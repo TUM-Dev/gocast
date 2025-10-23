@@ -41,10 +41,7 @@ func (c *AxisCam) TakeSnapshot(outDir string) (filename string, err error) {
 // SetPreset tells the camera to use a preset specified by presetId
 func (c AxisCam) SetPreset(presetId int) error {
 	_, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/com/ptz.cgi?gotoserverpresetno=%d&camera=1", fmt.Sprintf(axisBaseURL, c.Ip), presetId))
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // GetPresets fetches all presets stored on the camera

@@ -8,41 +8,32 @@ import (
 )
 
 /**
-*
-* Compatible cameras:
-* - Sony SRG-A40 series (untested)
-*
-**/
+ *
+ * Compatible cameras:
+ * - Sony SRG-A40 series (untested)
+ *
+ **/
 
 const sonySRGBaseUrl = "http://%s/command"
 
 type SonySRG struct {
-	addr string
-	auth string
+	Ip   string
+	Auth string
 }
 
-func NewSonySRG(addr string, auth string) SonySRG {
-	return SonySRG{addr: addr, auth: auth}
+func NewSonySRG(ip string, auth string) Cam {
+	return &SonySRG{Ip: ip, Auth: auth}
 }
 
-func (s SonySRG) SetPreset(presetId int) error {
-	auth := &s.auth
-	if s.auth == "" {
-		auth = nil
-	}
-	_, err := makeAuthenticatedRequest(auth, "GET", "", fmt.Sprintf("%s/presetposition.cgi?PresetCall=%d", fmt.Sprintf(sonySRGBaseUrl, s.addr), presetId))
+func (s *SonySRG) SetPreset(presetId int) error {
+	_, err := makeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("%s/presetposition.cgi?PresetCall=%d", fmt.Sprintf(sonySRGBaseUrl, s.Ip), presetId))
 	return err
 }
 
-func (s SonySRG) TakeSnapshot(outDir string) (filename string, err error) {
-	auth := &s.auth
-	if s.auth == "" {
-		auth = nil
-	}
-
+func (s *SonySRG) TakeSnapshot(outDir string) (filename string, err error) {
 	// oneshotimage1 takes JPEGs as still images from codec images corresponding to ImageCodec1 (Video Stream 1)
-	logger.Info(fmt.Sprintf("%s/oneshotimage1", s.addr))
-	resp, err := makeAuthenticatedRequest(auth, "GET", "", fmt.Sprintf("http://%s/oneshotimage1", s.addr))
+	logger.Info(fmt.Sprintf("%s/oneshotimage1", s.Ip))
+	resp, err := makeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("http://%s/oneshotimage1", s.Ip))
 	if err != nil {
 		return "", err
 	}
@@ -54,7 +45,7 @@ func (s SonySRG) TakeSnapshot(outDir string) (filename string, err error) {
 	return filename, nil
 }
 
-func (s SonySRG) GetPresets() ([]model.CameraPreset, error) {
+func (s *SonySRG) GetPresets() ([]model.CameraPreset, error) {
 	// Sony SRG-A40 cameras support up to 256 presets, but only a few are used (see panasonic.go)
 	presets := make([]model.CameraPreset, 16)
 	for i := range presets {
