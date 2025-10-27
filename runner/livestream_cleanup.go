@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	"github.com/tum-dev/gocast/runner/config"
 )
 
-func (r *Runner) livestreamCleanup() {
+func (r *Runner) livestreamCleanup(ctx context.Context) {
 	r.log.Info("Starting livestream cleanup")
 	for !r.draining {
 		livePath := config.Config.SegmentPath
@@ -90,8 +91,12 @@ func (r *Runner) livestreamCleanup() {
 				}
 			}
 		}
-		// TODO: Set this higher
-		time.Sleep(1 * time.Minute)
+		select {
+		case <-ctx.Done():
+			r.log.Debug("Context done, stopping livestream cleanup")
+			return
+		case <-time.After(time.Minute):
+		}
 	}
 	r.log.Debug("Stopping livestream cleanup")
 }
