@@ -42,6 +42,7 @@ require (
 )
 
 require (
+	github.com/ebitengine/purego v0.9.0 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20230811205829-9131a7e9cc17 // indirect
