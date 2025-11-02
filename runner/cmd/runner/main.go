@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -14,8 +15,12 @@ import (
 var V = "dev"
 
 func main() {
+	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
+	defer cancel()
+
 	r := runner.NewRunner(V)
-	go r.Run()
+	go r.Run(ctx)
 
 	shouldShutdown := false // set to true once we receive a shutdown signal
 
@@ -32,10 +37,8 @@ func main() {
 		}
 	}()
 
-	osSignal := make(chan os.Signal, 1)
-	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
-	s := <-osSignal
-	slog.Info("Received signal", "signal", s)
+	<-ctx.Done()
+	slog.Info("Received signal")
 	shouldShutdown = true
 	r.Drain()
 
@@ -43,6 +46,9 @@ func main() {
 	time.Sleep(time.Second)
 
 	go func() {
+		osSignal := make(chan os.Signal, 1)
+		signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
+
 		<-osSignal
 		// second signal, force shutdown
 		slog.Info("Received second signal, shutting down immediately")

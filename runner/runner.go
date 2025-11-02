@@ -60,7 +60,7 @@ type Runner struct {
 
 func NewRunner(v string) *Runner {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: slog.LevelDebug,
 	})).With("version", v)
 
 	vmstats := vmstat.New()
@@ -80,7 +80,7 @@ func NewRunner(v string) *Runner {
 	}
 }
 
-func (r *Runner) Run() {
+func (r *Runner) Run(ctx context.Context) {
 	r.log.Info("Running!")
 	if config.Config.Port == 0 {
 		r.log.Info("Getting free port")
@@ -96,6 +96,7 @@ func (r *Runner) Run() {
 	go r.Metrics.Run()
 	go r.handleNotifications()
 	go r.InitApiGrpc()
+	go r.livestreamCleanup(ctx, r.log.With("job", "livestreamCleanup"))
 	go func() {
 		err := r.hlsServer.Start()
 		if err != nil {
