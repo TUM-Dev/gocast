@@ -34,13 +34,13 @@ require (
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/crewjam/saml v0.4.14
 	github.com/icholy/digest v1.1.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/u2takey/go-utils v0.3.1
 )
 
 require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20250907134856-9d3b4d5385a2
-	github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789
+	github.com/TUM-Dev/gocast/worker v0.0.0-20251102182539-4e087e888c3c
 	github.com/asticode/go-astisub v0.34.0
 	github.com/dgraph-io/ristretto/v2 v2.1.0
 	github.com/getsentry/sentry-go/gin v0.31.1
@@ -69,18 +69,27 @@ require (
 	github.com/bytedance/sonic/loader v0.2.2 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
+	github.com/ebitengine/purego v0.9.0 // indirect
 	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
+	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/golang/glog v1.2.4 // indirect
 	github.com/google/pprof v0.0.0-20241210010833-40e02aabc2ad // indirect
+	github.com/icza/gox v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
+	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
+	github.com/shirou/gopsutil/v4 v4.25.9 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.15 // indirect
+	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.13.0 // indirect
 	golang.org/x/mod v0.27.0 // indirect
