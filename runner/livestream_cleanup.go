@@ -38,7 +38,7 @@ func (r *Runner) livestreamCleanup(ctx context.Context, log *slog.Logger) {
 			}
 			log.Debug("attempting deletion", "dir", d)
 			if err := os.RemoveAll(d); err != nil {
-				log.Info("Couldn't remove directory", "dir", d, "err", err)
+				log.Error("Couldn't remove directory", "dir", d, "err", err)
 			}
 		}
 
@@ -50,12 +50,12 @@ func (r *Runner) livestreamCleanup(ctx context.Context, log *slog.Logger) {
 			dstDir := filepath.Join(config.Config.ErrorPath, strings.TrimPrefix(d, config.Config.SegmentPath))
 			log.Debug("attempting backup", "src", d, "dst", dstDir)
 			if err := cp.Copy(d, dstDir); err != nil {
-				log.Info("Couldn't backup directory", "dir", d, "err", err)
+				log.Error("Couldn't backup directory", "dir", d, "err", err)
 				continue
 			}
 			log.Debug("deleting backed-up directory", "dir", d)
 			if err := os.RemoveAll(d); err != nil {
-				log.Info("Couldn't remove directory", "dir", d, "err", err)
+				log.Error("Couldn't remove directory", "dir", d, "err", err)
 			}
 		}
 
