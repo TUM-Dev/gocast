@@ -29,8 +29,7 @@ func CheckVoD(ctx context.Context, logger *slog.Logger, _ chan *protobuf.Notific
 		duration = 2 * time.Hour
 	}
 	filename := fmt.Sprintf(formatString, time.Now().Add(duration).Unix())
-	err2 := writeManagementFile(recordingDir, filename)
-	return errors.Join(err, err2)
+	return errors.Join(err, writeManagementFile(recordingDir, filename))
 }
 
 func writeManagementFile(recordingDir string, filename string) error {

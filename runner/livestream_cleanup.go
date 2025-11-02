@@ -2,101 +2,110 @@ package runner
 
 import (
 	"context"
+	"fmt"
+	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/tum-dev/gocast/runner/config"
+
+	cp "github.com/otiai10/copy"
 )
 
-func (r *Runner) livestreamCleanup(ctx context.Context) {
-	r.log.Info("Starting livestream cleanup")
-	for !r.draining {
-		livePath := config.Config.SegmentPath
-		streamDirs, err := os.ReadDir(livePath)
+// livestreamCleanup runs every minute and checks for files
+//   - prefixed .del- in config.Config.SegmentPath and deletes their directories
+//     if they are older than two hours
+//   - prefixed .keep- in config.Config.SegmentPath and moves them to config.Config.ErrorPath
+//     if they are older than two hours
+func (r *Runner) livestreamCleanup(ctx context.Context, log *slog.Logger) {
+	log.Info("Starting livestream cleanup")
+	for {
+		remove, backup, err := determineCleanableDirectories(config.Config.SegmentPath)
 		if err != nil {
-			r.log.Error("Error reading livestream cleanup dir", "path", livePath)
+			log.Error("Couldn't determine all directories to clean up", "err", err)
 		}
-		for _, streamDir := range streamDirs {
-			shouldDelete := false
-			deletionError := false
-			if streamDir.IsDir() {
-				streamVersionDirs, err := os.ReadDir(filepath.Join(livePath, streamDir.Name()))
-				if err != nil {
-					r.log.Error("Error reading livestream cleanup dir", "name", streamDir.Name())
-				}
-				for _, streamVersionDir := range streamVersionDirs {
-					if streamVersionDir.IsDir() {
-						files, err := os.ReadDir(filepath.Join(livePath, streamDir.Name(), streamVersionDir.Name()))
-						if err != nil {
-							r.log.Error("Error reading livestream cleanup dir", "name", streamDir.Name())
-							deletionError = true
-							continue
-						}
-						for _, file := range files {
-							if !file.IsDir() {
-								if strings.HasPrefix(file.Name(), ".del-") {
-									// Read time from filename and delete if necessary
-									delTime, err := time.Parse(time.RFC3339, file.Name()[5:])
-									if err != nil {
-										r.log.Error("Error parsing time string", "name", file.Name())
-										deletionError = true
-									} else {
-										if delTime.Before(time.Now()) {
-											shouldDelete = true
-											r.log.Info("Deleting livestream as VoD healthy", "name", file.Name())
-											err = os.RemoveAll(filepath.Join(livePath, streamDir.Name(), streamVersionDir.Name()))
-											if err != nil {
-												r.log.Error("Error removing time string", "name", file.Name())
-												deletionError = true
-											}
-										}
-									}
-									break
-								} else if strings.HasPrefix(file.Name(), ".keep-") {
-									// Read time from filename and move if necessary
-									keepTime, err := time.Parse(time.RFC3339, file.Name()[6:])
-									if err != nil {
-										r.log.Error("Error parsing time string", file.Name())
-										deletionError = true
-									} else {
-										if keepTime.Before(time.Now()) {
-											shouldDelete = true
-											newErrorFolder := filepath.Join(config.Config.ErrorPath, streamDir.Name())
-											err := os.MkdirAll(newErrorFolder, os.ModePerm)
-											if err != nil {
-												r.log.Error("Error creating errors cleanup dir", "name", streamDir.Name())
-												deletionError = true
-											}
-											err = os.Rename(filepath.Join(livePath, streamDir.Name(), streamVersionDir.Name()), filepath.Join(newErrorFolder, streamVersionDir.Name()))
-											if err != nil {
-												r.log.Error("Error moving error livestream", "name", streamDir.Name())
-												deletionError = true
-											}
-										}
-									}
-									break
-								}
-							}
-						}
-					}
-				}
+		log.Debug("determined directories for removal/backup", "remove", remove, "backup", backup)
+		//continue anyway, there might be actionable items
+
+		for d, t := range remove {
+			log.Debug("checking directory marked for deletion", "dir", d, "time", t)
+			if !t.Before(time.Now()) {
+				continue
 			}
-			if !deletionError && shouldDelete {
-				r.log.Info("Deleting whole livestream dir as VoD healthy", "name", streamDir.Name())
-				err = os.RemoveAll(filepath.Join(livePath, streamDir.Name()))
-				if err != nil {
-					r.log.Error("Error removing livestream cleanup dir", "name", streamDir.Name())
-				}
+			log.Debug("attempting deletion", "dir", d)
+			if err := os.RemoveAll(d); err != nil {
+				log.Info("Couldn't remove directory", "dir", d, "err", err)
 			}
 		}
+
+		for d, t := range backup {
+			log.Debug("checking directory marked for backup", "dir", d, "time", t)
+			if !t.Before(time.Now()) {
+				continue
+			}
+			dstDir := filepath.Join(config.Config.ErrorPath, strings.TrimPrefix(d, config.Config.SegmentPath))
+			log.Debug("attempting backup", "src", d, "dst", dstDir)
+			if err := cp.Copy(d, dstDir); err != nil {
+				log.Info("Couldn't backup directory", "dir", d, "err", err)
+				continue
+			}
+			log.Debug("deleting backed-up directory", "dir", d)
+			if err := os.RemoveAll(d); err != nil {
+				log.Info("Couldn't remove directory", "dir", d, "err", err)
+			}
+		}
+
 		select {
 		case <-ctx.Done():
-			r.log.Debug("Context done, stopping livestream cleanup")
+			log.Debug("Context done, stopping livestream cleanup")
 			return
 		case <-time.After(time.Minute):
 		}
 	}
-	r.log.Debug("Stopping livestream cleanup")
+}
+
+func determineCleanableDirectories(path string) (remove map[string]time.Time, backup map[string]time.Time, err error) {
+	remove = make(map[string]time.Time)
+	backup = make(map[string]time.Time)
+	err = filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+		if d == nil {
+			return nil
+		}
+		if strings.HasPrefix(d.Name(), ".del-") {
+			t, err := parseUnix(d.Name()[5:])
+			if err != nil {
+				return err
+			}
+			remove[filepath.Dir(path)] = t
+		} else if strings.HasPrefix(d.Name(), ".keep-") {
+			t, err := parseUnix(d.Name()[6:])
+			if err != nil {
+				return err
+			}
+			backup[filepath.Dir(path)] = t
+		} else if d.IsDir() && path != config.Config.SegmentPath {
+			// find empty directories
+			dir, err := os.ReadDir(path)
+			if err != nil {
+				return err
+			}
+			if len(dir) == 0 {
+				remove[path] = time.Now()
+			}
+		}
+		return nil
+	})
+	return remove, backup, err
+}
+
+func parseUnix(t string) (time.Time, error) {
+	unixSec, err := strconv.ParseInt(t, 10, 64)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse time %q :%w", t, err)
+	}
+	return time.Unix(unixSec, 0), nil
 }
