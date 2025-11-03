@@ -8,9 +8,9 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/TUM-Dev/gocast/web"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,6 +18,8 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/TUM-Dev/gocast/web"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -31,11 +33,13 @@ type Manager struct {
 	listenAddr string
 
 	protobuf.UnimplementedRunnerManagerServiceServer
+
+	streamStartLock sync.Mutex
 }
 
 // New returns a new instance of Manager with the given Options
 func New(dao dao.DaoWrapper, opts ...Option) *Manager {
-	m := Manager{dao: dao, listenAddr: ":50056"}
+	m := Manager{dao: dao, listenAddr: ":50056", streamStartLock: sync.Mutex{}}
 	m.applyOpts(opts)
 	return &m
 }
@@ -218,6 +222,11 @@ func (m *Manager) getClient(ctx context.Context) (protobuf.RunnerServiceClient, 
 }
 
 func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNotification) error {
+	// This is usually called in bursts, which introduces a chance for race conditions,
+	// where a stream is fetched and overwrites the url that the other requests added.
+	m.streamStartLock.Lock()
+	defer m.streamStartLock.Unlock()
+
 	stream, err := m.dao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
 	if err != nil {
 		return err
