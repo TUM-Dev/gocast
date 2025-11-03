@@ -238,7 +238,7 @@ func main() {
 	}
 	dao.Cache = cache
 
-	m := runner_manager.New(dao.NewDaoWrapper())
+	m := runner_manager.New(dao.NewDaoWrapper(), runner_manager.WithMassStorage(tools.Cfg.Paths.Mass))
 	log.Info("running runner manager")
 	err = m.Run()
 	if err != nil {

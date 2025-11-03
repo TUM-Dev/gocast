@@ -1,5 +1,9 @@
 package actions
 
+import (
+	"errors"
+)
+
 var _ isAbortingError = (*abortingError)(nil)
 
 type abortingError struct {
@@ -34,6 +38,6 @@ func (e *abortingError) Error() string {
 }
 
 func IsAbortingError(err error) bool {
-	_, ok := err.(isAbortingError)
+	ok := errors.As(err, new(isAbortingError))
 	return ok
 }
