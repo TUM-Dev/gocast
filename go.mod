@@ -34,13 +34,13 @@ require (
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/crewjam/saml v0.4.14
 	github.com/icholy/digest v1.1.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/u2takey/go-utils v0.3.1
 )
 
 require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20250907134856-9d3b4d5385a2
-	github.com/TUM-Dev/gocast/worker v0.0.0-20250110151606-bd9f2b63e789
+	github.com/TUM-Dev/gocast/worker v0.0.0-20251102182539-4e087e888c3c
 	github.com/asticode/go-astisub v0.34.0
 	github.com/dgraph-io/ristretto/v2 v2.1.0
 	github.com/getsentry/sentry-go/gin v0.31.1
