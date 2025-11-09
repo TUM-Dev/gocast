@@ -149,6 +149,7 @@ type Config struct {
 		SmpPassword string `yaml:"smpPassword"`
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`
+		CamAuthSony string `yaml:"camAuthSony"`
 	} `yaml:"auths"`
 	Alerts *struct {
 		Matrix *struct {

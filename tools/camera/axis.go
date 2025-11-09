@@ -26,29 +26,28 @@ func NewAxisCam(ip string, auth string) Cam {
 }
 
 func (c *AxisCam) TakeSnapshot(outDir string) (filename string, err error) {
-	resp, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/jpg/image.cgi?compression=75", fmt.Sprintf(axisBaseURL, c.Ip)))
+	resp, _, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/jpg/image.cgi?compression=75", fmt.Sprintf(axisBaseURL, c.Ip)))
 	if err != nil {
 		return "", err
 	}
-	filename = fmt.Sprintf("%s%s", uuid.NewV4().String(), ".jpg")
-
+	filename = uuid.NewV4().String() + ".jpg"
 	err = saveResponseBuffer(outDir, filename, resp)
-	return filename, err
+	if err != nil {
+		return "", err
+	}
+	return filename, nil
 }
 
 // SetPreset tells the camera to use a preset specified by presetId
 func (c AxisCam) SetPreset(presetId int) error {
-	_, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/com/ptz.cgi?gotoserverpresetno=%d&camera=1", fmt.Sprintf(axisBaseURL, c.Ip), presetId))
-	if err != nil {
-		return err
-	}
-	return nil
+	_, _, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/com/ptz.cgi?gotoserverpresetno=%d&camera=1", fmt.Sprintf(axisBaseURL, c.Ip), presetId))
+	return err
 }
 
 // GetPresets fetches all presets stored on the camera
 func (c AxisCam) GetPresets() ([]model.CameraPreset, error) {
 	var presetsForLectureHall []model.CameraPreset
-	resp, err := makeAuthenticatedRequest(&c.Auth, "POST", "action=list&group=root.PTZ.Preset.P0.Position.*.Name", fmt.Sprintf("%s/axis-cgi/param.cgi", fmt.Sprintf(axisBaseURL, c.Ip)))
+	resp, _, err := makeAuthenticatedRequest(&c.Auth, "POST", "action=list&group=root.PTZ.Preset.P0.Position.*.Name", fmt.Sprintf("%s/axis-cgi/param.cgi", fmt.Sprintf(axisBaseURL, c.Ip)))
 	if err != nil {
 		return nil, err
 	}
