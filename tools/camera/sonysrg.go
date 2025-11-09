@@ -2,9 +2,11 @@ package camera
 
 import (
 	"fmt"
+	"net/http"
+
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/TUM-Dev/gocast/model"
-	uuid "github.com/satori/go.uuid"
 )
 
 /**
@@ -26,14 +28,14 @@ func NewSonySRG(ip string, auth string) Cam {
 }
 
 func (s *SonySRG) SetPreset(presetId int) error {
-	_, err := makeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("%s/presetposition.cgi?PresetCall=%d", fmt.Sprintf(sonySRGBaseUrl, s.Ip), presetId))
+	_, _, err := makeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("%s/presetposition.cgi?PresetCall=%d", fmt.Sprintf(sonySRGBaseUrl, s.Ip), presetId))
 	return err
 }
 
 func (s *SonySRG) TakeSnapshot(outDir string) (filename string, err error) {
 	// oneshotimage1 takes JPEGs as still images from codec images corresponding to ImageCodec1 (Video Stream 1)
 	logger.Info(fmt.Sprintf("%s/oneshotimage1", s.Ip))
-	resp, err := makeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("http://%s/oneshotimage1", s.Ip))
+	resp, _, err := makeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("http://%s/oneshotimage1", s.Ip))
 	if err != nil {
 		return "", err
 	}
@@ -47,13 +49,18 @@ func (s *SonySRG) TakeSnapshot(outDir string) (filename string, err error) {
 
 func (s *SonySRG) GetPresets() ([]model.CameraPreset, error) {
 	// Sony SRG-A40 cameras support up to 256 presets, but only a few are used (see panasonic.go)
-	presets := make([]model.CameraPreset, 16)
-	for i := range presets {
-		presets[i].PresetID = i
-		presets[i].Name = fmt.Sprintf("Preset %d", i)
-		if i == 0 {
-			presets[i].Name = "Home"
+	presets := make([]model.CameraPreset, 0, 16)
+	for i := range 16 {
+		_, status, err := makeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("http://%s/preset/presetimg%d.jpg", s.Ip, i+1))
+		if err != nil || status != http.StatusOK {
+			logger.Info("Preset not available, stop polling", "i", i, "err", err)
+			break
 		}
+		presets = append(presets, model.CameraPreset{
+			Name:      fmt.Sprintf("Preset %d", i+1),
+			PresetID:  i + 1,
+			IsDefault: i == 0,
+		})
 	}
 	return presets, nil
 }
