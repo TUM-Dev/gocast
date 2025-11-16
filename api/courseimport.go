@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"html/template"
@@ -13,12 +14,13 @@ import (
 	"unicode"
 
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
+
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
 )
 
 func (r lectureHallRoutes) postSchedule(c *gin.Context) {
@@ -70,6 +72,11 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			continue
 		}
 		token := strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15]
+		l := sql.NullString{Valid: false}
+		if courseReq.Language == "de" || courseReq.Language == "en" {
+			l.Valid = true
+			l.String = courseReq.Language
+		}
 		course := model.Course{
 			UserID:              tumLiveContext.User.ID,
 			Name:                courseReq.Title,
@@ -84,6 +91,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			Streams:             nil,
 			Users:               nil,
 			Token:               token,
+			Language:            l,
 		}
 
 		var streams []model.Stream
@@ -115,6 +123,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 		}
 		var users []*model.User
 		for _, contact := range courseReq.Contacts {
+
 			if !contact.MainContact {
 				continue
 			}
@@ -165,6 +174,7 @@ type MailTmpl struct {
 }
 
 func (r lectureHallRoutes) notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
+	return nil
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
 		return err
@@ -257,7 +267,7 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	ical.Filter()
 	ical.Sort()
 	courses := ical.GroupByCourse()
-	courses, err = campus.LoadCourseContacts(courses)
+	courses, err = campus.EnrichCourse(courses)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

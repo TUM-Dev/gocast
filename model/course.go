@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -37,8 +38,9 @@ type Course struct {
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
 	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
-	Pinned                  bool   `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
+	Language                sql.NullString
 
+	Pinned      bool `gorm:"-"`                       // Used to determine if the course is pinned when loaded for a specific user.
 	LivePrivate bool `gorm:"not null; default:false"` // whether Livestreams are private
 	VodPrivate  bool `gorm:"not null; default:false"` // Whether VODs are made private after livestreams
 }

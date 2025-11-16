@@ -5,7 +5,7 @@ go 1.24.0
 tool go.uber.org/mock/mockgen
 
 require (
-	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4
+	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20251116171131-fe44da0a604a
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/antchfx/xmlquery v1.4.4
 	github.com/gabstv/melody v1.0.2
