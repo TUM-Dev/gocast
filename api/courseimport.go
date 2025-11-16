@@ -174,7 +174,6 @@ type MailTmpl struct {
 }
 
 func (r lectureHallRoutes) notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
-	return nil
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
 		return err
