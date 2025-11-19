@@ -1,4 +1,4 @@
-FROM amd64/golang:1.23-alpine3.22 as builder
+FROM golang:1.25-alpine3.22 as builder
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/runner
 COPY . .

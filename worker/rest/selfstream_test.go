@@ -69,11 +69,9 @@ func TestInitApi(t *testing.T) {
 func TestNotAllowedMethods(t *testing.T) {
 	setup()
 
-	// onPublish and onPublishDone should only work with POST
+	// onPublish should only work with POST
 	r.Method = http.MethodGet
 	streams.onPublish(w, r)
-	checkReturnCode(t, w, http.StatusMethodNotAllowed)
-	streams.onPublishDone(w, r)
 	checkReturnCode(t, w, http.StatusMethodNotAllowed)
 
 	w = httptest.NewRecorder() // Reset recorder

@@ -27,7 +27,7 @@ type Cam interface {
 // makeAuthenticatedRequest Sends a request to the camera.
 // Example usage: c.makeAuthenticatedRequest("GET", "/base","/some.cgi?preset=1")
 // Returns the response body as a buffer.
-func makeAuthenticatedRequest(auth *string, method string, body string, url string) (*bytes.Buffer, error) {
+func makeAuthenticatedRequest(auth *string, method string, body string, url string) (*bytes.Buffer, int, error) {
 	// var camCurl *exec.Cmd
 	client := http.DefaultClient
 	if auth != nil {
@@ -48,15 +48,15 @@ func makeAuthenticatedRequest(auth *string, method string, body string, url stri
 	case "POST":
 		req, err = http.NewRequest("POST", url, bytes.NewReader([]byte(body)))
 	default:
-		return nil, fmt.Errorf("unsupported protocol: %v", method)
+		return nil, http.StatusBadRequest, fmt.Errorf("unsupported protocol: %v", method)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("create http request: %v", err)
+		return nil, http.StatusBadRequest, fmt.Errorf("create http request: %v", err)
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() {
 		_ = res.Body.Close()
@@ -64,9 +64,9 @@ func makeAuthenticatedRequest(auth *string, method string, body string, url stri
 
 	bts, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, res.StatusCode, err
 	}
-	return bytes.NewBuffer(bts), nil
+	return bytes.NewBuffer(bts), res.StatusCode, nil
 }
 
 func saveResponseBuffer(outDir string, filename string, resp *bytes.Buffer) error {

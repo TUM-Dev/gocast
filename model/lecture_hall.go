@@ -39,6 +39,7 @@ type CameraType uint
 const (
 	Axis CameraType = iota + 1
 	Panasonic
+	Sony_SRG_A40
 )
 
 func (l LectureHall) NumSources() int {

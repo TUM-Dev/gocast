@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1381,6 +1382,21 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		return
 	}
 
+	lang := sql.NullString{}
+	switch req.Lang {
+	case "de", "en":
+		lang.Valid = true
+		lang.String = req.Lang
+	case "":
+		lang.Valid = false
+	default:
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid Teaching Language. Allowed: en, de or none.",
+		})
+		return
+	}
+
 	course := model.Course{
 		UserID:              tumLiveContext.User.ID,
 		Name:                req.Name,
@@ -1393,6 +1409,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		ChatEnabled:         req.EnChat,
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
+		Language:            lang,
 	}
 	if tumLiveContext.User.Role != model.AdminType {
 		course.Admins = []model.User{*tumLiveContext.User}
@@ -1507,11 +1524,13 @@ type createCourseRequest struct {
 	Name         string
 	Slug         string
 	TeachingTerm string
+	Lang         string
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
 	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		fmt.Println(err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
