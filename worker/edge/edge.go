@@ -26,14 +26,14 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.org/x/sync/singleflight"
 )
 
 var (
 	cacheLock   = sync.Mutex{}
 	cachedFiles = make(map[string]time.Time)
 
-	inflightLock = sync.Mutex{}
-	inflight     = make(map[string]*sync.Mutex)
+	fetchGroup singleflight.Group
 
 	//                                  /itocm2.cit.tum.de/62169/STREAM_VERSION_COMBINED/playlist.m3u8
 	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9.]+/([a-zA-Z0-9_]+/)*([0-9]+|playlist)\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
@@ -364,52 +364,45 @@ func fetchFile(host, file string) error {
 		return nil
 	}
 
-	inflightLock.Lock()
-	if _, ok = inflight[file]; !ok {
-		inflight[file] = &sync.Mutex{}
-	}
-	curLock := inflight[file]
-	curLock.Lock()
-	inflightLock.Unlock()
-	defer curLock.Unlock()
-	defer delete(inflight, file)
-
-	// check if file is already in cache after acquiring lock:
-	_, err := os.Stat(diskDir)
-	if err == nil {
-		return nil // file in cache, can be served
-	}
-	if !os.IsNotExist(err) {
-		return err // Unknown error
-	}
-	// file not in cache, fetch it
-	filePathPts := strings.SplitN(file, ".", 2)
-	if len(filePathPts) != 2 {
-		return fmt.Errorf("parse file path: %s", file)
-	}
-	d := filepath.Dir(diskDir)
-	err = os.MkdirAll(d, 0755)
-	if err != nil {
-		return err
-	}
-	fileResp, err := http.Get(fmt.Sprintf("%s%s:%s/%s", originProto, host, originPort, file))
-	if err != nil {
-		return err
-	}
-	defer fileResp.Body.Close()
-	f, err := os.Create(diskDir)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.ReadFrom(fileResp.Body)
-	if err != nil {
-		return err
-	}
-	cacheLock.Lock()
-	cachedFiles[diskDir] = time.Now()
-	cacheLock.Unlock()
-	return nil
+	_, err, _ := fetchGroup.Do(file, func() (interface{}, error) {
+		// check if file is already in cache after acquiring singleflight:
+		_, err := os.Stat(diskDir)
+		if err == nil {
+			return nil, nil // file in cache, can be served
+		} 
+		if !os.IsNotExist(err) {
+			return nil, err // Unknown error
+		}
+		// file not in cache, fetch it
+		filePathPts := strings.SplitN(file, ".", 2)
+		if len(filePathPts) != 2 {
+			return nil, fmt.Errorf("parse file path: %s", file)
+		}
+		d := filepath.Dir(diskDir)
+		err = os.MkdirAll(d, 0755)
+		if err != nil {
+			return nil, err
+		}
+		fileResp, err := http.Get(fmt.Sprintf("%s%s:%s/%s", originProto, host, originPort, file))
+		if err != nil {
+			return nil, err
+		}
+		defer fileResp.Body.Close()
+		f, err := os.Create(diskDir)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		_, err = f.ReadFrom(fileResp.Body)
+		if err != nil {
+			return nil, err
+		}
+		cacheLock.Lock()
+		cachedFiles[diskDir] = time.Now()
+		cacheLock.Unlock()
+		return nil, nil
+	})
+	return err
 }
 
 const cacheDir = "/tmp/edge"

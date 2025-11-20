@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/prometheus/client_golang v1.21.1
+	golang.org/x/sync v0.7.0
 )
 
 require (
