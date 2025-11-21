@@ -11,6 +11,7 @@ message Notification {
     StreamEndNotification stream_end = 2;
     HeartbeatNotification heartbeat = 3;
     VODReadyNotification vod_ready = 4;
+    ThumbnailReadyNotification thumbnail_ready = 5;
   }
 }
 
@@ -38,6 +39,12 @@ message VODReadyNotification {
   StreamInfo stream = 1;
   StreamVersion stream_version = 2;
   string url = 3;
+}
+
+message ThumbnailReadyNotification {
+  StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
+  bytes thumbnail = 3;
 }
 
 message NotificationResponse {

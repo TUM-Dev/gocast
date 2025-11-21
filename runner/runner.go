@@ -210,7 +210,20 @@ func (r *Runner) handleNotifications() {
 
 func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2 context.Context) error {
 	return func(ctx context.Context) error {
-		r.log.Debug("send notification", "notification", notification)
+		switch notification.Data.(type) {
+		case *protobuf.Notification_Heartbeat:
+		// pass: logging this is too noisy
+		case *protobuf.Notification_ThumbnailReady:
+			r.log.Debug("send notification", "notification", &protobuf.Notification_ThumbnailReady{
+				ThumbnailReady: &protobuf.ThumbnailReadyNotification{
+					Stream:        notification.GetThumbnailReady().Stream,
+					StreamVersion: notification.GetThumbnailReady().StreamVersion,
+					// strip data from this notification log to avoid noise
+				},
+			})
+		default:
+			r.log.Debug("send notification", "notification", notification)
+		}
 		conn, err := r.dialIn()
 		if err != nil {
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))

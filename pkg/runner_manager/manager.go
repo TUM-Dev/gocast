@@ -6,11 +6,13 @@ import (
 	"fmt"
 	log "log/slog"
 	"net"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/TUM-Dev/gocast/web"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,6 +23,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/web"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -31,11 +34,14 @@ type Manager struct {
 	listenAddr string
 
 	protobuf.UnimplementedRunnerManagerServiceServer
+
+	streamStartLock sync.Mutex
+	massStorage     string
 }
 
 // New returns a new instance of Manager with the given Options
 func New(dao dao.DaoWrapper, opts ...Option) *Manager {
-	m := Manager{dao: dao, listenAddr: ":50056"}
+	m := Manager{dao: dao, listenAddr: ":50056", streamStartLock: sync.Mutex{}}
 	m.applyOpts(opts)
 	return &m
 }
@@ -106,6 +112,12 @@ func WithListenAddr(addr string) Option {
 	}
 	return func(m *Manager) {
 		m.listenAddr = addr
+	}
+}
+
+func WithMassStorage(path string) Option {
+	return func(m *Manager) {
+		m.massStorage = path
 	}
 }
 
@@ -200,6 +212,8 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 			return nil, err
 		}
 		return &protobuf.NotificationResponse{}, nil
+	case *protobuf.Notification_ThumbnailReady:
+		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
@@ -218,6 +232,11 @@ func (m *Manager) getClient(ctx context.Context) (protobuf.RunnerServiceClient, 
 }
 
 func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNotification) error {
+	// This is usually called in bursts, which introduces a chance for race conditions,
+	// where a stream is fetched and overwrites the url that the other requests added.
+	m.streamStartLock.Lock()
+	defer m.streamStartLock.Unlock()
+
 	stream, err := m.dao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
 	if err != nil {
 		return err
@@ -248,7 +267,7 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		return nil, fmt.Errorf("invalid stream version %v", version)
 	}
 
-	var outputOptions = "-c:v libx264 -preset veryfast -c:a aac -ar 44100 -b:a 128k -b:v 5000k"
+	outputOptions := "-c:v libx264 -preset veryfast -c:a aac -ar 44100 -b:a 128k -b:v 5000k"
 	if !s.IsSelfStream() {
 		switch lh.StreamProtocol {
 		case model.RTSP:
@@ -283,6 +302,59 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		FfmpegOutputOptions: ptr.Take(outputOptions),
 		Input:               ptr.Take(input),
 	})
+}
+
+func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailReadyNotification) error {
+	var fileType model.FileType
+	switch req.GetStreamVersion() {
+	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+		fileType = model.FILETYPE_THUMB_LG_CAM
+	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+		fileType = model.FILETYPE_THUMB_LG_PRES
+	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+		fileType = model.FILETYPE_THUMB_LG_COMB
+	default:
+		return status.Errorf(codes.InvalidArgument, "invalid stream version %v", req.GetStreamVersion())
+	}
+
+	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
+	if err != nil {
+		return status.Errorf(codes.NotFound, "can't find stream for id %d: %v", req.Stream.GetId(), err)
+	}
+
+	fname := fmt.Sprintf("%d_%s.jpeg", stream.ID, req.GetStreamVersion().String())
+	file := model.File{
+		StreamID: stream.ID,
+		// /mass/thumbs/2025/10/500/1024_STREAM_VERSION_COMBINED.jpeg
+		Path:     filepath.Join(m.massStorage, "thumbs", stream.Start.Format("2006/01"), fmt.Sprintf("%d", stream.CourseID), fname),
+		Filename: fname,
+		Type:     fileType,
+	}
+
+	err = os.MkdirAll(file.Path, 0o755)
+	if err != nil {
+		return status.Errorf(codes.Internal, "can't make directory: %v", err)
+	}
+
+	f, err := os.OpenFile(filepath.Join(file.Path, file.Filename), os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return status.Errorf(codes.Internal, "can't open file: %v", err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	_, err = f.Write(req.GetThumbnail())
+	if err != nil {
+		return status.Errorf(codes.Internal, "can't write file: %v", err)
+	}
+
+	err = m.dao.FileDao.NewFile(&file)
+	if err != nil {
+		return status.Errorf(codes.Internal, "can't save thumbnail to db: %v", err)
+	}
+
+	return nil
 }
 
 func dialRunner(ctx context.Context, runner model.Runner) (*grpc.ClientConn, error) {
