@@ -21,7 +21,7 @@ const vjsIcon = (icon) => `vjs-icon-${icon}`;
  * @param keys An iterable of strings, each naming a key code as per {@link KeyboardEvent#key}.
  * @param event The event to match.
  */
-const matchKeys = (keys: Iterable<string>, event: videojs.KeyboardEvent) =>
+const matchKeys = (keys: Iterable<string>, event: KeyboardEvent) =>
     Array.from(keys).includes(event.key) ? event.key : undefined;
 
 const matches = (match, player, event) =>
@@ -30,8 +30,10 @@ const matches = (match, player, event) =>
 const getIcon = (icon, player, event) => (typeof icon === "function" ? icon(player, event) : icon);
 
 const handleWithClick = (name) => (player, event) => {
-    const ButtonComponent = videojs.getComponent(name);
-    ButtonComponent.prototype.handleClick.call(player, event);
+    const component = player.getChild("controlBar").getChild(name);
+    if (component) {
+        component.handleClick(event);
+    }
 };
 
 const handleFullscreen = (player, event) => {
@@ -44,7 +46,10 @@ const handleFullscreen = (player, event) => {
 
 const handleSeek = (forward: boolean) => (player, event) => {
     const controlBar = player.controlBar;
-    (forward ? controlBar.seekForward : controlBar.seekBack).handleClick(event);
+    const button = forward ? controlBar.getChild("skipForward") : controlBar.getChild("skipBackward");
+    if (button) {
+        button.handleClick(event);
+    }
 };
 
 const handleVolume = (up: boolean, step = 0.05) =>
@@ -196,7 +201,7 @@ export const defaultOptions = {
 export function handleHotkeys(extraOptions = {}) {
     const options = videojs.mergeOptions(defaultOptions, extraOptions) as typeof defaultOptions;
 
-    return function (event: videojs.KeyboardEvent) {
+    return function (event: KeyboardEvent) {
         // ignore events where Alt, Ctrl or Meta is pressed
         // note: we are processing keydown events
         if (event.altKey || event.ctrlKey || event.metaKey) return;

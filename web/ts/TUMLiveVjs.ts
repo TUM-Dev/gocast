@@ -1,6 +1,6 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { StatusCodes } from "http-status-codes";
-import videojs, { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
@@ -8,23 +8,24 @@ import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
 
 import "videojs-sprite-thumbnails";
-import "videojs-seek-buttons";
 import "videojs-contrib-quality-levels";
+
+type Player = ReturnType<typeof videojs>;
 
 const Button = videojs.getComponent("Button");
 
-const players: VideoJsPlayer[] = [];
+const players: Player[] = [];
 
-export function getPlayers(): VideoJsPlayer[] {
+export function getPlayers(): Player[] {
     return players;
 }
 
 class PlayerSettings {
-    private readonly player: VideoJsPlayer;
+    private readonly player: Player;
     private readonly isLive: boolean;
     private readonly isEmbedded: boolean;
 
-    constructor(player: VideoJsPlayer, isLive: boolean, isEmbedded: boolean) {
+    constructor(player: Player, isLive: boolean, isEmbedded: boolean) {
         this.player = player;
         this.isLive = isLive;
         this.isEmbedded = isEmbedded;
@@ -170,6 +171,12 @@ export const initPlayer = function (
             nativeAudioTracks: false,
             nativeTextTracks: false,
         },
+        controlBar: {
+            skipButtons: {
+                forward: seekingTime,
+                backward: seekingTime,
+            },
+        },
         userActions: {
             hotkeys: handleHotkeys(),
         },
@@ -189,12 +196,6 @@ export const initPlayer = function (
             columns: 17,
         });
     }
-    player.seekButtons({
-        // the user's preferred seeking time will be used for forwards and backwards seeking.
-        backIndex: 0,
-        forward: seekingTime,
-        back: seekingTime,
-    });
 
     player.on("volumechange", function () {
         settings.storeVolume();
@@ -205,8 +206,8 @@ export const initPlayer = function (
     });
 
     // When catching up to live, resume at normal speed
-    player.liveTracker.on("liveedgechange", function (evt) {
-        if (player.liveTracker.atLiveEdge() && player.playbackRate() > 1) {
+    (player as any).liveTracker.on("liveedgechange", function (evt) {
+        if ((player as any).liveTracker.atLiveEdge() && player.playbackRate() > 1) {
             player.playbackRate(1);
         }
     });
@@ -239,21 +240,23 @@ let skipTo = 0;
 /**
  * Button to add a class to passed player that will toggle skip silence button.
  */
-export const SkipSilenceToggle = videojs.extend(Button, {
-    constructor: function (...args) {
-        Button.apply(this, args);
-        this.controlText("Skip pause");
+class SkipSilenceToggle extends Button {
+    constructor(player: Player, options: any) {
+        super(player, options);
+        (this as any).controlText("Skip pause");
         (this.el().firstChild as HTMLElement).classList.add("icon-forward");
-    },
-    handleClick: function () {
+    }
+
+    handleClick() {
         for (let i = 0; i < players.length; i++) {
             players[i].currentTime(skipTo);
         }
-    },
-    buildCSSClass: function () {
+    }
+
+    buildCSSClass() {
         return `vjs-skip-silence-control`;
-    },
-});
+    }
+}
 
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
@@ -263,7 +266,10 @@ export const skipSilence = function (options) {
             players[j].addClass("vjs-skip-silence");
             const toggle = players[j].addChild("SkipSilenceToggle");
             toggle.el().classList.add("invisible");
-            players[j].el().insertBefore(toggle.el(), players[j].bigPlayButton.el());
+            const bigPlayButton = (players[j] as any).bigPlayButton || players[j].getChild("BigPlayButton");
+            if (bigPlayButton) {
+                players[j].el().insertBefore(toggle.el(), bigPlayButton.el());
+            }
 
             let isShowing = false;
             const silences = JSON.parse(options);

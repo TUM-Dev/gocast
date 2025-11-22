@@ -1,5 +1,7 @@
 import { getPlayers } from "./TUMLiveVjs";
-import { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
+
+type Player = ReturnType<typeof videojs>;
 
 export class TranscriptController {
     static initiatedInstances: Map<string, Promise<TranscriptController>> = new Map();
@@ -7,7 +9,7 @@ export class TranscriptController {
     private list: VTTCue[];
     private elem: HTMLElement;
     private lastSyncTime: number;
-    private player: VideoJsPlayer;
+    private player: Player;
     private selectedTrackLabel: string;
 
     constructor() {
@@ -51,7 +53,7 @@ export class TranscriptController {
         this.highlightActiveCue(currentTime);
     }
 
-    async fetchTranscript(player: VideoJsPlayer): Promise<VTTCue[]> {
+    async fetchTranscript(player: Player): Promise<VTTCue[]> {
         const textTracks = player.textTracks();
         let transcript: VTTCue[] = [];
 
@@ -66,7 +68,8 @@ export class TranscriptController {
         return transcript;
     }
 
-    getTranscriptFromTracks(textTracks: TextTrackList, label?: string): VTTCue[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getTranscriptFromTracks(textTracks: any, label?: string): VTTCue[] {
         const transcript: VTTCue[] = [];
         for (let i = 0; i < textTracks.length; i++) {
             const track = textTracks[i];
@@ -126,7 +129,8 @@ export class TranscriptController {
         this.downloadTextAsFile(transcript, "transcript.txt");
     }
 
-    getTranscriptText(textTracks: TextTrackList, label?: string): string {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getTranscriptText(textTracks: any, label?: string): string {
         let transcript = "";
         for (let i = 0; i < textTracks.length; i++) {
             const track = textTracks[i];

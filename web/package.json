@@ -47,13 +47,11 @@
     "moment": "^2.30.1",
     "nouislider": "^15.7.1",
     "split.js": "^1.6.5",
-    "video.js": "^7.21.1",
-    "videojs-contrib-quality-levels": "^3.0.0",
-    "videojs-seek-buttons": "^3.0.1",
-    "videojs-sprite-thumbnails": "^1.1.1"
+    "video.js": "8.23.4",
+    "videojs-contrib-quality-levels": "^4.1.0",
+    "videojs-sprite-thumbnails": "^2.2.4"
   },
   "devDependencies": {
-    "@types/video.js": "^7.3.52",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "autoprefixer": "^10.4.16",
