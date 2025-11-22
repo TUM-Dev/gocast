@@ -332,7 +332,7 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		return err
 	}
 	m.logger.With("stream", stream.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
-  return nil
+	return nil
 }
 
 func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailReadyNotification) error {
