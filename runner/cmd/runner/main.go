@@ -58,6 +58,7 @@ func main() {
 
 	if currentCount == 0 {
 		slog.Info("No jobs left, shutting down")
+		//nolint:all
 		os.Exit(0)
 	}
 

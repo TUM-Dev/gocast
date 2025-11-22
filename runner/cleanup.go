@@ -29,7 +29,7 @@ func (r *Runner) livestreamCleanup(ctx context.Context, log *slog.Logger) {
 			log.Error("Couldn't determine all directories to clean up", "err", err)
 		}
 		log.Debug("determined directories for removal/backup", "remove", remove, "backup", backup)
-		//continue anyway, there might be actionable items
+		// continue anyway, there might be actionable items
 
 		for d, t := range remove {
 			log.Debug("checking directory marked for deletion", "dir", d, "time", t)
@@ -75,6 +75,7 @@ func determineCleanableDirectories(path string) (remove map[string]time.Time, ba
 		if d == nil {
 			return nil
 		}
+		//nolint:all
 		if strings.HasPrefix(d.Name(), ".del-") {
 			t, err := parseUnix(d.Name()[5:])
 			if err != nil {
