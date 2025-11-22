@@ -33,7 +33,7 @@ func NewPanasonicCam(ip string, auth *string) *PanasonicCam {
 
 func (c PanasonicCam) TakeSnapshot(outDir string) (filename string, err error) {
 	logger.Info(fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
-	resp, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
+	resp, _, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +47,7 @@ func (c PanasonicCam) TakeSnapshot(outDir string) (filename string, err error) {
 
 // SetPreset tells the camera to use a preset specified by presetId
 func (c PanasonicCam) SetPreset(presetId int) error {
-	_, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/camctrl?preset=%d", fmt.Sprintf(panasonicBaseUrl, c.Ip), presetId))
+	_, _, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/camctrl?preset=%d", fmt.Sprintf(panasonicBaseUrl, c.Ip), presetId))
 	return err
 }
 

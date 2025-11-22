@@ -107,6 +107,13 @@ func (x *Notification) GetVodReady() *VODReadyNotification {
 	return nil
 }
 
+func (x *Notification) GetThumbnailReady() *ThumbnailReadyNotification {
+	if x, ok := x.GetData().(*Notification_ThumbnailReady); ok {
+		return x.ThumbnailReady
+	}
+	return nil
+}
+
 type isNotification_Data interface {
 	isNotification_Data()
 }
@@ -127,6 +134,10 @@ type Notification_VodReady struct {
 	VodReady *VODReadyNotification `protobuf:"bytes,4,opt,name=vod_ready,json=vodReady,oneof"`
 }
 
+type Notification_ThumbnailReady struct {
+	ThumbnailReady *ThumbnailReadyNotification `protobuf:"bytes,5,opt,name=thumbnail_ready,json=thumbnailReady,oneof"`
+}
+
 func (*Notification_StreamStart) isNotification_Data() {}
 
 func (*Notification_StreamEnd) isNotification_Data() {}
@@ -134,6 +145,8 @@ func (*Notification_StreamEnd) isNotification_Data() {}
 func (*Notification_Heartbeat) isNotification_Data() {}
 
 func (*Notification_VodReady) isNotification_Data() {}
+
+func (*Notification_ThumbnailReady) isNotification_Data() {}
 
 type StreamInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -403,6 +416,67 @@ func (x *VODReadyNotification) GetUrl() string {
 	return ""
 }
 
+type ThumbnailReadyNotification struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Stream        *StreamInfo    `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
+	StreamVersion *StreamVersion `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
+	Thumbnail     []byte         `protobuf:"bytes,3,opt,name=thumbnail" json:"thumbnail,omitempty"`
+}
+
+func (x *ThumbnailReadyNotification) Reset() {
+	*x = ThumbnailReadyNotification{}
+	mi := &file_notifications_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ThumbnailReadyNotification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ThumbnailReadyNotification) ProtoMessage() {}
+
+func (x *ThumbnailReadyNotification) ProtoReflect() protoreflect.Message {
+	mi := &file_notifications_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ThumbnailReadyNotification.ProtoReflect.Descriptor instead.
+func (*ThumbnailReadyNotification) Descriptor() ([]byte, []int) {
+	return file_notifications_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ThumbnailReadyNotification) GetStream() *StreamInfo {
+	if x != nil {
+		return x.Stream
+	}
+	return nil
+}
+
+func (x *ThumbnailReadyNotification) GetStreamVersion() StreamVersion {
+	if x != nil && x.StreamVersion != nil {
+		return *x.StreamVersion
+	}
+	return StreamVersion_STREAM_VERSION_UNSPECIFIED
+}
+
+func (x *ThumbnailReadyNotification) GetThumbnail() []byte {
+	if x != nil {
+		return x.Thumbnail
+	}
+	return nil
+}
+
 type NotificationResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -411,7 +485,7 @@ type NotificationResponse struct {
 
 func (x *NotificationResponse) Reset() {
 	*x = NotificationResponse{}
-	mi := &file_notifications_proto_msgTypes[6]
+	mi := &file_notifications_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -423,7 +497,7 @@ func (x *NotificationResponse) String() string {
 func (*NotificationResponse) ProtoMessage() {}
 
 func (x *NotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifications_proto_msgTypes[6]
+	mi := &file_notifications_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -436,7 +510,7 @@ func (x *NotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotificationResponse.ProtoReflect.Descriptor instead.
 func (*NotificationResponse) Descriptor() ([]byte, []int) {
-	return file_notifications_proto_rawDescGZIP(), []int{6}
+	return file_notifications_proto_rawDescGZIP(), []int{7}
 }
 
 var File_notifications_proto protoreflect.FileDescriptor
@@ -482,32 +556,36 @@ func file_notifications_proto_rawDescGZIP() []byte {
 	return file_notifications_proto_rawDescData
 }
 
-var file_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_notifications_proto_goTypes = []any{
-	(*Notification)(nil),            // 0: protobuf.Notification
-	(*StreamInfo)(nil),              // 1: protobuf.StreamInfo
-	(*StreamStartNotification)(nil), // 2: protobuf.StreamStartNotification
-	(*StreamEndNotification)(nil),   // 3: protobuf.StreamEndNotification
-	(*HeartbeatNotification)(nil),   // 4: protobuf.HeartbeatNotification
-	(*VODReadyNotification)(nil),    // 5: protobuf.VODReadyNotification
-	(*NotificationResponse)(nil),    // 6: protobuf.NotificationResponse
-	(StreamVersion)(0),              // 7: protobuf.StreamVersion
+	(*Notification)(nil),               // 0: protobuf.Notification
+	(*StreamInfo)(nil),                 // 1: protobuf.StreamInfo
+	(*StreamStartNotification)(nil),    // 2: protobuf.StreamStartNotification
+	(*StreamEndNotification)(nil),      // 3: protobuf.StreamEndNotification
+	(*HeartbeatNotification)(nil),      // 4: protobuf.HeartbeatNotification
+	(*VODReadyNotification)(nil),       // 5: protobuf.VODReadyNotification
+	(*ThumbnailReadyNotification)(nil), // 6: protobuf.ThumbnailReadyNotification
+	(*NotificationResponse)(nil),       // 7: protobuf.NotificationResponse
+	(StreamVersion)(0),                 // 8: protobuf.StreamVersion
 }
 var file_notifications_proto_depIdxs = []int32{
-	2, // 0: protobuf.Notification.stream_start:type_name -> protobuf.StreamStartNotification
-	3, // 1: protobuf.Notification.stream_end:type_name -> protobuf.StreamEndNotification
-	4, // 2: protobuf.Notification.heartbeat:type_name -> protobuf.HeartbeatNotification
-	5, // 3: protobuf.Notification.vod_ready:type_name -> protobuf.VODReadyNotification
-	1, // 4: protobuf.StreamStartNotification.stream:type_name -> protobuf.StreamInfo
-	7, // 5: protobuf.StreamStartNotification.stream_version:type_name -> protobuf.StreamVersion
-	1, // 6: protobuf.StreamEndNotification.stream:type_name -> protobuf.StreamInfo
-	1, // 7: protobuf.VODReadyNotification.stream:type_name -> protobuf.StreamInfo
-	7, // 8: protobuf.VODReadyNotification.stream_version:type_name -> protobuf.StreamVersion
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	2,  // 0: protobuf.Notification.stream_start:type_name -> protobuf.StreamStartNotification
+	3,  // 1: protobuf.Notification.stream_end:type_name -> protobuf.StreamEndNotification
+	4,  // 2: protobuf.Notification.heartbeat:type_name -> protobuf.HeartbeatNotification
+	5,  // 3: protobuf.Notification.vod_ready:type_name -> protobuf.VODReadyNotification
+	6,  // 4: protobuf.Notification.thumbnail_ready:type_name -> protobuf.ThumbnailReadyNotification
+	1,  // 5: protobuf.StreamStartNotification.stream:type_name -> protobuf.StreamInfo
+	8,  // 6: protobuf.StreamStartNotification.stream_version:type_name -> protobuf.StreamVersion
+	1,  // 7: protobuf.StreamEndNotification.stream:type_name -> protobuf.StreamInfo
+	1,  // 8: protobuf.VODReadyNotification.stream:type_name -> protobuf.StreamInfo
+	8,  // 9: protobuf.VODReadyNotification.stream_version:type_name -> protobuf.StreamVersion
+	1,  // 10: protobuf.ThumbnailReadyNotification.stream:type_name -> protobuf.StreamInfo
+	8,  // 11: protobuf.ThumbnailReadyNotification.stream_version:type_name -> protobuf.StreamVersion
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_notifications_proto_init() }
@@ -521,6 +599,7 @@ func file_notifications_proto_init() {
 		(*Notification_StreamEnd)(nil),
 		(*Notification_Heartbeat)(nil),
 		(*Notification_VodReady)(nil),
+		(*Notification_ThumbnailReady)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -528,7 +607,7 @@ func file_notifications_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notifications_proto_rawDesc), len(file_notifications_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

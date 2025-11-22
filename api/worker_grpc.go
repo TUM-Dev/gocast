@@ -265,6 +265,8 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 				return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
 			case model.Panasonic:
 				return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(preference.PresetID)
+			case model.Sony_SRG_A40:
+				return camera.NewSonySRG(lectureHall.CameraIP, tools.Cfg.Auths.CamAuthSony).SetPreset(preference.PresetID)
 			}
 		}
 	}
@@ -278,6 +280,8 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 		return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
 	case model.Panasonic:
 		return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(defaultPreset.PresetID)
+	case model.Sony_SRG_A40:
+		return camera.NewSonySRG(lectureHall.CameraIP, tools.Cfg.Auths.CamAuthSony).SetPreset(defaultPreset.PresetID)
 	}
 	return nil
 }
