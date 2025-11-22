@@ -29,6 +29,7 @@ type Notification struct {
 	//	*Notification_StreamEnd
 	//	*Notification_Heartbeat
 	//	*Notification_VodReady
+	//	*Notification_ThumbnailReady
 	Data          isNotification_Data `protobuf_oneof:"data"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -108,8 +109,10 @@ func (x *Notification) GetVodReady() *VODReadyNotification {
 }
 
 func (x *Notification) GetThumbnailReady() *ThumbnailReadyNotification {
-	if x, ok := x.GetData().(*Notification_ThumbnailReady); ok {
-		return x.ThumbnailReady
+	if x != nil {
+		if x, ok := x.Data.(*Notification_ThumbnailReady); ok {
+			return x.ThumbnailReady
+		}
 	}
 	return nil
 }
@@ -417,13 +420,12 @@ func (x *VODReadyNotification) GetUrl() string {
 }
 
 type ThumbnailReadyNotification struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
+	StreamVersion *StreamVersion         `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
+	Thumbnail     []byte                 `protobuf:"bytes,3,opt,name=thumbnail" json:"thumbnail,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Stream        *StreamInfo    `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
-	StreamVersion *StreamVersion `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
-	Thumbnail     []byte         `protobuf:"bytes,3,opt,name=thumbnail" json:"thumbnail,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ThumbnailReadyNotification) Reset() {
@@ -517,13 +519,14 @@ var File_notifications_proto protoreflect.FileDescriptor
 
 const file_notifications_proto_rawDesc = "" +
 	"\n" +
-	"\x13notifications.proto\x12\bprotobuf\x1a\rcommons.proto\"\xa0\x02\n" +
+	"\x13notifications.proto\x12\bprotobuf\x1a\rcommons.proto\"\xf1\x02\n" +
 	"\fNotification\x12F\n" +
 	"\fstream_start\x18\x01 \x01(\v2!.protobuf.StreamStartNotificationH\x00R\vstreamStart\x12@\n" +
 	"\n" +
 	"stream_end\x18\x02 \x01(\v2\x1f.protobuf.StreamEndNotificationH\x00R\tstreamEnd\x12?\n" +
 	"\theartbeat\x18\x03 \x01(\v2\x1f.protobuf.HeartbeatNotificationH\x00R\theartbeat\x12=\n" +
-	"\tvod_ready\x18\x04 \x01(\v2\x1e.protobuf.VODReadyNotificationH\x00R\bvodReadyB\x06\n" +
+	"\tvod_ready\x18\x04 \x01(\v2\x1e.protobuf.VODReadyNotificationH\x00R\bvodReady\x12O\n" +
+	"\x0fthumbnail_ready\x18\x05 \x01(\v2$.protobuf.ThumbnailReadyNotificationH\x00R\x0ethumbnailReadyB\x06\n" +
 	"\x04data\"\x1c\n" +
 	"\n" +
 	"StreamInfo\x12\x0e\n" +
@@ -541,7 +544,11 @@ const file_notifications_proto_rawDesc = "" +
 	"\x14VODReadyNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x10\n" +
-	"\x03url\x18\x03 \x01(\tR\x03url\"\x16\n" +
+	"\x03url\x18\x03 \x01(\tR\x03url\"\xa8\x01\n" +
+	"\x1aThumbnailReadyNotification\x12,\n" +
+	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
+	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x1c\n" +
+	"\tthumbnail\x18\x03 \x01(\fR\tthumbnail\"\x16\n" +
 	"\x14NotificationResponseB\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
 
 var (
