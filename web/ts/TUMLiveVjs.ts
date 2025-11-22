@@ -157,13 +157,6 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    // Video.js v8 skip buttons only support 5, 10, or 30 seconds
-    // Map user's seeking time to the nearest valid value
-    const validSkipTimes = [5, 10, 30];
-    const mappedSkipTime = validSkipTimes.reduce((prev, curr) =>
-        Math.abs(curr - seekingTime) < Math.abs(prev - seekingTime) ? curr : prev,
-    );
-
     const player = videojs(id, {
         liveui: true,
         fluid: fluid,
@@ -180,8 +173,8 @@ export const initPlayer = function (
         },
         controlBar: {
             skipButtons: {
-                forward: mappedSkipTime,
-                backward: mappedSkipTime,
+                forward: seekingTime,
+                backward: seekingTime,
             },
         },
         userActions: {
