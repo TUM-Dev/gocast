@@ -8,6 +8,8 @@ RUN GO111MODULE=on go mod download
 ARG version=dev
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '-static' -X main.V=${version}" -o /runner cmd/runner/main.go
 
+FROM alpine:3.22
+
 RUN apk add --no-cache \
   ffmpeg \
   tzdata
@@ -15,4 +17,4 @@ RUN apk add --no-cache \
 COPY --from=builder /runner /runner
 RUN chmod +x /runner
 
-CMD ["/entrypoint.sh"]
+CMD ["/runner"]
