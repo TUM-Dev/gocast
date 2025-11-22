@@ -15,6 +15,12 @@ import (
 // SourceMode 0 -> COMB, 1-> PRES, 2 -> CAM
 type SourceMode int
 
+const (
+	SourceModeCOMB SourceMode = iota
+	SourceModePRESOnly
+	SourceModeCAMOnly
+)
+
 type Course struct {
 	gorm.Model
 
@@ -349,4 +355,33 @@ func (c *Course) BeforeSave(tx *gorm.DB) (err error) {
 		return errors.New("invalid course slug")
 	}
 	return nil
+}
+
+// ShouldGenerateSubtitles returns true for the optimal StreamVersion for subtitle generation.
+// If no language is set for the course, false is always returned.
+// If the stream is a self-stream, it will return true for the COMB version.
+// For lecture hall streams, it checks the source preference of the course for the given lecture hall ID, returning
+// true for the respective version if it's scheduled to stream only from that (i.e. true for cam if only streamed as cam)
+// otherwise the PRES version is preferred.
+func (c *Course) ShouldGenerateSubtitles(version StreamVersion, lectureHallID uint) bool {
+	if !c.Language.Valid {
+		return false
+	}
+	if lectureHallID == 0 {
+		// selfstream
+		return version == COMB
+	}
+	for _, p := range c.GetSourcePreference() {
+		if p.LectureHallID == lectureHallID {
+			switch p.SourceMode {
+			case SourceModeCAMOnly:
+				return version == CAM
+			case SourceModePRESOnly:
+				return version == PRES
+			default:
+				// pass
+			}
+		}
+	}
+	return version == PRES
 }

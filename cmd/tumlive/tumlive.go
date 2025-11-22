@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/soheilhy/cmux"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/dgraph-io/ristretto/v2"
 	"github.com/getsentry/sentry-go"
@@ -30,6 +32,7 @@ import (
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	"github.com/TUM-Dev/gocast/voice-service/pb"
 	"github.com/TUM-Dev/gocast/web"
 )
 
@@ -43,7 +46,6 @@ var logger = log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
 
 var initializers = []initializer{
 	tools.LoadConfig,
-	api.ServeWorkerGRPC,
 	tools.InitBranding,
 }
 
@@ -231,19 +233,28 @@ func main() {
 		BufferItems: 64,      // number of keys per Get buffer.
 		Metrics:     true,
 	})
-	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second * 5)
-		logger.Error("Error risretto.NewCache", "err", err)
-	}
 	dao.Cache = cache
 
-	m := runner_manager.New(dao.NewDaoWrapper(), runner_manager.WithMassStorage(tools.Cfg.Paths.Mass))
+	opts := []runner_manager.Option{
+		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
+	}
+	var subtitleClient pb.SubtitleGeneratorClient
+	if tools.Cfg.VoiceService.Host != "" {
+		c, err := grpc.NewClient(fmt.Sprintf("%s:%s", tools.Cfg.VoiceService.Host, tools.Cfg.VoiceService.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Error("failed to connect to voice service", "err", err)
+		} else {
+			opts = append(opts, runner_manager.WithSubtitleClient(pb.NewSubtitleGeneratorClient(c), tools.Cfg.VoiceService.AuthToken))
+		}
+	}
+	m := runner_manager.New(dao.NewDaoWrapper(), opts...)
 	log.Info("running runner manager")
 	err = m.Run()
 	if err != nil {
 		log.Error("Failed to start runner manager", "err", err)
 	}
+
+	api.ServeWorkerGRPC(subtitleClient, tools.Cfg.VoiceService.AuthToken)
 
 	// init meili search index settings
 	go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()
