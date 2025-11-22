@@ -172,10 +172,11 @@ type Config struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
-	VodURLTemplate string `yaml:"vodURLTemplate"`
-	CanonicalURL   string `yaml:"canonicalURL"`
-	WikiURL        string `yaml:"wikiURL"`
-	RtmpProxyURL   string `yaml:"rtmpProxyURL"`
+	VodURLTemplate   string `yaml:"vodURLTemplate"`
+	CanonicalURL     string `yaml:"canonicalURL"`
+	WikiURL          string `yaml:"wikiURL"`
+	RtmpProxyURL     string `yaml:"rtmpProxyURL"`
+	RtmpProxyService string `yaml:"rtmpProxyService"`
 }
 
 type MailConfig struct {

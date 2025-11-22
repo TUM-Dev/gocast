@@ -54,7 +54,7 @@ func initAll(initializers []initializer) {
 }
 
 // GinServer launches the gin server
-func GinServer() (err error) {
+func GinServer(manager *runner_manager.Manager) (err error) {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	gin.SetMode(gin.ReleaseMode)
@@ -103,7 +103,7 @@ func GinServer() (err error) {
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Any("/api/v2/*any", api2Client.Proxy())
-	api.ConfigGinRouter(router)
+	api.ConfigGinRouter(router, manager)
 	web.ConfigGinRouter(router)
 	go func() {
 		err = router.RunListener(m.Match(cmux.Any()))
@@ -253,7 +253,7 @@ func main() {
 
 	initCron(m)
 	go func() {
-		err = GinServer()
+		err = GinServer(m)
 		if err != nil {
 			sentry.CaptureException(err)
 			sentry.Flush(time.Second * 5)

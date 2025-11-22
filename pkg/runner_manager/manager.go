@@ -13,6 +13,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -20,18 +25,13 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/web"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
 // Manager manages communication with runners and handles job distribution
 type Manager struct {
 	dao        dao.DaoWrapper
 	listenAddr string
+	logger     *log.Logger
 
 	protobuf.UnimplementedRunnerManagerServiceServer
 
@@ -41,7 +41,14 @@ type Manager struct {
 
 // New returns a new instance of Manager with the given Options
 func New(dao dao.DaoWrapper, opts ...Option) *Manager {
-	m := Manager{dao: dao, listenAddr: ":50056", streamStartLock: sync.Mutex{}}
+	m := Manager{
+		dao:        dao,
+		listenAddr: ":50056",
+		logger: log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
+			Level: log.LevelDebug,
+		})).With("service", "runner_manager"),
+		streamStartLock: sync.Mutex{},
+	}
 	m.applyOpts(opts)
 	return &m
 }
@@ -50,16 +57,16 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 type Option func(m *Manager)
 
 func (m *Manager) TriggerDueStreams() error {
-	log.Info("Triggering due streams")
+	m.logger.Info("Triggering due streams")
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
 	// TODO: Remove this when turning off workers
-	if web.VersionTag == "development" {
+	if false { // TODO: For testing you have to change this
 		workerStreams := m.dao.GetDueStreamsForWorkers()
 		streams = append(streams, workerStreams...)
 	}
 
-	log.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
+	m.logger.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
 	if err != nil {
 		return err
 	}
@@ -82,21 +89,21 @@ func (m *Manager) TriggerDueStreams() error {
 			errs = append(errs, fmt.Errorf("RequestStream COMB: %w", err))
 			continue
 		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
+		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
 
 		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
 		if err != nil && !errors.Is(err, errNotNoLectureSource) {
 			errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
 			continue
 		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
+		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
 
 		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
 		if err != nil && !errors.Is(err, errNotNoLectureSource) {
 			errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
 			continue
 		}
-		log.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
+		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to start stream: %v", errs)
@@ -146,14 +153,14 @@ func (m *Manager) Run() error {
 			_ = listener.Close()
 		}()
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Error("failed to serve runner manager", "err", err)
+			m.logger.Error("failed to serve runner manager", "err", err)
 		}
 	}(lis)
 	return nil
 }
 
 func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
-	log.Info("Register Runner", "d", req)
+	m.logger.Info("Register Runner", "d", req)
 	err := m.dao.RunnerDao.Create(ctx, &model.Runner{
 		Hostname:       req.GetHostname(),
 		Port:           uint32(req.GetPort()),
@@ -169,7 +176,7 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
-		log.Debug("Heartbeat", "d", notification)
+		m.logger.Debug("Heartbeat", "d", notification)
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
@@ -185,14 +192,14 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	case *protobuf.Notification_StreamStart:
 		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
 	case *protobuf.Notification_StreamEnd:
-		log.Debug("streamEnd", "payload", notification.GetStreamEnd())
+		m.logger.Debug("streamEnd", "payload", notification.GetStreamEnd())
 		err := m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStreamEnd().GetStream().GetId()))
 		if err != nil {
 			return nil, err
 		}
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_VodReady:
-		log.Debug("vodReady", "payload", notification.GetVodReady())
+		m.logger.Debug("vodReady", "payload", notification.GetVodReady())
 		streamId := notification.GetVodReady().Stream.GetId()
 		stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
 		if err != nil {
@@ -267,7 +274,8 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		return nil, fmt.Errorf("invalid stream version %v", version)
 	}
 
-	outputOptions := "-c:v libx264 -preset veryfast -c:a aac -ar 44100 -b:a 128k -b:v 5000k"
+	outputOptions := "-c:v libx264 -preset veryfast -tune zerolatency -c:a aac -ar 44100 -b:a 128k -g 60 -bufsize 5000k -maxrate 5000k -b:v 3500k"
+
 	if !s.IsSelfStream() {
 		switch lh.StreamProtocol {
 		case model.RTSP:
@@ -293,7 +301,7 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		if err != nil {
 			return nil, err
 		}
-		input = fmt.Sprintf("rtmp://localhost/%s", course.Slug)
+		input = fmt.Sprintf("%s/%s-%d", tools.Cfg.IngestBase, course.Slug, s.ID)
 	}
 	return client.RequestStream(ctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
@@ -302,6 +310,28 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		FfmpegOutputOptions: ptr.Take(outputOptions),
 		Input:               ptr.Take(input),
 	})
+}
+
+func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) error {
+	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
+	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
+		m.logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)
+		return errors.New("stream rejected")
+	}
+
+	client, err := m.getClient(ctx)
+	if err != nil {
+		m.logger.Error("Could not get client", "err", err)
+		return err
+	}
+
+	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
+	if err != nil && !errors.Is(err, errNotNoLectureSource) {
+		m.logger.Error("Could not start selfstream", "err", err)
+		return err
+	}
+	m.logger.With("stream", stream.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
+	return nil
 }
 
 func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailReadyNotification) error {
@@ -353,7 +383,6 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't save thumbnail to db: %v", err)
 	}
-
 	return nil
 }
 
