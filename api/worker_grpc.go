@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -35,6 +36,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/camera"
+	subtitle_proto "github.com/TUM-Dev/gocast/voice-service/pb"
 	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
@@ -45,6 +47,9 @@ var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configura
 type server struct {
 	pb.UnimplementedFromWorkerServer
 	dao.DaoWrapper
+
+	subtitleClient subtitle_proto.SubtitleGeneratorClient
+	subtitleAuth   string
 }
 
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
@@ -423,18 +428,65 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	}
 	stream.Recording = true
 	stream.Private = course.VodPrivate
+	var modelVersion model.StreamVersion
 	switch req.SourceType {
 	case "CAM":
+		modelVersion = model.CAM
 		stream.PlaylistUrlCAM = req.HLSUrl
 	case "PRES":
+		modelVersion = model.PRES
 		stream.PlaylistUrlPRES = req.HLSUrl
 	default:
+		modelVersion = model.COMB
 		stream.PlaylistUrl = req.HLSUrl
 	}
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
+
+	err = s.requestSubtitles(ctx, stream, modelVersion)
+	if err != nil {
+		logger.Error("failed to request subtitles", "stream", stream.ID, "version", modelVersion, "err", err)
+	}
+
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s *server) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) error {
+	if s.subtitleClient == nil {
+		return nil // nothing to do
+	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return err
+	}
+	if course.ShouldGenerateSubtitles(version, stream.LectureHallID) {
+		outCtx := context.Background()
+		if s.subtitleAuth != "" {
+			outCtx = metadata.AppendToOutgoingContext(outCtx, "auth", s.subtitleAuth)
+		}
+		// sign playlist so that subtitle generator can access it
+		err = tools.SetSignedPlaylists(&stream, &model.User{}, false)
+		if err != nil {
+			logger.Error("can't sign playlists for subtitle generation", "err", err)
+		}
+		var url string
+		switch version {
+		case model.COMB:
+			url = stream.PlaylistUrl
+		case model.PRES:
+			url = stream.PlaylistUrlPRES
+		default:
+			url = stream.PlaylistUrlCAM
+		}
+		_, err = s.subtitleClient.Generate(outCtx, &subtitle_proto.GenerateRequest{
+			StreamId:   int32(stream.ID),
+			SourceFile: url,
+			Language:   course.Language.String,
+		})
+		return err
+	}
+	return nil
 }
 
 // NotifyThumbnailsFinished receives and handles messages from workers about finished thumbnails.
@@ -1097,7 +1149,7 @@ func getWorkerWithLeastWorkload(workers []model.Worker) int {
 }
 
 // ServeWorkerGRPC initializes a gRPC server on port 50052
-func ServeWorkerGRPC() {
+func ServeWorkerGRPC(subtitleClient subtitle_proto.SubtitleGeneratorClient, subtitleAuth string) {
 	logger.Info("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
@@ -1111,7 +1163,7 @@ func ServeWorkerGRPC() {
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper()})
+	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper(), subtitleClient: subtitleClient, subtitleAuth: subtitleAuth})
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {

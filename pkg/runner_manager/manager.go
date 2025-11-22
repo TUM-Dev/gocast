@@ -13,18 +13,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-	"github.com/tum-dev/gocast/runner/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/voice-service/pb"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
 // Manager manages communication with runners and handles job distribution
@@ -37,6 +40,9 @@ type Manager struct {
 
 	streamStartLock sync.Mutex
 	massStorage     string
+
+	subtitleClient pb.SubtitleGeneratorClient
+	subtitleAuth   string
 }
 
 // New returns a new instance of Manager with the given Options
@@ -128,6 +134,13 @@ func WithMassStorage(path string) Option {
 	}
 }
 
+func WithSubtitleClient(client pb.SubtitleGeneratorClient, auth string) Option {
+	return func(m *Manager) {
+		m.subtitleClient = client
+		m.subtitleAuth = auth
+	}
+}
+
 func (m *Manager) applyOpts(opts []Option) {
 	for _, opt := range opts {
 		opt(m)
@@ -199,26 +212,7 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		}
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_VodReady:
-		m.logger.Debug("vodReady", "payload", notification.GetVodReady())
-		streamId := notification.GetVodReady().Stream.GetId()
-		stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
-		if err != nil {
-			return nil, err
-		}
-		switch *notification.GetVodReady().StreamVersion {
-		case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
-			stream.PlaylistUrl = notification.GetVodReady().GetUrl()
-		case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
-			stream.PlaylistUrlPRES = notification.GetVodReady().GetUrl()
-		case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
-			stream.PlaylistUrlCAM = notification.GetVodReady().GetUrl()
-		}
-		stream.Recording = true
-		err = m.dao.StreamsDao.SaveStream(&stream)
-		if err != nil {
-			return nil, err
-		}
-		return &protobuf.NotificationResponse{}, nil
+		return m.handleVODReady(ctx, notification.GetVodReady())
 	case *protobuf.Notification_ThumbnailReady:
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
 	default:
@@ -382,6 +376,76 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 	err = m.dao.FileDao.NewFile(&file)
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't save thumbnail to db: %v", err)
+	}
+
+	return nil
+}
+
+func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VODReadyNotification) (*protobuf.NotificationResponse, error) {
+	m.logger.Debug("vodReady", "payload", notification)
+	streamId := notification.Stream.GetId()
+	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
+	if err != nil {
+		return nil, err
+	}
+	modelVersion := model.COMB
+	switch *notification.StreamVersion {
+	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+		stream.PlaylistUrl = notification.GetUrl()
+	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+		modelVersion = model.PRES
+		stream.PlaylistUrlPRES = notification.GetUrl()
+	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+		modelVersion = model.CAM
+		stream.PlaylistUrlCAM = notification.GetUrl()
+	}
+	stream.Recording = true
+	err = m.dao.StreamsDao.SaveStream(&stream)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.requestSubtitles(ctx, stream, modelVersion)
+	if err != nil {
+		log.Error("failed to request subtitles", "stream", streamId, "version", modelVersion, "err", err)
+	}
+
+	return &protobuf.NotificationResponse{}, nil
+}
+
+func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) error {
+	if m.subtitleClient == nil {
+		return nil // nothing to do
+	}
+	course, err := m.dao.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return err
+	}
+	if course.ShouldGenerateSubtitles(version, stream.LectureHallID) {
+		outCtx := context.Background()
+		if m.subtitleAuth != "" {
+			outCtx = metadata.AppendToOutgoingContext(outCtx, "auth", m.subtitleAuth)
+		}
+		// sign playlist so that subtitle generator can access it
+		err = tools.SetSignedPlaylists(&stream, &model.User{}, false)
+		if err != nil {
+			log.Error("can't sign playlists for subtitle generation", "err", err)
+		}
+		var url string
+		switch version {
+		case model.COMB:
+			url = stream.PlaylistUrl
+		case model.PRES:
+			url = stream.PlaylistUrlPRES
+		default:
+			url = stream.PlaylistUrlCAM
+		}
+		_, err = m.subtitleClient.Generate(outCtx, &pb.GenerateRequest{
+			StreamId:   int32(stream.ID),
+			SourceFile: url,
+			Language:   course.Language.String,
+		})
+		return err
 	}
 	return nil
 }

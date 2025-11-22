@@ -161,8 +161,9 @@ type Config struct {
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
 	VoiceService *struct {
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
+		Host      string `yaml:"host"`
+		Port      string `yaml:"port"`
+		AuthToken string `yaml:"authToken"`
 	}
 	IngestBase  string  `yaml:"ingestBase"`
 	WebUrl      string  `yaml:"webUrl"`
