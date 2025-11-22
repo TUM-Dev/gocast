@@ -44,7 +44,6 @@ service RunnerManagerService {
   rpc Notify (Notification) returns (NotificationResponse) {}
 }
 
-
 message RegisterRequest {
   string hostname = 1;
   int32 port = 2;
