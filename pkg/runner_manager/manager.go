@@ -312,7 +312,6 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 	})
 }
 
-
 func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) error {
 	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
