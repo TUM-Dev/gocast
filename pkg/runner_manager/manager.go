@@ -47,7 +47,7 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 		logger: log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
 			Level: log.LevelDebug,
 		})).With("service", "runner_manager"),
-    streamStartLock: sync.Mutex{},
+		streamStartLock: sync.Mutex{},
 	}
 	m.applyOpts(opts)
 	return &m
