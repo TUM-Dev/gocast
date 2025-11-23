@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
 	"github.com/getsentry/sentry-go"
@@ -818,13 +820,16 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	}
 	defer client.CloseConn()
 
-	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
+	outCtx := context.Background()
+	if tools.Cfg.VoiceService.AuthToken != "" {
+		outCtx = metadata.AppendToOutgoingContext(outCtx, "auth", tools.Cfg.VoiceService.AuthToken)
+	}
+	_, err = client.Generate(outCtx, &pb.GenerateRequest{
 		StreamId:   int32(stream.ID),
 		SourceFile: playlist,
 		Language:   request.Language,
 	})
 	if err != nil {
-		sentry.CaptureException(err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not call generate on voice_client",
