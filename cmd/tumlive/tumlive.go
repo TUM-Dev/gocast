@@ -240,6 +240,7 @@ func main() {
 	}
 	var subtitleClient pb.SubtitleGeneratorClient
 	if tools.Cfg.VoiceService.Host != "" {
+		api.RunVoiceServiceReceiver(tools.Cfg.VoiceService.AuthToken)
 		c, err := grpc.NewClient(fmt.Sprintf("%s:%s", tools.Cfg.VoiceService.Host, tools.Cfg.VoiceService.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Error("failed to connect to voice service", "err", err)
