@@ -157,6 +157,7 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
+    const nativeTextTracks = (/iPad|iPhone|iPod/.test(navigator.userAgent));
     const player = videojs(id, {
         liveui: true,
         fluid: fluid,
@@ -169,7 +170,7 @@ export const initPlayer = function (
             },
             nativeVideoTracks: false,
             nativeAudioTracks: false,
-            nativeTextTracks: false,
+            nativeTextTracks: nativeTextTracks,
         },
         controlBar: {
             skipButtons: {
