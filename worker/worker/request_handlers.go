@@ -14,9 +14,10 @@ import (
 	"syscall"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
-	log "github.com/sirupsen/logrus"
 )
 
 type safeStreams struct {
@@ -218,7 +219,7 @@ func cancelCmd(cmd *exec.Cmd) {
 
 func HandleStreamRequest(request *pb.StreamRequest) {
 	log.WithField("request", request).Info("Request to stream")
-	//setup context with relevant information to pass to other subprocesses
+	// setup context with relevant information to pass to other subprocesses
 	streamCtx := &StreamContext{
 		streamId:      request.GetStreamID(),
 		sourceUrl:     "rtsp://" + request.GetSourceUrl(),
@@ -484,7 +485,7 @@ type StreamContext struct {
 	discardVoD   bool   // whether the VoD should be discarded
 
 	// calculated after stream:
-	duration      uint32 //duration of the stream in seconds
+	duration      uint32 // duration of the stream in seconds
 	thumbInterval uint32 // interval between thumbnails in seconds
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful

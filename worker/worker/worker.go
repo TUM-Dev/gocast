@@ -1,12 +1,14 @@
 package worker
 
 import (
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	"github.com/TUM-Dev/gocast/worker/worker/vmstat"
-	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
+
+	"github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/worker/vmstat"
 )
 
 // Setup starts all recurring jobs of the worker

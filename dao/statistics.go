@@ -3,9 +3,10 @@ package dao
 import (
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/timing"
-	"gorm.io/gorm"
 )
 
 //go:generate go tool mockgen -source=statistics.go -destination ../mock_dao/statistics.go

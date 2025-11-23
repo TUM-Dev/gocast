@@ -34,7 +34,7 @@ func TestShouldGenerateSubtitles(t *testing.T) {
 		pref := []SourcePreference{{LectureHallID: 1, SourceMode: SourceModeCAMOnly}}
 		prefBytes, _ := json.Marshal(pref)
 		course := Course{
-			Language:        sql.NullString{String: "en", Valid: true},
+			Language:          sql.NullString{String: "en", Valid: true},
 			SourcePreferences: string(prefBytes),
 		}
 		assert.False(t, course.ShouldGenerateSubtitles(COMB, 1))
@@ -47,7 +47,7 @@ func TestShouldGenerateSubtitles(t *testing.T) {
 		pref := []SourcePreference{{LectureHallID: 1, SourceMode: SourceModePRESOnly}}
 		prefBytes, _ := json.Marshal(pref)
 		course := Course{
-			Language:        sql.NullString{String: "en", Valid: true},
+			Language:          sql.NullString{String: "en", Valid: true},
 			SourcePreferences: string(prefBytes),
 		}
 		assert.False(t, course.ShouldGenerateSubtitles(COMB, 1))
@@ -60,7 +60,7 @@ func TestShouldGenerateSubtitles(t *testing.T) {
 		pref := []SourcePreference{{LectureHallID: 1, SourceMode: SourceModeCOMB}}
 		prefBytes, _ := json.Marshal(pref)
 		course := Course{
-			Language:        sql.NullString{String: "en", Valid: true},
+			Language:          sql.NullString{String: "en", Valid: true},
 			SourcePreferences: string(prefBytes),
 		}
 		assert.False(t, course.ShouldGenerateSubtitles(COMB, 1))
@@ -73,7 +73,7 @@ func TestShouldGenerateSubtitles(t *testing.T) {
 		pref := []SourcePreference{{LectureHallID: 99, SourceMode: SourceModeCAMOnly}} // Preference for another LH
 		prefBytes, _ := json.Marshal(pref)
 		course := Course{
-			Language:        sql.NullString{String: "en", Valid: true},
+			Language:          sql.NullString{String: "en", Valid: true},
 			SourcePreferences: string(prefBytes),
 		}
 		assert.False(t, course.ShouldGenerateSubtitles(COMB, 1))
@@ -84,7 +84,7 @@ func TestShouldGenerateSubtitles(t *testing.T) {
 	// Test case 7: Lecture hall stream - Empty SourcePreferences string
 	t.Run("LectureHall_EmptySourcePreferences", func(t *testing.T) {
 		course := Course{
-			Language:        sql.NullString{String: "en", Valid: true},
+			Language:          sql.NullString{String: "en", Valid: true},
 			SourcePreferences: "", // Empty string, GetSourcePreference will return empty slice
 		}
 		assert.False(t, course.ShouldGenerateSubtitles(COMB, 1))
@@ -95,7 +95,7 @@ func TestShouldGenerateSubtitles(t *testing.T) {
 	// Test case 8: Lecture hall stream - Invalid SourcePreferences string
 	t.Run("LectureHall_InvalidSourcePreferences", func(t *testing.T) {
 		course := Course{
-			Language:        sql.NullString{String: "en", Valid: true},
+			Language:          sql.NullString{String: "en", Valid: true},
 			SourcePreferences: "invalid json", // Invalid JSON, GetSourcePreference will return empty slice
 		}
 		assert.False(t, course.ShouldGenerateSubtitles(COMB, 1))

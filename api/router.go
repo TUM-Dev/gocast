@@ -1,10 +1,11 @@
 package api
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
 )
 
 // ConfigChatRouter configure gin router for chat (without gzip)

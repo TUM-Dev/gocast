@@ -8,8 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/TUM-Dev/gocast/worker/cfg"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
 )
 
 // stream records and streams a lecture hall to the lrz
@@ -27,7 +28,7 @@ func stream(streamCtx *StreamContext) {
 		timeout := fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds())
 		args := buildFFmpegArgs(streamCtx, timeout)
 		cmd := exec.Command("ffmpeg", args...)
-		recordFile, err := os.OpenFile(streamCtx.getRecordingFileName(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		recordFile, err := os.OpenFile(streamCtx.getRecordingFileName(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err == nil {
 			cmd.Stdout = recordFile
 		} else {
@@ -37,7 +38,7 @@ func stream(streamCtx *StreamContext) {
 		// persist stream command in context, so it can be killed later
 		streamCtx.streamCmd = cmd
 		log.WithField("cmd", cmd.String()).Info("Starting stream")
-		ffmpegErr, errFfmpegErrFile := os.OpenFile(fmt.Sprintf("%s/ffmpeg_%s.log", cfg.LogDir, streamCtx.getStreamName()), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		ffmpegErr, errFfmpegErrFile := os.OpenFile(fmt.Sprintf("%s/ffmpeg_%s.log", cfg.LogDir, streamCtx.getStreamName()), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o644)
 		if errFfmpegErrFile == nil {
 			cmd.Stderr = ffmpegErr
 		} else {

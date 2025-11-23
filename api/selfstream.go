@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
-	"github.com/gin-gonic/gin"
 )
 
 type selfstreamRoutes struct {

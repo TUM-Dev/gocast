@@ -176,6 +176,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 var lightLock = sync.Mutex{}
 
 // NotifyStreamStart handles workers notification about streams being started
+//
 // Deprecated: this is now "NotifyStreamStarted"
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()

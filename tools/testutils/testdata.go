@@ -8,13 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/mock_tools"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 // Misc

@@ -4,11 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // GetNotifications retrieves notifications for the current user.

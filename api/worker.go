@@ -3,9 +3,10 @@ package api
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
 )
 
 func configWorkerRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {

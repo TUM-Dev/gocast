@@ -7,8 +7,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/TUM-Dev/gocast/worker/worker"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/worker"
 )
 
 // streams contains a map from streaming keys to their ids

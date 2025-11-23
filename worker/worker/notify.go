@@ -3,12 +3,14 @@ package worker
 import (
 	"context"
 	"fmt"
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	"github.com/TUM-Dev/gocast/worker/pb"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"time"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
 func closeConnection(conn *grpc.ClientConn) {

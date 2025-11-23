@@ -3,8 +3,9 @@ package camera
 import (
 	"fmt"
 
-	"github.com/TUM-Dev/gocast/model"
 	uuid "github.com/satori/go.uuid"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 /**

@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/TUM-Dev/gocast/model"
 	uuid "github.com/satori/go.uuid"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // AxisCam represents AXIS IP cameras the TUM uses

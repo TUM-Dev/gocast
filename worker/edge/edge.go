@@ -37,13 +37,15 @@ var (
 
 	//                                  /itocm2.cit.tum.de/62169/STREAM_VERSION_COMBINED/playlist.m3u8
 	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9.]+/([a-zA-Z0-9_]+/)*([0-9]+|playlist)\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
-	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
+	// allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
 
 var port = ":8089"
 
-var originPort = "8187"
-var originProto = "http://"
+var (
+	originPort  = "8187"
+	originProto = "http://"
+)
 
 var VersionTag = "dev"
 
@@ -238,7 +240,6 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
-
 			if err != nil {
 				err404Playlists.WithLabelValues(claims.StreamID, claims.Playlist).Inc()
 				w.WriteHeader(http.StatusNotFound)
@@ -369,7 +370,7 @@ func fetchFile(host, file string) error {
 		_, err := os.Stat(diskDir)
 		if err == nil {
 			return nil, nil // file in cache, can be served
-		} 
+		}
 		if !os.IsNotExist(err) {
 			return nil, err // Unknown error
 		}
@@ -379,7 +380,7 @@ func fetchFile(host, file string) error {
 			return nil, fmt.Errorf("parse file path: %s", file)
 		}
 		d := filepath.Dir(diskDir)
-		err = os.MkdirAll(d, 0755)
+		err = os.MkdirAll(d, 0o755)
 		if err != nil {
 			return nil, err
 		}

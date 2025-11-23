@@ -1,9 +1,10 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/dao/migrations"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/dao/migrations"
 )
 
 type migrator struct {
