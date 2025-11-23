@@ -415,6 +415,7 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 
 func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) error {
 	if m.subtitleClient == nil {
+		m.logger.Info("skipping subtitle generation, not configured", "stream-id", stream.ID, "version", version)
 		return nil // nothing to do
 	}
 	course, err := m.dao.CoursesDao.GetCourseById(ctx, stream.CourseID)
@@ -447,6 +448,7 @@ func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, ver
 		})
 		return err
 	}
+	m.logger.Info("skipping subtitle generation, not eligible", "stream-id", stream.ID, "version", version)
 	return nil
 }
 
