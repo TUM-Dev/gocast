@@ -67,11 +67,6 @@ func (m *Manager) TriggerDueStreams() error {
 	m.logger.Info("Triggering due streams")
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
-	// TODO: Remove this when turning off workers
-	if false { // TODO: For testing you have to change this
-		workerStreams := m.dao.GetDueStreamsForWorkers()
-		streams = append(streams, workerStreams...)
-	}
 
 	m.logger.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
 	if err != nil {
