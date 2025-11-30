@@ -208,10 +208,8 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager) (err error)
 	m := cmux.New(l)
 
 	go func() {
-		select {
-		case <-ctx.Done():
-			m.Close()
-		}
+		<-ctx.Done()
+		m.Close()
 	}()
 
 	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
