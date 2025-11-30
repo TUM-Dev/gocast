@@ -1,27 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	log "log/slog"
+	"log/slog"
 	"net"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/soheilhy/cmux"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
 	"github.com/dgraph-io/ristretto/v2"
 	"github.com/getsentry/sentry-go"
-	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	slogGorm "github.com/orandin/slog-gorm"
-	"github.com/pkg/profile"
+	"github.com/soheilhy/cmux"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
@@ -36,123 +33,26 @@ import (
 	"github.com/TUM-Dev/gocast/web"
 )
 
-var VersionTag = "development"
-
-type initializer func()
-
-var logger = log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
-	Level: log.LevelDebug,
-})).With("service", "main")
-
-var initializers = []initializer{
-	tools.LoadConfig,
-	tools.InitBranding,
-}
-
-func initAll(initializers []initializer) {
-	for _, init := range initializers {
-		init()
-	}
-}
-
-// GinServer launches the gin server
-func GinServer(manager *runner_manager.Manager) (err error) {
-	router := gin.New()
-	router.Use(gin.Recovery())
-	gin.SetMode(gin.ReleaseMode)
-	// capture performance with sentry
-	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
-	if VersionTag != "development" {
-		tools.CookieSecure = true
-	}
-
-	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		if param.StatusCode >= 400 {
-			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
-				param.TimeStamp.Format(time.DateTime),
-				param.StatusCode,
-				param.ClientIP,
-				param.Path,
-				param.Request.UserAgent(),
-			)
-		}
-		return ""
-	}))
-
-	router.Use(tools.InitContext(dao.NewDaoWrapper()))
-
-	l, err := net.Listen("tcp", ":8081")
-	if err != nil {
-		logger.Error("can't listen on port 8081", "err", err)
-	}
-
-	m := cmux.New(l)
-	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
-
-	api2Client := apiv2.New(dao.DB)
-	go func() {
-		if err := api2Client.Run(grpcl); err != nil {
-			logger.Error("can't launch grpc server", "err", err)
-		}
-	}()
-
-	liveUpdates := router.Group("/api/pub-sub")
-	api.ConfigRealtimeRouter(liveUpdates)
-
-	// event streams don't work with gzip, configure group without
-	chat := router.Group("/api/chat")
-	api.ConfigChatRouter(chat)
-
-	router.Use(gzip.Gzip(gzip.DefaultCompression))
-	router.Any("/api/v2/*any", api2Client.Proxy())
-	api.ConfigGinRouter(router, manager)
-	web.ConfigGinRouter(router)
-	go func() {
-		err = router.RunListener(m.Match(cmux.Any()))
-		// err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
-		if err != nil {
-			sentry.CaptureException(err)
-			logger.Error("Error starting tumlive", "err", err)
-		}
-	}()
-
-	return m.Serve()
-}
-
-var osSignal chan os.Signal
-
 func main() {
+	ctx := context.Background()
+	err := run(ctx)
+	if err != nil {
+		slog.With("err", err).ErrorContext(ctx, "shutting down")
+		os.Exit(1)
+	}
+}
+
+func run(ctx context.Context) error {
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})).With("service", "main")
 	initAll(initializers)
 	defer api.RealtimeInstance.CloseAll()
 
-	defer profile.Start(profile.MemProfile).Stop()
-	go func() {
-		_ = http.ListenAndServe(":8082", nil) // debug endpoint
-	}()
-
 	web.VersionTag = VersionTag
-	osSignal = make(chan os.Signal, 1)
-
-	env := "production"
-	if VersionTag == "development" {
-		env = "development"
-	}
-	if os.Getenv("SentryDSN") != "" {
-		err := sentry.Init(sentry.ClientOptions{
-			Dsn:              os.Getenv("SentryDSN"),
-			Release:          VersionTag,
-			TracesSampleRate: 0.15,
-			Debug:            true,
-			AttachStacktrace: true,
-			Environment:      env,
-		})
-		if err != nil {
-			logger.Error("sentry.Init", "err", err)
-		}
-		// Flush buffered events before the program terminates.
-		defer sentry.Flush(2 * time.Second)
-		defer sentry.Recover()
-	}
 
 	gormJSONLogger := slogGorm.New()
 
@@ -168,16 +68,13 @@ func main() {
 		Logger:      gormJSONLogger,
 	})
 	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second * 5)
 		logger.Error("Error opening database", "err", err)
 	}
 	dao.DB = db
 
 	err = dao.Migrator.RunBefore(db)
 	if err != nil {
-		logger.Error("Error running before db", "err", err)
-		return
+		return fmt.Errorf("before migration: %s", err)
 	}
 
 	err = db.AutoMigrate(
@@ -217,14 +114,11 @@ func main() {
 		&model.Runner{},
 	)
 	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second * 5)
-		logger.Error("can't migrate database", "err", err)
+		return fmt.Errorf("migration: %w", err)
 	}
 	err = dao.Migrator.RunAfter(db)
 	if err != nil {
-		logger.Error("Error running after db", "err", err)
-		return
+		return fmt.Errorf("after migrate: %s", err)
 	}
 
 	cache, _ := ristretto.NewCache[string, any](&ristretto.Config[string, any]{
@@ -243,16 +137,16 @@ func main() {
 		api.RunVoiceServiceReceiver(tools.Cfg.VoiceService.AuthToken)
 		c, err := grpc.NewClient(fmt.Sprintf("%s:%s", tools.Cfg.VoiceService.Host, tools.Cfg.VoiceService.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Error("failed to connect to voice service", "err", err)
+			logger.Error("failed to connect to voice service", "err", err)
 		} else {
 			opts = append(opts, runner_manager.WithSubtitleClient(pb.NewSubtitleGeneratorClient(c), tools.Cfg.VoiceService.AuthToken))
 		}
 	}
 	m := runner_manager.New(dao.NewDaoWrapper(), opts...)
-	log.Info("running runner manager")
+	logger.Info("running runner manager")
 	err = m.Run()
 	if err != nil {
-		log.Error("Failed to start runner manager", "err", err)
+		logger.Error("Failed to start runner manager", "err", err)
 	}
 
 	api.ServeWorkerGRPC(subtitleClient, tools.Cfg.VoiceService.AuthToken)
@@ -263,19 +157,101 @@ func main() {
 	mailer := tools.NewMailer(dao.NewDaoWrapper(), tools.Cfg.Mail.MaxMailsPerMinute)
 	go mailer.Run()
 
-	initCron(m)
-	go func() {
-		err = GinServer(m)
-		if err != nil {
-			sentry.CaptureException(err)
-			sentry.Flush(time.Second * 5)
-			logger.Error("can't launch gin server", "err", err)
-		}
-	}()
-	keepAlive()
+	initCron(logger, m)
+	return serveHttp(ctx, m)
 }
 
-func initCron(m *runner_manager.Manager) {
+var VersionTag = "development"
+
+type initializer func()
+
+var initializers = []initializer{
+	tools.LoadConfig,
+	tools.InitBranding,
+}
+
+func initAll(initializers []initializer) {
+	for _, init := range initializers {
+		init()
+	}
+}
+
+// serveHttp launches all http servers
+func serveHttp(ctx context.Context, manager *runner_manager.Manager) (err error) {
+	router := gin.New()
+	router.Use(gin.Recovery())
+	gin.SetMode(gin.ReleaseMode)
+	if VersionTag != "development" {
+		tools.CookieSecure = true
+	}
+
+	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		if param.StatusCode >= 400 {
+			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
+				param.TimeStamp.Format(time.DateTime),
+				param.StatusCode,
+				param.ClientIP,
+				param.Path,
+				param.Request.UserAgent(),
+			)
+		}
+		return ""
+	}))
+
+	router.Use(tools.InitContext(dao.NewDaoWrapper()))
+
+	l, err := net.Listen("tcp", ":8081")
+	if err != nil {
+		return err
+	}
+
+	m := cmux.New(l)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			m.Close()
+		}
+	}()
+
+	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+	httpl := m.Match(cmux.Any())
+
+	api2Client := apiv2.New(dao.DB)
+
+	g, _ := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		return api2Client.Run(grpcl)
+	})
+
+	liveUpdates := router.Group("/api/pub-sub")
+	api.ConfigRealtimeRouter(liveUpdates)
+
+	// event streams don't work with gzip, configure group without
+	chat := router.Group("/api/chat")
+	api.ConfigChatRouter(chat)
+
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	router.Any("/api/v2/*any", api2Client.Proxy())
+	api.ConfigGinRouter(router, manager)
+	web.ConfigGinRouter(router)
+	g.Go(func() error {
+		return router.RunListener(httpl)
+	})
+
+	g.Go(func() error {
+		return m.Serve()
+	})
+
+	if err = g.Wait(); err != nil && ctx.Err() != nil {
+		// webserver gracefully shut down
+		return nil
+	}
+	return err
+}
+
+func initCron(logger *slog.Logger, m *runner_manager.Manager) {
 	daoWrapper := dao.NewDaoWrapper()
 	tools.InitCronService()
 	// Fetch students every 12 hours
@@ -289,7 +265,7 @@ func initCron(m *runner_manager.Manager) {
 	_ = tools.Cron.AddFunc("triggerDueStreamsRunner", func() {
 		err := m.TriggerDueStreams()
 		if err != nil {
-			log.With("err", err).Error("Can't run streams with runner")
+			logger.With("err", err).Error("Can't run streams with runner")
 		}
 	}, "0-59 * * * *")
 	// update courses available
@@ -299,10 +275,4 @@ func initCron(m *runner_manager.Manager) {
 	// fetch live stream previews
 	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "*/1 * * * *")
 	tools.Cron.Run()
-}
-
-func keepAlive() {
-	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
-	s := <-osSignal
-	logger.Info("Exiting on signal" + s.String())
 }
