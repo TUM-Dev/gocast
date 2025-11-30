@@ -342,21 +342,23 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.NotFound, "can't find stream for id %d: %v", req.Stream.GetId(), err)
 	}
 
+	fpath := filepath.Join(m.massStorage, "thumbs", stream.Start.Format("2006/01"), fmt.Sprintf("%d", stream.CourseID)
 	fname := fmt.Sprintf("%d_%s.jpeg", stream.ID, req.GetStreamVersion().String())
+
 	file := model.File{
 		StreamID: stream.ID,
 		// /mass/thumbs/2025/10/500/1024_STREAM_VERSION_COMBINED.jpeg
-		Path:     filepath.Join(m.massStorage, "thumbs", stream.Start.Format("2006/01"), fmt.Sprintf("%d", stream.CourseID), fname),
+		Path:     filepath.Join(fpath, fname),
 		Filename: fname,
 		Type:     fileType,
 	}
 
-	err = os.MkdirAll(file.Path, 0o755)
+	err = os.MkdirAll(fpath, 0o755)
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't make directory: %v", err)
 	}
 
-	f, err := os.OpenFile(filepath.Join(file.Path, file.Filename), os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(filepath.Join(fpath, file.Filename), os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't open file: %v", err)
 	}
