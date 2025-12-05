@@ -11,14 +11,44 @@ export class TranscriptController {
     private lastSyncTime: number;
     private player: Player;
     private selectedTrackLabel: string;
+    private availableLanguages: string[];
 
     constructor() {
         this.lastSyncTime = 0;
-        this.selectedTrackLabel = "English";
+        this.selectedTrackLabel = "";
+        this.availableLanguages = [];
     }
 
     reset(): void {
         this.player = getPlayers()[0];
+    }
+
+    getAvailableLanguages(): string[] {
+        if (!this.player) {
+            return [];
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const textTracks = this.player.textTracks() as any;
+        const languages: string[] = [];
+        for (let i = 0; i < textTracks.length; i++) {
+            const track = textTracks[i];
+            if ((track.kind === "captions" || track.kind === "subtitles") && track.label) {
+                if (!languages.includes(track.label)) {
+                    languages.push(track.label);
+                }
+            }
+        }
+        return languages;
+    }
+
+    setLanguage(label: string): void {
+        this.selectedTrackLabel = label;
+        // Trigger a sync to update the transcript with the new language
+        this.syncTranscript();
+    }
+
+    getSelectedLanguage(): string {
+        return this.selectedTrackLabel;
     }
 
     async init(key: string, element: HTMLElement) {
@@ -30,6 +60,13 @@ export class TranscriptController {
         });
 
         this.player = getPlayers()[0];
+
+        // Initialize with the first available language
+        this.availableLanguages = this.getAvailableLanguages();
+        if (this.availableLanguages.length > 0 && !this.selectedTrackLabel) {
+            this.selectedTrackLabel = this.availableLanguages[0];
+        }
+
         window.setInterval(() => this.syncTranscript(), 1000);
     }
 
