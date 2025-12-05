@@ -228,6 +228,8 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
 	case *protobuf.Notification_JobUpdate:
 		return &protobuf.NotificationResponse{}, m.handleJobUpdate(ctx, notification.GetJobUpdate())
+	case *protobuf.Notification_ActionUpdate:
+		return &protobuf.NotificationResponse{}, m.handleActionUpdate(ctx, notification.GetActionUpdate())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
@@ -606,7 +608,6 @@ func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.Jo
 
 	// Convert protobuf types to model types
 	jobStatus := protoJobStatusToModel(notification.GetStatus())
-	actionType := protoActionTypeToModel(notification.GetCurrentAction())
 	streamVersion := protoStreamVersionToModel(notification.GetStreamVersion())
 
 	// Try to get existing job or create new one
@@ -620,19 +621,15 @@ func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.Jo
 			StreamID:       uint(notification.GetStream().GetId()),
 			StreamVersion:  streamVersion,
 			Status:         jobStatus,
-			CurrentAction:  actionType,
-			Progress:       uint8(notification.GetProgress()),
 			StartedAt:      &now,
-			ErrorMessage:   notification.GetErrorMessage(),
+			LastError:      notification.GetLastError(),
 		}
 		return m.dao.JobDao.Create(ctx, &job)
 	}
 
 	// Update existing job
 	job.Status = jobStatus
-	job.CurrentAction = actionType
-	job.Progress = uint8(notification.GetProgress())
-	job.ErrorMessage = notification.GetErrorMessage()
+	job.LastError = notification.GetLastError()
 
 	// Set completion time if job is done
 	if jobStatus == model.JobStatusCompleted || jobStatus == model.JobStatusFailed || jobStatus == model.JobStatusCancelled {
@@ -641,6 +638,47 @@ func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.Jo
 	}
 
 	return m.dao.JobDao.Update(ctx, &job)
+}
+
+// handleActionUpdate handles action update notifications from runners
+func (m *Manager) handleActionUpdate(ctx context.Context, notification *protobuf.ActionUpdateNotification) error {
+	m.logger.Debug("actionUpdate", "payload", notification)
+
+	// Get the job by its string JobID
+	job, err := m.dao.JobDao.GetByJobID(ctx, notification.GetJobId())
+	if err != nil {
+		return fmt.Errorf("job not found: %w", err)
+	}
+
+	// Convert protobuf status to model status
+	actionStatus := protoActionStatusToModel(notification.GetStatus())
+
+	// Try to get existing action or create new one
+	action, err := m.dao.JobDao.GetActionByJobIDAndType(ctx, job.ID, notification.GetActionType())
+	if err != nil {
+		// Action doesn't exist, create new one
+		now := time.Now()
+		action = model.Action{
+			JobID:      job.ID,
+			ActionType: notification.GetActionType(),
+			Status:     actionStatus,
+			StartedAt:  &now,
+			LastError:  notification.GetLastError(),
+		}
+		return m.dao.JobDao.CreateAction(ctx, &action)
+	}
+
+	// Update existing action
+	action.Status = actionStatus
+	action.LastError = notification.GetLastError()
+
+	// Set completion time if action is done
+	if actionStatus == model.ActionStatusCompleted || actionStatus == model.ActionStatusFailed {
+		now := time.Now()
+		action.CompletedAt = &now
+	}
+
+	return m.dao.JobDao.UpdateAction(ctx, &action)
 }
 
 // protoJobStatusToModel converts protobuf JobStatus to model JobStatus
@@ -661,21 +699,17 @@ func protoJobStatusToModel(status protobuf.JobStatus) model.JobStatus {
 	}
 }
 
-// protoActionTypeToModel converts protobuf ActionType to model ActionType
-func protoActionTypeToModel(action protobuf.ActionType) model.ActionType {
-	switch action {
-	case protobuf.ActionType_ACTION_TYPE_STREAM:
-		return model.ActionTypeStream
-	case protobuf.ActionType_ACTION_TYPE_STREAM_END:
-		return model.ActionTypeStreamEnd
-	case protobuf.ActionType_ACTION_TYPE_MK_VOD:
-		return model.ActionTypeMkVOD
-	case protobuf.ActionType_ACTION_TYPE_CHECK_VOD:
-		return model.ActionTypeCheckVoD
-	case protobuf.ActionType_ACTION_TYPE_MK_THUMB:
-		return model.ActionTypeMkThumb
+// protoActionStatusToModel converts protobuf ActionStatus to model ActionStatus
+func protoActionStatusToModel(status protobuf.ActionStatus) model.ActionStatus {
+	switch status {
+	case protobuf.ActionStatus_ACTION_STATUS_RUNNING:
+		return model.ActionStatusRunning
+	case protobuf.ActionStatus_ACTION_STATUS_COMPLETED:
+		return model.ActionStatusCompleted
+	case protobuf.ActionStatus_ACTION_STATUS_FAILED:
+		return model.ActionStatusFailed
 	default:
-		return ""
+		return model.ActionStatusRunning
 	}
 }
 

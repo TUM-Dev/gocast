@@ -80,62 +80,56 @@ func (JobStatus) EnumDescriptor() ([]byte, []int) {
 	return file_notifications_proto_rawDescGZIP(), []int{0}
 }
 
-// ActionType represents the type of action being executed
-type ActionType int32
+// ActionStatus represents the status of an action
+type ActionStatus int32
 
 const (
-	ActionType_ACTION_TYPE_UNSPECIFIED ActionType = 0
-	ActionType_ACTION_TYPE_STREAM      ActionType = 1
-	ActionType_ACTION_TYPE_STREAM_END  ActionType = 2
-	ActionType_ACTION_TYPE_MK_VOD      ActionType = 3
-	ActionType_ACTION_TYPE_CHECK_VOD   ActionType = 4
-	ActionType_ACTION_TYPE_MK_THUMB    ActionType = 5
+	ActionStatus_ACTION_STATUS_UNSPECIFIED ActionStatus = 0
+	ActionStatus_ACTION_STATUS_RUNNING     ActionStatus = 1
+	ActionStatus_ACTION_STATUS_COMPLETED   ActionStatus = 2
+	ActionStatus_ACTION_STATUS_FAILED      ActionStatus = 3
 )
 
-// Enum value maps for ActionType.
+// Enum value maps for ActionStatus.
 var (
-	ActionType_name = map[int32]string{
-		0: "ACTION_TYPE_UNSPECIFIED",
-		1: "ACTION_TYPE_STREAM",
-		2: "ACTION_TYPE_STREAM_END",
-		3: "ACTION_TYPE_MK_VOD",
-		4: "ACTION_TYPE_CHECK_VOD",
-		5: "ACTION_TYPE_MK_THUMB",
+	ActionStatus_name = map[int32]string{
+		0: "ACTION_STATUS_UNSPECIFIED",
+		1: "ACTION_STATUS_RUNNING",
+		2: "ACTION_STATUS_COMPLETED",
+		3: "ACTION_STATUS_FAILED",
 	}
-	ActionType_value = map[string]int32{
-		"ACTION_TYPE_UNSPECIFIED": 0,
-		"ACTION_TYPE_STREAM":      1,
-		"ACTION_TYPE_STREAM_END":  2,
-		"ACTION_TYPE_MK_VOD":      3,
-		"ACTION_TYPE_CHECK_VOD":   4,
-		"ACTION_TYPE_MK_THUMB":    5,
+	ActionStatus_value = map[string]int32{
+		"ACTION_STATUS_UNSPECIFIED": 0,
+		"ACTION_STATUS_RUNNING":     1,
+		"ACTION_STATUS_COMPLETED":   2,
+		"ACTION_STATUS_FAILED":      3,
 	}
 )
 
-func (x ActionType) Enum() *ActionType {
-	p := new(ActionType)
+func (x ActionStatus) Enum() *ActionStatus {
+	p := new(ActionStatus)
 	*p = x
 	return p
 }
 
-func (x ActionType) String() string {
+func (x ActionStatus) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ActionType) Descriptor() protoreflect.EnumDescriptor {
+func (ActionStatus) Descriptor() protoreflect.EnumDescriptor {
 	return file_notifications_proto_enumTypes[1].Descriptor()
 }
 
-func (ActionType) Type() protoreflect.EnumType {
+func (ActionStatus) Type() protoreflect.EnumType {
 	return &file_notifications_proto_enumTypes[1]
 }
 
-func (x ActionType) Number() protoreflect.EnumNumber {
+func (x ActionStatus) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ActionType.Descriptor instead.
-func (ActionType) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ActionStatus.Descriptor instead.
+func (ActionStatus) EnumDescriptor() ([]byte, []int) {
 	return file_notifications_proto_rawDescGZIP(), []int{1}
 }
 
@@ -149,6 +143,7 @@ type Notification struct {
 	//	*Notification_VodReady
 	//	*Notification_ThumbnailReady
 	//	*Notification_JobUpdate
+	//	*Notification_ActionUpdate
 	Data          isNotification_Data `protobuf_oneof:"data"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -245,6 +240,15 @@ func (x *Notification) GetJobUpdate() *JobUpdateNotification {
 	return nil
 }
 
+func (x *Notification) GetActionUpdate() *ActionUpdateNotification {
+	if x != nil {
+		if x, ok := x.Data.(*Notification_ActionUpdate); ok {
+			return x.ActionUpdate
+		}
+	}
+	return nil
+}
+
 type isNotification_Data interface {
 	isNotification_Data()
 }
@@ -273,6 +277,10 @@ type Notification_JobUpdate struct {
 	JobUpdate *JobUpdateNotification `protobuf:"bytes,6,opt,name=job_update,json=jobUpdate,oneof"`
 }
 
+type Notification_ActionUpdate struct {
+	ActionUpdate *ActionUpdateNotification `protobuf:"bytes,7,opt,name=action_update,json=actionUpdate,oneof"`
+}
+
 func (*Notification_StreamStart) isNotification_Data() {}
 
 func (*Notification_StreamEnd) isNotification_Data() {}
@@ -284,6 +292,8 @@ func (*Notification_VodReady) isNotification_Data() {}
 func (*Notification_ThumbnailReady) isNotification_Data() {}
 
 func (*Notification_JobUpdate) isNotification_Data() {}
+
+func (*Notification_ActionUpdate) isNotification_Data() {}
 
 type StreamInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -621,9 +631,7 @@ type JobUpdateNotification struct {
 	Stream         *StreamInfo            `protobuf:"bytes,3,opt,name=stream" json:"stream,omitempty"`
 	StreamVersion  *StreamVersion         `protobuf:"varint,4,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
 	Status         *JobStatus             `protobuf:"varint,5,opt,name=status,enum=protobuf.JobStatus" json:"status,omitempty"`
-	CurrentAction  *ActionType            `protobuf:"varint,6,opt,name=current_action,json=currentAction,enum=protobuf.ActionType" json:"current_action,omitempty"`
-	Progress       *uint32                `protobuf:"varint,7,opt,name=progress" json:"progress,omitempty"`
-	ErrorMessage   *string                `protobuf:"bytes,8,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	LastError      *string                `protobuf:"bytes,6,opt,name=last_error,json=lastError" json:"last_error,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -693,23 +701,78 @@ func (x *JobUpdateNotification) GetStatus() JobStatus {
 	return JobStatus_JOB_STATUS_UNSPECIFIED
 }
 
-func (x *JobUpdateNotification) GetCurrentAction() ActionType {
-	if x != nil && x.CurrentAction != nil {
-		return *x.CurrentAction
+func (x *JobUpdateNotification) GetLastError() string {
+	if x != nil && x.LastError != nil {
+		return *x.LastError
 	}
-	return ActionType_ACTION_TYPE_UNSPECIFIED
+	return ""
 }
 
-func (x *JobUpdateNotification) GetProgress() uint32 {
-	if x != nil && x.Progress != nil {
-		return *x.Progress
-	}
-	return 0
+// ActionUpdateNotification is sent when an action's status changes
+type ActionUpdateNotification struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	JobId         *string                `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	ActionType    *string                `protobuf:"bytes,2,opt,name=action_type,json=actionType" json:"action_type,omitempty"`
+	Status        *ActionStatus          `protobuf:"varint,3,opt,name=status,enum=protobuf.ActionStatus" json:"status,omitempty"`
+	LastError     *string                `protobuf:"bytes,4,opt,name=last_error,json=lastError" json:"last_error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *JobUpdateNotification) GetErrorMessage() string {
-	if x != nil && x.ErrorMessage != nil {
-		return *x.ErrorMessage
+func (x *ActionUpdateNotification) Reset() {
+	*x = ActionUpdateNotification{}
+	mi := &file_notifications_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActionUpdateNotification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActionUpdateNotification) ProtoMessage() {}
+
+func (x *ActionUpdateNotification) ProtoReflect() protoreflect.Message {
+	mi := &file_notifications_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActionUpdateNotification.ProtoReflect.Descriptor instead.
+func (*ActionUpdateNotification) Descriptor() ([]byte, []int) {
+	return file_notifications_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ActionUpdateNotification) GetJobId() string {
+	if x != nil && x.JobId != nil {
+		return *x.JobId
+	}
+	return ""
+}
+
+func (x *ActionUpdateNotification) GetActionType() string {
+	if x != nil && x.ActionType != nil {
+		return *x.ActionType
+	}
+	return ""
+}
+
+func (x *ActionUpdateNotification) GetStatus() ActionStatus {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ActionStatus_ACTION_STATUS_UNSPECIFIED
+}
+
+func (x *ActionUpdateNotification) GetLastError() string {
+	if x != nil && x.LastError != nil {
+		return *x.LastError
 	}
 	return ""
 }
@@ -722,7 +785,7 @@ type NotificationResponse struct {
 
 func (x *NotificationResponse) Reset() {
 	*x = NotificationResponse{}
-	mi := &file_notifications_proto_msgTypes[8]
+	mi := &file_notifications_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -734,7 +797,7 @@ func (x *NotificationResponse) String() string {
 func (*NotificationResponse) ProtoMessage() {}
 
 func (x *NotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifications_proto_msgTypes[8]
+	mi := &file_notifications_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,14 +810,14 @@ func (x *NotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotificationResponse.ProtoReflect.Descriptor instead.
 func (*NotificationResponse) Descriptor() ([]byte, []int) {
-	return file_notifications_proto_rawDescGZIP(), []int{8}
+	return file_notifications_proto_rawDescGZIP(), []int{9}
 }
 
 var File_notifications_proto protoreflect.FileDescriptor
 
 const file_notifications_proto_rawDesc = "" +
 	"\n" +
-	"\x13notifications.proto\x12\bprotobuf\x1a\rcommons.proto\"\xb3\x03\n" +
+	"\x13notifications.proto\x12\bprotobuf\x1a\rcommons.proto\"\xfe\x03\n" +
 	"\fNotification\x12F\n" +
 	"\fstream_start\x18\x01 \x01(\v2!.protobuf.StreamStartNotificationH\x00R\vstreamStart\x12@\n" +
 	"\n" +
@@ -763,7 +826,8 @@ const file_notifications_proto_rawDesc = "" +
 	"\tvod_ready\x18\x04 \x01(\v2\x1e.protobuf.VODReadyNotificationH\x00R\bvodReady\x12O\n" +
 	"\x0fthumbnail_ready\x18\x05 \x01(\v2$.protobuf.ThumbnailReadyNotificationH\x00R\x0ethumbnailReady\x12@\n" +
 	"\n" +
-	"job_update\x18\x06 \x01(\v2\x1f.protobuf.JobUpdateNotificationH\x00R\tjobUpdateB\x06\n" +
+	"job_update\x18\x06 \x01(\v2\x1f.protobuf.JobUpdateNotificationH\x00R\tjobUpdate\x12I\n" +
+	"\raction_update\x18\a \x01(\v2\".protobuf.ActionUpdateNotificationH\x00R\factionUpdateB\x06\n" +
 	"\x04data\"\x1c\n" +
 	"\n" +
 	"StreamInfo\x12\x0e\n" +
@@ -785,16 +849,22 @@ const file_notifications_proto_rawDesc = "" +
 	"\x1aThumbnailReadyNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x1c\n" +
-	"\tthumbnail\x18\x03 \x01(\fR\tthumbnail\"\xf0\x02\n" +
+	"\tthumbnail\x18\x03 \x01(\fR\tthumbnail\"\x91\x02\n" +
 	"\x15JobUpdateNotification\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12'\n" +
 	"\x0frunner_hostname\x18\x02 \x01(\tR\x0erunnerHostname\x12,\n" +
 	"\x06stream\x18\x03 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x04 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12+\n" +
-	"\x06status\x18\x05 \x01(\x0e2\x13.protobuf.JobStatusR\x06status\x12;\n" +
-	"\x0ecurrent_action\x18\x06 \x01(\x0e2\x14.protobuf.ActionTypeR\rcurrentAction\x12\x1a\n" +
-	"\bprogress\x18\a \x01(\rR\bprogress\x12#\n" +
-	"\rerror_message\x18\b \x01(\tR\ferrorMessage\"\x16\n" +
+	"\x06status\x18\x05 \x01(\x0e2\x13.protobuf.JobStatusR\x06status\x12\x1d\n" +
+	"\n" +
+	"last_error\x18\x06 \x01(\tR\tlastError\"\xa1\x01\n" +
+	"\x18ActionUpdateNotification\x12\x15\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x1f\n" +
+	"\vaction_type\x18\x02 \x01(\tR\n" +
+	"actionType\x12.\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x16.protobuf.ActionStatusR\x06status\x12\x1d\n" +
+	"\n" +
+	"last_error\x18\x04 \x01(\tR\tlastError\"\x16\n" +
 	"\x14NotificationResponse*\xa2\x01\n" +
 	"\tJobStatus\x12\x1a\n" +
 	"\x16JOB_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
@@ -802,15 +872,12 @@ const file_notifications_proto_rawDesc = "" +
 	"\x12JOB_STATUS_RUNNING\x10\x02\x12\x18\n" +
 	"\x14JOB_STATUS_COMPLETED\x10\x03\x12\x15\n" +
 	"\x11JOB_STATUS_FAILED\x10\x04\x12\x18\n" +
-	"\x14JOB_STATUS_CANCELLED\x10\x05*\xaa\x01\n" +
-	"\n" +
-	"ActionType\x12\x1b\n" +
-	"\x17ACTION_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
-	"\x12ACTION_TYPE_STREAM\x10\x01\x12\x1a\n" +
-	"\x16ACTION_TYPE_STREAM_END\x10\x02\x12\x16\n" +
-	"\x12ACTION_TYPE_MK_VOD\x10\x03\x12\x19\n" +
-	"\x15ACTION_TYPE_CHECK_VOD\x10\x04\x12\x18\n" +
-	"\x14ACTION_TYPE_MK_THUMB\x10\x05B\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
+	"\x14JOB_STATUS_CANCELLED\x10\x05*\x7f\n" +
+	"\fActionStatus\x12\x1d\n" +
+	"\x19ACTION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15ACTION_STATUS_RUNNING\x10\x01\x12\x1b\n" +
+	"\x17ACTION_STATUS_COMPLETED\x10\x02\x12\x18\n" +
+	"\x14ACTION_STATUS_FAILED\x10\x03B\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
 
 var (
 	file_notifications_proto_rawDescOnce sync.Once
@@ -825,10 +892,10 @@ func file_notifications_proto_rawDescGZIP() []byte {
 }
 
 var file_notifications_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_notifications_proto_goTypes = []any{
 	(JobStatus)(0),                     // 0: protobuf.JobStatus
-	(ActionType)(0),                    // 1: protobuf.ActionType
+	(ActionStatus)(0),                  // 1: protobuf.ActionStatus
 	(*Notification)(nil),               // 2: protobuf.Notification
 	(*StreamInfo)(nil),                 // 3: protobuf.StreamInfo
 	(*StreamStartNotification)(nil),    // 4: protobuf.StreamStartNotification
@@ -837,8 +904,9 @@ var file_notifications_proto_goTypes = []any{
 	(*VODReadyNotification)(nil),       // 7: protobuf.VODReadyNotification
 	(*ThumbnailReadyNotification)(nil), // 8: protobuf.ThumbnailReadyNotification
 	(*JobUpdateNotification)(nil),      // 9: protobuf.JobUpdateNotification
-	(*NotificationResponse)(nil),       // 10: protobuf.NotificationResponse
-	(StreamVersion)(0),                 // 11: protobuf.StreamVersion
+	(*ActionUpdateNotification)(nil),   // 10: protobuf.ActionUpdateNotification
+	(*NotificationResponse)(nil),       // 11: protobuf.NotificationResponse
+	(StreamVersion)(0),                 // 12: protobuf.StreamVersion
 }
 var file_notifications_proto_depIdxs = []int32{
 	4,  // 0: protobuf.Notification.stream_start:type_name -> protobuf.StreamStartNotification
@@ -847,22 +915,23 @@ var file_notifications_proto_depIdxs = []int32{
 	7,  // 3: protobuf.Notification.vod_ready:type_name -> protobuf.VODReadyNotification
 	8,  // 4: protobuf.Notification.thumbnail_ready:type_name -> protobuf.ThumbnailReadyNotification
 	9,  // 5: protobuf.Notification.job_update:type_name -> protobuf.JobUpdateNotification
-	3,  // 6: protobuf.StreamStartNotification.stream:type_name -> protobuf.StreamInfo
-	11, // 7: protobuf.StreamStartNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 8: protobuf.StreamEndNotification.stream:type_name -> protobuf.StreamInfo
-	3,  // 9: protobuf.VODReadyNotification.stream:type_name -> protobuf.StreamInfo
-	11, // 10: protobuf.VODReadyNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 11: protobuf.ThumbnailReadyNotification.stream:type_name -> protobuf.StreamInfo
-	11, // 12: protobuf.ThumbnailReadyNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 13: protobuf.JobUpdateNotification.stream:type_name -> protobuf.StreamInfo
-	11, // 14: protobuf.JobUpdateNotification.stream_version:type_name -> protobuf.StreamVersion
-	0,  // 15: protobuf.JobUpdateNotification.status:type_name -> protobuf.JobStatus
-	1,  // 16: protobuf.JobUpdateNotification.current_action:type_name -> protobuf.ActionType
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	10, // 6: protobuf.Notification.action_update:type_name -> protobuf.ActionUpdateNotification
+	3,  // 7: protobuf.StreamStartNotification.stream:type_name -> protobuf.StreamInfo
+	12, // 8: protobuf.StreamStartNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 9: protobuf.StreamEndNotification.stream:type_name -> protobuf.StreamInfo
+	3,  // 10: protobuf.VODReadyNotification.stream:type_name -> protobuf.StreamInfo
+	12, // 11: protobuf.VODReadyNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 12: protobuf.ThumbnailReadyNotification.stream:type_name -> protobuf.StreamInfo
+	12, // 13: protobuf.ThumbnailReadyNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 14: protobuf.JobUpdateNotification.stream:type_name -> protobuf.StreamInfo
+	12, // 15: protobuf.JobUpdateNotification.stream_version:type_name -> protobuf.StreamVersion
+	0,  // 16: protobuf.JobUpdateNotification.status:type_name -> protobuf.JobStatus
+	1,  // 17: protobuf.ActionUpdateNotification.status:type_name -> protobuf.ActionStatus
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_notifications_proto_init() }
@@ -878,6 +947,7 @@ func file_notifications_proto_init() {
 		(*Notification_VodReady)(nil),
 		(*Notification_ThumbnailReady)(nil),
 		(*Notification_JobUpdate)(nil),
+		(*Notification_ActionUpdate)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -885,7 +955,7 @@ func file_notifications_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notifications_proto_rawDesc), len(file_notifications_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

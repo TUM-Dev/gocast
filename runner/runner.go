@@ -177,7 +177,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 	streamVersion, _ := data["streamVersion"].(string)
 
 	// Send job created notification
-	r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CREATED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, "")
+	r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CREATED, "")
 
 	go func() {
 		defer func() {
@@ -190,10 +190,13 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 		var lastError string
 
 		for _, action := range a {
-			actionType := r.getActionType(getFunctionName(action))
+			actionType := getActionTypeString(getFunctionName(action))
 
-			// Send running notification for this action
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_RUNNING, actionType, "")
+			// Send action running notification
+			r.sendActionUpdate(job, actionType, protobuf.ActionStatus_ACTION_STATUS_RUNNING, "")
+
+			// Update job status to running
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_RUNNING, "")
 
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
@@ -207,9 +210,13 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 						log.Info("action can't continue")
 						jobFailed = true
 						lastError = err.Error()
+						// Send action failed notification
+						r.sendActionUpdate(job, actionType, protobuf.ActionStatus_ACTION_STATUS_FAILED, err.Error())
 						break // escape retry loop on unrecoverable error
 					}
 				} else {
+					// Send action completed notification
+					r.sendActionUpdate(job, actionType, protobuf.ActionStatus_ACTION_STATUS_COMPLETED, "")
 					break // escape retry loop on no error
 				}
 			}
@@ -221,18 +228,18 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 		// Send final job status notification
 		if c.Err() != nil {
 			// Context was cancelled
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CANCELLED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CANCELLED, "")
 		} else if jobFailed {
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_FAILED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, lastError)
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_FAILED, lastError)
 		} else {
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_COMPLETED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_COMPLETED, "")
 		}
 	}()
 	return job
 }
 
 // sendJobUpdate sends a job update notification
-func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.JobStatus, actionType protobuf.ActionType, errorMsg string) {
+func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.JobStatus, lastError string) {
 	// Safely convert stream version string to protobuf enum
 	var version protobuf.StreamVersion
 	if val, ok := protobuf.StreamVersion_value[streamVersion]; ok {
@@ -249,28 +256,41 @@ func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion stri
 				Stream:         &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 				StreamVersion:  ptr.Take(version),
 				Status:         ptr.Take(status),
-				CurrentAction:  ptr.Take(actionType),
-				ErrorMessage:   ptr.Take(errorMsg),
+				LastError:      ptr.Take(lastError),
 			},
 		},
 	}
 }
 
-// getActionType converts an action function name to an ActionType
-func (r *Runner) getActionType(funcName string) protobuf.ActionType {
+// sendActionUpdate sends an action update notification
+func (r *Runner) sendActionUpdate(jobID string, actionType string, status protobuf.ActionStatus, lastError string) {
+	r.notifications <- &protobuf.Notification{
+		Data: &protobuf.Notification_ActionUpdate{
+			ActionUpdate: &protobuf.ActionUpdateNotification{
+				JobId:      ptr.Take(jobID),
+				ActionType: ptr.Take(actionType),
+				Status:     ptr.Take(status),
+				LastError:  ptr.Take(lastError),
+			},
+		},
+	}
+}
+
+// getActionTypeString converts an action function name to a string action type
+func getActionTypeString(funcName string) string {
 	switch {
 	case strings.HasSuffix(funcName, "Stream"):
-		return protobuf.ActionType_ACTION_TYPE_STREAM
+		return "stream"
 	case strings.HasSuffix(funcName, "StreamEnd"):
-		return protobuf.ActionType_ACTION_TYPE_STREAM_END
+		return "stream_end"
 	case strings.HasSuffix(funcName, "MkVOD"):
-		return protobuf.ActionType_ACTION_TYPE_MK_VOD
+		return "mk_vod"
 	case strings.HasSuffix(funcName, "CheckVoD"):
-		return protobuf.ActionType_ACTION_TYPE_CHECK_VOD
+		return "check_vod"
 	case strings.HasSuffix(funcName, "MkThumb"):
-		return protobuf.ActionType_ACTION_TYPE_MK_THUMB
+		return "mk_thumb"
 	default:
-		return protobuf.ActionType_ACTION_TYPE_UNSPECIFIED
+		return funcName
 	}
 }
 

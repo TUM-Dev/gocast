@@ -35,6 +35,18 @@ type JobDao interface {
 
 	// DeleteByStreamID deletes all jobs for a given stream ID
 	DeleteByStreamID(context.Context, uint) error
+
+	// CreateAction creates a new action for a job
+	CreateAction(context.Context, *model.Action) error
+
+	// UpdateAction updates an existing action
+	UpdateAction(context.Context, *model.Action) error
+
+	// GetActionByJobIDAndType retrieves an action by job ID and action type
+	GetActionByJobIDAndType(context.Context, uint, string) (model.Action, error)
+
+	// GetActionsByJobID retrieves all actions for a given job ID
+	GetActionsByJobID(context.Context, uint) ([]model.Action, error)
 }
 
 type jobDao struct {
@@ -96,4 +108,28 @@ func (d jobDao) Delete(ctx context.Context, jobID string) error {
 // DeleteByStreamID deletes all jobs for a given stream ID
 func (d jobDao) DeleteByStreamID(ctx context.Context, streamID uint) error {
 	return d.db.WithContext(ctx).Where("stream_id = ?", streamID).Delete(&model.Job{}).Error
+}
+
+// CreateAction creates a new action for a job
+func (d jobDao) CreateAction(ctx context.Context, action *model.Action) error {
+	return d.db.WithContext(ctx).Create(action).Error
+}
+
+// UpdateAction updates an existing action
+func (d jobDao) UpdateAction(ctx context.Context, action *model.Action) error {
+	return d.db.WithContext(ctx).Save(action).Error
+}
+
+// GetActionByJobIDAndType retrieves an action by job ID and action type
+func (d jobDao) GetActionByJobIDAndType(ctx context.Context, jobID uint, actionType string) (model.Action, error) {
+	var action model.Action
+	err := d.db.WithContext(ctx).Where("job_id = ? AND action_type = ?", jobID, actionType).First(&action).Error
+	return action, err
+}
+
+// GetActionsByJobID retrieves all actions for a given job ID
+func (d jobDao) GetActionsByJobID(ctx context.Context, jobID uint) ([]model.Action, error) {
+	var actions []model.Action
+	err := d.db.WithContext(ctx).Where("job_id = ?", jobID).Find(&actions).Error
+	return actions, err
 }
