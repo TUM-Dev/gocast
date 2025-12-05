@@ -234,13 +234,13 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 }
 
 func (m *Manager) getClient(ctx context.Context) (protobuf.RunnerServiceClient, error) {
-	r, err := m.dao.RunnerDao.GetAvailable(ctx)
+	r, err := m.dao.RunnerDao.ReserveRunner(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("get Available Runner: %w", err)
+		return nil, fmt.Errorf("reserve available runner: %w", err)
 	}
-	conn, err := dialRunner(ctx, r)
+	conn, err := dialRunner(r)
 	if err != nil {
-		return nil, fmt.Errorf("dialRunner: %w", err)
+		return nil, fmt.Errorf("dial runner: %w", err)
 	}
 	return protobuf.NewRunnerServiceClient(conn), nil
 }
@@ -531,6 +531,6 @@ func (m *Manager) handleCamera(ctx context.Context, stream model.Stream) (err er
 	return nil
 }
 
-func dialRunner(ctx context.Context, runner model.Runner) (*grpc.ClientConn, error) {
+func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
 	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 }

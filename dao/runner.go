@@ -27,8 +27,9 @@ type RunnerDao interface {
 	// GetAll gets a list of all Runners.
 	GetAll(context.Context) ([]model.Runner, error)
 
-	// GetAvailable returns the runner that currently runs the lease jobs and is not draining
-	GetAvailable(context.Context) (model.Runner, error)
+	// ReserveRunner returns the runner that currently runs the least jobs and is not draining.
+	// It also increments the number of jobs assigned to the runner.
+	ReserveRunner(context.Context) (model.Runner, error)
 }
 
 type runnerDao struct {
@@ -39,8 +40,35 @@ func NewRunnerDao() RunnerDao {
 	return runnerDao{db: DB}
 }
 
-func (d runnerDao) GetAvailable(ctx context.Context) (runner model.Runner, err error) {
-	return runner, d.db.WithContext(ctx).Model(model.Runner{}).Order("job_count DESC").Where("draining = 0").Find(&runner).Error
+func (d runnerDao) ReserveRunner(ctx context.Context) (runner model.Runner, err error) {
+	tx := d.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return runner, tx.Error
+	}
+
+	// 1. Select the least-loaded runner, and LOCK the selected row(s) for update
+	err = tx.Model(&model.Runner{}).
+		Where("draining = ? AND last_seen > DATE_SUB(NOW(), INTERVAL 20 SECOND)", 0).
+		Order("job_count ASC").
+		Limit(1).
+		Set("gorm:query_option", "FOR UPDATE"). // Lock the selected row
+		Find(&runner).Error
+	if err != nil {
+		tx.Rollback()
+		return runner, err
+	}
+
+	err = tx.Model(&runner).UpdateColumn("job_count", gorm.Expr("job_count + ?", 1)).Error
+	if err != nil {
+		tx.Rollback()
+		return runner, err
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		return runner, err
+	}
+
+	return runner, nil
 }
 
 // Get a Runner by id.

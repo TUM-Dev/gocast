@@ -12,10 +12,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-retry"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/actions"
@@ -93,7 +94,7 @@ func (r *Runner) Run(ctx context.Context) {
 	r.log.Info("using port", "port", config.Config.Port)
 
 	go r.Metrics.Run()
-	go r.handleNotifications()
+	go r.handleNotifications(ctx)
 	go r.InitApiGrpc()
 	go r.livestreamCleanup(ctx, r.log.With("job", "livestreamCleanup"))
 	go func() {
@@ -106,16 +107,22 @@ func (r *Runner) Run(ctx context.Context) {
 	r.RegisterWithGocast(5)
 	r.log.Info("successfully connected to gocast")
 	go func() {
-		t := time.NewTicker(5 * time.Second)
-		for range t.C {
-			r.notifications <- &protobuf.Notification{
-				Data: &protobuf.Notification_Heartbeat{
-					Heartbeat: &protobuf.HeartbeatNotification{
-						Hostname: ptr.Take(config.Config.Hostname),
-						Draining: ptr.Take(r.draining),
-						JobCount: ptr.Take(uint64(len(r.jobs))),
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				r.notifications <- &protobuf.Notification{
+					Data: &protobuf.Notification_Heartbeat{
+						Heartbeat: &protobuf.HeartbeatNotification{
+							Hostname: ptr.Take(config.Config.Hostname),
+							Draining: ptr.Take(r.draining),
+							JobCount: ptr.Take(uint64(len(r.jobs))),
+						},
 					},
-				},
+				}
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -191,19 +198,23 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 	return job
 }
 
-func (r *Runner) handleNotifications() {
+func (r *Runner) handleNotifications(ctx context.Context) {
 	b := retry.NewFibonacci(1 * time.Second)
 	b = retry.WithJitter(500*time.Millisecond, b)
 	b = retry.WithMaxRetries(10, b)
 
-	for n := range r.notifications {
-		go func() {
-			ctx := context.Background()
-			err := retry.Do(ctx, b, r.sendNotification(n))
-			if err != nil {
-				r.log.Error("failed to send notification", "error", err)
-			}
-		}()
+	for {
+		select {
+		case n := <-r.notifications:
+			go func() {
+				err := retry.Do(ctx, b, r.sendNotification(n))
+				if err != nil {
+					r.log.Error("failed to send notification", "error", err)
+				}
+			}()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
