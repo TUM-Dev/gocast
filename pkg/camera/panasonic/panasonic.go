@@ -1,4 +1,4 @@
-package camera
+package panasonic
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/camera/protocol"
 )
 
 /**
@@ -22,24 +23,23 @@ const panasonicBaseUrl = "http://%s/cgi-bin"
 // PanasonicCam represents Panasonic IP cameras the TUM uses
 type PanasonicCam struct {
 	Ip   string
-	Auth *string // currently unused as our cams have auth deactivated for PTZ operation
+	Auth string
 }
 
 // NewPanasonicCam Acts as a constructor for cameras.
 // ip: the ip address of the camera
 // auth: username and password of the camera (e.g. "user:password")
-func NewPanasonicCam(ip string, auth *string) *PanasonicCam {
+func NewPanasonicCam(ip string, auth string) *PanasonicCam {
 	return &PanasonicCam{Ip: ip, Auth: auth}
 }
 
 func (c PanasonicCam) TakeSnapshot(outDir string) (filename string, err error) {
-	logger.Info(fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
-	resp, _, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
+	resp, _, err := protocol.MakeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
 	if err != nil {
 		return "", err
 	}
 	filename = uuid.NewV4().String() + ".jpg"
-	err = saveResponseBuffer(outDir, filename, resp)
+	err = protocol.SaveResponseBuffer(outDir, filename, resp)
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +48,7 @@ func (c PanasonicCam) TakeSnapshot(outDir string) (filename string, err error) {
 
 // SetPreset tells the camera to use a preset specified by presetId
 func (c PanasonicCam) SetPreset(presetId int) error {
-	_, _, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/camctrl?preset=%d", fmt.Sprintf(panasonicBaseUrl, c.Ip), presetId))
+	_, _, err := protocol.MakeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/camctrl?preset=%d", fmt.Sprintf(panasonicBaseUrl, c.Ip), presetId))
 	return err
 }
 

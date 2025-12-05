@@ -4,7 +4,6 @@ package api
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,7 +34,6 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/camera"
 	subtitle_proto "github.com/TUM-Dev/gocast/voice-service/pb"
 	"github.com/TUM-Dev/gocast/worker/pb"
 )
@@ -241,55 +239,6 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	NotifyViewersLiveState(uint(request.StreamID), false)
 
 	return &pb.Status{Ok: true}, nil
-}
-
-func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
-	if stream.LectureHallID == 0 {
-		return nil
-	}
-	course, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), stream.CourseID)
-	if err != nil {
-		return err
-	}
-	lectureHall, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
-	if err != nil {
-		return err
-	}
-	var preferences []model.CameraPresetPreference
-	// make sure there is an empty list if no preferences are found (null or empty string in db)
-	if course.CameraPresetPreferences == "" {
-		course.CameraPresetPreferences = "[]"
-	}
-	err = json.Unmarshal([]byte(course.CameraPresetPreferences), &preferences)
-	if err != nil {
-		return err
-	}
-	for _, preference := range preferences {
-		if preference.LectureHallID == stream.LectureHallID {
-			switch lectureHall.CameraType {
-			case model.Axis:
-				return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
-			case model.Panasonic:
-				return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(preference.PresetID)
-			case model.Sony_SRG_A40:
-				return camera.NewSonySRG(lectureHall.CameraIP, tools.Cfg.Auths.CamAuthSony).SetPreset(preference.PresetID)
-			}
-		}
-	}
-	// no preset found for this lecture hall, use default
-	defaultPreset, err := daoWrapper.CameraPresetDao.GetDefaultCameraPreset(lectureHall.ID)
-	if err != nil {
-		return err
-	}
-	switch lectureHall.CameraType {
-	case model.Axis:
-		return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
-	case model.Panasonic:
-		return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(defaultPreset.PresetID)
-	case model.Sony_SRG_A40:
-		return camera.NewSonySRG(lectureHall.CameraIP, tools.Cfg.Auths.CamAuthSony).SetPreset(defaultPreset.PresetID)
-	}
-	return nil
 }
 
 func handleLightOnSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
@@ -628,10 +577,6 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		err := handleLightOnSwitch(stream, s.DaoWrapper)
 		if err != nil {
 			logger.Error("Can't handle light on switch", "err", err)
-		}
-		err = handleCameraPositionSwitch(stream, s.DaoWrapper)
-		if err != nil {
-			logger.Error("Can't handle camera position switch", "err", err)
 		}
 		err = s.DaoWrapper.DeleteSilences(fmt.Sprintf("%d", stream.ID))
 		if err != nil {

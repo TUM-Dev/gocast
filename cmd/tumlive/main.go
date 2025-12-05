@@ -26,6 +26,7 @@ import (
 	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/camera"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
@@ -129,8 +130,21 @@ func run(ctx context.Context) error {
 	})
 	dao.Cache = cache
 
+	// init cam service
+	camAuths := make(map[model.CameraType]string)
+	if tools.Cfg.Auths.CamAuth != "" {
+		// todo: per-camera auths
+		camAuths[model.Panasonic] = tools.Cfg.Auths.CamAuth
+		camAuths[model.Axis] = tools.Cfg.Auths.CamAuth
+	}
+	if tools.Cfg.Auths.CamAuthSony != "" {
+		camAuths[model.Sony_SRG_A40] = tools.Cfg.Auths.CamAuthSony
+	}
+	camService := camera.NewService(camAuths)
+
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
+		runner_manager.WithCamService(camService),
 	}
 	var subtitleClient pb.SubtitleGeneratorClient
 	if tools.Cfg.VoiceService.Host != "" {
@@ -158,7 +172,7 @@ func run(ctx context.Context) error {
 	go mailer.Run()
 
 	initCron(logger, m)
-	return serveHttp(ctx, m)
+	return serveHttp(ctx, m, camService)
 }
 
 var VersionTag = "development"
@@ -177,7 +191,7 @@ func initAll(initializers []initializer) {
 }
 
 // serveHttp launches all http servers
-func serveHttp(ctx context.Context, manager *runner_manager.Manager) (err error) {
+func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService *camera.Service) (err error) {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	gin.SetMode(gin.ReleaseMode)
@@ -232,7 +246,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager) (err error)
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Any("/api/v2/*any", api2Client.Proxy())
-	api.ConfigGinRouter(router, manager)
+	api.ConfigGinRouter(router, manager, camService)
 	web.ConfigGinRouter(router)
 	g.Go(func() error {
 		return router.RunListener(httpl)

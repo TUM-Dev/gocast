@@ -13,7 +13,6 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
-	"github.com/TUM-Dev/gocast/mock_tools"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
@@ -687,20 +686,4 @@ func GetUploadKeyMock(t *testing.T) dao.UploadKeyDao {
 		CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil)
 	return streamsMock
-}
-
-func GetProgressMock(t *testing.T) dao.ProgressDao {
-	progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
-	progressMock.
-		EXPECT().
-		SaveProgresses(gomock.Any()).
-		Return(nil).AnyTimes()
-	return progressMock
-}
-
-func GetPresetUtilityMock(ctrl *gomock.Controller) tools.PresetUtility {
-	mockPresetUtility := mock_tools.NewMockPresetUtility(ctrl)
-	mockPresetUtility.EXPECT().FetchLHPresets(LectureHall).Return().AnyTimes()
-	mockPresetUtility.EXPECT().TakeSnapshot(CameraPreset).Return().AnyTimes()
-	return mockPresetUtility
 }

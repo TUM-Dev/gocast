@@ -25,6 +25,8 @@ import (
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 
+	"github.com/TUM-Dev/gocast/pkg/camera"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -44,6 +46,14 @@ type Manager struct {
 
 	subtitleClient pb.SubtitleGeneratorClient
 	subtitleAuth   string
+
+	camService      CamService
+	camsHandled     map[uint]bool
+	camsHandledLock sync.Mutex
+}
+
+type CamService interface {
+	For(address string, cameraType model.CameraType) (camera.Cam, error)
 }
 
 // New returns a new instance of Manager with the given Options
@@ -55,6 +65,7 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 			Level: log.LevelDebug,
 		})).With("service", "runner_manager"),
 		streamStartLock: sync.Mutex{},
+		camsHandled:     make(map[uint]bool),
 	}
 	m.applyOpts(opts)
 	return &m
@@ -127,6 +138,12 @@ func WithListenAddr(addr string) Option {
 func WithMassStorage(path string) Option {
 	return func(m *Manager) {
 		m.massStorage = path
+	}
+}
+
+func WithCamService(camService CamService) Option {
+	return func(m *Manager) {
+		m.camService = camService
 	}
 }
 
@@ -231,13 +248,12 @@ func (m *Manager) getClient(ctx context.Context) (protobuf.RunnerServiceClient, 
 func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNotification) error {
 	// This is usually called in bursts, which introduces a chance for race conditions,
 	// where a stream is fetched and overwrites the url that the other requests added.
-	m.streamStartLock.Lock()
-	defer m.streamStartLock.Unlock()
 
 	stream, err := m.dao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
 	if err != nil {
 		return err
 	}
+	m.streamStartLock.Lock()
 	switch req.GetStreamVersion() {
 	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
 		m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
@@ -246,6 +262,13 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
 		m.dao.StreamsDao.SaveCAMURL(&stream, *req.Url)
 	}
+	m.streamStartLock.Unlock()
+
+	err = m.handleCamera(ctx, stream)
+	if err != nil {
+		log.Error("failed to handle camera", "stream", stream.ID, "err", err)
+	}
+
 	return nil
 }
 
@@ -447,6 +470,64 @@ func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, ver
 		return err
 	}
 	m.logger.Info("skipping subtitle generation, not eligible", "stream-id", stream.ID, "version", version)
+	return nil
+}
+
+// handleCamera takes care of PTZ camera control and positioning on stream start`
+func (m *Manager) handleCamera(ctx context.Context, stream model.Stream) (err error) {
+	if stream.IsSelfStream() {
+		return nil
+	}
+	m.camsHandledLock.Lock()
+	if m.camsHandled[stream.ID] {
+		m.camsHandledLock.Unlock()
+		return nil
+	}
+	m.camsHandled[stream.ID] = true
+	m.camsHandledLock.Unlock()
+
+	defer func() {
+		if err != nil {
+			m.camsHandledLock.Lock()
+			m.camsHandled[stream.ID] = false
+			m.camsHandledLock.Unlock()
+		}
+	}()
+
+	lh, err := m.dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	course, err := m.dao.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return err
+	}
+	ctrl, err := m.camService.For(lh.CameraIP, lh.CameraType)
+	if err != nil {
+		return err
+	}
+	var pref *model.CameraPresetPreference
+	for _, preference := range course.GetCameraPresetPreference() {
+		if preference.LectureHallID == stream.LectureHallID {
+			pref = &preference
+			break
+		}
+	}
+
+	var p *model.CameraPreset
+	for _, preset := range lh.CameraPresets {
+		if preset.IsDefault && pref == nil {
+			p = &preset
+			break
+		}
+		if pref != nil && preset.PresetID == pref.PresetID {
+			p = &preset
+			break
+		}
+	}
+	if p != nil {
+		return ctrl.SetPreset(p.PresetID)
+	}
 	return nil
 }
 
