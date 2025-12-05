@@ -49,22 +49,14 @@ message ThumbnailReadyNotification {
   bytes thumbnail = 3;
 }
 
-// JobStatus represents the status of a job
-enum JobStatus {
-  JOB_STATUS_UNSPECIFIED = 0;
-  JOB_STATUS_CREATED = 1;
-  JOB_STATUS_RUNNING = 2;
-  JOB_STATUS_COMPLETED = 3;
-  JOB_STATUS_FAILED = 4;
-  JOB_STATUS_CANCELLED = 5;
-}
-
-// ActionStatus represents the status of an action
-enum ActionStatus {
-  ACTION_STATUS_UNSPECIFIED = 0;
-  ACTION_STATUS_RUNNING = 1;
-  ACTION_STATUS_COMPLETED = 2;
-  ACTION_STATUS_FAILED = 3;
+// WorkState represents the state of a job or action
+enum WorkState {
+  WORK_STATE_UNSPECIFIED = 0;
+  WORK_STATE_CREATED = 1;
+  WORK_STATE_RUNNING = 2;
+  WORK_STATE_COMPLETED = 3;
+  WORK_STATE_FAILED = 4;
+  WORK_STATE_CANCELLED = 5;
 }
 
 // JobUpdateNotification is sent when a job's status changes
@@ -73,7 +65,7 @@ message JobUpdateNotification {
   string runner_hostname = 2;
   StreamInfo stream = 3;
   StreamVersion stream_version = 4;
-  JobStatus status = 5;
+  WorkState status = 5;
   string last_error = 6;
 }
 
@@ -81,7 +73,7 @@ message JobUpdateNotification {
 message ActionUpdateNotification {
   string job_id = 1;
   string action_type = 2;
-  ActionStatus status = 3;
+  WorkState status = 3;
   string last_error = 4;
 }
 

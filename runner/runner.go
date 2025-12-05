@@ -177,7 +177,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 	streamVersion, _ := data["streamVersion"].(string)
 
 	// Send job created notification
-	r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CREATED, "")
+	r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_CREATED, "")
 
 	go func() {
 		defer func() {
@@ -193,10 +193,10 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 			actionType := getActionTypeString(getFunctionName(action))
 
 			// Send action running notification
-			r.sendActionUpdate(job, actionType, protobuf.ActionStatus_ACTION_STATUS_RUNNING, "")
+			r.sendActionUpdate(job, actionType, protobuf.WorkState_WORK_STATE_RUNNING, "")
 
 			// Update job status to running
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_RUNNING, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_RUNNING, "")
 
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
@@ -211,12 +211,12 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 						jobFailed = true
 						lastError = err.Error()
 						// Send action failed notification
-						r.sendActionUpdate(job, actionType, protobuf.ActionStatus_ACTION_STATUS_FAILED, err.Error())
+						r.sendActionUpdate(job, actionType, protobuf.WorkState_WORK_STATE_FAILED, err.Error())
 						break // escape retry loop on unrecoverable error
 					}
 				} else {
 					// Send action completed notification
-					r.sendActionUpdate(job, actionType, protobuf.ActionStatus_ACTION_STATUS_COMPLETED, "")
+					r.sendActionUpdate(job, actionType, protobuf.WorkState_WORK_STATE_COMPLETED, "")
 					break // escape retry loop on no error
 				}
 			}
@@ -228,18 +228,18 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 		// Send final job status notification
 		if c.Err() != nil {
 			// Context was cancelled
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CANCELLED, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_CANCELLED, "")
 		} else if jobFailed {
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_FAILED, lastError)
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_FAILED, lastError)
 		} else {
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_COMPLETED, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_COMPLETED, "")
 		}
 	}()
 	return job
 }
 
 // sendJobUpdate sends a job update notification
-func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.JobStatus, lastError string) {
+func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.WorkState, lastError string) {
 	// Safely convert stream version string to protobuf enum
 	var version protobuf.StreamVersion
 	if val, ok := protobuf.StreamVersion_value[streamVersion]; ok {
@@ -263,7 +263,7 @@ func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion stri
 }
 
 // sendActionUpdate sends an action update notification
-func (r *Runner) sendActionUpdate(jobID string, actionType string, status protobuf.ActionStatus, lastError string) {
+func (r *Runner) sendActionUpdate(jobID string, actionType string, status protobuf.WorkState, lastError string) {
 	r.notifications <- &protobuf.Notification{
 		Data: &protobuf.Notification_ActionUpdate{
 			ActionUpdate: &protobuf.ActionUpdateNotification{

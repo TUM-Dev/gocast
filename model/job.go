@@ -6,20 +6,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// JobStatus represents the current status of a job
-type JobStatus string
+// WorkState represents the current state of a job or action
+type WorkState string
 
 const (
-	// JobStatusCreated means the job was just created
-	JobStatusCreated JobStatus = "created"
-	// JobStatusRunning means the job is currently running
-	JobStatusRunning JobStatus = "running"
-	// JobStatusCompleted means the job completed successfully
-	JobStatusCompleted JobStatus = "completed"
-	// JobStatusFailed means the job failed
-	JobStatusFailed JobStatus = "failed"
-	// JobStatusCancelled means the job was cancelled
-	JobStatusCancelled JobStatus = "cancelled"
+	// WorkStateCreated means the job/action was just created
+	WorkStateCreated WorkState = "created"
+	// WorkStateRunning means the job/action is currently running
+	WorkStateRunning WorkState = "running"
+	// WorkStateCompleted means the job/action completed successfully
+	WorkStateCompleted WorkState = "completed"
+	// WorkStateFailed means the job/action failed
+	WorkStateFailed WorkState = "failed"
+	// WorkStateCancelled means the job/action was cancelled
+	WorkStateCancelled WorkState = "cancelled"
 )
 
 // Job represents a runner job that processes stream-related tasks.
@@ -36,11 +36,13 @@ type Job struct {
 	// StreamVersion is the version of the stream (COMB, CAM, PRES)
 	StreamVersion StreamVersion `gorm:"column:stream_version;not null"`
 	// Status is the current status of the job
-	Status JobStatus `gorm:"column:status;not null;default:'created';index"`
+	Status WorkState `gorm:"column:status;not null;default:'created';index"`
 	// StartedAt is the timestamp when the job started
 	StartedAt *time.Time `gorm:"column:started_at"`
 	// CompletedAt is the timestamp when the job completed (or failed)
 	CompletedAt *time.Time `gorm:"column:completed_at"`
+	// LastError is the error message if the job failed
+	LastError string `gorm:"column:last_error;type:text"`
 	// Actions is the list of actions executed as part of this job
 	Actions []Action `gorm:"foreignKey:JobID;references:ID"`
 }
@@ -52,5 +54,5 @@ func (*Job) TableName() string {
 
 // IsActive returns true if the job is still active (not completed, failed, or cancelled)
 func (j *Job) IsActive() bool {
-	return j.Status == JobStatusCreated || j.Status == JobStatusRunning
+	return j.Status == WorkStateCreated || j.Status == WorkStateRunning
 }

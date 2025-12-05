@@ -108,7 +108,7 @@ func (d runnerDao) GetAll(c context.Context) ([]model.Runner, error) {
 func (d runnerDao) GetAllWithJobs(c context.Context) ([]model.Runner, error) {
 	var runners []model.Runner
 	err := d.db.WithContext(c).
-		Preload("Jobs", "status IN ?", []model.JobStatus{model.JobStatusCreated, model.JobStatusRunning}).
+		Preload("Jobs", "status IN ?", []model.WorkState{model.WorkStateCreated, model.WorkStateRunning}).
 		Find(&runners).Error
 	return runners, err
 }

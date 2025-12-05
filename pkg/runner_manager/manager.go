@@ -607,7 +607,7 @@ func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.Jo
 	m.logger.Debug("jobUpdate", "payload", notification)
 
 	// Convert protobuf types to model types
-	jobStatus := protoJobStatusToModel(notification.GetStatus())
+	workState := protoWorkStateToModel(notification.GetStatus())
 	streamVersion := protoStreamVersionToModel(notification.GetStreamVersion())
 
 	// Try to get existing job or create new one
@@ -620,7 +620,7 @@ func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.Jo
 			RunnerHostname: notification.GetRunnerHostname(),
 			StreamID:       uint(notification.GetStream().GetId()),
 			StreamVersion:  streamVersion,
-			Status:         jobStatus,
+			Status:         workState,
 			StartedAt:      &now,
 			LastError:      notification.GetLastError(),
 		}
@@ -628,11 +628,11 @@ func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.Jo
 	}
 
 	// Update existing job
-	job.Status = jobStatus
+	job.Status = workState
 	job.LastError = notification.GetLastError()
 
 	// Set completion time if job is done
-	if jobStatus == model.JobStatusCompleted || jobStatus == model.JobStatusFailed || jobStatus == model.JobStatusCancelled {
+	if workState == model.WorkStateCompleted || workState == model.WorkStateFailed || workState == model.WorkStateCancelled {
 		now := time.Now()
 		job.CompletedAt = &now
 	}
@@ -651,7 +651,7 @@ func (m *Manager) handleActionUpdate(ctx context.Context, notification *protobuf
 	}
 
 	// Convert protobuf status to model status
-	actionStatus := protoActionStatusToModel(notification.GetStatus())
+	workState := protoWorkStateToModel(notification.GetStatus())
 
 	// Try to get existing action or create new one
 	action, err := m.dao.JobDao.GetActionByJobIDAndType(ctx, job.ID, notification.GetActionType())
@@ -661,7 +661,7 @@ func (m *Manager) handleActionUpdate(ctx context.Context, notification *protobuf
 		action = model.Action{
 			JobID:      job.ID,
 			ActionType: notification.GetActionType(),
-			Status:     actionStatus,
+			Status:     workState,
 			StartedAt:  &now,
 			LastError:  notification.GetLastError(),
 		}
@@ -669,11 +669,11 @@ func (m *Manager) handleActionUpdate(ctx context.Context, notification *protobuf
 	}
 
 	// Update existing action
-	action.Status = actionStatus
+	action.Status = workState
 	action.LastError = notification.GetLastError()
 
 	// Set completion time if action is done
-	if actionStatus == model.ActionStatusCompleted || actionStatus == model.ActionStatusFailed {
+	if workState == model.WorkStateCompleted || workState == model.WorkStateFailed {
 		now := time.Now()
 		action.CompletedAt = &now
 	}
@@ -681,35 +681,21 @@ func (m *Manager) handleActionUpdate(ctx context.Context, notification *protobuf
 	return m.dao.JobDao.UpdateAction(ctx, &action)
 }
 
-// protoJobStatusToModel converts protobuf JobStatus to model JobStatus
-func protoJobStatusToModel(status protobuf.JobStatus) model.JobStatus {
+// protoWorkStateToModel converts protobuf WorkState to model WorkState
+func protoWorkStateToModel(status protobuf.WorkState) model.WorkState {
 	switch status {
-	case protobuf.JobStatus_JOB_STATUS_CREATED:
-		return model.JobStatusCreated
-	case protobuf.JobStatus_JOB_STATUS_RUNNING:
-		return model.JobStatusRunning
-	case protobuf.JobStatus_JOB_STATUS_COMPLETED:
-		return model.JobStatusCompleted
-	case protobuf.JobStatus_JOB_STATUS_FAILED:
-		return model.JobStatusFailed
-	case protobuf.JobStatus_JOB_STATUS_CANCELLED:
-		return model.JobStatusCancelled
+	case protobuf.WorkState_WORK_STATE_CREATED:
+		return model.WorkStateCreated
+	case protobuf.WorkState_WORK_STATE_RUNNING:
+		return model.WorkStateRunning
+	case protobuf.WorkState_WORK_STATE_COMPLETED:
+		return model.WorkStateCompleted
+	case protobuf.WorkState_WORK_STATE_FAILED:
+		return model.WorkStateFailed
+	case protobuf.WorkState_WORK_STATE_CANCELLED:
+		return model.WorkStateCancelled
 	default:
-		return model.JobStatusCreated
-	}
-}
-
-// protoActionStatusToModel converts protobuf ActionStatus to model ActionStatus
-func protoActionStatusToModel(status protobuf.ActionStatus) model.ActionStatus {
-	switch status {
-	case protobuf.ActionStatus_ACTION_STATUS_RUNNING:
-		return model.ActionStatusRunning
-	case protobuf.ActionStatus_ACTION_STATUS_COMPLETED:
-		return model.ActionStatusCompleted
-	case protobuf.ActionStatus_ACTION_STATUS_FAILED:
-		return model.ActionStatusFailed
-	default:
-		return model.ActionStatusRunning
+		return model.WorkStateCreated
 	}
 }
 

@@ -86,7 +86,7 @@ func (d jobDao) GetByStreamID(ctx context.Context, streamID uint) ([]model.Job, 
 func (d jobDao) GetByRunnerHostname(ctx context.Context, hostname string) ([]model.Job, error) {
 	var jobs []model.Job
 	err := d.db.WithContext(ctx).
-		Where("runner_hostname = ? AND status IN ?", hostname, []model.JobStatus{model.JobStatusCreated, model.JobStatusRunning}).
+		Where("runner_hostname = ? AND status IN ?", hostname, []model.WorkState{model.WorkStateCreated, model.WorkStateRunning}).
 		Find(&jobs).Error
 	return jobs, err
 }
@@ -95,7 +95,7 @@ func (d jobDao) GetByRunnerHostname(ctx context.Context, hostname string) ([]mod
 func (d jobDao) GetActiveJobs(ctx context.Context) ([]model.Job, error) {
 	var jobs []model.Job
 	err := d.db.WithContext(ctx).
-		Where("status IN ?", []model.JobStatus{model.JobStatusCreated, model.JobStatusRunning}).
+		Where("status IN ?", []model.WorkState{model.WorkStateCreated, model.WorkStateRunning}).
 		Find(&jobs).Error
 	return jobs, err
 }
