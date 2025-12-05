@@ -95,31 +95,24 @@ func (m *Manager) TriggerDueStreams() error {
 			errs = append(errs, fmt.Errorf("GetLectureHallByID: %w", err))
 			continue
 		}
-		client, err := m.getClient(ctx)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("getClient: %w", err))
+		versions := []protobuf.StreamVersion{
+			protobuf.StreamVersion_STREAM_VERSION_COMBINED,
+			protobuf.StreamVersion_STREAM_VERSION_PRESENTATION,
+			protobuf.StreamVersion_STREAM_VERSION_CAMERA,
 		}
+		for _, version := range versions {
+			client, err := m.getClient(ctx)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("getClient: %w", err))
+			}
 
-		resp, err := m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
-		if err != nil && !errors.Is(err, errNotNoLectureSource) {
-			errs = append(errs, fmt.Errorf("RequestStream COMB: %w", err))
-			continue
+			resp, err := m.requestStreamVersion(ctx, s, client, lh, version)
+			if err != nil && !errors.Is(err, errNotNoLectureSource) {
+				errs = append(errs, fmt.Errorf("RequestStream COMB: %w", err))
+				continue
+			}
+			m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", version).Info("started Stream")
 		}
-		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
-
-		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_PRESENTATION)
-		if err != nil && !errors.Is(err, errNotNoLectureSource) {
-			errs = append(errs, fmt.Errorf("RequestStream PRES: %w", err))
-			continue
-		}
-		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.PRES).Info("started Stream")
-
-		resp, err = m.requestStreamVersion(ctx, s, client, lh, protobuf.StreamVersion_STREAM_VERSION_CAMERA)
-		if err != nil && !errors.Is(err, errNotNoLectureSource) {
-			errs = append(errs, fmt.Errorf("RequestStream CAM: %w", err))
-			continue
-		}
-		m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", model.CAM).Info("started Stream")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to start stream: %v", errs)
