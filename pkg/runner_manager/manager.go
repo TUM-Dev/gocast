@@ -104,6 +104,7 @@ func (m *Manager) TriggerDueStreams() error {
 			client, err := m.getClient(ctx)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("getClient: %w", err))
+				continue
 			}
 
 			resp, err := m.requestStreamVersion(ctx, s, client, lh, version)
