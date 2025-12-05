@@ -593,7 +593,7 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 
 	err = m.handleLightsOff(stream)
 	if err != nil {
-		log.Error("failed to turn on lights", "stream", stream.ID, "err", err)
+		log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
 	}
 	return nil
 }
