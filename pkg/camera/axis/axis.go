@@ -1,4 +1,4 @@
-package camera
+package axis
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/camera/protocol"
 )
 
 // AxisCam represents AXIS IP cameras the TUM uses
@@ -22,17 +23,17 @@ const axisBaseURL = "http://%s"
 // NewAxisCam Acts as a constructor for cameras.
 // ip: the ip address of the camera
 // auth: username and password of the camera (e.g. "user:password")
-func NewAxisCam(ip string, auth string) Cam {
+func NewAxisCam(ip string, auth string) *AxisCam {
 	return &AxisCam{Ip: ip, Auth: auth}
 }
 
 func (c *AxisCam) TakeSnapshot(outDir string) (filename string, err error) {
-	resp, _, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/jpg/image.cgi?compression=75", fmt.Sprintf(axisBaseURL, c.Ip)))
+	resp, _, err := protocol.MakeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/jpg/image.cgi?compression=75", fmt.Sprintf(axisBaseURL, c.Ip)))
 	if err != nil {
 		return "", err
 	}
 	filename = uuid.NewV4().String() + ".jpg"
-	err = saveResponseBuffer(outDir, filename, resp)
+	err = protocol.SaveResponseBuffer(outDir, filename, resp)
 	if err != nil {
 		return "", err
 	}
@@ -40,15 +41,15 @@ func (c *AxisCam) TakeSnapshot(outDir string) (filename string, err error) {
 }
 
 // SetPreset tells the camera to use a preset specified by presetId
-func (c AxisCam) SetPreset(presetId int) error {
-	_, _, err := makeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/com/ptz.cgi?gotoserverpresetno=%d&camera=1", fmt.Sprintf(axisBaseURL, c.Ip), presetId))
+func (c *AxisCam) SetPreset(presetId int) error {
+	_, _, err := protocol.MakeAuthenticatedRequest(&c.Auth, "GET", "", fmt.Sprintf("%s/axis-cgi/com/ptz.cgi?gotoserverpresetno=%d&camera=1", fmt.Sprintf(axisBaseURL, c.Ip), presetId))
 	return err
 }
 
 // GetPresets fetches all presets stored on the camera
-func (c AxisCam) GetPresets() ([]model.CameraPreset, error) {
+func (c *AxisCam) GetPresets() ([]model.CameraPreset, error) {
 	var presetsForLectureHall []model.CameraPreset
-	resp, _, err := makeAuthenticatedRequest(&c.Auth, "POST", "action=list&group=root.PTZ.Preset.P0.Position.*.Name", fmt.Sprintf("%s/axis-cgi/param.cgi", fmt.Sprintf(axisBaseURL, c.Ip)))
+	resp, _, err := protocol.MakeAuthenticatedRequest(&c.Auth, "POST", "action=list&group=root.PTZ.Preset.P0.Position.*.Name", fmt.Sprintf("%s/axis-cgi/param.cgi", fmt.Sprintf(axisBaseURL, c.Ip)))
 	if err != nil {
 		return nil, err
 	}

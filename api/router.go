@@ -27,7 +27,11 @@ func ConfigRealtimeRouter(router *gin.RouterGroup) {
 }
 
 // ConfigGinRouter for non ws endpoints
-func ConfigGinRouter(router *gin.Engine, manager *runner_manager.Manager) {
+func ConfigGinRouter(
+	router *gin.Engine,
+	manager *runner_manager.Manager,
+	camService CamService,
+) {
 	daoWrapper := dao.NewDaoWrapper()
 
 	router.Use(tools.ErrorHandler)
@@ -37,7 +41,7 @@ func ConfigGinRouter(router *gin.Engine, manager *runner_manager.Manager) {
 	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
-	configGinLectureHallApiRouter(router, daoWrapper, tools.NewPresetUtility(daoWrapper.LectureHallsDao))
+	configGinLectureHallApiRouter(router, daoWrapper, camService, tools.Cfg.Paths.Static)
 	configProgressRouter(router, daoWrapper)
 	configSeekStatsRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)
