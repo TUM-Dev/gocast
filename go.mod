@@ -53,9 +53,10 @@ require (
 	github.com/tum-dev/gocast/runner v0.0.0-20251017070229-156fcf6b62e3
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.45.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20250324211829-b45e905df463
+	golang.org/x/sync v0.18.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217
 	google.golang.org/grpc v1.71.0
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.10
 	gorm.io/gorm v1.25.12
 )
 
@@ -85,9 +86,8 @@ require (
 	golang.org/x/arch v0.13.0 // indirect
 	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846 // indirect
 )
 
 require (
