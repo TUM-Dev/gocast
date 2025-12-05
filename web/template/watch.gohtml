@@ -73,6 +73,15 @@
         </div>
     </div>
 </div>
+{{if .IndexData.TUMLiveContext.User}}
+    <div id="bookmarks-mobile" x-cloak x-show="sidebar === watch.SidebarState.Bookmarks"
+         class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+        <div @click.outside="sidebar = watch.SidebarState.Hidden"
+             class="m-auto w-3/4 h-16/9 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+            {{template "bookmarks-modal" $stream.ID}}
+        </div>
+    </div>
+{{end}}
 {{if .AlertsEnabled}}
     {{template "alert-modal" . }}
 {{end}}
