@@ -23,7 +23,6 @@ type LectureHall struct {
 	CameraPresets  []CameraPreset
 	RoomID         int    // used by TUMOnline
 	PwrCtrlIp      string // power control api for red live light
-	LiveLightIndex int    // id of power outlet for live light
 	ExternalURL    string
 
 	// Legacy is true if a stream is handled by a worker, false if handled by a runner.

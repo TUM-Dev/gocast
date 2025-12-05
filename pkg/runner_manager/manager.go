@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -50,6 +51,8 @@ type Manager struct {
 	camService      CamService
 	camsHandled     map[uint]bool
 	camsHandledLock sync.Mutex
+
+	lightLock sync.Mutex
 }
 
 type CamService interface {
@@ -218,12 +221,7 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	case *protobuf.Notification_StreamStart:
 		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
 	case *protobuf.Notification_StreamEnd:
-		m.logger.Debug("streamEnd", "payload", notification.GetStreamEnd())
-		err := m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStreamEnd().GetStream().GetId()))
-		if err != nil {
-			return nil, err
-		}
-		return &protobuf.NotificationResponse{}, nil
+		return &protobuf.NotificationResponse{}, m.streamEnded(ctx, notification.GetStreamEnd())
 	case *protobuf.Notification_VodReady:
 		return m.handleVODReady(ctx, notification.GetVodReady())
 	case *protobuf.Notification_ThumbnailReady:
@@ -267,6 +265,11 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	err = m.handleCamera(ctx, stream)
 	if err != nil {
 		log.Error("failed to handle camera", "stream", stream.ID, "err", err)
+	}
+
+	err = m.handleLightsOn(stream)
+	if err != nil {
+		log.Error("failed to turn on lights", "stream", stream.ID, "err", err)
 	}
 
 	return nil
@@ -527,6 +530,70 @@ func (m *Manager) handleCamera(ctx context.Context, stream model.Stream) (err er
 	}
 	if p != nil {
 		return ctrl.SetPreset(p.PresetID)
+	}
+	return nil
+}
+
+// handleLightsOn turns on the lights in the lecture hall when a stream starts
+func (m *Manager) handleLightsOn(stream model.Stream) (err error) {
+	m.lightLock.Lock()
+	defer m.lightLock.Unlock()
+
+	if stream.IsSelfStream() {
+		return nil
+	}
+	lh, err := m.dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	client := go_anel_pwrctrl.New(lh.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
+	for i := range 3 {
+		err = errors.Join(err, client.TurnOn(i))
+	}
+	return err
+}
+
+// handleLightsOff turns off the lights in the lecture hall when a stream ends if no other streams are live in the same hall
+func (m *Manager) handleLightsOff(stream model.Stream) (err error) {
+	m.lightLock.Lock()
+	defer m.lightLock.Unlock()
+
+	liveStreamsInLectureHall, err := m.dao.StreamsDao.GetLiveStreamsInLectureHall(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	if len(liveStreamsInLectureHall) > 1 {
+		return nil // another stream is live, don't turn off the light
+	}
+	if len(liveStreamsInLectureHall) == 1 && liveStreamsInLectureHall[0].ID != stream.ID {
+		return nil // the one different live stream is not this one, don't turn off the light
+	}
+	lectureHall, err := m.dao.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
+	for i := range 3 {
+		err = errors.Join(err, client.TurnOff(i))
+	}
+	return err
+}
+
+func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.StreamEndNotification) error {
+	m.logger.Debug("streamEnd", "payload", notification)
+	err := m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStream().GetId()))
+	if err != nil {
+		return err
+	}
+
+	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(notification.GetStream().GetId(), 10))
+	if err != nil {
+		return err
+	}
+
+	err = m.handleLightsOff(stream)
+	if err != nil {
+		log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
 	}
 	return nil
 }

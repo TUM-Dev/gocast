@@ -34,16 +34,15 @@ var (
 	Admin            = model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}
 	EmptyLectureHall = model.LectureHall{}
 	LectureHall      = model.LectureHall{
-		Model:          gorm.Model{ID: uint(1)},
-		Name:           "FMI_HS1",
-		FullName:       "MI HS1",
-		CombIP:         "127.0.0.1/extron3",
-		PresIP:         "127.0.0.1/extron1",
-		CamIP:          "127.0.0.1/extron2",
-		CameraIP:       "127.0.0.1",
-		RoomID:         0,
-		PwrCtrlIp:      "http://pwrctrlip.in.test.de",
-		LiveLightIndex: 0,
+		Model:     gorm.Model{ID: uint(1)},
+		Name:      "FMI_HS1",
+		FullName:  "MI HS1",
+		CombIP:    "127.0.0.1/extron3",
+		PresIP:    "127.0.0.1/extron1",
+		CamIP:     "127.0.0.1/extron2",
+		CameraIP:  "127.0.0.1",
+		RoomID:    0,
+		PwrCtrlIp: "http://pwrctrlip.in.test.de",
 	}
 	CameraPreset = model.CameraPreset{
 		Name:          "Home",
