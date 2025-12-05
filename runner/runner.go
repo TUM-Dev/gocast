@@ -233,13 +233,21 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 
 // sendJobUpdate sends a job update notification
 func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.JobStatus, actionType protobuf.ActionType, errorMsg string) {
+	// Safely convert stream version string to protobuf enum
+	var version protobuf.StreamVersion
+	if val, ok := protobuf.StreamVersion_value[streamVersion]; ok {
+		version = protobuf.StreamVersion(val)
+	} else {
+		version = protobuf.StreamVersion_STREAM_VERSION_UNSPECIFIED
+	}
+
 	r.notifications <- &protobuf.Notification{
 		Data: &protobuf.Notification_JobUpdate{
 			JobUpdate: &protobuf.JobUpdateNotification{
 				JobId:          ptr.Take(jobID),
 				RunnerHostname: ptr.Take(config.Config.Hostname),
 				Stream:         &protobuf.StreamInfo{Id: ptr.Take(streamID)},
-				StreamVersion:  ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
+				StreamVersion:  ptr.Take(version),
 				Status:         ptr.Take(status),
 				CurrentAction:  ptr.Take(actionType),
 				ErrorMessage:   ptr.Take(errorMsg),

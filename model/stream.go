@@ -55,6 +55,7 @@ type Stream struct {
 	VideoSections         []VideoSection
 	TranscodingProgresses []TranscodingProgress `gorm:"foreignKey:StreamID"`
 	Private               bool                  `gorm:"not null;default:false"`
+	Jobs                  []Job                 `gorm:"foreignKey:StreamID"` // Jobs associated with this stream
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }

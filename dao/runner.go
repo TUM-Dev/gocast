@@ -27,6 +27,9 @@ type RunnerDao interface {
 	// GetAll gets a list of all Runners.
 	GetAll(context.Context) ([]model.Runner, error)
 
+	// GetAllWithJobs gets a list of all Runners with their active jobs preloaded.
+	GetAllWithJobs(context.Context) ([]model.Runner, error)
+
 	// ReserveRunner returns the runner that currently runs the least jobs and is not draining.
 	// It also increments the number of jobs assigned to the runner.
 	ReserveRunner(context.Context) (model.Runner, error)
@@ -98,5 +101,14 @@ func (d runnerDao) Update(c context.Context, it *model.Runner) error {
 func (d runnerDao) GetAll(c context.Context) ([]model.Runner, error) {
 	var runners []model.Runner
 	err := d.db.WithContext(c).Find(&runners).Error
+	return runners, err
+}
+
+// GetAllWithJobs returns all Runners with their active jobs preloaded
+func (d runnerDao) GetAllWithJobs(c context.Context) ([]model.Runner, error) {
+	var runners []model.Runner
+	err := d.db.WithContext(c).
+		Preload("Jobs", "status IN ?", []model.JobStatus{model.JobStatusCreated, model.JobStatusRunning}).
+		Find(&runners).Error
 	return runners, err
 }

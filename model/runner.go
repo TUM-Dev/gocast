@@ -28,6 +28,9 @@ type Runner struct {
 	JobCount uint64 `gorm:"column:job_count;not null;default:0"`
 	// Version is the version of the runner.
 	Version string `gorm:"column:version;not null;default:'dev'"`
+	// Jobs is the list of jobs currently associated with this runner.
+	// This is populated when explicitly requested.
+	Jobs []Job `gorm:"foreignKey:RunnerHostname;references:Hostname"`
 }
 
 // TableName returns the name of the table for the Runner model in the database.

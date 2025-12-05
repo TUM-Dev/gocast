@@ -114,3 +114,6 @@ tumlive.service
 
 # osx
 .DS_Store
+
+# downloaded protoc binary
+protoc-*.zip
