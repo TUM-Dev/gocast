@@ -79,10 +79,6 @@
 @media (prefers-reduced-motion: reduce) {
     .snowflake {
         animation: none;
-        opacity: 0.3;
-    }
-    
-    #theme-effects-container {
-        display: none;
+        opacity: 0.2;
     }
 }

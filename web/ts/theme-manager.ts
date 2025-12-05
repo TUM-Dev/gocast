@@ -54,9 +54,7 @@ class ChristmasTheme implements ThemeEffects {
         // Remove snowflake after animation completes
         setTimeout(
             () => {
-                if (snowflake.parentNode) {
-                    snowflake.parentNode.removeChild(snowflake);
-                }
+                snowflake.remove();
             },
             (duration + delay) * 1000,
         );
@@ -67,8 +65,8 @@ class ChristmasTheme implements ThemeEffects {
             clearInterval(this.snowflakeInterval);
             this.snowflakeInterval = null;
         }
-        if (this.container && this.container.parentNode) {
-            this.container.parentNode.removeChild(this.container);
+        if (this.container) {
+            this.container.remove();
             this.container = null;
         }
     }
@@ -122,7 +120,7 @@ class SiteThemeManager {
         this.currentTheme = themeId;
 
         // Apply new theme
-        if (themeId && themeId !== "") {
+        if (themeId) {
             document.body.classList.add(`theme-${themeId}`);
 
             // Initialize theme effects if available
