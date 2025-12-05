@@ -6,6 +6,7 @@ export * from "./user-settings";
 export * from "./start-page";
 export * from "./utilities/time";
 export * from "./custom-elements/elements";
+export * from "./theme-manager";
 
 export async function getData(url = "") {
     return await fetch(url);

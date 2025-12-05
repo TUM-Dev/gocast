@@ -2,6 +2,42 @@
     <div x-data="admin.maintenancePage()">
 
         <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Maintenance</h2>
+
+        <div class="form-container" x-data="admin.themePage()" x-init="fetchThemes()">
+            <div class="form-container-title">Site Theme</div>
+            <div class="form-container-body">
+                <p class="text-sm text-4 mb-3">Select a theme to apply to all pages for all users.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="theme in themes" :key="theme.id">
+                        <button
+                            @click="setActiveTheme(theme.id)"
+                            class="p-4 rounded-lg border-2 transition-all duration-200 text-left"
+                            :class="activeTheme === theme.id ? 'border-blue-500 dark:border-indigo-500 bg-blue-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
+                        >
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid text-2xl" :class="theme.icon + (activeTheme === theme.id ? ' text-blue-500 dark:text-indigo-400' : ' text-4')"></i>
+                                <div>
+                                    <div class="font-semibold text-1" x-text="theme.name"></div>
+                                    <div class="text-sm text-4" x-text="theme.description"></div>
+                                </div>
+                            </div>
+                            <div x-show="activeTheme === theme.id" class="mt-2 text-xs text-blue-600 dark:text-indigo-400">
+                                <i class="fa-solid fa-check mr-1"></i> Active
+                            </div>
+                        </button>
+                    </template>
+                </div>
+                <div x-show="loading" class="text-center py-4">
+                    <i class="fa-solid fa-spinner fa-spin text-2"></i>
+                    <span class="ml-2 text-4">Loading themes...</span>
+                </div>
+                <div x-show="error" x-cloak class="text-red-500 mt-2" x-text="error"></div>
+                <div x-show="success" x-cloak class="text-green-500 mt-2">
+                    <i class="fa-solid fa-check mr-1"></i> Theme updated successfully
+                </div>
+            </div>
+        </div>
+
         <div class="form-container" x-init="keepUpdated()">
             <div class="form-container-title">Thumbnails</div>
             <div class="form-container-body">

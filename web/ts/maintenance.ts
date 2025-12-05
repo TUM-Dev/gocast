@@ -24,6 +24,79 @@ interface maintenancePage {
     deleteEmailFailure(id: number): void;
 }
 
+interface Theme {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+}
+
+interface themePage {
+    themes: Theme[];
+    activeTheme: string;
+    loading: boolean;
+    error: string | null;
+    success: boolean;
+    fetchThemes(): void;
+    setActiveTheme(themeId: string): void;
+}
+
+export function themePage(): themePage {
+    return {
+        themes: [],
+        activeTheme: "",
+        loading: true,
+        error: null,
+        success: false,
+        fetchThemes() {
+            this.loading = true;
+            this.error = null;
+
+            // Fetch available themes and active theme in parallel
+            Promise.all([
+                fetch("/api/theme/available").then((r) => r.json()),
+                fetch("/api/theme/active").then((r) => r.json()),
+            ])
+                .then(([themes, activeResponse]) => {
+                    this.themes = themes;
+                    this.activeTheme = activeResponse.themeId || "";
+                    this.loading = false;
+                })
+                .catch((err) => {
+                    this.error = "Failed to load themes: " + err.message;
+                    this.loading = false;
+                });
+        },
+        setActiveTheme(themeId: string) {
+            this.error = null;
+            this.success = false;
+
+            fetch("/api/theme/active", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ themeId }),
+            })
+                .then((r) => {
+                    if (r.status === StatusCodes.OK) {
+                        this.activeTheme = themeId;
+                        this.success = true;
+                        // Auto-hide success message after 3 seconds
+                        setTimeout(() => {
+                            this.success = false;
+                        }, 3000);
+                    } else {
+                        throw new Error("Failed to update theme");
+                    }
+                })
+                .catch((err) => {
+                    this.error = err.message;
+                });
+        },
+    };
+}
+
 export function maintenancePage(): maintenancePage {
     return {
         generateThumbnails() {

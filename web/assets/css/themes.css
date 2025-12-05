@@ -1,0 +1,88 @@
+/* Christmas/Winter Theme Effects */
+
+/* Snowflake animation */
+.snowflake {
+    position: fixed;
+    top: -10px;
+    z-index: 9999;
+    color: #fff;
+    font-size: 1em;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+    pointer-events: none;
+    animation: fall linear infinite;
+    opacity: 0.8;
+}
+
+/* Dark mode snowflakes - slightly different color for visibility */
+.dark .snowflake {
+    color: #e0e8ff;
+    text-shadow: 0 0 8px rgba(200, 220, 255, 0.6);
+}
+
+@keyframes fall {
+    0% {
+        transform: translateY(-10px) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Variations for different snowflake animations */
+.snowflake:nth-child(odd) {
+    animation-name: fall, sway-right;
+}
+
+.snowflake:nth-child(even) {
+    animation-name: fall, sway-left;
+}
+
+@keyframes sway-right {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(25px);
+    }
+}
+
+@keyframes sway-left {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(-25px);
+    }
+}
+
+/* Container for snowflakes - prevents interference with page content */
+#theme-effects-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9998;
+    overflow: hidden;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .snowflake {
+        animation: none;
+        opacity: 0.3;
+    }
+    
+    #theme-effects-container {
+        display: none;
+    }
+}

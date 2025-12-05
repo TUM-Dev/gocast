@@ -113,6 +113,7 @@ func run(ctx context.Context) error {
 		&model.TranscodingFailure{},
 		&model.Email{},
 		&model.Runner{},
+		&model.SiteSetting{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)

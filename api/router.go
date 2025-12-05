@@ -45,6 +45,7 @@ func ConfigGinRouter(
 	configProgressRouter(router, daoWrapper)
 	configSeekStatsRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)
+	configSiteSettingsRouter(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configWorkerRouter(router, daoWrapper)
 	configRunnerRouter(router, daoWrapper)
