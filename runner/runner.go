@@ -177,7 +177,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 	streamVersion, _ := data["streamVersion"].(string)
 
 	// Send job created notification
-	r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_CREATED, "")
+	r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_CREATED)
 
 	go func() {
 		defer func() {
@@ -187,7 +187,6 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 		}()
 
 		jobFailed := false
-		var lastError string
 
 		for _, action := range a {
 			actionType := getActionTypeString(getFunctionName(action))
@@ -196,7 +195,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 			r.sendActionUpdate(job, actionType, protobuf.WorkState_WORK_STATE_RUNNING, "")
 
 			// Update job status to running
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_RUNNING, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_RUNNING)
 
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
@@ -209,8 +208,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
 						jobFailed = true
-						lastError = err.Error()
-						// Send action failed notification
+						// Send action failed notification with error
 						r.sendActionUpdate(job, actionType, protobuf.WorkState_WORK_STATE_FAILED, err.Error())
 						break // escape retry loop on unrecoverable error
 					}
@@ -228,18 +226,18 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 		// Send final job status notification
 		if c.Err() != nil {
 			// Context was cancelled
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_CANCELLED, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_CANCELLED)
 		} else if jobFailed {
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_FAILED, lastError)
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_FAILED)
 		} else {
-			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_COMPLETED, "")
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.WorkState_WORK_STATE_COMPLETED)
 		}
 	}()
 	return job
 }
 
 // sendJobUpdate sends a job update notification
-func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.WorkState, lastError string) {
+func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.WorkState) {
 	// Safely convert stream version string to protobuf enum
 	var version protobuf.StreamVersion
 	if val, ok := protobuf.StreamVersion_value[streamVersion]; ok {
@@ -256,7 +254,6 @@ func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion stri
 				Stream:         &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 				StreamVersion:  ptr.Take(version),
 				Status:         ptr.Take(status),
-				LastError:      ptr.Take(lastError),
 			},
 		},
 	}

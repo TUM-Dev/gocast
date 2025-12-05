@@ -41,8 +41,6 @@ type Job struct {
 	StartedAt *time.Time `gorm:"column:started_at"`
 	// CompletedAt is the timestamp when the job completed (or failed)
 	CompletedAt *time.Time `gorm:"column:completed_at"`
-	// LastError is the error message if the job failed
-	LastError string `gorm:"column:last_error;type:text"`
 	// Actions is the list of actions executed as part of this job
 	Actions []Action `gorm:"foreignKey:JobID;references:ID"`
 }

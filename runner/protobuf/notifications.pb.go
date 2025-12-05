@@ -578,7 +578,6 @@ type JobUpdateNotification struct {
 	Stream         *StreamInfo            `protobuf:"bytes,3,opt,name=stream" json:"stream,omitempty"`
 	StreamVersion  *StreamVersion         `protobuf:"varint,4,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
 	Status         *WorkState             `protobuf:"varint,5,opt,name=status,enum=protobuf.WorkState" json:"status,omitempty"`
-	LastError      *string                `protobuf:"bytes,6,opt,name=last_error,json=lastError" json:"last_error,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -646,13 +645,6 @@ func (x *JobUpdateNotification) GetStatus() WorkState {
 		return *x.Status
 	}
 	return WorkState_WORK_STATE_UNSPECIFIED
-}
-
-func (x *JobUpdateNotification) GetLastError() string {
-	if x != nil && x.LastError != nil {
-		return *x.LastError
-	}
-	return ""
 }
 
 // ActionUpdateNotification is sent when an action's status changes
@@ -796,15 +788,13 @@ const file_notifications_proto_rawDesc = "" +
 	"\x1aThumbnailReadyNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x1c\n" +
-	"\tthumbnail\x18\x03 \x01(\fR\tthumbnail\"\x91\x02\n" +
+	"\tthumbnail\x18\x03 \x01(\fR\tthumbnail\"\xf2\x01\n" +
 	"\x15JobUpdateNotification\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12'\n" +
 	"\x0frunner_hostname\x18\x02 \x01(\tR\x0erunnerHostname\x12,\n" +
 	"\x06stream\x18\x03 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x04 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12+\n" +
-	"\x06status\x18\x05 \x01(\x0e2\x13.protobuf.WorkStateR\x06status\x12\x1d\n" +
-	"\n" +
-	"last_error\x18\x06 \x01(\tR\tlastError\"\x9e\x01\n" +
+	"\x06status\x18\x05 \x01(\x0e2\x13.protobuf.WorkStateR\x06status\"\x9e\x01\n" +
 	"\x18ActionUpdateNotification\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x1f\n" +
 	"\vaction_type\x18\x02 \x01(\tR\n" +

@@ -622,14 +622,12 @@ func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.Jo
 			StreamVersion:  streamVersion,
 			Status:         workState,
 			StartedAt:      &now,
-			LastError:      notification.GetLastError(),
 		}
 		return m.dao.JobDao.Create(ctx, &job)
 	}
 
 	// Update existing job
 	job.Status = workState
-	job.LastError = notification.GetLastError()
 
 	// Set completion time if job is done
 	if workState == model.WorkStateCompleted || workState == model.WorkStateFailed || workState == model.WorkStateCancelled {

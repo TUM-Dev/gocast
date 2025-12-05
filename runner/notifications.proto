@@ -66,7 +66,6 @@ message JobUpdateNotification {
   StreamInfo stream = 3;
   StreamVersion stream_version = 4;
   WorkState status = 5;
-  string last_error = 6;
 }
 
 // ActionUpdateNotification is sent when an action's status changes
