@@ -36,7 +36,7 @@ func (d siteSettingsDao) Get(key string) (string, error) {
 // Set creates or updates a setting value
 func (d siteSettingsDao) Set(key string, value string) error {
 	var setting model.SiteSetting
-	err := d.db.Where("v = ?", key).First(&setting).Error
+	err := d.db.Where("k = ?", key).First(&setting).Error
 	if err == gorm.ErrRecordNotFound {
 		// Create new setting
 		setting = model.SiteSetting{K: key, V: value}
