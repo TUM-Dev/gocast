@@ -6,13 +6,18 @@ import "gorm.io/gorm"
 type SiteSetting struct {
 	gorm.Model
 
-	Key   string `gorm:"uniqueIndex;not null"`
-	Value string `gorm:"not null"`
+	K string `gorm:"uniqueIndex;not null"`
+	V string `gorm:"not null"`
+}
+
+// TableName returns the name of the table for the Runner model in the database.
+func (*SiteSetting) TableName() string {
+	return "site_settings" // todo
 }
 
 const (
 	// SettingActiveTheme is the key for the currently active theme
-	// Value should be one of the ThemeID constants, or empty string for default
+	// V should be one of the ThemeID constants, or empty string for default
 	SettingActiveTheme = "active_theme"
 )
 

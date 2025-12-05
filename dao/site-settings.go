@@ -26,27 +26,27 @@ func NewSiteSettingsDao() SiteSettingsDao {
 // Get retrieves a setting value by key
 func (d siteSettingsDao) Get(key string) (string, error) {
 	var setting model.SiteSetting
-	err := d.db.Where("key = ?", key).First(&setting).Error
+	err := d.db.Where("k = ?", key).First(&setting).Error
 	if err != nil {
 		return "", err
 	}
-	return setting.Value, nil
+	return setting.V, nil
 }
 
 // Set creates or updates a setting value
 func (d siteSettingsDao) Set(key string, value string) error {
 	var setting model.SiteSetting
-	err := d.db.Where("key = ?", key).First(&setting).Error
+	err := d.db.Where("v = ?", key).First(&setting).Error
 	if err == gorm.ErrRecordNotFound {
 		// Create new setting
-		setting = model.SiteSetting{Key: key, Value: value}
+		setting = model.SiteSetting{K: key, V: value}
 		return d.db.Create(&setting).Error
 	}
 	if err != nil {
 		return err
 	}
 	// Update existing setting
-	setting.Value = value
+	setting.V = value
 	return d.db.Save(&setting).Error
 }
 
