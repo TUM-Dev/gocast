@@ -11,12 +11,10 @@ export class TranscriptController {
     private lastSyncTime: number;
     private player: Player;
     private selectedTrackLabel: string;
-    private availableLanguages: string[];
 
     constructor() {
         this.lastSyncTime = 0;
         this.selectedTrackLabel = "";
-        this.availableLanguages = [];
     }
 
     reset(): void {
@@ -62,9 +60,9 @@ export class TranscriptController {
         this.player = getPlayers()[0];
 
         // Initialize with the first available language
-        this.availableLanguages = this.getAvailableLanguages();
-        if (this.availableLanguages.length > 0 && !this.selectedTrackLabel) {
-            this.selectedTrackLabel = this.availableLanguages[0];
+        const availableLanguages = this.getAvailableLanguages();
+        if (availableLanguages.length > 0 && !this.selectedTrackLabel) {
+            this.selectedTrackLabel = availableLanguages[0];
         }
 
         window.setInterval(() => this.syncTranscript(), 1000);
