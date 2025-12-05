@@ -109,7 +109,7 @@ func (m *Manager) TriggerDueStreams() error {
 
 			resp, err := m.requestStreamVersion(ctx, s, client, lh, version)
 			if err != nil && !errors.Is(err, errNotNoLectureSource) {
-				errs = append(errs, fmt.Errorf("RequestStream COMB: %w", err))
+				errs = append(errs, fmt.Errorf("RequestStream %v: %w", version, err))
 				continue
 			}
 			m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", version).Info("started Stream")
