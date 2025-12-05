@@ -226,6 +226,8 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return m.handleVODReady(ctx, notification.GetVodReady())
 	case *protobuf.Notification_ThumbnailReady:
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
+	case *protobuf.Notification_JobUpdate:
+		return &protobuf.NotificationResponse{}, m.handleJobUpdate(ctx, notification.GetJobUpdate())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
@@ -596,6 +598,99 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 		log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
 	}
 	return nil
+}
+
+// handleJobUpdate handles job update notifications from runners
+func (m *Manager) handleJobUpdate(ctx context.Context, notification *protobuf.JobUpdateNotification) error {
+	m.logger.Debug("jobUpdate", "payload", notification)
+
+	// Convert protobuf types to model types
+	jobStatus := protoJobStatusToModel(notification.GetStatus())
+	actionType := protoActionTypeToModel(notification.GetCurrentAction())
+	streamVersion := protoStreamVersionToModel(notification.GetStreamVersion())
+
+	// Try to get existing job or create new one
+	job, err := m.dao.JobDao.GetByJobID(ctx, notification.GetJobId())
+	if err != nil {
+		// Job doesn't exist, create new one
+		now := time.Now()
+		job = model.Job{
+			JobID:          notification.GetJobId(),
+			RunnerHostname: notification.GetRunnerHostname(),
+			StreamID:       uint(notification.GetStream().GetId()),
+			StreamVersion:  streamVersion,
+			Status:         jobStatus,
+			CurrentAction:  actionType,
+			Progress:       uint8(notification.GetProgress()),
+			StartedAt:      &now,
+			ErrorMessage:   notification.GetErrorMessage(),
+		}
+		return m.dao.JobDao.Create(ctx, &job)
+	}
+
+	// Update existing job
+	job.Status = jobStatus
+	job.CurrentAction = actionType
+	job.Progress = uint8(notification.GetProgress())
+	job.ErrorMessage = notification.GetErrorMessage()
+
+	// Set completion time if job is done
+	if jobStatus == model.JobStatusCompleted || jobStatus == model.JobStatusFailed || jobStatus == model.JobStatusCancelled {
+		now := time.Now()
+		job.CompletedAt = &now
+	}
+
+	return m.dao.JobDao.Update(ctx, &job)
+}
+
+// protoJobStatusToModel converts protobuf JobStatus to model JobStatus
+func protoJobStatusToModel(status protobuf.JobStatus) model.JobStatus {
+	switch status {
+	case protobuf.JobStatus_JOB_STATUS_CREATED:
+		return model.JobStatusCreated
+	case protobuf.JobStatus_JOB_STATUS_RUNNING:
+		return model.JobStatusRunning
+	case protobuf.JobStatus_JOB_STATUS_COMPLETED:
+		return model.JobStatusCompleted
+	case protobuf.JobStatus_JOB_STATUS_FAILED:
+		return model.JobStatusFailed
+	case protobuf.JobStatus_JOB_STATUS_CANCELLED:
+		return model.JobStatusCancelled
+	default:
+		return model.JobStatusCreated
+	}
+}
+
+// protoActionTypeToModel converts protobuf ActionType to model ActionType
+func protoActionTypeToModel(action protobuf.ActionType) model.ActionType {
+	switch action {
+	case protobuf.ActionType_ACTION_TYPE_STREAM:
+		return model.ActionTypeStream
+	case protobuf.ActionType_ACTION_TYPE_STREAM_END:
+		return model.ActionTypeStreamEnd
+	case protobuf.ActionType_ACTION_TYPE_MK_VOD:
+		return model.ActionTypeMkVOD
+	case protobuf.ActionType_ACTION_TYPE_CHECK_VOD:
+		return model.ActionTypeCheckVoD
+	case protobuf.ActionType_ACTION_TYPE_MK_THUMB:
+		return model.ActionTypeMkThumb
+	default:
+		return ""
+	}
+}
+
+// protoStreamVersionToModel converts protobuf StreamVersion to model StreamVersion
+func protoStreamVersionToModel(version protobuf.StreamVersion) model.StreamVersion {
+	switch version {
+	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+		return model.COMB
+	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+		return model.CAM
+	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+		return model.PRES
+	default:
+		return model.COMB
+	}
 }
 
 func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {

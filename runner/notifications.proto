@@ -12,6 +12,7 @@ message Notification {
     HeartbeatNotification heartbeat = 3;
     VODReadyNotification vod_ready = 4;
     ThumbnailReadyNotification thumbnail_ready = 5;
+    JobUpdateNotification job_update = 6;
   }
 }
 
@@ -45,6 +46,38 @@ message ThumbnailReadyNotification {
   StreamInfo stream = 1;
   StreamVersion stream_version = 2;
   bytes thumbnail = 3;
+}
+
+// JobStatus represents the status of a job
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_CREATED = 1;
+  JOB_STATUS_RUNNING = 2;
+  JOB_STATUS_COMPLETED = 3;
+  JOB_STATUS_FAILED = 4;
+  JOB_STATUS_CANCELLED = 5;
+}
+
+// ActionType represents the type of action being executed
+enum ActionType {
+  ACTION_TYPE_UNSPECIFIED = 0;
+  ACTION_TYPE_STREAM = 1;
+  ACTION_TYPE_STREAM_END = 2;
+  ACTION_TYPE_MK_VOD = 3;
+  ACTION_TYPE_CHECK_VOD = 4;
+  ACTION_TYPE_MK_THUMB = 5;
+}
+
+// JobUpdateNotification is sent when a job's status changes
+message JobUpdateNotification {
+  string job_id = 1;
+  string runner_hostname = 2;
+  StreamInfo stream = 3;
+  StreamVersion stream_version = 4;
+  JobStatus status = 5;
+  ActionType current_action = 6;
+  uint32 progress = 7;
+  string error_message = 8;
 }
 
 message NotificationResponse {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -170,13 +171,30 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 	job := uuid.New().String()
 	r.JobCount <- 1
 	r.jobs[job] = cancel
+
+	// Extract stream info for job notifications
+	streamID, _ := data["streamID"].(uint64)
+	streamVersion, _ := data["streamVersion"].(string)
+
+	// Send job created notification
+	r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CREATED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, "")
+
 	go func() {
 		defer func() {
 			cancel()
 			delete(r.jobs, job)
 			r.JobCount <- -1
 		}()
+
+		jobFailed := false
+		var lastError string
+
 		for _, action := range a {
+			actionType := r.getActionType(getFunctionName(action))
+
+			// Send running notification for this action
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_RUNNING, actionType, "")
+
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
 				log.Info("running action")
@@ -187,15 +205,65 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
+						jobFailed = true
+						lastError = err.Error()
 						break // escape retry loop on unrecoverable error
 					}
 				} else {
 					break // escape retry loop on no error
 				}
 			}
+			if jobFailed {
+				break
+			}
+		}
+
+		// Send final job status notification
+		if c.Err() != nil {
+			// Context was cancelled
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_CANCELLED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, "")
+		} else if jobFailed {
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_FAILED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, lastError)
+		} else {
+			r.sendJobUpdate(job, streamID, streamVersion, protobuf.JobStatus_JOB_STATUS_COMPLETED, protobuf.ActionType_ACTION_TYPE_UNSPECIFIED, "")
 		}
 	}()
 	return job
+}
+
+// sendJobUpdate sends a job update notification
+func (r *Runner) sendJobUpdate(jobID string, streamID uint64, streamVersion string, status protobuf.JobStatus, actionType protobuf.ActionType, errorMsg string) {
+	r.notifications <- &protobuf.Notification{
+		Data: &protobuf.Notification_JobUpdate{
+			JobUpdate: &protobuf.JobUpdateNotification{
+				JobId:          ptr.Take(jobID),
+				RunnerHostname: ptr.Take(config.Config.Hostname),
+				Stream:         &protobuf.StreamInfo{Id: ptr.Take(streamID)},
+				StreamVersion:  ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
+				Status:         ptr.Take(status),
+				CurrentAction:  ptr.Take(actionType),
+				ErrorMessage:   ptr.Take(errorMsg),
+			},
+		},
+	}
+}
+
+// getActionType converts an action function name to an ActionType
+func (r *Runner) getActionType(funcName string) protobuf.ActionType {
+	switch {
+	case strings.HasSuffix(funcName, "Stream"):
+		return protobuf.ActionType_ACTION_TYPE_STREAM
+	case strings.HasSuffix(funcName, "StreamEnd"):
+		return protobuf.ActionType_ACTION_TYPE_STREAM_END
+	case strings.HasSuffix(funcName, "MkVOD"):
+		return protobuf.ActionType_ACTION_TYPE_MK_VOD
+	case strings.HasSuffix(funcName, "CheckVoD"):
+		return protobuf.ActionType_ACTION_TYPE_CHECK_VOD
+	case strings.HasSuffix(funcName, "MkThumb"):
+		return protobuf.ActionType_ACTION_TYPE_MK_THUMB
+	default:
+		return protobuf.ActionType_ACTION_TYPE_UNSPECIFIED
+	}
 }
 
 func (r *Runner) handleNotifications(ctx context.Context) {
