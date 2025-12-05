@@ -383,10 +383,6 @@ input[type='checkbox']:checked + label {
     .lg\:h-16\/6 {
         height: calc((6 / 16) * 100vw) !important;
     }
-    .lg\:h-sidebar-auto {
-        height: auto !important;
-        max-height: none !important;
-    }
 }
 
 /* don't ask */
