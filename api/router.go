@@ -52,4 +52,6 @@ func ConfigGinRouter(router *gin.Engine, manager *runner_manager.Manager) {
 	configMaintenanceRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)
+	configGinArtemisRouter(router, daoWrapper)
+	configGinArtemisSSORouter(router, daoWrapper)  // SSO-based authentication for Artemis
 }

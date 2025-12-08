@@ -165,10 +165,11 @@ type Config struct {
 		Port      string `yaml:"port"`
 		AuthToken string `yaml:"authToken"`
 	}
-	IngestBase  string  `yaml:"ingestBase"`
-	WebUrl      string  `yaml:"webUrl"`
-	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool
-	JWTKey      *string `yaml:"jwtKey"`
+	IngestBase    string  `yaml:"ingestBase"`
+	WebUrl        string  `yaml:"webUrl"`
+	WorkerToken   string  `yaml:"workerToken"`   // used for workers to join the worker pool
+	ArtemisAPIKey string  `yaml:"artemisApiKey"` // Shared secret for Artemis SSO integration
+	JWTKey        *string `yaml:"jwtKey"`
 	Meili       *struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`

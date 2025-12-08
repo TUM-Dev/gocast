@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -21,6 +22,8 @@ func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g.Use(tools.AtLeastLecturer)
 	g.POST("/create", routes.createToken)
 	g.DELETE("/:id", routes.deleteToken)
+	g.GET("/artemis", routes.getArtemisToken)
+	g.GET("/artemis/courses", routes.getArtemisCourses)
 }
 
 type tokenRoutes struct {
@@ -192,4 +195,171 @@ func (r *tokenRoutes) fetchStreamKey(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"url": "" + tools.Cfg.IngestBase + courseSlug + "?secret=" + streamKey + "/" + courseSlug})
+}
+
+// getArtemisToken returns or creates an upload token for the logged-in user for Artemis integration
+func (r tokenRoutes) getArtemisToken(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "not logged in",
+		})
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	if tumLiveContext.User == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "not logged in",
+		})
+		return
+	}
+
+	// Check if user already has an active Artemis upload token
+	allTokens, err := r.TokenDao.GetAllTokens(tumLiveContext.User)
+	if err != nil {
+		logger.Error("can not get tokens", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get tokens",
+			Err:           err,
+		})
+		return
+	}
+
+	// Look for an active lecturer token
+	var existingToken *model.Token
+	for _, tokenDto := range allTokens {
+		// Check if it's a lecturer token and not expired
+		if tokenDto.Scope == model.TokenScopeLecturer {
+			if tokenDto.Expires.Valid && tokenDto.Expires.Time.Before(time.Now()) {
+				// Token is expired, skip it
+				continue
+			}
+			// Found a valid token
+			token := tokenDto.Token  // Extract the embedded model.Token
+			existingToken = &token
+			break
+		}
+	}
+
+	// If no valid token exists, create one (valid for 1 year)
+	if existingToken == nil {
+		tokenStr := uuid.NewV4().String()
+		expires := sql.NullTime{
+			Valid: true,
+			Time:  time.Now().AddDate(1, 0, 0), // 1 year from now
+		}
+		newToken := model.Token{
+			UserID:  tumLiveContext.User.ID,
+			Token:   tokenStr,
+			Expires: expires,
+			Scope:   model.TokenScopeLecturer,
+		}
+		err = r.TokenDao.AddToken(newToken)
+		if err != nil {
+			logger.Error("can not create token", "err", err)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not create token",
+				Err:           err,
+			})
+			return
+		}
+		existingToken = &newToken
+	}
+
+	// Get courses where user is admin
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, "", 0)
+	if err != nil {
+		logger.Error("can not get courses", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get courses",
+			Err:           err,
+		})
+		return
+	}
+
+	// Filter only courses with VOD enabled
+	vodEnabledCourses := []gin.H{}
+	for _, course := range courses {
+		if course.VODEnabled {
+			vodEnabledCourses = append(vodEnabledCourses, gin.H{
+				"id":   course.ID,
+				"name": course.Name,
+				"slug": course.Slug,
+				"year": course.Year,
+				"term": course.TeachingTerm,
+			})
+		}
+	}
+
+	// Return token and course list
+	c.JSON(http.StatusOK, gin.H{
+		"token":   existingToken.Token,
+		"expires": existingToken.Expires,
+		"courses": vodEnabledCourses,
+		"baseUrl": "https://" + c.Request.Host,
+		"usage": gin.H{
+			"endpoint": "/api/course/artemis/{courseID}/upload",
+			"example":  "https://" + c.Request.Host + "/api/course/artemis/{courseID}/upload?title=My+Video",
+		},
+	})
+}
+
+// getArtemisCourses returns the list of courses where the user can upload videos
+func (r tokenRoutes) getArtemisCourses(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "not logged in",
+		})
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	if tumLiveContext.User == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "not logged in",
+		})
+		return
+	}
+
+	// Get courses where user is admin
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, "", 0)
+	if err != nil {
+		logger.Error("can not get courses", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get courses",
+			Err:           err,
+		})
+		return
+	}
+
+	// Filter only courses with VOD enabled
+	vodEnabledCourses := []gin.H{}
+	for _, course := range courses {
+		if course.VODEnabled {
+			vodEnabledCourses = append(vodEnabledCourses, gin.H{
+				"id":          course.ID,
+				"name":        course.Name,
+				"slug":        course.Slug,
+				"year":        course.Year,
+				"term":        course.TeachingTerm,
+				"uploadUrl":   "https://" + c.Request.Host + "/api/course/artemis/" + fmt.Sprintf("%d", course.ID) + "/upload",
+				"description": fmt.Sprintf("%s (%s %d)", course.Name, course.TeachingTerm, course.Year),
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"courses": vodEnabledCourses,
+		"total":   len(vodEnabledCourses),
+	})
 }
