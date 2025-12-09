@@ -32,12 +32,12 @@ type artemisSSORoutes struct {
 
 type artemisSSORequest struct {
 	// User information from SAML assertion
-	LrzID       string `json:"lrzId" binding:"required"`       // TUM LRZ ID (e.g., "ge12abc")
-	MatrNr      string `json:"matrNr"`                         // Matriculation number (optional for staff)
-	FirstName   string `json:"firstName" binding:"required"`   // Given name from SAML
-	LastName    string `json:"lastName"`                       // Surname from SAML (optional)
-	Email       string `json:"email"`                          // Email (optional, will be constructed if missing)
-	
+	LrzID     string `json:"lrzId" binding:"required"`     // TUM LRZ ID (e.g., "ge12abc")
+	MatrNr    string `json:"matrNr"`                       // Matriculation number (optional for staff)
+	FirstName string `json:"firstName" binding:"required"` // Given name from SAML
+	LastName  string `json:"lastName"`                     // Surname from SAML (optional)
+	Email     string `json:"email"`                        // Email (optional, will be constructed if missing)
+
 	// Artemis authentication
 	ArtemisAPIKey string `json:"artemisApiKey" binding:"required"` // Shared secret between Artemis and TUM Live
 }
@@ -265,4 +265,3 @@ func (r artemisSSORoutes) getOrCreateUploadTokenSSO(c *gin.Context, userID uint)
 	logger.Info("Created new token", "userID", userID, "tokenID", newToken.ID, "expires", expires.Time)
 	return &newToken, nil
 }
-
