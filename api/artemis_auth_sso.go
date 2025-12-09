@@ -57,6 +57,16 @@ type artemisSSOResponse struct {
 	Error   string       `json:"error,omitempty"`
 }
 
+type courseInfo struct {
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	Slug        string `json:"slug"`
+	Year        int    `json:"year"`
+	Term        string `json:"term"`
+	UploadURL   string `json:"uploadUrl"`
+	Description string `json:"description"`
+}
+
 // authenticateFromSSO authenticates a user based on SAML attributes provided by Artemis
 // This is called AFTER Artemis has authenticated the user via TUM SAML SSO
 func (r artemisSSORoutes) authenticateFromSSO(c *gin.Context) {
