@@ -38,7 +38,7 @@ func ConfigGinRouter(
 
 	configGinStreamRestRouter(router, daoWrapper)
 	configGinUsersRouter(router, daoWrapper)
-	configGinCourseRouter(router, daoWrapper)
+	configGinCourseRouter(router, daoWrapper, manager)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router, daoWrapper, camService, tools.Cfg.Paths.Static)

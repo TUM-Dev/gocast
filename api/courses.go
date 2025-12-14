@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -28,10 +27,15 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
+	
+	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
-func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := coursesRoutes{daoWrapper}
+func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, manager runnerManager) {
+	routes := coursesRoutes{
+		DaoWrapper: daoWrapper,
+		manager:    manager,
+	}
 
 	router.POST("/api/course/activate/:token", routes.activateCourseByToken)
 	router.GET("/api/lecture-halls-by-id", routes.lectureHallsByID)
@@ -105,6 +109,11 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 type coursesRoutes struct {
 	dao.DaoWrapper
+	manager runnerManager
+}
+
+type runnerManager interface {
+	SendVODJob(ctx context.Context, streamID uint, version protobuf.StreamVersion, recordingDir string) error
 }
 
 const (
@@ -466,44 +475,87 @@ func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
 		return
 	}
 
-	key := uuid.NewV4().String()
-	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID, req.VideoType)
+	// Get the uploaded file
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not read uploaded file",
+			Err:           err,
+		})
+		return
+	}
+	defer file.Close()
+
+	// Create directory structure in Ceph: mass/streamID/videoType/
+	streamDir := filepath.Join(tools.Cfg.Paths.Mass, fmt.Sprintf("%d", stream.ID), string(req.VideoType))
+	err = os.MkdirAll(streamDir, os.ModePerm)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not create upload key",
+			CustomMessage: "can not create storage directory",
 			Err:           err,
 		})
 		return
 	}
-	workers := r.WorkerDao.GetAliveWorkers()
-	if len(workers) == 0 {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "no workers available",
-			Err:           err,
-		})
-		return
-	}
-	w := workers[getWorkerWithLeastWorkload(workers)]
-	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
+
+	// Save file to Ceph
+	destPath := filepath.Join(streamDir, header.Filename)
+	destFile, err := os.Create(destPath)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: fmt.Sprintf("parse proxy url: %v", err),
+			CustomMessage: "can not create destination file",
 			Err:           err,
 		})
 		return
 	}
-	p := httputil.NewSingleHostReverseProxy(u)
-	p.Director = func(req *http.Request) {
-		req.URL.Scheme = u.Scheme
-		req.URL.Host = u.Host
-		req.Host = u.Host
-		req.URL.Path = u.Path
-		req.URL.RawQuery = u.RawQuery
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, file)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not save file",
+			Err:           err,
+		})
+		return
 	}
-	p.ServeHTTP(c.Writer, c.Request)
+
+	logger.Info("File saved to Ceph", "path", destPath, "streamID", stream.ID, "videoType", req.VideoType)
+
+	// Send job to runner to process the VOD
+	err = r.sendVODJobToRunner(c.Request.Context(), stream.ID, req.VideoType, streamDir)
+	if err != nil {
+		logger.Error("Failed to send VOD job to runner", "err", err, "streamID", stream.ID)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "file uploaded but failed to start processing",
+			Err:           err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "file uploaded successfully, processing started"})
+}
+
+// sendVODJobToRunner sends a VOD processing job to an available runner
+func (r coursesRoutes) sendVODJobToRunner(ctx context.Context, streamID uint, videoType model.VideoType, recordingDir string) error {
+	// Convert VideoType to StreamVersion
+	var version protobuf.StreamVersion
+	switch videoType {
+	case model.VideoTypeCombined:
+		version = protobuf.StreamVersion_STREAM_VERSION_COMBINED
+	case model.VideoTypePresentation:
+		version = protobuf.StreamVersion_STREAM_VERSION_PRESENTATION
+	case model.VideoTypeCamera:
+		version = protobuf.StreamVersion_STREAM_VERSION_CAMERA
+	default:
+		return fmt.Errorf("unsupported video type: %s", videoType)
+	}
+
+	// Send job to runner via manager
+	return r.manager.SendVODJob(ctx, streamID, version, recordingDir)
 }
 
 // updateSourceSettings updates the CameraPresets of a course

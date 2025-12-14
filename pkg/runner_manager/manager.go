@@ -237,6 +237,27 @@ func (m *Manager) getClient(ctx context.Context) (protobuf.RunnerServiceClient, 
 	return protobuf.NewRunnerServiceClient(conn), nil
 }
 
+// SendVODJob sends a VOD processing job to an available runner
+func (m *Manager) SendVODJob(ctx context.Context, streamID uint, version protobuf.StreamVersion, recordingDir string) error {
+	client, err := m.getClient(ctx)
+	if err != nil {
+		return fmt.Errorf("get runner client: %w", err)
+	}
+
+	streamIDUint64 := uint64(streamID)
+	_, err = client.HandleVOD(ctx, &protobuf.HandleVODRequest{
+		StreamId: &streamIDUint64,
+		Version:  &version,
+		Filepath: &recordingDir,
+	})
+	if err != nil {
+		return fmt.Errorf("send HandleVOD request: %w", err)
+	}
+
+	m.logger.Info("VOD job sent to runner", "streamID", streamID, "version", version)
+	return nil
+}
+
 func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNotification) error {
 	// This is usually called in bursts, which introduces a chance for race conditions,
 	// where a stream is fetched and overwrites the url that the other requests added.

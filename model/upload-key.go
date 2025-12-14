@@ -14,6 +14,7 @@ func (v VideoType) Valid() bool {
 	return v == VideoTypeCombined || v == VideoTypePresentation || v == VideoTypeCamera
 }
 
+// deprecated: delete with worker
 // UploadKey represents a key that is created when a user uploads a file,
 // sent to the worker with the upload request and back to TUM-Live to authenticate the request.
 type UploadKey struct {

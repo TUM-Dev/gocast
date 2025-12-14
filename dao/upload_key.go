@@ -8,6 +8,7 @@ import (
 
 //go:generate go tool mockgen -source=upload_key.go -destination ../mock_dao/upload_key.go
 
+// deprecated: delete with worker
 type UploadKeyDao interface {
 	GetUploadKey(key string) (model.UploadKey, error)
 	CreateUploadKey(key string, stream uint, videoType model.VideoType) error
