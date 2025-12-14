@@ -33,9 +33,17 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	}
 	var recording string
 	if rec, ok := d["recording"]; ok {
-		recording = rec.(string)
+		if recStr, ok := rec.(string); ok {
+			recording = recStr
+		} else {
+			return AbortingError(fmt.Errorf("recording value is not a string"))
+		}
 	} else if dir, ok := d["recordingDir"]; ok {
-		recording = path.Join(dir.(string), "playlist.m3u8")
+		if dirStr, ok := dir.(string); ok {
+			recording = path.Join(dirStr, "playlist.m3u8")
+		} else {
+			return AbortingError(fmt.Errorf("recordingDir value is not a string"))
+		}
 	} else {
 		return AbortingError(fmt.Errorf("no recording or recordingDir in context"))
 	}
@@ -52,7 +60,11 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	// Check if re-encoding is needed
 	var reencode bool
 	if needsReencode, ok := d["needsReencode"]; ok {
-		reencode = needsReencode.(bool)
+		if reencodeVal, ok := needsReencode.(bool); ok {
+			reencode = reencodeVal
+		} else {
+			return AbortingError(fmt.Errorf("needsReencode is not a bool"))
+		}
 	}
 
 	var videoCodec, audioCodec string

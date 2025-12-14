@@ -63,5 +63,5 @@ func (r *Runner) HandleVOD(_ context.Context, req *protobuf.HandleVODRequest) (*
 	jID := r.RunAction(a, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetFilepath()))
 	r.log.Info("job added", "ID", jID)
 
-	return &protobuf.HandleVODResponse{}, nil
+	return &protobuf.HandleVODResponse{JobId: ptr.Take(jID)}, nil
 }
