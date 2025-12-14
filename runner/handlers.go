@@ -45,3 +45,23 @@ func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequ
 	}
 	return nil, status.Errorf(codes.NotFound, "stream not found")
 }
+
+func (r *Runner) HandleVOD(_ context.Context, req *protobuf.HandleVODRequest) (*protobuf.HandleVODResponse, error) {
+	data := map[string]any{
+		"streamID":      req.GetStreamId(),
+		"streamVersion": req.GetVersion().String(),
+		"recordingDir":  req.GetFilepath(),
+	}
+	r.log.Info("HandleVOD data constructed", "data", data)
+	a := []actions.Action{
+		actions.CheckCodec,
+		actions.MkVOD,
+		actions.CheckVoD,
+		actions.MkThumb,
+	}
+
+	jID := r.RunAction(a, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetFilepath()))
+	r.log.Info("job added", "ID", jID)
+
+	return &protobuf.HandleVODResponse{}, nil
+}

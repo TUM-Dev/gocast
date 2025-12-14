@@ -31,9 +31,13 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream version in context"))
 	}
-	recordingDir, ok := d["recordingDir"].(string)
-	if !ok {
-		return AbortingError(fmt.Errorf("no recordingDir in context"))
+	var recording string
+	if rec, ok := d["recording"]; ok {
+		recording = rec.(string)
+	} else if dir, ok := d["recordingDir"]; ok {
+		recording = path.Join(dir.(string), "playlist.m3u8")
+	} else {
+		return AbortingError(fmt.Errorf("no recording or recordingDir in context"))
 	}
 
 	metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Inc()
@@ -45,7 +49,24 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 		return AbortingError(fmt.Errorf("create VOD directory: %w", err))
 	}
 
-	err = convertStream(ctx, logger, streamID, path.Join(recordingDir, "playlist.m3u8"), vodDir, "playlist.m3u8")
+	// Check if re-encoding is needed
+	var reencode bool
+	if needsReencode, ok := d["needsReencode"]; ok {
+		reencode = needsReencode.(bool)
+	}
+
+	var videoCodec, audioCodec string
+	if reencode {
+		logger.Info("re-encoding required, transcoding video")
+		videoCodec = "libx264"
+		audioCodec = "aac"
+	} else {
+		logger.Info("no re-encoding needed, using copy codec")
+		videoCodec = "copy"
+		audioCodec = "copy"
+	}
+
+	err = convertStream(ctx, logger, streamID, recording, vodDir, "playlist.m3u8", videoCodec, audioCodec)
 	if err != nil {
 		return AbortingError(fmt.Errorf("convert stream: %w", err))
 	}
@@ -67,9 +88,18 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	return nil
 }
 
-func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, streamPath, vodDir string, playlistName string) error {
+func convertStream(ctx context.Context, logger *slog.Logger, streamID uint64, streamPath, vodDir string, playlistName string, videoCodec string, audioCodec string) error {
 	input := "-i " + streamPath
-	options := "-c copy -f hls -hls_time 20 -hls_playlist_type vod -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
+
+	// Build codec options based on parameters
+	codecOpts := fmt.Sprintf("-c:v %s -c:a %s", videoCodec, audioCodec)
+
+	// Add bitrate limit if re-encoding video
+	if videoCodec != "copy" {
+		codecOpts += " -b:v 3M"
+	}
+
+	options := codecOpts + " -f hls -hls_time 20 -hls_playlist_type vod -hls_flags append_list -hls_segment_filename " + path.Join(vodDir, "%05d.ts") + " " + path.Join(vodDir, playlistName)
 
 	args := strings.Split(input, " ")
 	args = append(args, strings.Split(options, " ")...)

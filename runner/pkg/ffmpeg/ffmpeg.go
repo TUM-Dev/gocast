@@ -34,6 +34,30 @@ func (r *FFProbeResult) Container() string {
 	return gjson.Get(r.raw, "format.format_name").String()
 }
 
+// StreamInfo holds information about a single stream
+type StreamInfo struct {
+	CodecType string
+	CodecName string
+	BitRate   int64
+}
+
+// Streams returns all streams with their codec information
+func (r *FFProbeResult) Streams() []StreamInfo {
+	nStreams := gjson.Get(r.raw, "streams.#").Int()
+	streams := make([]StreamInfo, 0, nStreams)
+	for i := 0; i < int(nStreams); i++ {
+		codecType := gjson.Get(r.raw, fmt.Sprintf("streams.%d.codec_type", i)).String()
+		codecName := gjson.Get(r.raw, fmt.Sprintf("streams.%d.codec_name", i)).String()
+		bitRate := gjson.Get(r.raw, fmt.Sprintf("streams.%d.bit_rate", i)).Int()
+		streams = append(streams, StreamInfo{
+			CodecType: codecType,
+			CodecName: codecName,
+			BitRate:   bitRate,
+		})
+	}
+	return streams
+}
+
 // FFProbeResult holds the results of a ffprobe execution
 type FFProbeResult struct {
 	raw string
