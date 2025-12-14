@@ -12,6 +12,7 @@ service RunnerService {
   // Requests a stream from a lecture hall
   rpc RequestStream (StreamRequest) returns (StreamResponse) {}
   rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+  rpc HandleVOD (HandleVODRequest) returns (HandleVODResponse) {}
 }
 
 message StreamRequest {
@@ -51,4 +52,14 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
+}
+
+message HandleVODRequest {
+  uint64 stream_id = 1;
+  StreamVersion version = 2;
+  string filepath = 3;
+}
+
+message HandleVODResponse {
+  string job_id = 1;
 }

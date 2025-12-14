@@ -47,13 +47,12 @@ func MkThumb(_ context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	return nil
 }
 
-// createVideoThumbnail creates a thumbnail from the given video file
-
 const (
 	thumbnailWidth         = 720 // Width of the generated thumbnail in pixels
 	jpegCompressionQuality = 90  // JPEG compression quality (0-100)
 )
 
+// createVideoThumbnail creates a thumbnail from the given video file
 func createVideoThumbnail(source string) ([]byte, error) {
 	g, err := thumbgen.New(source, thumbnailWidth, 1, "", thumbgen.WithJpegCompression(jpegCompressionQuality))
 	if err != nil {
