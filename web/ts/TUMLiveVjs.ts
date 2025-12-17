@@ -222,12 +222,17 @@ export const initPlayer = function (
         };
         // Move playToggle in between the skip buttons
         const controlBar = player.getChild("controlBar");
-        const playToggle = controlBar.getChild("playToggle");
-        controlBar.removeChild(playToggle);
-        const skipBackward = controlBar.getChild("skipBackward");
-        const skipBackwardIndex = controlBar.children().indexOf(skipBackward);
-        controlBar.addChild(playToggle, {}, skipBackwardIndex + 1);
-
+        if (controlBar) {
+            const playToggle = controlBar.getChild("playToggle");
+            const skipBackward = controlBar.getChild("skipBackward");
+            if (playToggle && skipBackward) {
+                const skipBackwardIndex = controlBar.children().indexOf(skipBackward);
+                if (skipBackwardIndex !== -1) {
+                    controlBar.removeChild(playToggle);
+                    controlBar.addChild(playToggle, {}, skipBackwardIndex + 1);
+                }
+            }
+        }
         // Apply player settings
         settings.initTrackbars(streamID);
         settings.initAirPlay();
