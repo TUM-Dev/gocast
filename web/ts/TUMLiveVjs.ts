@@ -229,7 +229,7 @@ export const initPlayer = function (
                 const skipBackwardIndex = controlBar.children().indexOf(skipBackward);
                 if (skipBackwardIndex !== -1) {
                     controlBar.removeChild(playToggle);
-                    controlBar.addChild(playToggle, {}, skipBackwardIndex + 1);
+                    controlBar.addChild(playToggle, {}, skipBackwardIndex);
                 }
             }
         }
