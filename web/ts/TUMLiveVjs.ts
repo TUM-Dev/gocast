@@ -246,7 +246,23 @@ export const initPlayer = function (
         settings.addOverlayIcon();
     });
     // handle hotkeys from anywhere on the page
-    document.addEventListener("keydown", (event) => player.handleKeyDown(event));
+    document.addEventListener(
+        "keydown",
+        (event) => {
+            // If Space is pressed while a control bar button is focused,
+            // blur the button to stop it from being clicked
+            // See https://github.com/videojs/video.js/issues/2669
+            if (
+                (event.key === " " || event.key === "Spacebar") &&
+                document.activeElement instanceof HTMLElement &&
+                document.activeElement.closest(".vjs-control-bar")
+            ) {
+                document.activeElement.blur();
+            }
+            player.handleKeyDown(event);
+        },
+        true,
+    );
     players.push(player);
 };
 
