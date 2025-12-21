@@ -220,6 +220,20 @@ export const initPlayer = function (
             streamUrl: streamUrl,
             startIn: streamStartIn,
         };
+        // Move playToggle in between the skip buttons
+        const controlBar = player.getChild("controlBar");
+        if (controlBar) {
+            const playToggle = controlBar.getChild("playToggle");
+            const skipBackward = controlBar.getChild("skipBackward");
+            if (playToggle && skipBackward) {
+                const skipBackwardIndex = controlBar.children().indexOf(skipBackward);
+                if (skipBackwardIndex !== -1) {
+                    controlBar.removeChild(playToggle);
+                    controlBar.addChild(playToggle, {}, skipBackwardIndex + 1);
+                }
+            }
+        }
+        // Apply player settings
         settings.initTrackbars(streamID);
         settings.initAirPlay();
         settings.setVolume();
