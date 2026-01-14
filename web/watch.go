@@ -127,17 +127,6 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
 	}
-	// Check if user wants to use beta stream mode
-	mode, err := tumLiveContext.User.GetDefaultMode()
-	if err != nil {
-		logger.Error("Couldn't decode user setting", "err", err)
-	}
-
-	if _, dvr := c.GetQuery("dvr"); dvr || mode.Beta {
-		data.DVR = "?dvr"
-	} else {
-		data.DVR = ""
-	}
 
 	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
@@ -169,8 +158,7 @@ type WatchPageData struct {
 	Progress        model.StreamProgress
 	IndexData       IndexData
 	Description     template.HTML
-	CutOffLength    int    // The maximum length for the preview of a description.
-	DVR             string // ?dvr if dvr is enabled, empty string otherwise
+	CutOffLength    int // The maximum length for the preview of a description.
 	LectureHallName string
 	ChatData        ChatData
 }
