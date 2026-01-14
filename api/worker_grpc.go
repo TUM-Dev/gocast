@@ -559,10 +559,6 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	worker, err := s.WorkerDao.GetWorkerByID(ctx, request.WorkerID)
-	if err != nil {
-		return nil, err
-	}
 	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
 	if err != nil {
 		logger.Error("Can't find stream", "err", err)
@@ -595,19 +591,6 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
 		if err != nil {
 			logger.Error("Can't set StreamLiveNowTimestamp", "err", err)
-		}
-
-		time.Sleep(time.Second * 5)
-		if !isHlsUrlOk(request.HlsUrl) {
-			sentry.WithScope(func(scope *sentry.Scope) {
-				scope.SetExtra("URL", request.HlsUrl)
-				scope.SetExtra("StreamID", request.StreamID)
-				scope.SetExtra("LectureHall", stream.LectureHallID)
-				scope.SetExtra("Worker", worker.Host)
-				scope.SetExtra("Version", request.SourceType)
-				sentry.CaptureException(errors.New("DVR URL 404s"))
-			})
-			request.HlsUrl = strings.ReplaceAll(request.HlsUrl, "?dvr", "")
 		}
 
 		switch request.GetSourceType() {

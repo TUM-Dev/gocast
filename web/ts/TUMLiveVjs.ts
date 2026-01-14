@@ -712,16 +712,7 @@ export class SeekLogger {
 }
 
 export function switchView(baseUrl: string) {
-    const isDVR = getQueryParam("dvr") === "";
-
-    let redirectUrl = keepQuery(baseUrl);
-    if (isDVR) {
-        const player = getPlayers()[0];
-        const url = new URL(window.location.origin + redirectUrl);
-        url.searchParams.set("t", String(Math.floor(player.currentTime())));
-        redirectUrl = url.toString();
-    }
-    window.location.assign(redirectUrl);
+    window.location.assign(keepQuery(baseUrl));
 }
 
 function debounce(func, timeout) {

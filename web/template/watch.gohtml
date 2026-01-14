@@ -181,7 +181,7 @@
                                         <source src="{{$stream.PlaylistUrlPRES}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
                                                 type="application/x-mpegURL"/>
                                     {{else}}
-                                        <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                        <source src="{{$stream.PlaylistUrlPRES}}" type="application/x-mpegURL"/>
                                     {{end}}
                                 {{end}}
                                 <p class="vjs-no-js">
@@ -205,7 +205,7 @@
                                         <source src="{{$stream.PlaylistUrlCAM}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
                                                 type="application/x-mpegURL"/>
                                     {{else}}
-                                        <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                        <source src="{{$stream.PlaylistUrlCAM}}" type="application/x-mpegURL"/>
                                     {{end}}
                                 {{end}}
                                 <p class="vjs-no-js">
@@ -230,11 +230,11 @@
                                         type="application/x-mpegURL"/>
                             {{else}}
                                 {{if eq .Version "CAM"}}
-                                    <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    <source src="{{$stream.PlaylistUrlCAM}}" type="application/x-mpegURL"/>
                                 {{else if eq .Version "PRES"}}
-                                    <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    <source src="{{$stream.PlaylistUrlPRES}}" type="application/x-mpegURL"/>
                                 {{else}}
-                                    <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    <source src="{{$stream.PlaylistUrl}}" type="application/x-mpegURL"/>
                                 {{end}}
                             {{end}}
                         {{end}}
