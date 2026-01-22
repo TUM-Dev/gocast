@@ -280,28 +280,37 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	yearStr := c.Query("year")
-	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
-		return
-	}
 	term := c.Query("term")
+
+	var year int
+	var err error
+	filterBySemester := false
+
+	if yearStr != "" && term != "" {
+		year, err = strconv.Atoi(yearStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
+			return
+		}
+		filterBySemester = true
+	}
 
 	var pinnedCourses []model.Course
 	if tumLiveContext.User != nil {
 		pinnedCourses = tumLiveContext.User.PinnedCourses
-	} else {
-		pinnedCourses = []model.Course{}
 	}
 
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	user := tumLiveContext.User
-	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
+
+	resp := make([]model.CourseDTO, 0)
 	for _, course := range pinnedCourses {
-		if course.Year != year || course.TeachingTerm != term {
-			continue
+		if filterBySemester {
+			if course.Year != year || course.TeachingTerm != term {
+				continue
+			}
 		}
-		if tumLiveContext.User.IsEligibleToSearchForCourse(course) {
+		if user == nil || user.IsEligibleToSearchForCourse(course) {
 			resp = append(resp, course.ToDTO(user))
 		}
 	}
