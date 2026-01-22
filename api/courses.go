@@ -298,7 +298,6 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
-		logger.Info("course", course.Name, "year", year, "term", term)
 		if course.Year != year || course.TeachingTerm != term {
 			continue
 		}
