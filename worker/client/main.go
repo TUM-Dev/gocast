@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/TUM-Dev/gocast/worker/pb"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
-	"time"
+
+	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
 // interactively test your implementation here

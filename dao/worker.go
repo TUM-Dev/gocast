@@ -3,11 +3,12 @@ package dao
 import (
 	"context"
 
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=worker.go -destination ../mock_dao/worker.go
+//go:generate go tool mockgen -source=worker.go -destination ../mock_dao/worker.go
 
 type WorkerDao interface {
 	CreateWorker(worker *model.Worker) error

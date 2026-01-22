@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/gin-gonic/gin"
 )
 
 func configSemestersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {

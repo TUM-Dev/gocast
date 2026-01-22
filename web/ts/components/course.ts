@@ -43,10 +43,22 @@ export function courseContext(slug: string, year: number, term: string, userId: 
         plannedStreams: new Paginator<Stream>([], 3),
         upcomingStreams: new Paginator<Stream>([], 3),
 
-        streamSortMode: +getFromStorage("streamSortMode") ?? StreamSortMode.NewestFirst,
-        streamFilterMode: +getFromStorage("streamFilterMode") ?? StreamFilterMode.ShowWatched,
-        viewMode: (+getFromStorage("viewMode") ?? ViewMode.Grid) as number,
-        groupMode: (+getFromStorage("groupMode") ?? GroupMode.Month) as number,
+        streamSortMode:
+            getFromStorage("streamSortMode") !== null && getFromStorage("streamSortMode") !== undefined
+                ? +getFromStorage("streamSortMode")
+                : StreamSortMode.NewestFirst,
+        streamFilterMode:
+            getFromStorage("streamFilterMode") !== null && getFromStorage("streamFilterMode") !== undefined
+                ? +getFromStorage("streamFilterMode")
+                : StreamFilterMode.ShowWatched,
+        viewMode:
+            getFromStorage("viewMode") !== null && getFromStorage("viewMode") !== undefined
+                ? +getFromStorage("viewMode")
+                : ViewMode.Grid,
+        groupMode:
+            getFromStorage("groupMode") !== null && getFromStorage("groupMode") !== undefined
+                ? +getFromStorage("groupMode")
+                : GroupMode.Month,
 
         dateOfFirstWeek: new Date(),
         weekCountWithoutEmptyWeeks: new Map<number, number>(),

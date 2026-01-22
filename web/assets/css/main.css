@@ -362,6 +362,19 @@ input[type='checkbox']:checked + label {
     height: calc((6 / 16) * 100vw) !important;
 }
 
+/* Mobile sidebar panel height - uses a reasonable fixed height on mobile instead of video aspect ratio */
+.h-sidebar-mobile {
+    height: 60vh !important;
+    max-height: 400px !important;
+}
+
+@media (min-width: 768px) {
+    .md\:h-16\/9 {
+        height: calc((9 / 16) * 100vw) !important;
+        max-height: calc(100vh - 200px) !important;
+    }
+}
+
 @media (min-width: 1024px) {
     .lg\:h-16\/9 {
         height: calc((9 / 16) * 100vw) !important;

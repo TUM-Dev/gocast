@@ -8,10 +8,12 @@ import (
 type HLSServer struct {
 	log *slog.Logger
 	fs  http.Handler
+
+	version string
 }
 
-func NewHLSServer(LiveDir string, log *slog.Logger) *HLSServer {
-	return &HLSServer{fs: http.FileServer(http.Dir(LiveDir)), log: log}
+func NewHLSServer(liveDir string, log *slog.Logger, version string) *HLSServer {
+	return &HLSServer{fs: http.FileServer(http.Dir(liveDir)), log: log, version: version}
 }
 
 func (h *HLSServer) Start() error {
@@ -21,6 +23,5 @@ func (h *HLSServer) Start() error {
 }
 
 func (h *HLSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Access-Control-Allow-Origin", "*")
 	h.fs.ServeHTTP(w, r)
 }

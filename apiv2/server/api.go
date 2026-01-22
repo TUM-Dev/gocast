@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
-	"github.com/TUM-Dev/gocast/dao"
 	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -22,6 +20,9 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
+
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/dao"
 )
 
 // API is the grpc server for the v2 api
@@ -91,7 +92,7 @@ func (a *API) handleDocs(c *gin.Context) {
 	http.StripPrefix("/api/v2", fileServer).ServeHTTP(c.Writer, c.Request)
 }
 
-// healthcheck
+// HealthCheck returns ok
 func (a *API) HealthCheck(ctx context.Context, req *emptypb.Empty) (*protobuf.HealthCheckResponse, error) {
 	return &protobuf.HealthCheckResponse{Status: "OK"}, nil
 }

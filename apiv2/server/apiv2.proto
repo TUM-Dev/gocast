@@ -33,7 +33,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     HTTPS
   ]
   base_path: "/api/v2"
-  host: "localhost:8081"
+  host: "tum.live"
   consumes: "application/json"
   produces: "application/json"
 };
@@ -183,46 +183,46 @@ service API {
   // STREAM ENDPOINTS (./stream.go)
 
   rpc getStream(GetStreamRequest) returns (CourseStream) {
-    option (google.api.http) = {get: "/streams/{stream_id}"};
+    option (google.api.http) = {get: "/streams/{slug}/{stream_id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Streams"
-      summary: "Get stream and course by stream ID."
+      summary: "Get stream and course by course slug and stream ID."
       description: "Retrieves a stream and its course by its stream ID."
     };
   }
 
   rpc getVideoSections(GetVideoSectionsRequest) returns (GetVideoSectionsResponse) {
-    option (google.api.http) = {get: "/streams/{stream_id}/sections"};
+    option (google.api.http) = {get: "/streams/{slug}/{stream_id}/sections"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Streams"
-      summary: "Get video sections."
+      summary: "Get video sections by course slug and stream ID."
       description: "Retrieves the video sections for a stream."
     };
   }
 
   rpc getStreamPlaylist(GetStreamPlaylistRequest) returns (GetStreamPlaylistResponse) {
-    option (google.api.http) = {get: "/streams/{stream_id}/playlist"};
+    option (google.api.http) = {get: "/streams/{slug}/{stream_id}/playlist"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Streams"
-      summary: "Get stream playlist."
+      summary: "Get stream playlist by course slug and stream ID."
       description: "Retrieves the playlist for a stream including watch progress."
     };
   }
 
   rpc getSubtitles(GetSubtitlesRequest) returns (google.api.HttpBody) {
-    option (google.api.http) = {get: "/streams/{stream_id}/subtitles/{lang}"};
+    option (google.api.http) = {get: "/streams/{slug}/{stream_id}/subtitles/{lang}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Streams"
-      summary: "Get subtitles."
+      summary: "Get subtitles by course slug, stream ID, and language."
       description: "Retrieves the subtitles for a stream in a specific language."
     };
   }
 
   rpc getThumbs(GetThumbsRequest) returns (google.api.HttpBody) {
-    option (google.api.http) = {get: "/streams/{stream_id}/thumbs"};
+    option (google.api.http) = {get: "/streams/{slug}/{stream_id}/thumbs"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Streams"
-      summary: "Get thumbs."
+      summary: "Get thumbs by course slug, stream ID, and optional thumb type."
       description: "Retrieves the thumbs for a stream."
     };
   }
@@ -644,24 +644,29 @@ enum VideoType {
 
 message GetStreamRequest {
   uint32 stream_id = 1;
+  string slug = 2;
 }
 
 message GetVideoSectionsRequest {
   uint32 stream_id = 1;
+  string slug = 2;
 }
 
 message GetSubtitlesRequest {
   uint32 stream_id = 1;
   string lang = 2;
+  string slug = 3;
 }
 
 message GetStreamPlaylistRequest {
   uint32 stream_id = 1;
+  string slug = 2;
 }
 
 message GetThumbsRequest {
   uint32 stream_id = 1;
   optional VideoType thumb_type = 2;
+  string slug = 3;
 }
 
 ///////////////////////////////

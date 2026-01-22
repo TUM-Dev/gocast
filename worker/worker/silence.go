@@ -1,10 +1,11 @@
 package worker
 
 import (
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type SilenceDetect struct {

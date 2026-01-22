@@ -7,21 +7,22 @@ import (
 	"os"
 	"strconv"
 
+	"google.golang.org/genproto/googleapis/api/httpbody"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
+
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
-	"google.golang.org/genproto/googleapis/api/httpbody"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 )
 
 // GetStream returns a stream by its ID including the course and lecture hall
 func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*protobuf.CourseStream, error) {
 	a.log.Info("GetStream")
 
-	_, stream, course, err := a.authorizeUserForStreamCourse(ctx, req)
+	user, stream, course, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*p
 
 	return &protobuf.CourseStream{
 		Course:      h.ParseCourseToProto(course, nil),
-		Stream:      h.ParseStreamToProto(stream, nil),
+		Stream:      h.ParseStreamToProto(stream, course, user),
 		LectureHall: h.ParseLectureHallToProto(lectureHall),
 	}, nil
 }

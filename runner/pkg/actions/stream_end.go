@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
@@ -20,7 +21,7 @@ func StreamEnd(_ context.Context, _ *slog.Logger, notify chan *protobuf.Notifica
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_StreamEnd{
 			StreamEnd: &protobuf.StreamEndNotification{
-				Stream: &protobuf.StreamInfo{Id: &streamID},
+				Stream: &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 			},
 		},
 	}

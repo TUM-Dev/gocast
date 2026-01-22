@@ -8,15 +8,17 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -28,7 +30,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/seekingTime", routes.updateSeekingTime)
 	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
 	router.POST("/api/users/settings/autoSkip", routes.updateAutoSkip)
-	router.POST("/api/users/settings/defaultMode", routes.updateDefaultMode)
+	router.POST("api/users/settings/lectureView", routes.updatePreferredView)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
@@ -127,21 +129,43 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 }
 
 func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err error) {
-	q := c.Query("q")
-	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
-	q = reg.ReplaceAllString(q, "")
-	if len(q) < 3 {
+	query := c.Query("q")
+	roleQuery := c.Query("r")
+	reg := regexp.MustCompile("[^a-zA-Z0-9 ]+")
+	query = reg.ReplaceAllString(query, "")
+	// make the search work with empty query but selected role
+	if len(query) < 3 && (roleQuery == "-1" || roleQuery == "") {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "query too short (minimum length is 3)",
 		})
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
-	users, err = r.UsersDao.SearchUser(q)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if roleQuery == "" || roleQuery == "-1" {
+		users, err = r.UsersDao.SearchUser(query)
+	} else {
+		role, err := strconv.ParseUint(roleQuery, 10, 64)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "could not parse role",
+				Err:           err,
+			})
+			return nil, err
+		}
+		users, err = r.UsersDao.SearchUserWithRole(query, role)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "could not search user",
+				Err:           err,
+			})
+		}
+	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not search user",
+			CustomMessage: "cannot search for user's",
 			Err:           err,
 		})
 		return nil, err
@@ -266,15 +290,16 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	userName := c.PostForm("newUserFirstName")
 	userEmail := c.PostForm("newUserEmail")
 
-	if batchUsers != "" {
+	switch {
+	case batchUsers != "":
 		go r.addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
-	} else if userName != "" && userEmail != "" {
+	case userName != "" && userEmail != "":
 		r.addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
-	} else {
+	default:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "invalid form",
@@ -757,21 +782,15 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 	}
 }
 
-// updateDefaultMode updates whether the default stream mode for a user should be "beta"
-func (r usersRoutes) updateDefaultMode(c *gin.Context) {
+func (r usersRoutes) updatePreferredView(c *gin.Context) {
 	u := getUserFromContext(c)
-	var req struct{ Value model.DefaultModeSetting }
-	if err := c.BindJSON(&req); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body to request",
-			Err:           err,
-		})
-		return
-	}
+	request := getRequestFromContext(c)
 
-	settingBytes, _ := json.Marshal(req.Value)
-	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.DefaultMode, Value: string(settingBytes)})
+	err := r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.LectureView,
+		Value:  request.Value,
+	})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

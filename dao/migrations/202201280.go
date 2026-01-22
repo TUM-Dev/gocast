@@ -1,9 +1,10 @@
 package migrations
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // Migrate202201280 Deletes all messages longer than 200 characters and all empty messages

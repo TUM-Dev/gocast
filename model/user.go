@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"database/sql"
@@ -9,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -59,7 +59,9 @@ const (
 	SeekingTime
 	UserDefinedSpeeds
 	AutoSkip
-	DefaultMode
+	// Deprecated: this is no longer used
+	defaultMode
+	LectureView
 )
 
 type UserSetting struct {
@@ -164,12 +166,14 @@ func (u *User) GetPreferredGreeting() string {
 	return "Moin"
 }
 
+var validSeekingTimes = []int{5, 10, 30}
+
 // GetSeekingTime returns the seeking time preference for the user.
 // If the user is nil, the default seeking time of 15 seconds is returned.
 func (u *User) GetSeekingTime() int {
 	// Check if the user is nil
 	if u == nil {
-		return 15
+		return 10
 	}
 	// Check if the setting type is SeekingTime
 	for _, setting := range u.Settings {
@@ -179,11 +183,14 @@ func (u *User) GetSeekingTime() int {
 			if err != nil {
 				break
 			}
-			return seekingTime
+			if slices.Contains(validSeekingTimes, seekingTime) {
+				return seekingTime
+			}
+			return 10
 		}
 	}
 	// If no seeking time setting is found, return the default seeking time
-	return 15
+	return 10
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
@@ -216,26 +223,13 @@ func (u *User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
 	return AutoSkipSetting{Enabled: false}, nil
 }
 
-// DefaultModeSetting wraps whether the default stream mode for the user is beta
-type DefaultModeSetting struct {
-	Beta bool `json:"beta"`
-}
-
-func (u *User) GetDefaultMode() (DefaultModeSetting, error) {
-	if u == nil {
-		return DefaultModeSetting{Beta: false}, nil
-	}
+func (u *User) GetPreferredView() string {
 	for _, setting := range u.Settings {
-		if setting.Type == DefaultMode {
-			var m DefaultModeSetting
-			err := json.Unmarshal([]byte(setting.Value), &m)
-			if err != nil {
-				return DefaultModeSetting{Beta: false}, err
-			}
-			return m, nil
+		if setting.Type == LectureView {
+			return setting.Value
 		}
 	}
-	return DefaultModeSetting{Beta: false}, nil
+	return "Combined"
 }
 
 type argonParams struct {
@@ -275,9 +269,9 @@ func (u *User) IsAllowedToWatchPrivateCourse(course Course) bool {
 // IsEligibleToWatchCourse checks if the user is allowed to access the course
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	if u == nil {
-		return course.Visibility == "public" || course.Visibility == "hidden"
+		return course.IsPublic() || course.IsHidden()
 	}
-	if course.Visibility == "public" || course.Visibility == "hidden" || course.Visibility == "loggedin" {
+	if course.IsPublic() || course.IsHidden() || course.IsLoggedIn() {
 		return true
 	}
 	for _, invCourse := range u.Courses {
@@ -290,10 +284,10 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 
 // IsEligibleToSearchForCourse is a stricter version of IsEligibleToWatchCourse; in case of hidden course, it returns true only when the user is an admin of the course
 func (u *User) IsEligibleToSearchForCourse(course Course) bool {
-	return u.IsEligibleToWatchCourse(course) && course.Visibility != "hidden" || u.IsAdminOfCourse(course)
+	return u.IsEligibleToWatchCourse(course) && !course.IsHidden() || u.IsAdminOfCourse(course)
 }
 
-func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
+func (u *User) CoursesForSemester(year int, term string) []Course {
 	cMap := make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
@@ -364,7 +358,7 @@ func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester S
 	return courses
 }
 
-// hasTestCourse checks if the user has a test course
+// HasTestCourse checks if the user has a test course
 func (u *User) HasTestCourse() bool {
 	for _, course := range u.AdministeredCourses {
 		if course.Year == 1234 {

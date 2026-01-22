@@ -3,6 +3,7 @@ edition = "2023";
 package protobuf;
 
 import "google/protobuf/timestamp.proto";
+import "commons.proto";
 import "notifications.proto";
 
 option go_package = "runner/protobuf";
@@ -11,13 +12,6 @@ service RunnerService {
   // Requests a stream from a lecture hall
   rpc RequestStream (StreamRequest) returns (StreamResponse) {}
   rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
-}
-
-enum StreamVersion {
-  STREAM_VERSION_UNSPECIFIED = 0;
-  STREAM_VERSION_COMBINED = 1;
-  STREAM_VERSION_CAMERA = 2;
-  STREAM_VERSION_PRESENTATION = 3;
 }
 
 message StreamRequest {
@@ -53,6 +47,7 @@ service RunnerManagerService {
 message RegisterRequest {
   string hostname = 1;
   int32 port = 2;
+  string version = 3;
 }
 
 message RegisterResponse {

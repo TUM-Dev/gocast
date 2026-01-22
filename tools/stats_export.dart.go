@@ -4,8 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/TUM-Dev/gocast/dao"
 	"github.com/gin-gonic/gin"
+
+	"github.com/TUM-Dev/gocast/dao"
 )
 
 type ExportDataEntry struct {

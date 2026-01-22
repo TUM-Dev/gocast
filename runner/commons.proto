@@ -1,0 +1,11 @@
+edition = "2023";
+
+package protobuf;
+option go_package = "runner/protobuf";
+
+enum StreamVersion {
+  STREAM_VERSION_UNSPECIFIED = 0;
+  STREAM_VERSION_COMBINED = 1;
+  STREAM_VERSION_CAMERA = 2;
+  STREAM_VERSION_PRESENTATION = 3;
+}

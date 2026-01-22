@@ -1,8 +1,9 @@
 import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
 import { cloneEvents } from "./global";
-import videojs, { VideoJsPlayer } from "video.js";
-import PlayerOptions = videojs.PlayerOptions;
+import videojs from "video.js";
+
+type Player = ReturnType<typeof videojs>;
 
 const mouseMovingTimeout = 2200;
 
@@ -39,26 +40,24 @@ export class SplitView {
         this.videoWrapperResizeObs.observe(this.videoWrapper);
         this.detectMouseNotMoving();
 
-        this.players[1].ready(() => {
+        Promise.all([this.players[0].ready(), this.players[1].ready()]).then(() => {
+            this.players[1].muted(true);
             this.setTrackBarModes(0, "disabled");
-        });
 
-        this.players[0].ready(() => {
             this.setupControlBars();
             this.overwriteFullscreenToggle();
-        });
+            cloneEvents(this.players[1].el(), this.players[0].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
-        cloneEvents(this.players[1].el(), this.players[0].el(), ["mousemove", "mouseenter", "mouseleave"]);
-
-        // Setup splitview
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const that = this;
-        this.split = Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
-            minSize: [0, 0],
-            sizes: this.getSizes(),
-            onDrag(sizes: number[]) {
-                that.updateControlBarSize(sizes);
-            },
+            // Setup splitview
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
+            const that = this;
+            this.split = Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
+                minSize: [0, 0],
+                sizes: this.getSizes(),
+                onDrag(sizes: number[]) {
+                    that.updateControlBarSize(sizes);
+                },
+            });
         });
     }
 
@@ -110,7 +109,6 @@ export class SplitView {
 
     private setupControlBars() {
         this.players[1].controlBar.hide();
-        this.players[1].muted(true);
 
         this.players[0].el().addEventListener("fullscreenchange", () => {
             this.isFullscreen = document.fullscreenElement !== null;
@@ -152,8 +150,8 @@ export class SplitView {
             await this.toggleFullscreen();
         });
 
-        (this.players[0] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
-        (this.players[1] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
+        (this.players[0] as any).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
+        (this.players[1] as any).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
     }
 
     private async toggleFullscreen() {

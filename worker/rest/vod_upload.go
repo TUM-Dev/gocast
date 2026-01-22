@@ -1,11 +1,13 @@
 package rest
 
 import (
-	"github.com/TUM-Dev/gocast/worker/worker"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/worker"
 )
 
 // handleUpload handles VOD upload requests proxied by TUM-Live.

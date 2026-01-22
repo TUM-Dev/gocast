@@ -1,30 +1,31 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { StatusCodes } from "http-status-codes";
-import videojs, { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
 
-require("videojs-sprite-thumbnails");
-require("videojs-seek-buttons");
-require("videojs-contrib-quality-levels");
+import "videojs-sprite-thumbnails";
+import "videojs-contrib-quality-levels";
+
+type Player = ReturnType<typeof videojs>;
 
 const Button = videojs.getComponent("Button");
 
-const players: VideoJsPlayer[] = [];
+const players: Player[] = [];
 
-export function getPlayers(): VideoJsPlayer[] {
+export function getPlayers(): Player[] {
     return players;
 }
 
 class PlayerSettings {
-    private readonly player: VideoJsPlayer;
+    private readonly player: Player;
     private readonly isLive: boolean;
     private readonly isEmbedded: boolean;
 
-    constructor(player: VideoJsPlayer, isLive: boolean, isEmbedded: boolean) {
+    constructor(player: Player, isLive: boolean, isEmbedded: boolean) {
         this.player = player;
         this.isLive = isLive;
         this.isEmbedded = isEmbedded;
@@ -40,19 +41,22 @@ class PlayerSettings {
     }
 
     setVolume() {
-        const volume: number = +PlayerSettings.getFromStorage("volume") ?? this.player.volume();
+        const storedVolume = PlayerSettings.getFromStorage("volume");
+        const volume: number = storedVolume !== null ? +storedVolume : this.player.volume();
         this.player.volume(volume);
         console.log(`⚫️ set volume: ${volume}`);
     }
 
     setMuted() {
-        const muted: string = PlayerSettings.getFromStorage("muted") ?? String(this.player.muted());
+        const storedMuted = PlayerSettings.getFromStorage("muted");
+        const muted: string = storedMuted !== null ? storedMuted : String(this.player.muted());
         this.player.muted("true" === muted);
         console.log(`⚫️ set muted: ${muted}`);
     }
 
     setRate() {
-        let persistedRate = +PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate") ?? 1.0;
+        const storedRate = PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate");
+        let persistedRate = storedRate !== null ? +storedRate : 1.0;
         persistedRate = persistedRate <= 0 ? 1.0 : persistedRate;
 
         const queryRate: number = +getQueryParam("rate");
@@ -153,10 +157,12 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
+    const nativeTextTracks = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const player = videojs(id, {
         liveui: true,
         fluid: fluid,
-        playbackRates: playbackSpeeds,
+        // restrict clickable playbackRates to <= 2.0 if on Safari, because higher rates cause weird behaviour (see issue #1222)
+        playbackRates: playbackSpeeds.filter((rate) => rate <= 2 || !videojs.browser.IS_SAFARI),
         html5: {
             reloadSourceOnError: true,
             vhs: {
@@ -164,10 +170,16 @@ export const initPlayer = function (
             },
             nativeVideoTracks: false,
             nativeAudioTracks: false,
-            nativeTextTracks: false,
+            nativeTextTracks: nativeTextTracks,
+        },
+        controlBar: {
+            skipButtons: {
+                forward: seekingTime,
+                backward: seekingTime,
+            },
         },
         userActions: {
-            hotkeys: handleHotkeys(),
+            hotkeys: handleHotkeys(seekingTime),
         },
         autoplay: autoplay,
         /* eslint-disable  @typescript-eslint/no-explicit-any */
@@ -182,14 +194,9 @@ export const initPlayer = function (
             url: `/api/stream/${streamID}/thumbs/${spriteID}`,
             width: 160,
             height: 90,
+            columns: 17,
         });
     }
-    player.seekButtons({
-        // the user's preferred seeking time will be used for forwards and backwards seeking.
-        backIndex: 0,
-        forward: seekingTime,
-        back: seekingTime,
-    });
 
     player.on("volumechange", function () {
         settings.storeVolume();
@@ -200,8 +207,8 @@ export const initPlayer = function (
     });
 
     // When catching up to live, resume at normal speed
-    player.liveTracker.on("liveedgechange", function (evt) {
-        if (player.liveTracker.atLiveEdge() && player.playbackRate() > 1) {
+    (player as any).liveTracker.on("liveedgechange", function (evt) {
+        if ((player as any).liveTracker.atLiveEdge() && player.playbackRate() > 1) {
             player.playbackRate(1);
         }
     });
@@ -213,6 +220,20 @@ export const initPlayer = function (
             streamUrl: streamUrl,
             startIn: streamStartIn,
         };
+        // Move playToggle in between the skip buttons
+        const controlBar = player.getChild("controlBar");
+        if (controlBar) {
+            const playToggle = controlBar.getChild("playToggle");
+            const skipBackward = controlBar.getChild("skipBackward");
+            if (playToggle && skipBackward) {
+                const skipBackwardIndex = controlBar.children().indexOf(skipBackward);
+                if (skipBackwardIndex !== -1) {
+                    controlBar.removeChild(playToggle);
+                    controlBar.addChild(playToggle, {}, skipBackwardIndex);
+                }
+            }
+        }
+        // Apply player settings
         settings.initTrackbars(streamID);
         settings.initAirPlay();
         settings.setVolume();
@@ -225,7 +246,23 @@ export const initPlayer = function (
         settings.addOverlayIcon();
     });
     // handle hotkeys from anywhere on the page
-    document.addEventListener("keydown", (event) => player.handleKeyDown(event));
+    document.addEventListener(
+        "keydown",
+        (event) => {
+            // If Space is pressed while a control bar button is focused,
+            // blur the button to stop it from being clicked
+            // See https://github.com/videojs/video.js/issues/2669
+            if (
+                (event.key === " " || event.key === "Spacebar") &&
+                document.activeElement instanceof HTMLElement &&
+                document.activeElement.closest(".vjs-control-bar")
+            ) {
+                document.activeElement.blur();
+            }
+            player.handleKeyDown(event);
+        },
+        true,
+    );
     players.push(player);
 };
 
@@ -234,21 +271,23 @@ let skipTo = 0;
 /**
  * Button to add a class to passed player that will toggle skip silence button.
  */
-export const SkipSilenceToggle = videojs.extend(Button, {
-    constructor: function (...args) {
-        Button.apply(this, args);
-        this.controlText("Skip pause");
+class SkipSilenceToggle extends Button {
+    constructor(player: Player, options: any) {
+        super(player, options);
+        (this as any).controlText("Skip pause");
         (this.el().firstChild as HTMLElement).classList.add("icon-forward");
-    },
-    handleClick: function () {
+    }
+
+    handleClick() {
         for (let i = 0; i < players.length; i++) {
             players[i].currentTime(skipTo);
         }
-    },
-    buildCSSClass: function () {
+    }
+
+    buildCSSClass() {
         return `vjs-skip-silence-control`;
-    },
-});
+    }
+}
 
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
@@ -258,7 +297,10 @@ export const skipSilence = function (options) {
             players[j].addClass("vjs-skip-silence");
             const toggle = players[j].addChild("SkipSilenceToggle");
             toggle.el().classList.add("invisible");
-            players[j].el().insertBefore(toggle.el(), players[j].bigPlayButton.el());
+            const bigPlayButton = (players[j] as any).bigPlayButton || players[j].getChild("BigPlayButton");
+            if (bigPlayButton) {
+                players[j].el().insertBefore(toggle.el(), bigPlayButton.el());
+            }
 
             let isShowing = false;
             const silences = JSON.parse(options);
@@ -686,16 +728,7 @@ export class SeekLogger {
 }
 
 export function switchView(baseUrl: string) {
-    const isDVR = getQueryParam("dvr") === "";
-
-    let redirectUrl = keepQuery(baseUrl);
-    if (isDVR) {
-        const player = getPlayers()[0];
-        const url = new URL(window.location.origin + redirectUrl);
-        url.searchParams.set("t", String(Math.floor(player.currentTime())));
-        redirectUrl = url.toString();
-    }
-    window.location.assign(redirectUrl);
+    window.location.assign(keepQuery(baseUrl));
 }
 
 function debounce(func, timeout) {

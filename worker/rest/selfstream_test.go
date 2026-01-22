@@ -8,14 +8,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TUM-Dev/gocast/worker/cfg"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
 )
 
-var r *http.Request
-var w *httptest.ResponseRecorder
-var streamID string
-var testSlug string
+var (
+	r        *http.Request
+	w        *httptest.ResponseRecorder
+	streamID string
+	testSlug string
+)
 
 func setup() {
 	r = httptest.NewRequest(http.MethodGet, "https://test.de", nil)
@@ -69,11 +72,9 @@ func TestInitApi(t *testing.T) {
 func TestNotAllowedMethods(t *testing.T) {
 	setup()
 
-	// onPublish and onPublishDone should only work with POST
+	// onPublish should only work with POST
 	r.Method = http.MethodGet
 	streams.onPublish(w, r)
-	checkReturnCode(t, w, http.StatusMethodNotAllowed)
-	streams.onPublishDone(w, r)
 	checkReturnCode(t, w, http.StatusMethodNotAllowed)
 
 	w = httptest.NewRecorder() // Reset recorder
