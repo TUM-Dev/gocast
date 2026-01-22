@@ -32,7 +32,7 @@ type File struct {
 	Path       string `gorm:"not null"`
 	Filename   string
 	Type       FileType `gorm:"not null; default: 1"`
-	CourseName string   `gorm:"default: null"`
+	CourseName string   `gorm:"default:null"`
 }
 
 func (f File) GetDownloadFileName() string {
