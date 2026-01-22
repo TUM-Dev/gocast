@@ -279,6 +279,14 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 func (r coursesRoutes) getPinned(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
+	yearStr := c.Query("year")
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
+		return
+	}
+	term := c.Query("term")
+
 	var pinnedCourses []model.Course
 	if tumLiveContext.User != nil {
 		pinnedCourses = tumLiveContext.User.PinnedCourses
@@ -290,6 +298,10 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 	user := tumLiveContext.User
 	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
 	for _, course := range pinnedCourses {
+		logger.Info("course", course.Name, "year", year, "term", term)
+		if course.Year != year || course.TeachingTerm != term {
+			continue
+		}
 		if tumLiveContext.User.IsEligibleToSearchForCourse(course) {
 			resp = append(resp, course.ToDTO(user))
 		}
