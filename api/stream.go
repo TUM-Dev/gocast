@@ -949,7 +949,7 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 		StreamID:   streamID,
 		Path:       path,
 		Filename:   file.Filename,
-		Type:       model.FILETYPE_THUMB_LG_CAM_PRES,
+		Type:       model.FILETYPE_THUMB_CUSTOM,
 		CourseName: course.Name,
 	}
 
