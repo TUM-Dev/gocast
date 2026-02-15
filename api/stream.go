@@ -962,5 +962,5 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Thumbnail uploaded successfully"})
+	c.JSON(http.StatusOK, thumb.ID)
 }
