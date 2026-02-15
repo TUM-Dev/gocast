@@ -395,21 +395,21 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
         onCustomThumbnailUpload(e){
             if (e.dataTransfer.items) {
-            const item = e.dataTransfer.items[0];
-            const { kind } = item;
-            switch (kind) {
-                case "file": {
-                    DataStore.adminLectureList.uploadThumbnail(
-                        this.lectureData.courseId,
-                        this.lectureData.lectureId,
-                        item.getAsFile(),
-                    );
-                    break;
-                }
+                const item = e.dataTransfer.items[0];
+                const { kind } = item;
+                switch (kind) {
+                    case "file": {
+                        DataStore.adminLectureList.uploadThumbnail(
+                            this.lectureData.courseId,
+                            this.lectureData.lectureId,
+                            item.getAsFile(),
+                        );
+                        break;
+                    }
 
-            }
-            this.previewThumbnail(e);
-        }},
+                }
+                this.previewThumbnail(e);
+            }},
     } as AlpineComponent;
 }
 
