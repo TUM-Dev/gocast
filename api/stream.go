@@ -187,6 +187,7 @@ func (r streamRoutes) getLiveThumbs(c *gin.Context) {
 
 		path := pathprovider.LiveThumbnail(streamId)
 		c.File(path)
+		return
 	}
 	c.File(file.Path)
 }
