@@ -319,8 +319,16 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          * Save changes send them to backend and commit change set.
          */
         async saveEdit() {
-            const { courseId, lectureId, name, description, lectureHallId, isChatEnabled, isCustomThumbnailEnabled, videoSections } =
-                this.lectureData;
+            const {
+                courseId,
+                lectureId,
+                name,
+                description,
+                lectureHallId,
+                isChatEnabled,
+                isCustomThumbnailEnabled,
+                videoSections,
+            } = this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
 
             try {
@@ -331,7 +339,9 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         description: changedKeys.includes("description") ? description : undefined,
                         lectureHallId: changedKeys.includes("lectureHallId") ? lectureHallId : undefined,
                         isChatEnabled: changedKeys.includes("isChatEnabled") ? isChatEnabled : undefined,
-                        isCustomThumbnailEnabled: changedKeys.includes("isCustomThumbnailEnabled") ? isCustomThumbnailEnabled : undefined,
+                        isCustomThumbnailEnabled: changedKeys.includes("isCustomThumbnailEnabled")
+                            ? isCustomThumbnailEnabled
+                            : undefined,
                     },
                     options: {
                         saveSeries: this.uiEditMode === UIEditMode.series,
@@ -380,9 +390,9 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             this.changeSet.commit({ discardKeys: this.videoFiles.map((v) => v.info.key) });
             this.uiEditMode = UIEditMode.none;
         },
-        previewThumbnail(e){
+        previewThumbnail(e) {
             const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
+            if (file && file.type.startsWith("image/")) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     this.thumbnailSrc = e.target.result;
@@ -390,10 +400,10 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 reader.readAsDataURL(file);
             }
         },
-        clearThumbnail(){
+        clearThumbnail() {
             this.thumbnailSrc = "";
         },
-        onCustomThumbnailUpload(e){
+        onCustomThumbnailUpload(e) {
             if (e.dataTransfer.items) {
                 const item = e.dataTransfer.items[0];
                 const { kind } = item;
@@ -406,10 +416,10 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         );
                         break;
                     }
-
                 }
                 this.previewThumbnail(e);
-            }},
+            }
+        },
     } as AlpineComponent;
 }
 

@@ -267,7 +267,7 @@ export const AdminLectureList = {
             );
         }
 
-       /* if (request.isCustomThumbnailEnabled !== undefined) {
+        /* if (request.isCustomThumbnailEnabled !== undefined) {
             promises.push(
                 put(`/api/stream/${lectureId}/customThumbnail/enabled`, {
                     lectureId,
@@ -389,7 +389,6 @@ export const AdminLectureList = {
         listener: PostFormDataListener = {},
     ) => {
         return await uploadFile(`/api/stream/${lectureId}/thumbs/`, file, listener);
-
     },
 
     /**
