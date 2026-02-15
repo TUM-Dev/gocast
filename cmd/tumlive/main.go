@@ -200,7 +200,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	}
 
 	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		if param.StatusCode >= 400 {
+		if param.StatusCode >= 400 &&  VersionTag == "development" {
 			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
 				param.TimeStamp.Format(time.DateTime),
 				param.StatusCode,

@@ -185,6 +185,44 @@ export const initPlayer = function (
         /* eslint-disable  @typescript-eslint/no-explicit-any */
     }) as any;
 
+    let isFastForwardActive = false;
+    let previousPlaybackRate: number | null = null;
+    let fastForwardTimeout: number | null = null;
+    let wasFastForwardJustReleased = false;
+    let releaseDebounceTimeout: number | null = null;
+    const fastForwardDelayMs = 200;
+
+    const applyFastForward = () => {
+        if (isFastForwardActive) return;
+        isFastForwardActive = true;
+        previousPlaybackRate = player.playbackRate();
+        if (previousPlaybackRate !== 2) {
+            player.playbackRate(2);
+        }
+    };
+
+    const clearFastForward = () => {
+        if (fastForwardTimeout !== null) {
+            window.clearTimeout(fastForwardTimeout);
+            fastForwardTimeout = null;
+        }
+        if (!isFastForwardActive) return;
+        isFastForwardActive = false;
+        wasFastForwardJustReleased = true;
+        if (previousPlaybackRate !== null) {
+            player.playbackRate(previousPlaybackRate);
+        }
+        previousPlaybackRate = null;
+        if (releaseDebounceTimeout !== null) {
+            window.clearTimeout(releaseDebounceTimeout);
+        }
+        // Clear the flag after a short delay to allow the click event to be suppressed, so that video does not pause
+        releaseDebounceTimeout = window.setTimeout(() => {
+            wasFastForwardJustReleased = false;
+            releaseDebounceTimeout = null;
+        }, 50);
+    };
+
     const settings = new PlayerSettings(player, live, isEmbedded);
 
     const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
@@ -244,6 +282,45 @@ export const initPlayer = function (
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
         settings.addOverlayIcon();
+    });
+    const handleHoldMouseDown = (event: MouseEvent) => {
+        if (event.button !== 0) return;
+        if (fastForwardTimeout !== null) {
+            window.clearTimeout(fastForwardTimeout);
+        }
+        fastForwardTimeout = window.setTimeout(() => {
+            fastForwardTimeout = null;
+            applyFastForward();
+        }, fastForwardDelayMs);
+    };
+
+    const handleHoldMouseUp = (event: MouseEvent) => {
+        if (event.button !== 0) return;
+        clearFastForward();
+    };
+
+    const handleClick = (event: MouseEvent) => {
+        if (wasFastForwardJustReleased) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    };
+
+    player.el().addEventListener("mousedown", handleHoldMouseDown);
+    document.addEventListener("mouseup", handleHoldMouseUp);
+    player.el().addEventListener("click", handleClick, true);
+    player.on("dispose", () => {
+        if (releaseDebounceTimeout !== null) {
+            window.clearTimeout(releaseDebounceTimeout);
+            releaseDebounceTimeout = null;
+        }
+        if (fastForwardTimeout !== null) {
+            window.clearTimeout(fastForwardTimeout);
+            fastForwardTimeout = null;
+        }
+        player.el()?.removeEventListener("mousedown", handleHoldMouseDown);
+        document.removeEventListener("mouseup", handleHoldMouseUp);
+        player.el()?.removeEventListener("click", handleClick, true);
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener(
