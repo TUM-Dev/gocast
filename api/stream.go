@@ -189,7 +189,6 @@ func (r streamRoutes) getLiveThumbs(c *gin.Context) {
 		c.File(path)
 	}
 	c.File(file.Path)
-
 }
 
 func (r streamRoutes) getSubtitles(c *gin.Context) {
@@ -914,7 +913,7 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 	course := tumLiveContext.Course
 	file, err := c.FormFile("file")
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file"})
+		// c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file"})
 		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "Invalid file",
@@ -935,7 +934,7 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 		filesFolder,
 		fmt.Sprintf("%s%s", fileUuid, filepath.Ext(filename)))
 
-	//tempFilePath := pathprovider.LiveThumbnail(strconv.Itoa(int(streamID)))
+	// tempFilePath := pathprovider.LiveThumbnail(strconv.Itoa(int(streamID)))
 	if err := c.SaveUploadedFile(file, path); err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
 			Status:        http.StatusInternalServerError,

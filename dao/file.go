@@ -61,5 +61,5 @@ func (d fileDao) SetThumbnail(streamId uint, thumb model.File) error {
 
 func (d fileDao) GetThumbnail(streamId uint, fileType model.FileType) (f model.File, err error) {
 	err = DB.Where("stream_id = ? AND type = ?", streamId, fileType).First(&f).Error
-	return
+	return f, err
 }
