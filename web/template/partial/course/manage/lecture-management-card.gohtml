@@ -413,17 +413,7 @@
                     </div>
                     <img :src="thumbnailSrc" alt="Thumbnail Preview" class="mt-4" x-show="thumbnailSrc">
                     <button @click="deleteCustomThumbnail" class="mt-2 px-4 py-2 bg-red-500 text-white rounded" x-show="thumbnailSrc || hasCustomThumbnail()">Delete uploaded thumbnail</button>
-{{/*                    </label>*/}}
-                </section>
-{{/*                    <article x-data="{ id: $id('text-input') }"*/}}
-{{/*                             class="w-full" >*/}}
-
-{{/*                    </article>*/}}
-
                     <!--input type="file" id="thumbnailUpload" class="hidden" accept="image/*" @change="onAttachmentFileDrop"-->
-
-
-
                 <div>
                     <button :disabled="isSaving" @click="discardEdit();"
                             class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
@@ -436,7 +426,7 @@
                             x-text="isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>
                 </div>
-
+            </section>
         </div>
 
         <template x-if="lecture.isCopying">

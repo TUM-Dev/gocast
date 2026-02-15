@@ -440,7 +440,11 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             }
 
             try {
-                await DataStore.adminLectureList.uploadThumbnail(this.lectureData.courseId, this.lectureData.lectureId, file);
+                await DataStore.adminLectureList.uploadThumbnail(
+                    this.lectureData.courseId,
+                    this.lectureData.lectureId,
+                    file,
+                );
                 await DataStore.adminLectureList.getData(this.lectureData.courseId, true);
                 this.uploadThumbnailPanelOpen = true;
                 this.changeSet.patch("isCustomThumbnailEnabled", true);

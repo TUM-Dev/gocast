@@ -1095,7 +1095,7 @@ func TestPutCustomLiveThumbnail(t *testing.T) {
 			},
 			Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 			ExpectedCode:     http.StatusOK,
-			ExpectedResponse: gin.H{"message": "Thumbnail uploaded successfully"},
+			ExpectedResponse: uint(0),
 			Body:             validBodySuccess,
 			ContentType:      validContentTypeSuccess,
 		},

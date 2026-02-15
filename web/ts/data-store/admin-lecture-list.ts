@@ -1,4 +1,4 @@
-    import { StreamableMapProvider } from "./provider";
+import { StreamableMapProvider } from "./provider";
 import {
     AdminLectureList,
     Lecture,

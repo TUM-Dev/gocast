@@ -984,7 +984,6 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 		filesFolder,
 		fmt.Sprintf("%s%s", fileUuid, filepath.Ext(filename)))
 
-	// tempFilePath := pathprovider.LiveThumbnail(strconv.Itoa(int(streamID)))
 	if err := c.SaveUploadedFile(file, path); err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
 			Status:        http.StatusInternalServerError,
