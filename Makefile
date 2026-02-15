@@ -14,7 +14,7 @@ go_dependencies:
 
 .PHONY: bundle
 bundle:
-	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/tumlive/tumlive.go
+	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/tumlive/main.go
 
 .PHONY: clean
 clean:
@@ -22,7 +22,7 @@ clean:
 
 .PHONY: install
 install:
-	mv main /bin/tum-live
+	mv cmd/tumlive/main /bin/tum-live
 
 .PHONY: mocks
 mocks:
@@ -35,7 +35,7 @@ run_web:
 
 .PHONY: run
 run:
-	go run cmd/tumlive/tumlive.go
+	go run cmd/tumlive/main.go
 
 .PHONY: test
 test:
