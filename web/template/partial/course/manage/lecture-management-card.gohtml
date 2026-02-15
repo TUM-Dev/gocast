@@ -372,48 +372,67 @@
             <div class="mt-6 flex items-center justify-between">
                 <section class="flex items-center py-1 px-3">
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="isChatEnabled" class="sr-only peer" x-bind-change-set="changeSet" />
+                        <input type="checkbox" name="isChatEnabled" class="sr-only peer" x-bind-change-set="changeSet"/>
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
-                        dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
-                        peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
-                        after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600"></div>
+                                   dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
+                                   peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                   after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
+                                   after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600"></div>
                         <span class="ml-3 text-sm font-medium text-3">Chat Enabled</span>
                     </label>
                 </section>
             </div>
-                <section>
-                    <label class="relative inline-flex items-center cursor-pointer left-3" >
-                        <input type="checkbox" class="sr-only peer" :checked="uploadThumbnailPanelOpen" @change="uploadThumbnailPanelOpen = $event.target.checked"/>
-                        <div
-                             class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
-                        dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
-                        peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
-                        after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600" ></div>
-                        <span class="ml-3 text-sm font-medium text-3">Upload Custom Thumbnail</span>
-                    </label>
-                    <div
-                                @drop.prevent="(e) => onCustomThumbnailUpload(e)"
-                                @dragover.prevent=""
-                                class="tl-textarea grow mt-4 p-6 border-2 border-dashed border-gray-300 rounded-lg"
-                                placeholder="Drop thumbnail here."
-                                autocomplete="off"
-                                x-show="uploadThumbnailPanelOpen">
-                            Drop thumbnail here.
-                    </div>
-                    <div class="mt-3" x-show="uploadThumbnailPanelOpen">
-                        <input type="file" x-ref="thumbnailFileInput" accept="image/*" class="hidden" @change="onCustomThumbnailFileSelected" />
-                        <button @click="$refs.thumbnailFileInput.click()" type="button" class="px-4 py-2 bg-indigo-500 text-white rounded">
-                            Select thumbnail from file browser
-                        </button>
-                        <a :href="customThumbnailUrl(false)" target="_blank" rel="noopener" class="ml-3 text-indigo-600 underline" x-show="thumbnailSrc || hasCustomThumbnail()">
-                            Open current thumbnail
-                        </a>
-                    </div>
-                    <img :src="thumbnailSrc" alt="Thumbnail Preview" class="mt-4" x-show="thumbnailSrc">
-                    <button @click="deleteCustomThumbnail" class="mt-2 px-4 py-2 bg-red-500 text-white rounded" x-show="thumbnailSrc || hasCustomThumbnail()">Delete uploaded thumbnail</button>
-                    <!--input type="file" id="thumbnailUpload" class="hidden" accept="image/*" @change="onAttachmentFileDrop"-->
+            <section>
+                <label class="relative inline-flex items-center cursor-pointer left-3">
+                    <input type="checkbox"
+                           class="sr-only peer"
+                           :checked="uploadThumbnailPanelOpen"
+                           @change="uploadThumbnailPanelOpen = $event.target.checked"/>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
+                                dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
+                                peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
+                                after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600"></div>
+                    <span class="ml-3 text-sm font-medium text-3">Upload Custom Thumbnail</span>
+                </label>
+
+                <div @drop.prevent="(e) => onCustomThumbnailUpload(e)"
+                     @dragover.prevent=""
+                     class="tl-textarea grow mt-4 p-6 border-2 border-dashed border-gray-300 rounded-lg"
+                     placeholder="Drop thumbnail here."
+                     autocomplete="off"
+                     x-show="uploadThumbnailPanelOpen">
+                    Drop thumbnail here.
+                </div>
+
+                <div class="mt-3" x-show="uploadThumbnailPanelOpen">
+                    <input type="file"
+                           x-ref="thumbnailFileInput"
+                           accept="image/*"
+                           class="hidden"
+                           @change="onCustomThumbnailFileSelected"/>
+                    <button @click="$refs.thumbnailFileInput.click()"
+                            type="button"
+                            class="px-4 py-2 bg-indigo-500 text-white rounded">
+                        Select thumbnail from file browser
+                    </button>
+                    <a :href="customThumbnailUrl(false)"
+                       target="_blank"
+                       rel="noopener"
+                       class="ml-3 text-indigo-600 underline"
+                       x-show="thumbnailSrc || hasCustomThumbnail()">
+                        Open current thumbnail
+                    </a>
+                </div>
+
+                <img :src="thumbnailSrc" alt="Thumbnail Preview" class="mt-4" x-show="thumbnailSrc">
+                <button @click="deleteCustomThumbnail"
+                        class="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+                        x-show="thumbnailSrc || hasCustomThumbnail()">
+                    Delete uploaded thumbnail
+                </button>
+                <!--input type="file" id="thumbnailUpload" class="hidden" accept="image/*" @change="onAttachmentFileDrop"-->
+
                 <div>
                     <button :disabled="isSaving" @click="discardEdit();"
                             class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
