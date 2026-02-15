@@ -116,6 +116,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         uiEditMode: UIEditMode.none,
         isDirty: false,
         isSaving: false,
+        uploadThumbnailPanelOpen: false,
+        thumbnailSrc: "",
 
         // Lecture Data
         changeSet: null as ChangeSet<Lecture> | null,
@@ -157,8 +159,34 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 const update = lectureList.find((l) => l.lectureId === lecture.lectureId);
                 if (update) {
                     this.changeSet.updateState(update);
+                    this.syncCustomThumbnailUi();
                 }
             });
+
+            this.syncCustomThumbnailUi();
+        },
+
+        getCustomThumbnailFile() {
+            return this.lectureData?.files?.find((f) => f.fileType === FileType.thumb_custom);
+        },
+
+        hasCustomThumbnail() {
+            return this.getCustomThumbnailFile() != null;
+        },
+
+        customThumbnailUrl(cacheBust = true): string {
+            const base = `/api/stream/${this.lectureData.lectureId}/thumbs/vod`;
+            return cacheBust ? `${base}?t=${Date.now()}` : base;
+        },
+
+        syncCustomThumbnailUi() {
+            const hasCustomThumbnail = this.hasCustomThumbnail();
+            if (hasCustomThumbnail) {
+                this.uploadThumbnailPanelOpen = true;
+                this.thumbnailSrc = this.customThumbnailUrl();
+            } else if (!this.thumbnailSrc.startsWith("data:")) {
+                this.thumbnailSrc = "";
+            }
         },
 
         toggleVisibility() {
@@ -395,8 +423,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             this.changeSet.commit({ discardKeys: this.videoFiles.map((v) => v.info.key) });
             this.uiEditMode = UIEditMode.none;
         },
-        previewThumbnail(e) {
-            const file = e.dataTransfer.files[0];
+        previewThumbnail(file: File) {
             if (file && file.type.startsWith("image/")) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -405,34 +432,71 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 reader.readAsDataURL(file);
             }
         },
-        clearThumbnail() {
-            this.thumbnailSrc = "";
+
+        async uploadCustomThumbnailFile(file: File) {
+            if (!file || !file.type.startsWith("image/")) {
+                this.lastErrors = ["Only image files are supported as thumbnails!"];
+                return;
+            }
+
+            try {
+                await DataStore.adminLectureList.uploadThumbnail(this.lectureData.courseId, this.lectureData.lectureId, file);
+                await DataStore.adminLectureList.getData(this.lectureData.courseId, true);
+                this.uploadThumbnailPanelOpen = true;
+                this.changeSet.patch("isCustomThumbnailEnabled", true);
+                this.previewThumbnail(file);
+            } catch (err) {
+                console.error(err);
+                this.lastErrors = ["Failed to upload custom thumbnail"];
+            }
         },
+
+        async onCustomThumbnailFileSelected(e) {
+            const input = e.target as HTMLInputElement;
+            const file = input.files?.[0];
+            if (!file) {
+                return;
+            }
+
+            await this.uploadCustomThumbnailFile(file);
+            input.value = "";
+        },
+
         async onCustomThumbnailUpload(e) {
-            if (e.dataTransfer.items) {
-                const item = e.dataTransfer.items[0];
-                const { kind } = item;
-                switch (kind) {
-                    case "file": {
-                        try {
-                            await DataStore.adminLectureList.uploadThumbnail(
-                                this.lectureData.courseId,
-                                this.lectureData.lectureId,
-                                item.getAsFile(),
-                            );
-                        } catch (err) {
-                            console.error(err);
-                            this.lastErrors = ["Failed to upload custom thumbnail"];
-                            return;
-                        }
-                        break;
-                    }
-                    default: {
-                        alert("Only image files are supported as thumbnails!");
-                        return;
-                    }
-                }
-                this.previewThumbnail(e);
+            if (!e.dataTransfer?.items?.length) {
+                return;
+            }
+
+            const item = e.dataTransfer.items[0];
+            if (item.kind !== "file") {
+                alert("Only image files are supported as thumbnails!");
+                return;
+            }
+
+            await this.uploadCustomThumbnailFile(item.getAsFile());
+        },
+
+        async deleteCustomThumbnail() {
+            const customThumbnail = this.getCustomThumbnailFile();
+            if (!customThumbnail) {
+                this.thumbnailSrc = "";
+                this.uploadThumbnailPanelOpen = false;
+                this.changeSet.patch("isCustomThumbnailEnabled", false);
+                return;
+            }
+
+            try {
+                await DataStore.adminLectureList.deleteAttachment(
+                    this.lectureData.courseId,
+                    this.lectureData.lectureId,
+                    customThumbnail.id,
+                );
+                this.thumbnailSrc = "";
+                this.uploadThumbnailPanelOpen = false;
+                this.changeSet.patch("isCustomThumbnailEnabled", false);
+            } catch (err) {
+                console.error(err);
+                this.lastErrors = ["Failed to delete custom thumbnail"];
             }
         },
     } as AlpineComponent;
