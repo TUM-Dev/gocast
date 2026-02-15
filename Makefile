@@ -22,7 +22,7 @@ clean:
 
 .PHONY: install
 install:
-	mv cmd/tumlive/main /bin/tum-live
+	mv main /bin/tum-live
 
 .PHONY: mocks
 mocks:
