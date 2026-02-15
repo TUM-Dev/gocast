@@ -1,8 +1,9 @@
 package tools
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/gin-gonic/gin"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // AdminCourseJson is the JSON representation of a courses streams for the admin panel

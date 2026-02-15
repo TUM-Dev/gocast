@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=subtitles.go -destination ../mock_dao/subtitles.go
+//go:generate go tool mockgen -source=subtitles.go -destination ../mock_dao/subtitles.go
 
 type SubtitlesDao interface {
 	// Get Subtitles by ID

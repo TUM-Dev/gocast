@@ -4,21 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/thumbgen"
 	"net"
 	"os"
 	"os/exec"
 	"time"
 
+	"github.com/joschahenningsen/thumbgen"
+
 	"github.com/u2takey/go-utils/uuid"
 
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	"github.com/TUM-Dev/gocast/worker/pb"
-	"github.com/TUM-Dev/gocast/worker/worker"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/pb"
+	"github.com/TUM-Dev/gocast/worker/worker"
 )
 
 type server struct {

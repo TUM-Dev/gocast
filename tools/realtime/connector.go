@@ -5,24 +5,31 @@ import (
 )
 
 type (
-	ConnectHookFunc    func(*Client)
+	// ConnectHookFunc is called on connecting.
+	ConnectHookFunc func(*Client)
+	// DisconnectHookFunc is called on disconnecting.
 	DisconnectHookFunc func(*Client)
-	MessageHookFunc    func(*Client, []byte)
+	// MessageHookFunc is called on Message.
+	MessageHookFunc func(*Client, []byte)
+	// RequestHandlerFunc is a func that handles a request.
 	RequestHandlerFunc func(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error
 )
 
+// Connector manages a set of clients
 type Connector struct {
 	requestHandler RequestHandlerFunc
 	clients        ClientStore
 	hooks          *Hooks
 }
 
+// Hooks manages the Connector's Hooks
 type Hooks struct {
 	OnConnect    ConnectHookFunc
 	OnDisconnect DisconnectHookFunc
 	OnMessage    MessageHookFunc
 }
 
+// NewConnector creates a connector for the given RequestHandlerFunc
 func NewConnector(requestHandler RequestHandlerFunc) *Connector {
 	connector := &Connector{
 		requestHandler: requestHandler,
@@ -42,6 +49,7 @@ func (c *Connector) Join(sendMessage MessageSendFunc, properties map[string]inte
 	return client
 }
 
+// Message triggers the clients OnMessage handler
 func (c *Connector) Message(clientId string, data []byte) {
 	client := c.clients.Get(clientId)
 	if c.hooks.OnMessage != nil {
@@ -49,6 +57,7 @@ func (c *Connector) Message(clientId string, data []byte) {
 	}
 }
 
+// Leave triggers the clients OnDisconnect handler and removes it from the Connector
 func (c *Connector) Leave(clientId string) {
 	client := c.clients.Get(clientId)
 	if c.hooks.OnDisconnect != nil {

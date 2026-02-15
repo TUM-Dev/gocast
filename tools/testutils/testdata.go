@@ -8,13 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
-	"github.com/TUM-Dev/gocast/mock_tools"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/golang/mock/gomock"
-	"gorm.io/gorm"
 )
 
 // Misc
@@ -34,16 +34,15 @@ var (
 	Admin            = model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}
 	EmptyLectureHall = model.LectureHall{}
 	LectureHall      = model.LectureHall{
-		Model:          gorm.Model{ID: uint(1)},
-		Name:           "FMI_HS1",
-		FullName:       "MI HS1",
-		CombIP:         "127.0.0.1/extron3",
-		PresIP:         "127.0.0.1/extron1",
-		CamIP:          "127.0.0.1/extron2",
-		CameraIP:       "127.0.0.1",
-		RoomID:         0,
-		PwrCtrlIp:      "http://pwrctrlip.in.test.de",
-		LiveLightIndex: 0,
+		Model:     gorm.Model{ID: uint(1)},
+		Name:      "FMI_HS1",
+		FullName:  "MI HS1",
+		CombIP:    "127.0.0.1/extron3",
+		PresIP:    "127.0.0.1/extron1",
+		CamIP:     "127.0.0.1/extron2",
+		CameraIP:  "127.0.0.1",
+		RoomID:    0,
+		PwrCtrlIp: "http://pwrctrlip.in.test.de",
 	}
 	CameraPreset = model.CameraPreset{
 		Name:          "Home",
@@ -686,20 +685,4 @@ func GetUploadKeyMock(t *testing.T) dao.UploadKeyDao {
 		CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil)
 	return streamsMock
-}
-
-func GetProgressMock(t *testing.T) dao.ProgressDao {
-	progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
-	progressMock.
-		EXPECT().
-		SaveProgresses(gomock.Any()).
-		Return(nil).AnyTimes()
-	return progressMock
-}
-
-func GetPresetUtilityMock(ctrl *gomock.Controller) tools.PresetUtility {
-	mockPresetUtility := mock_tools.NewMockPresetUtility(ctrl)
-	mockPresetUtility.EXPECT().FetchLHPresets(LectureHall).Return().AnyTimes()
-	mockPresetUtility.EXPECT().TakeSnapshot(CameraPreset).Return().AnyTimes()
-	return mockPresetUtility
 }

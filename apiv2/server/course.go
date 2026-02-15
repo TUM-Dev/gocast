@@ -6,13 +6,14 @@ import (
 	"errors"
 	"net/http"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+	"gorm.io/gorm"
+
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"gorm.io/gorm"
 )
 
 // GetLiveCourses retrieves the currently live courses and their streams.
@@ -31,17 +32,17 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 		courseForLiveStream, _ := a.dao.GetCourseById(context.Background(), stream.CourseID)
 
 		// only show streams for logged-in users if they are logged in
-		if courseForLiveStream.Visibility == "loggedin" && user == nil {
+		if courseForLiveStream.IsLoggedIn() && user == nil {
 			continue
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.Visibility == "enrolled" {
+		if courseForLiveStream.IsEnrolled() {
 			if !user.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
 		// Only show hidden streams to course admins
-		if courseForLiveStream.Visibility == "hidden" && (user == nil || !user.IsAdminOfCourse(courseForLiveStream)) {
+		if courseForLiveStream.IsHidden() && (user == nil || !user.IsAdminOfCourse(courseForLiveStream)) {
 			continue
 		}
 		// Only show private streams to course admins
@@ -67,7 +68,7 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 
 		resp = append(resp, &protobuf.CourseStream{
 			Course:      h.ParseCourseToProto(courseForLiveStream, user),
-			Stream:      h.ParseStreamToProto(stream, nil),
+			Stream:      h.ParseStreamToProto(stream, courseForLiveStream, user),
 			LectureHall: h.ParseLectureHallToProto(lectureHall),
 			// Viewers:     viewers,
 		})
@@ -140,10 +141,10 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 
-	streams := make([]*protobuf.Stream, len(course.Streams))
-	for i, stream := range course.Streams {
+	streams := make([]*protobuf.Stream, 0, len(course.Streams))
+	for _, stream := range course.Streams {
 		if !stream.Private || user.IsAdminOfCourse(course) {
-			streams[i] = h.ParseStreamToProto(stream, nil)
+			streams = append(streams, h.ParseStreamToProto(stream, course, user))
 		}
 	}
 
@@ -174,15 +175,15 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 
 	switch user.Role {
 	case model.AdminType:
-		courses = a.dao.GetAllCoursesForSemester(year, term, context.Background())
+		courses = a.dao.GetAllCoursesForSemester(ctx, year, term)
 	case model.LecturerType:
-		courses = user.CoursesForSemester(year, term, context.Background())
+		courses = user.CoursesForSemester(year, term)
 		coursesForLecturer, err := a.dao.GetAdministeredCoursesByUserId(context.Background(), user.ID, term, year)
 		if err == nil {
 			courses = append(courses, coursesForLecturer...)
 		}
 	default:
-		courses = user.CoursesForSemester(year, term, context.Background())
+		courses = user.CoursesForSemester(year, term)
 	}
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)

@@ -1,4 +1,4 @@
-FROM node:23 AS node
+FROM node:24 AS node
 
 WORKDIR /app
 COPY web web
@@ -10,7 +10,7 @@ RUN rm -rf web/assets/ts-dist &&\
 WORKDIR /app/web
 RUN npm i --no-dev
 
-FROM golang:1.24.1-alpine3.21 AS build-env
+FROM golang:1.25-alpine3.22 AS build-env
 
 RUN mkdir /gostuff
 WORKDIR /gostuff
@@ -26,9 +26,9 @@ COPY --from=node /app/web/node_modules ./web/node_modules
 
 # bundle version into binary if specified in build-args, dev otherwise.
 ARG version=dev
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -extldflags '-static' -X main.VersionTag=${version}" -o /go/bin/tumlive cmd/tumlive/tumlive.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -extldflags '-static' -X main.VersionTag=${version}" -o /go/bin/tumlive cmd/tumlive/main.go
 
-FROM alpine:3.21
+FROM alpine:3.23
 RUN apk add --no-cache tzdata openssl
 WORKDIR /app
 COPY --from=build-env /go/bin/tumlive .

@@ -1,12 +1,13 @@
-// Package main provides a simple edge tumlive that proxies requests for TUM-Live-Worker and caches immutable files.
+// Package main provides a simple edge server that proxies requests for TUM-Live-Runner and caches immutable files.
 package main
 
 import (
 	"crypto/rsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"log"
+	log "log/slog"
 	"mime"
 	"net"
 	"net/http"
@@ -25,23 +26,26 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.org/x/sync/singleflight"
 )
 
 var (
 	cacheLock   = sync.Mutex{}
 	cachedFiles = make(map[string]time.Time)
 
-	inflightLock = sync.Mutex{}
-	inflight     = make(map[string]*sync.Mutex)
+	fetchGroup singleflight.Group
 
-	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
-	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
+	//                                  /itocm2.cit.tum.de/62169/STREAM_VERSION_COMBINED/playlist.m3u8
+	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9.]+/([a-zA-Z0-9_]+/)*([0-9]+|playlist)\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
+	// allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
 
 var port = ":8089"
 
-var originPort = "8085"
-var originProto = "http://"
+var (
+	originPort  = "8187"
+	originProto = "http://"
+)
 
 var VersionTag = "dev"
 
@@ -57,7 +61,11 @@ var mainInstance = "http://localhost:8081"
 var adminToken = ""
 
 func main() {
-	log.Println("Starting edge tumlive version " + VersionTag)
+	l := log.New(log.NewJSONHandler(os.Stdout, &log.HandlerOptions{
+		Level: log.LevelInfo,
+	})).With("version", VersionTag)
+	log.SetDefault(l)
+	log.Info("Starting edge server")
 	eport := os.Getenv("PORT")
 	if eport != "" {
 		port = eport
@@ -116,7 +124,11 @@ func ServeEdge(port string) {
 	mux.HandleFunc("/", edgeHandler)
 
 	go func() {
-		log.Fatal(http.ListenAndServe(port, mux))
+		err := http.ListenAndServe(port, mux)
+		if err != nil {
+			log.With("port", port, "err", err).Error("can't listen")
+			os.Exit(1)
+		}
 	}()
 	go handleTLS(mux)
 
@@ -228,7 +240,6 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
-
 			if err != nil {
 				err404Playlists.WithLabelValues(claims.StreamID, claims.Playlist).Inc()
 				w.WriteHeader(http.StatusNotFound)
@@ -274,7 +285,7 @@ func handleTLS(mux *http.ServeMux) {
 	privkeyName := ""
 	fullchainName := ""
 	if err != nil {
-		log.Println("[HTTPS] Skipping, could not read cert directory: ", err)
+		log.With("err", err).Warn("[HTTPS] Skipping, could not read cert directory")
 	} else {
 		for _, entry := range dir {
 			if strings.HasSuffix(entry.Name(), "privkey.pem") {
@@ -287,10 +298,14 @@ func handleTLS(mux *http.ServeMux) {
 	}
 	if privkeyName != "" && fullchainName != "" {
 		go func() {
-			log.Fatal(http.ListenAndServeTLS(":8443", fullchainName, privkeyName, mux))
+			err := http.ListenAndServeTLS(":8443", fullchainName, privkeyName, mux)
+			if err != nil {
+				log.With("err", err).Error("can't listen and serve tls")
+				os.Exit(1)
+			}
 		}()
 	} else {
-		log.Println("[HTTPS] Skipping, could not find privkey.pem or fullchain.pem in cert directory")
+		log.With("err", err).Warn("[HTTPS] Skipping, could not find privkey.pem or fullchain.pem in cert directory")
 	}
 }
 
@@ -302,6 +317,8 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	writer.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
+
 	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
 
 	// proxy m3u8 playlist
@@ -310,7 +327,6 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		request.URL.Path = "" // override by proxy
 		u, err := url.Parse(fmt.Sprintf("%s%s:%s/%s", originProto, urlParts[1], originPort, urlParts[2]))
 		if err != nil {
-			log.Println("Could not parse URL: ", err)
 			return
 		}
 		proxy := httputil.NewSingleHostReverseProxy(u)
@@ -329,7 +345,7 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	err := fetchFile(urlParts[1], urlParts[2])
 	if err != nil {
-		log.Printf("Could not fetch file: %v", err)
+		log.With("url", urlParts, "err", err).Warn("Could not fetch file")
 		writer.WriteHeader(http.StatusBadGateway)
 		_, _ = writer.Write([]byte("502 - Bad Gateway"))
 		return
@@ -349,59 +365,52 @@ func fetchFile(host, file string) error {
 		return nil
 	}
 
-	inflightLock.Lock()
-	if _, ok = inflight[file]; !ok {
-		inflight[file] = &sync.Mutex{}
-	}
-	curLock := inflight[file]
-	curLock.Lock()
-	inflightLock.Unlock()
-	defer curLock.Unlock()
-	defer delete(inflight, file)
-
-	// check if file is already in cache after acquiring lock:
-	_, err := os.Stat(diskDir)
-	if err == nil {
-		return nil // file in cache, can be served
-	}
-	if !os.IsNotExist(err) {
-		return err // Unknown error
-	}
-	// file not in cache, fetch it
-	filePathPts := strings.SplitN(file, ".", 2)
-	if len(filePathPts) != 2 {
-		return fmt.Errorf("parse file path: %s", file)
-	}
-	d := filepath.Dir(diskDir)
-	err = os.MkdirAll(d, 0755)
-	if err != nil {
-		return err
-	}
-	fileResp, err := http.Get(fmt.Sprintf("%s%s:%s/%s", originProto, host, originPort, file))
-	if err != nil {
-		return err
-	}
-	defer fileResp.Body.Close()
-	f, err := os.Create(diskDir)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.ReadFrom(fileResp.Body)
-	if err != nil {
-		return err
-	}
-	cacheLock.Lock()
-	cachedFiles[diskDir] = time.Now()
-	cacheLock.Unlock()
-	return nil
+	_, err, _ := fetchGroup.Do(file, func() (interface{}, error) {
+		// check if file is already in cache after acquiring singleflight:
+		_, err := os.Stat(diskDir)
+		if err == nil {
+			return nil, nil // file in cache, can be served
+		}
+		if !os.IsNotExist(err) {
+			return nil, err // Unknown error
+		}
+		// file not in cache, fetch it
+		filePathPts := strings.SplitN(file, ".", 2)
+		if len(filePathPts) != 2 {
+			return nil, fmt.Errorf("parse file path: %s", file)
+		}
+		d := filepath.Dir(diskDir)
+		err = os.MkdirAll(d, 0o755)
+		if err != nil {
+			return nil, err
+		}
+		fileResp, err := http.Get(fmt.Sprintf("%s%s:%s/%s", originProto, host, originPort, file))
+		if err != nil {
+			return nil, err
+		}
+		defer fileResp.Body.Close()
+		f, err := os.Create(diskDir)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		_, err = f.ReadFrom(fileResp.Body)
+		if err != nil {
+			return nil, err
+		}
+		cacheLock.Lock()
+		cachedFiles[diskDir] = time.Now()
+		cacheLock.Unlock()
+		return nil, nil
+	})
+	return err
 }
 
 const cacheDir = "/tmp/edge"
 
 func cleanup() {
 	// find files older than one hour:
-	log.Println("Cleaning up cache")
+	log.Info("Cleaning up cache")
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 	removed := 0
@@ -410,12 +419,86 @@ func cleanup() {
 			removed++
 			err := os.Remove(file)
 			if err != nil {
-				log.Println("Could not remove file: ", err)
+				log.With("err", err).Error("Could not remove file")
 			}
 			delete(cachedFiles, file)
 		}
 	}
-	log.Println("Removed ", removed, " files")
+	log.With("nFiles ", removed).Info("Removed files")
+	err := deleteEmptyDirs(cacheDir)
+	if err != nil {
+		log.With("err", err).Error("Could not remove empty directories in cache")
+	}
+}
+
+func isDirEmpty(dir string) (bool, error) {
+	f, err := os.Open(dir)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1) // Read at least one entry
+	if err == nil {
+		return false, nil // Not empty
+	}
+	if errors.Is(err, os.ErrClosed) {
+		return false, fmt.Errorf("directory closed: %s", dir)
+	}
+	return true, nil // Empty
+}
+
+func deleteEmptyDirs(root string) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			return nil
+		}
+
+		empty, err := isDirEmpty(path)
+		if err != nil {
+			return err
+		}
+		if empty {
+			// Check if the directory is empty or only contains empty directories
+			// We need to check all subdirectories recursively
+			// So we use a separate function to handle this
+			if err := removeEmptyDirs(path); err != nil {
+				return err
+			}
+		}
+		return filepath.SkipDir // Skip the directory's contents
+	})
+}
+
+func removeEmptyDirs(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subdir := filepath.Join(dir, entry.Name())
+			empty, err := isDirEmpty(subdir)
+			if err != nil {
+				return err
+			}
+			if !empty {
+				return nil // Not empty, do not delete
+			}
+			if err := removeEmptyDirs(subdir); err != nil {
+				return err
+			}
+		} else {
+			return nil // Not empty, do not delete
+		}
+	}
+
+	// If we get here, the directory is empty or only contains empty directories
+	return os.Remove(dir)
 }
 
 var jwtPubKey *rsa.PublicKey
@@ -426,46 +509,47 @@ func prepare() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("FFmpeg version: ", string(output))
+	log.With("version", string(output)).Info("probed ffmpeg")
 	// Empty cache on startup:
 	err = os.RemoveAll(cacheDir)
 	if err != nil {
-		log.Printf("Could not empty cache directory: %v", err)
+		log.With("err", err).Error("Could not empty cache directory")
 	}
 	err = os.MkdirAll(cacheDir, os.ModePerm)
 	if err != nil {
-		log.Fatal("Could not create cache directory for edge requests: ", err)
+		log.With("err", err).Error("Could not create cache directory for edge requests")
+		os.Exit(1)
 	}
 	// prevent defaulting to audio/x-mpegurl:
 	err = mime.AddExtensionType(".m3u8", "application/vnd.apple.mpegurl")
 	if err != nil {
-		log.Println("Error setting mimetype for m3u8:", err)
+		log.With("err", err).Error("Can't set mimetype for m3u8")
 	}
 	retries := 0
 	backoff := time.Second
 	for retries < 5 { // allow for 5 retries with backoff to reach main instance
-		log.Printf("Trying to get jwt key from main instance. Try #%d", +retries+1)
+		log.With("attempt", retries+1).Info("Trying to get jwt key from main instance.")
 		retries++
 		backoff *= 2
 		time.Sleep(backoff)
 		resp, err := http.Get(mainInstance + "/jwtPubKey")
 		if err != nil {
-			log.Println("Could not get jwt key from main instance, http error: ", err)
+			log.With("err", err).Warn("Could not get jwt key from main instance")
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
-			log.Println("Could not get jwt key from main instance, http status: ", resp.StatusCode)
+			log.With("status", resp.StatusCode).Warn("Could not get jwt key from main instance")
 			continue
 		}
 		decoder := json.NewDecoder(resp.Body)
 		jwtPubKeyTmp := rsa.PublicKey{}
 		err = decoder.Decode(&jwtPubKeyTmp)
 		if err != nil {
-			log.Println("Could not decode jwt key, error: ", err)
+			log.With("err", err).Warn("Could not decode jwt key")
 			continue
 		}
 		jwtPubKey = &jwtPubKeyTmp
-		log.Println("successfully gathered public key:", jwtPubKey)
+		log.With("pubKey", jwtPubKey).Info("successfully gathered public key")
 		break
 	}
 }
@@ -474,6 +558,6 @@ func keepAlive() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	s := <-sig
-	fmt.Println("Got signal:", s)
+	log.With("signal", s).Info("Terminating on signal")
 	os.Exit(1)
 }

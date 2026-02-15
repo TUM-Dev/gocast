@@ -92,6 +92,7 @@ func (c *Channel) IsSubscribed(clientId string, path string) bool {
 	return c.subscribers.IsSubscribed(clientId, path)
 }
 
+// FindContext returns the context of a subscriber tied to clientId and path
 func (c *Channel) FindContext(clientId string, path string) (*Context, bool) {
 	return c.subscribers.GetContext(clientId, path)
 }

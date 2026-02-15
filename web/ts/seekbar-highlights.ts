@@ -1,8 +1,10 @@
 import { Section } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
-import { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
 import { DataStore } from "./data-store/data-store";
 import { Bookmark } from "./data-store/bookmarks";
+
+type Player = ReturnType<typeof videojs>;
 
 export enum MarkerType {
     sectionSep,
@@ -23,7 +25,7 @@ export type SeekbarSection = {
 
 class SeekbarHighlights {
     streamId: number;
-    player: VideoJsPlayer;
+    player: Player;
     sections: SeekbarSection[];
     marker: SeekbarMarker[];
 

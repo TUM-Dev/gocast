@@ -8,12 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	e "github.com/TUM-Dev/gocast/apiv2/errors"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/metadata"
 	"gorm.io/gorm"
+
+	e "github.com/TUM-Dev/gocast/apiv2/errors"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 // getCurrent retrieves the current user based on the context.
@@ -101,16 +102,11 @@ type StreamRequest interface {
 	GetStreamId() uint32
 }
 
-// Checks if the user is allowed to access the stream and course and returns the user, stream and course
 func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamRequest) (*model.User, model.Stream, model.Course, error) {
-	stream := model.Stream{}
-	course := model.Course{}
-	user, err := a.getCurrent(ctx)
-	if err != nil {
-		return nil, stream, course, e.WithStatus(http.StatusUnauthorized, err)
-	}
+	var stream model.Stream
+	var course model.Course
 
-	stream, err = a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
+	stream, err := a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, stream, course, e.WithStatus(http.StatusNotFound, err)
@@ -123,8 +119,23 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 		return nil, stream, course, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	// Only check slug if request requires it
+	type slugGetter interface {
+		GetSlug() string
+	}
+	if r, ok := req.(slugGetter); ok {
+		if r.GetSlug() != course.Slug {
+			return nil, stream, course, e.WithStatus(http.StatusBadRequest, errors.New("slug does not match course"))
+		}
+	}
+
+	user, _ := a.getCurrent(ctx)
 	if !user.IsEligibleToWatchCourse(course) {
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not eligible to access course content"))
+	}
+
+	if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access private stream"))
 	}
 
 	return user, stream, course, nil

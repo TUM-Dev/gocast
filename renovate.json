@@ -4,6 +4,6 @@
     "config:base",
     "group:allNonMajor"
   ],
-  "ignoreDeps": ["github.com/TUM-Dev/gocast/worker"],
+  "ignoreDeps": ["github.com/TUM-Dev/gocast/worker", "github.com/TUM-Dev/gocast/runner"],
   "enabledManagers": ["npm", "gomod"]
 }

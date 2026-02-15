@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,15 +18,16 @@ import (
 	"time"
 
 	"github.com/RBG-TUM/commons"
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/tum"
 )
 
 func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -147,17 +149,17 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
 
 		// only show streams for logged-in users if they are logged in
-		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
+		if courseForLiveStream.IsLoggedIn() && tumLiveContext.User == nil {
 			continue
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.Visibility == "enrolled" {
+		if courseForLiveStream.IsEnrolled() {
 			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
 		// Only show hidden streams to course admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
+		if courseForLiveStream.IsHidden() && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
 			continue
 		}
 		// Only show private streams to course admins
@@ -248,15 +250,15 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
-			courses = r.GetAllCoursesForSemester(year, term, c)
+			courses = r.GetAllCoursesForSemester(c, year, term)
 		case model.LecturerType:
-			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
+			courses = tumLiveContext.User.CoursesForSemester(year, term)
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
 			if err == nil {
 				courses = append(courses, coursesForLecturer...)
 			}
 		default:
-			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
+			courses = tumLiveContext.User.CoursesForSemester(year, term)
 		}
 	}
 
@@ -277,18 +279,38 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 func (r coursesRoutes) getPinned(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
+	yearStr := c.Query("year")
+	term := c.Query("term")
+
+	var year int
+	var err error
+	filterBySemester := false
+
+	if yearStr != "" && term != "" {
+		year, err = strconv.Atoi(yearStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
+			return
+		}
+		filterBySemester = true
+	}
+
 	var pinnedCourses []model.Course
 	if tumLiveContext.User != nil {
 		pinnedCourses = tumLiveContext.User.PinnedCourses
-	} else {
-		pinnedCourses = []model.Course{}
 	}
 
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	user := tumLiveContext.User
-	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
+
+	resp := make([]model.CourseDTO, 0)
 	for _, course := range pinnedCourses {
-		if !course.IsHidden() {
+		if filterBySemester {
+			if course.Year != year || course.TeachingTerm != term {
+				continue
+			}
+		}
+		if user == nil || user.IsEligibleToSearchForCourse(course) {
 			resp = append(resp, course.ToDTO(user))
 		}
 	}
@@ -338,12 +360,6 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	if query.Year == 0 || query.Term == "" {
 		query.Year, query.Term = tum.GetCurrentSemester()
 	}
-
-	type Response struct {
-		Course  model.CourseDTO
-		Streams []model.StreamDTO
-	}
-
 	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1386,6 +1402,21 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		return
 	}
 
+	lang := sql.NullString{}
+	switch req.Lang {
+	case "de", "en":
+		lang.Valid = true
+		lang.String = req.Lang
+	case "":
+		lang.Valid = false
+	default:
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid Teaching Language. Allowed: en, de or none.",
+		})
+		return
+	}
+
 	course := model.Course{
 		UserID:              tumLiveContext.User.ID,
 		Name:                req.Name,
@@ -1398,6 +1429,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		ChatEnabled:         req.EnChat,
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
+		Language:            lang,
 	}
 	if tumLiveContext.User.Role != model.AdminType {
 		course.Admins = []model.User{*tumLiveContext.User}
@@ -1512,11 +1544,13 @@ type createCourseRequest struct {
 	Name         string
 	Slug         string
 	TeachingTerm string
+	Lang         string
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
 	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		fmt.Println(err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}

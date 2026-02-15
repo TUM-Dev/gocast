@@ -1,10 +1,11 @@
 package api
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/TUM-Dev/gocast/tools/realtime/connector"
-	"github.com/gin-gonic/gin"
 )
 
 type realtimeRoutes struct {

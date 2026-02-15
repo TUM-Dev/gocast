@@ -12,9 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
@@ -29,6 +30,9 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	streamEnd, ok := d["streamEnd"].(time.Time)
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream end in context"))
+	}
+	if streamEnd.Before(time.Now()) {
+		return nil
 	}
 	streamVersion, ok := d["streamVersion"].(string)
 	if !ok {
@@ -50,7 +54,6 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if !ok {
 		return AbortingError(fmt.Errorf("no input in context"))
 	}
-	log = log.With("stream_id", streamID)
 
 	metrics.Streams.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
 	defer func() {
@@ -68,14 +71,17 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_StreamStart{
 			StreamStart: &protobuf.StreamStartNotification{
-				Stream: &protobuf.StreamInfo{Id: &streamID},
-				Url:    ptr.Take(fmt.Sprintf("%s/%s/%s/%d.m3u8", config.Config.EdgeServer, config.Config.Hostname, liveRecDir, streamID)),
+				Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
+				StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
+				Url:           ptr.Take(fmt.Sprintf("%s/%s/%s/playlist.m3u8", config.Config.EdgeServer, config.Config.Hostname, path.Join(fmt.Sprintf("%d", streamID), streamVersion))),
 			},
 		},
 	}
 
 	args := []string{"-nostdin", "-y"} // noninteractive mode
-	args = append(args, strings.Split(globalOpts, " ")...)
+	if globalOpts != "" {
+		args = append(args, strings.Split(globalOpts, " ")...)
+	}
 	args = append(args, "-t", fmt.Sprintf("%.0f", time.Until(streamEnd).Seconds()))
 	if inputOpts != "" {
 		args = append(args, strings.Split(inputOpts, " ")...)
@@ -104,6 +110,9 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if err != nil {
 		metrics.StreamErrors.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
 		return err
+	}
+	if streamEnd.After(time.Now()) {
+		return fmt.Errorf("ffmpeg terminated before stream end")
 	}
 	return nil
 }

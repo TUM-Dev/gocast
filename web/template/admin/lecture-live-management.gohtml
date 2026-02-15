@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+{{- /*gotype: github.com/TUM-Dev/gocast/web.LiveLectureManagementData*/ -}}
+<head>
+    <meta charset="UTF-8">
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    {{$displayName := or $stream.Name (printf "Lecture: %s %02d. %d" $stream.Start.Month $stream.Start.Day $stream.Start.Year)}}
+    <title>{{.IndexData.Branding.Title}} | {{$course.Name}}: {{$displayName}}</title>
+    {{template "headImports" .IndexData.VersionTag}}
+    <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
+    <script src="/static/assets/ts-dist/watch.bundle.js?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"></script>
+    <script src="/static/assets/ts-dist/admin.bundle.js?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"></script>
+    <script src="/static/assets/ts-dist/interaction.bundle.js?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"></script>
+    <link href="/static/assets/css-dist/home.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"
+          rel="stylesheet">
+    <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
+    <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
+    <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
+    <link rel="stylesheet"
+          href="/static/assets/css-dist/watch.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}">
+    {{/* Remove this when using KaTeX in other locations than the chat */}}
+    {{if $stream.ChatEnabled}}
+        <link rel="stylesheet" href="/static/node_modules/katex/dist/katex.min.css">
+        <script defer src="/static/node_modules/katex/dist/katex.js"></script>
+        <script defer src="/static/node_modules/katex/dist/contrib/auto-render.min.js"></script>
+        <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
+    {{end}}
+</head>
+<body x-data="{'streamID': {{$stream.Model.ID}} }" class="w-full">
+    {{template "header" .IndexData.TUMLiveContext}}
+    <div class="h-full w-full flex flex-col items-center" x-data="interaction.videoInformationContext({{$stream.ID}});">
+        <!-- Heading with Lecture and Course Name -->
+        <div class="flex flex-row items-center pt-2">
+            <a href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><h1 class="text-gray-900 dark:text-gray-200 mb-0">{{$stream.Name}}</h1></a>
+            <span class="text-gray-900 dark:text-gray-200 mx-2">|</span>
+            <a href="/?year={{$course.Year}}&term={{$course.TeachingTerm}}&slug={{$course.Slug}}&view=3"><h3 class="text-gray-800 dark:text-gray-300">{{$course.Name}}</h3></a>
+        </div>
+
+        <div class="flex flex-row w-full">
+            <div class="flex flex-col w-full pl-5 pt-3">
+                <div class="flex flex-row items-center justify-between" style="width: 25vw;">
+                    <div x-init="interaction.periodicUpdateLiveTimeLeft( '{{.Lecture.End}}' );" class="flex flex-row items-center justify-start gap-1">
+                        <div class="pulsing-circle"></div>
+                        <span class="text-2 text-gray-800 dark:text-gray-200 mt-1" id="live-time-remaining">Time left: </span>
+                    </div>
+                    <span class="text-2 text-gray-800 dark:text-gray-200 mt-1" id="time"></span>
+                </div>
+                <div class="w-full flex flex-row gap-2">
+                    <div class="flex flex-col h-full" style="width: 25vw">
+                        <!-- Video Player -->
+                        <div style="width: 100%; height: fit-content;">
+                            <video-js id="videoPlayer" class="video-js vjs-default-skin vjs-16-9 mt-1"
+                                      preload="auto" muted autoplay
+                                      data-setup='{"fluid": true, "liveui": true}'
+                                      poster="/public/no_active_stream.jpg">
+                                {{if $stream.PlaylistUrl}}
+                                    <source src="{{$stream.PlaylistUrl}}" type="application/x-mpegURL">
+                                {{else}}
+                                    <source src="{{$stream.PlaylistUrlPRES}}" type="application/x-mpegURL">
+                                {{end}}
+                            </video-js>
+                        </div>
+                        <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm w-full p-2 mt-1">
+                            {{if eq .Lecture.Description ""}}
+                                <span id="description" class="text-wrap">No description available</span>
+                            {{else}}
+                                <span id="description" class="text-wrap">{{.Lecture.Description}}</span>
+                            {{end}}
+                        </div>
+                        <button @click="watch.seekToLive()" class="align-middle mt-1 text-3 hover:text-1 font-medium bg-indigo-600 hover:bg-indigo-500 rounded-2xl w-full">Seek to Live</button>
+                        <button @click="watch.setHighestQuality()" class="dark:bg-blue-800 dark:hover:bg-blue-700 align-middle mt-1 text-3 hover:text-1 font-light rounded-2xl w-full">Switch to highest quality</button>
+                        <div class="w-full flex flex-row gap-1 pt-2">
+                            <button @click="window.location.href='?restart=1'"
+                                    title="Issues with the stream? Restart it."
+                                    class="bg-indigo-600 text-center md:inline-block block w-full text-white font-bold hover:bg-indigo-500 rounded-lg cursor-pointer py-1">
+                                <i class="fas fa-redo mr-1"></i>Restart
+                            </button>
+                            <button @click="$dispatch('stop')"
+                                    title="Already finished? End the stream early."
+                                    class="bg-red-600 text-center md:inline-block block w-full text-white hover:bg-red-500 font-bold rounded-lg cursor-pointer py-1">
+                                <i class="fas fa-power-off mr-1"></i>Stop
+                            </button>
+                        </div>
+
+                        <!-- TODO: Fix this
+                        <div>
+                            <span class="text-gray-200">Student Live activity during lecture</span>
+                            <div class="w-full m-auto" style="min-height: 200px; min-width:200px;">
+                                <canvas id="lectureLiveStats" width="400" height="100" aria-label="Viewer Live stats"
+                                        role="img"></canvas>
+                            </div>
+                        </div>-->
+                    </div>
+
+
+                    <!-- Video Stats -->
+                    <div
+                            x-data="{ data: { bufferSeconds: 0, videoHeight: 0, videoWidth: 0, bandwidth: 0, mediaRequests: 0, mediaRequestsFailed: 0 } }"
+                            x-on:newvideostats.window="e => { data = e.detail }"
+                            class="important-text-4"
+                    >
+                        <div class="flex justify-between align-middle pb-4">
+                            <h3>Video Stats</h3>
+                        </div>
+                        <div class="flex justify-between align-middle">
+                            <div>
+                                <div>Resolution:</div>
+                                <div>Bandwidth:</div>
+                            </div>
+                            <div class="pr-4">
+                                <div class="text-right" x-text="`${data.videoWidth}x${data.videoHeight}`"></div>
+                                <div class="text-right"
+                                     x-text="Math.round(data.bandwidth / 1000000) + ' MBit/s'"></div>
+                            </div>
+                        </div>
+                        <br>
+                        <div>Buffer:</div>
+                        <div class="flex justify-between align-middle">
+                            <div>
+                                <div class="pl-2">> Buffered Time:</div>
+                                <div class="pl-2">> Chunks Requested:</div>
+                                <div class="pl-2">> Requests Failed:</div>
+                            </div>
+                            <div class="pr-4">
+                                <div class="text-right"
+                                     x-text="(Math.round(data.bufferSeconds * 100) / 100) + 's'"></div>
+                                <div class="text-right" x-text="data.mediaRequests"></div>
+                                <div class="text-right" x-text="data.mediaRequestsFailed"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat -->
+            {{if and $course.ChatEnabled $stream.ChatEnabled}}
+                <div
+                     style="height: 80vh; width: 40vw" class="pr-5">
+                    <div class="border dark:border-gray-800 rounded-lg h-full">
+                        {{template "chat-component" .ChatData}}
+                    </div>
+                </div>
+            {{end}}
+
+        </div>
+
+    </div>
+
+    <!-- Modal when stopping a stream -->
+    <div class="inline-block" x-data="{ 'showModal': false }"
+         @stop.window="showModal=true"
+         @keydown.escape="showModal = false" x-cloak x-show="showModal">
+        <section class="flex flex-wrap h-full">
+            <div class="overflow-auto" x-show="showModal"
+                 :class="{ 'absolute inset-0 z-50 flex items-center justify-center': showModal }">
+                <div class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left
+                        px-6"
+                     @click.away="showModal = false">
+                    <!--Title-->
+                    <div class="flex justify-between pb-3">
+                        <p class="text-2 font-bold">Keep the recording after ending the stream?</p>
+                    </div>
+                    <!--Footer-->
+                    <div class="flex justify-start pt-2">
+                        <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then((response) => {if (response.ok) showModal=false; else throw new Error('Response not ok');}).catch((err) => {
+                                            console.log('Some error occurred while ending the stream:', err);
+                                        });">
+                            Yes
+                        </button>
+                        <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then((response) => {if (response.ok) showModal=false; else throw new Error('Response not ok');}).catch((err) => {
+                                            console.log('Some error occurred while ending the stream:', err);
+                                        });">
+                            No
+                        </button>
+                        <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
+                                @click="showModal = false">Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script defer>
+        watch.initPlayer("videoPlayer", true, false, false, {{.IndexData.TUMLiveContext.User.GetEnabledPlaybackSpeeds}}, {{$stream.LiveNow}}, {{.IndexData.TUMLiveContext.User.GetSeekingTime}});
+        setTimeout(() => watch.setHighestQuality(), 2000);
+        watch.periodicCurrentTime("time");
+        watch.videoStatListener.listen();
+
+        admin.loadLectureStats("lecture", "lectureLiveStats", "{{.Lecture.Model.ID}}");
+        admin.initLectureStatsPage("{{.Lecture.Model.ID}}");
+    </script>
+</body>
+</html>

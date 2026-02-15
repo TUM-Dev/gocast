@@ -12,10 +12,10 @@ var Config struct {
 	Port         int    `env:"PORT" envDefault:"52735"`
 	StoragePath  string `env:"STORAGE_PATH" envDefault:"storage/mass"`
 	SegmentPath  string `env:"SEGMENT_PATH" envDefault:"storage/live"`
+	ErrorPath    string `env:"ERROR_PATH" envDefault:"storage/errors"`
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
-	Version      string `env:"VERSION" envDefault:"dev"`
-	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:50057"`
+	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:8089"`
 }
 
 func init() {

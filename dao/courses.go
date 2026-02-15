@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=courses.go -destination ../mock_dao/courses.go
+//go:generate go tool mockgen -source=courses.go -destination ../mock_dao/courses.go
 
 type CoursesDao interface {
 	CreateCourse(ctx context.Context, course *model.Course, keep bool) error
@@ -23,7 +23,7 @@ type CoursesDao interface {
 	GetAllCourses() ([]model.Course, error)
 	GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error)
 	GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error)
-	GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course)
+	GetAllCoursesForSemester(ctx context.Context, year int, term string) (courses []model.Course)
 	GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error)
 	GetCourseByToken(token string) (course model.Course, err error)
@@ -46,18 +46,18 @@ type CoursesDao interface {
 	DeleteCourse(course model.Course)
 }
 
-type coursesDao struct {
+type CoursesDaoImpl struct {
 	db       *gorm.DB
 	usersDao UsersDao
 }
 
-func NewCoursesDao() coursesDao {
-	return coursesDao{db: DB, usersDao: NewUsersDao()}
+func NewCoursesDao() CoursesDaoImpl {
+	return CoursesDaoImpl{db: DB, usersDao: NewUsersDao()}
 }
 
 // CreateCourse creates a new course, if keep is false, deleted_at is set to NOW(),
 // letting the user manually create the course again (opt-in)
-func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep bool) error {
+func (d CoursesDaoImpl) CreateCourse(ctx context.Context, course *model.Course, keep bool) error {
 	defer Cache.Clear()
 	err := DB.Create(&course).Error
 	if err != nil {
@@ -69,20 +69,20 @@ func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep
 	return nil
 }
 
-func (d coursesDao) AddAdminToCourse(userID uint, courseID uint) error {
+func (d CoursesDaoImpl) AddAdminToCourse(userID uint, courseID uint) error {
 	defer Cache.Clear()
 	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?) on duplicate key update user_id = user_id", userID, courseID).Error
 }
 
 // GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
-func (d coursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
+func (d CoursesDaoImpl) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	var res model.Stream
 	err := DB.Model(&model.Stream{}).Preload("Chats").Order("start").First(&res, "course_id = ? AND (end > NOW() OR live_now)", courseID).Error
 	return res, err
 }
 
 // GetAllCourses retrieves all courses from the database.
-func (d coursesDao) GetAllCourses() ([]model.Course, error) {
+func (d CoursesDaoImpl) GetAllCourses() ([]model.Course, error) {
 	cachedCourses, found := Cache.Get("allCourses")
 	if found {
 		return cachedCourses.([]model.Course), nil
@@ -95,7 +95,7 @@ func (d coursesDao) GetAllCourses() ([]model.Course, error) {
 	return courses, err
 }
 
-func (d coursesDao) GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
+func (d CoursesDaoImpl) GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
 	var res []model.Course
 	err := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
@@ -103,7 +103,7 @@ func (d coursesDao) GetCourseForLecturerIdByYearAndTerm(c context.Context, year 
 	return res, err
 }
 
-func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error) {
+func (d CoursesDaoImpl) GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v-%d-%s", userid, year, teachingTerm))
 	if found {
 		return cachedCourses.([]model.Course), nil
@@ -147,7 +147,7 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 	return foundCourses, dbErr
 }
 
-func (d coursesDao) GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course) {
+func (d CoursesDaoImpl) GetAllCoursesForSemester(ctx context.Context, year int, term string) (courses []model.Course) {
 	span := sentry.StartSpan(ctx, "SQL: GetAllCoursesForSemester")
 	defer span.Finish()
 	var foundCourses []model.Course
@@ -157,7 +157,7 @@ func (d coursesDao) GetAllCoursesForSemester(year int, term string, ctx context.
 	return foundCourses
 }
 
-func (d coursesDao) GetPublicCourses(year int, term string) (courses []model.Course, err error) {
+func (d CoursesDaoImpl) GetPublicCourses(year int, term string) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCourses%d%v", year, term))
 	if found {
 		return cachedCourses.([]model.Course), err
@@ -175,7 +175,7 @@ func (d coursesDao) GetPublicCourses(year int, term string) (courses []model.Cou
 	return publicCourses, err
 }
 
-func (d coursesDao) GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error) {
+func (d CoursesDaoImpl) GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term))
 	if found {
 		return cachedCourses.([]model.Course), err
@@ -192,14 +192,15 @@ func (d coursesDao) GetPublicAndLoggedInCourses(year int, term string) (courses 
 	return publicCourses, err
 }
 
-func (d coursesDao) GetCourseByToken(token string) (course model.Course, err error) {
-	err = DB.Unscoped().
+func (d CoursesDaoImpl) GetCourseByToken(token string) (model.Course, error) {
+	var course model.Course
+	err := DB.Unscoped().
 		Preload("Streams", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
 		First(&course, "token = ?", token).Error
-	return
+	return course, err
 }
 
-func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
+func (d CoursesDaoImpl) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.TranscodingProgresses").
 		Preload("Streams.VideoSections").
@@ -210,11 +211,11 @@ func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Co
 	return foundCourse, dbErr
 }
 
-func (d coursesDao) GetInvitedUsersForCourse(course *model.Course) error {
+func (d CoursesDaoImpl) GetInvitedUsersForCourse(course *model.Course) error {
 	return DB.Preload("Users", "role = ?", model.GenericType).Find(course).Error
 }
 
-func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error) {
+func (d CoursesDaoImpl) GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year))
 	if found {
 		return cachedCourses.(model.Course), nil
@@ -231,7 +232,7 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 	return course, err
 }
 
-func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
+func (d CoursesDaoImpl) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
 	var foundCourses []model.Course
 
 	switch term {
@@ -245,7 +246,7 @@ func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year
 	return foundCourses, err
 }
 
-func (d coursesDao) GetAvailableSemesters(c context.Context, includeTestSemester bool) []model.Semester {
+func (d CoursesDaoImpl) GetAvailableSemesters(c context.Context, includeTestSemester bool) []model.Semester {
 	var semesters []model.Semester
 
 	if cached, found := Cache.Get("getAllSemesters"); found {
@@ -271,7 +272,7 @@ func (d coursesDao) GetAvailableSemesters(c context.Context, includeTestSemester
 }
 
 // GetCourseByShortLink returns the course associated with the given short link (e.g. EIDI2022)
-func (d coursesDao) GetCourseByShortLink(link string) (model.Course, error) {
+func (d CoursesDaoImpl) GetCourseByShortLink(link string) (model.Course, error) {
 	var sl model.ShortLink
 	err := DB.First(&sl, "link = ?", link).Error
 	if err != nil {
@@ -282,7 +283,7 @@ func (d coursesDao) GetCourseByShortLink(link string) (model.Course, error) {
 }
 
 // GetCourseAdmins returns the admins of the given course excluding the creator (usually system) and the tumlive admins
-func (d coursesDao) GetCourseAdmins(courseID uint) ([]model.User, error) {
+func (d CoursesDaoImpl) GetCourseAdmins(courseID uint) ([]model.User, error) {
 	var admins []model.User
 	err := DB.Raw("select u.* from courses "+
 		"join course_admins ca on courses.id = ca.course_id "+
@@ -304,7 +305,7 @@ type Course struct {
 // ExecAllCourses executes f on all courses.
 //
 // loads every course into memory
-func (d coursesDao) ExecAllCourses(f func([]Course)) {
+func (d CoursesDaoImpl) ExecAllCourses(f func([]Course)) {
 	var res []Course
 	err := DB.Raw(`SELECT id, name, slug, year, teaching_term, visibility
 							FROM courses 
@@ -315,26 +316,26 @@ func (d coursesDao) ExecAllCourses(f func([]Course)) {
 	f(res)
 }
 
-func (d coursesDao) UpdateCourse(ctx context.Context, course model.Course) error {
+func (d CoursesDaoImpl) UpdateCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
 }
 
-func (d coursesDao) UpdateCourseMetadata(ctx context.Context, course model.Course) {
+func (d CoursesDaoImpl) UpdateCourseMetadata(ctx context.Context, course model.Course) {
 	defer Cache.Clear()
 	DB.Save(&course)
 }
 
-func (d coursesDao) UnDeleteCourse(ctx context.Context, course model.Course) error {
+func (d CoursesDaoImpl) UnDeleteCourse(ctx context.Context, course model.Course) error {
 	return DB.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
 }
 
-func (d coursesDao) RemoveAdminFromCourse(userID uint, courseID uint) error {
+func (d CoursesDaoImpl) RemoveAdminFromCourse(userID uint, courseID uint) error {
 	defer Cache.Clear()
 	return DB.Exec("delete from course_admins where user_id = ? and course_id = ?", userID, courseID).Error
 }
 
-func (d coursesDao) DeleteCourse(course model.Course) {
+func (d CoursesDaoImpl) DeleteCourse(course model.Course) {
 	for _, stream := range course.Streams {
 		err := DB.Delete(&stream).Error
 		if err != nil {

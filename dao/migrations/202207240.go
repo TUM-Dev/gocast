@@ -1,9 +1,10 @@
 package migrations
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // Migrate202207240 Drops the column "stream_status" from streams, because they are superseded by transcodingProgresses

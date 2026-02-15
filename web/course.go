@@ -2,16 +2,18 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 type editCourseByTokenPageData struct {
@@ -110,12 +112,13 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 	}
 	indexData.TUMLiveContext.Course = &course
 	s, err := r.CoursesDao.GetCurrentOrNextLectureForCourse(c, course.ID)
-	if err == nil {
+	switch {
+	case err == nil:
 		indexData.TUMLiveContext.Stream = &s
-	} else if err == gorm.ErrRecordNotFound {
+	case errors.Is(err, gorm.ErrRecordNotFound):
 		c.Redirect(http.StatusFound, fmt.Sprintf("/course/%d/%s/%s", course.Year, course.TeachingTerm, course.Slug))
 		return
-	} else {
+	default:
 		sentry.CaptureException(err)
 		logger.Error("Error getting current or next lecture for course", "err", err)
 	}
@@ -159,7 +162,7 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 		return
 	}
 
-	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
+	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(tumLiveContext.Course.ID, tumLiveContext.User.ID)
 	if err != nil {
 		sentry.CaptureException(err)
 		logger.Error("loading streamsWithWatchState and progresses for a given course and user failed", "err", err)

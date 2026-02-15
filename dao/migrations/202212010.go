@@ -1,9 +1,10 @@
 package migrations
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // Migrate202212010 changes data type of the 'name' column in the 'user' table from 'longtext' to 'varchar(80)'

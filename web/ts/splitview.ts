@@ -1,8 +1,9 @@
 import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
 import { cloneEvents } from "./global";
-import videojs, { VideoJsPlayer } from "video.js";
-import PlayerOptions = videojs.PlayerOptions;
+import videojs from "video.js";
+
+type Player = ReturnType<typeof videojs>;
 
 const mouseMovingTimeout = 2200;
 
@@ -149,8 +150,8 @@ export class SplitView {
             await this.toggleFullscreen();
         });
 
-        (this.players[0] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
-        (this.players[1] as VideoJsPlayer).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
+        (this.players[0] as any).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
+        (this.players[1] as any).options_.userActions.doubleClick = async () => await this.toggleFullscreen();
     }
 
     private async toggleFullscreen() {

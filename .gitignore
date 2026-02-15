@@ -31,6 +31,7 @@ storage
 .idea/**/dictionaries
 .idea/**/shelf
 .idea/copilot/
+.idea/copilot.*
 
 # Generated files
 .idea/**/contentModel.xml

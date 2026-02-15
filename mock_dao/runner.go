@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	model "github.com/TUM-Dev/gocast/model"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockRunnerDao is a mock of RunnerDao interface.
@@ -82,6 +82,36 @@ func (m *MockRunnerDao) Get(arg0 context.Context, arg1 string) (model.Runner, er
 func (mr *MockRunnerDaoMockRecorder) Get(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRunnerDao)(nil).Get), arg0, arg1)
+}
+
+// GetAll mocks base method.
+func (m *MockRunnerDao) GetAll(arg0 context.Context) ([]model.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll", arg0)
+	ret0, _ := ret[0].([]model.Runner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockRunnerDaoMockRecorder) GetAll(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockRunnerDao)(nil).GetAll), arg0)
+}
+
+// GetAvailable mocks base method.
+func (m *MockRunnerDao) GetAvailable(arg0 context.Context) (model.Runner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAvailable", arg0)
+	ret0, _ := ret[0].(model.Runner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAvailable indicates an expected call of GetAvailable.
+func (mr *MockRunnerDaoMockRecorder) GetAvailable(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailable", reflect.TypeOf((*MockRunnerDao)(nil).GetAvailable), arg0)
 }
 
 // Update mocks base method.
