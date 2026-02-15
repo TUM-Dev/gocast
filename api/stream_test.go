@@ -1,10 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -31,6 +35,30 @@ func StreamDefaultRouter(t *testing.T) func(r *gin.Engine) {
 		}
 		configGinStreamRestRouter(r, wrapper)
 	}
+}
+
+func multipartFileBody(t *testing.T, fieldName, filename, contentType string, content []byte) (*bytes.Buffer, string) {
+	t.Helper()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	header := textproto.MIMEHeader{}
+	header.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, fieldName, filename))
+	header.Set("Content-Type", contentType)
+
+	part, err := writer.CreatePart(header)
+	if err != nil {
+		t.Fatalf("failed to create multipart part: %v", err)
+	}
+	if _, err = part.Write(content); err != nil {
+		t.Fatalf("failed to write multipart content: %v", err)
+	}
+	if err = writer.Close(); err != nil {
+		t.Fatalf("failed to close multipart writer: %v", err)
+	}
+
+	return body, writer.FormDataContentType()
 }
 
 func TestStream(t *testing.T) {
@@ -976,6 +1004,108 @@ func TestAttachments(t *testing.T) {
 			_ = os.Remove(testFile.Path) // Then cleanup
 		}
 	})
+}
+
+func TestPutCustomLiveThumbnail(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	oldMass := tools.Cfg.Paths.Mass
+	tools.Cfg.Paths.Mass = os.TempDir()
+	defer func() {
+		tools.Cfg.Paths.Mass = oldMass
+	}()
+
+	baseFolder := filepath.Join(
+		tools.Cfg.Paths.Mass,
+		fmt.Sprintf("%s.%d.%s", testutils.CourseFPV.Name, testutils.CourseFPV.Year, testutils.CourseFPV.TeachingTerm),
+	)
+	filesFolder := filepath.Join(baseFolder, "files")
+
+	validBodyNotAdmin, validContentType := multipartFileBody(t, "file", "thumb.png", "image/png", []byte("fake image"))
+	validBodySetFail, validContentTypeSetFail := multipartFileBody(t, "file", "thumb.png", "image/png", []byte("fake image"))
+	validBodySuccess, validContentTypeSuccess := multipartFileBody(t, "file", "thumb.png", "image/png", []byte("fake image"))
+	invalidTypeBody, invalidTypeContentType := multipartFileBody(t, "file", "thumb.png", "text/plain", []byte("not image"))
+	unsupportedExtBody, unsupportedExtContentType := multipartFileBody(t, "file", "thumb.txt", "image/png", []byte("image bytes"))
+
+	url := fmt.Sprintf("/api/stream/%d/", testutils.StreamFPVLive.ID)
+	gomino.TestCases{
+		"no context": {
+			ExpectedCode: http.StatusInternalServerError,
+		},
+		"not admin": {
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+			ExpectedCode: http.StatusForbidden,
+			Body:         validBodyNotAdmin,
+			ContentType:  validContentType,
+		},
+		"missing file": {
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+			ExpectedCode: http.StatusBadRequest,
+			Body:         "",
+			ContentType:  "multipart/form-data",
+		},
+		"invalid content type": {
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+			ExpectedCode: http.StatusBadRequest,
+			Body:         invalidTypeBody,
+			ContentType:  invalidTypeContentType,
+		},
+		"unsupported image extension": {
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+			ExpectedCode: http.StatusBadRequest,
+			Body:         unsupportedExtBody,
+			ContentType:  unsupportedExtContentType,
+		},
+		"set thumbnail fails": {
+			Router: func(r *gin.Engine) {
+				wrapper := dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.EXPECT().SetThumbnail(testutils.StreamFPVLive.ID, gomock.Any()).Return(errors.New(""))
+						return fileMock
+					}(),
+				}
+				configGinStreamRestRouter(r, wrapper)
+			},
+			Before: func() {
+				_ = os.MkdirAll(filesFolder, 0o755)
+			},
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+			ExpectedCode: http.StatusInternalServerError,
+			Body:         validBodySetFail,
+			ContentType:  validContentTypeSetFail,
+		},
+		"success": {
+			Router: func(r *gin.Engine) {
+				wrapper := dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.EXPECT().SetThumbnail(testutils.StreamFPVLive.ID, gomock.Any()).Return(nil)
+						return fileMock
+					}(),
+				}
+				configGinStreamRestRouter(r, wrapper)
+			},
+			Before: func() {
+				_ = os.MkdirAll(filesFolder, 0o755)
+			},
+			Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+			ExpectedCode:     http.StatusOK,
+			ExpectedResponse: gin.H{"message": "Thumbnail uploaded successfully"},
+			Body:             validBodySuccess,
+			ContentType:      validContentTypeSuccess,
+		},
+	}.
+		Router(StreamDefaultRouter(t)).
+		Method(http.MethodPost).
+		Url(url).
+		Run(t, testutils.Equal)
+
+	_ = os.RemoveAll(baseFolder)
 }
 
 func TestSubtitles(t *testing.T) {

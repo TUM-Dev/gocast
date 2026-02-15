@@ -388,7 +388,7 @@ export const AdminLectureList = {
         file: File,
         listener: PostFormDataListener = {},
     ) => {
-        return await uploadFile(`/api/stream/${lectureId}/thumbs/`, file, listener);
+        return await uploadFile(`/api/stream/${lectureId}/`, file, listener);
     },
 
     /**

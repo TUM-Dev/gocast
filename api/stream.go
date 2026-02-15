@@ -53,7 +53,6 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 				thumbs.GET(":fid", routes.getThumbs)
 				thumbs.GET("/live", routes.getLiveThumbs)
 				thumbs.GET("/vod", routes.getVODThumbs)
-				thumbs.POST("/", routes.putCustomLiveThumbnail) // TODO: change to admin only endpoint
 			}
 		}
 		{
@@ -66,6 +65,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
 			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
+			admins.POST("/", routes.putCustomLiveThumbnail)
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
@@ -145,6 +145,11 @@ func (r streamRoutes) getVODThumbs(c *gin.Context) {
 	queryType := c.Query("type")
 
 	if queryType == "" {
+		if customThumb, err := r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_CUSTOM); err == nil {
+			c.File(customThumb.Path)
+			return
+		}
+
 		thumb, err := tumLiveContext.Stream.GetLGThumbnail()
 		if err != nil {
 			_ = c.Error(tools.RequestError{
@@ -182,9 +187,14 @@ func (r streamRoutes) getLiveThumbs(c *gin.Context) {
 
 	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
 
-	file, err := r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_LG_CAM_PRES)
-	if err != nil {
+	file, err := r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_CUSTOM)
+	if err == nil {
+		c.File(file.Path)
+		return
+	}
 
+	file, err = r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_LG_CAM_PRES)
+	if err != nil {
 		path := pathprovider.LiveThumbnail(streamId)
 		c.File(path)
 		return
@@ -914,7 +924,6 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 	course := tumLiveContext.Course
 	file, err := c.FormFile("file")
 	if err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file"})
 		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "Invalid file",
@@ -926,10 +935,50 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 	filename := file.Filename
 	fileUuid := uuid.NewV1()
 
+	// Enforce reasonable file size limit for thumbnails.
+	if file.Size > MAX_FILE_SIZE {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "File too large",
+			Err:           errors.New("uploaded file exceeds maximum allowed size"),
+		})
+		return
+	}
+	// Validate that the uploaded file is an image (MIME type and file extension).
+	contentType := file.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid file type",
+			Err:           errors.New("uploaded file is not an image"),
+		})
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+	default:
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Unsupported image format",
+			Err:           errors.New("unsupported image file extension"),
+		})
+		return
+	}
+
 	filesFolder := filepath.Join(
 		tools.Cfg.Paths.Mass,
 		fmt.Sprintf("%s.%d.%s", course.Name, course.Year, course.TeachingTerm),
 		"files")
+
+	if err := os.MkdirAll(filesFolder, os.ModePerm); err != nil {
+		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Failed to create thumbnail folder",
+			Err:           err,
+		})
+		return
+	}
 
 	path := filepath.Join(
 		filesFolder,

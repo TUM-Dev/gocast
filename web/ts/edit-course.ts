@@ -33,6 +33,11 @@ export enum FileType {
     thumb_comb,
     thumb_cam,
     thumb_pres,
+    thumb_lg_comb,
+    thumb_lg_cam,
+    thumb_lg_pres,
+    thumb_lg_cam_pres,
+    thumb_custom,
 }
 
 export class LectureList {
@@ -403,18 +408,28 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         clearThumbnail() {
             this.thumbnailSrc = "";
         },
-        onCustomThumbnailUpload(e) {
+        async onCustomThumbnailUpload(e) {
             if (e.dataTransfer.items) {
                 const item = e.dataTransfer.items[0];
                 const { kind } = item;
                 switch (kind) {
                     case "file": {
-                        DataStore.adminLectureList.uploadThumbnail(
-                            this.lectureData.courseId,
-                            this.lectureData.lectureId,
-                            item.getAsFile(),
-                        );
+                        try {
+                            await DataStore.adminLectureList.uploadThumbnail(
+                                this.lectureData.courseId,
+                                this.lectureData.lectureId,
+                                item.getAsFile(),
+                            );
+                        } catch (err) {
+                            console.error(err);
+                            this.lastErrors = ["Failed to upload custom thumbnail"];
+                            return;
+                        }
                         break;
+                    }
+                    default: {
+                        alert("Only image files are supported as thumbnails!");
+                        return;
                     }
                 }
                 this.previewThumbnail(e);

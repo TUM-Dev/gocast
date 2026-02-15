@@ -1,4 +1,4 @@
-import { StreamableMapProvider } from "./provider";
+    import { StreamableMapProvider } from "./provider";
 import {
     AdminLectureList,
     Lecture,
@@ -125,7 +125,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         const res = await AdminLectureList.uploadAttachmentFile(courseId, lectureId, file);
         const newFile = new LectureFile({
             id: JSON.parse(res.responseText),
-            fileType: 2,
+            fileType: FileType.thumb_custom,
             friendlyName: file.name,
         });
 
@@ -234,22 +234,6 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
     }
 
     async uploadThumbnail(courseId: number, lectureId: number, file: File) {
-        const res = await AdminLectureList.uploadThumbnailFile(courseId, lectureId, file);
-        const newFile = new LectureFile({
-            id: JSON.parse(res.responseText),
-            fileType: 2,
-            friendlyName: file.name,
-        });
-
-        this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
-                return {
-                    ...s,
-                    files: [...s.files, newFile],
-                };
-            }
-            return s;
-        });
-        await this.triggerUpdate(courseId);
+        await AdminLectureList.uploadThumbnailFile(courseId, lectureId, file);
     }
 }
