@@ -954,7 +954,6 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 	}
 
 	if err := r.DaoWrapper.FileDao.SetThumbnail(streamID, thumb); err != nil {
-
 		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "Failed to set thumbnail",
