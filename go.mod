@@ -61,7 +61,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
-	filippo.io/edwards25519 v1.1.0 // indirect
+	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/asticode/go-astikit v0.51.1 // indirect
 	github.com/asticode/go-astits v1.13.0 // indirect
