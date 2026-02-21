@@ -11,16 +11,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/TUM-Dev/gocast/worker/api"
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	"github.com/TUM-Dev/gocast/worker/pb"
-	"github.com/TUM-Dev/gocast/worker/rest"
-	"github.com/TUM-Dev/gocast/worker/worker"
 	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/TUM-Dev/gocast/worker/api"
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/pb"
+	"github.com/TUM-Dev/gocast/worker/rest"
+	"github.com/TUM-Dev/gocast/worker/worker"
 )
 
 // OsSignal contains the current os signal received.

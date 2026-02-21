@@ -1,0 +1,8 @@
+version: v1
+deps: []
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE

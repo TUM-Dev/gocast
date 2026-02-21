@@ -10,6 +10,8 @@ export enum UserSetting {
     SeekingTime = "seekingTime",
     CustomSpeeds = "customSpeeds",
     AutoSkip = "autoSkip",
+    DefaultMode = "defaultMode",
+    LectureView = "lectureView",
 }
 
 export function updatePreference(t: UserSetting, value: string | boolean | number[]): Promise<string> {

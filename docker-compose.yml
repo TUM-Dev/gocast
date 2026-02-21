@@ -1,4 +1,6 @@
-version: "3.8"
+####################################################
+# Not production ready, only for local development #
+####################################################
 
 services:
   tum-live:
@@ -20,7 +22,7 @@ services:
     container_name: tum-live-worker
     depends_on:
       - tum-live
-      - vod-service
+      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build: worker
     platform: linux/amd64
     environment:
@@ -65,19 +67,20 @@ services:
       TZ: Europe/Berlin
     command: --init-file /data/application/init.sql
     volumes:
-      - ./init.sql:/data/application/init.sql
+      - ./docs/static/tum-live-starter.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
-  voice-service:
-    container_name: tum-live-voice-service
-    image: ghcr.io/tum-dev/tum-live-voice-service:latest
-    environment:
-      - TRANSCRIBER=whisper
-      - WHISPER_MODEL=tiny
-      - MAX_WORKERS=10
-      - DEBUG=1
-    volumes:
-      - mass:/mass
+# Omitted for local development due to size. Comment out to use voice-service
+#  voice-service:
+#    container_name: tum-live-voice-service
+#    image: ghcr.io/tum-dev/tum-live-voice-service:latest
+#    environment:
+#      - TRANSCRIBER=whisper
+#      - WHISPER_MODEL=tiny
+#      - MAX_WORKERS=10
+#      - DEBUG=1
+#    volumes:
+#      - mass:/mass
 
 volumes:
   recordings:

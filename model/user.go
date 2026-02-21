@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"database/sql"
@@ -9,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -59,6 +59,9 @@ const (
 	SeekingTime
 	UserDefinedSpeeds
 	AutoSkip
+	// Deprecated: this is no longer used
+	defaultMode
+	LectureView
 )
 
 type UserSetting struct {
@@ -98,9 +101,6 @@ func (s PlaybackSpeedSettings) GetEnabled() (res []float32) {
 }
 
 func (u *User) GetEnabledPlaybackSpeeds() (res []float32) {
-	if u == nil {
-		return []float32{1}
-	}
 	// Possibly, this could be collapsed into a single line, but readibility suffers.
 	res = append(res, u.GetPlaybackSpeeds().GetEnabled()...)
 	res = append(res, u.GetCustomSpeeds()...)
@@ -166,12 +166,14 @@ func (u *User) GetPreferredGreeting() string {
 	return "Moin"
 }
 
+var validSeekingTimes = []int{5, 10, 30}
+
 // GetSeekingTime returns the seeking time preference for the user.
 // If the user is nil, the default seeking time of 15 seconds is returned.
 func (u *User) GetSeekingTime() int {
 	// Check if the user is nil
 	if u == nil {
-		return 15
+		return 10
 	}
 	// Check if the setting type is SeekingTime
 	for _, setting := range u.Settings {
@@ -181,11 +183,14 @@ func (u *User) GetSeekingTime() int {
 			if err != nil {
 				break
 			}
-			return seekingTime
+			if slices.Contains(validSeekingTimes, seekingTime) {
+				return seekingTime
+			}
+			return 10
 		}
 	}
 	// If no seeking time setting is found, return the default seeking time
-	return 15
+	return 10
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
@@ -218,6 +223,15 @@ func (u *User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
 	return AutoSkipSetting{Enabled: false}, nil
 }
 
+func (u *User) GetPreferredView() string {
+	for _, setting := range u.Settings {
+		if setting.Type == LectureView {
+			return setting.Value
+		}
+	}
+	return "Combined"
+}
+
 type argonParams struct {
 	memory      uint32
 	iterations  uint32
@@ -239,8 +253,25 @@ func (u *User) IsAdminOfCourse(course Course) bool {
 	return u.Role == AdminType || course.UserID == u.ID
 }
 
+// IsAllowedToWatchPrivateCourse checks if the user is allowed to watch a private course.
+func (u *User) IsAllowedToWatchPrivateCourse(course Course) bool {
+	if u != nil {
+		for _, c := range u.Courses {
+			if c.ID == course.ID {
+				return true
+			}
+		}
+		return u.IsEligibleToWatchCourse(course)
+	}
+	return false
+}
+
+// IsEligibleToWatchCourse checks if the user is allowed to access the course
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
-	if course.Visibility == "loggedin" || course.Visibility == "public" {
+	if u == nil {
+		return course.IsPublic() || course.IsHidden()
+	}
+	if course.IsPublic() || course.IsHidden() || course.IsLoggedIn() {
 		return true
 	}
 	for _, invCourse := range u.Courses {
@@ -251,7 +282,12 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	return u.IsAdminOfCourse(course)
 }
 
-func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
+// IsEligibleToSearchForCourse is a stricter version of IsEligibleToWatchCourse; in case of hidden course, it returns true only when the user is an admin of the course
+func (u *User) IsEligibleToSearchForCourse(course Course) bool {
+	return u.IsEligibleToWatchCourse(course) && !course.IsHidden() || u.IsAdminOfCourse(course)
+}
+
+func (u *User) CoursesForSemester(year int, term string) []Course {
 	cMap := make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
@@ -268,6 +304,68 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 		cRes = append(cRes, c)
 	}
 	return cRes
+}
+
+// AdministeredCoursesForSemesters returns all courses, that the user is a course admin of, in the given semester range or semesters
+func (u *User) AdministeredCoursesForSemesters(semesters []Semester) []Course {
+	var semester Semester
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsInRangeOfSemesters(semesters) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+// AdministeredCoursesBetweenSemesters returns all courses, that the user is a course admin of, between firstSemester and lasSemester
+func (u *User) AdministeredCoursesBetweenSemesters(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	administeredCourses := make([]Course, 0)
+	for _, c := range u.AdministeredCourses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) {
+			administeredCourses = append(administeredCourses, c)
+		}
+	}
+	return administeredCourses
+}
+
+// CoursesForSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
+func (u *User) CoursesForSemestersWithoutAdministeredCourses(semesters []Semester) []Course {
+	var semester Semester
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsInRangeOfSemesters(semesters) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
+}
+
+// CoursesBetweenSemestersWithoutAdministeredCourses returns all courses of the user in the given semester range or semesters excluding administered courses
+func (u *User) CoursesBetweenSemestersWithoutAdministeredCourses(firstSemester Semester, lastSemester Semester) []Course {
+	var semester Semester
+	courses := make([]Course, 0)
+	for _, c := range u.Courses {
+		semester = Semester{TeachingTerm: c.TeachingTerm, Year: c.Year}
+		if semester.IsBetweenSemesters(firstSemester, lastSemester) && !u.IsAdminOfCourse(c) {
+			courses = append(courses, c)
+		}
+	}
+	return courses
+}
+
+// HasTestCourse checks if the user has a test course
+func (u *User) HasTestCourse() bool {
+	for _, course := range u.AdministeredCourses {
+		if course.Year == 1234 {
+			return true
+		}
+	}
+	return false
 }
 
 var (

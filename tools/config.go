@@ -88,6 +88,9 @@ func initConfig() {
 		}
 		jwtKey = key
 	}
+	if Cfg.WikiURL == "" {
+		logger.Warn("No Wiki URL found, link cannot be provided on webpage")
+	}
 	// allow overwriting database host with env var, mainly for testing with docker-compose
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
@@ -146,6 +149,7 @@ type Config struct {
 		SmpPassword string `yaml:"smpPassword"`
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`
+		CamAuthSony string `yaml:"camAuthSony"`
 	} `yaml:"auths"`
 	Alerts *struct {
 		Matrix *struct {
@@ -157,8 +161,9 @@ type Config struct {
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
 	VoiceService *struct {
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
+		Host      string `yaml:"host"`
+		Port      string `yaml:"port"`
+		AuthToken string `yaml:"authToken"`
 	}
 	IngestBase  string  `yaml:"ingestBase"`
 	WebUrl      string  `yaml:"webUrl"`
@@ -168,8 +173,11 @@ type Config struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
-	VodURLTemplate string `yaml:"vodURLTemplate"`
-	CanonicalURL   string `yaml:"canonicalURL"`
+	VodURLTemplate   string `yaml:"vodURLTemplate"`
+	CanonicalURL     string `yaml:"canonicalURL"`
+	WikiURL          string `yaml:"wikiURL"`
+	RtmpProxyURL     string `yaml:"rtmpProxyURL"`
+	RtmpProxyService string `yaml:"rtmpProxyService"`
 }
 
 type MailConfig struct {
@@ -186,11 +194,11 @@ func (Config) GetJWTKey() *rsa.PrivateKey {
 
 var ErrMeiliNotConfigured = errors.New("meilisearch is not configured")
 
-func (c Config) GetMeiliClient() (*meilisearch.Client, error) {
+func (c Config) GetMeiliClient() (meilisearch.ServiceManager, error) {
 	if c.Meili == nil {
 		return nil, ErrMeiliNotConfigured
 	}
-	return meilisearch.NewClient(meilisearch.ClientConfig{Host: c.Meili.Host, APIKey: c.Meili.ApiKey}), nil
+	return meilisearch.New(c.Meili.Host, meilisearch.WithAPIKey(c.Meili.ApiKey)), nil
 }
 
 var jwtKey *rsa.PrivateKey

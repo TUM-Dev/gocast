@@ -8,17 +8,18 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/api"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {
-	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
+	span := sentry.StartSpan(c, "GET /w", sentry.WithTransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
 	err := data.Prepare(c, r.LectureHallsDao)
@@ -34,7 +35,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	data.IndexData = NewIndexData()
-	if tumLiveContext.Course.DownloadsEnabled && tumLiveContext.Stream.IsDownloadable() {
+	if (tumLiveContext.Course.DownloadsEnabled || tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)) && tumLiveContext.Stream.IsDownloadable() {
 		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, true)
 	} else {
 		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, false)
@@ -58,7 +59,23 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		}
 	}
 
-	if c.Param("version") != "" {
+	if c.Param("version") == "" {
+		if tumLiveContext.User != nil {
+			switch tumLiveContext.User.GetPreferredView() {
+			case "Presentation":
+				c.Redirect(http.StatusFound, c.Request.RequestURI+"/PRES")
+				return
+			case "Camera":
+				c.Redirect(http.StatusFound, c.Request.RequestURI+"/CAM")
+				return
+			case "Split":
+				c.Redirect(http.StatusFound, c.Request.RequestURI+"/SPLIT")
+				return
+			case "Combined":
+				// do nothing, as version=="" implies combined
+			}
+		}
+	} else if tumLiveContext.User != nil {
 		data.Version = c.Param("version")
 		if strings.HasPrefix(data.Version, "unit-") {
 			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(tumLiveContext.Stream.Units) {
@@ -110,11 +127,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
 	}
-	if _, dvr := c.GetQuery("dvr"); dvr {
-		data.DVR = "?dvr"
-	} else {
-		data.DVR = ""
-	}
+
 	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = data.Unit.GetDescriptionHTML()
@@ -145,8 +158,7 @@ type WatchPageData struct {
 	Progress        model.StreamProgress
 	IndexData       IndexData
 	Description     template.HTML
-	CutOffLength    int    // The maximum length for the preview of a description.
-	DVR             string // ?dvr if dvr is enabled, empty string otherwise
+	CutOffLength    int // The maximum length for the preview of a description.
 	LectureHallName string
 	ChatData        ChatData
 }

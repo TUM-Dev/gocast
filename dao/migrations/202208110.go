@@ -1,9 +1,10 @@
 package migrations
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // Migrate202208110 Drops the column "live_enabled" from courses, since it isn't needed anymore

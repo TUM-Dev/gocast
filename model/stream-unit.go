@@ -27,8 +27,8 @@ func (s *StreamUnit) GetRoundedUnitLen() string {
 	lenS := (s.UnitEnd - s.UnitStart) / 1000
 	lenM := lenS / 60
 	lenH := lenM / 60
-	lenM = lenM % 60
-	lenS = lenS % 60
+	lenM %= 60
+	lenS %= 60
 	if lenH > 0 {
 		return fmt.Sprintf("%2dh, %2dmin", lenH, lenM)
 	}

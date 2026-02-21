@@ -7,9 +7,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/TUM-Dev/gocast/worker/pb"
 	uuid "github.com/iris-contrib/go.uuid"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
 const (

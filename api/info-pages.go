@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
 )
 
 func configInfoPageRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
@@ -58,7 +59,6 @@ func (r infoPageRoutes) updateText(c *gin.Context) {
 		RawContent: reqBody.RawContent,
 		Type:       reqBody.Type,
 	})
-
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

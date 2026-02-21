@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/TUM-Dev/gocast/worker/worker"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/worker"
 )
 
 // handleUpload handles VOD upload requests proxied by TUM-Live.

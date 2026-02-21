@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/matthiasreumann/gomino"
+	"go.uber.org/mock/gomock"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
-	"github.com/matthiasreumann/gomino"
 )
 
 func TokenRouterWrapper(r *gin.Engine) {
@@ -88,6 +89,7 @@ func TestToken(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						TokenDao: func() dao.TokenDao {
 							tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
+							tokenMock.EXPECT().GetTokenByID("1").Return(model.Token{}, nil).AnyTimes()
 							tokenMock.EXPECT().DeleteToken("1").Return(errors.New("")).AnyTimes()
 							return tokenMock
 						}(),
@@ -102,6 +104,7 @@ func TestToken(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						TokenDao: func() dao.TokenDao {
 							tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
+							tokenMock.EXPECT().GetTokenByID("1").Return(model.Token{}, nil).AnyTimes()
 							tokenMock.EXPECT().DeleteToken("1").Return(nil).AnyTimes()
 							return tokenMock
 						}(),

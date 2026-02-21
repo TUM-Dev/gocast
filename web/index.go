@@ -9,19 +9,20 @@ import (
 	"strconv"
 
 	"github.com/RBG-TUM/commons"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 var VersionTag string
 
 func (r mainRoutes) MainPage(c *gin.Context) {
-	tName := sentry.TransactionName("GET /")
+	tName := sentry.WithTransactionName("GET /")
 	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
 	defer spanMain.Finish()
 
@@ -88,13 +89,14 @@ type IndexData struct {
 	Courses             []model.Course
 	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
-	Semesters           []dao.Semester
+	Semesters           []model.Semester
 	CurrentYear         int
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
 	CanonicalURL        tools.CanonicalURL
 	Branding            tools.Branding
+	WikiURL             string
 }
 
 func NewIndexData() IndexData {
@@ -102,6 +104,7 @@ func NewIndexData() IndexData {
 		VersionTag:   VersionTag,
 		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
 		Branding:     tools.BrandingCfg,
+		WikiURL:      tools.Cfg.WikiURL,
 	}
 }
 
@@ -165,7 +168,7 @@ func (d *IndexData) SetYearAndTerm(c *gin.Context) {
 
 // LoadSemesters Load available Semesters from the database into the IndexData object
 func (d *IndexData) LoadSemesters(spanMain *sentry.Span, coursesDao dao.CoursesDao) {
-	d.Semesters = coursesDao.GetAvailableSemesters(spanMain.Context())
+	d.Semesters = coursesDao.GetAvailableSemesters(spanMain.Context(), false)
 }
 
 // LoadLivestreams Load non-hidden, currently live streams into the IndexData object.
@@ -176,6 +179,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Error("could not get current live streams", "err", err)
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+		return
 	}
 
 	tumLiveContext := d.TUMLiveContext
@@ -186,17 +190,17 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		courseForLiveStream, _ := daoWrapper.GetCourseById(context.Background(), stream.CourseID)
 
 		// only show streams for logged in users if they are logged in
-		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
+		if courseForLiveStream.IsLoggedIn() && tumLiveContext.User == nil {
 			continue
 		}
 		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.Visibility == "enrolled" {
-			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+		if courseForLiveStream.IsEnrolled() {
+			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
 				continue
 			}
 		}
 		// Only show hidden streams to admins
-		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		if courseForLiveStream.IsHidden() && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
 			continue
 		}
 		var lectureHall *model.LectureHall
@@ -225,17 +229,17 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 	if d.TUMLiveContext.User != nil {
 		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
-			courses = coursesDao.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+			courses = coursesDao.GetAllCoursesForSemester(spanMain.Context(), d.CurrentYear, d.CurrentTerm)
 		case model.LecturerType:
 			{
-				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm)
 				coursesForLecturer, err := coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}
 			}
 		default:
-			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm)
 		}
 	}
 
@@ -250,7 +254,7 @@ func (d *IndexData) LoadPinnedCourses() {
 	if d.TUMLiveContext.User != nil {
 		pinnedCourses = d.TUMLiveContext.User.PinnedCourses
 		for i := range pinnedCourses {
-			pinnedCourses[i].Pinned = true
+			pinnedCourses[i].Pinned = d.TUMLiveContext.User.IsEligibleToSearchForCourse(pinnedCourses[i])
 		}
 		sortCourses(pinnedCourses)
 		d.PinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
@@ -281,18 +285,6 @@ type CourseStream struct {
 	Course      model.Course
 	Stream      model.Stream
 	LectureHall *model.LectureHall
-}
-
-func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
-	if user != nil {
-		for _, c := range user.Courses {
-			if c.ID == course.ID {
-				return true
-			}
-		}
-		return user.IsEligibleToWatchCourse(course)
-	}
-	return false
 }
 
 func sortCourses(courses []model.Course) {

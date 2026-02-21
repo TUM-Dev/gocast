@@ -10,11 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 )
 
 var wsMapLock sync.RWMutex
@@ -105,7 +106,7 @@ func BroadcastStats(streamsDao dao.StreamsDao) {
 
 func cleanupSessions() {
 	for id, sessions := range sessionsMap {
-		roomName := strings.Replace(ChatRoomName, ":streamID", strconv.Itoa(int(id)), -1)
+		roomName := strings.ReplaceAll(ChatRoomName, ":streamID", strconv.Itoa(int(id)))
 		var newSessions []*sessionWrapper
 		for i, session := range sessions {
 			if RealtimeInstance.IsSubscribed(roomName, session.session.Client.Id) {

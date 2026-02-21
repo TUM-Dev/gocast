@@ -471,7 +471,7 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
 	isAdmin := false
-	var uid uint = 0 // 0 = not logged in. -> doesn't match a user
+	var uid uint // 0 = not logged in. -> doesn't match a user
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
 		isAdmin = tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)

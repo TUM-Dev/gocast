@@ -14,9 +14,10 @@ import (
 	"syscall"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
-	log "github.com/sirupsen/logrus"
 )
 
 type safeStreams struct {
@@ -231,7 +232,7 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		publishVoD:    request.GetPublishVoD(),
 		streamName:    request.GetStreamName(),
 		ingestServer:  request.GetIngestServer(),
-		isSelfStream:  false,
+		isSelfStream:  request.GetSelfStream(),
 		outUrl:        request.GetOutUrl(),
 	}
 
@@ -328,6 +329,7 @@ func HandleUploadRestReq(streamInfo *pb.GetStreamInfoForUploadResponse, localFil
 		streamVersion: streamInfo.VideoType,
 		publishVoD:    true,
 		recordingPath: &localFile,
+		isSelfStream:  false,
 	}
 	log.WithFields(log.Fields{"stream": c.streamId, "course": c.courseSlug, "file": localFile}).Debug("Handling upload request")
 
@@ -341,10 +343,18 @@ func HandleUploadRestReq(streamInfo *pb.GetStreamInfoForUploadResponse, localFil
 		log.Debugf("Wrong container: %s, converting", container)
 	}
 
-	if codec, err := getCodec(localFile); err != nil {
+	if codec, err := getCodec(localFile, "video"); err != nil {
 		log.WithError(err).Warn("Error getting codec")
 		needsConversion = true
 	} else if codec != "h264" {
+		needsConversion = true
+		log.Debugf("wrong codec: %s, converting", codec)
+	}
+
+	if codec, err := getCodec(localFile, "audio"); err != nil {
+		log.WithError(err).Warn("Error getting codec")
+		needsConversion = true
+	} else if codec != "aac" {
 		needsConversion = true
 		log.Debugf("wrong codec: %s, converting", codec)
 	}

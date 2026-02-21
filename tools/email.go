@@ -73,7 +73,9 @@ func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() {
+		_ = c.Close()
+	}()
 	if err = c.Mail(r.Replace(from)); err != nil {
 		return err
 	}

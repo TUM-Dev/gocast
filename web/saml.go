@@ -9,12 +9,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -110,6 +111,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "400 - Bad Request", "error": err.Error()})
+			return
 		}
 		response, err := getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.ParseResponse(c.Request, []string{""})
 		if err != nil {
@@ -132,6 +134,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			if len(s) == 0 || s[0] == "" {
 				logger.Error("Can't extract mwn id", "LRZ-ID", lrzID, "firstName", firstName, "lastName", lastName, "mwnID", matrNr)
 				c.AbortWithStatus(http.StatusInternalServerError)
+				return
 			}
 			matrNr = s[0]
 		}
@@ -145,6 +148,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		if err != nil {
 			logger.Error("Could not upsert user", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 		HandleValidLogin(c, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})
 	})

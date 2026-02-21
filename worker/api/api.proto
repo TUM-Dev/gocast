@@ -90,6 +90,7 @@ message StreamRequest {
   string StreamName = 13;
   string IngestServer = 14;
   string OutUrl = 15;
+  bool SelfStream = 16;
 }
 
 message PremiereRequest {

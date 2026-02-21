@@ -7,10 +7,11 @@ import (
 
 	"google.golang.org/grpc"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
 	"github.com/TUM-Dev/gocast/worker/worker"
-	log "github.com/sirupsen/logrus"
 )
 
 // defaultHandler tells that the current worker is active and has a valid ID

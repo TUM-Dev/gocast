@@ -1,17 +1,25 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 // SourceMode 0 -> COMB, 1-> PRES, 2 -> CAM
 type SourceMode int
+
+const (
+	SourceModeCOMB SourceMode = iota
+	SourceModePRESOnly
+	SourceModeCAMOnly
+)
 
 type Course struct {
 	gorm.Model
@@ -36,8 +44,9 @@ type Course struct {
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
 	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
-	Pinned                  bool   `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
+	Language                sql.NullString
 
+	Pinned      bool `gorm:"-"`                       // Used to determine if the course is pinned when loaded for a specific user.
 	LivePrivate bool `gorm:"not null; default:false"` // whether Livestreams are private
 	VodPrivate  bool `gorm:"not null; default:false"` // Whether VODs are made private after livestreams
 }
@@ -56,7 +65,7 @@ type CourseDTO struct {
 	IsAdmin          bool // Set in API handler
 }
 
-func (c *Course) ToDTO() CourseDTO {
+func (c *Course) ToDTO(u *User) CourseDTO {
 	return CourseDTO{
 		ID:               c.ID,
 		Name:             c.Name,
@@ -65,8 +74,8 @@ func (c *Course) ToDTO() CourseDTO {
 		TeachingTerm:     c.TeachingTerm,
 		Year:             c.Year,
 		DownloadsEnabled: c.DownloadsEnabled,
-		NextLecture:      c.GetNextLecture().ToDTO(),
-		LastRecording:    c.GetLastRecording().ToDTO(),
+		NextLecture:      c.GetNextLecture(u).ToDTO(),
+		LastRecording:    c.GetLastRecording(u).ToDTO(),
 		IsAdmin:          false,
 	}
 }
@@ -219,15 +228,18 @@ func (c *Course) NumUsers() int {
 }
 
 // NextLectureHasReachedTimeSlot returns whether the courses next lecture arrived at its timeslot
-func (c *Course) NextLectureHasReachedTimeSlot() bool {
-	return c.GetNextLecture().TimeSlotReached()
+func (c *Course) NextLectureHasReachedTimeSlot(u *User) bool {
+	return c.GetNextLecture(u).TimeSlotReached()
 }
 
 // GetNextLecture returns the next lecture of the course
-func (c *Course) GetNextLecture() *Stream {
+func (c *Course) GetNextLecture(u *User) *Stream {
 	var earliestLecture Stream
 	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
+		if s.Private && (u == nil || (c != nil && !u.IsAdminOfCourse(*c))) {
+			continue
+		}
 		if s.Start.Before(earliestLectureDate) && s.End.After(time.Now()) {
 			earliestLectureDate = s.Start
 			earliestLecture = s
@@ -238,10 +250,13 @@ func (c *Course) GetNextLecture() *Stream {
 
 // GetLastRecording returns the most recent lecture of the course
 // Assumes an ascending order of c.Streams
-func (c *Course) GetLastRecording() *Stream {
+func (c *Course) GetLastRecording(u *User) *Stream {
 	var lastLecture Stream
 	now := time.Now()
 	for _, s := range c.Streams {
+		if s.Private && (u == nil || (c != nil && !u.IsAdminOfCourse(*c))) {
+			continue
+		}
 		if s.Start.After(now) {
 			return &lastLecture
 		}
@@ -276,8 +291,8 @@ func (c *Course) GetNextLectureDate() time.Time {
 }
 
 // IsNextLectureSelfStream checks whether the next lecture is a self stream
-func (c *Course) IsNextLectureSelfStream() bool {
-	return c.GetNextLecture().IsSelfStream()
+func (c *Course) IsNextLectureSelfStream(u *User) bool {
+	return c.GetNextLecture(u).IsSelfStream()
 }
 
 // GetNextLectureDateFormatted returns a JavaScript friendly formatted date string
@@ -327,11 +342,46 @@ func (c *Course) IsEnrolled() bool {
 	return c.Visibility == "enrolled"
 }
 
-// AdminJson is the JSON representation of a courses streams for the admin panel
-func (c *Course) AdminJson(lhs []LectureHall) []gin.H {
-	var res []gin.H
-	for _, s := range c.Streams {
-		res = append(res, s.getJson(lhs, c))
+// IsPublic returns true if visibility is set to 'public' and false if not
+func (c *Course) IsPublic() bool {
+	return c.Visibility == "public"
+}
+
+var courseSlugRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_]{1,150}$`)
+
+// BeforeSave returns an error if the course to be inserted is invalid
+func (c *Course) BeforeSave(tx *gorm.DB) (err error) {
+	if !courseSlugRegex.MatchString(c.Slug) {
+		return errors.New("invalid course slug")
 	}
-	return res
+	return nil
+}
+
+// ShouldGenerateSubtitles returns true for the optimal StreamVersion for subtitle generation.
+// If no language is set for the course, false is always returned.
+// If the stream is a self-stream, it will return true for the COMB version.
+// For lecture hall streams, it checks the source preference of the course for the given lecture hall ID, returning
+// true for the respective version if it's scheduled to stream only from that (i.e. true for cam if only streamed as cam)
+// otherwise the PRES version is preferred.
+func (c *Course) ShouldGenerateSubtitles(version StreamVersion, lectureHallID uint) bool {
+	if !c.Language.Valid {
+		return false
+	}
+	if lectureHallID == 0 {
+		// selfstream
+		return version == COMB
+	}
+	for _, p := range c.GetSourcePreference() {
+		if p.LectureHallID == lectureHallID {
+			switch p.SourceMode {
+			case SourceModeCAMOnly:
+				return version == CAM
+			case SourceModePRESOnly:
+				return version == PRES
+			default:
+				// pass
+			}
+		}
+	}
+	return version == PRES
 }

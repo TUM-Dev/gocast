@@ -3,12 +3,13 @@ package dao
 import (
 	"time"
 
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=lecture_halls.go -destination ../mock_dao/lecture_halls.go
+//go:generate go tool mockgen -source=lecture_halls.go -destination ../mock_dao/lecture_halls.go
 
 type LectureHallsDao interface {
 	CreateLectureHall(lectureHall model.LectureHall)

@@ -37,6 +37,7 @@
         link.setAttribute('href', location.href);
         document.head.appendChild(link);
     </script>
+
 </head>
 <body x-data="home.skeleton()"
       @popstate.window="onPopState"
@@ -53,14 +54,7 @@
         </button>
     </div>
 
-    <!--
-    <article id="search" class="h-10 w-96">
-        <label class="flex items-center rounded-full bg-gray-100 dark:bg-gray-800 text-sm py-1 h-full">
-            <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
-            <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" type="text"
-                   placeholder="Search in lectures">
-        </label>
-    </article>-->
+{{template "search-global"}}
 
     <div id="user-context" class="flex items-center ms-auto">
         {{template "notifications"}}
@@ -237,7 +231,7 @@
                 </button>
             </template>
         </article>
-        {{template "mobile_footer" .VersionTag}}
+        {{template "mobile_footer" .}}
     </section>
 
     <!-- views -->
@@ -416,7 +410,7 @@
                                  :class="plannedStreams.hasElements() ? 'col-span-2' : 'col-span-full'">
                             <header>
                                 <h3 class="font-bold">VODs</h3>
-                                <section class="space-x-2">
+                                <section class="button-area space-y-1">
                                     <button type="button" @click="sortNewestFirst()"
                                             class="tum-live-button tum-live-button-tertiary"
                                             :class="{'active' : isNewestFirst() }">
@@ -439,6 +433,11 @@
                                             :class="{'active' : isListView() }">
                                         List View
                                     </button>
+                                    <button type="button" @click="toggleWeekView()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isWeekView() }">
+                                        Week View
+                                    </button>
                                 </section>
                             </header>
                             <section>
@@ -448,7 +447,7 @@
                                                 x-for="group in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                             <article class="mb-8">
                                                 <header class="mb-2">
-                                                    <h6 class="font-semibold" x-text="group[0].GetMonthName()"></h6>
+                                                    <h6 class="font-semibold" x-text="groupNames.get(group[0].ID);"></h6>
                                                 </header>
                                                 <section class="grid gap-3  grid-cols-1"
                                                          :class="isListView() ? 'xl:grid-cols-1 lg:grid-cols-1 md:grid-cols-1 grid-cols-1' : plannedStreams.hasElements()
@@ -486,12 +485,15 @@
                                                             <div class="relative flex justify-between px-1 min-h-[32px]">
                                                                 <div class="w-full">
                                                                     <template x-if="vod.HasName()">
-                                                                        <a class="title overflow-hidden"
-                                                                           :href="course.WatchURL(vod.ID)"
-                                                                           :title="vod.Name"
-                                                                           x-text="vod.Name">
-
-                                                                        </a>
+                                                                        <div class="flex">
+                                                                            <i title="This lecture is hidden" x-show="!vod.IsPubliclyVisible"
+                                                                               class="fas fa-eye-slash px-1" style="line-height:revert"></i>
+                                                                            <a class="title overflow-hidden"
+                                                                               :href="course.WatchURL(vod.ID)"
+                                                                               :title="vod.Name"
+                                                                               x-text="vod.Name">
+                                                                            </a>
+                                                                        </div>
                                                                     </template>
                                                                     <template x-if="vod.HasName()">
                                                                     <span class="date text-sm"
@@ -499,10 +501,15 @@
                                                                     </template>
 
                                                                     <template x-if="!vod.HasName()">
-                                                                        <a :class="isListView() ? 'title overflow-hidden' : ''" :href="course.WatchURL(vod.ID)">
-                                                                        <span class="date" :class="isListView() ? '' : 'text-sm'"   
-                                                                              x-text="vod.FriendlyDateStart()"></span>
-                                                                        </a>
+                                                                        <div>
+                                                                            <i title="This lecture is hidden" x-show="!vod.IsPubliclyVisible"
+                                                                               class="fas fa-eye-slash px-1" style="line-height:revert"></i>
+                                                                            <a :class="isListView() ? 'title overflow-hidden' : ''"
+                                                                               :href="course.WatchURL(vod.ID)">
+                                                                            <span class="date" :class="isListView() ? '' : 'text-sm'"
+                                                                                  x-text="vod.FriendlyDateStart()"></span>
+                                                                            </a>
+                                                                        </div>
                                                                     </template>
                                                                 </div>
                                                                 <button type="button" @click="vod.Dropdown.toggle()"
@@ -590,6 +597,9 @@
                                                         <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
                                                     </div>
                                                     <h4 x-text="s.Name" class="font-semibold text-1"></h4>
+                                                    <template x-if="home.isLectureHallValid(s.LectureHall)">
+                                                        <a :href="`https://nav.tum.de/room/${s.LectureHall}`" class="no-underline" x-text="s.LectureHall"></a>
+                                                    </template>
                                                 </div>
                                             </div>
                                         </article>
@@ -666,7 +676,7 @@
                                         <div class="px-2">
                                             <a class="course text-sm"
                                                :href="livestream.Course.URL()"
-                                               @click.prevent="showCourse(livestream.Course.Slug)"
+                                               @click.prevent="showCourse(livestream.Course.Slug, livestream.Course.Year, livestream.Course.TeachingTerm)"
                                                x-text="livestream.Course.Name">
                                             </a>
                                             <template x-if="livestream.Stream.HasName()">
@@ -786,7 +796,7 @@
                                         </a>
                                         <div class="px-1">
                                             <a class="course text-xs"
-                                               x-text="course.Name" @click.prevent="showCourse(course.Slug)"
+                                               x-text="course.Name" @click.prevent="showCourse(course.Slug, course.Year, course.TeachingTerm)"
                                                :href="course.URL()"
                                                :class="course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"></a>
                                             <template x-if="course.LastRecording.HasName()">
@@ -804,12 +814,17 @@
                             </template>
                         </article>
                     </template>
+                    <template x-if="loaded && !hasLivestreams() && !recently.hasElements() && userCourses.length == 0 && liveToday.length == 0">
+                        <span class="font-semibold m-auto dark:text-white">
+                            No streams, VODs or courses to show in this semester.
+                        </span>
+                    </template>
                 </span>
             </article>
         </template>
     </article>
 </main>
-{{template "footer" .VersionTag}}
+{{template "footer" .}}
 </body>
 </html>
 

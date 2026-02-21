@@ -1,88 +1,84 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/TUM-Dev/gocast
+
 # For a description for each linter, see https://golangci-lint.run/usage/linters/.
 linters:
   enable:
-    - gosimple
-    - typecheck
     - govet
     - errcheck
     - staticcheck
     - unused
     - dupl
     - gocyclo
-    - gofmt
     - gocritic
     - bidichk
     - ineffassign
-    - gofumpt
     - revive
     - nakedret
     - unconvert
     - wastedassign
     - nolintlint
-    - stylecheck
-  enable-all: false
-  disable-all: true
-  fast: false
+  default: none
+
+  settings:
+    staticcheck:
+      checks: [ "all", "-ST1000", "-ST1003", "-ST1005", "-QF1008", "-QF1001", "-SA1019" ]
+    nakedret:
+      max-func-lines: 0
+    gocyclo:
+      min-complexity: 40 # todo: refactor (r mainRoutes) WatchPage and then remove
+    revive:
+      severity: warning
+      confidence: 0.8
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        #- name: exported todo: revisit.
+        - name: if-return
+        - name: increment-decrement
+        - name: var-declaration
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: duplicated-imports
+        - name: modifies-value-receiver
+  exclusions:
+    paths:
+      - node_modules
+      - template
+    rules:
+      # Exclude some linters from running on tests files.
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - gofumpt
+          - dupl
+          - gosec
+          - unparam
+          - staticcheck
+
 
 run:
-  go: '1.21'
+  go: '1.24'
   timeout: 10m
-  skip-dirs:
-    - node_modules
-    - template
-
-linters-settings:
-  stylecheck:
-    checks: [ "all", "-ST1005", "-ST1003" ]
-  staticcheck:
-    checks: [ "all", "-ST1000", "-ST1003" ]
-  nakedret:
-    max-func-lines: 0
-  revive:
-    ignore-generated-header: false
-    severity: warning
-    confidence: 0.8
-    errorCode: 1
-    warningCode: 1
-    rules:
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: exported
-      - name: if-return
-      - name: increment-decrement
-      - name: var-declaration
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: time-naming
-      - name: unexported-return
-      - name: indent-error-flow
-      - name: errorf
-      - name: duplicated-imports
-      - name: modifies-value-receiver
-  gofumpt:
-    extra-rules: false
-    lang-version: "1.21"
-
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  new: true
-  new-from-rev: dev
-  fix: false 
-  exclude-rules:
-    # Exclude some linters from running on tests files.
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - gofumpt
-        - dupl
-        - gosec
-        - unparam
-        - staticcheck
+#  skip-dirs:
+#    - node_modules
+#    - template

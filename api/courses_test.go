@@ -9,17 +9,18 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/dgraph-io/ristretto/v2"
+	"github.com/gin-gonic/gin"
+	"github.com/matthiasreumann/gomino"
+	"github.com/u2takey/go-utils/uuid"
+	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/dgraph-io/ristretto"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
-	"github.com/matthiasreumann/gomino"
-	"github.com/u2takey/go-utils/uuid"
-	"gorm.io/gorm"
 )
 
 func CourseRouterWrapper(r *gin.Engine) {
@@ -29,14 +30,14 @@ func CourseRouterWrapper(r *gin.Engine) {
 func TestCoursesCRUD(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	cache, _ := ristretto.NewCache(&ristretto.Config{
+	cache, _ := ristretto.NewCache[string, any](&ristretto.Config[string, any]{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
 		MaxCost:     1 << 30, // maximum cost of cache (1GB).
 		BufferItems: 64,      // number of keys per Get buffer.
 		Metrics:     true,
 	})
 
-	dao.Cache = *cache
+	dao.Cache = cache
 
 	t.Run("GET/api/courses/live", func(t *testing.T) {
 		url := "/api/courses/live"
@@ -136,12 +137,12 @@ func TestCoursesCRUD(t *testing.T) {
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []CourseStream{
 					{
-						Course:  fpv.ToDTO(),
+						Course:  fpv.ToDTO(testutils.TUMLiveContextAdmin.User),
 						Stream:  testutils.SelfStream.ToDTO(),
 						Viewers: 0,
 					},
 					{
-						Course:      fpv.ToDTO(),
+						Course:      fpv.ToDTO(testutils.TUMLiveContextAdmin.User),
 						Stream:      testutils.StreamFPVLive.ToDTO(),
 						LectureHall: testutils.LectureHall.ToDTO(),
 						Viewers:     0,
@@ -220,8 +221,8 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseFPV.ToDTO(),
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 			"success not logged-in": {
@@ -242,8 +243,8 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseFPV.ToDTO(),
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 		}.
@@ -286,7 +287,7 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextLecturer)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 			"success admin": {
@@ -296,7 +297,7 @@ func TestCoursesCRUD(t *testing.T) {
 							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								GetAllCoursesForSemester(2023, "S", gomock.Any()).
+								GetAllCoursesForSemester(gomock.Any(), 2023, "S").
 								Return([]model.Course{testutils.CourseGBS, testutils.CourseFPV}).
 								AnyTimes()
 							return mock
@@ -307,8 +308,8 @@ func TestCoursesCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
 				ExpectedResponse: []model.CourseDTO{
-					testutils.CourseFPV.ToDTO(),
-					testutils.CourseGBS.ToDTO(),
+					testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User),
+					testutils.CourseGBS.ToDTO(testutils.TUMLiveContextAdmin.User),
 				},
 			},
 		}.
@@ -331,7 +332,7 @@ func TestCoursesCRUD(t *testing.T) {
 				Router:           CourseRouterWrapper,
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: []model.CourseDTO{testutils.CourseFPV.ToDTO()},
+				ExpectedResponse: []model.CourseDTO{testutils.CourseFPV.ToDTO(testutils.TUMLiveContextAdmin.User)},
 			},
 		}.
 			Method(http.MethodGet).
@@ -342,7 +343,7 @@ func TestCoursesCRUD(t *testing.T) {
 	t.Run("GET/api/courses/:slug/", func(t *testing.T) {
 		url := fmt.Sprintf("/api/courses/%s/", testutils.CourseTensNet.Slug)
 
-		response := testutils.CourseTensNet.ToDTO()
+		response := testutils.CourseTensNet.ToDTO(testutils.TUMLiveContextAdmin.User)
 		response.Streams = []model.StreamDTO{
 			testutils.StreamTensNetLive.ToDTO(),
 		}
@@ -2238,7 +2239,7 @@ func TestLectureHallsById(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 
-		var sourceMode model.SourceMode = 0
+		var sourceMode model.SourceMode
 		response := []lhResp{
 			{
 				LectureHallName: testutils.LectureHall.Name,

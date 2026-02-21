@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TUM-Dev/gocast/worker/cfg"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
 )
 
 func upload(streamCtx *StreamContext) {

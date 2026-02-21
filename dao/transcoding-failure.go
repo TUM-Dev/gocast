@@ -1,11 +1,12 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=transcoding-failure.go -destination ../mock_dao/transcoding-failure.go
+//go:generate go tool mockgen -source=transcoding-failure.go -destination ../mock_dao/transcoding-failure.go
 
 type TranscodingFailureDao interface {
 	// All returns all open transcoding failures

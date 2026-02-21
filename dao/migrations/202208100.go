@@ -1,9 +1,10 @@
 package migrations
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // Migrate202210080 adjusts the user setting type to compensate for removal of 'enable_chromcast'.

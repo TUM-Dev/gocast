@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/gin-gonic/gin"
 )
 
 func configSemestersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -19,7 +20,9 @@ type semesterRoutes struct {
 }
 
 func (s semesterRoutes) getSemesters(c *gin.Context) {
-	semesters := s.GetAvailableSemesters(context.Background())
+	includeTestSemester := c.Query("includeTestSemester")
+
+	semesters := s.GetAvailableSemesters(context.Background(), includeTestSemester == "1")
 	year, term := tum.GetCurrentSemester()
 	c.JSON(http.StatusOK, gin.H{
 		"Current": gin.H{
