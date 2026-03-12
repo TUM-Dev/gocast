@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine3.22 as builder
+FROM golang:1.26 as builder
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/runner
 COPY . .
