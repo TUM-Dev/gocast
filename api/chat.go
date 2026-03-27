@@ -17,7 +17,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -53,7 +52,7 @@ func RegisterRealtimeChatChannel() {
 		OnMessage: func(psc *realtime.Context, message *realtime.Message) {
 			foundContext, exists := psc.Get("TUMLiveContext")
 			if !exists {
-				sentry.CaptureException(errors.New("context should exist but doesn't"))
+				logger.Error("context should exist but doesn't")
 				return
 			}
 			tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -704,7 +703,7 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 	if ctx, ok := psc.Client.Get("dao"); ok {
 		daoWrapper = ctx.(dao.DaoWrapper)
 	} else {
-		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
+		logger.Error("daoWrapper should exist but doesn't")
 		return
 	}
 
@@ -712,7 +711,7 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 	if foundContext, exists := psc.Get("TUMLiveContext"); exists {
 		tumLiveContext = foundContext.(tools.TUMLiveContext)
 	} else {
-		sentry.CaptureException(errors.New("tumLiveContext should exist but doesn't"))
+		logger.Error("tumLiveContext should exist but doesn't")
 		return
 	}
 
@@ -720,7 +719,7 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 	if result, exists := psc.Get("chat.joinTime"); exists {
 		joinTime = result.(time.Time)
 	} else {
-		sentry.CaptureException(errors.New("joinTime should exist but doesn't"))
+		logger.Error("joinTime should exist but doesn't")
 		return
 	}
 

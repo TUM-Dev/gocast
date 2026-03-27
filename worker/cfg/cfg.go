@@ -2,10 +2,7 @@ package cfg
 
 import (
 	"os"
-	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/makasim/sentryhook"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -94,22 +91,5 @@ func SetConfig() {
 		if err != nil {
 			log.Fatalf("Could not get hostname: %v\n", err)
 		}
-	}
-
-	if os.Getenv("SentryDSN") != "" {
-		err := sentry.Init(sentry.ClientOptions{
-			Dsn:              os.Getenv("SentryDSN"),
-			TracesSampleRate: 1,
-			Debug:            true,
-			AttachStacktrace: true,
-			Environment:      "Worker",
-		})
-		if err != nil {
-			log.Fatalf("sentry.Init: %s", err)
-		}
-		// Flush buffered events before the program terminates.
-		defer sentry.Flush(2 * time.Second)
-		defer sentry.Recover()
-		log.AddHook(sentryhook.New([]log.Level{log.PanicLevel, log.FatalLevel, log.ErrorLevel, log.WarnLevel}))
 	}
 }

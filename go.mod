@@ -9,7 +9,6 @@ require (
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/antchfx/xmlquery v1.4.4
 	github.com/gabstv/melody v1.0.2
-	github.com/getsentry/sentry-go v0.31.1
 	github.com/gin-contrib/gzip v1.2.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-asn1-ber/asn1-ber v1.5.7 // indirect
@@ -42,7 +41,6 @@ require (
 	github.com/TUM-Dev/gocast/worker v0.0.0-20251102182539-4e087e888c3c
 	github.com/asticode/go-astisub v0.34.0
 	github.com/dgraph-io/ristretto/v2 v2.1.0
-	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/matthiasreumann/gomino v0.0.2

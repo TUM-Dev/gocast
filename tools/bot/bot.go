@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -147,7 +146,6 @@ func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
 
 	liveViewers, err := statsDao.GetStreamNumLiveViews(streamID)
 	if err != nil {
-		sentry.CaptureException(err)
 		logger.Error("Failed to get current live viewers", "err", err)
 		return false
 	}

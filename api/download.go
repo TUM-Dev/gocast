@@ -1,12 +1,10 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -31,7 +29,7 @@ var dlErr = tools.RequestError{
 func (r downloadRoutes) download(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
