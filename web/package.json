@@ -62,7 +62,7 @@
     "lodash": "^4.17.23",
     "postcss": "^8.4.49",
     "prettier": "^3.1.1",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^4.0.0",
     "top-twitter-emojis-map": "^1.0.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
