@@ -1,8 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
-    "group:allNonMajor",
+    "config:recommended",
     "docker:enableMajor",
     "helpers:pinGitHubActionDigests"
   ],
@@ -14,12 +13,6 @@
   "schedule": ["before 6am on Monday"],
   "packageRules": [
     {
-      "description": "Group all non-major updates into a single PR",
-      "groupName": "all non-major dependencies",
-      "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
-      "groupSlug": "all-non-major"
-    },
-    {
       "description": "Group all major updates by manager",
       "groupName": "major {{manager}} updates",
       "matchUpdateTypes": ["major"]
@@ -27,24 +20,28 @@
     {
       "description": "Group all Docker updates together",
       "groupName": "docker dependencies",
+      "groupSlug": "docker-non-major",
       "matchManagers": ["dockerfile", "docker-compose"],
       "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
       "description": "Group all GitHub Actions updates together",
       "groupName": "github-actions dependencies",
+      "groupSlug": "github-actions-non-major",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin"]
     },
     {
       "description": "Group all Go module updates together",
       "groupName": "go dependencies",
+      "groupSlug": "go-non-major",
       "matchManagers": ["gomod"],
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
       "description": "Group all npm updates together",
       "groupName": "npm dependencies",
+      "groupSlug": "npm-non-major",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch"]
     }
