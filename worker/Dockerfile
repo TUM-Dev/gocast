@@ -11,7 +11,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '
 
 FROM bluenviron/mediamtx:latest AS rtsp
 
-FROM alpine:3.18
+FROM alpine:3.23
 ADD entrypoint.sh /entrypoint.sh
 ADD mediamtx.yml /mediamtx.yml
 RUN chmod +x /entrypoint.sh
