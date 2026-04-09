@@ -49,7 +49,7 @@ require (
 	github.com/meilisearch/meilisearch-go v0.31.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/soheilhy/cmux v0.1.5
-	github.com/tum-dev/gocast/runner v0.0.0-20260409075203-e3824266ad40
+	github.com/tum-dev/gocast/runner v0.0.0-20260409082233-af97fc2cd196
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/sync v0.20.0
