@@ -1,7 +1,7 @@
-FROM bluenviron/mediamtx:1.1.0 as mediamtx
+FROM bluenviron/mediamtx:1.17.1 as mediamtx
 
 
-FROM alpine:3.18
+FROM alpine:3.23
 ADD entrypoint.sh /entrypoint.sh
 ADD mediamtx.yml /mediamtx.yml
 RUN chmod +x /entrypoint.sh
