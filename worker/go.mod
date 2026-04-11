@@ -10,9 +10,9 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.18.0
-	golang.org/x/sync v0.17.0
-	google.golang.org/grpc v1.71.0
-	google.golang.org/protobuf v1.36.6
+	golang.org/x/sync v0.19.0
+	google.golang.org/grpc v1.79.3
+	google.golang.org/protobuf v1.36.10
 )
 
 require (
@@ -31,9 +31,9 @@ require (
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/u2takey/go-utils v0.3.1
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 )
 
 require (
@@ -44,5 +44,5 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	golang.org/x/image v0.11.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 )
