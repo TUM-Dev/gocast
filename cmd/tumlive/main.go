@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	slogGorm "github.com/orandin/slog-gorm"
@@ -270,8 +269,6 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager) {
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
 	// Collect livestream stats (viewers) every minute
 	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")
-	// Flush stale sentry exceptions and transactions every 5 minutes
-	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
 	// Look for due streams and notify workers about them
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	_ = tools.Cron.AddFunc("triggerDueStreamsRunner", func() {

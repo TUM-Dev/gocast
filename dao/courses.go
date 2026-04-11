@@ -9,7 +9,6 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 
 	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
 )
 
@@ -148,8 +147,6 @@ func (d CoursesDaoImpl) GetAdministeredCoursesByUserId(ctx context.Context, user
 }
 
 func (d CoursesDaoImpl) GetAllCoursesForSemester(ctx context.Context, year int, term string) (courses []model.Course) {
-	span := sentry.StartSpan(ctx, "SQL: GetAllCoursesForSemester")
-	defer span.Finish()
 	var foundCourses []model.Course
 	DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")

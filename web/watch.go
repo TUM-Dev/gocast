@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -19,8 +18,6 @@ import (
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {
-	span := sentry.StartSpan(c, "GET /w", sentry.WithTransactionName("GET /w"))
-	defer span.Finish()
 	var data WatchPageData
 	err := data.Prepare(c, r.LectureHallsDao)
 	if err != nil {
@@ -29,7 +26,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +50,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
 		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
 		if err != nil {
-			sentry.CaptureException(err)
+			logger.Error("Error getting lecture hall by id", "err", err)
 		} else {
 			data.Presets = lectureHall.CameraPresets
 		}

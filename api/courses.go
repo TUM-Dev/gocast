@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
@@ -368,7 +367,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 				CustomMessage: "can't find course",
 			})
 		} else {
-			sentry.CaptureException(err)
+			logger.Error("can't retrieve course", "err", err)
 			_ = c.Error(tools.RequestError{
 				Err:           err,
 				Status:        http.StatusInternalServerError,
@@ -786,7 +785,7 @@ type lhResp struct {
 func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
