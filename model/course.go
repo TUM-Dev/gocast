@@ -347,7 +347,7 @@ func (c *Course) IsPublic() bool {
 	return c.Visibility == "public"
 }
 
-var courseSlugRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_]{1,150}$`)
+var courseSlugRegex = regexp.MustCompile(`^[a-zA-Z0-9äöüÄÖÜ\-_]{1,150}$`)
 
 // BeforeSave returns an error if the course to be inserted is invalid
 func (c *Course) BeforeSave(tx *gorm.DB) (err error) {
