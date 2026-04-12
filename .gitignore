@@ -2,7 +2,7 @@
 # Binaries for programs and plugins
 main
 *.exe
-*.exe~
+ .exe~
 *.dll
 *.so
 *.dylib
@@ -36,6 +36,7 @@ storage
 # Generated files
 .idea/**/contentModel.xml
 .idea/misc.xml
+.idea/go.imports.xml
 
 # Sensitive or high-churn files
 .idea/**/dataSources/
