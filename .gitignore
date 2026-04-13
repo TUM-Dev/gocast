@@ -2,7 +2,7 @@
 # Binaries for programs and plugins
 main
 *.exe
- .exe~
+*.exe~
 *.dll
 *.so
 *.dylib
