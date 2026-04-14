@@ -14,7 +14,7 @@ services:
       - mass:/mass
     restart: always
     environment:
-      - DBHOST=localhost
+      - DBHOST=db
       - TZ=Europe/Berlin
     ports:
       - "8081:8081"
