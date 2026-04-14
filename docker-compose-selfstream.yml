@@ -25,7 +25,7 @@ services:
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build:
       context: runner/
-      dockerfile: runner/Dockerfile-local
+      dockerfile: Dockerfile
     platform: linux/amd64
     environment:
       - STORAGE_PATH=/storage/mass
@@ -33,6 +33,14 @@ services:
     volumes:
       - runner_data:/storage/live
       - vod:/storage/mass
+    network_mode: host
+  ingest:
+    container_name: tum-live-ingest
+      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
+    build:
+      context: ingest/
+      dockerfile: Dockerfile-local
+    platform: linux/amd64
     network_mode: host
   edge:
     container_name: tum-live-edge
