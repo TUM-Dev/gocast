@@ -32,7 +32,7 @@ services:
       - SEGMENT_PATH=/storage/live
       - REALHOST=runner
       - "EDGE_SERVER=http://localhost:8089"
-      - "GOCAST_SERVER=http://tum-live:8081"
+      - "GOCAST_SERVER=tum-live:50056"
     volumes:
       - runner_data:/storage/live
       - vod:/storage/mass
