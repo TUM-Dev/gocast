@@ -60,7 +60,6 @@ services:
       - "8089:8089"
     volumes:
       - vod:/vod
-    network_mode: host
   db:
     container_name: mariadb_container
     image: mariadb
