@@ -5,7 +5,7 @@ FROM alpine:3.23
 ADD entrypoint.sh /entrypoint.sh
 ADD mediamtx.yml /mediamtx.yml
 RUN chmod +x /entrypoint.sh
-RUN sed -i 's|externalAuthenticationURL: https://tum.live/api/selfstream/onPublish|externalAuthenticationURL: http://localhost:8081/api/selfstream/onPublish|' /mediamtx.yml
+RUN sed -i 's|externalAuthenticationURL: https://tum.live/api/selfstream/onPublish|externalAuthenticationURL: http://tum-live:8081/api/selfstream/onPublish|' /mediamtx.yml
 
 RUN apk add --no-cache \
   ffmpeg \
