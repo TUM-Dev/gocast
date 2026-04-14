@@ -67,7 +67,7 @@ services:
       TZ: Europe/Berlin
     command: --init-file /data/application/init.sql
     volumes:
-      - ./docs/static/tum-live-starter.sql:/data/application/init.sql
+      - ./tum-live-starter.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
 # Omitted for local development due to size. Comment out to use voice-service
