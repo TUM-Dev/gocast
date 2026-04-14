@@ -7,7 +7,9 @@ services:
     container_name: tum-live
     depends_on:
       - db
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-local
     volumes:
       - ./config.yaml:/etc/TUM-Live/config.yaml
       - ./branding/branding.yaml:/etc/TUM-Live/branding.yaml
