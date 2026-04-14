@@ -73,7 +73,7 @@ docker run --detach \
   --env MARIADB_ROOT_PASSWORD=example \
   --restart always \
   -p 3306:3306 \
-  --volume "$(pwd)"/docs/static/tum-live-starter.sql:/init.sql \
+  --volume "$(pwd)"/tum-live-starter.sql:/init.sql \
   mariadb:latest --init-file /init.sql
 ```
 - Alternatively, install mariadb on its own.
