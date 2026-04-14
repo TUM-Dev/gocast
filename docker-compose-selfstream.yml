@@ -83,7 +83,6 @@ services:
 #      - mass:/mass
 
 volumes:
-  recordings:
-  mass:
   vod:
   mariadb-data:
+  runner_data:
