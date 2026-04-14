@@ -14,7 +14,7 @@ services:
       - mass:/mass
     restart: always
     environment:
-      - DBHOST=db
+      - DBHOST=localhost
       - TZ=Europe/Berlin
     network_mode: host
   runner:
