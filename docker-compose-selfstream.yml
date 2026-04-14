@@ -86,3 +86,4 @@ volumes:
   vod:
   mariadb-data:
   runner_data:
+  mass:
