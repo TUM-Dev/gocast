@@ -25,7 +25,7 @@ services:
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build:
       context: runner/
-      dockerfile: Dockerfile-local
+      dockerfile: runner/Dockerfile-local
     platform: linux/amd64
     environment:
       - STORAGE_PATH=/storage/mass
