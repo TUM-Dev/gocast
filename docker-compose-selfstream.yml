@@ -8,8 +8,6 @@ services:
     depends_on:
       - db
     build: .
-    ports:
-      - "8081:8081"
     volumes:
       - ./config.yaml:/etc/TUM-Live/config.yaml
       - ./branding/branding.yaml:/etc/TUM-Live/branding.yaml
@@ -18,6 +16,7 @@ services:
     environment:
       - DBHOST=db
       - TZ=Europe/Berlin
+    network_mode: host
   runner:
     container_name: tum-live-runner
     depends_on:
