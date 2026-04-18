@@ -1,0 +1,2793 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "course (Courses)",
+    "version" : "5.15.0-SNAPSHOT-0f2d6c9",
+    "contact" : {
+      "name" : "CAMPUSonline",
+      "url" : "https://www.campusonline.at",
+      "email" : "campusonline@tugraz.at"
+    },
+    "description" : "The Course API provides information about courses."
+  },
+  "components" : {
+    "securitySchemes" : {
+      "co-service-account" : {
+        "type" : "oauth2",
+        "flows" : {
+          "clientCredentials" : {
+            "scopes" : {
+              "co-course.read" : "With this scope you can read all course resources.",
+              "co-course.write" : "With this scope you can write course resources.",
+              "co-course-category-admin.read" : "With this scope you can read internal course categories."
+            },
+            "tokenUrl" : "https://review.campus.tum.de/RSYSTEM/co/co-tm-core/swagger/token"
+          }
+        }
+      }
+    },
+    "schemas" : {
+      "CourseCategoryElementResource" : {
+        "type" : "object",
+        "required" : [ "uid", "key", "name" ],
+        "description" : "Resource representing a course category element.",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "key" : {
+            "type" : "string",
+            "description" : "The key referring to the course category element."
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English name for the course category element."
+          },
+          "validUntil" : {
+            "$ref" : "#/components/schemas/LocalDate",
+            "type" : "string",
+            "description" : "Date until which the course category element is valid"
+          }
+        }
+      },
+      "CourseCategoryGroupResource" : {
+        "type" : "object",
+        "required" : [ "uid", "key", "name", "courseCategoryElements", "internal" ],
+        "description" : "Resource representing a course category group.",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "key" : {
+            "type" : "string",
+            "description" : "The key referring to the course category group."
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English name for the course category group."
+          },
+          "courseCategoryElements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseCategoryElementResource"
+            },
+            "description" : "a List of all category elements connected to a course category group."
+          },
+          "internal" : {
+            "type" : "boolean",
+            "description" : "Defines if a Category is internal or public. Internal categories should not be delivered to students"
+          },
+          "validUntil" : {
+            "$ref" : "#/components/schemas/LocalDate",
+            "type" : "string",
+            "description" : "Date until which the course category group is valid"
+          }
+        }
+      },
+      "CourseCategoryListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseCategoryGroupResource"
+            }
+          }
+        }
+      },
+      "CourseClassificationListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseClassificationResource"
+            }
+          }
+        }
+      },
+      "CourseClassificationResource" : {
+        "type" : "object",
+        "required" : [ "key", "name" ],
+        "description" : "Resource representing a course classification.",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "The key referring to the course classification."
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English name for the course classification."
+          },
+          "active" : {
+            "type" : "boolean",
+            "description" : "Indicates whether an active configuration is available or not."
+          }
+        }
+      },
+      "CourseDescriptionListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseDescriptionResource"
+            }
+          }
+        }
+      },
+      "CourseDescriptionResource" : {
+        "type" : "object",
+        "required" : [ "uid" ],
+        "description" : "Resource representing a course description",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "content" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The content of the course."
+          },
+          "expectedPreviousKnowledge" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The expected previous knowledge of the course."
+          },
+          "objective" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The objective of the course."
+          },
+          "criteriaForRegistration" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The criteria for registration to the course."
+          },
+          "note" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "Additional notes for the course"
+          },
+          "teachingMethodKey" : {
+            "type" : "string",
+            "description" : "The key of the teaching method to which the course is associated"
+          },
+          "teachingMethodDescription" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The key of the teaching method to which the course is associated"
+          },
+          "courseRegistrationInfo" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The course registration infos"
+          },
+          "onlineInfos" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseOnlineInformationResource"
+            },
+            "description" : "The online information for a course"
+          }
+        }
+      },
+      "CourseDocumentResource" : {
+        "type" : "object",
+        "description" : "Resource representing a document which is connected to the given course",
+        "properties" : {
+          "downLoadLink" : {
+            "type" : "string",
+            "description" : "The download link where you can download the connected documents"
+          },
+          "accessScope" : {
+            "type" : "string",
+            "description" : "The access scope which is required to download the document"
+          }
+        }
+      },
+      "CourseFilterCriteria" : {
+        "type" : "object",
+        "properties" : {
+          "semesterKeys" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "The Semester Keys for which the courses will be requested"
+          },
+          "courseUids" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "The UIDs which will be requested. With this filter criteria no other filters will be applied"
+          },
+          "organisationUids" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Only courses which belongs to the given organisation UIDs will be requested"
+          },
+          "courseIdentityCodeUids" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "The UIDs of the identity codes (GHK) to which the courses are connected."
+          },
+          "code" : {
+            "type" : "string",
+            "description" : "The course code (course number) for which the course might be requested"
+          },
+          "title" : {
+            "type" : "string",
+            "description" : "The title of the course. The filter will be applied for the german and the english course title"
+          },
+          "typeKeys" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "The key referring to the type of the course."
+          },
+          "onlyELearningCourses" : {
+            "type" : "boolean",
+            "description" : "if true: only courses which has a associated elearningEventTypeUid will be provided, </br>if false: only courses which has not set a elearningEventTypeUid will be provided, </br>if null or not set, all courses will be provided whether they have a associated elearningEventTypeUid or not "
+          }
+        }
+      },
+      "CourseGroupEventListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseGroupEventResource"
+            }
+          }
+        }
+      },
+      "CourseGroupEventResource" : {
+        "type" : "object",
+        "required" : [ "uid", "start", "end" ],
+        "description" : "Resource representing an event held by a course group",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "start" : {
+            "$ref" : "#/components/schemas/LocalDateTime",
+            "type" : "string",
+            "description" : "The date and time when the range starts."
+          },
+          "end" : {
+            "$ref" : "#/components/schemas/LocalDateTime",
+            "type" : "string",
+            "description" : "The date and time when the range ends."
+          },
+          "statusType" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The status type of the event."
+          },
+          "eventType" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The type of the event."
+          }
+        }
+      },
+      "CourseGroupListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseGroupResource"
+            }
+          }
+        }
+      },
+      "CourseGroupResource" : {
+        "type" : "object",
+        "required" : [ "uid", "courseUid", "name", "standardGroup", "events" ],
+        "description" : "Resource representing a course group",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "courseUid" : {
+            "type" : "string",
+            "description" : "The course uid to which the group belongs."
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The name of the group."
+          },
+          "standardGroup" : {
+            "type" : "boolean",
+            "description" : "Indicates whether the group is a standard group or not."
+          },
+          "events" : {
+            "$ref" : "#/components/schemas/CourseGroupEventListResource",
+            "type" : "object",
+            "description" : "The list of events the group holds."
+          },
+          "registration" : {
+            "$ref" : "#/components/schemas/CourseTimeRangeResource",
+            "type" : "object",
+            "description" : "The possible time range for registration."
+          },
+          "deRegistration" : {
+            "$ref" : "#/components/schemas/LocalDateTime",
+            "type" : "string",
+            "description" : "The possible time for de-registration."
+          },
+          "minNumberOfParticipants" : {
+            "type" : "integer",
+            "description" : "The minimal amount of participants for a course group."
+          },
+          "maxNumberOfParticipants" : {
+            "type" : "integer",
+            "description" : "The maximal amount of participants for a course group."
+          },
+          "registrationProcedureUid" : {
+            "type" : "string",
+            "description" : "The registration procedure UId, if the group is assigned to a registration procedure."
+          }
+        }
+      },
+      "CourseIdToCourseCategoryListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseIdToCourseCategoryResource"
+            }
+          }
+        }
+      },
+      "CourseIdToCourseCategoryResource" : {
+        "type" : "object",
+        "required" : [ "courseUid", "categoryElementKeys" ],
+        "description" : "Resource representing a the connection between a course and the category element.",
+        "properties" : {
+          "courseUid" : {
+            "type" : "string",
+            "description" : "The courseUid for the course which reverse to the requested category element."
+          },
+          "categoryElementKeys" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "The key referring to the course category element."
+          }
+        }
+      },
+      "CourseOnlineInformationResource" : {
+        "type" : "object",
+        "description" : "Resource representing the online information for a course",
+        "properties" : {
+          "parentName" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The german and english name of the parent info type"
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The german and english name of the info type"
+          },
+          "url" : {
+            "type" : "string",
+            "description" : "The URL which leads to the containing the online information"
+          },
+          "documentResource" : {
+            "$ref" : "#/components/schemas/CourseDocumentResource",
+            "type" : "object",
+            "description" : "The links and required scope for the connected document"
+          }
+        }
+      },
+      "CoursePageResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseResource"
+            },
+            "description" : "Results of this page. This will be an empty array if there are no results."
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "description" : "The cursor value which refers to the next page."
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "The limit used for this page of results. This will be the same as the limit query parameter unless it exceeded the maximum value allowed for this API endpoint."
+          }
+        }
+      },
+      "CourseRegistrationListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseRegistrationResource"
+            }
+          },
+          "claims" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "All selected claims that are present and filled out correctly in this selective person resource."
+          }
+        }
+      },
+      "CourseRegistrationResource" : {
+        "type" : "object",
+        "required" : [ "uid", "personUid", "courseUid", "courseGroupUid", "lastModifiedAt" ],
+        "description" : "Resource representing a course registration",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "personUid" : {
+            "type" : "string",
+            "description" : "PersonUid of the course registration"
+          },
+          "personClaims" : {
+            "$ref" : "#/components/schemas/PersonClaimsResource",
+            "type" : "object",
+            "description" : "Represents the person claims"
+          },
+          "claims" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "All selected claims that are present and filled out correctly in this selective person resource."
+          },
+          "courseUid" : {
+            "type" : "string",
+            "description" : "CourseUid to which the student is registered"
+          },
+          "courseGroupUid" : {
+            "type" : "string",
+            "description" : "CourseGroupUid to which the student is registered"
+          },
+          "lastModifiedAt" : {
+            "$ref" : "#/components/schemas/LocalDateTime",
+            "type" : "string",
+            "description" : "Date on which the registrations was modified"
+          }
+        }
+      },
+      "CourseResource" : {
+        "type" : "object",
+        "required" : [ "uid", "title", "semesterKey", "courseTypeKey", "courseClassificationKey", "organisationUid", "semesterHours" ],
+        "description" : "Resource representing a course",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "title" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English title for the course."
+          },
+          "semesterKey" : {
+            "type" : "string",
+            "description" : "The semester key in which the course takes place."
+          },
+          "courseTypeKey" : {
+            "type" : "string",
+            "description" : "The key referring to the type of the course."
+          },
+          "courseClassificationKey" : {
+            "type" : "string",
+            "description" : "The classification key of the course"
+          },
+          "organisationUid" : {
+            "type" : "string",
+            "description" : "The UID of the organisation at which the course is assigned."
+          },
+          "semesterHours" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "The semester hours for the course."
+          },
+          "teachingUnits" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "The teaching units for the course."
+          },
+          "courseCode" : {
+            "type" : "string",
+            "description" : "The number of the course."
+          },
+          "formattedCourseCode" : {
+            "type" : "string",
+            "readOnly" : true,
+            "description" : "The formatted number of the course. This formatting is applied based on the specific parameter LEH/LV_NUMMER_PREFIX, which affects how the number is displayed."
+          },
+          "credits" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "The ECTS credits for the course."
+          },
+          "courseIdentityCodeUid" : {
+            "type" : "string",
+            "description" : "The UID of the course identity code (GHK) to which the course is connected."
+          },
+          "mainLanguageOfInstruction" : {
+            "$ref" : "#/components/schemas/Language",
+            "type" : "string",
+            "description" : "The main language in which the course is held."
+          },
+          "instructionLanguages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Language"
+            },
+            "description" : "The languages in which the course is held."
+          },
+          "registrationConfigType" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The registration config type dictates how to register for this course."
+          },
+          "elearningEventTypeKey" : {
+            "type" : "string",
+            "description" : "The Key of the e-learning event type"
+          },
+          "blocked" : {
+            "type" : "boolean",
+            "description" : "Indicates whether the course is blocked or not."
+          }
+        }
+      },
+      "CourseTagListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseTagResource"
+            }
+          }
+        }
+      },
+      "CourseTagResource" : {
+        "type" : "object",
+        "required" : [ "uid", "name" ],
+        "description" : "Resource representing a course tag.",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "The name of the course tag."
+          }
+        }
+      },
+      "CourseTeachingMethodListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseTeachingMethodResource"
+            }
+          }
+        }
+      },
+      "CourseTeachingMethodResource" : {
+        "type" : "object",
+        "required" : [ "key", "name" ],
+        "description" : "Resource representing a course teaching method.",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "The key referring to the course teaching method."
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English name for the course teaching method."
+          }
+        }
+      },
+      "CourseTimeRangeResource" : {
+        "type" : "object",
+        "required" : [ "start", "end" ],
+        "description" : "Resource representing a time range",
+        "properties" : {
+          "start" : {
+            "$ref" : "#/components/schemas/LocalDateTime",
+            "type" : "string",
+            "description" : "The date and time when the range starts."
+          },
+          "end" : {
+            "$ref" : "#/components/schemas/LocalDateTime",
+            "type" : "string",
+            "description" : "The date and time when the range ends."
+          }
+        }
+      },
+      "CourseTypeListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CourseTypeResource"
+            }
+          }
+        }
+      },
+      "CourseTypeResource" : {
+        "type" : "object",
+        "required" : [ "key", "name", "shortName", "active", "continuousAssessment" ],
+        "description" : "Resource representing a course type",
+        "properties" : {
+          "uid" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string",
+            "description" : "The key referring to the course type."
+          },
+          "parentKey" : {
+            "type" : "string",
+            "description" : "The key referring to the parent course type."
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English name for the course type."
+          },
+          "shortName" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English shortname for the course type."
+          },
+          "active" : {
+            "type" : "boolean",
+            "description" : "Defines whether the course type is active or not."
+          },
+          "continuousAssessment" : {
+            "type" : "boolean",
+            "description" : "Indicates if this course type has a continuous assessment character (prüfungsimmanent). Usually true for all types except 'VO' or types derived from 'VO'."
+          }
+        }
+      },
+      "ELearningEventTypeListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ELearningEventTypeResource"
+            }
+          }
+        }
+      },
+      "ELearningEventTypeResource" : {
+        "type" : "object",
+        "required" : [ "key", "name" ],
+        "description" : "Resource representing a E-Learning Event Type",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "The key referring to the E-Learning Event Type"
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English name for the E-Learning Event Type"
+          },
+          "description" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English description of the E-learning Event Type"
+          }
+        }
+      },
+      "ELearningInfoListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ELearningInfoResource"
+            }
+          }
+        }
+      },
+      "ELearningInfoResource" : {
+        "type" : "object",
+        "required" : [ "uid", "courseUid", "externalUrl" ],
+        "description" : "Resource representing the E-Learning Infos of a course",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "courseUid" : {
+            "type" : "string",
+            "description" : "The Uid of the course to which the E-Learning Infos belongs to"
+          },
+          "courseGroupUid" : {
+            "type" : "string",
+            "description" : "The Uid of the course group to which the E-Learning Infos belongs to"
+          },
+          "externalUrl" : {
+            "type" : "string",
+            "description" : "The external Url which links a course to a LMS"
+          }
+        }
+      },
+      "ELearningInfoWriteResource" : {
+        "type" : "object",
+        "required" : [ "courseUid", "externalUrl" ],
+        "description" : "Resource representing the E-Learning Infos of a course",
+        "properties" : {
+          "courseUid" : {
+            "type" : "string",
+            "description" : "The Uid of the course to which the E-Learning Infos belongs to"
+          },
+          "courseGroupUid" : {
+            "type" : "string",
+            "description" : "The Uid of the course group to which the E-Learning Infos belongs to"
+          },
+          "externalUrl" : {
+            "type" : "string",
+            "description" : "The external Url which links a course to a LMS"
+          }
+        }
+      },
+      "ErrorResource" : {
+        "type" : "object",
+        "required" : [ "type" ],
+        "description" : "All erroneous requests result in this CAMPUSonline specific error resource.",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "format" : "uri",
+            "default" : "about:blank"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "stackTrace" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "diagnosticContext" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Contains error-specific values that place the general error message in a specific context (e.g. listing a specific course number)."
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32",
+            "examples" : [ 503 ],
+            "description" : "The http status code is included in the error resource.",
+            "exclusiveMaximum" : 600,
+            "minimum" : 100
+          }
+        }
+      },
+      "GroupLectureshipListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GroupLectureshipResource"
+            }
+          }
+        }
+      },
+      "GroupLectureshipResource" : {
+        "type" : "object",
+        "properties" : {
+          "groupUid" : {
+            "type" : "string",
+            "description" : "The Group Uid to which the lectureship belongs"
+          }
+        }
+      },
+      "I18nValueResource" : {
+        "type" : "object",
+        "description" : "Used for multilingual texts. It consists of a map where the key is Language.key from the Language enum and the value is the text in the corresponding language.",
+        "properties" : {
+          "value" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "Language" : {
+        "type" : "string",
+        "enum" : [ "AR", "ARZ", "ASE", "ASQ", "BE", "BFI", "BG", "BM", "BS", "CA", "CNR", "CZ", "DA", "DE", "EL", "EN", "EO", "ES", "ET", "FA", "FI", "FR", "FU", "GA", "GL", "GSG", "HA", "HE", "HI", "HR", "HU", "HY", "ID", "ILS", "IS", "IT", "JA", "KO", "LA", "LT", "LV", "MK", "MN", "MS", "MT", "NL", "NO", "PL", "PT", "RO", "ROM", "RU", "SK", "SL", "SQ", "SR", "SV", "SW", "TA", "TH", "TR", "UK", "VI", "WO", "ZH" ],
+        "description" : "Enum with all supported languages in CAMPUSonline. The Language.key is used in the I18nValueResource as a map index."
+      },
+      "LectureshipFunctionListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LectureshipFunctionResource"
+            }
+          }
+        }
+      },
+      "LectureshipFunctionResource" : {
+        "type" : "object",
+        "required" : [ "key", "name" ],
+        "description" : "Resource representing an lectureship function.",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "The key referring to the lectureship function"
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The German and English name for the lectureship function."
+          }
+        }
+      },
+      "LectureshipListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LectureshipResource"
+            }
+          }
+        }
+      },
+      "LectureshipResource" : {
+        "type" : "object",
+        "required" : [ "uid", "functionKey", "personUid", "courseUid" ],
+        "description" : "Resource representing a lectureship",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "description" : "Unique identifier of the resource"
+          },
+          "functionKey" : {
+            "type" : "string",
+            "description" : "Key of the functionType"
+          },
+          "personUid" : {
+            "type" : "string",
+            "description" : "PersonUid of the lectureship"
+          },
+          "courseUid" : {
+            "type" : "string",
+            "description" : "CourseUid to which the lectureship is assigned"
+          },
+          "parentUid" : {
+            "type" : "string",
+            "description" : "The parentUid if a parent lectureship exists"
+          },
+          "sort" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "The sort-order of the lectureship"
+          },
+          "remunerations" : {
+            "$ref" : "#/components/schemas/RemunerationListResource",
+            "type" : "object",
+            "description" : "Holds information about the lectureships remunerations"
+          },
+          "groups" : {
+            "$ref" : "#/components/schemas/GroupLectureshipListResource",
+            "type" : "object",
+            "description" : "The groups to which the Lectureship is connected"
+          }
+        }
+      },
+      "LocalDate" : {
+        "type" : "string",
+        "format" : "date",
+        "examples" : [ "2022-03-10" ]
+      },
+      "LocalDateTime" : {
+        "type" : "string",
+        "format" : "date-time",
+        "examples" : [ "2022-03-10T12:15:50" ]
+      },
+      "ModificationPageResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ModificationResource1"
+            },
+            "description" : "Results of this page. This will be an empty array if there are no results."
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "description" : "The cursor value which refers to the next page."
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "The limit used for this page of results. This will be the same as the limit query parameter unless it exceeded the maximum value allowed for this API endpoint."
+          }
+        }
+      },
+      "ModificationResource1" : {
+        "type" : "object",
+        "required" : [ "objectUid", "courseUid", "changedAt", "operationType" ],
+        "description" : "Resource representing a modified object",
+        "properties" : {
+          "objectUid" : {
+            "type" : "string",
+            "description" : "UID of the modified object"
+          },
+          "courseUid" : {
+            "type" : "string",
+            "description" : "UID of the dependent course"
+          },
+          "changedAt" : {
+            "$ref" : "#/components/schemas/LocalDateTime",
+            "type" : "string",
+            "description" : "Timestamp when the modification happened"
+          },
+          "operationType" : {
+            "$ref" : "#/components/schemas/OperationType",
+            "type" : "string",
+            "description" : "The operation Type of the modification"
+          }
+        }
+      },
+      "OperationType" : {
+        "type" : "string",
+        "enum" : [ "INSERT", "UPDATE", "DELETE" ]
+      },
+      "PersonClaimsResource" : {
+        "type" : "object",
+        "required" : [ "uid", "givenName", "surname", "dateOfBirth", "matriculationNumber" ],
+        "description" : "A person with its claims. Claims can also be empty, if they were not selected or the client\nhas not the appropriate scope.",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "examples" : [ "FF0B82455312A53A" ],
+            "description" : "Unique ID identifying exactly one person."
+          },
+          "givenName" : {
+            "type" : "string",
+            "examples" : [ "Jane" ],
+            "description" : "Given name of a person."
+          },
+          "surname" : {
+            "type" : "string",
+            "examples" : [ "Doe" ],
+            "description" : "Surname of a person."
+          },
+          "titlePrefix" : {
+            "type" : "string",
+            "examples" : [ "DI" ],
+            "description" : "Academic titles that go before the name of the person."
+          },
+          "titleSuffix" : {
+            "type" : "string",
+            "examples" : [ "BSc" ],
+            "description" : "Academic titles that come after the name of the person."
+          },
+          "dateOfBirth" : {
+            "$ref" : "#/components/schemas/LocalDate",
+            "type" : "string",
+            "examples" : [ "03.06.1998" ],
+            "description" : "Date on which a person was born."
+          },
+          "matriculationNumber" : {
+            "type" : "string",
+            "examples" : [ "20130280" ],
+            "description" : "The matriculation number of a person, if the person is also a student."
+          },
+          "emailStudent" : {
+            "type" : "string",
+            "examples" : [ "student@university.at" ],
+            "description" : "The student email address of the person."
+          }
+        }
+      },
+      "RemunerationListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RemunerationResource"
+            }
+          }
+        }
+      },
+      "RemunerationResource" : {
+        "type" : "object",
+        "description" : "Remuneration infos",
+        "properties" : {
+          "semesterHours" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "the planed semester hours for the lectureship"
+          },
+          "teachingUnits" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "the planed teaching units for the lectureship"
+          },
+          "lectureShipType" : {
+            "type" : "string",
+            "description" : "the code of the lectureship type"
+          }
+        }
+      },
+      "SelectableClaim" : {
+        "type" : "string",
+        "enum" : [ "CO_CLAIM_ALL", "CO_CLAIM_TITLE", "CO_CLAIM_DATE_OF_BIRTH", "CO_CLAIM_NAME", "CO_CLAIM_EMAIL_STUDENT", "CO_CLAIM_MATRICULATION_NUMBER" ],
+        "description" : "## Enumeration of selectable claims that can be requested.\n\n- **CO_CLAIM_ALL**: All claims of a person.\n- **CO_CLAIM_TITLE**: The title of the person.\n- **CO_CLAIM_DATE_OF_BIRTH**: The date of birth of the person.\n- **CO_CLAIM_NAME**: The given name and surname of the person.\n- **CO_CLAIM_EMAIL_STUDENT**: The student's email address. (puStPers.getEmail(*))\n- **CO_CLAIM_MATRICULATION_NUMBER**: The matriculation number of the student.\n"
+      }
+    }
+  },
+  "tags" : [ {
+    "name" : "Course Category Service",
+    "description" : "API for retrieving information about course categories"
+  }, {
+    "name" : "Course Classification Service",
+    "description" : "API for retrieving course classifications"
+  }, {
+    "name" : "Course Description Service",
+    "description" : "API for retrieving course descriptions"
+  }, {
+    "name" : "Course Group Service",
+    "description" : "API for retrieving course groups"
+  }, {
+    "name" : "Course Registration Service",
+    "description" : "API for retrieving information about course registrations"
+  }, {
+    "name" : "Course Service",
+    "description" : "API for retrieving courses"
+  }, {
+    "name" : "Course Tag Service",
+    "description" : "API for retrieving course tags"
+  }, {
+    "name" : "Course Teaching Method Service",
+    "description" : "API for retrieving course teaching methods"
+  }, {
+    "name" : "Course Type Service",
+    "description" : "API for retrieving course types"
+  }, {
+    "name" : "E-Learning Service",
+    "description" : "API for retrieving, creating and updating information about e-learning"
+  }, {
+    "name" : "Lectureship Service",
+    "description" : "API for retrieving information about course lectureships"
+  } ],
+  "paths" : {
+    "/course-categories" : {
+      "get" : {
+        "summary" : "Returns a list of all public course category groups and the connected course category elements. If the Scope co-course.read is provided only public course categories will be delivered. If you want to get all course categories you need the scope co-course-category-admin.read",
+        "x-audience" : "external-public",
+        "operationId" : "CourseCategoryRestService_findCourseCategories",
+        "tags" : [ "Course Category Service" ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "All configured public course categories.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseCategoryListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read", "co-course-category-admin.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read", "co-course-category-admin.read" ],
+        "description" : "Scopes: [co-course.read, co-course-category-admin.read]"
+      }
+    },
+    "/course-classifications" : {
+      "get" : {
+        "summary" : "Returns a list of all existing course classifications ",
+        "x-audience" : "external-public",
+        "operationId" : "CourseClassificationRestService_findAllCourseClassifications",
+        "tags" : [ "Course Classification Service" ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "All existing course classifications.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseClassificationListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/course-descriptions" : {
+      "get" : {
+        "summary" : "Returns the descriptions of the specified courses.",
+        "x-audience" : "external-public",
+        "operationId" : "CourseDescriptionRestServiceNew_getDescriptionByIds",
+        "tags" : [ "Course Description Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the course.",
+          "required" : true,
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Descriptions of courses with the specified UIDs.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseDescriptionListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/course-groups" : {
+      "get" : {
+        "summary" : "Returns the groups of the specified courses. Inactive standard groups are not delivered",
+        "x-audience" : "external-public",
+        "operationId" : "CourseGroupRestServiceNew_getGroups",
+        "tags" : [ "Course Group Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the course.",
+          "required" : true,
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Groups of the courses with the specified UIDs.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseGroupListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Course specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/course-tags" : {
+      "get" : {
+        "summary" : "Returns a list of all course tags.",
+        "x-audience" : "external-public",
+        "operationId" : "CourseTagRestService_findCourseTags",
+        "tags" : [ "Course Tag Service" ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "All available course tags.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseTagListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "400" : {
+            "description" : "Course tags not active due to value of parameter LV.COURSE_TAGS_ENABLED.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/course-teaching-methods" : {
+      "get" : {
+        "summary" : "Returns a list of all existing course teaching methods ",
+        "x-audience" : "external-public",
+        "operationId" : "CourseTeachingMethodRestService_findAllCourseTeachingMethods",
+        "tags" : [ "Course Teaching Method Service" ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "All existing course teaching methods.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseTeachingMethodListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/course-types" : {
+      "get" : {
+        "summary" : "Returns a list of all existing course types",
+        "x-audience" : "external-public",
+        "operationId" : "CourseTypeRestService_findAllCourseTypes",
+        "tags" : [ "Course Type Service" ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "All existing course types.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseTypeListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/course-types/{key}" : {
+      "get" : {
+        "summary" : "Returns the course type of the specified key. If there a multiple curse types with the same key (which is not recommended), then we first sort by active and than by uid.so the active course type with the highest id or if no course type with the given key is active, than the course typewith the highest id will be returned",
+        "x-audience" : "external-public",
+        "operationId" : "CourseTypeRestService_getCourseTypeByKey",
+        "tags" : [ "Course Type Service" ],
+        "parameters" : [ {
+          "description" : "The key of the course type.",
+          "required" : true,
+          "name" : "key",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Course Type with the specified key.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseTypeResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Course Type specified by `KEY` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/courses" : {
+      "get" : {
+        "summary" : "Returns a limited number of courses for potential filter criteria.",
+        "x-audience" : "external-public",
+        "operationId" : "CourseRestService_findCourses",
+        "tags" : [ "Course Service" ],
+        "parameters" : [ {
+          "description" : "The course code (course number) for which the course might be requested",
+          "example" : "BW011022",
+          "name" : "code",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The UIDs of the identity codes (GHK) to which the courses are connected.",
+          "name" : "course_identity_code_uids",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "The UIDs which will be requested. With this filter criteria no other filters will be applied",
+          "name" : "course_uids",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "Kennzeichnung in der Response, dass es noch weitere Einträge gibt, die abgerufen werden können. (Entspricht der \"Page\")",
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Anzahl der zurückgelieferten Einträge je Page",
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "if true: only courses which has a associated elearningEventTypeUid will be provided, </br>if false: only courses which has not set a elearningEventTypeUid will be provided, </br>if null or not set, all courses will be provided whether they have a associated elearningEventTypeUid or not ",
+          "name" : "only_elearning_courses",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Only courses which belongs to the given organisation UIDs will be requested",
+          "name" : "organisation_uids",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "The Semester Key for which the courses will be requested",
+          "example" : "2021W",
+          "name" : "semester_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The title of the course. The filter will be applied for the german and the english course title",
+          "example" : "Algebra",
+          "name" : "title",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The key referring to the type of the course.",
+          "name" : "type_keys",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Courses for the given filter criteria limited by `limit`. The default `limit` is 100.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CoursePageResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "400" : {
+            "description" : "Query parameter `semester_key` or `course_uids` is required when searching courses.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/courses/categories" : {
+      "get" : {
+        "summary" : "Returns all courseUids which are connected to the requested course category element keys and the given semester.If you want to request courseUids for internal course category elements, the scope co-course-category-admin.read must be provided in addition to the scopeco-course.read",
+        "x-audience" : "external-public",
+        "operationId" : "CourseRestService_getCourseIdsBySemesterAndCategories",
+        "tags" : [ "Course Service" ],
+        "parameters" : [ {
+          "description" : "Course category element keys for which the courses might be requested",
+          "name" : "course_category_element_keys",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "The Semester Key for which the courses will be requested",
+          "example" : "2021W",
+          "required" : true,
+          "name" : "semester_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string",
+            "pattern" : "\\S"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "CourseIds wich are connected to the requested course category elements.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseIdToCourseCategoryListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "400" : {
+            "description" : "Query parameter `semester_key` is required when searching courses.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read", "co-course-category-admin.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read", "co-course-category-admin.read" ],
+        "description" : "Scopes: [co-course.read, co-course-category-admin.read]"
+      }
+    },
+    "/courses/modifications" : {
+      "get" : {
+        "summary" : "Returns all modified courses since the given date. Modifications can only be provided for the last 7 Days and only the last modification for a course will be returned",
+        "x-audience" : "external-public",
+        "operationId" : "CourseRestService_getModifiedCourses",
+        "tags" : [ "Course Service" ],
+        "parameters" : [ {
+          "description" : "If a courseUid is provided you will get only the last modification for the course, if you do not get a modification, than the course was not changed since the given date or within the last 7 days",
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Kennzeichnung in der Response, dass es noch weitere Einträge gibt, die abgerufen werden können. (Entspricht der \"Page\")",
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Anzahl der zurückgelieferten Einträge je Page",
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "if true: only courses which has a associated elearningEventTypeUid will be provided, </br>if false: only courses which has not set a elearningEventTypeUid will be provided, </br>if null or not set, all courses will be provided whether they have a associated elearningEventTypeUid or not ",
+          "name" : "only_elearning_courses",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "If a semesterKey is provided, only modifications for courses that take place in the specified semester will be provided",
+          "example" : "2023W",
+          "name" : "semester_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Date for which the modifications will be requested",
+          "example" : "2024-01-20",
+          "required" : true,
+          "name" : "since",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All course UIDs that have been modified",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ModificationPageResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/courses/search" : {
+      "post" : {
+        "summary" : "Returns a limited number of courses for large quantities of filter criteria.",
+        "x-audience" : "external-public",
+        "x-zally-ignore" : "134",
+        "operationId" : "CourseRestService_searchCourses",
+        "tags" : [ "Course Service" ],
+        "parameters" : [ {
+          "description" : "Kennzeichnung in der Response, dass es noch weitere Einträge gibt, die abgerufen werden können. (Entspricht der \"Page\")",
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Anzahl der zurückgelieferten Einträge je Page",
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Filter criteria",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CourseFilterCriteria"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public",
+            "x-zally-ignore" : "134"
+          },
+          "200" : {
+            "description" : "Courses for the given filter criteria limited by `limit`. The default `limit` is 100.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CoursePageResource"
+                }
+              }
+            },
+            "x-audience" : "external-public",
+            "x-zally-ignore" : "134"
+          },
+          "400" : {
+            "description" : "parameter `semesterKeys` or `courseUids` is required when searching courses.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public",
+            "x-zally-ignore" : "134"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/courses/{uid}" : {
+      "get" : {
+        "summary" : "Returns the specified course.",
+        "x-audience" : "external-public",
+        "operationId" : "CourseRestService_getCourse",
+        "tags" : [ "Course Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the course.",
+          "required" : true,
+          "name" : "uid",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Course with the specified UID.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Course specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/courses/{uid}/description" : {
+      "get" : {
+        "summary" : "Returns the description of the specified course.",
+        "description" : "Scopes: [co-course.read]\n    This endpoint is deprecated and will be removed in future versions.\n    Please use the new API at /course/api/course-descriptions, which supports retrieving\n    descriptions for multiple courses by accepting a list of course UIDs.\n",
+        "x-audience" : "external-public",
+        "x-zally-ignore" : "134",
+        "deprecated" : true,
+        "operationId" : "CourseDescriptionRestService_getDescription",
+        "tags" : [ "Course Description Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the course.",
+          "required" : true,
+          "name" : "uid",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public",
+            "x-zally-ignore" : "134"
+          },
+          "200" : {
+            "description" : "Description of course with the specified UID.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseDescriptionResource"
+                }
+              }
+            },
+            "x-audience" : "external-public",
+            "x-zally-ignore" : "134"
+          },
+          "404" : {
+            "description" : "Course specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public",
+            "x-zally-ignore" : "134"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ]
+      }
+    },
+    "/courses/{uid}/groups" : {
+      "get" : {
+        "summary" : "Returns the groups of the specified course.",
+        "x-audience" : "external-public",
+        "deprecated" : true,
+        "operationId" : "CourseGroupRestService_getGroups",
+        "tags" : [ "Course Group Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the course.",
+          "required" : true,
+          "name" : "uid",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Groups of the course with the specified UID.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseGroupListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Course specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course.read" ]
+        } ],
+        "x-scopes" : [ "co-course.read" ],
+        "description" : "Scopes: [co-course.read]"
+      }
+    },
+    "/e-learning-event-types" : {
+      "get" : {
+        "summary" : "Returns a list of all existing e-learning event types",
+        "x-audience" : "external-public",
+        "operationId" : "ELearningRestService_findAllELearningEventTypes",
+        "tags" : [ "E-Learning Service" ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "All existing e-learning event types.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ELearningEventTypeListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "403" : {
+            "description" : "You are not allowed to access this ressource",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-elearning.read" ]
+        } ],
+        "x-scopes" : [ "co-elearning.read" ],
+        "description" : "Scopes: [co-elearning.read]"
+      }
+    },
+    "/e-learning-infos" : {
+      "get" : {
+        "summary" : "Returns the E-Learning Info for the given courseId",
+        "x-audience" : "external-public",
+        "operationId" : "ELearningRestService_findELearningInfos",
+        "tags" : [ "E-Learning Service" ],
+        "parameters" : [ {
+          "name" : "course_group_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "The Uid of the course to which the E-Learning Infos belongs to",
+          "required" : true,
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "E-Learning Info for the requested course",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ELearningInfoListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "403" : {
+            "description" : "You are not allowed to access this ressource",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Course specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-elearning.read" ]
+        } ],
+        "x-scopes" : [ "co-elearning.read" ],
+        "description" : "Scopes: [co-elearning.read]"
+      },
+      "post" : {
+        "summary" : "Create the E-Learning Information for a course. At the moment only the external url can be set",
+        "x-audience" : "external-public",
+        "operationId" : "ELearningRestService_createELearningInfoForCourse",
+        "tags" : [ "E-Learning Service" ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ELearningInfoWriteResource"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "E-Learning Information was created successfully.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ELearningInfoResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "400" : {
+            "description" : "The E-Learning Info Resource must not be null.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "403" : {
+            "description" : "You are not allowed to access this ressource",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "E-Learning Information not found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-elearning.write" ]
+        } ],
+        "x-scopes" : [ "co-elearning.write" ],
+        "description" : "Scopes: [co-elearning.write]"
+      }
+    },
+    "/e-learning-infos/{uid}" : {
+      "put" : {
+        "summary" : "Update the E-Learning Information for a course. At the moment only the external url can be changed",
+        "x-audience" : "external-public",
+        "operationId" : "ELearningRestService_updateELearningInfoForCourse",
+        "tags" : [ "E-Learning Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the E-Learning information",
+          "required" : true,
+          "name" : "uid",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ELearningInfoWriteResource"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated successfully.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ELearningInfoResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "400" : {
+            "description" : "The E-Learning Info Resource must not be null.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "403" : {
+            "description" : "You are not allowed to access this ressource",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "E-Learning Information not found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-elearning.write" ]
+        } ],
+        "x-scopes" : [ "co-elearning.write" ],
+        "description" : "Scopes: [co-elearning.write]"
+      },
+      "delete" : {
+        "summary" : "Delete the E-Learning Information for a course",
+        "x-audience" : "external-public",
+        "operationId" : "ELearningRestService_deleteELearningInfoForCourse",
+        "tags" : [ "E-Learning Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the E-Learning information.",
+          "required" : true,
+          "name" : "uid",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "E-Learning Information was deleted successfully.",
+            "x-audience" : "external-public"
+          },
+          "400" : {
+            "description" : "The E-Learning Info Resource must not be null.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "403" : {
+            "description" : "You are not allowed to access this ressource",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Course specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-elearning.write" ]
+        } ],
+        "x-scopes" : [ "co-elearning.write" ],
+        "description" : "Scopes: [co-elearning.write]"
+      }
+    },
+    "/lectureship-functions" : {
+      "get" : {
+        "summary" : "Returns all available lectureship functions",
+        "x-audience" : "external-public",
+        "operationId" : "LectureshipRestService_getLectureshipFunctions",
+        "tags" : [ "Lectureship Service" ],
+        "responses" : {
+          "200" : {
+            "description" : "All lectureship functions",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LectureshipFunctionListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-lectureship.read" ]
+        } ],
+        "x-scopes" : [ "co-lectureship.read" ],
+        "description" : "Scopes: [co-lectureship.read]"
+      }
+    },
+    "/lectureships" : {
+      "get" : {
+        "summary" : "Returns the lectureships of the specified courses or persons. Only lectureships with the functionKey MAIN_LECTURER, LECTURER, ASSISTANT,, TUTOR, or SUPERVISOR will be provided. You must provide either a course_uid or a person_uid",
+        "x-audience" : "external-public",
+        "operationId" : "LectureshipRestService_getLectureships",
+        "tags" : [ "Lectureship Service" ],
+        "parameters" : [ {
+          "description" : "The List of course UIDs for which the Lectureships should be requested",
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "The List of person UIDs for which the Lectureships should be requested",
+          "name" : "person_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "The List of semester_keys for which the Lectureships should be requested (can be used only in combination with person_uids)",
+          "name" : "semester_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Lectureships for the courses with the specified UIDs.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LectureshipListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-lectureship.read" ]
+        } ],
+        "x-scopes" : [ "co-lectureship.read" ],
+        "description" : "Scopes: [co-lectureship.read]"
+      }
+    },
+    "/lectureships/modifications" : {
+      "get" : {
+        "summary" : "Returns all modified lectureships since the given date. Modifications can only be provided for the last 7 Days.",
+        "x-audience" : "external-public",
+        "operationId" : "LectureshipRestService_getModifiedLectureships",
+        "tags" : [ "Lectureship Service" ],
+        "parameters" : [ {
+          "description" : "If a courseUid is provided, only modifications for the given course will be provided",
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Kennzeichnung in der Response, dass es noch weitere Einträge gibt, die abgerufen werden können. (Entspricht der \"Page\")",
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Anzahl der zurückgelieferten Einträge je Page",
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "if true: only courses which has a associated elearningEventTypeUid will be provided, </br>if false: only courses which has not set a elearningEventTypeUid will be provided, </br>if null or not set, all courses will be provided whether they have a associated elearningEventTypeUid or not ",
+          "name" : "only_elearning_courses",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "If a semesterKey is provided, only modifications for courses that take place in the specified semester will be provided",
+          "example" : "2023W",
+          "name" : "semester_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Date for which the modification will be requested",
+          "example" : "2024-01-20",
+          "required" : true,
+          "name" : "since",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All lectureshipUids that have ben modified",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ModificationPageResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-lectureship.read" ]
+        } ],
+        "x-scopes" : [ "co-lectureship.read" ],
+        "description" : "Scopes: [co-lectureship.read]"
+      }
+    },
+    "/lectureships/{uid}" : {
+      "get" : {
+        "summary" : "Returns the specified lectureship. Only lectureships with the functionKey MAIN_LECTURER, LECTURER, ASSISTANT, TUTOR, or SUPERVISOR will be provided",
+        "x-audience" : "external-public",
+        "operationId" : "LectureshipRestService_getLectureship",
+        "tags" : [ "Lectureship Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the lectureship.",
+          "required" : true,
+          "name" : "uid",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Lectureship with the specified UID.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LectureshipResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Lectureship specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-lectureship.read" ]
+        } ],
+        "x-scopes" : [ "co-lectureship.read" ],
+        "description" : "Scopes: [co-lectureship.read]"
+      }
+    },
+    "/registrations" : {
+      "get" : {
+        "summary" : "Returns all registrations for the specified courses. Only confirmed registrations will be provided",
+        "x-audience" : "external-public",
+        "operationId" : "CourseRegistrationRestService_getCourseRegistrations",
+        "tags" : [ "Course Registration Service" ],
+        "parameters" : [ {
+          "description" : "a list of claims which should be embedded; for all claims the necessary scope must be provided",
+          "name" : "claim",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "$ref" : "#/components/schemas/SelectableClaim"
+            }
+          }
+        }, {
+          "description" : "a context which can be used only for agent calls, and only support organisation contexts; context=org-1234",
+          "name" : "context",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The List of course UIDs for which the registrations should be requested",
+          "required" : true,
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "with `expand=personClaims` you can expand the CourseRegistrationResource with personClaims",
+          "name" : "expand",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All registrations for the courses with the specified UIDs.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseRegistrationListResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course-registration.read", "co-agent.read" ]
+        } ],
+        "x-scopes" : [ "co-agent.read", "co-course-registration.read" ],
+        "description" : "Scopes: [co-agent.read, co-course-registration.read]"
+      }
+    },
+    "/registrations/modifications" : {
+      "get" : {
+        "summary" : "Returns all modified course registrations since the given date. Modifications can only be provided for the last 7 Days.",
+        "x-audience" : "external-public",
+        "operationId" : "CourseRegistrationRestService_getModifiedCourseRegistrations",
+        "tags" : [ "Course Registration Service" ],
+        "parameters" : [ {
+          "description" : "a context which can be used only for agent calls, and only support organisation contexts; context=org-1234",
+          "name" : "context",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "If a courseUid is provided, only modifications for the given course will be provided",
+          "name" : "course_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Kennzeichnung in der Response, dass es noch weitere Einträge gibt, die abgerufen werden können. (Entspricht der \"Page\")",
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Anzahl der zurückgelieferten Einträge je Page",
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "if true: only courses which has a associated elearningEventTypeUid will be provided, </br>if false: only courses which has not set a elearningEventTypeUid will be provided, </br>if null or not set, all courses will be provided whether they have a associated elearningEventTypeUid or not ",
+          "name" : "only_elearning_courses",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "If a semesterKey is provided, only modifications for courses that takes place in the specified semester will be provided",
+          "example" : "2023W",
+          "name" : "semester_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Date for which the modifications will be requested",
+          "example" : "2024-01-20",
+          "required" : true,
+          "name" : "since",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All course registration UIDs that have been modified",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ModificationPageResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course-registration.read", "co-agent.read" ]
+        } ],
+        "x-scopes" : [ "co-agent.read", "co-course-registration.read" ],
+        "description" : "Scopes: [co-agent.read, co-course-registration.read]"
+      }
+    },
+    "/registrations/{uid}" : {
+      "get" : {
+        "summary" : "Returns the specified course registration. With the QueryParameter expand=personClaims and for example claim=co-claim-name, you can expand theCourseRegistration Resource with the personClaims",
+        "x-audience" : "external-public",
+        "operationId" : "CourseRegistrationRestService_getCourseRegistration",
+        "tags" : [ "Course Registration Service" ],
+        "parameters" : [ {
+          "description" : "The unique ID (UID) of the course registration.",
+          "required" : true,
+          "name" : "uid",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "a list of claims which should be embedded; for all claims the necessary scope must be provided",
+          "name" : "claim",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "$ref" : "#/components/schemas/SelectableClaim"
+            }
+          }
+        }, {
+          "description" : "with `expand=personClaims` you can expand the CourseRegistrationResource with personClaims",
+          "name" : "expand",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "200" : {
+            "description" : "Course registration with the specified UID.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CourseRegistrationResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          },
+          "404" : {
+            "description" : "Course registration specified by `UID` does not exist.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            },
+            "x-audience" : "external-public"
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-course-registration.read", "co-agent.read" ]
+        } ],
+        "x-scopes" : [ "co-agent.read", "co-course-registration.read" ],
+        "description" : "Scopes: [co-agent.read, co-course-registration.read]"
+      }
+    }
+  },
+  "servers" : [ {
+    "url" : "https://review.campus.tum.de/RSYSTEM/co/co-tm-core/course/api"
+  } ]
+}

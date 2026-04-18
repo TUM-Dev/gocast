@@ -170,7 +170,8 @@ export function seekToLive() {
     console.log("Seeking to live edge");
     console.debug(players);
     players.forEach((player) => {
-        player.liveTracker.seekToLiveEdge();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (player as any).liveTracker.seekToLiveEdge();
     });
 }
 

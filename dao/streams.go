@@ -78,7 +78,8 @@ func (d streamsDao) GetDueStreamsForRunners() ([]model.Stream, error) {
 		Joins("JOIN courses c ON c.id = streams.course_id").
 		Joins("JOIN lecture_halls lh on streams.lecture_hall_id = lh.id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND lh.stream_protocol = 2 AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
+			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null " +
+			"AND NOT lh.legacy").
 		Scan(&res).Error
 	return res, err
 }
@@ -135,7 +136,8 @@ func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
 		Joins("JOIN courses c ON c.id = streams.course_id").
 		Joins("JOIN lecture_halls lh on streams.lecture_hall_id = lh.id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND lh.stream_protocol = 1 AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
+			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null " +
+			"AND lh.legacy").
 		Scan(&res)
 	return res
 }

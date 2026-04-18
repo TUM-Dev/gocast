@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/TUM-Dev/CampusProxy/client"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model/search"
 	"github.com/TUM-Dev/gocast/tools"

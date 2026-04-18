@@ -140,7 +140,8 @@
                 </div>
                 <div x-show="lectureData.isLiveNow"
                      class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
-                    Live
+                    <i title="This lecture is hidden" x-show="lectureData.private" class="fas fa-eye-slash mr-2"></i>
+                    <span> Live </span>
                 </div>
                 <div x-show="!lectureData.isRecording && lectureData.isPast"
                      class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
@@ -148,7 +149,8 @@
                 </div>
                 <div x-show="!lectureData.isPast && !lectureData.isLiveNow && !lectureData.isRecording"
                      class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
-                    Scheduled
+                    <i title="This lecture is hidden" x-show="lectureData.private" class="fas fa-eye-slash mr-2"></i>
+                    <span> Scheduled</span>
                 </div>
                 <div x-data="{ moreDropdownOpen: false,
                                toggleMoreDropdown() {

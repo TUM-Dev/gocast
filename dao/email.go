@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate go tool mockgen -source=email.go -destination ../mock_dao/email.go

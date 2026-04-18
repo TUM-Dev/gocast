@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/antchfx/xmlquery"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/antchfx/xmlquery"
 )
 
 func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
@@ -15,6 +16,7 @@ func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
 	if err != nil {
 		return CourseInfo{}, fmt.Errorf("GetCourseInformation: Can't LoadURL: %v", err)
 	}
+	fmt.Println(doc.Data)
 	isError := len(xmlquery.Find(doc, "//Error")) != 0
 	if isError {
 		return CourseInfo{}, errors.New("course not found")
@@ -25,6 +27,7 @@ func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
 	// turns Sommersemester 2020 into SoSe2020
 	courseInfo.TeachingTerm = xmlquery.FindOne(doc, "//teachingTerm").InnerText()
 	courseInfo.NumberAttendees = len(xmlquery.Find(doc, "//personID"))
+	courseInfo.TeachingLang = xmlquery.FindOne(doc, "//instructionLanguage").SelectAttr("teachingLang")
 	return courseInfo, nil
 }
 
@@ -48,4 +51,5 @@ type CourseInfo struct {
 	NumberAttendees  int    `json:"numberAttendees"`
 	TeachingTerm     string `json:"teachingTerm"`
 	TeachingTermFull string `json:"teachingTermFull"`
+	TeachingLang     string `json:"teachingLang"`
 }

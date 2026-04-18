@@ -4,10 +4,11 @@ package helpers
 import (
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // ParseUserToProto converts a User model to its protobuf representation.

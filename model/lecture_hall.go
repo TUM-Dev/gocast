@@ -23,8 +23,11 @@ type LectureHall struct {
 	CameraPresets  []CameraPreset
 	RoomID         int    // used by TUMOnline
 	PwrCtrlIp      string // power control api for red live light
-	LiveLightIndex int    // id of power outlet for live light
 	ExternalURL    string
+
+	// Legacy is true if a stream is handled by a worker, false if handled by a runner.
+	// todo: remove with worker code
+	Legacy bool `gorm:"not null; default:true"`
 }
 
 type StreamProtocol uint
@@ -39,9 +42,10 @@ type CameraType uint
 const (
 	Axis CameraType = iota + 1
 	Panasonic
+	Sony_SRG_A40
 )
 
-func (l LectureHall) NumSources() int {
+func (l *LectureHall) NumSources() int {
 	num := 0
 	if l.CombIP != "" {
 		num++

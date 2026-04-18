@@ -1,4 +1,6 @@
-import { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
+
+type Player = ReturnType<typeof videojs>;
 
 /**
  * Registers a time watcher that observes the time of the current player
@@ -7,7 +9,7 @@ import { VideoJsPlayer } from "video.js";
  * @return callBack function that got registered for listening to player time updates (used to deregister)
  */
 export const registerTimeWatcher = function (
-    player: VideoJsPlayer,
+    player: Player,
     callback: (currentPlayerTime: number) => void,
 ): () => void {
     const timeWatcherCallBack: () => void = () => callback(player.currentTime());
@@ -20,6 +22,6 @@ export const registerTimeWatcher = function (
  * @param player The player to deregister the watcher.
  * @param callback regestered callBack function
  */
-export const deregisterTimeWatcher = function (player: VideoJsPlayer, callback: () => void) {
+export const deregisterTimeWatcher = function (player: Player, callback: () => void) {
     player.off("timeupdate", callback);
 };

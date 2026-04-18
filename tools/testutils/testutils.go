@@ -3,9 +3,10 @@ package testutils
 import (
 	"testing"
 
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func Equal(t *testing.T, a, b interface{}) {

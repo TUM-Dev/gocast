@@ -90,7 +90,7 @@ mail:
   smimekey: /path/to/key.pem
   maxMailsPerMinute: 10
 paths:
-  mass: /mass
+  mass: runner/storage # to make development easier, files will end up here were streams also are
   static: /var/www/static
   branding: /branding
 voiceservice:

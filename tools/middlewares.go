@@ -1,13 +1,11 @@
 package tools
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
@@ -117,7 +115,7 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		foundContext, exists := c.Get("TUMLiveContext")
 		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			logger.Error("context should exist but doesn't")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -179,7 +177,7 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		foundContext, exists := c.Get("TUMLiveContext")
 		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			logger.Error("context should exist but doesn't")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -271,7 +269,7 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 
 		course, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
 		if err != nil {
-			sentry.CaptureException(err)
+			logger.Error("could not retrieve course", "err", err)
 			return realtime.NewError(http.StatusInternalServerError, "could not retrieve course")
 		}
 		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
@@ -294,7 +292,7 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 func OwnerOfCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -310,7 +308,7 @@ func OwnerOfCourse(c *gin.Context) {
 func AdminOfCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -329,7 +327,7 @@ func AdminOfCourse(c *gin.Context) {
 func AtLeastLecturer(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

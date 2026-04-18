@@ -12,8 +12,8 @@ type HLSServer struct {
 	version string
 }
 
-func NewHLSServer(LiveDir string, log *slog.Logger, version string) *HLSServer {
-	return &HLSServer{fs: http.FileServer(http.Dir(LiveDir)), log: log, version: version}
+func NewHLSServer(liveDir string, log *slog.Logger, version string) *HLSServer {
+	return &HLSServer{fs: http.FileServer(http.Dir(liveDir)), log: log, version: version}
 }
 
 func (h *HLSServer) Start() error {

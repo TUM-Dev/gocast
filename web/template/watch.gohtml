@@ -36,23 +36,24 @@
     </div>
 </div>
 <div x-cloak x-show="showShare"
-     id="share-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false" x-init="() => { window.addEventListener('keydown', (e) => { if (e.key === 'Escape') showShare = false; }); }">
+     id="share-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50 p-4">
+    <div class="m-auto w-full max-w-md" @click.outside="showShare=false" x-init="() => { window.addEventListener('keydown', (e) => { if (e.key === 'Escape') showShare = false; }); }">
         <div class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
-            <div class="flex justify-between items-center px-3 pt-3 pb-1">
-                <h3 class="text-3 text-sm font-semibold">Share</h3>
+            <div class="flex justify-between items-center px-4 pt-4 pb-2">
+                <h3 class="text-3 text-base font-semibold">Share</h3>
                 <button type="button" title="Close share modal"
-                        @click="showShare=false">
+                        @click="showShare=false"
+                        class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600">
                     <i class="fa-solid fa-xmark text-3"></i>
                 </button>
             </div>
-            <div class="pt-1 pb-3 px-3 mt-3" x-data="{share: new watch.ShareURL()}">
+            <div class="pt-2 pb-4 px-4" x-data="{share: new watch.ShareURL()}">
                 <span class="font-light text-xs mb-1 text-4">URL</span>
-                <div class="flex items-center justify-between tl-input text-sm">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 tl-input text-sm">
                     <input id="share-url" type="text"
-                           class="bg-transparent outline-0 border-0 text-left text-5 grow" :value="share.url" disabled>
+                           class="bg-transparent outline-0 border-0 text-left text-5 grow min-w-0 truncate" :value="share.url" disabled>
                     <button type="button" @click="share.copyURL()"
-                            class="text-xs text-white rounded-full px-3 py-1 h-fit w-fit bg-blue-500 dark:bg-indigo-600 hover:bg-blue-600 dark:hover:bg-indigo-700">
+                            class="text-xs text-white rounded-full px-4 py-2 h-fit w-full sm:w-fit bg-blue-500 dark:bg-indigo-600 hover:bg-blue-600 dark:hover:bg-indigo-700 whitespace-nowrap">
                         <i class="fa-solid mr-2" :class="share.copied ? 'fa-check' : 'fa-clipboard'"></i>
                         <span x-text="share.copied ? 'Copied' : 'Copy'"></span>
                     </button>
@@ -60,11 +61,11 @@
                 {{if not $stream.LiveNow}}
                     <!-- $nextTick does not work in watch. Therefore, @change.once has to be used. -->
                     <div x-init="$watch('showShare', async value => { if (value) { await share.setURL(true); }});"
-                         class="flex justify-start items-center pt-2">
-                        <input id="include-timestamp" type="checkbox" class="h-8 hover:cursor-pointer"
+                         class="flex flex-wrap justify-start items-center pt-3 gap-2">
+                        <input id="include-timestamp" type="checkbox" class="h-5 w-5 hover:cursor-pointer"
                                x-model="share.includeTimestamp" @change="share.setURL(false)">
-                        <label for="include-timestamp" class="font-light text-xs ml-2 important-text-4">Include Timestamp</label>
-                        <input x-cloak x-show="share.includeTimestamp" class="tl-input h-8 w-20 text-xs ml-2"
+                        <label for="include-timestamp" class="font-light text-sm important-text-4">Include Timestamp</label>
+                        <input x-cloak x-show="share.includeTimestamp" class="tl-input h-10 w-24 text-sm"
                                type="text" x-model="share.timestamp" @input="share.setURL(false);">
                     </div>
                 {{end}}
@@ -180,7 +181,7 @@
                                         <source src="{{$stream.PlaylistUrlPRES}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
                                                 type="application/x-mpegURL"/>
                                     {{else}}
-                                        <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                        <source src="{{$stream.PlaylistUrlPRES}}" type="application/x-mpegURL"/>
                                     {{end}}
                                 {{end}}
                                 <p class="vjs-no-js">
@@ -204,7 +205,7 @@
                                         <source src="{{$stream.PlaylistUrlCAM}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
                                                 type="application/x-mpegURL"/>
                                     {{else}}
-                                        <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                        <source src="{{$stream.PlaylistUrlCAM}}" type="application/x-mpegURL"/>
                                     {{end}}
                                 {{end}}
                                 <p class="vjs-no-js">
@@ -229,11 +230,11 @@
                                         type="application/x-mpegURL"/>
                             {{else}}
                                 {{if eq .Version "CAM"}}
-                                    <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    <source src="{{$stream.PlaylistUrlCAM}}" type="application/x-mpegURL"/>
                                 {{else if eq .Version "PRES"}}
-                                    <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    <source src="{{$stream.PlaylistUrlPRES}}" type="application/x-mpegURL"/>
                                 {{else}}
-                                    <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    <source src="{{$stream.PlaylistUrl}}" type="application/x-mpegURL"/>
                                 {{end}}
                             {{end}}
                         {{end}}
@@ -406,9 +407,8 @@
         {{if and $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="sidebar === watch.SidebarState.Chat"
                  :class="sidebar === watch.SidebarState.Chat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-20 basis-full order-5
-                        md:px-2
-                        lg:h-16/6 h-16/9 lg:order-none">
+                 class="z-20 basis-full order-5 px-2
+                        h-sidebar-mobile md:h-16/9 lg:h-16/6 lg:order-none">
                 <div class="border dark:border-gray-800 rounded-lg h-full">
                     {{template "chat-component" .ChatData}}
                 </div>
@@ -419,7 +419,7 @@
         {{if .IndexData.TUMLiveContext.User}}
             <div id="bookmarks-desktop" x-cloak x-show="sidebar === watch.SidebarState.Bookmarks"
                  :class="sidebar === watch.SidebarState.Bookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="hidden md:block basis-full h-16/9 lg:h-16/6 px-5 md:px-2 lg:order-none order-4">
+                 class="basis-full h-sidebar-mobile md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4">
                 {{template "bookmarks-modal" $stream.ID}}
             </div>
         {{end}}
@@ -427,7 +427,7 @@
         <!-- Transcript -->
         <div id="transcript-desktop" x-cloak x-show="sidebar === watch.SidebarState.Transcript && transcriptAvailable"
             :class="sidebar === watch.SidebarState.Transcript ? 'lg:basis-1/4' : 'lg:basis-0'"
-            class="basis-full md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4 grow">
+            class="basis-full h-sidebar-mobile md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4">
             {{template "transcript-modal" $stream.ID}}
         </div>
 
@@ -435,7 +435,7 @@
         <button x-data="{ showScrollUp: false }"
                 x-show="showScrollUp"
                 @click="watch.pauseVideo();window.scrollTo({ top: 0, behavior: 'smooth' }); "
-                class="fixed bottom-4 right-4 md:hidden bg-blue-500 text-white rounded-full p-2 shadow-lg z-50"
+                class="fixed bottom-4 right-4 md:hidden bg-blue-500 text-white rounded-full p-3 shadow-lg z-50"
                 @scroll.window="showScrollUp = (window.scrollY > 200)">
             <i class="fa-solid fa-arrow-up"></i>
         </button>
@@ -444,22 +444,22 @@
         {{if .IndexData.TUMLiveContext.User}}
             <div id="streams-box" x-cloak x-show="sidebar === watch.SidebarState.Streams"
                  :class="sidebar === watch.SidebarState.Streams ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="order-4 z-20 basis-full px-5 md:px-2 lg:order-none lg:h-16/6 h-16/9">
+                 class="order-4 z-20 basis-full px-2 lg:order-none h-sidebar-mobile md:h-16/9 lg:h-16/6">
                 {{template "playlist" $stream.ID}}
             </div>
         {{end}}
 
         <!-- stream info container -->
         <!-- Title, course name, actions -->
-        <div class="basis-full relative order-2 p-5 lg:order-none w-full">
-            <div class="flex flex-col justify-between align-middle pb-2 md:flex-row">
+        <div class="basis-full relative order-2 p-4 md:p-5 lg:order-none w-full">
+            <div class="flex flex-col justify-between align-middle pb-2 md:flex-row gap-3">
                 <!-- title and course-name -->
-                <div class="pb-3 border-b dark:border-gray-600 grid shrink mb-auto lg:pb-0 lg:border-0">
-                    <h1 class="font-bold text-4 text-lg grow lg:text-2xl"
+                <div class="pb-3 border-b dark:border-gray-600 grid shrink mb-auto md:pb-0 md:border-0">
+                    <h1 class="font-bold text-4 text-base sm:text-lg lg:text-2xl line-clamp-2"
                         @titleupdate.window="$el.innerText=$event.detail.title">
                         {{$displayName}}
                     </h1>
-                    <div class="flex justify-between flex-col sm:flex-row text-sm lg:text-base">
+                    <div class="flex justify-between flex-col sm:flex-row text-sm lg:text-base mt-1">
                         <div class="flex my-auto">
                             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                                 <span class="text-5 hover:text-1 hover:underline">{{$course.Name}}</span></a>
@@ -467,7 +467,7 @@
                     </div>
 
                     {{if $stream.Recording}}
-                    <div>
+                    <div class="mt-1">
                         <span class="text-5 text-sm">{{$stream.FriendlyTime}}</span>
                     </div>
                     {{end}}
@@ -476,9 +476,9 @@
                     {{end}}
                 </div>
 
-                <!-- Desktop stream info-->
-                <div class="pt-2 lg:pt-0">
-                    <div class="justify-center space-x-2 text-lg flex shrink-0" x-data="{reactionsOpen: false}" @keydown.escape="reactionsOpen = false;">
+                <!-- Stream actions -->
+                <div class="pt-2 md:pt-0">
+                    <div class="justify-start md:justify-center gap-2 text-lg flex flex-wrap shrink-0" x-data="{reactionsOpen: false}" @keydown.escape="reactionsOpen = false;">
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
                             <div class="rounded-lg px-3 text-4 py-2 h-fit w-fit bg-gray-100 dark:bg-secondary-light space-x-2">
                             <a
@@ -505,7 +505,7 @@
 
                         {{if .IndexData.TUMLiveContext.User}}
                             <button @click="sidebar = (sidebar === watch.SidebarState.Bookmarks ? watch.SidebarState.Hidden : watch.SidebarState.Bookmarks)"
-                                    class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                    class="rounded-lg px-3 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                     title="New Bookmark">
                                 <i class="fa-solid fa-bookmark text-4"></i>
                             </button>
@@ -513,13 +513,13 @@
 
                         <!-- Transcript Button -->
                         <button x-show="transcriptAvailable" @toggletranscript.window="e => {transcriptAvailable=true}" @click="sidebar = (sidebar === watch.SidebarState.Transcript ? watch.SidebarState.Hidden : watch.SidebarState.Transcript)"
-                                class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                class="rounded-lg px-3 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                 title="Show Transcript">
                             <i class="fa-solid fa-text-height text-4"></i>
                         </button>
 
                         <button @click="showShare = true;"
-                                class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                class="rounded-lg px-3 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                 title="Share">
                             <i class="fa-solid fa-share text-4"></i>
                         </button>
@@ -534,15 +534,16 @@
                                     :title="'React to stream'">
                                 <i class="fa-solid fa-face-smile"></i>
                             </button>
-
-                            <!-- Desktop Open Chat -->
-                            {{if and $course.ChatEnabled $stream.ChatEnabled}}
-                                <button @click="sidebar = (sidebar === watch.SidebarState.Chat ? watch.SidebarState.Hidden : watch.SidebarState.Chat)"
-                                        title="Open Chat">
-                                    <i class="fa-solid fa-comments text-4"></i>
-                                </button>
-                            {{end}}
                         </div>
+                        <!-- Open Chat -->
+                        {{if and $course.ChatEnabled $stream.ChatEnabled}}
+                            <button @click="sidebar = (sidebar === watch.SidebarState.Chat ? watch.SidebarState.Hidden : watch.SidebarState.Chat)"
+                                    title="Open Chat"
+                                    :class="sidebar === watch.SidebarState.Chat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
+                                    class="rounded-lg px-3 md:px-4 py-2 h-fit w-fit">
+                                <i class="fa-solid fa-comments text-4"></i>
+                            </button>
+                        {{end}}
                         <!-- Reactions overlay -->
                         <div class="fixed left-0 top-0 w-full h-full bg-black opacity-75 z-50 m-0 p-0 flex flex-row items-center justify-center" x-show="reactionsOpen" @click="reactionsOpen = false;">
                             <div class="w-1/5 h-1/5">
@@ -555,7 +556,7 @@
                         <button @click="sidebar = (sidebar === watch.SidebarState.Streams ? watch.SidebarState.Hidden : watch.SidebarState.Streams)"
                                 title="Open Playlist"
                                 :class="sidebar === watch.SidebarState.Streams ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
-                                class="rounded-lg px-3 py-2 h-fit w-fit">
+                                class="rounded-lg px-3 md:px-4 py-2 h-fit w-fit">
                             <i class="fa-solid fa-list text-4"></i>
                         </button>
                         {{ end }}

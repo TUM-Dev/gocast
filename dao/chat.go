@@ -3,9 +3,10 @@ package dao
 import (
 	"errors"
 
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate go tool mockgen -source=chat.go -destination ../mock_dao/chat.go

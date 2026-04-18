@@ -23,7 +23,7 @@ type PollOption struct {
 	Votes  []User `gorm:"many2many:poll_option_user_votes" json:"-"`
 }
 
-func (o PollOption) GetStatsMap(votes int64) gin.H {
+func (o *PollOption) GetStatsMap(votes int64) gin.H {
 	return gin.H{
 		"ID":     o.ID,
 		"answer": o.Answer,

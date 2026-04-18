@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"fmt"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"log/slog"
 	"os"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 

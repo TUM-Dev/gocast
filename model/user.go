@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -58,7 +59,8 @@ const (
 	SeekingTime
 	UserDefinedSpeeds
 	AutoSkip
-	DefaultMode
+	// Deprecated: this is no longer used
+	defaultMode
 	LectureView
 )
 
@@ -164,12 +166,14 @@ func (u *User) GetPreferredGreeting() string {
 	return "Moin"
 }
 
+var validSeekingTimes = []int{5, 10, 30}
+
 // GetSeekingTime returns the seeking time preference for the user.
 // If the user is nil, the default seeking time of 15 seconds is returned.
 func (u *User) GetSeekingTime() int {
 	// Check if the user is nil
 	if u == nil {
-		return 15
+		return 10
 	}
 	// Check if the setting type is SeekingTime
 	for _, setting := range u.Settings {
@@ -179,11 +183,14 @@ func (u *User) GetSeekingTime() int {
 			if err != nil {
 				break
 			}
-			return seekingTime
+			if slices.Contains(validSeekingTimes, seekingTime) {
+				return seekingTime
+			}
+			return 10
 		}
 	}
 	// If no seeking time setting is found, return the default seeking time
-	return 15
+	return 10
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
@@ -214,28 +221,6 @@ func (u *User) GetAutoSkipEnabled() (AutoSkipSetting, error) {
 		}
 	}
 	return AutoSkipSetting{Enabled: false}, nil
-}
-
-// DefaultModeSetting wraps whether the default stream mode for the user is beta
-type DefaultModeSetting struct {
-	Beta bool `json:"beta"`
-}
-
-func (u *User) GetDefaultMode() (DefaultModeSetting, error) {
-	if u == nil {
-		return DefaultModeSetting{Beta: false}, nil
-	}
-	for _, setting := range u.Settings {
-		if setting.Type == DefaultMode {
-			var m DefaultModeSetting
-			err := json.Unmarshal([]byte(setting.Value), &m)
-			if err != nil {
-				return DefaultModeSetting{Beta: false}, err
-			}
-			return m, nil
-		}
-	}
-	return DefaultModeSetting{Beta: false}, nil
 }
 
 func (u *User) GetPreferredView() string {

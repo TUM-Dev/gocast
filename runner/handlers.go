@@ -12,9 +12,7 @@ import (
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
-func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
-	ctx = context.Background()
-
+func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
 	data := map[string]any{
 		"streamID":      req.GetStreamId(),
 		"streamVersion": protobuf.StreamVersion_name[int32(req.GetVersion())],
@@ -30,6 +28,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 		actions.StreamEnd,
 		actions.MkVOD,
 		actions.CheckVoD,
+		actions.MkThumb,
 	}
 
 	jID := r.RunAction(a, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))

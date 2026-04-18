@@ -154,6 +154,7 @@ type Config struct {
 		SmpPassword string `yaml:"smpPassword"`
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`
+		CamAuthSony string `yaml:"camAuthSony"`
 	} `yaml:"auths"`
 	Alerts *struct {
 		Matrix *struct {
@@ -165,8 +166,9 @@ type Config struct {
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
 	VoiceService *struct {
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
+		Host      string `yaml:"host"`
+		Port      string `yaml:"port"`
+		AuthToken string `yaml:"authToken"`
 	}
 	IngestBase  string  `yaml:"ingestBase"`
 	WebUrl      string  `yaml:"webUrl"`
@@ -180,6 +182,7 @@ type Config struct {
 	CanonicalURL     string   `yaml:"canonicalURL"`
 	WikiURL          string   `yaml:"wikiURL"`
 	RtmpProxyURL     string   `yaml:"rtmpProxyURL"`
+	RtmpProxyService string   `yaml:"rtmpProxyService"`
 	AllowedReactions []string `yaml:"allowedReactions"`
 }
 

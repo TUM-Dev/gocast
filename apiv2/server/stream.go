@@ -7,14 +7,15 @@ import (
 	"os"
 	"strconv"
 
+	"google.golang.org/genproto/googleapis/api/httpbody"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
+
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
-	"google.golang.org/genproto/googleapis/api/httpbody"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 )
 
 // GetStream returns a stream by its ID including the course and lecture hall
