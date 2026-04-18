@@ -3,14 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -36,7 +34,7 @@ type sessionWrapper struct {
 var connHandler = func(context *realtime.Context) {
 	foundContext, exists := context.Get("TUMLiveContext") // get gin context
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)

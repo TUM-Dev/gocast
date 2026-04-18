@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	"unicode"
 
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 
@@ -27,7 +25,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	resp := ""
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
@@ -42,7 +40,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	var req importReq
 	err := c.BindJSON(&req)
 	if err != nil {
-		sentry.CaptureException(errors.New("could not bind JSON request"))
+		logger.Error("could not bind JSON request", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not bind JSON request",

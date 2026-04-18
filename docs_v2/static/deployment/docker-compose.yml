@@ -89,7 +89,7 @@ services:
 
   # See (https://tumlive-docs.pages.dev/docs/deployment/add-vodservice)
   vodservice:
-    image: ghcr.io/tum-dev/gocast/vod-service:1.4.9
+    image: ghcr.io/tum-dev/gocast/vod-service:1.7.3
     networks:
       - default
     ports:

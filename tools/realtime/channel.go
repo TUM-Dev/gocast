@@ -1,10 +1,7 @@
 package realtime
 
 import (
-	"errors"
 	"strings"
-
-	"github.com/getsentry/sentry-go"
 )
 
 // channelPathSep describes the separator of paths in a channel name. e.g 'stream/123' is seperated by channelPathSep
@@ -61,10 +58,7 @@ func (c *Channel) PathMatches(path string) (bool, map[string]string) {
 func (c *Channel) Subscribe(context *Context) {
 	for _, middleware := range c.handlers.SubscriptionMiddlewares {
 		if err := middleware(context); err != nil {
-			sentry.CaptureException(errors.New(err.Description))
-			if err := context.SendError(err); err != nil {
-				sentry.CaptureException(err)
-			}
+			_ = context.SendError(err)
 			return
 		}
 	}

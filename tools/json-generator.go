@@ -15,7 +15,7 @@ func AdminCourseJson(c *model.Course, lhs []model.LectureHall, u *model.User) []
 		if err != nil {
 			logger.Error("Could not sign playlist for admin", "err", err)
 		}
-		res = append(res, s.GetJson(lhs, *c))
+		res = append(res, s.GetJson(lhs, c))
 	}
 	return res
 }

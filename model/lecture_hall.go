@@ -45,7 +45,7 @@ const (
 	Sony_SRG_A40
 )
 
-func (l LectureHall) NumSources() int {
+func (l *LectureHall) NumSources() int {
 	num := 0
 	if l.CombIP != "" {
 		num++

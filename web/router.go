@@ -8,8 +8,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/getsentry/sentry-go"
-
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
 
@@ -189,10 +187,6 @@ type mainRoutes struct {
 }
 
 func (r mainRoutes) home(c *gin.Context) {
-	tName := sentry.WithTransactionSource("GET /")
-	spanMain := sentry.StartSpan(c.Request.Context(), "HomePageHandler", tName)
-	defer spanMain.Finish()
-
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
 		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)

@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/getsentry/sentry-go"
-
 	"github.com/TUM-Dev/gocast/tools"
 )
 
@@ -75,14 +73,12 @@ func (m *Matrix) SendBotMessage(message Message) error {
 	err := m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.LogRoomID, message)
 	if err != nil {
 		logger.Error("Failed to send message to matrix log room", "err", err)
-		sentry.CaptureException(err)
 		return err
 	}
 	if message.Prio {
 		err = m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.AlertRoomID, message)
 		if err != nil {
 			logger.Error("Failed to send message to matrix alert room", "err", err)
-			sentry.CaptureException(err)
 		}
 	}
 	return err

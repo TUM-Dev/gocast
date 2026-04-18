@@ -15,7 +15,6 @@ import (
 
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -103,16 +102,15 @@ type liveStreamDto struct {
 
 func (r streamRoutes) getThumbs(c *gin.Context) {
 	ctx, exists := c.Get("TUMLiveContext")
-	tumLiveContext := ctx.(tools.TUMLiveContext)
-
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
 		})
 		return
 	}
+	tumLiveContext := ctx.(tools.TUMLiveContext)
 	file, err := r.GetFileById(c.Param("fid"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -288,7 +286,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 
 	var alert alertMessage
 	if err := c.ShouldBindJSON(&alert); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -299,7 +297,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	// Get lecture hall of the stream that has issues.
 	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not get lecturehall by id", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get lecturehall by id",
@@ -311,7 +309,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	// Get course of the stream that has issues.
 	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not get course by id", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get course by id",
@@ -349,7 +347,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 
 	// Set messaging strategy as specified in strategy pattern
 	if err = alertBot.SendAlert(botInfo, r.StatisticsDao); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not send bot alert", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not send bot alert",
@@ -790,7 +788,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	var request subtitleRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -828,7 +826,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	// request to voice-service for subtitles
 	client, err := GetSubtitleGeneratorClient()
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("could not connect to voice-service", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not connect to voice-service",

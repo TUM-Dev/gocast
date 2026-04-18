@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -263,8 +262,7 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 
 	err = r.UsersDao.DeleteUser(context.Background(), deleteRequest.Id)
 	if err != nil {
-		sentry.CaptureException(err)
-		defer sentry.Flush(time.Second * 2)
+		logger.Error("can not delete user", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not delete user",
@@ -278,7 +276,7 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
@@ -379,7 +377,7 @@ func (r usersRoutes) getPinForCourse(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		has, err = r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
 		if err != nil {
-			sentry.CaptureException(err)
+			logger.Error("can't retrieve course", "err", err)
 			_ = c.Error(tools.RequestError{
 				Err:           err,
 				Status:        http.StatusInternalServerError,

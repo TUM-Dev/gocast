@@ -35,7 +35,7 @@ type File struct {
 	CourseName string   `gorm:"default:null"`
 }
 
-func (f File) GetDownloadFileName() string {
+func (f *File) GetDownloadFileName() string {
 	pts := strings.Split(f.Path, "/")
 	if len(pts) == 0 {
 		return ""
@@ -43,7 +43,7 @@ func (f File) GetDownloadFileName() string {
 	return pts[len(pts)-1]
 }
 
-func (f File) GetFriendlyFileName() string {
+func (f *File) GetFriendlyFileName() string {
 	fn := f.GetDownloadFileName()
 	if strings.Contains(strings.ToLower(fn), "cam") {
 		return "Camera-view"
@@ -59,7 +59,7 @@ func (f File) GetFriendlyFileName() string {
 }
 
 // GetVodTypeByName infers the type of a video file based on its name.
-func (f File) GetVodTypeByName() string {
+func (f *File) GetVodTypeByName() string {
 	if strings.HasSuffix(f.Path, "CAM.mp4") {
 		return "CAM"
 	}
@@ -69,11 +69,11 @@ func (f File) GetVodTypeByName() string {
 	return "COMB"
 }
 
-func (f File) IsThumb() bool {
+func (f *File) IsThumb() bool {
 	return f.Type == FILETYPE_THUMB_CAM || f.Type == FILETYPE_THUMB_PRES || f.Type == FILETYPE_THUMB_COMB || f.Type == FILETYPE_THUMB_CUSTOM
 }
 
-func (f File) IsURL() bool {
+func (f *File) IsURL() bool {
 	parsedUrl, err := url.Parse(f.Path)
 	if err != nil {
 		return false

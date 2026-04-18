@@ -17,7 +17,6 @@ import (
 	"time"
 
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
-	"github.com/getsentry/sentry-go"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -734,19 +733,16 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 			err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 			if err != nil {
 				logger.Warn("Can't set stream undone", "err", err)
-				sentry.CaptureException(err)
 				continue
 			}
 			courseForStream, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
 			if err != nil {
 				logger.Warn("Can't get course for stream, skipping", "err", err)
-				sentry.CaptureException(err)
 				continue
 			}
 			lectureHallForStream, err := daoWrapper.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
 			if err != nil {
 				logger.Error("Can't get lecture hall for stream, skipping", "err", err)
-				sentry.CaptureException(err)
 				continue
 			}
 
@@ -782,7 +778,6 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			logger.Warn("Can't set stream undone", "err", err)
-			sentry.CaptureException(err)
 			continue
 		}
 		if len(streams[i].Files) == 0 {

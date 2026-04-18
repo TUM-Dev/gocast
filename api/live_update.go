@@ -2,11 +2,9 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"sync"
 
 	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -42,7 +40,7 @@ func liveUpdateOnUnsubscribe(psc *realtime.Context) {
 	ctx, _ := psc.Client.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 
@@ -74,7 +72,7 @@ func liveUpdateOnSubscribe(psc *realtime.Context) {
 
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 

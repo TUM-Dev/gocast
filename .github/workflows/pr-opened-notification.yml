@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Send message to test channel
         id: matrix-chat-message
-        uses: fadenb/matrix-chat-message@v0.0.6
+        uses: fadenb/matrix-chat-message@89baab2b9ea06ffdd5f5b1ca80e9f888c3d7c9d3 # v0.0.6
         with:
           homeserver: 'matrix.org'
           token: ${{ secrets.MATRIX_TOKEN }}

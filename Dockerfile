@@ -1,4 +1,4 @@
-FROM node:24 AS node
+FROM node:25 AS node
 
 WORKDIR /app
 COPY web web
@@ -10,7 +10,7 @@ RUN rm -rf web/assets/ts-dist &&\
 WORKDIR /app/web
 RUN npm i --no-dev
 
-FROM golang:1.25-alpine3.22 AS build-env
+FROM golang:1.26 AS build-env
 
 RUN mkdir /gostuff
 WORKDIR /gostuff
