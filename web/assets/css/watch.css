@@ -11,3 +11,27 @@
     height: auto;
     overflow: visible;
 }
+
+.pulsing-circle {
+    width: 2ch;
+    height: 2ch;
+    border-radius: 50%;
+    background-color: red;
+    animation: pulse 2s infinite;
+    margin-left: .2ch;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

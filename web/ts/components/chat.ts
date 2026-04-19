@@ -7,8 +7,10 @@ import { User } from "../api/users";
 import { Tunnel } from "../utilities/tunnels";
 import Alpine from "alpinejs";
 import { ToggleableElement } from "../utilities/ToggleableElement";
-import { VideoJsPlayer } from "video.js";
+import videojs from "video.js";
 import { registerTimeWatcher, deregisterTimeWatcher } from "../video/watchers";
+
+type Player = ReturnType<typeof videojs>;
 
 export function chatContext(streamId: number, user: User, isRecording: boolean): AlpineComponent {
     return {
@@ -28,7 +30,7 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
         serverMessage: {},
         unreadMessages: false,
 
-        attachedPlayer: undefined as VideoJsPlayer,
+        attachedPlayer: undefined as Player,
         streamStart: undefined as Date,
         replay: ChatReplay.get(),
 
@@ -41,7 +43,7 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
             this.__initpromise = Promise.all([this.loadMessages(), this.initWebsocket()]);
         },
 
-        afterInitNotPopout(player: VideoJsPlayer, streamStart: string) {
+        afterInitNotPopout(player: Player, streamStart: string) {
             if (this.isRecording) {
                 this.__initpromise.then(() => {
                     this.preprocessors.push(ChatMessagePreprocessor.GrayOut);
@@ -286,12 +288,12 @@ class ChatReplay {
         return this.activated;
     }
 
-    deactivate(player: VideoJsPlayer) {
+    deactivate(player: Player) {
         this.activated = false;
         deregisterTimeWatcher(player, this.callback);
     }
 
-    activate(player: VideoJsPlayer, callback: (t: number) => void) {
+    activate(player: Player, callback: (t: number) => void) {
         this.activated = true;
         this.callback = registerTimeWatcher(player, callback);
     }

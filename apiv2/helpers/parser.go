@@ -4,9 +4,11 @@ package helpers
 import (
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 // ParseUserToProto converts a User model to its protobuf representation.
@@ -89,9 +91,10 @@ func ParseSemesterToProto(semester model.Semester) *protobuf.Semester {
 }
 
 // ParseStreamToProto converts a Stream model to its protobuf representation.
-// It returns an error if the conversion of timestamps fails.
-func ParseStreamToProto(stream model.Stream, downloads []model.DownloadableVod) *protobuf.Stream {
+func ParseStreamToProto(stream model.Stream, course model.Course, user *model.User) *protobuf.Stream {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
+
+	_ = tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled)
 
 	s := &protobuf.Stream{
 		Id:               uint32(stream.ID),
@@ -126,8 +129,10 @@ func ParseStreamToProto(stream model.Stream, downloads []model.DownloadableVod) 
 		s.Duration = uint32(stream.Duration.Int32)
 	}
 
-	for _, download := range downloads {
-		s.Downloads = append(s.Downloads, ParseDownloadToProto(download))
+	if course.DownloadsEnabled {
+		for _, download := range stream.GetVodFiles() {
+			s.Downloads = append(s.Downloads, ParseDownloadToProto(download))
+		}
 	}
 
 	return s

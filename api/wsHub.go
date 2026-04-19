@@ -3,18 +3,17 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 )
 
 var wsMapLock sync.RWMutex
@@ -35,7 +34,7 @@ type sessionWrapper struct {
 var connHandler = func(context *realtime.Context) {
 	foundContext, exists := context.Get("TUMLiveContext") // get gin context
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -105,7 +104,7 @@ func BroadcastStats(streamsDao dao.StreamsDao) {
 
 func cleanupSessions() {
 	for id, sessions := range sessionsMap {
-		roomName := strings.Replace(ChatRoomName, ":streamID", strconv.Itoa(int(id)), -1)
+		roomName := strings.ReplaceAll(ChatRoomName, ":streamID", strconv.Itoa(int(id)))
 		var newSessions []*sessionWrapper
 		for i, session := range sessions {
 			if RealtimeInstance.IsSubscribed(roomName, session.session.Client.Id) {

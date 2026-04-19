@@ -10,19 +10,40 @@ import (
 	"time"
 
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
+	"github.com/gin-gonic/gin"
+	"github.com/matthiasreumann/gomino"
+	"go.uber.org/mock/gomock"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/camera"
+	mockcamera "github.com/TUM-Dev/gocast/pkg/camera/mock"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/testutils"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/mock/gomock"
-	"github.com/matthiasreumann/gomino"
 )
 
 func LectureHallRouterWrapper(t *testing.T) func(r *gin.Engine) {
 	return func(r *gin.Engine) {
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{}, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+		configGinLectureHallApiRouter(r, dao.DaoWrapper{}, newCamServiceMock(gomock.NewController(t)), "tmp")
+	}
+}
+
+type camServiceMock struct {
+	camMock camera.Cam
+}
+
+func (c camServiceMock) For(string, model.CameraType) (camera.Cam, error) {
+	return c.camMock, nil
+}
+
+func newCamServiceMock(controller *gomock.Controller) CamService {
+	camMock := mockcamera.NewMockCam(controller)
+	camMock.EXPECT().GetPresets().Return([]model.CameraPreset{{}}, nil).AnyTimes()
+	camMock.EXPECT().TakeSnapshot(gomock.Any()).Return("", nil).AnyTimes()
+	camMock.EXPECT().SetPreset(gomock.Any()).Return(nil).AnyTimes()
+	return &camServiceMock{
+		camMock: camMock,
 	}
 }
 
@@ -34,12 +55,13 @@ func TestLectureHallsCRUD(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		body := createLectureHallRequest{
-			Name:      "LH1",
-			CombIP:    "0.0.0.0",
-			PresIP:    "0.0.0.0",
-			CamIP:     "0.0.0.0",
-			CameraIP:  "0.0.0.0",
-			PwrCtrlIP: "0.0.0.0",
+			Name:           "LH1",
+			StreamProtocol: 1,
+			CombIP:         "0.0.0.0",
+			PresIP:         "0.0.0.0",
+			CamIP:          "0.0.0.0",
+			CameraIP:       "0.0.0.0",
+			PwrCtrlIP:      "0.0.0.0",
 		}
 
 		gomino.TestCases{
@@ -61,7 +83,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(ctrl))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
@@ -77,7 +99,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(ctrl))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
@@ -121,7 +143,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(ctrl))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
@@ -145,7 +167,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(ctrl))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
@@ -169,7 +191,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(ctrl))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
@@ -286,7 +308,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(ctrl))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
@@ -304,7 +326,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(ctrl))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
@@ -345,7 +367,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
@@ -369,7 +391,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
@@ -398,7 +420,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Method:       http.MethodPost,
 				Url:          url,
@@ -429,7 +451,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
@@ -563,7 +585,7 @@ func TestCourseImport(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Url:         "/api/course-schedule/2022/S",
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -598,7 +620,7 @@ func TestCourseImport(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Url:         "/api/course-schedule/2022/S",
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -633,7 +655,7 @@ func TestCourseImport(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Url:         "/api/course-schedule/2022/S",
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -668,7 +690,7 @@ func TestCourseImport(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Url:         "/api/course-schedule/2022/S",
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -749,7 +771,7 @@ func TestLectureHallIcal(t *testing.T) {
 							return auditDao
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusInternalServerError,
@@ -767,7 +789,7 @@ func TestLectureHallIcal(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedResponse: icalAdmin.Bytes(),
@@ -786,7 +808,7 @@ func TestLectureHallIcal(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedResponse: icalLoggedIn.Bytes(),
@@ -826,7 +848,7 @@ func TestLectureHallPresets(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
@@ -834,9 +856,14 @@ func TestLectureHallPresets(t *testing.T) {
 			"success": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
-						LectureHallsDao: testutils.GetLectureHallMock(t),
+						LectureHallsDao: func() dao.LectureHallsDao {
+							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
+							lectureHallMock.EXPECT().GetLectureHallByID(testutils.LectureHall.ID).Return(testutils.LectureHall, nil)
+							lectureHallMock.EXPECT().SaveLectureHallFullAssoc(gomock.Any())
+							return lectureHallMock
+						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
@@ -880,7 +907,7 @@ func TestLectureHallPresets(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
@@ -914,7 +941,7 @@ func TestLectureHallPresets(t *testing.T) {
 							return lectureHallMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
@@ -950,30 +977,29 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 						}(),
 					}
 
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
 			},
-			"can not find preset after TakeSnapshot": {
+			"can not find lecture hall": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
 						LectureHallsDao: func() dao.LectureHallsDao {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
-							first := lectureHallMock.
+							lectureHallMock.
 								EXPECT().
 								FindPreset(lectureHallIDStr, presetIdStr).
 								Return(testutils.CameraPreset, nil)
-							second := lectureHallMock.
+							lectureHallMock.
 								EXPECT().
-								FindPreset(lectureHallIDStr, presetIdStr).
-								Return(testutils.CameraPreset, errors.New(""))
-							gomock.InOrder(first, second)
+								GetLectureHallByID(testutils.CameraPreset.LectureHallID).
+								Return(model.LectureHall{}, errors.New(""))
 							return lectureHallMock
 						}(),
 					}
 
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
@@ -988,11 +1014,23 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 								FindPreset(lectureHallIDStr, presetIdStr).
 								Return(testutils.CameraPreset, nil).
 								AnyTimes()
+							lectureHallMock.
+								EXPECT().
+								GetLectureHallByID(testutils.CameraPreset.LectureHallID).
+								Return(testutils.LectureHall, nil).
+								AnyTimes()
+							lectureHallMock.
+								EXPECT().
+								SavePreset(gomock.Any()).
+								Return(nil).
+								AnyTimes()
 							return lectureHallMock
 						}(),
 					}
-
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					camMock := mockcamera.NewMockCam(ctrl)
+					camMock.EXPECT().SetPreset(gomock.Any()).Return(nil)
+					camMock.EXPECT().TakeSnapshot(gomock.Any()).Return(testutils.CameraPreset.Image, nil)
+					configGinLectureHallApiRouter(r, wrapper, &camServiceMock{camMock: camMock}, "tmp")
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
@@ -1036,7 +1074,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							return streamsMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
@@ -1060,7 +1098,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							return streamsMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         unsetLectureHallRequest,
@@ -1093,7 +1131,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							return streamsMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
@@ -1123,7 +1161,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							return streamsMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
@@ -1153,7 +1191,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							return streamsMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,

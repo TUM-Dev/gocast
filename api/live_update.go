@@ -2,17 +2,16 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"sync"
 
 	"github.com/RBG-TUM/commons"
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -41,13 +40,13 @@ func liveUpdateOnUnsubscribe(psc *realtime.Context) {
 	ctx, _ := psc.Client.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
-	var userId uint = 0
+	var userId uint
 	if tumLiveContext.User != nil {
 		userId = tumLiveContext.User.ID
 	}
@@ -73,14 +72,14 @@ func liveUpdateOnSubscribe(psc *realtime.Context) {
 
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		return
 	}
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
 	var userCourses []model.Course
-	var userId uint = 0
+	var userId uint
 	var err error
 	year, term := tum.GetCurrentSemester()
 

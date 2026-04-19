@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -29,7 +29,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/seekingTime", routes.updateSeekingTime)
 	router.POST("/api/users/settings/customSpeeds", routes.updateCustomSpeeds)
 	router.POST("/api/users/settings/autoSkip", routes.updateAutoSkip)
-	router.POST("/api/users/settings/defaultMode", routes.updateDefaultMode)
+	router.POST("api/users/settings/lectureView", routes.updatePreferredView)
 
 	router.POST("/api/users/resetPassword", routes.resetPassword)
 
@@ -153,8 +153,15 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 			return nil, err
 		}
 		users, err = r.UsersDao.SearchUserWithRole(query, role)
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "could not search user",
+				Err:           err,
+			})
+		}
 	}
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "cannot search for user's",
@@ -255,8 +262,7 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 
 	err = r.UsersDao.DeleteUser(context.Background(), deleteRequest.Id)
 	if err != nil {
-		sentry.CaptureException(err)
-		defer sentry.Flush(time.Second * 2)
+		logger.Error("can not delete user", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not delete user",
@@ -270,7 +276,7 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
@@ -282,15 +288,16 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	userName := c.PostForm("newUserFirstName")
 	userEmail := c.PostForm("newUserEmail")
 
-	if batchUsers != "" {
+	switch {
+	case batchUsers != "":
 		go r.addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
-	} else if userName != "" && userEmail != "" {
+	case userName != "" && userEmail != "":
 		r.addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
-	} else {
+	default:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "invalid form",
@@ -370,7 +377,7 @@ func (r usersRoutes) getPinForCourse(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		has, err = r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
 		if err != nil {
-			sentry.CaptureException(err)
+			logger.Error("can't retrieve course", "err", err)
 			_ = c.Error(tools.RequestError{
 				Err:           err,
 				Status:        http.StatusInternalServerError,
@@ -773,21 +780,15 @@ func (r usersRoutes) updateAutoSkip(c *gin.Context) {
 	}
 }
 
-// updateDefaultMode updates whether the default stream mode for a user should be "beta"
-func (r usersRoutes) updateDefaultMode(c *gin.Context) {
+func (r usersRoutes) updatePreferredView(c *gin.Context) {
 	u := getUserFromContext(c)
-	var req struct{ Value model.DefaultModeSetting }
-	if err := c.BindJSON(&req); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body to request",
-			Err:           err,
-		})
-		return
-	}
+	request := getRequestFromContext(c)
 
-	settingBytes, _ := json.Marshal(req.Value)
-	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.DefaultMode, Value: string(settingBytes)})
+	err := r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.LectureView,
+		Value:  request.Value,
+	})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

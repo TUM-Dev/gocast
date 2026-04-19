@@ -1,18 +1,17 @@
 package tools
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/realtime"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 var templateExecutor TemplateExecutor
@@ -66,10 +65,8 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 		if err != nil {
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			return
-		} else {
-			c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
-			return
 		}
+		c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 	}
 }
 
@@ -118,14 +115,15 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		foundContext, exists := c.Get("TUMLiveContext")
 		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			logger.Error("context should exist but doesn't")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 		tumLiveContext := foundContext.(TUMLiveContext)
 		// Get course based on context:
 		var course model.Course
-		if c.Param("courseID") != "" {
+		switch {
+		case c.Param("courseID") != "":
 			cIDInt, err := strconv.ParseInt(c.Param("courseID"), 10, 32)
 			if err != nil {
 				c.AbortWithStatus(http.StatusBadRequest)
@@ -138,7 +136,7 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			} else {
 				course = foundCourse
 			}
-		} else if c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "" {
+		case c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "":
 			y := c.Param("year")
 			yInt, err := strconv.Atoi(y)
 			if err != nil {
@@ -152,7 +150,7 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			} else {
 				course = foundCourse
 			}
-		} else {
+		default:
 			c.Status(http.StatusNotFound)
 			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
 		}
@@ -160,14 +158,15 @@ func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			return
 		}
 		// check if course is accessible by user:
-		if course.Visibility == "public" || course.Visibility == "hidden" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
+		switch {
+		case course.IsPublic(), course.IsHidden(), tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course):
 			tumLiveContext.Course = &course
 			c.Set("TUMLiveContext", tumLiveContext)
-		} else if tumLiveContext.User == nil {
+		case tumLiveContext.User == nil:
 			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 			c.Abort()
 			return
-		} else {
+		default:
 			c.Status(http.StatusForbidden)
 			RenderErrorPage(c, http.StatusForbidden, ForbiddenCourseAccess)
 		}
@@ -178,7 +177,7 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		foundContext, exists := c.Get("TUMLiveContext")
 		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			logger.Error("context should exist but doesn't")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -217,7 +216,7 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if course.Visibility != "public" && course.Visibility != "hidden" {
+		if !course.IsPublic() && !course.IsHidden() {
 			if tumLiveContext.User == nil {
 				c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 				c.Abort()
@@ -262,22 +261,21 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 			foundStream, err := wrapper.StreamsDao.GetStreamByID(c, context.Param("streamID"))
 			if err != nil {
 				return realtime.NewError(http.StatusNotFound, "stream not found")
-			} else {
-				stream = foundStream
 			}
+			stream = foundStream
 		} else {
 			return realtime.NewError(http.StatusNotFound, "stream not found")
 		}
 
 		course, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
 		if err != nil {
-			sentry.CaptureException(err)
+			logger.Error("could not retrieve course", "err", err)
 			return realtime.NewError(http.StatusInternalServerError, "could not retrieve course")
 		}
 		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
 			return realtime.NewError(http.StatusForbidden, "forbidden to see course")
 		}
-		if course.Visibility != "public" && course.Visibility != "hidden" {
+		if !course.IsPublic() && !course.IsHidden() {
 			if tumLiveContext.User == nil {
 				return realtime.NewError(http.StatusForbidden, "course only visible for logged in users")
 			} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
@@ -294,7 +292,7 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 func OwnerOfCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -310,7 +308,7 @@ func OwnerOfCourse(c *gin.Context) {
 func AdminOfCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -329,7 +327,7 @@ func AdminOfCourse(c *gin.Context) {
 func AtLeastLecturer(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -343,7 +341,7 @@ func AtLeastLecturer(c *gin.Context) {
 func Admin(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

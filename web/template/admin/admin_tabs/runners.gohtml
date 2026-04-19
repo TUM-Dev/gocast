@@ -1,0 +1,116 @@
+{{define "runners"}}
+    <div class="form-container">
+        <h1 class="form-container-title">Runners</h1>
+        <div class="form-container-body grid grid-cols-2 gap-3">
+            <table class="table-auto w-full col-span-full">
+                <thead>
+                <tr class="text-2 uppercase text-left">
+                    <th class="px-5">    </th>
+                    <th class="py-3 pr-6 text-left">Name</th>
+                    <th class="py-3 px-6 text-left">Status</th>
+                    <th class="py-3 px-6 text-left">Workload</th>
+                    <th class="py-3 px-6 text-left">Uptime</th>
+                    <th class="py-3 px-6 text-left">Actions</th>
+                </tr>
+                </thead>
+                {{- /*gotype: github.com/TUM-Dev/gocast/web.RunnersData*/ -}}
+                <tbody class="text-3" x-data="{ runners: {{ .RunnersJson }} , runnersOpen: {} }">
+                    <template x-for="runner in runners" :key="runner.Hostname">
+                        <tr class="border-gray-500" x-init="runnersOpen[runner.Hostname] = false"
+                            x-on:runner-alive-status-update.window="e => {
+                                for (const runner of runners) {
+                                    if (e.detail.runners[runner.Hostname] !== undefined) {
+                                        runner.Alive = e.detail.runners[runner.Hostname].alive;
+                                        runner.JobCount = e.detail.runners[runner.Hostname].jobCount;
+                                    }
+                                }
+                            }"
+                        >
+                            <td><a @click="runnersOpen[runner.Hostname] = !runnersOpen[runner.Hostname];"><i class="fa-solid text-xs pt-3" :class="runnersOpen[runner.Hostname] ? 'fa-chevron-down' : 'fa-chevron-right'"></i></a></td>
+                            <td class="pt-3 pr-6">
+                                <div class="font-semibold text-1">
+                                    <span x-text="runner.Hostname"></span>
+                                    <span class="font-normal text-4">@</span>
+                                    <span x-text="runner.Version" class="font-normal text-4"></span>
+                                </div>
+                            </td>
+                            <td class="px-6">
+                                <template x-if="runner.Alive">
+                                    <span  class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>
+                                </template>
+                                <template x-if="!runner.Alive" >
+                                    <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>
+                                </template>
+                            </td>
+                            <td class="px-6 text-center whitespace-nowrap">
+                                <span x-text="runner.JobCount"></span>
+                                <span> Jobs</span>
+                            </td>
+                            <td class="px-6">
+                                <p class="text-white"
+                                   x-data="{
+                                     rawTime: runner.TimeOfRegister,
+                                     time: null,
+                                     diffText: '',
+                                     getTimeAgo() {
+                                       const now = new Date();
+                                       const diff = Math.floor((now - this.time) / 1000); // in seconds
+
+                                       const intervals = [
+                                         { label: 'year', seconds: 31536000 },
+                                         { label: 'month', seconds: 2592000 },
+                                         { label: 'day', seconds: 86400 },
+                                         { label: 'hour', seconds: 3600 },
+                                         { label: 'minute', seconds: 60 },
+                                         { label: 'second', seconds: 1 },
+                                       ];
+
+                                       for (const interval of intervals) {
+                                         const count = Math.floor(diff / interval.seconds);
+                                         if (count >= 1) {
+                                           return `${count} ${interval.label}${count !== 1 ? 's' : ''}`;
+                                         }
+                                       }
+
+                                       return 'just now';
+                                     }
+                                   }"
+                                   x-init="
+                                         // Remove the ' CEST' part
+                                         clean = rawTime.replace(/ [A-Z]{3,}$/, '');
+                                         time = new Date(clean);
+                                         diffText = getTimeAgo();
+                                         setInterval(function() {diffText = getTimeAgo();}, 60000);
+                                       "
+                                   x-text="diffText"
+                                ></p>
+                            </td>
+                            <td x-data class="px-6">
+                                <button @click="admin.deleteRunner(runner.Hostname).then(() => window.location.reload())"
+                                   class="text-5 hover:text-1 items-center justify-center"
+                                   type="button"
+                                   title="Delete Runner">
+                                   <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                    </template>
+                    <template x-for="runner in runners" :key="runner.Hostname">
+                        <tr x-show="runnersOpen[runner.Hostname]">
+                            <td></td>
+                            <td colspan="5" class="text-sm">
+                                <div>
+                                    <p><strong>Some information:</strong> <span>Information to be added (e.g. a list of currently running jobs)</span></p>
+                                    <!--<p><strong>Draining:</strong> <span x-text="runner.Draining"></span></p>
+                                    <p><strong>Job Count:</strong> <span x-text="runner.JobCount"></span></p>-->
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <!-- Just for initializing things div-->
+            <template x-init="admin.liveRunnerUpdateListener.init()"></template>
+            <template x-init="admin.periodicAskForAliveStatus()"></template>
+        </div>
+    </div>
+{{end}}

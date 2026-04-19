@@ -33,6 +33,11 @@
                             class="bg-indigo-500 rounded px-2 py-0 font-semibold">
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
+                        <span class="rounded-sm bg-red-500 text-red-200 block p-4">
+                            Self-Streaming is an experimental feature. By using it, you acknowledge, that a local
+                            copy during the stream is <b>absolutely necessary</b> to ensure the availability of the
+                            lecture in case something fails during processing of your stream.
+                        </span>
                         <span class="font-semibold">Stream Server:</span>
                         <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"
@@ -135,7 +140,8 @@
                 </div>
                 <div x-show="lectureData.isLiveNow"
                      class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
-                    Live
+                    <i title="This lecture is hidden" x-show="lectureData.private" class="fas fa-eye-slash mr-2"></i>
+                    <span> Live </span>
                 </div>
                 <div x-show="!lectureData.isRecording && lectureData.isPast"
                      class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
@@ -143,7 +149,8 @@
                 </div>
                 <div x-show="!lectureData.isPast && !lectureData.isLiveNow && !lectureData.isRecording"
                      class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
-                    Scheduled
+                    <i title="This lecture is hidden" x-show="lectureData.private" class="fas fa-eye-slash mr-2"></i>
+                    <span> Scheduled</span>
                 </div>
                 <div x-data="{ moreDropdownOpen: false,
                                toggleMoreDropdown() {
@@ -223,7 +230,7 @@
             </div>
         </div>
 
-        <button x-show="uiEditMode == 0 && !isCopying"
+        <button x-show="uiEditMode == 0 && !lecture.isCopying"
                 @click="startSingleEdit(); closeMoreDropdown();"
                 class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-b">
             <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>

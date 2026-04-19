@@ -11,17 +11,19 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
+
+	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/bot"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 )
 
 const (
@@ -99,16 +101,15 @@ type liveStreamDto struct {
 
 func (r streamRoutes) getThumbs(c *gin.Context) {
 	ctx, exists := c.Get("TUMLiveContext")
-	tumLiveContext := ctx.(tools.TUMLiveContext)
-
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
 		})
 		return
 	}
+	tumLiveContext := ctx.(tools.TUMLiveContext)
 	file, err := r.GetFileById(c.Param("fid"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -267,7 +268,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 
 	var alert alertMessage
 	if err := c.ShouldBindJSON(&alert); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -278,7 +279,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	// Get lecture hall of the stream that has issues.
 	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not get lecturehall by id", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get lecturehall by id",
@@ -290,7 +291,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	// Get course of the stream that has issues.
 	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not get course by id", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get course by id",
@@ -328,7 +329,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 
 	// Set messaging strategy as specified in strategy pattern
 	if err = alertBot.SendAlert(botInfo, r.StatisticsDao); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not send bot alert", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not send bot alert",
@@ -625,15 +626,13 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 			Err:           err,
 		})
 		return
-	} else {
-		go func() {
-			err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
-			if err != nil {
-				logger.Error("failed to generate video section images", "err", err)
-			}
-		}()
 	}
-
+	go func() {
+		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
+		if err != nil {
+			logger.Error("failed to generate video section images", "err", err)
+		}
+	}()
 	c.Status(http.StatusAccepted)
 }
 
@@ -771,7 +770,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	var request subtitleRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -790,14 +789,15 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 		return
 	}
 
-	playlist := ""
-	if stream.PlaylistUrl != "" {
+	var playlist string
+	switch {
+	case stream.PlaylistUrl != "":
 		playlist = stream.PlaylistUrl
-	} else if stream.PlaylistUrlCAM != "" {
-		playlist = stream.PlaylistUrlCAM
-	} else if stream.PlaylistUrlPRES != "" {
+	case stream.PlaylistUrlPRES != "":
 		playlist = stream.PlaylistUrlPRES
-	} else {
+	case stream.PlaylistUrlCAM != "":
+		playlist = stream.PlaylistUrlCAM
+	default:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "no playlist found",
@@ -808,7 +808,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	// request to voice-service for subtitles
 	client, err := GetSubtitleGeneratorClient()
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("could not connect to voice-service", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not connect to voice-service",
@@ -818,13 +818,16 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	}
 	defer client.CloseConn()
 
-	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
+	outCtx := context.Background()
+	if tools.Cfg.VoiceService.AuthToken != "" {
+		outCtx = metadata.AppendToOutgoingContext(outCtx, "auth", tools.Cfg.VoiceService.AuthToken)
+	}
+	_, err = client.Generate(outCtx, &pb.GenerateRequest{
 		StreamId:   int32(stream.ID),
 		SourceFile: playlist,
 		Language:   request.Language,
 	})
 	if err != nil {
-		sentry.CaptureException(err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not call generate on voice_client",

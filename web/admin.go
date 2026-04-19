@@ -7,21 +7,22 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // AdminPage serves all administration pages. todo: refactor into multiple methods
 func (r mainRoutes) AdminPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -39,7 +40,11 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	workers, err := r.WorkerDao.GetAllWorkers()
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("could not get workers", "err", err)
+	}
+	runners, err := r.RunnerDao.GetAll(c)
+	if err != nil {
+		logger.Error("could not get runners", "err", err)
 	}
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
@@ -73,7 +78,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		streams, err := r.StreamsDao.GetAllStreams()
 		if err != nil {
 			logger.Error("Can't get all streams", "err", err)
-			sentry.CaptureException(err)
 			streams = []model.Stream{}
 		}
 		indexData.TUMLiveContext.Course = &model.Course{
@@ -99,6 +103,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			LectureHalls:        lectureHalls,
 			Page:                page,
 			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
+			Runners:             RunnersData{Runners: runners, RunnersJson: toJson(runners)},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
@@ -125,6 +130,8 @@ func GetPageString(s string) string {
 		return "createLectureHalls"
 	case "/admin/workers":
 		return "workers"
+	case "/admin/runners":
+		return "runners"
 	case "/admin/create-course":
 		return "createCourse"
 	case "/admin/course-import":
@@ -153,6 +160,30 @@ type WorkersData struct {
 	Token   string
 }
 
+type RunnersData struct {
+	Runners     []model.Runner
+	RunnersJson string
+}
+
+func toJson(runners []model.Runner) string {
+	type runnerData struct {
+		model.Runner
+		Alive bool `json:"Alive"`
+	}
+	runnersData := make([]runnerData, len(runners))
+	for i, runner := range runners {
+		runnersData[i] = runnerData{
+			Runner: runner,
+			Alive:  runner.Alive(),
+		}
+	}
+	ret, err := json.Marshal(runnersData)
+	if err != nil {
+		return ""
+	}
+	return string(ret)
+}
+
 type TokensData struct {
 	Tokens       []dao.AllTokensDto
 	RtmpProxyURL string
@@ -162,7 +193,7 @@ type TokensData struct {
 func (r mainRoutes) LectureCutPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -175,7 +206,7 @@ func (r mainRoutes) LectureCutPage(c *gin.Context) {
 func (r mainRoutes) LectureUnitsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -187,14 +218,14 @@ func (r mainRoutes) LectureUnitsPage(c *gin.Context) {
 		Lecture:   *tumLiveContext.Stream,
 		Units:     tumLiveContext.Stream.Units,
 	}); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not execute template", "err", err)
 	}
 }
 
 func (r mainRoutes) LectureStatsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -205,14 +236,53 @@ func (r mainRoutes) LectureStatsPage(c *gin.Context) {
 		IndexData: indexData,
 		Lecture:   *tumLiveContext.Stream,
 	}); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not execute template", "err", err)
+	}
+}
+
+func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		logger.Error("context should exist but doesn't")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	indexData := NewIndexData()
+	indexData.TUMLiveContext = tumLiveContext
+	stream := tumLiveContext.Stream
+
+	if stream == nil {
+		tools.RenderErrorPage(c, http.StatusNotFound, "Lecture not found")
+		return
+	}
+
+	if !stream.LiveNow {
+		tools.RenderErrorPage(c, http.StatusNotFound, "Lecture is not live")
+		return
+	}
+
+	if c.Query("restart") == "1" {
+		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
+		return
+	}
+
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-live-management.gohtml", LiveLectureManagementData{
+		IndexData: indexData,
+		Lecture:   *tumLiveContext.Stream,
+		ChatData: ChatData{
+			IsAdminOfCourse: tumLiveContext.UserIsAdmin(),
+			IndexData:       indexData,
+		},
+	}); err != nil {
+		logger.Error("can not execute template", "err", err)
 	}
 }
 
 func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -241,7 +311,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -296,7 +366,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 func (r mainRoutes) UpdateCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -341,6 +411,7 @@ type AdminPageData struct {
 	LectureHalls        []model.LectureHall
 	Page                string
 	Workers             WorkersData
+	Runners             RunnersData
 	Semesters           []model.Semester
 	CurY                int
 	CurT                string
@@ -389,4 +460,10 @@ type LectureUnitsPageData struct {
 type LectureStatsPageData struct {
 	IndexData IndexData
 	Lecture   model.Stream
+}
+
+type LiveLectureManagementData struct {
+	IndexData IndexData
+	Lecture   model.Stream
+	ChatData  ChatData
 }

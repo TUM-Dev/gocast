@@ -1,11 +1,12 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=bookmark.go -destination ../mock_dao/bookmark.go
+//go:generate go tool mockgen -source=bookmark.go -destination ../mock_dao/bookmark.go
 
 type BookmarkDao interface {
 	Add(*model.Bookmark) error

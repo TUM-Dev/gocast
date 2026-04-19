@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/TUM-Dev/gocast/model"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=users.go -destination ../mock_dao/users.go
+//go:generate go tool mockgen -source=users.go -destination ../mock_dao/users.go
 
 type UsersDao interface {
 	AreUsersEmpty(ctx context.Context) (isEmpty bool, err error)
@@ -156,9 +157,8 @@ func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) erro
 	defer Cache.Clear()
 	if pin {
 		return DB.Model(&user).Association("PinnedCourses").Append(&course)
-	} else {
-		return DB.Model(&user).Association("PinnedCourses").Delete(&course)
 	}
+	return DB.Model(&user).Association("PinnedCourses").Delete(&course)
 }
 
 func (d usersDao) UpsertUser(user *model.User) error {
@@ -191,13 +191,16 @@ func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 	// create empty users for ids that are not yet registered:
 	stubUsers := make([]model.User, len(matrNr))
 	for i, id := range matrNr {
-		stubUsers[i] = model.User{MatriculationNumber: id, Role: model.StudentType}
+		stubUsers[i] = model.User{MatriculationNumber: id, Name: "Unbekannt", Role: model.StudentType}
 	}
-	DB.Model(&model.User{}).Clauses(clause.OnConflict{DoNothing: true}).Create(&stubUsers)
+	err := DB.Model(&model.User{}).Clauses(clause.OnConflict{DoNothing: true}).Create(&stubUsers).Error
+	if err != nil {
+		return err
+	}
 
 	// find users for current course:
 	var foundUsersIDs []courseUsers
-	err := DB.Model(&model.User{}).Where("matriculation_number in ?", matrNr).Select("? as course_id, id as user_id", courseID).Scan(&foundUsersIDs).Error
+	err = DB.Model(&model.User{}).Where("matriculation_number in ?", matrNr).Select("? as course_id, id as user_id", courseID).Scan(&foundUsersIDs).Error
 	if err != nil {
 		return err
 	}

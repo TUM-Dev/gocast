@@ -1,11 +1,12 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=notifications.go -destination ../mock_dao/notifications.go
+//go:generate go tool mockgen -source=notifications.go -destination ../mock_dao/notifications.go
 
 type NotificationsDao interface {
 	AddNotification(notification *model.Notification) error

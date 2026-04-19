@@ -41,6 +41,7 @@ func request_API_HealthCheck_0(ctx context.Context, marshaler runtime.Marshaler,
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.HealthCheck(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -59,6 +60,7 @@ func request_API_GetUser_0(ctx context.Context, marshaler runtime.Marshaler, cli
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetUser(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -125,6 +127,7 @@ func request_API_ExportPersonalData_0(ctx context.Context, marshaler runtime.Mar
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.ExportPersonalData(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -143,6 +146,7 @@ func request_API_GetSemesters_0(ctx context.Context, marshaler runtime.Marshaler
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetSemesters(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -163,6 +167,7 @@ func request_API_GetPublicCourses_0(ctx context.Context, marshaler runtime.Marsh
 		protoReq GetPublicCoursesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -196,6 +201,7 @@ func request_API_GetCourseBySlug_0(ctx context.Context, marshaler runtime.Marsha
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["slug"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
@@ -245,6 +251,7 @@ func request_API_GetUserCourses_0(ctx context.Context, marshaler runtime.Marshal
 		protoReq GetUserCoursesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -275,6 +282,7 @@ func request_API_GetPinnedCourses_0(ctx context.Context, marshaler runtime.Marsh
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetPinnedCourses(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -293,6 +301,7 @@ func request_API_GetLiveCourses_0(ctx context.Context, marshaler runtime.Marshal
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetLiveCourses(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -312,6 +321,7 @@ func request_API_GetPinForCourse_0(ctx context.Context, marshaler runtime.Marsha
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["course_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "course_id")
@@ -390,7 +400,16 @@ func request_API_GetStream_0(ctx context.Context, marshaler runtime.Marshaler, c
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	io.Copy(io.Discard, req.Body)
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -408,7 +427,15 @@ func local_request_API_GetStream_0(ctx context.Context, marshaler runtime.Marsha
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -426,7 +453,16 @@ func request_API_GetVideoSections_0(ctx context.Context, marshaler runtime.Marsh
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	io.Copy(io.Discard, req.Body)
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -444,7 +480,15 @@ func local_request_API_GetVideoSections_0(ctx context.Context, marshaler runtime
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -462,7 +506,16 @@ func request_API_GetStreamPlaylist_0(ctx context.Context, marshaler runtime.Mars
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	io.Copy(io.Discard, req.Body)
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -480,7 +533,15 @@ func local_request_API_GetStreamPlaylist_0(ctx context.Context, marshaler runtim
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -498,7 +559,16 @@ func request_API_GetSubtitles_0(ctx context.Context, marshaler runtime.Marshaler
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	io.Copy(io.Discard, req.Body)
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -524,7 +594,15 @@ func local_request_API_GetSubtitles_0(ctx context.Context, marshaler runtime.Mar
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -544,7 +622,7 @@ func local_request_API_GetSubtitles_0(ctx context.Context, marshaler runtime.Mar
 	return msg, metadata, err
 }
 
-var filter_API_GetThumbs_0 = &utilities.DoubleArray{Encoding: map[string]int{"stream_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+var filter_API_GetThumbs_0 = &utilities.DoubleArray{Encoding: map[string]int{"slug": 0, "stream_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_API_GetThumbs_0(ctx context.Context, marshaler runtime.Marshaler, client APIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -552,7 +630,16 @@ func request_API_GetThumbs_0(ctx context.Context, marshaler runtime.Marshaler, c
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	io.Copy(io.Discard, req.Body)
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -576,7 +663,15 @@ func local_request_API_GetThumbs_0(ctx context.Context, marshaler runtime.Marsha
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["stream_id"]
+	val, ok := pathParams["slug"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "slug")
+	}
+	protoReq.Slug, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "slug", err)
+	}
+	val, ok = pathParams["stream_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
 	}
@@ -601,6 +696,7 @@ func request_API_GetProgressBatch_0(ctx context.Context, marshaler runtime.Marsh
 		protoReq GetProgressBatchRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -675,6 +771,7 @@ func request_API_AddBookmark_0(ctx context.Context, marshaler runtime.Marshaler,
 		protoReq AddBookmarkRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -707,6 +804,7 @@ func request_API_GetBookmarks_0(ctx context.Context, marshaler runtime.Marshaler
 		protoReq GetBookmarksRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -740,6 +838,7 @@ func request_API_UpdateBookmark_0(ctx context.Context, marshaler runtime.Marshal
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["bookmark_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "bookmark_id")
@@ -788,6 +887,7 @@ func request_API_DeleteBookmark_0(ctx context.Context, marshaler runtime.Marshal
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["bookmark_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "bookmark_id")
@@ -823,6 +923,7 @@ func request_API_GetNotifications_0(ctx context.Context, marshaler runtime.Marsh
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetNotifications(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -841,6 +942,7 @@ func request_API_GetServerNotifications_0(ctx context.Context, marshaler runtime
 		protoReq emptypb.Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetServerNotifications(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -1126,7 +1228,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetStream", runtime.WithHTTPPathPattern("/streams/{stream_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetStream", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1146,7 +1248,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetVideoSections", runtime.WithHTTPPathPattern("/streams/{stream_id}/sections"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetVideoSections", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/sections"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1166,7 +1268,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetStreamPlaylist", runtime.WithHTTPPathPattern("/streams/{stream_id}/playlist"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetStreamPlaylist", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/playlist"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1186,7 +1288,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetSubtitles", runtime.WithHTTPPathPattern("/streams/{stream_id}/subtitles/{lang}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetSubtitles", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/subtitles/{lang}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1206,7 +1308,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetThumbs", runtime.WithHTTPPathPattern("/streams/{stream_id}/thumbs"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.API/GetThumbs", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/thumbs"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1645,7 +1747,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetStream", runtime.WithHTTPPathPattern("/streams/{stream_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetStream", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1662,7 +1764,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetVideoSections", runtime.WithHTTPPathPattern("/streams/{stream_id}/sections"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetVideoSections", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/sections"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1679,7 +1781,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetStreamPlaylist", runtime.WithHTTPPathPattern("/streams/{stream_id}/playlist"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetStreamPlaylist", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/playlist"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1696,7 +1798,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetSubtitles", runtime.WithHTTPPathPattern("/streams/{stream_id}/subtitles/{lang}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetSubtitles", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/subtitles/{lang}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1713,7 +1815,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetThumbs", runtime.WithHTTPPathPattern("/streams/{stream_id}/thumbs"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.API/GetThumbs", runtime.WithHTTPPathPattern("/streams/{slug}/{stream_id}/thumbs"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1879,11 +1981,11 @@ var (
 	pattern_API_GetLiveCourses_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "live"}, ""))
 	pattern_API_GetPinForCourse_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "pin"}, ""))
 	pattern_API_PinCourse_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "pin"}, ""))
-	pattern_API_GetStream_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"streams", "stream_id"}, ""))
-	pattern_API_GetVideoSections_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"streams", "stream_id", "sections"}, ""))
-	pattern_API_GetStreamPlaylist_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"streams", "stream_id", "playlist"}, ""))
-	pattern_API_GetSubtitles_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"streams", "stream_id", "subtitles", "lang"}, ""))
-	pattern_API_GetThumbs_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"streams", "stream_id", "thumbs"}, ""))
+	pattern_API_GetStream_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2}, []string{"streams", "slug", "stream_id"}, ""))
+	pattern_API_GetVideoSections_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"streams", "slug", "stream_id", "sections"}, ""))
+	pattern_API_GetStreamPlaylist_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"streams", "slug", "stream_id", "playlist"}, ""))
+	pattern_API_GetSubtitles_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"streams", "slug", "stream_id", "subtitles", "lang"}, ""))
+	pattern_API_GetThumbs_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"streams", "slug", "stream_id", "thumbs"}, ""))
 	pattern_API_GetProgressBatch_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"progress"}, ""))
 	pattern_API_UpdateProgress_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"progress", "stream_id"}, ""))
 	pattern_API_AddBookmark_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"bookmarks"}, ""))

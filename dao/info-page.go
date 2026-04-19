@@ -1,11 +1,12 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=info-page.go -destination ../mock_dao/info-page.go
+//go:generate go tool mockgen -source=info-page.go -destination ../mock_dao/info-page.go
 
 type InfoPageDao interface {
 	New(*model.InfoPage) error

@@ -1,11 +1,12 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=video-section.go -destination ../mock_dao/video-section.go
+//go:generate go tool mockgen -source=video-section.go -destination ../mock_dao/video-section.go
 
 type VideoSectionDao interface {
 	Create([]model.VideoSection) error

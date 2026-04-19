@@ -1,16 +1,15 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 )
 
 func configGinDownloadRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -30,7 +29,7 @@ var dlErr = tools.RequestError{
 func (r downloadRoutes) download(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
@@ -87,12 +86,12 @@ func (r downloadRoutes) download(c *gin.Context) {
 			_ = c.Error(dlErr)
 			return
 		}
-		if course.Visibility == "loggedin" || course.Visibility == "enrolled" {
+		if course.IsLoggedIn() || course.IsEnrolled() {
 			if tumLiveContext.User == nil {
 				_ = c.Error(dlErr)
 				return
 			}
-			if course.Visibility == "enrolled" {
+			if course.IsEnrolled() {
 				if !tumLiveContext.User.IsEligibleToWatchCourse(course) {
 					_ = c.Error(dlErr)
 					return
@@ -115,7 +114,7 @@ func sendImageContent(c *gin.Context, file model.File) {
 }
 
 func sendDownloadFile(c *gin.Context, file model.File, tumLiveContext tools.TUMLiveContext) {
-	var uid uint = 0
+	var uid uint
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
 	}
@@ -129,7 +128,9 @@ func sendDownloadFile(c *gin.Context, file model.File, tumLiveContext tools.TUML
 		})
 		return
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	stat, err := f.Stat()
 	if err != nil {
 		_ = c.Error(tools.RequestError{

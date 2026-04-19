@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine3.18 as builder
+FROM golang:1.26 as builder
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/worker
 COPY . .
@@ -10,7 +10,7 @@ ARG version=dev
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '-static' -X main.VersionTag=${version}" -o /worker *.go &&\
     chmod +x /worker
 
-FROM alpine:3.18
+FROM alpine:3.23
 COPY --from=builder /worker /worker
 
 RUN apk add --no-cache ffmpeg

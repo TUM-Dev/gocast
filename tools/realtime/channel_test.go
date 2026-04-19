@@ -19,7 +19,7 @@ func TestChannelPathMatch(t *testing.T) {
 			t.Errorf("channel.PathMatches(%s) = (false, [...]), want (true, [...])", pathString)
 		}
 
-		pathString = pathString + "2"
+		pathString += "2"
 		if match, _ := channel.PathMatches(pathString); match {
 			t.Errorf("channel.PathMatches(%s) = (true, [...]), want (false, [...])", pathString)
 		}

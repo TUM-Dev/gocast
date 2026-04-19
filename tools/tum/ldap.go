@@ -4,12 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
+
+	"github.com/go-ldap/ldap/v3"
 
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
-	"github.com/go-ldap/ldap/v3"
 )
 
 var ErrLdapBadAuth = errors.New("login failed")
@@ -25,12 +24,13 @@ type LdapResp struct {
 func LoginWithTumCredentials(username string, password string) (*LdapResp, error) {
 	// sanitize possibly malicious username
 	username = ldap.EscapeFilter(username)
-	defer sentry.Flush(time.Second * 2)
 	l, err := ldap.DialURL(tools.Cfg.Ldap.URL)
 	if err != nil {
 		return nil, err
 	}
-	defer l.Close()
+	defer func() {
+		_ = l.Close()
+	}()
 
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)
@@ -97,12 +97,13 @@ func LoginWithTumCredentials(username string, password string) (*LdapResp, error
 
 func FindUserWithEmail(email string) (*model.User, error) {
 	username := ldap.EscapeFilter(email)
-	defer sentry.Flush(time.Second * 2)
 	l, err := ldap.DialURL(tools.Cfg.Ldap.URL)
 	if err != nil {
 		return nil, err
 	}
-	defer l.Close()
+	defer func() {
+		_ = l.Close()
+	}()
 
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)

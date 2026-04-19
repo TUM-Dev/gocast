@@ -6,7 +6,7 @@
 TUMs lecture streaming service, currently serving up to 100 courses every semester with up to 2000 active students.
 
 Features include:
-- Automatic lecture scheduling and access management coupled with [CAMPUSOnline](https://www.tugraz.at/tu-graz/organisationsstruktur/serviceeinrichtungen-und-stabsstellen/campusonline/)
+- Automatic lecture scheduling and access management coupled with [CAMPUSOnline](https://www.campusonline.tugraz.at)
 - Livestreaming from lecture halls
   - Support for Extron SMPs and automatic backup recordings on them.
   - Support for preset management on ip cameras
@@ -73,7 +73,7 @@ docker run --detach \
   --env MARIADB_ROOT_PASSWORD=example \
   --restart always \
   -p 3306:3306 \
-  --volume "$(pwd)"/docs/static/tum-live-starter.sql:/init.sql \
+  --volume "$(pwd)"/tum-live-starter.sql:/init.sql \
   mariadb:latest --init-file /init.sql
 ```
 - Alternatively, install mariadb on its own.
@@ -83,7 +83,7 @@ docker run --detach \
 
 ### Install go
 
-- Install **go >=1.21** by following the steps [here](https://go.dev/doc/install)
+- Install **go >=1.26** by following the steps [here](https://go.dev/doc/install)
 - Preferably use [JetBrains GoLand](https://youtu.be/vetAfxQxyJE) and open this project as it simplifies this entire process
 - Go to File -> Settings -> Go -> Go Modules and enable go modules integration.
 - Run `npm i` in the `./web` directory to install the required node modules

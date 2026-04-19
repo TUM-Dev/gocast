@@ -3,10 +3,11 @@ package apiv2
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // GetSemesters retrieves all available semesters and the current semester.

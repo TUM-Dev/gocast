@@ -2,7 +2,6 @@ package api
 
 import (
 	"embed"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,15 +9,22 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/camera"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 )
 
-func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, utility tools.PresetUtility) {
-	routes := lectureHallRoutes{daoWrapper, utility}
+var camSwitchDelay = time.Second * 5
+
+func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, camService CamService, presetImageDir string) {
+	routes := lectureHallRoutes{
+		DaoWrapper:     daoWrapper,
+		cameraService:  camService,
+		presetImageDir: presetImageDir,
+	}
 
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
@@ -41,17 +47,24 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	router.GET("/api/schedule.ics", routes.lectureHallIcal)
 }
 
+type CamService interface {
+	For(address string, cameraType model.CameraType) (camera.Cam, error)
+}
+
 type lectureHallRoutes struct {
 	dao.DaoWrapper
-	presetUtility tools.PresetUtility
+
+	presetImageDir string
+	cameraService  CamService
 }
 
 type updateLectureHallReq struct {
-	CamIp     string `json:"camIp"`
-	CombIp    string `json:"combIp"`
-	PresIP    string `json:"presIp"`
-	CameraIp  string `json:"cameraIp"`
-	PwrCtrlIp string `json:"pwrCtrlIp"`
+	StreamProtocol int    `json:"streamProtocol"`
+	CamIp          string `json:"camIp"`
+	CombIp         string `json:"combIp"`
+	PresIP         string `json:"presIp"`
+	CameraIp       string `json:"cameraIp"`
+	PwrCtrlIp      string `json:"pwrCtrlIp"`
 }
 
 func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
@@ -84,6 +97,8 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 		})
 		return
 	}
+	lectureHall.StreamProtocol = model.StreamProtocol(req.StreamProtocol)
+	logger.Debug("New stream protocol", "protocol", lectureHall.StreamProtocol)
 	lectureHall.CamIP = req.CamIp
 	lectureHall.CombIP = req.CombIp
 	lectureHall.PresIP = req.PresIP
@@ -189,7 +204,14 @@ func (r lectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
 		})
 		return
 	}
-	r.presetUtility.FetchLHPresets(lh)
+	err = r.fetchLHPresets(lh)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not fetch lecture hall presets",
+			Err:           err,
+		})
+	}
 }
 
 //go:embed template
@@ -203,7 +225,7 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
@@ -267,8 +289,37 @@ func (r lectureHallRoutes) switchPreset(c *gin.Context) {
 		})
 		return
 	}
-	r.presetUtility.UsePreset(preset)
-	time.Sleep(time.Second * 10)
+	lh, err := r.LectureHallsDao.GetLectureHallByID(preset.LectureHallID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find lecture hall",
+		})
+		return
+	}
+
+	ctrl, err := r.cameraService.For(lh.CameraIP, lh.CameraType)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not provide camera",
+			Err:           err,
+		})
+		return
+	}
+	err = ctrl.SetPreset(preset.PresetID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not set preset on camera",
+			Err:           err,
+		})
+		return
+	}
+	select {
+	case <-time.After(camSwitchDelay):
+	case <-c.Request.Context().Done():
+	}
 }
 
 func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
@@ -279,18 +330,57 @@ func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 			CustomMessage: "can not find preset",
 			Err:           err,
 		})
-		sentry.CaptureException(err)
 		return
 	}
-	r.presetUtility.TakeSnapshot(preset)
-	preset, err = r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	lh, err := r.LectureHallsDao.GetLectureHallByID(preset.LectureHallID)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
-			CustomMessage: "can not find preset",
+			CustomMessage: "can not find lecture hall",
 			Err:           err,
 		})
-		sentry.CaptureException(err)
+		return
+	}
+	ctrl, err := r.cameraService.For(lh.CameraIP, lh.CameraType)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not provide camera",
+			Err:           err,
+		})
+		return
+	}
+	err = ctrl.SetPreset(preset.PresetID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not set preset on camera",
+			Err:           err,
+		})
+		return
+	}
+	select {
+	case <-c.Request.Context().Done():
+		return
+	case <-time.After(camSwitchDelay):
+	}
+	snapshot, err := ctrl.TakeSnapshot(r.presetImageDir)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not take snapshot",
+			Err:           err,
+		})
+		return
+	}
+	preset.Image = snapshot
+	err = r.LectureHallsDao.SavePreset(preset)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not save snapshot",
+			Err:           err,
+		})
 		return
 	}
 	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
@@ -357,6 +447,7 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 	var req createLectureHallRequest
 	err := c.BindJSON(&req)
 	if err != nil {
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -365,22 +456,38 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 		return
 	}
 	r.LectureHallsDao.CreateLectureHall(model.LectureHall{
-		Name:      req.Name,
-		CombIP:    req.CombIP,
-		PresIP:    req.PresIP,
-		CamIP:     req.CamIP,
-		CameraIP:  req.CameraIP,
-		PwrCtrlIp: req.PwrCtrlIP,
+		Name:           req.Name,
+		StreamProtocol: model.StreamProtocol(req.StreamProtocol),
+		CombIP:         req.CombIP,
+		PresIP:         req.PresIP,
+		CamIP:          req.CamIP,
+		CameraIP:       req.CameraIP,
+		PwrCtrlIp:      req.PwrCtrlIP,
 	})
 }
 
+func (r lectureHallRoutes) fetchLHPresets(lh model.LectureHall) error {
+	cam, err := r.cameraService.For(lh.CameraIP, lh.CameraType)
+	if err != nil {
+		return err
+	}
+	presets, err := cam.GetPresets()
+	if err != nil {
+		return err
+	}
+	lh.CameraPresets = presets
+	r.LectureHallsDao.SaveLectureHallFullAssoc(lh)
+	return nil
+}
+
 type createLectureHallRequest struct {
-	Name      string `json:"name"`
-	CombIP    string `json:"combIP"`
-	PresIP    string `json:"presIP"`
-	CamIP     string `json:"camIP"`
-	CameraIP  string `json:"cameraIP"`
-	PwrCtrlIP string `json:"pwrCtrlIp"`
+	Name           string `json:"name"`
+	StreamProtocol int    `json:"streamProtocol"` // 1 = rtmp, 2 = srt
+	CombIP         string `json:"combIP"`
+	PresIP         string `json:"presIP"`
+	CamIP          string `json:"camIP"`
+	CameraIP       string `json:"cameraIP"`
+	PwrCtrlIP      string `json:"pwrCtrlIp"`
 }
 
 type setLectureHallRequest struct {

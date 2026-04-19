@@ -1,18 +1,17 @@
 package web
 
 import (
-	"errors"
 	"net/http"
 
-	"github.com/TUM-Dev/gocast/tools"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func (r mainRoutes) PopOutChat(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

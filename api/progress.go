@@ -9,10 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )

@@ -8,12 +8,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/getsentry/sentry-go"
-
 	"github.com/Masterminds/sprig/v3"
+	"github.com/gin-gonic/gin"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -120,6 +119,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/lectureHalls", routes.AdminPage)
 	adminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
 	adminGroup.GET("/admin/workers", routes.AdminPage)
+	adminGroup.GET("/admin/runners", routes.AdminPage)
 	adminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	adminGroup.GET("/admin/server-stats", routes.AdminPage)
 	adminGroup.GET("/admin/course-import", routes.AdminPage)
@@ -141,6 +141,7 @@ func configMainRoute(router *gin.Engine) {
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
 	withStream.GET("/admin/stats/:courseID/:streamID", routes.LectureStatsPage)
+	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
@@ -186,10 +187,6 @@ type mainRoutes struct {
 }
 
 func (r mainRoutes) home(c *gin.Context) {
-	tName := sentry.WithTransactionSource("GET /")
-	spanMain := sentry.StartSpan(c.Request.Context(), "HomePageHandler", tName)
-	defer spanMain.Finish()
-
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
 		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
@@ -277,11 +274,10 @@ func getFileHandler(file staticFile) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			c.File(pathToFile)
 		}
-	} else {
-		// Use Default with embedded FS
-		// p := file.Path // Copy bc. file is pointer
-		return func(c *gin.Context) {
-			c.FileFromFS(file.Path, http.FS(staticFS))
-		}
+	}
+	// Use Default with embedded FS
+	// p := file.Path // Copy bc. file is pointer
+	return func(c *gin.Context) {
+		c.FileFromFS(file.Path, http.FS(staticFS))
 	}
 }

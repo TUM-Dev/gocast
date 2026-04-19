@@ -8,9 +8,10 @@ import (
 
 	"github.com/TUM-Dev/gocast/model"
 
-	"github.com/TUM-Dev/gocast/dao"
 	"github.com/asticode/go-astisub"
 	"github.com/meilisearch/meilisearch-go"
+
+	"github.com/TUM-Dev/gocast/dao"
 )
 
 type MeiliStream struct {
@@ -44,7 +45,7 @@ type MeiliCourse struct {
 }
 
 type MeiliExporter struct {
-	c *meilisearch.Client
+	c meilisearch.ServiceManager
 	d dao.DaoWrapper
 }
 

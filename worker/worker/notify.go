@@ -3,12 +3,14 @@ package worker
 import (
 	"context"
 	"fmt"
-	"github.com/TUM-Dev/gocast/worker/cfg"
-	"github.com/TUM-Dev/gocast/worker/pb"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"time"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
+	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
 func closeConnection(conn *grpc.ClientConn) {
@@ -83,7 +85,7 @@ func notifyStreamStart(streamCtx *StreamContext) {
 	resp, err := client.NotifyStreamStarted(ctx, &pb.StreamStarted{
 		WorkerID:   cfg.WorkerID,
 		StreamID:   streamCtx.streamId,
-		HlsUrl:     fmt.Sprintf(streamCtx.outUrl, streamCtx.streamName), // could look like: fmt.Sprintf("https://live.stream.lrz.de/livetum/smil:%s_all.smil/playlist.m3u8?dvr", streamCtx.streamName)
+		HlsUrl:     fmt.Sprintf(streamCtx.outUrl, streamCtx.streamName), // could look like: fmt.Sprintf("https://edge.tum.live/stream/playlist.m3u8", streamCtx.streamName)
 		SourceType: streamCtx.streamVersion,
 	})
 	if err != nil || !resp.Ok {
