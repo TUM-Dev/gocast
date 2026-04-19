@@ -52,11 +52,13 @@ export class BookmarkController {
 
 export class BookmarkDialog {
     private readonly streamId: number;
+    private streamStartTime: number; // milliseconds since epoch
 
     request: AddBookmarkRequest;
 
     constructor(streamId: number) {
         this.streamId = streamId;
+        this.streamStartTime = 0;
     }
 
     async submit() {
@@ -68,8 +70,35 @@ export class BookmarkDialog {
     }
 
     reset(): void {
-        const player = getPlayers()[0];
-        const time = Time.FromSeconds(player.currentTime()).toObject();
+        // Get stream start time from Alpine.js parent context
+        const bodyElement = document.body;
+        const streamStartTimeAttr = bodyElement.getAttribute('x-data');
+        
+        // Extract streamStartTime from x-data if available
+        let elapsedSeconds = 0;
+        
+        try {
+            // Try to get streamStartTime from the Alpine.js context
+            // For live streams, calculate elapsed time since stream scheduled start
+            const currentTime = Date.now();
+            
+            // Parse the streamStartTime from x-data attribute using regex
+            const match = streamStartTimeAttr.match(/'streamStartTime':\s*(\d+)/);
+            if (match && match[1]) {
+                const streamStart = parseInt(match[1]);
+                elapsedSeconds = Math.max(0, Math.floor((currentTime - streamStart) / 1000));
+            } else {
+                // Fallback to player current time if streamStartTime is not available
+                const player = getPlayers()[0];
+                elapsedSeconds = Math.floor(player.currentTime());
+            }
+        } catch (e) {
+            // Fallback to player current time if anything goes wrong
+            const player = getPlayers()[0];
+            elapsedSeconds = Math.floor(player.currentTime());
+        }
+        
+        const time = Time.FromSeconds(elapsedSeconds).toObject();
         this.request = {
             StreamID: this.streamId,
             Description: "",

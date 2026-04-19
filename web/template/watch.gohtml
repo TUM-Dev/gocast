@@ -27,7 +27,7 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false, transcriptAvailable: false}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, 'streamStartTime': new Date('{{$stream.Start.Format \"2006-01-02T15:04:05Z07:00\"}}').valueOf(), seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false, transcriptAvailable: false}"
       x-init="seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="shortcuts-help-modal" class="hidden flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
