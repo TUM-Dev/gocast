@@ -34,8 +34,8 @@ class PlayerSettings {
         const controlBar = this.player.getChild("controlBar");
 
         // Set seek back/forward control text
-        controlBar.children()[0].controlText(`Seek back ${seekingTime} seconds (j)`);
-        controlBar.children()[2].controlText(`Seek forward ${seekingTime} seconds (l)`);
+        (controlBar.children()[0] as any).controlText(`Seek back ${seekingTime} seconds (j)`);
+        (controlBar.children()[2] as any).controlText(`Seek forward ${seekingTime} seconds (l)`);
 
         // Set initial text for play/pause, mute/unmute, fullscreen when the player is ready
         this.updatePlayControlText();
@@ -45,21 +45,21 @@ class PlayerSettings {
 
     // function to update play/pause control text to pause(k) when playing and play(k) else
     updatePlayControlText() {
-        const playToggle = this.player.getChild("controlBar").getChild("PlayToggle");
+        const playToggle = this.player.getChild("controlBar").getChild("PlayToggle") as any;
         const text = !this.player.paused() ? "Pause (k)" : "Play (k)";
         playToggle.controlText(text);
     }
 
     // function to update mute/unmute control text
     updateMuteControlText() {
-        const muteToggle = this.player.getChild("controlBar").getChild("VolumePanel").getChild("MuteToggle");
+        const muteToggle = this.player.getChild("controlBar").getChild("VolumePanel").getChild("MuteToggle") as any;
         const text = this.player.muted() ? "Unmute (m)" : "Mute (m)";
         muteToggle.controlText(text);
     }
 
     // function to update fullscreen/exit fullscreen control text
     updateFullscreenControlText() {
-        const fullscreenToggle = this.player.getChild("controlBar").getChild("FullscreenToggle");
+        const fullscreenToggle = this.player.getChild("controlBar").getChild("FullscreenToggle") as any;
         const text = document.fullscreenElement ? "Exit Fullscreen (f)" : "Fullscreen (f)";
         fullscreenToggle.controlText(text);
     }
