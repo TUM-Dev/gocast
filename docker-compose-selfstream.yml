@@ -20,10 +20,19 @@ services:
       - TZ=Europe/Berlin
     ports:
       - "8081:8081"
+    #extra_hosts:       # Only needed if you use wsl
+    #  - "localhost:host-gateway"
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z localhost 8081 || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s # Gibt dem Dienst Zeit zum Booten
   runner:
     container_name: tum-live-runner
     depends_on:
-      - tum-live
+      tum-live:
+        condition: service_healthy
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build:
       context: runner/
@@ -40,6 +49,8 @@ services:
       - vod:/storage/mass
     ports:
       - "52735:52735"
+    #extra_hosts:      # Only needed if you use wsl
+    #  - "ingest.tum.live:host-gateway"
   ingest:
     container_name: tum-live-ingest
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
@@ -52,7 +63,8 @@ services:
   edge:
     container_name: tum-live-edge
     depends_on:
-      - tum-live
+      tum-live:
+        condition: service_healthy
     build: worker/edge
     environment:
       - VOD_DIR=/vod
