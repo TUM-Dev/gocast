@@ -7,6 +7,7 @@ services:
     container_name: tum-live
     depends_on:
       - db
+      - meili-internal
     build:
       context: .
       dockerfile: Dockerfile-local
@@ -20,8 +21,8 @@ services:
       - TZ=Europe/Berlin
     ports:
       - "8081:8081"
-    #extra_hosts:       # Only needed if you use wsl
-    #  - "localhost:host-gateway"
+    extra_hosts:       # Only needed if you use wsl
+      - "localhost:host-gateway"
     healthcheck:
       test: [ "CMD-SHELL", "nc -z localhost 8081 || exit 1" ]
       interval: 5s
@@ -49,8 +50,8 @@ services:
       - vod:/storage/mass
     ports:
       - "52735:52735"
-    #extra_hosts:      # Only needed if you use wsl
-    #  - "ingest.tum.live:host-gateway"
+    extra_hosts:      # Only needed if you use wsl
+      - "ingest.tum.live:host-gateway"
   ingest:
     container_name: tum-live-ingest
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
@@ -86,6 +87,18 @@ services:
       - ./tum-live-starter.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
+
+  meili-internal:        # Service-Name geändert
+    image: getmeili/meilisearch:latest
+    # KEIN container_name! (Docker generiert einen eindeutigen Namen)
+    ports:
+      - "7700:7700"     # Extern 7701 nutzen, um Konflikt mit 7700 zu vermeiden
+    environment:
+      - MEILI_HTTP_ADDR=0.0.0.0:7700
+      - MEILI_MASTER_KEY=MASTER_KEY
+      - MEILI_NO_ANALYTICS=true
+    volumes:
+      - meili_gocast_data:/meili_data # Eigener Volume-Name
 # Omitted for local development due to size. Comment out to use voice-service
 #  voice-service:
 #    container_name: tum-live-voice-service
@@ -103,3 +116,4 @@ volumes:
   mariadb-data:
   runner_data:
   mass:
+  meili_gocast_data:
