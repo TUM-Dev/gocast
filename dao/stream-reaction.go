@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate mockgen -source=streamReaction.go -destination ../mock_dao/streamReaction.go
