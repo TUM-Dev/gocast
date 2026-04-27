@@ -931,6 +931,7 @@ func (r streamRoutes) changePersonalLectureName(c *gin.Context) {
 		return
 	}
 
+	update.PersonalLectureName = strings.TrimSpace(update.PersonalLectureName)
 	if update.PersonalLectureName == "" {
 		err = r.UserDefinedLectureTitlesDao.Delete(ctx.User.ID, uint(streamId))
 		if err != nil {
