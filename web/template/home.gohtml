@@ -74,7 +74,7 @@
                             <p class="font-semibold">Signed in as</p>
                             <span>@{{$user.Name}}</span>
                         </header>
-                        <nav class="d-grid gap-3 font-light">
+                        <nav class="d-grid gap-3 font-light" x-data="{showPopup: false}">
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
                                    class="tum-live-menu-item">
@@ -115,6 +115,33 @@
                                 </div>
                                 <p>Settings</p>
                             </a>
+                            <div class="tum-live-menu-item" @click="showPopup=true;" style="cursor: pointer;">
+                                <div style="width: 30px; display: flex; justify-content: center; align-items: center;">
+                                    <i class="fa-solid fa-keyboard mr-3"></i>
+                                </div>
+                                <p>Keyboard Shortcuts</p>
+                            </div>
+                            <div x-ref="keyboardShortcutsPopup" x-cloak x-show="showPopup" class="tum-live-popup-container overlay" @keydown.escape.window="showPopup=false;">
+                                <div class="tum-live-popup tum-live-bg" @click.outside="showPopup=false;">
+                                    <h2>Keyboard Shortcuts
+                                        <i class="icon-cancel" @click="showPopup=false;"></i>
+                                    </h2>
+                                    <ul>
+                                        <li><strong>Toggle play/pause</strong> <b> K / k / SPACEBAR</b></li>
+                                        <li><strong>Mute/Unmute</strong><b> M / m</b></li>
+                                        <li><strong>Open/Exit toggle fullscreen</strong><b> F / f</b></li>
+                                        <li><strong>Seek forward</strong><b> L / l / ArrowRight / Right</b></li>
+                                        <li><strong>Seek backwards</strong><b> J / j / ArrowLeft / Left</b></li>
+                                        <li><strong>Volume up</strong><b> ArrowUp / Up</b></li>
+                                        <li><strong>Volume down</strong><b> ArrowDown / Down</b></li>
+                                        <li><strong>Increase playback rate</strong><b> <</b></li>
+                                        <li><strong>Decrease playback rate</strong><b> ></b></li>
+                                        <li><strong>Seek to specific point in the video (7 advances to 70% of duration)</strong><b> 0...9</b></li>
+                                        <li><strong>Skip silence</strong><b> S / s</b></li>
+                                        <li><strong>Close any kind of popup - e.g. popup chat, popup keyboard shortcuts etc.</strong><b> ESCAPE</b></li>
+                                    </ul>
+                                </div>
+                            </div>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="https://github.com/TUM-Dev/gocast"
                                target="_blank"

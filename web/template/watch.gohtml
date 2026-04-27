@@ -27,11 +27,13 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false, transcriptAvailable: false}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false, showShortcuts: false, transcriptAvailable: false}"
       x-init="seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="shortcuts-help-modal" class="hidden flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
+<div x-cloak x-show="showShortcuts"
+     id="shortcuts-help-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
+    <div class="m-auto" @click.outside="showShortcuts = false"
+         x-init="() => { window.addEventListener('keydown', (e) => { if (e.key === 'Escape') showShortcuts = false; }); }">
         {{template "shortcuts"}}
     </div>
 </div>
@@ -522,6 +524,13 @@
                                 class="rounded-lg px-3 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                 title="Share">
                             <i class="fa-solid fa-share text-4"></i>
+                        </button>
+
+                        <!-- Keyboard Shortcuts -->
+                        <button @click="showShortcuts = true;"
+                                class="rounded-lg px-3 py-1 md:px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                title="Keyboard Shortcuts">
+                            <i class="fa-solid fa-keyboard text-4"></i>
                         </button>
 
                         <!-- Actions-->
