@@ -629,6 +629,9 @@ func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingPro
 	}
 }
 
+// isHlsUrlOk checks if the given HLS URL is valid and accessible
+//
+//nolint:unused
 func isHlsUrlOk(url string) bool {
 	r, err := http.Get(url)
 	if err != nil {
