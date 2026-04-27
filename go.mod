@@ -41,6 +41,7 @@ require (
 	github.com/TUM-Dev/gocast/worker v0.0.0-20251102182539-4e087e888c3c
 	github.com/asticode/go-astisub v0.34.0
 	github.com/dgraph-io/ristretto/v2 v2.1.0
+	github.com/getsentry/sentry-go v0.31.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/matthiasreumann/gomino v0.0.2
