@@ -193,7 +193,10 @@ func (r mainRoutes) home(c *gin.Context) {
 		return
 	}
 	if isFresh {
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
+			logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
+		}
 		return
 	}
 
@@ -201,13 +204,15 @@ func (r mainRoutes) home(c *gin.Context) {
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
 		logger.Error("Could not execute template: 'home.gohtml'", "err", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
 	}
 }
 
 func (r mainRoutes) SearchPage(c *gin.Context) {
 	indexData := NewIndexDataWithContext(c)
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "search-page.gohtml", indexData); err != nil {
-		logger.Error("Could not execute template: 'search.gohtml'", "err", err)
+		logger.Error("Could not execute template: 'search-page.gohtml'", "err", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
 	}
 }
 
