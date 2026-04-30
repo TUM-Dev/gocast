@@ -125,7 +125,7 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         const res = await AdminLectureList.uploadAttachmentFile(courseId, lectureId, file);
         const newFile = new LectureFile({
             id: JSON.parse(res.responseText),
-            fileType: 2,
+            fileType: FileType.attachment,
             friendlyName: file.name,
         });
 
@@ -231,5 +231,11 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         listener: PostFormDataListener = {},
     ) {
         await AdminLectureList.uploadVideo(courseId, lectureId, videoType, file, listener);
+    }
+
+    async uploadThumbnail(courseId: number, lectureId: number, file: File) {
+        await AdminLectureList.uploadThumbnailFile(courseId, lectureId, file);
+        await this.getData(courseId, true);
+        await this.triggerUpdate(courseId);
     }
 }

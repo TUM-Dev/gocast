@@ -22,15 +22,17 @@ const (
 	FILETYPE_THUMB_LG_CAM
 	FILETYPE_THUMB_LG_PRES
 	FILETYPE_THUMB_LG_CAM_PRES // generated from CAM and PRES, preferred over the others
+	FILETYPE_THUMB_CUSTOM
 )
 
 type File struct {
 	gorm.Model
 
-	StreamID uint   `gorm:"not null"`
-	Path     string `gorm:"not null"`
-	Filename string
-	Type     FileType `gorm:"not null; default: 1"`
+	StreamID   uint   `gorm:"not null"`
+	Path       string `gorm:"not null"`
+	Filename   string
+	Type       FileType `gorm:"not null; default: 1"`
+	CourseName string   `gorm:"default:null"`
 }
 
 func (f *File) GetDownloadFileName() string {
@@ -68,7 +70,7 @@ func (f *File) GetVodTypeByName() string {
 }
 
 func (f *File) IsThumb() bool {
-	return f.Type == FILETYPE_THUMB_CAM || f.Type == FILETYPE_THUMB_PRES || f.Type == FILETYPE_THUMB_COMB
+	return f.Type == FILETYPE_THUMB_CAM || f.Type == FILETYPE_THUMB_PRES || f.Type == FILETYPE_THUMB_COMB || f.Type == FILETYPE_THUMB_CUSTOM
 }
 
 func (f *File) IsURL() bool {

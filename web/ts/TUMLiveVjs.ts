@@ -12,6 +12,10 @@ import "videojs-contrib-quality-levels";
 
 type Player = ReturnType<typeof videojs>;
 
+interface ControlTextComponent {
+    controlText(text: string): void;
+}
+
 const Button = videojs.getComponent("Button");
 
 const players: Player[] = [];
@@ -29,6 +33,49 @@ class PlayerSettings {
         this.player = player;
         this.isLive = isLive;
         this.isEmbedded = isEmbedded;
+    }
+
+    initControlTexts(seekingTime: number) {
+        const controlBar = this.player.getChild("controlBar");
+
+        // Set seek back/forward control text
+        (controlBar.children()[0] as unknown as ControlTextComponent).controlText(
+            `Seek back ${seekingTime} seconds (j)`,
+        );
+        (controlBar.children()[2] as unknown as ControlTextComponent).controlText(
+            `Seek forward ${seekingTime} seconds (l)`,
+        );
+
+        // Set initial text for play/pause, mute/unmute, fullscreen when the player is ready
+        this.updatePlayControlText();
+        this.updateMuteControlText();
+        this.updateFullscreenControlText();
+    }
+
+    // function to update play/pause control text to pause(k) when playing and play(k) else
+    updatePlayControlText() {
+        const playToggle = this.player.getChild("controlBar").getChild("PlayToggle") as unknown as ControlTextComponent;
+        const text = !this.player.paused() ? "Pause (k)" : "Play (k)";
+        playToggle.controlText(text);
+    }
+
+    // function to update mute/unmute control text
+    updateMuteControlText() {
+        const muteToggle = this.player
+            .getChild("controlBar")
+            .getChild("VolumePanel")
+            .getChild("MuteToggle") as unknown as ControlTextComponent;
+        const text = this.player.muted() ? "Unmute (m)" : "Mute (m)";
+        muteToggle.controlText(text);
+    }
+
+    // function to update fullscreen/exit fullscreen control text
+    updateFullscreenControlText() {
+        const fullscreenToggle = this.player
+            .getChild("controlBar")
+            .getChild("FullscreenToggle") as unknown as ControlTextComponent;
+        const text = document.fullscreenElement ? "Exit Fullscreen (f)" : "Fullscreen (f)";
+        fullscreenToggle.controlText(text);
     }
 
     initTrackbars(streamID: number) {
@@ -243,6 +290,15 @@ export const initPlayer = function (
     player.on("ratechange", function () {
         settings.storeRate();
     });
+    player.on(["play", "pause"], function () {
+        settings.updatePlayControlText();
+    });
+    player.on("volumechange", function () {
+        settings.updateMuteControlText();
+    });
+    player.on("fullscreenchange", function () {
+        settings.updateFullscreenControlText();
+    });
 
     // When catching up to live, resume at normal speed
     (player as any).liveTracker.on("liveedgechange", function (evt) {
@@ -282,6 +338,7 @@ export const initPlayer = function (
         settings.addTimeToolTipClass(spriteID);
         settings.addStartInOverlay(streamStartIn, { ...options });
         settings.addOverlayIcon();
+        settings.initControlTexts(seekingTime);
     });
     const handleHoldMouseDown = (event: MouseEvent) => {
         if (event.button !== 0) return;

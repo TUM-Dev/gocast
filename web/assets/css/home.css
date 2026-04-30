@@ -423,6 +423,34 @@ label:has(~ .tum-live-input) {
     border-bottom: 1px solid black;
 }
 
+.tum-live-popup-container {
+    @apply flex fixed top-0 left-0 w-full h-full items-center justify-center bg-black/50;
+}
+
+.tum-live-popup {
+    @apply p-5 rounded-md w-[70%] max-w-[800px] h-[70%] max-h-[600px] overflow-auto relative;
+}
+
+.tum-live-popup h2 {
+    @apply font-bold text-[1.5em] mb-[15px] justify-between items-center flex;
+}
+
+.tum-live-popup ul {
+    @apply list-none p-0 border-t border-t-gray-300;
+}
+
+.tum-live-popup li {
+    @apply py-2.5 border-b border-b-gray-300;
+}
+
+.tum-live-popup strong {
+    @apply inline-block w-[380px] font-bold mr-5;
+}
+
+.tum-live-popup b {
+    @apply font-bold;
+}
+
 .tum-live-search-result-main {
     @apply flex text-left rounded-lg text-4 text-sm py-1 px-2 mt-1 border border-black dark:border-gray-300 w-full text-black dark:text-gray-300;
     width: 100%;
