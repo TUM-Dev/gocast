@@ -6,8 +6,10 @@ services:
   tum-live:
     container_name: tum-live
     depends_on:
-      - db
-      - meili-internal
+      db:
+        condition: service_started
+      meili-internal:
+        condition: service_healthy
     build:
       context: .
       dockerfile: Dockerfile-local
@@ -27,8 +29,8 @@ services:
       test: [ "CMD-SHELL", "nc -z localhost 8081 || exit 1" ]
       interval: 5s
       timeout: 3s
-      retries: 5
-      start_period: 5s # Gibt dem Dienst Zeit zum Booten
+      retries: 15
+      start_period: 60s # Gibt dem Dienst Zeit zum Booten
   runner:
     container_name: tum-live-runner
     depends_on:
@@ -87,7 +89,36 @@ services:
       - ./tum-live-starter.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
-
+  worker:
+    container_name: tum-live-worker
+    depends_on:
+      runner:
+        condition: service_started
+      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
+    build: worker
+    platform: linux/amd64
+    environment:
+      - Token=abc
+      - Host=worker
+      - MainBase=tum-live
+      - VodURLTemplate=http://localhost:8089/vod/%s.mp4/playlist.m3u8
+      - LrzUploadUrl=http://vod-service:8080
+      - DEBUG-MODE=true
+    volumes:
+      - recordings:/recordings
+      - mass:/mass
+  vod-service:
+    container_name: tum-live-vod-service
+    depends_on:
+      runner:
+        condition: service_started
+    build:
+        context: vod-service
+        dockerfile: Dockerfile-local
+    environment:
+      - OUTPUT_DIR=/vod
+    volumes:
+      - vod:/vod
   meili-internal:        # Service-Name geändert
     image: getmeili/meilisearch:latest
     # KEIN container_name! (Docker generiert einen eindeutigen Namen)
@@ -99,6 +130,12 @@ services:
       - MEILI_NO_ANALYTICS=true
     volumes:
       - meili_gocast_data:/meili_data # Eigener Volume-Name
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1:7700/health || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
 # Omitted for local development due to size. Comment out to use voice-service
 #  voice-service:
 #    container_name: tum-live-voice-service
@@ -117,3 +154,4 @@ volumes:
   runner_data:
   mass:
   meili_gocast_data:
+  recordings:
