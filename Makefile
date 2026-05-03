@@ -44,6 +44,7 @@ test:
 .PHONY: lint
 lint:
 	golangci-lint run
+	cd web; npx eslint ts/
 
 .PHONY: protoVoice
 protoVoice:
