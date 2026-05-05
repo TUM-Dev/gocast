@@ -23,6 +23,7 @@ func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data in
 	t, err := template.New("base").Funcs(sprig.FuncMap()).ParseGlob(e.Patterns[0])
 	if err != nil {
 		logger.Error("Failed to load pattern: '"+e.Patterns[0], "err", err.Error())
+		return err
 	}
 
 	for i := 1; i < len(e.Patterns); i++ {
@@ -30,6 +31,7 @@ func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data in
 		_, err := t.ParseGlob(pattern)
 		if err != nil {
 			logger.Error("Failed to load pattern: '"+pattern+"'.", "err", err.Error())
+			return err
 		}
 	}
 

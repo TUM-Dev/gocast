@@ -42,6 +42,7 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
 		logger.Error("Could not execute template: 'index.gohtml'", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -66,11 +67,14 @@ func (r mainRoutes) InfoPage(id uint, name string) gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
+		if err := templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
 			IndexData
 			Text template.HTML
 			Name string
-		}{indexData, text.Render(), name})
+		}{indexData, text.Render(), name}); err != nil {
+			logger.Error("Could not execute template: 'info-page.gohtml'", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
 	}
 }
 
