@@ -1,5 +1,5 @@
-FROM bluenviron/mediamtx:1.18.0 AS mediamtx
 
+FROM bluenviron/mediamtx:1.18.1 AS mediamtx
 
 FROM alpine:3.23
 ADD entrypoint.sh /entrypoint.sh
