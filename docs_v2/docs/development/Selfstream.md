@@ -31,14 +31,16 @@ Warning: This method doesn't insure that the services are running with the corre
 If you prefer to run the services locally, you can start each service individually. This method requires more setup and configuration, but it allows for more flexibility in development. To start the services locally, follow these steps:
 
 :::info
-You have to change the `externalAuthenticationURL` in the `ingest/mediamtx.yml` file by uncommenting the the line and changing the URL to `http://localhost:8081/api/selfstream/onPublish`. This is required for the `meidamtx` server to authenticate the stream correctly.
+You have to change the `externalAuthenticationURL` in the `ingest/mediamtx.yml` file by uncommenting the the line and changing the URL to `http://localhost:8081/api/selfstream/onPublish`. This is required for the `mediamtx` server to authenticate the stream correctly.
 :::
 
    - Start the db and meilisearch first. We use hybrid approach to run db and meilisearch in docker. You can run the following command to start them:
-
-     ```bash
-     docker start meilisearch mariadb-tumlive
-     ```
+       ```bash
+       docker start meilisearch mariadb-tumlive
+       ```
+        :::info 
+        If you don't have them set up, please follow the instructions in the [DevSetup](./DevSetup.md#setup-database) guide to set them up.
+        ::: 
 
    - Start the backend. run this command in the `root`
 
@@ -52,7 +54,7 @@ You have to change the `externalAuthenticationURL` in the `ingest/mediamtx.yml` 
   # in the web/ directory
   
   npm install
-  npm run buil-dev
+  npm run build-dev
   ```
 
 - Start the runner. Configure the path accordingly: You can set the `STORAGE_PATH` and `SEGMENT_PATH` environment variables to point to the correct locations if you don't want to use default ones:
@@ -70,7 +72,7 @@ You have to change the `externalAuthenticationURL` in the `ingest/mediamtx.yml` 
      
   go run ./worker/edge
   ```
-- Start the `meidamtx` server:
+- Start the `mediamtx` server:
 
    ```bash
    # in the root
