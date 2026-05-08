@@ -94,7 +94,7 @@ After setting up the services you can follow these instructions to start your st
 
 3. After creating the lecture you can click the `show keys` button to see the `URL` and `key`. Copy them into the streaming software of your choice.
 4. Change the `tum.ingest.live/` to `localhost/`.
-5. Start streaming, and you should see the stream in the admin section after a few seconds. You can also check the `meidamtx` logs to see if the stream is being ingested correctly.
+5. Start streaming, and you should see the stream in the admin section after a few seconds. You can also check the `mediamtx` logs to see if the stream is being ingested correctly.
 
 
 
