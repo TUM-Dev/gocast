@@ -14,7 +14,7 @@ go_dependencies:
 
 .PHONY: bundle
 bundle:
-	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/tumlive/tumlive.go
+	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/tumlive/main.go
 
 .PHONY: clean
 clean:
@@ -35,7 +35,7 @@ run_web:
 
 .PHONY: run
 run:
-	go run cmd/tumlive/tumlive.go
+	go run cmd/tumlive/main.go
 
 .PHONY: test
 test:
@@ -44,6 +44,7 @@ test:
 .PHONY: lint
 lint:
 	golangci-lint run
+	cd web; npm run lint
 
 .PHONY: protoVoice
 protoVoice:

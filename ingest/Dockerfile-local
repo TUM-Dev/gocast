@@ -1,0 +1,16 @@
+FROM bluenviron/mediamtx:1.18.1 as mediamtx
+
+FROM alpine:3.23
+ADD entrypoint.sh /entrypoint.sh
+ADD mediamtx.yml /mediamtx.yml
+RUN chmod +x /entrypoint.sh
+RUN sed -i 's|externalAuthenticationURL: https://tum.live/api/selfstream/onPublish|externalAuthenticationURL: http://tum-live:8081/api/selfstream/onPublish|' /mediamtx.yml
+
+RUN apk add --no-cache \
+  ffmpeg \
+  tzdata
+
+COPY --from=mediamtx /mediamtx /mediamtx
+RUN chmod +x /mediamtx
+
+CMD ["/entrypoint.sh"]

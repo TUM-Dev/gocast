@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"regexp"
 
+	"golang.org/x/oauth2/clientcredentials"
+
 	genaccount "github.com/TUM-Dev/gocast/pkg/campus/campusonline/gen/account"
 	gencourse "github.com/TUM-Dev/gocast/pkg/campus/campusonline/gen/course"
 	"github.com/TUM-Dev/gocast/pkg/campus/model"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
