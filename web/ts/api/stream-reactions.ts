@@ -19,7 +19,7 @@ export const liveReactionListener = {
         await Realtime.get().subscribeChannel("reaction-update", this.handle);
         await Realtime.get().send("reaction-update", {
             type: RealtimeMessageTypes.RealtimeMessageTypeChannelMessage,
-            payload: { streamID: streamId },
+            payload: { streamId: streamId },
         });
     },
 
