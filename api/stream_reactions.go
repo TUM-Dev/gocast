@@ -298,7 +298,7 @@ func NotifyAdminsOnReaction(streamID uint, reaction string) {
 
 func NotifyAdminsOnReactionPercentages(context context.Context) {
 	liveReactionListenerMutex.Lock()
-	defer liveReactionListenerMutex.Unlock()
+
 	streams := make([]uint, 0)
 	for _, session := range liveReactionListener {
 		streams = append(streams, session.stream)
@@ -336,7 +336,8 @@ func NotifyAdminsOnReactionPercentages(context context.Context) {
 
 	// Send the percentages to the admin sessions
 	liveReactionListenerMutex.Lock()
-
+	defer liveReactionListenerMutex.Unlock()
+	
 	for _, session := range liveReactionListener {
 		if session.stream == 0 {
 			continue
