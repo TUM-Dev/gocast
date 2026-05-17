@@ -66,7 +66,7 @@ func (d streamReactionDao) GetByStream(c context.Context, streamID uint) (res []
 // GetByStream gets a StreamReaction by stream within the last ... minutes.
 func (d streamReactionDao) GetByStreamWithinMinutes(c context.Context, streamID uint, minutes uint) (res []model.StreamReaction, err error) {
 	time_specified := time.Now().Add(-time.Duration(minutes) * time.Minute)
-	return res, d.db.WithContext(c).Where("stream_id = ? AND created_at > ?", streamID, time_specified.String()).Find(&res).Error
+	return res, d.db.WithContext(c).Where("stream_id = ? AND created_at > ?", streamID, time_specified).Find(&res).Error
 }
 
 // GetNumbersOfReactions gets the number of reactions grouped by reactions for a stream.
