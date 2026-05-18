@@ -9,7 +9,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-//go:generate mockgen -source=streamReaction.go -destination ../mock_dao/streamReaction.go
+//go:generate mockgen -source=stream-reaction.go -destination ../mock_dao/stream-reaction.go
 
 type StreamReactionDao interface {
 	// Get StreamReaction by ID
