@@ -43,10 +43,19 @@ func (r StreamReactionRoutes) addReaction(c *gin.Context) {
 
 	course, err := r.DaoWrapper.CoursesDao.GetCourseById(c, stream.CourseID)
 
-	if user == nil || err != nil {
+	if user == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "user not authenticated",
+		})
+		return
+	}
+
+	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "user or course not found",
+			CustomMessage: "course lookup failed",
+			Err:           err,
 		})
 		return
 	}
