@@ -141,26 +141,6 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
-    async uploadAttachmentUrl(courseId: number, lectureId: number, url: string) {
-        const res = await AdminLectureList.uploadAttachmentUrl(courseId, lectureId, url);
-        const newFile = new LectureFile({
-            id: JSON.parse(res.responseText),
-            fileType: 2,
-            friendlyName: url.substring(url.lastIndexOf("/") + 1),
-        });
-
-        this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
-                return {
-                    ...s,
-                    files: [...s.files, newFile],
-                };
-            }
-            return s;
-        });
-        await this.triggerUpdate(courseId);
-    }
-
     async deleteAttachment(courseId: number, lectureId: number, attachmentId: number) {
         await AdminLectureList.deleteAttachment(courseId, lectureId, attachmentId);
 

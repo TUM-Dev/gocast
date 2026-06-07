@@ -236,13 +236,6 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         );
                         break;
                     }
-                    case "string": {
-                        DataStore.adminLectureList.uploadAttachmentUrl(
-                            this.lectureData.courseId,
-                            this.lectureData.lectureId,
-                            e.dataTransfer.getData("URL"),
-                        );
-                    }
                 }
             }
         },
