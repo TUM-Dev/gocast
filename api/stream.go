@@ -711,16 +711,6 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 			})
 			return
 		}
-	case "url":
-		path = c.PostForm("file_url")
-		_, filename = filepath.Split(path)
-		if path == "" {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
-				CustomMessage: "missing form parameter 'file_url'",
-			})
-			return
-		}
 	default:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,

@@ -391,24 +391,6 @@ export const AdminLectureList = {
         return await uploadFile(`/api/stream/${lectureId}/`, file, listener);
     },
 
-    /**
-     * Upload a url as attachment for a lecture
-     * @param courseId
-     * @param lectureId
-     * @param url
-     * @param listener
-     */
-    uploadAttachmentUrl: async (
-        courseId: number,
-        lectureId: number,
-        url: string,
-        listener: PostFormDataListener = {},
-    ) => {
-        const vodUploadFormData = new FormData();
-        vodUploadFormData.append("file_url", url);
-        return postFormData(`/api/stream/${lectureId}/files?type=url`, vodUploadFormData, listener);
-    },
-
     deleteAttachment: async (courseId: number, lectureId: number, attachmentId: number) => {
         return del(`/api/stream/${lectureId}/files/${attachmentId}`);
     },
