@@ -46,8 +46,8 @@ func NewLectureHallsDao() LectureHallsDao {
 func (d lectureHallsDao) GetLiveStateForPwrCtrl() ([]PwrCtrlLiveState, error) {
 	var result []PwrCtrlLiveState
 
-	err := DB.Raw(`select lh.pwr_ctrl_ip, (select count(*) from tumlive.streams s where s.lecture_hall_id=lh.id and s.live_now) num_live from tumlive.lecture_halls lh
-	where lh.pwr_ctrl_ip is not NULL`).Scan(&result).Error
+	err := DB.Raw(`select lh.pwr_ctrl_ip, (select count(*) from tumlive.streams s where s.lecture_hall_id=lh.id and s.live_now and s.deleted_at is NULL) num_live from tumlive.lecture_halls lh
+	where lh.pwr_ctrl_ip is not NULL and lh.deleted_at is NULL`).Scan(&result).Error
 	return result, err
 }
 
