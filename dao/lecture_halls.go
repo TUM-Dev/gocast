@@ -26,6 +26,13 @@ type LectureHallsDao interface {
 	UnsetDefaults(lectureHallID string) error
 
 	DeleteLectureHall(id uint) error
+
+	GetLiveStateForPwrCtrl() ([]PwrCtrlLiveState, error)
+}
+
+type PwrCtrlLiveState struct {
+	PwrCtrlIP string
+	NumLive   uint
 }
 
 type lectureHallsDao struct {
