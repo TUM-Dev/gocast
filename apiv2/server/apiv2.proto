@@ -309,6 +309,110 @@ service API {
   }
 }
 
+service IntegrationService {
+  // INTEGRATION ENDPOINTS (./integration.go)
+
+  rpc listAdministeredCourses(ListAdministeredCoursesRequest) returns (ListAdministeredCoursesResponse) {
+    option (google.api.http) = {get: "/integration/users/{lrz_id}/administered-courses"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integration"
+      summary: "List administered courses for a user."
+      description: "Retrieves the courses directly administered by the given user (on behalf of), filtered by year and term."
+    };
+  }
+
+  rpc listCourseStreams(ListCourseStreamsRequest) returns (ListCourseStreamsResponse) {
+    option (google.api.http) = {get: "/integration/courses/{course_id}/streams"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integration"
+      summary: "List streams for a bound course."
+      description: "Retrieves the streams of a course the service account is bound to (course admin)."
+    };
+  }
+
+  rpc getPlaybackToken(GetPlaybackTokenRequest) returns (GetPlaybackTokenResponse) {
+    option (google.api.http) = {
+      post: "/integration/courses/{course_id}/streams/{stream_id}/playback-token"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integration"
+      summary: "Get a signed playback token for a stream."
+      description: "Issues signed, time-bounded playlist URLs for an eligible on-behalf-of user."
+    };
+  }
+
+  rpc getBindingStatus(GetBindingStatusRequest) returns (GetBindingStatusResponse) {
+    option (google.api.http) = {get: "/integration/courses/{course_id}/binding-status"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integration"
+      summary: "Get the binding status for a course."
+      description: "Reports whether the service account is bound to the course (course admin)."
+    };
+  }
+}
+
+///////////////////////////////
+///// INTEGRATION_MESSAGE /////
+///////////////////////////////
+
+message IntegrationCourse {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  int32 year = 4;
+  string teaching_term = 5;
+  bool vod_enabled = 6;
+  string visibility = 7;
+}
+
+message IntegrationStream {
+  uint32 stream_id = 1;
+  string name = 2;
+  bool private = 3;
+  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp end = 5;
+}
+
+message ListAdministeredCoursesRequest {
+  string lrz_id = 1;
+  int32 year = 2;
+  string term = 3;
+}
+
+message ListAdministeredCoursesResponse {
+  repeated IntegrationCourse courses = 1;
+}
+
+message ListCourseStreamsRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseStreamsResponse {
+  repeated IntegrationStream streams = 1;
+}
+
+message GetPlaybackTokenRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  int32 ttl_seconds = 3;
+}
+
+message GetPlaybackTokenResponse {
+  string playlist_url = 1;
+  string playlist_url_pres = 2;
+  string playlist_url_cam = 3;
+  int32 expires_in = 4;
+}
+
+message GetBindingStatusRequest {
+  uint32 course_id = 1;
+}
+
+message GetBindingStatusResponse {
+  bool bound = 1;
+}
+
 ///////////////////////////////
 ///// HEALTHCHECK_MESSAGE /////
 ///////////////////////////////

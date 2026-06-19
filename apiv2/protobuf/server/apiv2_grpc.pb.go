@@ -1071,3 +1071,219 @@ var API_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "server/apiv2.proto",
 }
+
+const (
+	IntegrationService_ListAdministeredCourses_FullMethodName = "/protobuf.IntegrationService/listAdministeredCourses"
+	IntegrationService_ListCourseStreams_FullMethodName       = "/protobuf.IntegrationService/listCourseStreams"
+	IntegrationService_GetPlaybackToken_FullMethodName        = "/protobuf.IntegrationService/getPlaybackToken"
+	IntegrationService_GetBindingStatus_FullMethodName        = "/protobuf.IntegrationService/getBindingStatus"
+)
+
+// IntegrationServiceClient is the client API for IntegrationService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type IntegrationServiceClient interface {
+	ListAdministeredCourses(ctx context.Context, in *ListAdministeredCoursesRequest, opts ...grpc.CallOption) (*ListAdministeredCoursesResponse, error)
+	ListCourseStreams(ctx context.Context, in *ListCourseStreamsRequest, opts ...grpc.CallOption) (*ListCourseStreamsResponse, error)
+	GetPlaybackToken(ctx context.Context, in *GetPlaybackTokenRequest, opts ...grpc.CallOption) (*GetPlaybackTokenResponse, error)
+	GetBindingStatus(ctx context.Context, in *GetBindingStatusRequest, opts ...grpc.CallOption) (*GetBindingStatusResponse, error)
+}
+
+type integrationServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewIntegrationServiceClient(cc grpc.ClientConnInterface) IntegrationServiceClient {
+	return &integrationServiceClient{cc}
+}
+
+func (c *integrationServiceClient) ListAdministeredCourses(ctx context.Context, in *ListAdministeredCoursesRequest, opts ...grpc.CallOption) (*ListAdministeredCoursesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAdministeredCoursesResponse)
+	err := c.cc.Invoke(ctx, IntegrationService_ListAdministeredCourses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *integrationServiceClient) ListCourseStreams(ctx context.Context, in *ListCourseStreamsRequest, opts ...grpc.CallOption) (*ListCourseStreamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCourseStreamsResponse)
+	err := c.cc.Invoke(ctx, IntegrationService_ListCourseStreams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *integrationServiceClient) GetPlaybackToken(ctx context.Context, in *GetPlaybackTokenRequest, opts ...grpc.CallOption) (*GetPlaybackTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPlaybackTokenResponse)
+	err := c.cc.Invoke(ctx, IntegrationService_GetPlaybackToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *integrationServiceClient) GetBindingStatus(ctx context.Context, in *GetBindingStatusRequest, opts ...grpc.CallOption) (*GetBindingStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBindingStatusResponse)
+	err := c.cc.Invoke(ctx, IntegrationService_GetBindingStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// IntegrationServiceServer is the server API for IntegrationService service.
+// All implementations must embed UnimplementedIntegrationServiceServer
+// for forward compatibility.
+type IntegrationServiceServer interface {
+	ListAdministeredCourses(context.Context, *ListAdministeredCoursesRequest) (*ListAdministeredCoursesResponse, error)
+	ListCourseStreams(context.Context, *ListCourseStreamsRequest) (*ListCourseStreamsResponse, error)
+	GetPlaybackToken(context.Context, *GetPlaybackTokenRequest) (*GetPlaybackTokenResponse, error)
+	GetBindingStatus(context.Context, *GetBindingStatusRequest) (*GetBindingStatusResponse, error)
+	mustEmbedUnimplementedIntegrationServiceServer()
+}
+
+// UnimplementedIntegrationServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedIntegrationServiceServer struct{}
+
+func (UnimplementedIntegrationServiceServer) ListAdministeredCourses(context.Context, *ListAdministeredCoursesRequest) (*ListAdministeredCoursesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAdministeredCourses not implemented")
+}
+func (UnimplementedIntegrationServiceServer) ListCourseStreams(context.Context, *ListCourseStreamsRequest) (*ListCourseStreamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCourseStreams not implemented")
+}
+func (UnimplementedIntegrationServiceServer) GetPlaybackToken(context.Context, *GetPlaybackTokenRequest) (*GetPlaybackTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPlaybackToken not implemented")
+}
+func (UnimplementedIntegrationServiceServer) GetBindingStatus(context.Context, *GetBindingStatusRequest) (*GetBindingStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBindingStatus not implemented")
+}
+func (UnimplementedIntegrationServiceServer) mustEmbedUnimplementedIntegrationServiceServer() {}
+func (UnimplementedIntegrationServiceServer) testEmbeddedByValue()                            {}
+
+// UnsafeIntegrationServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to IntegrationServiceServer will
+// result in compilation errors.
+type UnsafeIntegrationServiceServer interface {
+	mustEmbedUnimplementedIntegrationServiceServer()
+}
+
+func RegisterIntegrationServiceServer(s grpc.ServiceRegistrar, srv IntegrationServiceServer) {
+	// If the following call pancis, it indicates UnimplementedIntegrationServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&IntegrationService_ServiceDesc, srv)
+}
+
+func _IntegrationService_ListAdministeredCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAdministeredCoursesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).ListAdministeredCourses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_ListAdministeredCourses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).ListAdministeredCourses(ctx, req.(*ListAdministeredCoursesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IntegrationService_ListCourseStreams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseStreamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).ListCourseStreams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_ListCourseStreams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).ListCourseStreams(ctx, req.(*ListCourseStreamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IntegrationService_GetPlaybackToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPlaybackTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).GetPlaybackToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_GetPlaybackToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).GetPlaybackToken(ctx, req.(*GetPlaybackTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IntegrationService_GetBindingStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBindingStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).GetBindingStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_GetBindingStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).GetBindingStatus(ctx, req.(*GetBindingStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// IntegrationService_ServiceDesc is the grpc.ServiceDesc for IntegrationService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var IntegrationService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "protobuf.IntegrationService",
+	HandlerType: (*IntegrationServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "listAdministeredCourses",
+			Handler:    _IntegrationService_ListAdministeredCourses_Handler,
+		},
+		{
+			MethodName: "listCourseStreams",
+			Handler:    _IntegrationService_ListCourseStreams_Handler,
+		},
+		{
+			MethodName: "getPlaybackToken",
+			Handler:    _IntegrationService_GetPlaybackToken_Handler,
+		},
+		{
+			MethodName: "getBindingStatus",
+			Handler:    _IntegrationService_GetBindingStatus_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "server/apiv2.proto",
+}

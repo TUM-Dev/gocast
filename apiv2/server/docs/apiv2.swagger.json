@@ -16,6 +16,9 @@
   "tags": [
     {
       "name": "API"
+    },
+    {
+      "name": "IntegrationService"
     }
   ],
   "host": "tum.live",
@@ -454,6 +457,165 @@
         ],
         "tags": [
           "Courses"
+        ]
+      }
+    },
+    "/integration/courses/{courseId}/binding-status": {
+      "get": {
+        "summary": "Get the binding status for a course.",
+        "description": "Reports whether the service account is bound to the course (course admin).",
+        "operationId": "IntegrationService_getBindingStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetBindingStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Integration"
+        ]
+      }
+    },
+    "/integration/courses/{courseId}/streams": {
+      "get": {
+        "summary": "List streams for a bound course.",
+        "description": "Retrieves the streams of a course the service account is bound to (course admin).",
+        "operationId": "IntegrationService_listCourseStreams",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListCourseStreamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Integration"
+        ]
+      }
+    },
+    "/integration/courses/{courseId}/streams/{streamId}/playback-token": {
+      "post": {
+        "summary": "Get a signed playback token for a stream.",
+        "description": "Issues signed, time-bounded playlist URLs for an eligible on-behalf-of user.",
+        "operationId": "IntegrationService_getPlaybackToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetPlaybackTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IntegrationServicegetPlaybackTokenBody"
+            }
+          }
+        ],
+        "tags": [
+          "Integration"
+        ]
+      }
+    },
+    "/integration/users/{lrzId}/administered-courses": {
+      "get": {
+        "summary": "List administered courses for a user.",
+        "description": "Retrieves the courses directly administered by the given user (on behalf of), filtered by year and term.",
+        "operationId": "IntegrationService_listAdministeredCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListAdministeredCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lrzId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Integration"
         ]
       }
     },
@@ -982,6 +1144,15 @@
         }
       }
     },
+    "IntegrationServicegetPlaybackTokenBody": {
+      "type": "object",
+      "properties": {
+        "ttlSeconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "apiHttpBody": {
       "type": "object",
       "properties": {
@@ -1220,6 +1391,14 @@
         }
       }
     },
+    "protobufGetBindingStatusResponse": {
+      "type": "object",
+      "properties": {
+        "bound": {
+          "type": "boolean"
+        }
+      }
+    },
     "protobufGetBookmarksResponse": {
       "type": "object",
       "properties": {
@@ -1282,6 +1461,24 @@
             "type": "object",
             "$ref": "#/definitions/protobufCourse"
           }
+        }
+      }
+    },
+    "protobufGetPlaybackTokenResponse": {
+      "type": "object",
+      "properties": {
+        "playlistUrl": {
+          "type": "string"
+        },
+        "playlistUrlPres": {
+          "type": "string"
+        },
+        "playlistUrlCam": {
+          "type": "string"
+        },
+        "expiresIn": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -1388,6 +1585,57 @@
         }
       }
     },
+    "protobufIntegrationCourse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "teachingTerm": {
+          "type": "string"
+        },
+        "vodEnabled": {
+          "type": "boolean"
+        },
+        "visibility": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufIntegrationStream": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "private": {
+          "type": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "protobufLectureHall": {
       "type": "object",
       "properties": {
@@ -1403,6 +1651,30 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufCameraPreset"
+          }
+        }
+      }
+    },
+    "protobufListAdministeredCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufIntegrationCourse"
+          }
+        }
+      }
+    },
+    "protobufListCourseStreamsResponse": {
+      "type": "object",
+      "properties": {
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufIntegrationStream"
           }
         }
       }
