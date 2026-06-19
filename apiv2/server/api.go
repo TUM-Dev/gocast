@@ -32,6 +32,7 @@ type API struct {
 	log *slog.Logger
 
 	protobuf.UnimplementedAPIServer
+	protobuf.UnimplementedIntegrationServiceServer
 }
 
 // New creates a new API and assigns the given db and a logger
@@ -56,19 +57,45 @@ func (a *API) Run(lis net.Listener) error {
 	}))
 
 	protobuf.RegisterAPIServer(grpcServer, a)
+	protobuf.RegisterIntegrationServiceServer(grpcServer, a)
 	reflection.Register(grpcServer)
 	return grpcServer.Serve(lis)
 }
 
+// integrationHeaderMatcher is the shared gRPC-gateway incoming-header matcher
+// used by the single gateway mux serving both API and IntegrationService.
+//
+// It maps:
+//   - Authorization  → "authorization"       (bearer token for service-account auth;
+//     without this the default mapper renames it to grpcgateway-authorization)
+//   - X-On-Behalf-Of → "x-on-behalf-of"      (on-behalf-of LRZ ID for integration RPCs)
+//   - All others     → runtime.DefaultHeaderMatcher (preserves grpcgateway-cookie
+//     so existing cookie-based auth continues to work)
+func integrationHeaderMatcher(key string) (string, bool) {
+	switch {
+	case strings.EqualFold(key, "Authorization"):
+		return "authorization", true
+	case strings.EqualFold(key, "X-On-Behalf-Of"):
+		return "x-on-behalf-of", true
+	default:
+		return runtime.DefaultHeaderMatcher(key)
+	}
+}
+
 // Proxy returns a gin handler that proxies requests to the grpc gateway server
 func (a *API) Proxy() func(c *gin.Context) {
-	// setup muxing
-	mux := runtime.NewServeMux()
+	// setup muxing — one shared mux for both services so the custom header
+	// matcher and cookie auth apply uniformly.
+	mux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(integrationHeaderMatcher))
 	// DEPRECATED: opts := []grpc.DialOption{grpc.WithInsecure()}
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	err := protobuf.RegisterAPIHandlerFromEndpoint(context.Background(), mux, ":8081", opts)
 	if err != nil {
 		a.log.With("err", err).Error("can't register grpc handler")
+		os.Exit(1)
+	}
+	if err := protobuf.RegisterIntegrationServiceHandlerFromEndpoint(context.Background(), mux, ":8081", opts); err != nil {
+		a.log.With("err", err).Error("can't register integration grpc gateway handler")
 		os.Exit(1)
 	}
 

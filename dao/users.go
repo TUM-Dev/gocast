@@ -34,6 +34,7 @@ type UsersDao interface {
 	UpsertUser(user *model.User) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 	AddUserSetting(userSetting *model.UserSetting) error
+	GetUserByLrzID(lrzID string) (model.User, error)
 }
 
 type usersDao struct {
@@ -224,4 +225,17 @@ func (d usersDao) AddUserSetting(userSetting *model.UserSetting) error {
 		return err
 	}
 	return d.db.Create(userSetting).Error
+}
+
+// GetUserByLrzID retrieves a user by their LRZ ID, preloading the same
+// associations as GetUserByID so that eligibility and admin checks behave
+// identically regardless of which lookup path is used.
+func (d usersDao) GetUserByLrzID(lrzID string) (model.User, error) {
+	var user model.User
+	err := DB.Preload("AdministeredCourses").
+		Preload("PinnedCourses.Streams").
+		Preload("Courses.Streams").
+		Preload("Settings").
+		First(&user, "lrz_id = ?", lrzID).Error
+	return user, err
 }

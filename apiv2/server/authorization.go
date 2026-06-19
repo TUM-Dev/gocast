@@ -98,6 +98,97 @@ func (a *API) getUserFromClaims(ctx context.Context, claims *tools.JWTClaims) (*
 	return &user, nil
 }
 
+// ---------------------------------------------------------------------------
+// Service-account bearer auth helpers (G3)
+// ---------------------------------------------------------------------------
+
+// extractBearerFromMetadata extracts the raw token string from the
+// "authorization" metadata key (which the shared header matcher maps from the
+// HTTP Authorization header).
+func extractBearerFromMetadata(md metadata.MD) (string, error) {
+	vals := md.Get("authorization")
+	if len(vals) == 0 {
+		return "", e.WithStatus(http.StatusUnauthorized, errors.New("missing authorization"))
+	}
+	after, ok := strings.CutPrefix(vals[0], "Bearer ")
+	if !ok {
+		return "", e.WithStatus(http.StatusUnauthorized, errors.New("malformed bearer token"))
+	}
+	return after, nil
+}
+
+// getServiceAccount authenticates the incoming RPC using the bearer token
+// carried in the "authorization" metadata key, validates that the token has
+// service scope, loads the user, and enforces that the user has ServiceType
+// role (defense-in-depth). It records a "token used" timestamp on success.
+func (a *API) getServiceAccount(ctx context.Context) (*model.User, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("no metadata"))
+	}
+	raw, err := extractBearerFromMetadata(md)
+	if err != nil {
+		return nil, err
+	}
+	tok, err := a.dao.TokenDao.GetToken(raw) // already filters expired tokens
+	if err != nil {
+		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("invalid token"))
+	}
+	if tok.Scope != model.TokenScopeService {
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("token not authorized for integration"))
+	}
+	_ = a.dao.TokenDao.TokenUsed(tok)
+	user, err := a.dao.GetUserByID(ctx, tok.UserID)
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if user.Role != model.ServiceType {
+		// Defense-in-depth: a service-scoped token on a non-service-type user
+		// must not gain integration access.
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("token not bound to a service account"))
+	}
+	return &user, nil
+}
+
+// getOnBehalfOfUser resolves the user identified by the "x-on-behalf-of"
+// metadata key (mapped from the X-On-Behalf-Of HTTP header) via their LRZ ID.
+func (a *API) getOnBehalfOfUser(ctx context.Context) (*model.User, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	vals := md.Get("x-on-behalf-of")
+	if len(vals) == 0 || vals[0] == "" {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("missing X-On-Behalf-Of"))
+	}
+	user, err := a.dao.UsersDao.GetUserByLrzID(vals[0])
+	if err != nil {
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("on-behalf-of user not found"))
+	}
+	return &user, nil
+}
+
+// requireServiceCourseAdmin verifies that:
+//  1. the request carries a valid service-account bearer token (getServiceAccount), and
+//  2. that service account is an admin of the requested course.
+//
+// Returns the authenticated service user and the loaded course on success.
+func (a *API) requireServiceCourseAdmin(ctx context.Context, courseID uint) (*model.User, model.Course, error) {
+	svc, err := a.getServiceAccount(ctx)
+	if err != nil {
+		return nil, model.Course{}, err
+	}
+	course, err := a.dao.CoursesDao.GetCourseById(ctx, courseID)
+	if err != nil {
+		return nil, model.Course{}, e.WithStatus(http.StatusNotFound, err)
+	}
+	if !svc.IsAdminOfCourse(course) {
+		return nil, course, e.WithStatus(http.StatusForbidden, errors.New("service account not bound to course"))
+	}
+	return svc, course, nil
+}
+
+// ---------------------------------------------------------------------------
+// Stream request authorization (existing)
+// ---------------------------------------------------------------------------
+
 type StreamRequest interface {
 	GetStreamId() uint32
 }
