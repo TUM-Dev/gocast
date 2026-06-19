@@ -185,3 +185,28 @@ func (a *API) GetPlaybackToken(ctx context.Context, req *protobuf.GetPlaybackTok
 		ExpiresIn: int32(ttl),
 	}, nil
 }
+
+// GetBindingStatus implements IntegrationService/getBindingStatus (EP7).
+//
+// Authentication: requires a valid service-account bearer token (ServiceType
+// user with TokenScopeService). Does NOT accept session cookies.
+//
+// Returns {bound: true} if the service account is an admin of the requested
+// course (meaning the binding approval page was completed), and {bound: false}
+// otherwise. An unknown course returns NotFound so callers can distinguish
+// "not bound" from "course doesn't exist".
+//
+// The service account returned by getServiceAccount has AdministeredCourses
+// preloaded (GetUserByID preloads it), so IsAdminOfCourse iterates over the
+// correct populated slice without an additional DAO call.
+func (a *API) GetBindingStatus(ctx context.Context, req *protobuf.GetBindingStatusRequest) (*protobuf.GetBindingStatusResponse, error) {
+	svc, err := a.getServiceAccount(ctx)
+	if err != nil {
+		return nil, err
+	}
+	course, err := a.dao.CoursesDao.GetCourseById(ctx, uint(req.CourseId))
+	if err != nil {
+		return nil, e.WithStatus(http.StatusNotFound, err)
+	}
+	return &protobuf.GetBindingStatusResponse{Bound: svc.IsAdminOfCourse(course)}, nil
+}

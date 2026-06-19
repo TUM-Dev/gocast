@@ -985,3 +985,157 @@ func TestGetPlaybackToken_NoPlayableVariants_NotFound(t *testing.T) {
 	}
 	assertGRPCStatus(t, err, http.StatusNotFound)
 }
+
+// ---------------------------------------------------------------------------
+// EP7 GetBindingStatus
+// ---------------------------------------------------------------------------
+
+func TestGetBindingStatus_IsAdmin_BoundTrue(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(50)
+	)
+
+	course := model.Course{Name: "Algorithms"}
+	course.ID = courseID
+
+	// Service account has the course in AdministeredCourses → IsAdminOfCourse returns true.
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	svcUser := model.User{Role: model.ServiceType, AdministeredCourses: []model.Course{course}}
+	svcUser.ID = userID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(course, nil)
+
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	resp, err := api.GetBindingStatus(ctx, &protobuf.GetBindingStatusRequest{CourseId: uint32(courseID)})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !resp.Bound {
+		t.Error("expected Bound=true when service account is admin of course, got false")
+	}
+}
+
+func TestGetBindingStatus_NotAdmin_BoundFalse(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(50)
+	)
+
+	course := model.Course{Name: "Algorithms"}
+	course.ID = courseID
+
+	// Service account has NO administered courses → IsAdminOfCourse returns false.
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	svcUser := model.User{Role: model.ServiceType} // no AdministeredCourses
+	svcUser.ID = userID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(course, nil)
+
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	resp, err := api.GetBindingStatus(ctx, &protobuf.GetBindingStatusRequest{CourseId: uint32(courseID)})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Bound {
+		t.Error("expected Bound=false when service account is not admin of course, got true")
+	}
+}
+
+func TestGetBindingStatus_UnknownCourse_NotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(999)
+	)
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	svcUser := model.User{Role: model.ServiceType}
+	svcUser.ID = userID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(model.Course{}, errors.New("record not found"))
+
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	_, err := api.GetBindingStatus(ctx, &protobuf.GetBindingStatusRequest{CourseId: uint32(courseID)})
+	if err == nil {
+		t.Fatal("expected NotFound error for unknown course, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusNotFound)
+}
+
+func TestGetBindingStatus_MissingAuthHeader_Unauthenticated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   mock_dao.NewMockTokenDao(ctrl),
+		UsersDao:   mock_dao.NewMockUsersDao(ctrl),
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	})
+
+	// No metadata in context → no authorization header.
+	_, err := api.GetBindingStatus(incomingCtx(), &protobuf.GetBindingStatusRequest{CourseId: 50})
+	if err == nil {
+		t.Fatal("expected Unauthenticated error for missing auth header, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusUnauthorized)
+}
+
+func TestGetBindingStatus_InvalidToken_Unauthenticated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	tokenMock.EXPECT().GetToken("badtoken").Return(model.Token{}, errors.New("not found"))
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   mock_dao.NewMockUsersDao(ctrl),
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	})
+	ctx := incomingCtx("authorization", "Bearer badtoken")
+
+	_, err := api.GetBindingStatus(ctx, &protobuf.GetBindingStatusRequest{CourseId: 50})
+	if err == nil {
+		t.Fatal("expected Unauthenticated error for invalid token, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusUnauthorized)
+}
