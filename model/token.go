@@ -9,6 +9,7 @@ import (
 const (
 	TokenScopeAdmin    = "admin"
 	TokenScopeLecturer = "lecturer"
+	TokenScopeService  = "service"
 )
 
 // Token can be used to authenticate instead of a user account
