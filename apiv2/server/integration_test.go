@@ -2,17 +2,93 @@
 package apiv2
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
+
+// testJWTKey is the RSA key used for signing in EP2 tests.
+// It is initialised once at package level so all tests share a stable key.
+var testJWTKey *rsa.PrivateKey
+
+func init() {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic("failed to generate test JWT key: " + err.Error())
+	}
+	testJWTKey = key
+	// Wire the key into the tools package so that tools.SignPlaylistURL works.
+	tools.SetTestJWTKey(key)
+}
+
+// parsePlaybackClaims parses a JWT string from a signed playlist URL and
+// returns the embedded JWTPlaylistClaims, verifying the signature.
+func parsePlaybackClaims(t *testing.T, signedURL string) *tools.JWTPlaylistClaims {
+	t.Helper()
+	const needle = "jwt="
+	idx := strings.Index(signedURL, needle)
+	if idx == -1 {
+		t.Fatalf("no jwt= parameter in URL %q", signedURL)
+	}
+	jwtStr := signedURL[idx+len(needle):]
+	if amp := strings.Index(jwtStr, "&"); amp != -1 {
+		jwtStr = jwtStr[:amp]
+	}
+	claims := &tools.JWTPlaylistClaims{}
+	tok, err := jwt.ParseWithClaims(jwtStr, claims, func(_ *jwt.Token) (interface{}, error) {
+		return testJWTKey.Public(), nil
+	})
+	if err != nil {
+		t.Fatalf("jwt.ParseWithClaims: %v", err)
+	}
+	if !tok.Valid {
+		t.Fatal("JWT is not valid")
+	}
+	return claims
+}
+
+// ---------------------------------------------------------------------------
+// clampTTL (pure function)
+// ---------------------------------------------------------------------------
+
+func TestClampTTL(t *testing.T) {
+	cases := []struct {
+		name string
+		in   int
+		want int
+	}{
+		{"zero → default 7200", 0, 7200},
+		{"negative → default 7200", -1, 7200},
+		{"below min → clamped to 300", 100, 300},
+		{"above max → clamped to 86400", 999999, 86400},
+		{"exact min", 300, 300},
+		{"exact max", 86400, 86400},
+		{"in range", 1800, 1800},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if got := clampTTL(tc.in); got != tc.want {
+				t.Errorf("clampTTL(%d) = %d, want %d", tc.in, got, tc.want)
+			}
+		})
+	}
+}
 
 // ---------------------------------------------------------------------------
 // Helpers shared by EP1 tests
@@ -428,4 +504,484 @@ func TestListCourseStreams_InvalidToken_Unauthenticated(t *testing.T) {
 		t.Fatal("expected Unauthenticated error, got nil")
 	}
 	assertGRPCStatus(t, err, http.StatusUnauthorized)
+}
+
+// ---------------------------------------------------------------------------
+// EP2 GetPlaybackToken
+// ---------------------------------------------------------------------------
+
+// setupPlaybackTokenMocks wires the common DAOs for a GetPlaybackToken test:
+// service account is an admin of the given course, OBO user is set up, and
+// the stream is returned by GetStreamByID.
+func setupPlaybackTokenMocks(
+	ctrl *gomock.Controller,
+	rawToken string,
+	userID, courseID uint,
+	course model.Course,
+	oboLrzID string,
+	oboUser model.User,
+	stream model.Stream,
+) (*mock_dao.MockTokenDao, *mock_dao.MockUsersDao, *mock_dao.MockCoursesDao, *mock_dao.MockStreamsDao) {
+	tokenMock, usersMock, coursesMock := setupServiceCourseAdmin(ctrl, rawToken, userID, courseID, course)
+	usersMock.EXPECT().GetUserByLrzID(oboLrzID).Return(oboUser, nil)
+	streamsMock := mock_dao.NewMockStreamsDao(ctrl)
+	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", stream.ID)).Return(stream, nil)
+	return tokenMock, usersMock, coursesMock, streamsMock
+}
+
+func TestGetPlaybackToken_HappyPath(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	course := model.Course{Visibility: "public", DownloadsEnabled: true}
+	course.ID = courseID
+
+	// OBO user is eligible to watch the course (public → always eligible).
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType}
+	oboUser.ID = 55
+
+	stream := model.Stream{
+		Model:           gorm.Model{ID: streamID},
+		CourseID:        courseID,
+		PlaylistUrl:     "https://gocast.example.com/comb.m3u8",
+		PlaylistUrlPRES: "https://gocast.example.com/pres.m3u8",
+		PlaylistUrlCAM:  "https://gocast.example.com/cam.m3u8",
+	}
+
+	tokenMock, usersMock, coursesMock, streamsMock := setupPlaybackTokenMocks(
+		ctrl, rawToken, userID, courseID, course,
+		"ob01tum", oboUser, stream,
+	)
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: streamsMock,
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	before := time.Now()
+	resp, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId:   uint32(courseID),
+		StreamId:   uint32(streamID),
+		TtlSeconds: 3600,
+	})
+	after := time.Now()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// ExpiresIn must equal the requested (clamped) TTL.
+	if resp.ExpiresIn != 3600 {
+		t.Errorf("ExpiresIn = %d, want 3600", resp.ExpiresIn)
+	}
+
+	// All three variants must be signed URLs.
+	for variant, url := range map[string]string{
+		"comb": resp.PlaylistUrl,
+		"pres": resp.PlaylistUrlPres,
+		"cam":  resp.PlaylistUrlCam,
+	} {
+		if url == "" {
+			t.Errorf("%s: expected non-empty signed URL", variant)
+			continue
+		}
+		claims := parsePlaybackClaims(t, url)
+		if claims.UserID != 55 {
+			t.Errorf("%s: UserID=%d, want 55", variant, claims.UserID)
+		}
+		if claims.StreamID != fmt.Sprintf("%d", streamID) {
+			t.Errorf("%s: StreamID=%q, want %q", variant, claims.StreamID, fmt.Sprintf("%d", streamID))
+		}
+		if claims.CourseID != fmt.Sprintf("%d", courseID) {
+			t.Errorf("%s: CourseID=%q, want %q", variant, claims.CourseID, fmt.Sprintf("%d", courseID))
+		}
+		if !claims.Download {
+			t.Errorf("%s: Download=false, want true (course has DownloadsEnabled)", variant)
+		}
+		// exp ≈ now + 3600s (±2s for JWT second-level truncation)
+		exp := claims.ExpiresAt.Time
+		if exp.Before(before.Add(3600*time.Second-2*time.Second)) || exp.After(after.Add(3600*time.Second+2*time.Second)) {
+			t.Errorf("%s: exp %v not in expected window", variant, exp)
+		}
+	}
+}
+
+func TestGetPlaybackToken_ServiceAccountNotAdmin_PermissionDenied(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+	)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	// Service user has NO administered courses → not an admin.
+	svcUser := model.User{Role: model.ServiceType}
+	svcUser.ID = userID
+	course := model.Course{}
+	course.ID = courseID
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(course, nil)
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: mock_dao.NewMockStreamsDao(ctrl),
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: 200,
+	})
+	if err == nil {
+		t.Fatal("expected PermissionDenied, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusForbidden)
+}
+
+func TestGetPlaybackToken_StreamNotInCourse_BadRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	course := model.Course{Visibility: "public"}
+	course.ID = courseID
+
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType}
+	oboUser.ID = 55
+
+	// Stream belongs to a DIFFERENT course.
+	stream := model.Stream{
+		Model:       gorm.Model{ID: streamID},
+		CourseID:    999, // not courseID
+		PlaylistUrl: "https://gocast.example.com/comb.m3u8",
+	}
+
+	tokenMock, usersMock, coursesMock, streamsMock := setupPlaybackTokenMocks(
+		ctrl, rawToken, userID, courseID, course,
+		"ob01tum", oboUser, stream,
+	)
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: streamsMock,
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: uint32(streamID),
+	})
+	if err == nil {
+		t.Fatal("expected BadRequest, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusBadRequest)
+}
+
+func TestGetPlaybackToken_IneligibleOBO_PermissionDenied(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	// Enrolled course: requires explicit enrollment.
+	course := model.Course{Visibility: "enrolled"}
+	course.ID = courseID
+
+	// OBO user has no courses → NOT eligible.
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType, Courses: nil}
+	oboUser.ID = 55
+
+	stream := model.Stream{
+		Model:       gorm.Model{ID: streamID},
+		CourseID:    courseID,
+		PlaylistUrl: "https://gocast.example.com/comb.m3u8",
+	}
+
+	tokenMock, usersMock, coursesMock, streamsMock := setupPlaybackTokenMocks(
+		ctrl, rawToken, userID, courseID, course,
+		"ob01tum", oboUser, stream,
+	)
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: streamsMock,
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: uint32(streamID),
+	})
+	if err == nil {
+		t.Fatal("expected PermissionDenied, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusForbidden)
+}
+
+func TestGetPlaybackToken_MissingOBOHeader_BadRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+	)
+
+	course := model.Course{Visibility: "public"}
+	course.ID = courseID
+	tokenMock, usersMock, coursesMock := setupServiceCourseAdmin(ctrl, rawToken, userID, courseID, course)
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: mock_dao.NewMockStreamsDao(ctrl),
+	})
+	// No x-on-behalf-of header.
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: 200,
+	})
+	if err == nil {
+		t.Fatal("expected BadRequest, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusBadRequest)
+}
+
+func TestGetPlaybackToken_TTLClamping(t *testing.T) {
+	// Each subtest creates its own gomock controller (ctrl2); no outer
+	// controller is needed here.
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	course := model.Course{Visibility: "public"}
+	course.ID = courseID
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType}
+	oboUser.ID = 55
+	stream := model.Stream{
+		Model:       gorm.Model{ID: streamID},
+		CourseID:    courseID,
+		PlaylistUrl: "https://gocast.example.com/stream.m3u8",
+	}
+
+	cases := []struct {
+		name        string
+		ttlInput    int32
+		wantExpires int32
+	}{
+		{"zero → default 7200", 0, 7200},
+		{"negative → default 7200", -1, 7200},
+		{"below min → clamped to 300", 100, 300},
+		{"above max → clamped to 86400", 999999, 86400},
+		{"exact min", 300, 300},
+		{"exact max", 86400, 86400},
+		{"within range", 1800, 1800},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl2 := gomock.NewController(t)
+			defer ctrl2.Finish()
+
+			tokenMock, usersMock, coursesMock, streamsMock := setupPlaybackTokenMocks(
+				ctrl2, rawToken, userID, courseID, course,
+				"ob01tum", oboUser, stream,
+			)
+			api := buildAPI(dao.DaoWrapper{
+				TokenDao:   tokenMock,
+				UsersDao:   usersMock,
+				CoursesDao: coursesMock,
+				StreamsDao: streamsMock,
+			})
+			ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+			resp, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+				CourseId:   uint32(courseID),
+				StreamId:   uint32(streamID),
+				TtlSeconds: tc.ttlInput,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if resp.ExpiresIn != tc.wantExpires {
+				t.Errorf("ExpiresIn = %d, want %d", resp.ExpiresIn, tc.wantExpires)
+			}
+		})
+	}
+}
+
+func TestGetPlaybackToken_PrivateStreamIneligible_PermissionDenied(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	course := model.Course{Visibility: "public"}
+	course.ID = courseID
+
+	// OBO user is eligible for the course but NOT an admin → denied for private streams.
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType}
+	oboUser.ID = 55
+
+	stream := model.Stream{
+		Model:       gorm.Model{ID: streamID},
+		CourseID:    courseID,
+		Private:     true, // private!
+		PlaylistUrl: "https://gocast.example.com/comb.m3u8",
+	}
+
+	tokenMock, usersMock, coursesMock, streamsMock := setupPlaybackTokenMocks(
+		ctrl, rawToken, userID, courseID, course,
+		"ob01tum", oboUser, stream,
+	)
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: streamsMock,
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: uint32(streamID),
+	})
+	if err == nil {
+		t.Fatal("expected PermissionDenied for non-admin accessing private stream, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusForbidden)
+}
+
+func TestGetPlaybackToken_StreamNotFound_NotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	course := model.Course{Visibility: "public"}
+	course.ID = courseID
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType}
+	oboUser.ID = 55
+
+	tokenMock, usersMock, coursesMock := setupServiceCourseAdmin(ctrl, rawToken, userID, courseID, course)
+	usersMock.EXPECT().GetUserByLrzID("ob01tum").Return(oboUser, nil)
+	streamsMock := mock_dao.NewMockStreamsDao(ctrl)
+	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamID)).Return(model.Stream{}, errors.New("record not found"))
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: streamsMock,
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: uint32(streamID),
+	})
+	if err == nil {
+		t.Fatal("expected NotFound, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusNotFound)
+}
+
+func TestGetPlaybackToken_NoPlayableVariants_NotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	course := model.Course{Visibility: "public"}
+	course.ID = courseID
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType}
+	oboUser.ID = 55
+
+	// Stream has no playlist URLs → no playable variants.
+	stream := model.Stream{
+		Model:    gorm.Model{ID: streamID},
+		CourseID: courseID,
+	}
+
+	tokenMock, usersMock, coursesMock, streamsMock := setupPlaybackTokenMocks(
+		ctrl, rawToken, userID, courseID, course,
+		"ob01tum", oboUser, stream,
+	)
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: streamsMock,
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: uint32(streamID),
+	})
+	if err == nil {
+		t.Fatal("expected NotFound for stream with no variants, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusNotFound)
 }
