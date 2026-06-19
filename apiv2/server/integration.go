@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 )
@@ -48,4 +50,34 @@ func (a *API) ListAdministeredCourses(ctx context.Context, req *protobuf.ListAdm
 	}
 
 	return &protobuf.ListAdministeredCoursesResponse{Courses: out}, nil
+}
+
+// ListCourseStreams implements IntegrationService/listCourseStreams (EP8).
+//
+// Authentication: requires a valid service-account bearer token (ServiceType
+// user with TokenScopeService). The service account must be an admin of the
+// requested course (i.e. the course binding is established).
+//
+// Streams preload note: GetCourseById (called inside requireServiceCourseAdmin)
+// already preloads Streams with sub-preloads for TranscodingProgresses,
+// VideoSections, and Files ordered by start desc. Therefore course.Streams is
+// fully populated on return and no additional DAO call is needed.
+func (a *API) ListCourseStreams(ctx context.Context, req *protobuf.ListCourseStreamsRequest) (*protobuf.ListCourseStreamsResponse, error) {
+	_, course, err := a.requireServiceCourseAdmin(ctx, uint(req.CourseId))
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*protobuf.IntegrationStream, 0, len(course.Streams))
+	for _, s := range course.Streams {
+		out = append(out, &protobuf.IntegrationStream{
+			StreamId: uint32(s.ID),
+			Name:     s.GetName(),
+			Private:  s.Private,
+			Start:    timestamppb.New(s.Start),
+			End:      timestamppb.New(s.End),
+		})
+	}
+
+	return &protobuf.ListCourseStreamsResponse{Streams: out}, nil
 }

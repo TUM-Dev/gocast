@@ -221,3 +221,211 @@ func TestListAdministeredCourses_EmptyResult(t *testing.T) {
 		t.Fatalf("expected 0 courses, got %d", len(resp.Courses))
 	}
 }
+
+// ---------------------------------------------------------------------------
+// EP8 ListCourseStreams
+// ---------------------------------------------------------------------------
+
+// setupServiceCourseAdmin wires mock DAOs so that requireServiceCourseAdmin
+// succeeds for the given courseID. The returned course has svcUser as an
+// explicit admin so IsAdminOfCourse returns true.
+func setupServiceCourseAdmin(ctrl *gomock.Controller, rawToken string, userID, courseID uint, course model.Course) (
+	*mock_dao.MockTokenDao, *mock_dao.MockUsersDao, *mock_dao.MockCoursesDao,
+) {
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	// svcUser is listed in course.Admins via AdministeredCourses so
+	// IsAdminOfCourse reports true.
+	svcUser := model.User{Role: model.ServiceType, AdministeredCourses: []model.Course{course}}
+	svcUser.ID = userID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(course, nil)
+
+	return tokenMock, usersMock, coursesMock
+}
+
+func TestListCourseStreams_MapsStreamsCorrectly(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := model.Course{Name: "Analysis II"}
+	course.ID = 10
+
+	s1 := model.Stream{Name: "Lecture 01", Private: false}
+	s1.ID = 101
+	s2 := model.Stream{Name: "", Private: true} // empty name → GetName() returns "Lecture: ..."
+	s2.ID = 102
+
+	course.Streams = []model.Stream{s1, s2}
+
+	tokenMock, usersMock, coursesMock := setupServiceCourseAdmin(ctrl, "svctoken", 7, 10, course)
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer svctoken")
+
+	resp, err := api.ListCourseStreams(ctx, &protobuf.ListCourseStreamsRequest{CourseId: 10})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.Streams) != 2 {
+		t.Fatalf("expected 2 streams, got %d", len(resp.Streams))
+	}
+
+	got1 := resp.Streams[0]
+	if got1.StreamId != uint32(s1.ID) {
+		t.Errorf("streams[0].StreamId = %d, want %d", got1.StreamId, uint32(s1.ID))
+	}
+	if got1.Name != s1.GetName() {
+		t.Errorf("streams[0].Name = %q, want %q", got1.Name, s1.GetName())
+	}
+	if got1.Private {
+		t.Errorf("streams[0].Private = true, want false")
+	}
+	if got1.Start == nil {
+		t.Error("streams[0].Start is nil")
+	}
+	if got1.End == nil {
+		t.Error("streams[0].End is nil")
+	}
+
+	got2 := resp.Streams[1]
+	if got2.StreamId != uint32(s2.ID) {
+		t.Errorf("streams[1].StreamId = %d, want %d", got2.StreamId, uint32(s2.ID))
+	}
+	if got2.Name != s2.GetName() {
+		t.Errorf("streams[1].Name = %q, want %q", got2.Name, s2.GetName())
+	}
+	if !got2.Private {
+		t.Errorf("streams[1].Private = false, want true")
+	}
+}
+
+func TestListCourseStreams_EmptyStreams(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := model.Course{Name: "Empty Course"}
+	course.ID = 20
+	course.Streams = []model.Stream{}
+
+	tokenMock, usersMock, coursesMock := setupServiceCourseAdmin(ctrl, "svctoken", 7, 20, course)
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer svctoken")
+
+	resp, err := api.ListCourseStreams(ctx, &protobuf.ListCourseStreamsRequest{CourseId: 20})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.Streams) != 0 {
+		t.Fatalf("expected 0 streams, got %d", len(resp.Streams))
+	}
+}
+
+func TestListCourseStreams_NotAdmin_PermissionDenied(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	const rawToken = "svctoken"
+	const userID = uint(7)
+	const courseID = uint(30)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	// svcUser has NO administered courses → IsAdminOfCourse returns false.
+	svcUser := model.User{Role: model.ServiceType}
+	svcUser.ID = userID
+
+	course := model.Course{Name: "Restricted Course"}
+	course.ID = courseID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(course, nil)
+
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	_, err := api.ListCourseStreams(ctx, &protobuf.ListCourseStreamsRequest{CourseId: uint32(courseID)})
+	if err == nil {
+		t.Fatal("expected PermissionDenied error, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusForbidden)
+}
+
+func TestListCourseStreams_UnknownCourse_NotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	const rawToken = "svctoken"
+	const userID = uint(7)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	svcUser := model.User{Role: model.ServiceType}
+	svcUser.ID = userID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(999)).Return(model.Course{}, errors.New("record not found"))
+
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	_, err := api.ListCourseStreams(ctx, &protobuf.ListCourseStreamsRequest{CourseId: 999})
+	if err == nil {
+		t.Fatal("expected NotFound error, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusNotFound)
+}
+
+func TestListCourseStreams_MissingAuthHeader_Unauthenticated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   mock_dao.NewMockTokenDao(ctrl),
+		UsersDao:   mock_dao.NewMockUsersDao(ctrl),
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	})
+
+	// No metadata in context.
+	_, err := api.ListCourseStreams(incomingCtx(), &protobuf.ListCourseStreamsRequest{CourseId: 10})
+	if err == nil {
+		t.Fatal("expected Unauthenticated error, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusUnauthorized)
+}
+
+func TestListCourseStreams_InvalidToken_Unauthenticated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	tokenMock.EXPECT().GetToken("badtoken").Return(model.Token{}, errors.New("not found"))
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   mock_dao.NewMockUsersDao(ctrl),
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	})
+	ctx := incomingCtx("authorization", "Bearer badtoken")
+
+	_, err := api.ListCourseStreams(ctx, &protobuf.ListCourseStreamsRequest{CourseId: 10})
+	if err == nil {
+		t.Fatal("expected Unauthenticated error, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusUnauthorized)
+}
