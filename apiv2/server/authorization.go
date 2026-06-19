@@ -137,7 +137,9 @@ func (a *API) getServiceAccount(ctx context.Context) (*model.User, error) {
 	if tok.Scope != model.TokenScopeService {
 		return nil, e.WithStatus(http.StatusForbidden, errors.New("token not authorized for integration"))
 	}
-	_ = a.dao.TokenDao.TokenUsed(tok)
+	if err := a.dao.TokenDao.TokenUsed(tok); err != nil {
+		a.log.Warn("failed to record token last_use", "err", err)
+	}
 	user, err := a.dao.GetUserByID(ctx, tok.UserID)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)

@@ -94,11 +94,6 @@ func TestClampTTL(t *testing.T) {
 // Helpers shared by EP1 tests
 // ---------------------------------------------------------------------------
 
-// serviceCtx returns an incoming context that carries a valid service bearer token.
-func serviceCtx(token string) interface{ Done() <-chan struct{} } {
-	return incomingCtx("authorization", "Bearer "+token)
-}
-
 // setupServiceAccount wires the token + users mocks so that getServiceAccount
 // succeeds. Returns the mock token and users daoWrapper partial for reuse.
 func setupServiceTokenAndUser(ctrl *gomock.Controller, rawToken string, userID uint) (*mock_dao.MockTokenDao, *mock_dao.MockUsersDao, model.Token, model.User) {
