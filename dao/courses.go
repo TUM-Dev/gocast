@@ -22,6 +22,10 @@ type CoursesDao interface {
 	GetAllCourses() ([]model.Course, error)
 	GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error)
 	GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error)
+	// GetDirectlyAdministeredCoursesByUserId returns courses where the user is listed
+	// in course_admins. Unlike GetAdministeredCoursesByUserId it NEVER returns all
+	// semester courses for a global-admin user — only directly-administered ones.
+	GetDirectlyAdministeredCoursesByUserId(ctx context.Context, userID uint, teachingTerm string, year int) ([]model.Course, error)
 	GetAllCoursesForSemester(ctx context.Context, year int, term string) (courses []model.Course)
 	GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error)
@@ -144,6 +148,25 @@ func (d CoursesDaoImpl) GetAdministeredCoursesByUserId(ctx context.Context, user
 		Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v-%d-%s", userid, year, teachingTerm), foundCourses, 1, time.Minute)
 	}
 	return foundCourses, dbErr
+}
+
+// GetDirectlyAdministeredCoursesByUserId returns courses for which userID has an
+// explicit entry in course_admins. It intentionally omits the AdminType
+// "return all" branch from GetAdministeredCoursesByUserId so that EP1 only
+// surfaces courses to which a user has been directly bound.
+func (d CoursesDaoImpl) GetDirectlyAdministeredCoursesByUserId(ctx context.Context, userID uint, teachingTerm string, year int) ([]model.Course, error) {
+	var courses []model.Course
+	err := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Model(&model.Course{}).
+		Joins("JOIN course_admins ON courses.id = course_admins.course_id").
+		Where("course_admins.user_id = ? AND courses.deleted_at IS NULL AND ((teaching_term = ? AND year = ?) OR ? = 0)",
+			userID, teachingTerm, year, year).
+		Find(&courses).Error
+	if err != nil {
+		return nil, err
+	}
+	return courses, nil
 }
 
 func (d CoursesDaoImpl) GetAllCoursesForSemester(ctx context.Context, year int, term string) (courses []model.Course) {
