@@ -135,6 +135,8 @@ func configMainRoute(router *gin.Engine) {
 	courseAdminGroup.GET("/admin/course/:courseID", routes.EditCoursePage)
 	courseAdminGroup.GET("/admin/course/:courseID/stats", routes.CourseStatsPage)
 	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
+	courseAdminGroup.GET("/admin/course/:courseID/integration/confirm", routes.IntegrationBindingConfirmGET)
+	courseAdminGroup.POST("/admin/course/:courseID/integration/confirm", routes.IntegrationBindingConfirmPOST)
 
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))

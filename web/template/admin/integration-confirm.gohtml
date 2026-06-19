@@ -1,0 +1,58 @@
+{{- /*gotype: github.com/TUM-Dev/gocast/web.IntegrationConfirmPageData*/ -}}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.IndexData.Branding.Title}} | Authorize Integration</title>
+    {{template "headImports" .IndexData.VersionTag}}
+</head>
+
+<body>
+{{template "header" .IndexData.TUMLiveContext}}
+
+<div class="text-1 container mx-auto max-w-2xl mt-12 px-4">
+    <h1 class="text-2xl font-bold mb-6">Authorize Artemis Integration</h1>
+
+    <div class="bg-white dark:bg-secondary rounded-lg shadow p-6 mb-6">
+        <p class="mb-4">
+            You are about to authorize the Artemis service to manage videos for the following course:
+        </p>
+
+        <table class="w-full text-sm mb-4">
+            <tbody>
+                <tr class="border-b dark:border-gray-700">
+                    <td class="py-2 pr-4 font-semibold text-2 w-36">Course</td>
+                    <td class="py-2">{{.CourseName}}</td>
+                </tr>
+                <tr>
+                    <td class="py-2 pr-4 font-semibold text-2">Service Account</td>
+                    <td class="py-2">{{.ServiceUser.GetPreferredName}}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="text-sm text-2 mb-6">
+            Confirming this action grants the Artemis service account administrative access to this course.
+            This allows Artemis to list and link streams, and issue signed playback tokens on behalf of enrolled users.
+        </p>
+
+        <form method="POST" action="/admin/course/{{.CourseID}}/integration/confirm">
+            <input type="hidden" name="service" value="{{.ServiceUser.ID}}">
+            <input type="hidden" name="redirect" value="{{.Redirect}}">
+
+            <div class="flex gap-4">
+                <button type="submit"
+                        class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition-colors duration-150">
+                    Confirm
+                </button>
+                <a href="/admin/course/{{.CourseID}}"
+                   class="px-6 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-1 font-semibold rounded transition-colors duration-150">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

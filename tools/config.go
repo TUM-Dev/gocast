@@ -178,6 +178,11 @@ type Config struct {
 	WikiURL          string `yaml:"wikiURL"`
 	RtmpProxyURL     string `yaml:"rtmpProxyURL"`
 	RtmpProxyService string `yaml:"rtmpProxyService"`
+	// AllowedIntegrationRedirectBaseURL is the base URL of the Artemis server.
+	// After a course binding is confirmed, the handler will only redirect back
+	// to URLs whose prefix matches this value (open-redirect prevention).
+	// Example: "https://artemis.example.com"
+	AllowedIntegrationRedirectBaseURL string `yaml:"allowedIntegrationRedirectBaseURL"`
 }
 
 type MailConfig struct {

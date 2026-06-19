@@ -104,3 +104,7 @@ meili:
 vodURLTemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
 canonicalURL: https://tum.live
 rtmpProxyURL: https://proxy.example.com/live
+# allowedIntegrationRedirectBaseURL is the Artemis server base URL used for
+# open-redirect prevention after the course-binding approval page.
+# Only redirects whose URL starts with this value are accepted.
+allowedIntegrationRedirectBaseURL: ""
