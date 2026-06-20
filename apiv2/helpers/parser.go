@@ -2,6 +2,7 @@
 package helpers
 
 import (
+	"log/slog"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -10,6 +11,8 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
+
+var log = slog.Default().With("package", "apiv2/helpers")
 
 // ParseUserToProto converts a User model to its protobuf representation.
 func ParseUserToProto(u *model.User) *protobuf.User {
@@ -94,7 +97,9 @@ func ParseSemesterToProto(semester model.Semester) *protobuf.Semester {
 func ParseStreamToProto(stream model.Stream, course model.Course, user *model.User) *protobuf.Stream {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
-	_ = tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled)
+	if err := tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled); err != nil {
+		log.Warn("ParseStreamToProto: SetSignedPlaylists failed", "streamID", stream.ID, "err", err)
+	}
 
 	s := &protobuf.Stream{
 		Id:               uint32(stream.ID),

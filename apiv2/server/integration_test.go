@@ -302,7 +302,8 @@ func TestListAdministeredCourses_UnknownLrzId_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	tokenMock, usersMock, _, _ := setupServiceTokenAndUser(ctrl, "svctoken", 7)
-	usersMock.EXPECT().GetUserByLrzID("unknown99").Return(model.User{}, errors.New("not found"))
+	// Use gorm.ErrRecordNotFound so the handler maps it to 404 (not 500).
+	usersMock.EXPECT().GetUserByLrzID("unknown99").Return(model.User{}, gorm.ErrRecordNotFound)
 
 	api := buildAPI(dao.DaoWrapper{
 		TokenDao:   tokenMock,
@@ -316,6 +317,28 @@ func TestListAdministeredCourses_UnknownLrzId_NotFound(t *testing.T) {
 		t.Fatal("expected NotFound error, got nil")
 	}
 	assertGRPCStatus(t, err, http.StatusNotFound)
+}
+
+func TestListAdministeredCourses_LrzIdBackendError_InternalError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tokenMock, usersMock, _, _ := setupServiceTokenAndUser(ctrl, "svctoken", 7)
+	// A non-record-not-found error (e.g. DB connection failure) must map to 500.
+	usersMock.EXPECT().GetUserByLrzID("ab12cde").Return(model.User{}, errors.New("connection refused"))
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	})
+	ctx := incomingCtx("authorization", "Bearer svctoken")
+
+	_, err := api.ListAdministeredCourses(ctx, &protobuf.ListAdministeredCoursesRequest{LrzId: "ab12cde"})
+	if err == nil {
+		t.Fatal("expected InternalError, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusInternalServerError)
 }
 
 func TestListAdministeredCourses_EmptyResult(t *testing.T) {
@@ -975,7 +998,8 @@ func TestGetPlaybackToken_StreamNotFound_NotFound(t *testing.T) {
 	tokenMock, usersMock, coursesMock := setupServiceCourseAdmin(ctrl, rawToken, userID, courseID, course)
 	usersMock.EXPECT().GetUserByLrzID("ob01tum").Return(oboUser, nil)
 	streamsMock := mock_dao.NewMockStreamsDao(ctrl)
-	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamID)).Return(model.Stream{}, errors.New("record not found"))
+	// Use gorm.ErrRecordNotFound so the handler maps it to 404 (not 500).
+	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamID)).Return(model.Stream{}, gorm.ErrRecordNotFound)
 
 	api := buildAPI(dao.DaoWrapper{
 		TokenDao:   tokenMock,
@@ -993,6 +1017,46 @@ func TestGetPlaybackToken_StreamNotFound_NotFound(t *testing.T) {
 		t.Fatal("expected NotFound, got nil")
 	}
 	assertGRPCStatus(t, err, http.StatusNotFound)
+}
+
+func TestGetPlaybackToken_StreamBackendError_InternalError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(100)
+		streamID = uint(200)
+	)
+
+	course := model.Course{Visibility: "public"}
+	course.ID = courseID
+	oboUser := model.User{LrzID: "ob01tum", Role: model.StudentType}
+	oboUser.ID = 55
+
+	tokenMock, usersMock, coursesMock := setupServiceCourseAdmin(ctrl, rawToken, userID, courseID, course)
+	usersMock.EXPECT().GetUserByLrzID("ob01tum").Return(oboUser, nil)
+	streamsMock := mock_dao.NewMockStreamsDao(ctrl)
+	// A non-record-not-found error must map to 500.
+	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamID)).Return(model.Stream{}, errors.New("db timeout"))
+
+	api := buildAPI(dao.DaoWrapper{
+		TokenDao:   tokenMock,
+		UsersDao:   usersMock,
+		CoursesDao: coursesMock,
+		StreamsDao: streamsMock,
+	})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken, "x-on-behalf-of", "ob01tum")
+
+	_, err := api.GetPlaybackToken(ctx, &protobuf.GetPlaybackTokenRequest{
+		CourseId: uint32(courseID),
+		StreamId: uint32(streamID),
+	})
+	if err == nil {
+		t.Fatal("expected InternalError for backend DB error, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusInternalServerError)
 }
 
 func TestGetPlaybackToken_NoPlayableVariants_NotFound(t *testing.T) {

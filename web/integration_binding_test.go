@@ -73,9 +73,20 @@ func buildRouter(t *testing.T, daoWrapper dao.DaoWrapper, ctx tools.TUMLiveConte
 	return r
 }
 
+// withServiceAccountID sets IntegrationServiceAccountID to the given value for the duration
+// of the test and restores the original on cleanup.
+func withServiceAccountID(t *testing.T, id uint) {
+	t.Helper()
+	orig := tools.Cfg.IntegrationServiceAccountID
+	tools.Cfg.IntegrationServiceAccountID = id
+	t.Cleanup(func() { tools.Cfg.IntegrationServiceAccountID = orig })
+}
+
 func TestIntegrationBindingConfirmGET_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99) // must be set for the handler to proceed
 
 	course := &model.Course{
 		Model: gorm.Model{ID: 10},
@@ -121,6 +132,8 @@ func TestIntegrationBindingConfirmGET_NonServiceType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	withServiceAccountID(t, 77) // configured, matches request
+
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi"}
 	// User with non-service role
 	regularUser := model.User{Model: gorm.Model{ID: 77}, Name: "regular", Role: model.LecturerType}
@@ -148,6 +161,8 @@ func TestIntegrationBindingConfirmGET_MissingServiceParam(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// No IntegrationServiceAccountID set — but missing param is detected before the
+	// service-account check (empty string → ParseUint fails → 400).
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi"}
 	wrapper := dao.DaoWrapper{UsersDao: mock_dao.NewMockUsersDao(ctrl)}
 	ctx := courseAdminContext(course)
@@ -162,9 +177,61 @@ func TestIntegrationBindingConfirmGET_MissingServiceParam(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// GET-side fail-closed tests (Fix 1)
+// ---------------------------------------------------------------------------
+
+// TestIntegrationBindingConfirmGET_UnconfiguredID_Forbidden verifies that the GET
+// handler rejects requests when IntegrationServiceAccountID is 0 (unset).
+func TestIntegrationBindingConfirmGET_UnconfiguredID_Forbidden(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	withServiceAccountID(t, 0) // explicitly unset → fail closed
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi"}
+	// No DAO calls expected: the check fires before any lookup.
+	wrapper := dao.DaoWrapper{UsersDao: mock_dao.NewMockUsersDao(ctrl)}
+	ctx := courseAdminContext(course)
+	r := buildRouter(t, wrapper, ctx)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/course/10/integration/confirm?service=99", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when IntegrationServiceAccountID=0 (unset), got %d", w.Code)
+	}
+}
+
+// TestIntegrationBindingConfirmGET_MismatchedID_Forbidden verifies that the GET
+// handler rejects a "service" param that doesn't match the configured ID.
+func TestIntegrationBindingConfirmGET_MismatchedID_Forbidden(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99) // configured to 99, request sends 42
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi"}
+	// No DAO calls expected: the check fires before any lookup.
+	wrapper := dao.DaoWrapper{UsersDao: mock_dao.NewMockUsersDao(ctrl)}
+	ctx := courseAdminContext(course)
+	r := buildRouter(t, wrapper, ctx)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/course/10/integration/confirm?service=42", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when 'service' param does not match configured ID, got %d", w.Code)
+	}
+}
+
 func TestIntegrationBindingConfirmPOST_SuccessAllowlistedRedirect(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99) // must match request
 
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
 	serviceUser := model.User{Model: gorm.Model{ID: 99}, Name: "artemis-service", Role: model.ServiceType}
@@ -218,6 +285,8 @@ func TestIntegrationBindingConfirmPOST_SuccessAllowlistedRedirect(t *testing.T) 
 func TestIntegrationBindingConfirmPOST_BlockedRedirect(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99) // must match request
 
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
 	serviceUser := model.User{Model: gorm.Model{ID: 99}, Name: "artemis-service", Role: model.ServiceType}
@@ -276,6 +345,8 @@ func TestIntegrationBindingConfirmPOST_BlockedRedirect(t *testing.T) {
 func TestIntegrationBindingConfirmPOST_NonServiceTypeUserRejected(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	withServiceAccountID(t, 55) // must match request (55 is the student user ID)
 
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi"}
 	// A student account, NOT a service account.
@@ -348,6 +419,8 @@ func TestIntegrationBindingConfirmPOST_SameOriginViaReferer(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	withServiceAccountID(t, 99) // must match request
+
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
 	serviceUser := model.User{Model: gorm.Model{ID: 99}, Name: "artemis-service", Role: model.ServiceType}
 	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType, Name: "Prof. Test"}
@@ -414,7 +487,7 @@ func TestIntegrationBindingConfirmPOST_NoOriginNoReferer_Forbidden(t *testing.T)
 }
 
 // ---------------------------------------------------------------------------
-// Service-account restriction tests (MEDIUM-2)
+// Service-account restriction tests (Fix 1 — fail closed)
 // ---------------------------------------------------------------------------
 
 func TestIntegrationBindingConfirmPOST_WrongServiceAccountID_Forbidden(t *testing.T) {
@@ -423,23 +496,17 @@ func TestIntegrationBindingConfirmPOST_WrongServiceAccountID_Forbidden(t *testin
 
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
 	// Operator has configured account 99 as the allowed service account.
-	// The request presents account 42 → must be rejected.
-	configuredServiceUser := model.User{Model: gorm.Model{ID: 42}, Name: "other-service", Role: model.ServiceType}
+	// The request presents account 42 → must be rejected before any lookup.
 
-	usersDao := mock_dao.NewMockUsersDao(ctrl)
-	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(42)).Return(configuredServiceUser, nil).Times(1)
-
-	// AddAdminToCourse must NOT be called.
+	// No DAO calls expected: the service-account check fires before GetUserByID.
 	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
 
-	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao}
+	wrapper := dao.DaoWrapper{UsersDao: mock_dao.NewMockUsersDao(ctrl), CoursesDao: coursesDao}
 	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType}
 	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
 
 	// Configure the allowed service account to a DIFFERENT ID.
-	origID := tools.Cfg.IntegrationServiceAccountID
-	tools.Cfg.IntegrationServiceAccountID = 99
-	defer func() { tools.Cfg.IntegrationServiceAccountID = origID }()
+	withServiceAccountID(t, 99)
 
 	r := buildRouter(t, wrapper, ctx)
 
@@ -476,9 +543,7 @@ func TestIntegrationBindingConfirmPOST_CorrectServiceAccountID_Succeeds(t *testi
 	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao, AuditDao: auditDao}
 	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
 
-	origID := tools.Cfg.IntegrationServiceAccountID
-	tools.Cfg.IntegrationServiceAccountID = 99 // exactly matches the request
-	defer func() { tools.Cfg.IntegrationServiceAccountID = origID }()
+	withServiceAccountID(t, 99) // exactly matches the request
 
 	origBase := tools.Cfg.AllowedIntegrationRedirectBaseURL
 	tools.Cfg.AllowedIntegrationRedirectBaseURL = ""
@@ -500,28 +565,23 @@ func TestIntegrationBindingConfirmPOST_CorrectServiceAccountID_Succeeds(t *testi
 	}
 }
 
-func TestIntegrationBindingConfirmPOST_ZeroConfigID_AnyServiceTypeAllowed(t *testing.T) {
+// TestIntegrationBindingConfirmPOST_ZeroConfigID_Rejected verifies that the POST
+// handler fails closed when IntegrationServiceAccountID is 0 (unset). Previously
+// this test expected a 302 success (any ServiceType allowed); now it must be 403.
+func TestIntegrationBindingConfirmPOST_ZeroConfigID_Rejected(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
-	// Any ServiceType user should be accepted when IntegrationServiceAccountID is 0.
-	serviceUser := model.User{Model: gorm.Model{ID: 77}, Name: "any-service", Role: model.ServiceType}
+	// No DAO calls expected: the fail-closed check fires before any lookup.
+	wrapper := dao.DaoWrapper{
+		UsersDao:   mock_dao.NewMockUsersDao(ctrl),
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	}
 	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType, Name: "Prof. Test"}
-
-	usersDao := mock_dao.NewMockUsersDao(ctrl)
-	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(77)).Return(serviceUser, nil).Times(1)
-	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
-	coursesDao.EXPECT().AddAdminToCourse(uint(77), uint(10)).Return(nil).Times(1)
-	auditDao := mock_dao.NewMockAuditDao(ctrl)
-	auditDao.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
-
-	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao, AuditDao: auditDao}
 	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
 
-	origID := tools.Cfg.IntegrationServiceAccountID
-	tools.Cfg.IntegrationServiceAccountID = 0 // unset → backward-compatible: any ServiceType accepted
-	defer func() { tools.Cfg.IntegrationServiceAccountID = origID }()
+	withServiceAccountID(t, 0) // explicitly unset → fail closed
 
 	origBase := tools.Cfg.AllowedIntegrationRedirectBaseURL
 	tools.Cfg.AllowedIntegrationRedirectBaseURL = ""
@@ -538,8 +598,8 @@ func TestIntegrationBindingConfirmPOST_ZeroConfigID_AnyServiceTypeAllowed(t *tes
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if w.Code != http.StatusFound {
-		t.Fatalf("expected 302 when IntegrationServiceAccountID=0 (any service type allowed), got %d", w.Code)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when IntegrationServiceAccountID=0 (unset), got %d; handler must fail closed", w.Code)
 	}
 }
 

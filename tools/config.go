@@ -184,11 +184,11 @@ type Config struct {
 	// Example: "https://artemis.example.com"
 	AllowedIntegrationRedirectBaseURL string `yaml:"allowedIntegrationRedirectBaseURL"`
 
-	// IntegrationServiceAccountID, when non-zero, restricts the binding-approval
-	// page to a single, operator-configured service account. The POST handler
-	// rejects requests whose "service" parameter differs from this value.
-	// When set to 0 (the default) any ServiceType user is accepted (backward
-	// compatible with deployments that have only one service account).
+	// IntegrationServiceAccountID is REQUIRED for the binding-approval feature.
+	// Both the GET (render) and POST (grant) handlers fail closed: when this
+	// value is 0 (unset) all requests are rejected (403). When non-zero, only
+	// requests whose "service" parameter matches this value are permitted.
+	// There is no fallback — leaving this at 0 disables the approval page.
 	IntegrationServiceAccountID uint `yaml:"integrationServiceAccountID"`
 
 	// PlaybackTokenDefaultTTLSeconds is the TTL (in seconds) used when the

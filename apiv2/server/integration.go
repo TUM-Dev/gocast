@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
@@ -73,7 +74,10 @@ func (a *API) ListAdministeredCourses(ctx context.Context, req *protobuf.ListAdm
 
 	target, err := a.dao.UsersDao.GetUserByLrzID(req.LrzId)
 	if err != nil {
-		return nil, e.WithStatus(http.StatusNotFound, errors.New("user not found"))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, e.WithStatus(http.StatusNotFound, errors.New("user not found"))
+		}
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
 	courses, err := a.dao.CoursesDao.GetDirectlyAdministeredCoursesByUserId(ctx, target.ID, req.Term, int(req.Year))
@@ -152,7 +156,10 @@ func (a *API) GetPlaybackToken(ctx context.Context, req *protobuf.GetPlaybackTok
 	// (3) Load the stream.
 	stream, err := a.dao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamId))
 	if err != nil {
-		return nil, e.WithStatus(http.StatusNotFound, errors.New("stream not found"))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, e.WithStatus(http.StatusNotFound, errors.New("stream not found"))
+		}
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
 	// (4) Stream must belong to the path course. We deliberately return 404

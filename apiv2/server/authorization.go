@@ -162,7 +162,10 @@ func (a *API) getOnBehalfOfUser(ctx context.Context) (*model.User, error) {
 	}
 	user, err := a.dao.UsersDao.GetUserByLrzID(vals[0])
 	if err != nil {
-		return nil, e.WithStatus(http.StatusNotFound, errors.New("on-behalf-of user not found"))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, e.WithStatus(http.StatusNotFound, errors.New("on-behalf-of user not found"))
+		}
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 	return &user, nil
 }

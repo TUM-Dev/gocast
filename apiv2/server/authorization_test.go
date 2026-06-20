@@ -5,13 +5,16 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
@@ -172,6 +175,88 @@ func TestIntegrationHeaderMatcherPassesGrpcMetadata(t *testing.T) {
 	}
 	if !strings.EqualFold(got, "foo") {
 		t.Fatalf("expected lowercased 'foo', got %q", got)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// grpc-gateway mux header-propagation test (Fix 4)
+// ---------------------------------------------------------------------------
+
+// TestIntegrationHeaderMatcher_ViaGRPCGatewayMux drives an HTTP request through
+// an actual runtime.ServeMux wired with integrationHeaderMatcher and asserts that
+// all three header paths survive the full grpc-gateway AnnotateIncomingContext
+// path:
+//
+//   - Authorization   → "authorization" metadata key
+//   - X-On-Behalf-Of → "x-on-behalf-of" metadata key
+//   - Cookie          → "grpcgateway-cookie" metadata key
+//     (DefaultHeaderMatcher maps Cookie → "grpcgateway-Cookie"; gRPC stores keys
+//     lower-cased, so the downstream handler reads md["grpcgateway-cookie"])
+//
+// Implementation note: WithMetadata annotators and the header matcher are only
+// invoked via runtime.AnnotateIncomingContext, which generated gRPC-gateway code
+// calls during handler dispatch — NOT by ServeHTTP itself for unregistered paths.
+// To exercise the full path without a live gRPC backend, this test registers a
+// stub handler via mux.HandlePath that explicitly calls AnnotateIncomingContext
+// (exactly as generated handlers do) and captures the resulting metadata.
+func TestIntegrationHeaderMatcher_ViaGRPCGatewayMux(t *testing.T) {
+	// capturedMD is written by the stub HandlePath handler.
+	var capturedMD metadata.MD
+
+	mux := runtime.NewServeMux(
+		runtime.WithIncomingHeaderMatcher(integrationHeaderMatcher),
+	)
+
+	// Register a stub handler on a path the test will hit.
+	// The handler calls AnnotateIncomingContext — exactly what generated
+	// gRPC-gateway handlers do — so the header matcher runs in full.
+	if err := mux.HandlePath("GET", "/test/headers", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+		// AnnotateIncomingContext iterates r.Header, calls integrationHeaderMatcher
+		// for each key, and returns a context whose incoming metadata contains the
+		// mapped pairs (plus hardcoded "authorization" for the Authorization header).
+		annotated, err := runtime.AnnotateIncomingContext(r.Context(), mux, r, "/test.Service/Method")
+		if err != nil {
+			http.Error(w, "annotate error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		md, _ := metadata.FromIncomingContext(annotated)
+		capturedMD = md.Copy()
+		w.WriteHeader(http.StatusOK)
+	}); err != nil {
+		t.Fatalf("HandlePath: %v", err)
+	}
+
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+"/test/headers", nil)
+	if err != nil {
+		t.Fatalf("http.NewRequest: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer testtoken")
+	req.Header.Set("X-On-Behalf-Of", "ab12cde")
+	req.Header.Set("Cookie", "jwt=testcookie")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("HTTP request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("stub handler returned %d, expected 200", resp.StatusCode)
+	}
+
+	// Verify Authorization → "authorization" (integrationHeaderMatcher maps it).
+	if vals := capturedMD.Get("authorization"); len(vals) == 0 || !strings.Contains(vals[0], "testtoken") {
+		t.Errorf("authorization metadata missing or wrong: %v", capturedMD.Get("authorization"))
+	}
+	// Verify X-On-Behalf-Of → "x-on-behalf-of" (integrationHeaderMatcher maps it).
+	if vals := capturedMD.Get("x-on-behalf-of"); len(vals) == 0 || vals[0] != "ab12cde" {
+		t.Errorf("x-on-behalf-of metadata missing or wrong: %v", capturedMD.Get("x-on-behalf-of"))
+	}
+	// Verify Cookie → "grpcgateway-cookie" (DefaultHeaderMatcher via integrationHeaderMatcher's
+	// default branch; gRPC metadata lowercases all keys).
+	if vals := capturedMD.Get("grpcgateway-cookie"); len(vals) == 0 || !strings.Contains(vals[0], "jwt=testcookie") {
+		t.Errorf("grpcgateway-cookie metadata missing or wrong: %v", capturedMD.Get("grpcgateway-cookie"))
 	}
 }
 
@@ -359,12 +444,13 @@ func TestGetOnBehalfOfUser(t *testing.T) {
 		assertGRPCStatus(t, err, http.StatusBadRequest)
 	})
 
-	t.Run("unknown lrzId", func(t *testing.T) {
+	t.Run("unknown lrzId – record not found → 404", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
 		usersMock := mock_dao.NewMockUsersDao(ctrl)
-		usersMock.EXPECT().GetUserByLrzID("ab99zzz").Return(model.User{}, errors.New("not found"))
+		// Use gorm.ErrRecordNotFound so the handler maps it to 404.
+		usersMock.EXPECT().GetUserByLrzID("ab99zzz").Return(model.User{}, gorm.ErrRecordNotFound)
 
 		api := buildAPI(dao.DaoWrapper{UsersDao: usersMock})
 		ctx := incomingCtx("x-on-behalf-of", "ab99zzz")
@@ -374,6 +460,24 @@ func TestGetOnBehalfOfUser(t *testing.T) {
 			t.Fatal("expected NotFound error, got nil")
 		}
 		assertGRPCStatus(t, err, http.StatusNotFound)
+	})
+
+	t.Run("lrzId backend error → 500", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		usersMock := mock_dao.NewMockUsersDao(ctrl)
+		// A non-record-not-found error (e.g. DB connection failure) must map to 500.
+		usersMock.EXPECT().GetUserByLrzID("ab99zzz").Return(model.User{}, errors.New("connection refused"))
+
+		api := buildAPI(dao.DaoWrapper{UsersDao: usersMock})
+		ctx := incomingCtx("x-on-behalf-of", "ab99zzz")
+
+		_, err := api.getOnBehalfOfUser(ctx)
+		if err == nil {
+			t.Fatal("expected InternalError, got nil")
+		}
+		assertGRPCStatus(t, err, http.StatusInternalServerError)
 	})
 
 	t.Run("known lrzId", func(t *testing.T) {
