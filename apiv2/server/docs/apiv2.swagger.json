@@ -577,7 +577,7 @@
     "/integration/users/{lrzId}/administered-courses": {
       "get": {
         "summary": "List administered courses for a user.",
-        "description": "Retrieves the courses directly administered by the given user (on behalf of), filtered by year and term.",
+        "description": "Retrieves the courses directly administered by the user identified by `lrz_id` in the request path, filtered by year and term.",
         "operationId": "IntegrationService_listAdministeredCourses",
         "responses": {
           "200": {

@@ -183,6 +183,17 @@ type Config struct {
 	// to URLs whose prefix matches this value (open-redirect prevention).
 	// Example: "https://artemis.example.com"
 	AllowedIntegrationRedirectBaseURL string `yaml:"allowedIntegrationRedirectBaseURL"`
+
+	// PlaybackTokenDefaultTTLSeconds is the TTL (in seconds) used when the
+	// caller requests 0 or a negative value. Defaults to 7200 (2 hours) when
+	// unset or zero.
+	PlaybackTokenDefaultTTLSeconds int `yaml:"playbackTokenDefaultTTLSeconds"`
+	// PlaybackTokenMinTTLSeconds is the lower bound that clampTTL enforces on
+	// any caller-supplied TTL. Defaults to 300 (5 minutes) when unset or zero.
+	PlaybackTokenMinTTLSeconds int `yaml:"playbackTokenMinTTLSeconds"`
+	// PlaybackTokenMaxTTLSeconds is the upper bound that clampTTL enforces on
+	// any caller-supplied TTL. Defaults to 86400 (24 hours) when unset or zero.
+	PlaybackTokenMaxTTLSeconds int `yaml:"playbackTokenMaxTTLSeconds"`
 }
 
 type MailConfig struct {

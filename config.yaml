@@ -108,3 +108,10 @@ rtmpProxyURL: https://proxy.example.com/live
 # open-redirect prevention after the course-binding approval page.
 # Only redirects whose URL starts with this value are accepted.
 allowedIntegrationRedirectBaseURL: ""
+
+# Playback-token TTL bounds for the Artemis integration (EP2 getPlaybackToken).
+# All values are in seconds. Set a field to 0 (or omit it) to use the built-in
+# fallback: default=7200, min=300, max=86400.
+playbackTokenDefaultTTLSeconds: 0  # 0 → fallback: 7200 (2 hours)
+playbackTokenMinTTLSeconds: 0      # 0 → fallback: 300 (5 minutes)
+playbackTokenMaxTTLSeconds: 0      # 0 → fallback: 86400 (24 hours)

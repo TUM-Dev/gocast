@@ -20,6 +20,10 @@ type TokenDao interface {
 	TokenUsed(token model.Token) error
 
 	DeleteToken(id string) error
+	// DeleteServiceTokensForUser removes all service-scoped tokens for the given
+	// user. This is called during provisioning so that re-running the provisioning
+	// tool rotates credentials atomically (revoke old → insert new).
+	DeleteServiceTokensForUser(userID uint) error
 }
 
 type tokenDao struct {
@@ -76,6 +80,15 @@ func (d tokenDao) TokenUsed(token model.Token) error {
 
 func (d tokenDao) DeleteToken(id string) error {
 	return DB.Delete(&model.Token{}, id).Error
+}
+
+// DeleteServiceTokensForUser deletes all service-scoped tokens for the given
+// user. It performs a hard delete (Unscoped) so that the rows are removed
+// rather than soft-deleted, preventing accumulation of stale credential rows.
+func (d tokenDao) DeleteServiceTokensForUser(userID uint) error {
+	return DB.Unscoped().
+		Where("user_id = ? AND scope = ?", userID, model.TokenScopeService).
+		Delete(&model.Token{}).Error
 }
 
 type AllTokensDto struct {

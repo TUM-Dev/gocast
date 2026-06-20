@@ -15,12 +15,35 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// clampTTL returns a TTL (in seconds) clamped to [300, 86400].
-// A zero or negative value is treated as the default of 7200 seconds.
+// Hardcoded fallback bounds used when the corresponding config fields are
+// unset (zero). Keeping them as named constants makes the fallback logic
+// self-documenting and keeps the magic numbers in one place.
+const (
+	defaultTTLFallback = 7200  // 2 hours
+	minTTLFallback     = 300   // 5 minutes
+	maxTTLFallback     = 86400 // 24 hours
+)
+
+// clampTTL returns a TTL (in seconds) clamped to [min, max].
+// The bounds and default are read from tools.Cfg (PlaybackTokenMinTTLSeconds,
+// PlaybackTokenMaxTTLSeconds, PlaybackTokenDefaultTTLSeconds); when a field is
+// unset (zero) the corresponding hardcoded fallback value is used instead, so
+// behaviour is unchanged by default.
+//
+// A zero or negative ttlSeconds is treated as "use the default".
 func clampTTL(ttlSeconds int) int {
-	const defaultTTL = 7200
-	const minTTL = 300
-	const maxTTL = 86400
+	defaultTTL := tools.Cfg.PlaybackTokenDefaultTTLSeconds
+	if defaultTTL <= 0 {
+		defaultTTL = defaultTTLFallback
+	}
+	minTTL := tools.Cfg.PlaybackTokenMinTTLSeconds
+	if minTTL <= 0 {
+		minTTL = minTTLFallback
+	}
+	maxTTL := tools.Cfg.PlaybackTokenMaxTTLSeconds
+	if maxTTL <= 0 {
+		maxTTL = maxTTLFallback
+	}
 
 	if ttlSeconds <= 0 {
 		return defaultTTL

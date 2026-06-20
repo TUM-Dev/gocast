@@ -172,6 +172,13 @@ func (a *API) getOnBehalfOfUser(ctx context.Context) (*model.User, error) {
 //  2. that service account is an admin of the requested course.
 //
 // Returns the authenticated service user and the loaded course on success.
+//
+// Note on IsAdminOfCourse: getServiceAccount guarantees that svc.Role ==
+// ServiceType. IsAdminOfCourse's AdminType shortcut (which would make any
+// global AdminType user appear as admin of every course) therefore cannot fire
+// here — the check is a genuine course-admin membership lookup through the
+// AdministeredCourses association, ensuring only explicitly bound service
+// accounts can act on a course.
 func (a *API) requireServiceCourseAdmin(ctx context.Context, courseID uint) (*model.User, model.Course, error) {
 	svc, err := a.getServiceAccount(ctx)
 	if err != nil {

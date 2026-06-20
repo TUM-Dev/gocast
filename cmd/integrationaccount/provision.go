@@ -93,8 +93,14 @@ func main() {
 }
 
 // ProvisionServiceAccount creates (or finds) a ServiceType user identified by
-// login, generates a new random bearer token, persists it, and returns the
-// token string and the service user's ID.
+// login, revokes all existing service-scoped tokens for that user, generates a
+// fresh random bearer token, persists it, and returns the token string and the
+// service user's ID.
+//
+// Revoking before inserting makes re-running the command an atomic rotation:
+// old credentials are invalidated and a single new one is activated. If
+// revocation fails the function aborts so no new token is minted while stale
+// tokens might still be in use.
 //
 // The token is returned by value so the caller can print it exactly once. It
 // is NEVER passed to any log sink inside this function.
@@ -102,6 +108,13 @@ func ProvisionServiceAccount(usersDao dao.UsersDao, tokenDao dao.TokenDao, login
 	user, err := findOrCreateServiceUser(usersDao, login, name)
 	if err != nil {
 		return "", 0, fmt.Errorf("find/create service user: %w", err)
+	}
+
+	// Revoke all prior service-scoped tokens for this user before minting a
+	// new one. This ensures that re-running the provisioning tool rotates
+	// credentials cleanly rather than accumulating stale tokens.
+	if err = tokenDao.DeleteServiceTokensForUser(user.ID); err != nil {
+		return "", 0, fmt.Errorf("revoke existing service tokens: %w", err)
 	}
 
 	token, err = GenerateServiceToken()

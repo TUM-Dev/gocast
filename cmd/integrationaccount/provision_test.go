@@ -69,8 +69,9 @@ func TestGenerateServiceToken_Distinct(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // TestProvisionServiceAccount_NewUser verifies that when no service user exists
-// yet, ProvisionServiceAccount creates one, calls AddToken with
-// Scope==TokenScopeService and the correct UserID, and returns the token.
+// yet, ProvisionServiceAccount creates one, revokes any prior service-scoped
+// tokens (none in this case), calls AddToken with Scope==TokenScopeService and
+// the correct UserID, and returns the token.
 func TestProvisionServiceAccount_NewUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -97,6 +98,13 @@ func TestProvisionServiceAccount_NewUser(t *testing.T) {
 			u.ID = fakeID
 			return nil
 		})
+
+	// DeleteServiceTokensForUser must be called before AddToken to revoke prior
+	// service-scoped tokens (atomic rotation). For a brand-new user there are no
+	// prior tokens, but the call must still happen.
+	tokenDao.EXPECT().
+		DeleteServiceTokensForUser(fakeID).
+		Return(nil)
 
 	// AddToken must be called with the correct scope and user ID.
 	tokenDao.EXPECT().
@@ -129,9 +137,10 @@ func TestProvisionServiceAccount_NewUser(t *testing.T) {
 	}
 }
 
-// TestProvisionServiceAccount_ExistingUser verifies idempotency: when a
-// ServiceType user already exists, ProvisionServiceAccount reuses it and only
-// calls AddToken (not CreateUser).
+// TestProvisionServiceAccount_ExistingUser verifies that when a ServiceType
+// user already exists, ProvisionServiceAccount reuses it, revokes old service
+// tokens, and then mints a fresh one (atomic rotation). CreateUser must NOT be
+// called.
 func TestProvisionServiceAccount_ExistingUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -149,6 +158,13 @@ func TestProvisionServiceAccount_ExistingUser(t *testing.T) {
 
 	// CreateUser must NOT be called.
 	// (no EXPECT registered for CreateUser)
+
+	// DeleteServiceTokensForUser must be called BEFORE AddToken so that the
+	// rotation is atomic: old credentials are invalidated before a new one is
+	// activated.
+	tokenDao.EXPECT().
+		DeleteServiceTokensForUser(fakeID).
+		Return(nil)
 
 	tokenDao.EXPECT().
 		AddToken(gomock.AssignableToTypeOf(model.Token{})).
@@ -168,6 +184,36 @@ func TestProvisionServiceAccount_ExistingUser(t *testing.T) {
 	}
 	if userID != fakeID {
 		t.Errorf("returned userID=%d, want %d", userID, fakeID)
+	}
+}
+
+// TestProvisionServiceAccount_RevocationFails verifies that if
+// DeleteServiceTokensForUser returns an error, ProvisionServiceAccount aborts
+// and does not mint a new token. This ensures we never silently leave old
+// service tokens active when revocation is broken.
+func TestProvisionServiceAccount_RevocationFails(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	tokenDao := mock_dao.NewMockTokenDao(ctrl)
+
+	serviceUser := model.User{Role: model.ServiceType}
+	serviceUser.ID = 5
+
+	usersDao.EXPECT().
+		GetUserByLrzID("artemis-integration").
+		Return(serviceUser, nil)
+
+	tokenDao.EXPECT().
+		DeleteServiceTokensForUser(uint(5)).
+		Return(errors.New("db error during revocation"))
+
+	// AddToken must NOT be called when revocation fails.
+
+	_, _, err := ProvisionServiceAccount(usersDao, tokenDao, "artemis-integration", "Artemis")
+	if err == nil {
+		t.Fatal("expected error when token revocation fails, got nil")
 	}
 }
 
@@ -210,6 +256,11 @@ func TestProvisionServiceAccount_TokenDaoError(t *testing.T) {
 	usersDao.EXPECT().
 		GetUserByLrzID("artemis-integration").
 		Return(serviceUser, nil)
+
+	// DeleteServiceTokensForUser is called first; it succeeds here.
+	tokenDao.EXPECT().
+		DeleteServiceTokensForUser(uint(99)).
+		Return(nil)
 
 	tokenDao.EXPECT().
 		AddToken(gomock.Any()).

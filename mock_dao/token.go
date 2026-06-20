@@ -55,6 +55,20 @@ func (mr *MockTokenDaoMockRecorder) AddToken(token any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToken", reflect.TypeOf((*MockTokenDao)(nil).AddToken), token)
 }
 
+// DeleteServiceTokensForUser mocks base method.
+func (m *MockTokenDao) DeleteServiceTokensForUser(userID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteServiceTokensForUser", userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteServiceTokensForUser indicates an expected call of DeleteServiceTokensForUser.
+func (mr *MockTokenDaoMockRecorder) DeleteServiceTokensForUser(userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServiceTokensForUser", reflect.TypeOf((*MockTokenDao)(nil).DeleteServiceTokensForUser), userID)
+}
+
 // DeleteToken mocks base method.
 func (m *MockTokenDao) DeleteToken(id string) error {
 	m.ctrl.T.Helper()

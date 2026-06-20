@@ -4665,10 +4665,10 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10getNotifications\x12\x16.google.protobuf.Empty\x1a\".protobuf.GetNotificationsResponse\"k\x92AR\n" +
 	"\rNotifications\x12\x12Get notifications.\x1a-Retrieves notifications for the current user.\x82\xd3\xe4\x93\x02\x10\x12\x0e/notifications\x12\xcf\x01\n" +
 	"\x16getServerNotifications\x12\x16.google.protobuf.Empty\x1a(.protobuf.GetServerNotificationsResponse\"s\x92AS\n" +
-	"\rNotifications\x12\x19Get server notifications.\x1a'Retrieves current server notifications.\x82\xd3\xe4\x93\x02\x17\x12\x15/server-notifications2\xc9\t\n" +
-	"\x12IntegrationService\x12\xcb\x02\n" +
-	"\x17listAdministeredCourses\x12(.protobuf.ListAdministeredCoursesRequest\x1a).protobuf.ListAdministeredCoursesResponse\"\xda\x01\x92A\x9e\x01\n" +
-	"\vIntegration\x12%List administered courses for a user.\x1ahRetrieves the courses directly administered by the given user (on behalf of), filtered by year and term.\x82\xd3\xe4\x93\x022\x120/integration/users/{lrz_id}/administered-courses\x12\x95\x02\n" +
+	"\rNotifications\x12\x19Get server notifications.\x1a'Retrieves current server notifications.\x82\xd3\xe4\x93\x02\x17\x12\x15/server-notifications2\xdf\t\n" +
+	"\x12IntegrationService\x12\xe1\x02\n" +
+	"\x17listAdministeredCourses\x12(.protobuf.ListAdministeredCoursesRequest\x1a).protobuf.ListAdministeredCoursesResponse\"\xf0\x01\x92A\xb4\x01\n" +
+	"\vIntegration\x12%List administered courses for a user.\x1a~Retrieves the courses directly administered by the user identified by `lrz_id` in the request path, filtered by year and term.\x82\xd3\xe4\x93\x022\x120/integration/users/{lrz_id}/administered-courses\x12\x95\x02\n" +
 	"\x11listCourseStreams\x12\".protobuf.ListCourseStreamsRequest\x1a#.protobuf.ListCourseStreamsResponse\"\xb6\x01\x92A\x82\x01\n" +
 	"\vIntegration\x12 List streams for a bound course.\x1aQRetrieves the streams of a course the service account is bound to (course admin).\x82\xd3\xe4\x93\x02*\x12(/integration/courses/{course_id}/streams\x12\xb4\x02\n" +
 	"\x10getPlaybackToken\x12!.protobuf.GetPlaybackTokenRequest\x1a\".protobuf.GetPlaybackTokenResponse\"\xd8\x01\x92A\x86\x01\n" +

@@ -66,28 +66,84 @@ func parsePlaybackClaims(t *testing.T, signedURL string) *tools.JWTPlaylistClaim
 // clampTTL (pure function)
 // ---------------------------------------------------------------------------
 
+// resetTTLConfig zeroes out the three playback-token TTL config fields and
+// returns a function that restores the original values. Used in TTL tests to
+// ensure a clean config baseline without mutating the package-level singleton
+// permanently.
+func resetTTLConfig(t *testing.T) func() {
+	t.Helper()
+	orig := struct{ def, min, max int }{
+		tools.Cfg.PlaybackTokenDefaultTTLSeconds,
+		tools.Cfg.PlaybackTokenMinTTLSeconds,
+		tools.Cfg.PlaybackTokenMaxTTLSeconds,
+	}
+	tools.Cfg.PlaybackTokenDefaultTTLSeconds = 0
+	tools.Cfg.PlaybackTokenMinTTLSeconds = 0
+	tools.Cfg.PlaybackTokenMaxTTLSeconds = 0
+	return func() {
+		tools.Cfg.PlaybackTokenDefaultTTLSeconds = orig.def
+		tools.Cfg.PlaybackTokenMinTTLSeconds = orig.min
+		tools.Cfg.PlaybackTokenMaxTTLSeconds = orig.max
+	}
+}
+
 func TestClampTTL(t *testing.T) {
-	cases := []struct {
-		name string
-		in   int
-		want int
-	}{
-		{"zero → default 7200", 0, 7200},
-		{"negative → default 7200", -1, 7200},
-		{"below min → clamped to 300", 100, 300},
-		{"above max → clamped to 86400", 999999, 86400},
-		{"exact min", 300, 300},
-		{"exact max", 86400, 86400},
-		{"in range", 1800, 1800},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			if got := clampTTL(tc.in); got != tc.want {
-				t.Errorf("clampTTL(%d) = %d, want %d", tc.in, got, tc.want)
-			}
-		})
-	}
+	// Sub-group 1: fallback path — all config fields unset (zero).
+	t.Run("fallback (config unset)", func(t *testing.T) {
+		defer resetTTLConfig(t)()
+
+		cases := []struct {
+			name string
+			in   int
+			want int
+		}{
+			{"zero → default 7200", 0, 7200},
+			{"negative → default 7200", -1, 7200},
+			{"below min → clamped to 300", 100, 300},
+			{"above max → clamped to 86400", 999999, 86400},
+			{"exact min", 300, 300},
+			{"exact max", 86400, 86400},
+			{"in range", 1800, 1800},
+		}
+		for _, tc := range cases {
+			tc := tc
+			t.Run(tc.name, func(t *testing.T) {
+				if got := clampTTL(tc.in); got != tc.want {
+					t.Errorf("clampTTL(%d) = %d, want %d", tc.in, got, tc.want)
+				}
+			})
+		}
+	})
+
+	// Sub-group 2: config-driven path — all three fields are set.
+	t.Run("config-driven", func(t *testing.T) {
+		defer resetTTLConfig(t)()
+		tools.Cfg.PlaybackTokenDefaultTTLSeconds = 3600 // 1 hour default
+		tools.Cfg.PlaybackTokenMinTTLSeconds = 600      // 10 minutes min
+		tools.Cfg.PlaybackTokenMaxTTLSeconds = 43200    // 12 hours max
+
+		cases := []struct {
+			name string
+			in   int
+			want int
+		}{
+			{"zero → config default 3600", 0, 3600},
+			{"negative → config default 3600", -5, 3600},
+			{"below config min → clamped to 600", 100, 600},
+			{"above config max → clamped to 43200", 99999, 43200},
+			{"exact config min", 600, 600},
+			{"exact config max", 43200, 43200},
+			{"within config range", 7200, 7200},
+		}
+		for _, tc := range cases {
+			tc := tc
+			t.Run(tc.name, func(t *testing.T) {
+				if got := clampTTL(tc.in); got != tc.want {
+					t.Errorf("clampTTL(%d) = %d, want %d", tc.in, got, tc.want)
+				}
+			})
+		}
+	})
 }
 
 // ---------------------------------------------------------------------------
