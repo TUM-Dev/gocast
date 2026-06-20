@@ -47,7 +47,7 @@ require (
 	github.com/meilisearch/meilisearch-go v0.31.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/soheilhy/cmux v0.1.5
-	github.com/tum-dev/gocast/runner v0.0.0-20260502181723-a42e265fa85d
+	github.com/tum-dev/gocast/runner v0.0.0-20260620101435-fc79fca507e3
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/oauth2 v0.34.0
