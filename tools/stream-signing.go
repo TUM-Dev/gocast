@@ -15,13 +15,17 @@ import (
 // that external test packages (e.g. apiv2/server) can install a deterministic
 // signing key without reading a config file.
 //
-// It deliberately lives in a regular (non-_test.go) source file: a _test.go
-// helper would only be visible to tests *within* the tools package, not to
-// external test packages that import tools. There is no Go mechanism to expose
-// a hook into this package's unexported jwtKey to an external test package
-// while also excluding it from the default `go test` / production build without
-// a build tag (which the project's build/test commands do not pass). Do NOT
-// call this from production code.
+// Why it lives here (non-_test.go): Go's test compilation model makes helpers
+// in *_test.go files only visible within their own package. An external test
+// package (package apiv2) that imports "tools" cannot access a helper declared
+// in tools/stream-signing_test.go. Moving this to a build-tagged file would
+// require every `go test` invocation to pass `-tags gocast_testhook`, which
+// the project does not do, so the tests would silently fail to compile.
+//
+// ⚠ DO NOT call this from production code. It is intentionally not guarded by
+// a build tag so that `go test ./...` works without extra flags, but production
+// callers must never invoke it — production signing keys are loaded by
+// tools.LoadConfig() / initConfig() and stored in the unexported jwtKey var.
 func SetTestJWTKey(key *rsa.PrivateKey) {
 	jwtKey = key
 }

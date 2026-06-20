@@ -109,6 +109,13 @@ rtmpProxyURL: https://proxy.example.com/live
 # Only redirects whose URL starts with this value are accepted.
 allowedIntegrationRedirectBaseURL: ""
 
+# integrationServiceAccountID restricts the binding-approval page to a single,
+# pre-configured service account (identified by its numeric user ID).
+# When non-zero, the POST handler rejects any "service" parameter that does not
+# match this value, even if the account has ServiceType role.
+# Set to 0 (the default) to accept any ServiceType user (backward compatible).
+integrationServiceAccountID: 0
+
 # Playback-token TTL bounds for the Artemis integration (EP2 getPlaybackToken).
 # All values are in seconds. Set a field to 0 (or omit it) to use the built-in
 # fallback: default=7200, min=300, max=86400.

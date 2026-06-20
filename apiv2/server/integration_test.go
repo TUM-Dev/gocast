@@ -506,7 +506,8 @@ func TestListCourseStreams_UnknownCourse_NotFound(t *testing.T) {
 	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
 	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
 	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
-	coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(999)).Return(model.Course{}, errors.New("record not found"))
+	// Real GetCourseById uses Find (not First): missing course → nil error + zero-value course.
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(999)).Return(model.Course{}, nil)
 
 	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
 	ctx := incomingCtx("authorization", "Bearer "+rawToken)
@@ -710,7 +711,7 @@ func TestGetPlaybackToken_ServiceAccountNotAdmin_PermissionDenied(t *testing.T) 
 	assertGRPCStatus(t, err, http.StatusForbidden)
 }
 
-func TestGetPlaybackToken_StreamNotInCourse_BadRequest(t *testing.T) {
+func TestGetPlaybackToken_StreamNotInCourse_NotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -752,9 +753,11 @@ func TestGetPlaybackToken_StreamNotInCourse_BadRequest(t *testing.T) {
 		StreamId: uint32(streamID),
 	})
 	if err == nil {
-		t.Fatal("expected BadRequest, got nil")
+		t.Fatal("expected NotFound, got nil")
 	}
-	assertGRPCStatus(t, err, http.StatusBadRequest)
+	// A cross-course stream must return NotFound (not BadRequest) so the handler
+	// does not act as a stream-ID oracle for service tokens bound to one course.
+	assertGRPCStatus(t, err, http.StatusNotFound)
 }
 
 func TestGetPlaybackToken_IneligibleOBO_PermissionDenied(t *testing.T) {
@@ -1140,7 +1143,9 @@ func TestGetBindingStatus_UnknownCourse_NotFound(t *testing.T) {
 	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
 	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
 	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
-	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(model.Course{}, errors.New("record not found"))
+	// Real GetCourseById uses Find (not First): a missing course returns nil error
+	// and a zero-value course (ID == 0). The handler must detect this and return NotFound.
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(model.Course{}, nil)
 
 	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
 	ctx := incomingCtx("authorization", "Bearer "+rawToken)

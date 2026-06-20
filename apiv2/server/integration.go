@@ -155,12 +155,12 @@ func (a *API) GetPlaybackToken(ctx context.Context, req *protobuf.GetPlaybackTok
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("stream not found"))
 	}
 
-	// (4) Stream must belong to the path course. We deliberately return 400
-	//     (not 404) here: the stream exists, just not in this course, and we do
-	//     not want to confirm a stream's existence in some other course to a
-	//     caller that is only bound to this one.
+	// (4) Stream must belong to the path course. We deliberately return 404
+	//     (not 400) here: a 400 would confirm that the stream exists, acting as
+	//     a cross-course stream-ID oracle for a service token bound to only this
+	//     course. 404 is consistent with not confirming cross-course existence.
 	if stream.CourseID != course.ID {
-		return nil, e.WithStatus(http.StatusBadRequest, errors.New("stream does not belong to course"))
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("stream not found in course"))
 	}
 
 	// (5) OBO user eligibility: must be eligible to watch the course, and if the
@@ -230,6 +230,13 @@ func (a *API) GetBindingStatus(ctx context.Context, req *protobuf.GetBindingStat
 	course, err := a.dao.CoursesDao.GetCourseById(ctx, uint(req.CourseId))
 	if err != nil {
 		return nil, e.WithStatus(http.StatusNotFound, err)
+	}
+	// GetCourseById uses gorm Find (not First), so a missing course returns a
+	// nil error and a zero-value course rather than gorm.ErrRecordNotFound.
+	// Treat a zero ID as not-found so callers get NotFound instead of
+	// Bound:false for non-existent courses.
+	if course.ID == 0 {
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("course not found"))
 	}
 	return &protobuf.GetBindingStatusResponse{Bound: svc.IsAdminOfCourse(course)}, nil
 }

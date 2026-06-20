@@ -24,6 +24,11 @@ type TokenDao interface {
 	// user. This is called during provisioning so that re-running the provisioning
 	// tool rotates credentials atomically (revoke old → insert new).
 	DeleteServiceTokensForUser(userID uint) error
+	// RotateServiceToken atomically removes all existing service-scoped tokens for
+	// userID and inserts newToken in a single database transaction. If either
+	// operation fails the transaction is rolled back so no tokens are lost or
+	// duplicated.
+	RotateServiceToken(userID uint, newToken model.Token) error
 }
 
 type tokenDao struct {
@@ -89,6 +94,21 @@ func (d tokenDao) DeleteServiceTokensForUser(userID uint) error {
 	return DB.Unscoped().
 		Where("user_id = ? AND scope = ?", userID, model.TokenScopeService).
 		Delete(&model.Token{}).Error
+}
+
+// RotateServiceToken atomically revokes all existing service-scoped tokens for
+// userID and inserts newToken in a single database transaction. If the insert
+// fails the delete is rolled back, so concurrent runs can never leave the user
+// with zero valid tokens after a partial failure.
+func (d tokenDao) RotateServiceToken(userID uint, newToken model.Token) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Unscoped().
+			Where("user_id = ? AND scope = ?", userID, model.TokenScopeService).
+			Delete(&model.Token{}).Error; err != nil {
+			return err
+		}
+		return tx.Create(&newToken).Error
+	})
 }
 
 type AllTokensDto struct {

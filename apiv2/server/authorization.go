@@ -188,6 +188,12 @@ func (a *API) requireServiceCourseAdmin(ctx context.Context, courseID uint) (*mo
 	if err != nil {
 		return nil, model.Course{}, e.WithStatus(http.StatusNotFound, err)
 	}
+	// GetCourseById uses gorm Find (not First), so a missing course returns a
+	// nil error and a zero-value course rather than gorm.ErrRecordNotFound.
+	// Treat a zero ID as not-found.
+	if course.ID == 0 {
+		return nil, model.Course{}, e.WithStatus(http.StatusNotFound, errors.New("course not found"))
+	}
 	if !svc.IsAdminOfCourse(course) {
 		return nil, course, e.WithStatus(http.StatusForbidden, errors.New("service account not bound to course"))
 	}

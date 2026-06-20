@@ -13,6 +13,50 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
+// checkSameOrigin validates that the request originates from the same host.
+// It reads the Origin header (falling back to Referer) and compares the
+// scheme+host to c.Request.Host. Returns true when the origin matches.
+// Requests with no Origin AND no Referer header are rejected (safe default).
+func checkSameOrigin(c *gin.Context) bool {
+	origin := c.Request.Header.Get("Origin")
+	if origin == "" {
+		// Fall back to Referer, using only the scheme+host portion.
+		ref := c.Request.Header.Get("Referer")
+		if ref == "" {
+			return false
+		}
+		// Strip everything from the third slash onward to get scheme+host.
+		// e.g. "https://foo.example.com/path" → "https://foo.example.com"
+		if after, ok := strings.CutPrefix(ref, "https://"); ok {
+			if slash := strings.Index(after, "/"); slash >= 0 {
+				origin = "https://" + after[:slash]
+			} else {
+				origin = "https://" + after
+			}
+		} else if after, ok := strings.CutPrefix(ref, "http://"); ok {
+			if slash := strings.Index(after, "/"); slash >= 0 {
+				origin = "http://" + after[:slash]
+			} else {
+				origin = "http://" + after
+			}
+		} else {
+			return false
+		}
+	}
+	// Compare origin scheme+host to the request's own Host header.
+	// c.Request.Host is already scheme-stripped; we must compare without scheme.
+	reqHost := c.Request.Host
+	var originHost string
+	if after, ok := strings.CutPrefix(origin, "https://"); ok {
+		originHost = after
+	} else if after, ok := strings.CutPrefix(origin, "http://"); ok {
+		originHost = after
+	} else {
+		return false
+	}
+	return strings.EqualFold(originHost, reqHost)
+}
+
 // IntegrationConfirmPageData holds the data rendered by the confirmation template.
 type IntegrationConfirmPageData struct {
 	IndexData   IndexData
@@ -73,7 +117,16 @@ func (r mainRoutes) IntegrationBindingConfirmGET(c *gin.Context) {
 // Form fields:
 //   - service: numeric user ID of the ServiceType account to bind
 //   - redirect: URL to return to after confirmation (validated against config)
+//
+// Same-origin enforcement: the handler requires an Origin (or Referer) header
+// whose host matches c.Request.Host. Mismatches are rejected with 403.
 func (r mainRoutes) IntegrationBindingConfirmPOST(c *gin.Context) {
+	if !checkSameOrigin(c) {
+		c.Status(http.StatusForbidden)
+		tools.RenderErrorPage(c, http.StatusForbidden, "Cross-origin requests are not permitted.")
+		return
+	}
+
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	serviceIDStr := c.PostForm("service")
@@ -93,6 +146,14 @@ func (r mainRoutes) IntegrationBindingConfirmPOST(c *gin.Context) {
 	if serviceUser.Role != model.ServiceType {
 		c.Status(http.StatusBadRequest)
 		tools.RenderErrorPage(c, http.StatusBadRequest, "The specified user is not a service account.")
+		return
+	}
+	// When IntegrationServiceAccountID is configured, restrict the approval page
+	// to that specific service account. This prevents any arbitrary ServiceType
+	// user from being bound to a course through the approval flow.
+	if allowed := tools.Cfg.IntegrationServiceAccountID; allowed != 0 && uint(serviceID) != allowed {
+		c.Status(http.StatusForbidden)
+		tools.RenderErrorPage(c, http.StatusForbidden, "This service account is not the configured integration account.")
 		return
 	}
 

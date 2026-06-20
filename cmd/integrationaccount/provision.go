@@ -20,9 +20,10 @@
 //	token: <hex-encoded 32-byte random token>
 //
 // 4. Hand the printed token to Artemis ops out-of-band (e.g. via a
-// secrets manager or an encrypted channel). It is NEVER written to any
-// log and will not be retrievable from the database (which stores it as
-// plain text for lookup, so protect your database accordingly).
+// secrets manager or an encrypted channel). The token is stored as plain
+// text in the database for lookup (gocast does not hash tokens); it is
+// NEVER written to any log by this tool. Protect your database
+// accordingly — anyone with DB read access can recover all service tokens.
 //
 // 5. Configure Artemis:
 //
@@ -93,14 +94,13 @@ func main() {
 }
 
 // ProvisionServiceAccount creates (or finds) a ServiceType user identified by
-// login, revokes all existing service-scoped tokens for that user, generates a
-// fresh random bearer token, persists it, and returns the token string and the
-// service user's ID.
+// login, atomically revokes all existing service-scoped tokens for that user,
+// generates a fresh random bearer token, persists it, and returns the token
+// string and the service user's ID.
 //
-// Revoking before inserting makes re-running the command an atomic rotation:
-// old credentials are invalidated and a single new one is activated. If
-// revocation fails the function aborts so no new token is minted while stale
-// tokens might still be in use.
+// The revoke+insert is performed in a single database transaction via
+// TokenDao.RotateServiceToken. If the insert fails the delete is rolled back,
+// so a failed run can never leave the user with zero valid tokens.
 //
 // The token is returned by value so the caller can print it exactly once. It
 // is NEVER passed to any log sink inside this function.
@@ -110,25 +110,20 @@ func ProvisionServiceAccount(usersDao dao.UsersDao, tokenDao dao.TokenDao, login
 		return "", 0, fmt.Errorf("find/create service user: %w", err)
 	}
 
-	// Revoke all prior service-scoped tokens for this user before minting a
-	// new one. This ensures that re-running the provisioning tool rotates
-	// credentials cleanly rather than accumulating stale tokens.
-	if err = tokenDao.DeleteServiceTokensForUser(user.ID); err != nil {
-		return "", 0, fmt.Errorf("revoke existing service tokens: %w", err)
-	}
-
 	token, err = GenerateServiceToken()
 	if err != nil {
 		return "", 0, fmt.Errorf("generate token: %w", err)
 	}
 
-	if err = tokenDao.AddToken(model.Token{
+	// Atomically revoke all prior service-scoped tokens and insert the new one.
+	// A failed insert rolls back the delete so no tokens are lost on error.
+	if err = tokenDao.RotateServiceToken(user.ID, model.Token{
 		UserID:  user.ID,
 		Token:   token,
 		Scope:   model.TokenScopeService,
 		Expires: sql.NullTime{Valid: false}, // no expiration — long-lived service token
 	}); err != nil {
-		return "", 0, fmt.Errorf("persist token: %w", err)
+		return "", 0, fmt.Errorf("rotate service token: %w", err)
 	}
 
 	return token, user.ID, nil

@@ -141,3 +141,17 @@ func (mr *MockTokenDaoMockRecorder) TokenUsed(token any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TokenUsed", reflect.TypeOf((*MockTokenDao)(nil).TokenUsed), token)
 }
+
+// RotateServiceToken mocks base method.
+func (m *MockTokenDao) RotateServiceToken(userID uint, newToken model.Token) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RotateServiceToken", userID, newToken)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RotateServiceToken indicates an expected call of RotateServiceToken.
+func (mr *MockTokenDaoMockRecorder) RotateServiceToken(userID, newToken any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateServiceToken", reflect.TypeOf((*MockTokenDao)(nil).RotateServiceToken), userID, newToken)
+}

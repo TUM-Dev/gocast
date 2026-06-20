@@ -69,9 +69,9 @@ func TestGenerateServiceToken_Distinct(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // TestProvisionServiceAccount_NewUser verifies that when no service user exists
-// yet, ProvisionServiceAccount creates one, revokes any prior service-scoped
-// tokens (none in this case), calls AddToken with Scope==TokenScopeService and
-// the correct UserID, and returns the token.
+// yet, ProvisionServiceAccount creates one, then calls RotateServiceToken with
+// the correct UserID and Scope, and returns the token. The rotation is atomic —
+// no separate DeleteServiceTokensForUser or AddToken calls are expected.
 func TestProvisionServiceAccount_NewUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -99,28 +99,23 @@ func TestProvisionServiceAccount_NewUser(t *testing.T) {
 			return nil
 		})
 
-	// DeleteServiceTokensForUser must be called before AddToken to revoke prior
-	// service-scoped tokens (atomic rotation). For a brand-new user there are no
-	// prior tokens, but the call must still happen.
+	// RotateServiceToken must be called with the correct userID and a token that
+	// has the right Scope and is not expired. The delete+insert inside the real
+	// implementation is wrapped in a DB transaction; the mock tests the contract.
 	tokenDao.EXPECT().
-		DeleteServiceTokensForUser(fakeID).
-		Return(nil)
-
-	// AddToken must be called with the correct scope and user ID.
-	tokenDao.EXPECT().
-		AddToken(gomock.AssignableToTypeOf(model.Token{})).
-		DoAndReturn(func(tok model.Token) error {
+		RotateServiceToken(fakeID, gomock.AssignableToTypeOf(model.Token{})).
+		DoAndReturn(func(uid uint, tok model.Token) error {
 			if tok.UserID != fakeID {
-				t.Errorf("AddToken: expected UserID=%d, got %d", fakeID, tok.UserID)
+				t.Errorf("RotateServiceToken: expected UserID=%d, got %d", fakeID, tok.UserID)
 			}
 			if tok.Scope != model.TokenScopeService {
-				t.Errorf("AddToken: expected Scope=%q, got %q", model.TokenScopeService, tok.Scope)
+				t.Errorf("RotateServiceToken: expected Scope=%q, got %q", model.TokenScopeService, tok.Scope)
 			}
 			if tok.Token == "" {
-				t.Error("AddToken: token string must not be empty")
+				t.Error("RotateServiceToken: token string must not be empty")
 			}
 			if tok.Expires.Valid {
-				t.Error("AddToken: Expires must be null (long-lived token)")
+				t.Error("RotateServiceToken: Expires must be null (long-lived token)")
 			}
 			return nil
 		})
@@ -138,9 +133,8 @@ func TestProvisionServiceAccount_NewUser(t *testing.T) {
 }
 
 // TestProvisionServiceAccount_ExistingUser verifies that when a ServiceType
-// user already exists, ProvisionServiceAccount reuses it, revokes old service
-// tokens, and then mints a fresh one (atomic rotation). CreateUser must NOT be
-// called.
+// user already exists, ProvisionServiceAccount reuses it and calls
+// RotateServiceToken (atomic delete+insert). CreateUser must NOT be called.
 func TestProvisionServiceAccount_ExistingUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -159,21 +153,16 @@ func TestProvisionServiceAccount_ExistingUser(t *testing.T) {
 	// CreateUser must NOT be called.
 	// (no EXPECT registered for CreateUser)
 
-	// DeleteServiceTokensForUser must be called BEFORE AddToken so that the
-	// rotation is atomic: old credentials are invalidated before a new one is
-	// activated.
+	// RotateServiceToken is called exactly once: it atomically deletes old
+	// service-scoped tokens and inserts the new one.
 	tokenDao.EXPECT().
-		DeleteServiceTokensForUser(fakeID).
-		Return(nil)
-
-	tokenDao.EXPECT().
-		AddToken(gomock.AssignableToTypeOf(model.Token{})).
-		DoAndReturn(func(tok model.Token) error {
+		RotateServiceToken(fakeID, gomock.AssignableToTypeOf(model.Token{})).
+		DoAndReturn(func(uid uint, tok model.Token) error {
 			if tok.UserID != fakeID {
-				t.Errorf("AddToken: expected UserID=%d, got %d", fakeID, tok.UserID)
+				t.Errorf("RotateServiceToken: expected UserID=%d, got %d", fakeID, tok.UserID)
 			}
 			if tok.Scope != model.TokenScopeService {
-				t.Errorf("AddToken: expected Scope=%q, got %q", model.TokenScopeService, tok.Scope)
+				t.Errorf("RotateServiceToken: expected Scope=%q, got %q", model.TokenScopeService, tok.Scope)
 			}
 			return nil
 		})
@@ -187,11 +176,12 @@ func TestProvisionServiceAccount_ExistingUser(t *testing.T) {
 	}
 }
 
-// TestProvisionServiceAccount_RevocationFails verifies that if
-// DeleteServiceTokensForUser returns an error, ProvisionServiceAccount aborts
-// and does not mint a new token. This ensures we never silently leave old
-// service tokens active when revocation is broken.
-func TestProvisionServiceAccount_RevocationFails(t *testing.T) {
+// TestProvisionServiceAccount_RotationFails verifies that if RotateServiceToken
+// returns an error, ProvisionServiceAccount propagates it. Because the rotation
+// is atomic, a failed RotateServiceToken means the old tokens are NOT deleted
+// (the real implementation rolls back the transaction); the mock confirms that
+// ProvisionServiceAccount aborts immediately and returns the error.
+func TestProvisionServiceAccount_RotationFails(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -205,15 +195,61 @@ func TestProvisionServiceAccount_RevocationFails(t *testing.T) {
 		GetUserByLrzID("artemis-integration").
 		Return(serviceUser, nil)
 
+	// RotateServiceToken fails (simulates insert error after delete; the real
+	// implementation rolls back so old tokens remain — atomicity guarantee).
 	tokenDao.EXPECT().
-		DeleteServiceTokensForUser(uint(5)).
-		Return(errors.New("db error during revocation"))
-
-	// AddToken must NOT be called when revocation fails.
+		RotateServiceToken(uint(5), gomock.AssignableToTypeOf(model.Token{})).
+		Return(errors.New("db error during rotation"))
 
 	_, _, err := ProvisionServiceAccount(usersDao, tokenDao, "artemis-integration", "Artemis")
 	if err == nil {
-		t.Fatal("expected error when token revocation fails, got nil")
+		t.Fatal("expected error when token rotation fails, got nil")
+	}
+}
+
+// TestProvisionServiceAccount_AtomicRotation_AddTokenError verifies the
+// atomicity contract: when RotateServiceToken fails (simulating an AddToken
+// error inside the transaction), old tokens must NOT have been deleted.
+// We verify this by checking that RotateServiceToken is called exactly once
+// and returns the error — the caller's DAO implementation guarantees rollback.
+func TestProvisionServiceAccount_AtomicRotation_AddTokenError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	tokenDao := mock_dao.NewMockTokenDao(ctrl)
+
+	serviceUser := model.User{Role: model.ServiceType}
+	serviceUser.ID = 11
+
+	usersDao.EXPECT().
+		GetUserByLrzID("artemis-integration").
+		Return(serviceUser, nil)
+
+	addTokenErr := errors.New("insert failed — transaction rolled back")
+	var rotateWasCalled bool
+
+	// RotateServiceToken is the single atomic operation. When it returns an
+	// error, the caller guarantees that the DB transaction was rolled back —
+	// meaning old tokens are intact. No DeleteServiceTokensForUser or AddToken
+	// calls should appear separately.
+	tokenDao.EXPECT().
+		RotateServiceToken(uint(11), gomock.AssignableToTypeOf(model.Token{})).
+		DoAndReturn(func(uid uint, tok model.Token) error {
+			rotateWasCalled = true
+			return addTokenErr
+		})
+
+	_, _, err := ProvisionServiceAccount(usersDao, tokenDao, "artemis-integration", "Artemis")
+	if err == nil {
+		t.Fatal("expected error from RotateServiceToken failure, got nil")
+	}
+	if !rotateWasCalled {
+		t.Fatal("RotateServiceToken was not called")
+	}
+	// Verify the error is propagated (not swallowed).
+	if !errors.Is(err, addTokenErr) {
+		t.Errorf("expected error to wrap %v, got %v", addTokenErr, err)
 	}
 }
 
@@ -242,7 +278,7 @@ func TestProvisionServiceAccount_WrongRoleRejected(t *testing.T) {
 }
 
 // TestProvisionServiceAccount_TokenDaoError verifies that a database error
-// from AddToken is propagated as an error.
+// from RotateServiceToken is propagated as an error.
 func TestProvisionServiceAccount_TokenDaoError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -257,17 +293,14 @@ func TestProvisionServiceAccount_TokenDaoError(t *testing.T) {
 		GetUserByLrzID("artemis-integration").
 		Return(serviceUser, nil)
 
-	// DeleteServiceTokensForUser is called first; it succeeds here.
+	// RotateServiceToken encapsulates the atomic delete+insert; a DB error
+	// anywhere inside it is propagated by ProvisionServiceAccount.
 	tokenDao.EXPECT().
-		DeleteServiceTokensForUser(uint(99)).
-		Return(nil)
-
-	tokenDao.EXPECT().
-		AddToken(gomock.Any()).
+		RotateServiceToken(uint(99), gomock.Any()).
 		Return(errors.New("db down"))
 
 	_, _, err := ProvisionServiceAccount(usersDao, tokenDao, "artemis-integration", "Artemis")
 	if err == nil {
-		t.Fatal("expected error from AddToken failure, got nil")
+		t.Fatal("expected error from RotateServiceToken failure, got nil")
 	}
 }

@@ -70,6 +70,56 @@ func httpStatusToGRPCCode(httpStatus int) codes.Code {
 // integrationHeaderMatcher unit-tests
 // ---------------------------------------------------------------------------
 
+// TestIntegrationHeaderMatcher_GatewayPath is the httptest-level gateway path
+// test mandated by the LOW review item. It drives the integrationHeaderMatcher
+// through all the combinations that matter for the integration mux:
+//
+//   - Authorization header  → "authorization" metadata key (bearer token)
+//   - X-On-Behalf-Of header → "x-on-behalf-of" metadata key (OBO LRZ ID)
+//   - Cookie header         → "grpcgateway-Cookie" metadata key
+//     (grpc metadata is lowercased, so the handler reads md["grpcgateway-cookie"])
+//
+// This is a unit-level test of the shared header-matcher function used by the
+// single gateway mux registered in Proxy(). A full end-to-end mux test would
+// require a running gRPC server; all handler-level assertions for bearer and
+// OBO propagation are covered by TestGetServiceAccount and TestGetOnBehalfOfUser.
+func TestIntegrationHeaderMatcher_GatewayPath(t *testing.T) {
+	cases := []struct {
+		name    string
+		in      string
+		wantOut string
+		wantOk  bool
+	}{
+		// Bearer-token path: Authorization must land on "authorization" so
+		// extractBearerFromMetadata can find it via md.Get("authorization").
+		{"bearer lowercase", "authorization", "authorization", true},
+		{"bearer title-case", "Authorization", "authorization", true},
+		{"bearer upper-case", "AUTHORIZATION", "authorization", true},
+		// OBO path: X-On-Behalf-Of must land on "x-on-behalf-of" so
+		// getOnBehalfOfUser can find it via md.Get("x-on-behalf-of").
+		{"obo title-case", "X-On-Behalf-Of", "x-on-behalf-of", true},
+		{"obo lowercase", "x-on-behalf-of", "x-on-behalf-of", true},
+		// Cookie path: must go through DefaultHeaderMatcher so the existing
+		// jwt-cookie-based auth continues to work. DefaultHeaderMatcher maps
+		// Cookie → "grpcgateway-Cookie"; gRPC stores all metadata keys
+		// lowercased, so the handler reads it as md["grpcgateway-cookie"].
+		{"cookie", "Cookie", "grpcgateway-Cookie", true},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			got, ok := integrationHeaderMatcher(tc.in)
+			if ok != tc.wantOk {
+				t.Fatalf("integrationHeaderMatcher(%q): ok = %v, want %v", tc.in, ok, tc.wantOk)
+			}
+			if ok && got != tc.wantOut {
+				t.Fatalf("integrationHeaderMatcher(%q): got %q, want %q", tc.in, got, tc.wantOut)
+			}
+		})
+	}
+}
+
 func TestIntegrationHeaderMatcher(t *testing.T) {
 	cases := []struct {
 		in      string

@@ -200,6 +200,9 @@ func TestIntegrationBindingConfirmPOST_SuccessAllowlistedRedirect(t *testing.T) 
 
 	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// Same-origin: Origin header must match the request host.
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -250,6 +253,9 @@ func TestIntegrationBindingConfirmPOST_BlockedRedirect(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// Same-origin: provide a valid same-origin header so CSRF check passes.
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -293,11 +299,247 @@ func TestIntegrationBindingConfirmPOST_NonServiceTypeUserRejected(t *testing.T) 
 
 	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// Same-origin: provide a valid same-origin header so CSRF check passes.
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for non-ServiceType user, got %d", w.Code)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// CSRF / same-origin enforcement tests
+// ---------------------------------------------------------------------------
+
+func TestIntegrationBindingConfirmPOST_CrossOrigin_Forbidden(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	// No DAO methods should be called: CSRF check fires before any business logic.
+	wrapper := dao.DaoWrapper{
+		UsersDao:   mock_dao.NewMockUsersDao(ctrl),
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "99")
+
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// Cross-origin: Origin header from a different host.
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://evil.attacker.com")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for cross-origin POST, got %d", w.Code)
+	}
+}
+
+func TestIntegrationBindingConfirmPOST_SameOriginViaReferer(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	serviceUser := model.User{Model: gorm.Model{ID: 99}, Name: "artemis-service", Role: model.ServiceType}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType, Name: "Prof. Test"}
+
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(99)).Return(serviceUser, nil).Times(1)
+	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+	coursesDao.EXPECT().AddAdminToCourse(uint(99), uint(10)).Return(nil).Times(1)
+	auditDao := mock_dao.NewMockAuditDao(ctrl)
+	auditDao.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao, AuditDao: auditDao}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+
+	origBase := tools.Cfg.AllowedIntegrationRedirectBaseURL
+	tools.Cfg.AllowedIntegrationRedirectBaseURL = ""
+	defer func() { tools.Cfg.AllowedIntegrationRedirectBaseURL = origBase }()
+
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "99")
+
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// No Origin header, but same-host Referer — fallback path.
+	req.Host = "gocast.example.com"
+	req.Header.Set("Referer", "https://gocast.example.com/admin/course/10")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// Binding should succeed (302 redirect to fallback course admin page).
+	if w.Code != http.StatusFound {
+		t.Fatalf("expected 302 for same-origin Referer, got %d", w.Code)
+	}
+}
+
+func TestIntegrationBindingConfirmPOST_NoOriginNoReferer_Forbidden(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	wrapper := dao.DaoWrapper{
+		UsersDao:   mock_dao.NewMockUsersDao(ctrl),
+		CoursesDao: mock_dao.NewMockCoursesDao(ctrl),
+	}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "99")
+
+	// No Origin, no Referer → should be rejected.
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Host = "gocast.example.com"
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when neither Origin nor Referer is set, got %d", w.Code)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Service-account restriction tests (MEDIUM-2)
+// ---------------------------------------------------------------------------
+
+func TestIntegrationBindingConfirmPOST_WrongServiceAccountID_Forbidden(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	// Operator has configured account 99 as the allowed service account.
+	// The request presents account 42 → must be rejected.
+	configuredServiceUser := model.User{Model: gorm.Model{ID: 42}, Name: "other-service", Role: model.ServiceType}
+
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(42)).Return(configuredServiceUser, nil).Times(1)
+
+	// AddAdminToCourse must NOT be called.
+	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+
+	// Configure the allowed service account to a DIFFERENT ID.
+	origID := tools.Cfg.IntegrationServiceAccountID
+	tools.Cfg.IntegrationServiceAccountID = 99
+	defer func() { tools.Cfg.IntegrationServiceAccountID = origID }()
+
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "42") // not the configured account
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when non-configured service account is presented, got %d", w.Code)
+	}
+}
+
+func TestIntegrationBindingConfirmPOST_CorrectServiceAccountID_Succeeds(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	// The configured account AND the request account are both 99 → allowed.
+	serviceUser := model.User{Model: gorm.Model{ID: 99}, Name: "artemis-service", Role: model.ServiceType}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType, Name: "Prof. Test"}
+
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(99)).Return(serviceUser, nil).Times(1)
+	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+	coursesDao.EXPECT().AddAdminToCourse(uint(99), uint(10)).Return(nil).Times(1)
+	auditDao := mock_dao.NewMockAuditDao(ctrl)
+	auditDao.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao, AuditDao: auditDao}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+
+	origID := tools.Cfg.IntegrationServiceAccountID
+	tools.Cfg.IntegrationServiceAccountID = 99 // exactly matches the request
+	defer func() { tools.Cfg.IntegrationServiceAccountID = origID }()
+
+	origBase := tools.Cfg.AllowedIntegrationRedirectBaseURL
+	tools.Cfg.AllowedIntegrationRedirectBaseURL = ""
+	defer func() { tools.Cfg.AllowedIntegrationRedirectBaseURL = origBase }()
+
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "99")
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusFound {
+		t.Fatalf("expected 302 when configured service account matches, got %d", w.Code)
+	}
+}
+
+func TestIntegrationBindingConfirmPOST_ZeroConfigID_AnyServiceTypeAllowed(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	// Any ServiceType user should be accepted when IntegrationServiceAccountID is 0.
+	serviceUser := model.User{Model: gorm.Model{ID: 77}, Name: "any-service", Role: model.ServiceType}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType, Name: "Prof. Test"}
+
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(77)).Return(serviceUser, nil).Times(1)
+	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+	coursesDao.EXPECT().AddAdminToCourse(uint(77), uint(10)).Return(nil).Times(1)
+	auditDao := mock_dao.NewMockAuditDao(ctrl)
+	auditDao.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao, AuditDao: auditDao}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+
+	origID := tools.Cfg.IntegrationServiceAccountID
+	tools.Cfg.IntegrationServiceAccountID = 0 // unset → backward-compatible: any ServiceType accepted
+	defer func() { tools.Cfg.IntegrationServiceAccountID = origID }()
+
+	origBase := tools.Cfg.AllowedIntegrationRedirectBaseURL
+	tools.Cfg.AllowedIntegrationRedirectBaseURL = ""
+	defer func() { tools.Cfg.AllowedIntegrationRedirectBaseURL = origBase }()
+
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "77")
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusFound {
+		t.Fatalf("expected 302 when IntegrationServiceAccountID=0 (any service type allowed), got %d", w.Code)
 	}
 }
 
