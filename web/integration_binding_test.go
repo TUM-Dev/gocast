@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -154,6 +155,64 @@ func TestIntegrationBindingConfirmGET_NonServiceType(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for non-ServiceType user, got %d", w.Code)
+	}
+}
+
+// TestIntegrationBindingConfirmGET_BackendError_InternalError verifies that a
+// genuine backend/DB error from GetUserByID maps to 500 (not 404).
+func TestIntegrationBindingConfirmGET_BackendError_InternalError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99)
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi"}
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	usersDao.EXPECT().
+		GetUserByID(gomock.Any(), uint(99)).
+		Return(model.User{}, errors.New("db connection lost")).
+		Times(1)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao}
+	ctx := courseAdminContext(course)
+	r := buildRouter(t, wrapper, ctx)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/course/10/integration/confirm?service=99", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500 for backend error, got %d", w.Code)
+	}
+}
+
+// TestIntegrationBindingConfirmGET_NotFound_404 verifies that a missing service
+// account (GetUserByID returns a zero-value user with nil error, mirroring the
+// Find semantics of the real DAO) maps to 404.
+func TestIntegrationBindingConfirmGET_NotFound_404(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99)
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi"}
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	// Find semantics: missing row → zero-value user, nil error.
+	usersDao.EXPECT().
+		GetUserByID(gomock.Any(), uint(99)).
+		Return(model.User{}, nil).
+		Times(1)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao}
+	ctx := courseAdminContext(course)
+	r := buildRouter(t, wrapper, ctx)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin/course/10/integration/confirm?service=99", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for missing service account, got %d", w.Code)
 	}
 }
 
@@ -378,6 +437,80 @@ func TestIntegrationBindingConfirmPOST_NonServiceTypeUserRejected(t *testing.T) 
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for non-ServiceType user, got %d", w.Code)
+	}
+}
+
+// TestIntegrationBindingConfirmPOST_BackendError_InternalError verifies that a
+// genuine backend/DB error from GetUserByID maps to 500 (not 404), and that the
+// grant (AddAdminToCourse) is never attempted.
+func TestIntegrationBindingConfirmPOST_BackendError_InternalError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99)
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(99)).Return(model.User{}, errors.New("db connection lost")).Times(1)
+
+	// AddAdminToCourse must NOT be called.
+	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType, Name: "Prof. Test"}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "99")
+
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500 for backend error, got %d", w.Code)
+	}
+}
+
+// TestIntegrationBindingConfirmPOST_NotFound_404 verifies that a missing service
+// account (GetUserByID returns a zero-value user with nil error, mirroring the
+// Find semantics of the real DAO) maps to 404, and that the grant is never
+// attempted.
+func TestIntegrationBindingConfirmPOST_NotFound_404(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	withServiceAccountID(t, 99)
+
+	course := &model.Course{Model: gorm.Model{ID: 10}, Name: "Eidi", Slug: "eidi"}
+	usersDao := mock_dao.NewMockUsersDao(ctrl)
+	// Find semantics: missing row → zero-value user, nil error.
+	usersDao.EXPECT().GetUserByID(gomock.Any(), uint(99)).Return(model.User{}, nil).Times(1)
+
+	// AddAdminToCourse must NOT be called.
+	coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+
+	wrapper := dao.DaoWrapper{UsersDao: usersDao, CoursesDao: coursesDao}
+	adminUser := &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType, Name: "Prof. Test"}
+	ctx := tools.TUMLiveContext{User: adminUser, Course: course}
+	r := buildRouter(t, wrapper, ctx)
+
+	form := url.Values{}
+	form.Set("service", "99")
+
+	req := httptest.NewRequest(http.MethodPost, "/admin/course/10/integration/confirm", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Host = "gocast.example.com"
+	req.Header.Set("Origin", "https://gocast.example.com")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for missing service account, got %d", w.Code)
 	}
 }
 

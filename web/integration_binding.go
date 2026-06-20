@@ -2,12 +2,14 @@ package web
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -111,6 +113,15 @@ func (r mainRoutes) IntegrationBindingConfirmGET(c *gin.Context) {
 
 	serviceUser, err := r.UsersDao.GetUserByID(context.Background(), serviceID)
 	if err != nil {
+		// Distinguish a genuine not-found from a backend/DB error. GetUserByID
+		// uses Find, so a missing row normally returns (zero user, nil err)
+		// (handled by the ID == 0 check below); but if the DAO ever surfaces
+		// gorm.ErrRecordNotFound, treat it as 404, and any other error as 500.
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+			tools.RenderErrorPage(c, http.StatusNotFound, "Service account not found.")
+			return
+		}
 		c.Status(http.StatusInternalServerError)
 		tools.RenderErrorPage(c, http.StatusInternalServerError, "Failed to look up service account.")
 		return
@@ -167,6 +178,15 @@ func (r mainRoutes) IntegrationBindingConfirmPOST(c *gin.Context) {
 
 	serviceUser, err := r.UsersDao.GetUserByID(context.Background(), serviceID)
 	if err != nil {
+		// Distinguish a genuine not-found from a backend/DB error. GetUserByID
+		// uses Find, so a missing row normally returns (zero user, nil err)
+		// (handled by the ID == 0 check below); but if the DAO ever surfaces
+		// gorm.ErrRecordNotFound, treat it as 404, and any other error as 500.
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Status(http.StatusNotFound)
+			tools.RenderErrorPage(c, http.StatusNotFound, "Service account not found.")
+			return
+		}
 		c.Status(http.StatusInternalServerError)
 		tools.RenderErrorPage(c, http.StatusInternalServerError, "Failed to look up service account.")
 		return

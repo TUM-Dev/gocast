@@ -189,11 +189,13 @@ func (a *API) requireServiceCourseAdmin(ctx context.Context, courseID uint) (*mo
 	}
 	course, err := a.dao.CoursesDao.GetCourseById(ctx, courseID)
 	if err != nil {
-		return nil, model.Course{}, e.WithStatus(http.StatusNotFound, err)
+		// GetCourseById uses gorm Find (not First), so a missing course returns a
+		// nil error and a zero-value course (handled below). A non-nil error is
+		// therefore a genuine backend/DB failure → 500, not 404.
+		return nil, model.Course{}, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	// GetCourseById uses gorm Find (not First), so a missing course returns a
-	// nil error and a zero-value course rather than gorm.ErrRecordNotFound.
-	// Treat a zero ID as not-found.
+	// A missing course surfaces as a zero-value course (ID == 0) with nil error;
+	// treat that as not-found.
 	if course.ID == 0 {
 		return nil, model.Course{}, e.WithStatus(http.StatusNotFound, errors.New("course not found"))
 	}

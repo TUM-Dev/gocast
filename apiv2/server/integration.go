@@ -236,12 +236,14 @@ func (a *API) GetBindingStatus(ctx context.Context, req *protobuf.GetBindingStat
 	}
 	course, err := a.dao.CoursesDao.GetCourseById(ctx, uint(req.CourseId))
 	if err != nil {
-		return nil, e.WithStatus(http.StatusNotFound, err)
+		// GetCourseById uses gorm Find (not First), so a missing course returns a
+		// nil error and a zero-value course (handled below). A non-nil error is
+		// therefore a genuine backend/DB failure → 500, not 404.
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	// GetCourseById uses gorm Find (not First), so a missing course returns a
-	// nil error and a zero-value course rather than gorm.ErrRecordNotFound.
-	// Treat a zero ID as not-found so callers get NotFound instead of
-	// Bound:false for non-existent courses.
+	// A missing course surfaces as a zero-value course (ID == 0) with nil error;
+	// treat that as not-found so callers get NotFound instead of Bound:false for
+	// non-existent courses.
 	if course.ID == 0 {
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("course not found"))
 	}

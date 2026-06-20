@@ -542,6 +542,38 @@ func TestListCourseStreams_UnknownCourse_NotFound(t *testing.T) {
 	assertGRPCStatus(t, err, http.StatusNotFound)
 }
 
+func TestListCourseStreams_CourseBackendError_InternalError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	const rawToken = "svctoken"
+	const userID = uint(7)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	svcUser := model.User{Role: model.ServiceType}
+	svcUser.ID = userID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	// A non-nil error from GetCourseById is a genuine backend/DB failure → 500
+	// (not 404, which is reserved for the zero-course case).
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(42)).Return(model.Course{}, errors.New("db connection lost"))
+
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	_, err := api.ListCourseStreams(ctx, &protobuf.ListCourseStreamsRequest{CourseId: 42})
+	if err == nil {
+		t.Fatal("expected InternalError, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusInternalServerError)
+}
+
 func TestListCourseStreams_MissingAuthHeader_Unauthenticated(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -1219,6 +1251,41 @@ func TestGetBindingStatus_UnknownCourse_NotFound(t *testing.T) {
 		t.Fatal("expected NotFound error for unknown course, got nil")
 	}
 	assertGRPCStatus(t, err, http.StatusNotFound)
+}
+
+func TestGetBindingStatus_CourseBackendError_InternalError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	const (
+		rawToken = "svctoken"
+		userID   = uint(7)
+		courseID = uint(50)
+	)
+
+	tokenMock := mock_dao.NewMockTokenDao(ctrl)
+	usersMock := mock_dao.NewMockUsersDao(ctrl)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+
+	tok := model.Token{UserID: userID, Scope: model.TokenScopeService}
+	svcUser := model.User{Role: model.ServiceType}
+	svcUser.ID = userID
+
+	tokenMock.EXPECT().GetToken(rawToken).Return(tok, nil)
+	tokenMock.EXPECT().TokenUsed(tok).Return(nil)
+	usersMock.EXPECT().GetUserByID(gomock.Any(), userID).Return(svcUser, nil)
+	// A non-nil error from GetCourseById is a genuine backend/DB failure → 500,
+	// not 404 (which is reserved for the zero-course case).
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), courseID).Return(model.Course{}, errors.New("db connection lost"))
+
+	api := buildAPI(dao.DaoWrapper{TokenDao: tokenMock, UsersDao: usersMock, CoursesDao: coursesMock})
+	ctx := incomingCtx("authorization", "Bearer "+rawToken)
+
+	_, err := api.GetBindingStatus(ctx, &protobuf.GetBindingStatusRequest{CourseId: uint32(courseID)})
+	if err == nil {
+		t.Fatal("expected InternalError for backend DB error, got nil")
+	}
+	assertGRPCStatus(t, err, http.StatusInternalServerError)
 }
 
 func TestGetBindingStatus_MissingAuthHeader_Unauthenticated(t *testing.T) {
