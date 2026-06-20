@@ -23,7 +23,18 @@
                     <a :href="`/w/${lectureData.courseSlug}/${lectureData.lectureId}`"><span
                                 x-text="lectureData.startDateFormatted"></span> <i class="fas fa-external-link"></i></a>
                 </div>
-                <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
+                <div class="text-3 font-sans ml-6"
+                    x-data="{
+                        showKeys: false,
+                        copied: null,
+                        copyTimeout: null,
+                        copyAndShow(value, key) {
+                            global.copyToClipboard(value)
+                            this.copied = key
+                            clearTimeout(this.copyTimeout)
+                            this.copyTimeout = setTimeout(() => this.copied = null, 1500)
+                        }
+                    }">
                     <span x-text="lectureData.startTimeFormatted"></span>
                     -
                     <span x-text="lectureData.endTimeFormatted"></span>
@@ -40,13 +51,31 @@
                         </span>
                         <span class="font-semibold">Stream Server:</span>
                         <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey)"></i>
+                        <span class="relative inline-block">
+                            <i class="fas fa-clipboard hover:text-purple-500 cursor-pointer"
+                            @click="copyAndShow('{{$ingestBase}}{{$course.Slug}}-' + lectureData.lectureId + '?secret=' + lectureData.streamKey, 'stream-server')"></i>
+
+                            <span x-cloak
+                                x-show="copied === 'stream-server'"
+                                role="status"
+                                class="copy-tooltip bg-blue-500 dark:bg-indigo-600">
+                                Copied
+                            </span>
+                        </span>
                         <br>
                         <span class="font-semibold">Stream Key:</span>
                         <span x-text="lectureData.courseSlug + '-' + lectureData.lectureId"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard(lectureData.courseSlug + '-' + lectureData.lectureId)"></i>
+                        <span class="relative inline-block">
+                            <i class="fas fa-clipboard hover:text-purple-500 cursor-pointer"
+                            @click="copyAndShow(lectureData.courseSlug + '-' + lectureData.lectureId, 'stream-key')"></i>
+
+                            <span x-cloak
+                                x-show="copied === 'stream-key'"
+                                role="status"
+                                class="copy-tooltip bg-blue-500 dark:bg-indigo-600">
+                                Copied
+                            </span>
+                        </span>
                         <br>
                         {{if ne $user.Role 1}}
                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
