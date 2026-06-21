@@ -688,23 +688,18 @@ func GetUploadKeyMock(t *testing.T) dao.UploadKeyDao {
 }
 
 func GetStreamReactionMock(t *testing.T, lastReaction model.StreamReaction, createErr error) dao.StreamReactionDao {
-
 	reactionMock := mock_dao.NewMockStreamReactionDao(
 		gomock.NewController(t),
 	)
-
 	reactionMock.
 		EXPECT().
 		GetLastReactionOfUser(gomock.Any(), gomock.Any()).
 		Return(lastReaction, nil).
 		AnyTimes()
-
 	reactionMock.
 		EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		Return(createErr).
 		AnyTimes()
-
 	return reactionMock
-
 }
