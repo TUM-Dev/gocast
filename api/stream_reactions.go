@@ -129,6 +129,7 @@ const (
 var (
 	liveReactionListenerMutex sync.RWMutex
 	liveReactionListener      = map[uint]*liveReactionAdminSessionsWrapper{}
+	reactionDaoWrapper        dao.DaoWrapper
 )
 
 type liveReactionAdminSessionsWrapper struct {
@@ -136,12 +137,17 @@ type liveReactionAdminSessionsWrapper struct {
 	stream   uint
 }
 
-func RegisterReactionUpdateRealtimeChannel() {
-	RealtimeInstance.RegisterChannel(ReactionUpdateRoomName, realtime.ChannelHandlers{
-		OnSubscribe:   reactionUpdateOnSubscribe,
-		OnUnsubscribe: reactionUpdateOnUnsubscribe,
-		OnMessage:     reactionUpdateSetStream,
-	})
+func RegisterReactionUpdateRealtimeChannel(wrapper dao.DaoWrapper) {
+	reactionDaoWrapper = wrapper
+
+	RealtimeInstance.RegisterChannel(
+		ReactionUpdateRoomName,
+		realtime.ChannelHandlers{
+			OnSubscribe:   reactionUpdateOnSubscribe,
+			OnUnsubscribe: reactionUpdateOnUnsubscribe,
+			OnMessage:     reactionUpdateSetStream,
+		},
+	)
 
 	go func() {
 		// Notify admins every 5 seconds
@@ -250,12 +256,12 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 		return
 	}
 
-	stream, err := daoWrapper.StreamsDao.GetStreamByID(context.TODO(), messageObj.StreamID)
+	stream, err := reactionDaoWrapper.StreamsDao.GetStreamByID(context.TODO(), messageObj.StreamID)
 	if err != nil {
 		logger.Error("Cant get stream by id", "err", err)
 		return
 	}
-	course, err := daoWrapper.CoursesDao.GetCourseById(context.TODO(), stream.CourseID)
+	course, err := reactionDaoWrapper.CoursesDao.GetCourseById(context.TODO(), stream.CourseID)
 	if err != nil {
 		logger.Error("Cant get course by id", "err", err)
 		return
@@ -346,7 +352,7 @@ func NotifyAdminsOnReactionPercentages(context context.Context) {
 	// Send the percentages to the admin sessions
 	liveReactionListenerMutex.Lock()
 	defer liveReactionListenerMutex.Unlock()
-	
+
 	for _, session := range liveReactionListener {
 		if session.stream == 0 {
 			continue
