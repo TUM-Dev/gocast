@@ -177,8 +177,12 @@ func reactionUpdateOnUnsubscribe(psc *realtime.Context) {
 
 	liveReactionListenerMutex.Lock()
 	defer liveReactionListenerMutex.Unlock()
+	listener := liveReactionListener[userId]
+	if listener == nil {
+		return
+	}
 	var newSessions []*realtime.Context
-	for _, session := range liveReactionListener[userId].sessions {
+	for _, session := range listener.sessions {
 		if session != psc {
 			newSessions = append(newSessions, session)
 		}
@@ -186,7 +190,7 @@ func reactionUpdateOnUnsubscribe(psc *realtime.Context) {
 	if len(newSessions) == 0 {
 		delete(liveReactionListener, userId)
 	} else {
-		liveReactionListener[userId].sessions = newSessions
+		listener.sessions = newSessions
 	}
 	logger.Debug("Successfully unsubscribed from reaction Update")
 }
