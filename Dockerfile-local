@@ -32,4 +32,6 @@ FROM alpine:3.24
 RUN apk add --no-cache tzdata openssl
 WORKDIR /app
 COPY --from=build-env /go/bin/tumlive .
+COPY config.yaml /etc/TUM-Live/config.yaml
+RUN sed -i 's|ingestbase: rtmp://ingest.tum.live/|ingestbase: rtmp://ingest/|' /etc/TUM-Live/config.yaml
 CMD ["sh", "-c", "sleep 3 && ./tumlive"]

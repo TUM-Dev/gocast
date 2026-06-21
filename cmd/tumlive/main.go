@@ -284,5 +284,8 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager) {
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
 	// fetch live stream previews
 	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "*/1 * * * *")
+	// apply correct live lights
+	_ = tools.Cron.AddFunc("updateLights", m.UpdateLights, "1/5 * * * *")
+
 	tools.Cron.Run()
 }

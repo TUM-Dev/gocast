@@ -595,3 +595,28 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
 	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 }
+
+func (m *Manager) UpdateLights() {
+	res, err := m.dao.GetLiveStateForPwrCtrl()
+	if err != nil {
+		m.logger.Error("Couldn't get the power control live state.", "Err", err)
+		return
+	}
+
+	for _, r := range res {
+		client := go_anel_pwrctrl.New(r.PwrCtrlIP, tools.Cfg.Auths.PwrCrtlAuth)
+		for i := range 3 {
+			if r.NumLive > 0 {
+				err = client.TurnOn(i)
+				if err != nil {
+					m.logger.Error("Couldn't set the power control to on", "Err", err)
+				}
+			} else {
+				err = client.TurnOff(i)
+				if err != nil {
+					m.logger.Error("Couldn't set the power control to off", "Err", err)
+				}
+			}
+		}
+	}
+}

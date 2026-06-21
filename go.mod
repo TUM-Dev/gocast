@@ -48,12 +48,12 @@ require (
 	github.com/meilisearch/meilisearch-go v0.31.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/soheilhy/cmux v0.1.5
-	github.com/tum-dev/gocast/runner v0.0.0-20260423181057-56591c8caae2
+	github.com/tum-dev/gocast/runner v0.0.0-20260620101435-fc79fca507e3
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/oauth2 v0.34.0
 	golang.org/x/sync v0.20.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20260420184626-e10c466a9529
+	google.golang.org/genproto/googleapis/api v0.0.0-20260618152121-87f3d3e198d3
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.25.12
@@ -83,7 +83,7 @@ require (
 	golang.org/x/arch v0.13.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260610212136-7ab31c22f7ad // indirect
 )
 
 require (
