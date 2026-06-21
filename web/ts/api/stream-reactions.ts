@@ -1,4 +1,4 @@
-import { getData, postData } from "../global";
+import { postData } from "../global";
 import { get } from "../utilities/fetch-wrappers";
 import { Realtime, RealtimeMessageTypes } from "../socket";
 
