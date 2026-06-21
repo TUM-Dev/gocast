@@ -181,11 +181,19 @@
                     <!--Footer-->
                     <div class="flex justify-start pt-2">
                         <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal=false)">
+                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`)
+                                    .then((response) => {
+                                        if (response.ok) showModal = false;
+                                    })
+                                    .catch(console.error)">
                             Yes
                         </button>
                         <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal=false)">
+                                @click="fetch(`/api/stream/${streamID}/end?discard=${true}`)
+                                    .then((response) => {
+                                        if (response.ok) showModal = false;
+                                    })
+                                    .catch(console.error)">
                             No
                         </button>
                         <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
