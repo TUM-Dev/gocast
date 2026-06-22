@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -77,24 +78,32 @@ type IntegrationConfirmPageData struct {
 // binding-approval page is disabled entirely (no service account configured).
 // If it is non-zero, only the exact matching service param is permitted.
 func checkServiceAccountAllowed(c *gin.Context, serviceIDStr string) (uint, bool) {
-	serviceID, err := strconv.ParseUint(serviceIDStr, 10, 64)
+	serviceID64, err := strconv.ParseUint(serviceIDStr, 10, 64)
 	if err != nil || serviceIDStr == "" {
 		c.Status(http.StatusBadRequest)
 		tools.RenderErrorPage(c, http.StatusBadRequest, "Missing or invalid 'service' parameter.")
 		return 0, false
 	}
+	// Explicit upper-bound check before narrowing to uint (which is 32-bit on
+	// 32-bit platforms) — required to satisfy gosec G115 / CodeQL CWE-190.
+	if serviceID64 > uint64(math.MaxUint) {
+		c.Status(http.StatusBadRequest)
+		tools.RenderErrorPage(c, http.StatusBadRequest, "Missing or invalid 'service' parameter.")
+		return 0, false
+	}
+	serviceID := uint(serviceID64)
 	allowed := tools.Cfg.IntegrationServiceAccountID
 	if allowed == 0 {
 		c.Status(http.StatusForbidden)
 		tools.RenderErrorPage(c, http.StatusForbidden, "Integration binding is not available: integrationServiceAccountID must be configured.")
 		return 0, false
 	}
-	if uint(serviceID) != allowed {
+	if serviceID != allowed {
 		c.Status(http.StatusForbidden)
 		tools.RenderErrorPage(c, http.StatusForbidden, "This service account is not the configured integration account.")
 		return 0, false
 	}
-	return uint(serviceID), true
+	return serviceID, true
 }
 
 // IntegrationBindingConfirmGET renders the approval page that shows the course

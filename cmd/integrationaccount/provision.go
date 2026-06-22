@@ -36,6 +36,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
 	"errors"
@@ -43,8 +44,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
-	"crypto/rand"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
