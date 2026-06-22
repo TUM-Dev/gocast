@@ -79,14 +79,11 @@ type IntegrationConfirmPageData struct {
 // If it is non-zero, only the exact matching service param is permitted.
 func checkServiceAccountAllowed(c *gin.Context, serviceIDStr string) (uint, bool) {
 	serviceID64, err := strconv.ParseUint(serviceIDStr, 10, 64)
-	if err != nil || serviceIDStr == "" {
-		c.Status(http.StatusBadRequest)
-		tools.RenderErrorPage(c, http.StatusBadRequest, "Missing or invalid 'service' parameter.")
-		return 0, false
-	}
-	// Explicit upper-bound check before narrowing to uint (which is 32-bit on
-	// 32-bit platforms) — required to satisfy gosec G115 / CodeQL CWE-190.
-	if serviceID64 > uint64(math.MaxUint) {
+	// Genuine upper-bound check before narrowing to uint, required to satisfy
+	// gosec G115 / CodeQL CWE-190. gocast user IDs are GORM auto-increment
+	// primary keys that fit comfortably in 32 bits, so anything larger than
+	// math.MaxUint32 is treated as an invalid id (same path as a malformed id).
+	if err != nil || serviceIDStr == "" || serviceID64 > math.MaxUint32 {
 		c.Status(http.StatusBadRequest)
 		tools.RenderErrorPage(c, http.StatusBadRequest, "Missing or invalid 'service' parameter.")
 		return 0, false
