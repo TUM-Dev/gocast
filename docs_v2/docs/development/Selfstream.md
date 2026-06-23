@@ -34,19 +34,21 @@ If you prefer to run the services locally, you can start each service individual
 You have to change the `externalAuthenticationURL` in the `ingest/mediamtx.yml` file by uncommenting the the line and changing the URL to `http://localhost:8081/api/selfstream/onPublish`. This is required for the `mediamtx` server to authenticate the stream correctly.
 :::
 
-   - Start the db and meilisearch first. We use hybrid approach to run db and meilisearch in docker. You can run the following command to start them:
-       ```bash
-       docker start meilisearch mariadb-tumlive
-       ```
-        :::info 
-        If you don't have them set up, please follow the instructions in the [DevSetup](./DevSetup.md#setup-database) guide to set them up.
-        ::: 
+- Set ingestbase to `127.0.0.1` in config.yaml 
 
-   - Start the backend. run this command in the `root`
+- Start the db and meilisearch first. We use hybrid approach to run db and meilisearch in docker. You can run the following command to start them:
+    ```bash
+    docker start meilisearch mariadb-tumlive
+    ```
+    :::info 
+    If you don't have them set up, please follow the instructions in the [DevSetup](./DevSetup.md#setup-database) guide to set them up.
+    ::: 
 
-     ```bash
-     go run ./cmd/tumlive
-     ```
+- Start the backend. run this command in the `root`
+
+  ```bash
+  go run ./cmd/tumlive
+    ```
 
 - Start the frontend:
 
