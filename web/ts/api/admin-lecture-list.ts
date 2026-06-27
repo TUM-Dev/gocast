@@ -331,7 +331,10 @@ export const AdminLectureList = {
      * @param sectionId
      */
     deleteSection: async (lectureId: number, sectionId: number): Promise<void> => {
-        await del(`/api/stream/${lectureId}/sections/${sectionId}`);
+        const res = await del(`/api/stream/${lectureId}/sections/${sectionId}`);
+        if (res.status !== StatusCodes.ACCEPTED) {
+            throw Error(res.body.toString());
+        }
     },
 
     /**
