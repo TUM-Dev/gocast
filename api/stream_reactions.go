@@ -137,6 +137,62 @@ type liveReactionAdminSessionsWrapper struct {
 	stream   uint
 }
 
+func collectSessionsForStream(streamID uint) []*realtime.Context {
+	liveReactionListenerMutex.RLock()
+	defer liveReactionListenerMutex.RUnlock()
+
+	targets := make([]*realtime.Context, 0)
+	for _, listener := range liveReactionListener {
+		if listener.stream != streamID {
+			continue
+		}
+		targets = append(targets, listener.sessions...)
+	}
+
+	return targets
+}
+
+func collectSessionsGroupedByStream() map[uint][]*realtime.Context {
+	liveReactionListenerMutex.RLock()
+	defer liveReactionListenerMutex.RUnlock()
+
+	targetsByStream := make(map[uint][]*realtime.Context)
+	for _, listener := range liveReactionListener {
+		if listener.stream == 0 {
+			continue
+		}
+		targetsByStream[listener.stream] = append(targetsByStream[listener.stream], listener.sessions...)
+	}
+
+	return targetsByStream
+}
+
+func pruneReactionSessions(dead map[*realtime.Context]struct{}) {
+	if len(dead) == 0 {
+		return
+	}
+
+	liveReactionListenerMutex.Lock()
+	defer liveReactionListenerMutex.Unlock()
+
+	for userID, listener := range liveReactionListener {
+		filtered := listener.sessions[:0]
+		for _, session := range listener.sessions {
+			if _, remove := dead[session]; remove {
+				continue
+			}
+			filtered = append(filtered, session)
+		}
+
+		if len(filtered) == 0 {
+			delete(liveReactionListener, userID)
+			continue
+		}
+
+		listener.sessions = filtered
+	}
+}
+
 func RegisterReactionUpdateRealtimeChannel(wrapper dao.DaoWrapper) {
 	reactionDaoWrapper = wrapper
 
@@ -291,8 +347,6 @@ func reactionUpdateSetStream(psc *realtime.Context, message *realtime.Message) {
 }
 
 func NotifyAdminsOnReaction(streamID uint, reaction string) {
-	liveReactionListenerMutex.Lock()
-	defer liveReactionListenerMutex.Unlock()
 	reactionStruct := struct {
 		Reaction string `json:"reaction"`
 	}{
@@ -303,30 +357,26 @@ func NotifyAdminsOnReaction(streamID uint, reaction string) {
 		logger.Error("could not marshal reaction", "err", err)
 		return
 	}
-	for _, session := range liveReactionListener {
-		if session.stream == streamID {
-			for _, s := range session.sessions {
-				err := s.Send(reactionMarshaled)
-				if err != nil {
-					logger.Error("can't write reaction to session", "err", err)
-				}
-			}
+
+	targets := collectSessionsForStream(streamID)
+	dead := make(map[*realtime.Context]struct{})
+	for _, session := range targets {
+		err := session.Send(reactionMarshaled)
+		if err != nil {
+			logger.Error("can't write reaction to session", "err", err)
+			dead[session] = struct{}{}
 		}
 	}
+
+	pruneReactionSessions(dead)
 }
 
 func NotifyAdminsOnReactionPercentages(context context.Context) {
-	liveReactionListenerMutex.Lock()
-
-	streams := make([]uint, 0)
-	for _, session := range liveReactionListener {
-		streams = append(streams, session.stream)
-	}
-	liveReactionListenerMutex.Unlock()
+	targetsByStream := collectSessionsGroupedByStream()
 
 	streamReactionPercentages := map[uint]map[string]float64{}
 
-	for _, stream := range streams {
+	for stream := range targetsByStream {
 		reactionsRaw, err := daoWrapper.StreamReactionDao.GetByStreamWithinMinutes(context, stream, 2) // TODO: Make this variable for the lecturer
 		if err != nil {
 			logger.Error("could not get reactions for stream", "stream", stream, "err", err)
@@ -353,25 +403,22 @@ func NotifyAdminsOnReactionPercentages(context context.Context) {
 		}
 	}
 
-	// Send the percentages to the admin sessions
-	liveReactionListenerMutex.Lock()
-	defer liveReactionListenerMutex.Unlock()
-
-	for _, session := range liveReactionListener {
-		if session.stream == 0 {
-			continue
-		}
-		reactionPercentages := streamReactionPercentages[session.stream]
+	dead := make(map[*realtime.Context]struct{})
+	for streamID, sessions := range targetsByStream {
+		reactionPercentages := streamReactionPercentages[streamID]
 		reactionPercentagesMarshaled, err := json.Marshal(reactionPercentages)
 		if err != nil {
 			logger.Error("could not marshal reaction percentages", "err", err)
 			return
 		}
-		for _, s := range session.sessions {
-			err := s.Send([]byte("{\"percentages\": " + string(reactionPercentagesMarshaled) + "}"))
+		for _, session := range sessions {
+			err := session.Send([]byte("{\"percentages\": " + string(reactionPercentagesMarshaled) + "}"))
 			if err != nil {
 				logger.Error("can't write reaction percentages to session", "err", err)
+				dead[session] = struct{}{}
 			}
 		}
 	}
+
+	pruneReactionSessions(dead)
 }
