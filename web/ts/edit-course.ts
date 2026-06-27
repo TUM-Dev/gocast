@@ -224,20 +224,29 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         },
 
         onAttachmentFileDrop(e) {
-            if (e.dataTransfer.items) {
-                const item = e.dataTransfer.items[0];
-                const { kind } = item;
-                switch (kind) {
-                    case "file": {
-                        DataStore.adminLectureList.uploadAttachmentFile(
-                            this.lectureData.courseId,
-                            this.lectureData.lectureId,
-                            item.getAsFile(),
-                        );
-                        break;
-                    }
+            const files = [...(e.dataTransfer?.files ?? [])];
+
+            if (files.length > 0) {
+                for (const file of files) {
+                    DataStore.adminLectureList.uploadAttachmentFile(
+                        this.lectureData.courseId,
+                        this.lectureData.lectureId,
+                        file,
+                    );
                 }
+                return;
             }
+
+            const droppedFile = e.dataTransfer?.items?.[0]?.kind === "file" ? e.dataTransfer.items[0].getAsFile() : null;
+            if (!droppedFile) {
+                return;
+            }
+
+            DataStore.adminLectureList.uploadAttachmentFile(
+                this.lectureData.courseId,
+                this.lectureData.lectureId,
+                droppedFile,
+            );
         },
 
         deleteAttachment(id: number) {

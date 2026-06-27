@@ -131,9 +131,11 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
             if (s.lectureId === lectureId) {
+                const updatedFiles = [...(s.files ?? []), newFile];
                 return {
                     ...s,
-                    files: [...s.files, newFile],
+                    files: updatedFiles,
+                    hasAttachments: updatedFiles.some((f) => f.fileType === FileType.attachment),
                 };
             }
             return s;
@@ -146,9 +148,11 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
             if (s.lectureId === lectureId) {
+                const updatedFiles = (s.files ?? []).filter((a) => a.id !== attachmentId);
                 return {
                     ...s,
-                    files: [...s.files.filter((a) => a.id !== attachmentId)],
+                    files: updatedFiles,
+                    hasAttachments: updatedFiles.some((f) => f.fileType === FileType.attachment),
                 };
             }
             return s;
