@@ -1,10 +1,15 @@
-import { postData } from "../global";
+import { StatusCodes } from "http-status-codes";
+import { postData, showMessage } from "../global";
 import { get } from "../utilities/fetch-wrappers";
 import { Realtime, RealtimeMessageTypes } from "../socket";
 
 // Function to add a reaction to a stream
-export function addReaction(reaction: string, streamID: number) {
-    return postData(`/api/stream/${streamID}/reaction`, { reaction: reaction });
+export async function addReaction(reaction: string, streamID: number) {
+    const response = await postData(`/api/stream/${streamID}/reaction`, { reaction: reaction });
+    if (response.status === StatusCodes.TOO_MANY_REQUESTS) {
+        showMessage("Please wait before reacting again.");
+    }
+    return response;
 }
 
 // Function to get all possible reactions for a stream
