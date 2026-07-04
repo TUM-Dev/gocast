@@ -1008,6 +1008,14 @@ func (r coursesRoutes) updateStartEnd(c *gin.Context) {
 		return
 	}
 
+	if !req.End.After(req.Start) {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "end must be after start",
+		})
+		return
+	}
+
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -1017,6 +1025,42 @@ func (r coursesRoutes) updateStartEnd(c *gin.Context) {
 		})
 		return
 	}
+
+	courseID, err := strconv.Atoi(c.Param("courseID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid courseID",
+			Err:           err,
+		})
+		return
+	}
+
+	if stream.CourseID != uint(courseID) {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "stream does not belong to course",
+		})
+		return
+	}
+
+	if stream.LiveNow {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not change start/end for live lecture",
+		})
+		return
+	}
+
+	now := time.Now()
+	if (stream.End.Before(now) || stream.Recording || stream.Ended) && req.Start.After(now) {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not move past lecture to future",
+		})
+		return
+	}
+
 	stream.Start = req.Start
 	stream.End = req.End
 	if err = r.StreamsDao.UpdateStream(stream); err != nil {
