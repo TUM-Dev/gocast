@@ -1093,7 +1093,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							return streamsMock
 						}(),
 					}
-					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(gomock.NewController(t)), "")
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
