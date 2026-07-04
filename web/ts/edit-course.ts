@@ -143,6 +143,10 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         return true;
                     }
 
+                    if (a.videoSections.some((sA) => !b.videoSections.some((sB) => sA.id === sB.id))) {
+                        return true;
+                    }
+
                     // A section has edited and different information now
                     return a.videoSections.some((sA) => b.videoSections.some((sB) => videoSectionHasChanged(sA, sB)));
                 }),

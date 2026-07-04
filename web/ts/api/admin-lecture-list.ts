@@ -101,7 +101,10 @@ export type VideoSectionDelta = {
 
 // Checks if two video sections have the same id but different data
 export function videoSectionHasChanged(a: VideoSection, b: VideoSection) {
-    return a.id === b.id && (a.description !== b.description || videoSectionTimestamp(a) !== videoSectionTimestamp(b));
+    if (a == null || b == null || a.id !== b.id) {
+        return false;
+    }
+    return a.description !== b.description || videoSectionTimestamp(a) !== videoSectionTimestamp(b);
 }
 
 export function videoSectionGenKey(section: VideoSection): string {
@@ -125,7 +128,7 @@ export function videoSectionListDelta(oldSections: VideoSection[], newSections: 
 
         // Updating Video Sections
         const oldVideoSection = oldSections.find((oldSection: VideoSection) => oldSection.id === section.id);
-        if (videoSectionHasChanged(section, oldVideoSection)) {
+        if (oldVideoSection != null && videoSectionHasChanged(section, oldVideoSection)) {
             sectionsToUpdate.push(section);
         }
     }
@@ -301,7 +304,10 @@ export const AdminLectureList = {
         const result = await post(
             `/api/stream/${lectureId}/sections`,
             sections.map((s) => ({
-                ...s,
+                description: s.description,
+                startHours: s.startHours,
+                startMinutes: s.startMinutes,
+                startSeconds: s.startSeconds,
                 streamID: lectureId,
             })),
         );
@@ -333,7 +339,7 @@ export const AdminLectureList = {
     deleteSection: async (lectureId: number, sectionId: number): Promise<void> => {
         const res = await del(`/api/stream/${lectureId}/sections/${sectionId}`);
         if (res.status !== StatusCodes.ACCEPTED) {
-            throw Error(res.body.toString());
+            throw Error(res.statusText);
         }
     },
 
