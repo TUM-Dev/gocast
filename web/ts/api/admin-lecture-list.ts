@@ -18,6 +18,11 @@ export interface UpdateLectureMetaRequest {
     isCustomThumbnailEnabled?: boolean;
 }
 
+export interface UpdateLectureStartEndRequest {
+    start: Date;
+    end: Date;
+}
+
 export class LectureFile {
     readonly id: number;
     readonly fileType: number;
@@ -189,8 +194,9 @@ export interface Lecture {
     startDateFormatted: string;
     startTimeFormatted: string;
     endDate: Date;
-    endDateFormatted: string;
     endTimeFormatted: string;
+    duration: number;
+    durationFormatted: string;
 
     // Clientside pseudo fields
     newCombinedVideo: File | null;
@@ -232,9 +238,9 @@ export const AdminLectureList = {
      * @param request
      */
     updateMetadata: async function (courseId: number, lectureId: number, request: UpdateLectureMetaRequest) {
-        const promises = [];
+        const promises: (() => Promise<Response>)[] = [];
         if (request.name !== undefined) {
-            promises.push(
+            promises.push(() =>
                 post(`/api/course/${courseId}/renameLecture/${lectureId}`, {
                     name: request.name,
                 }),
@@ -242,7 +248,7 @@ export const AdminLectureList = {
         }
 
         if (request.description !== undefined) {
-            promises.push(
+            promises.push(() =>
                 put(`/api/course/${courseId}/updateDescription/${lectureId}`, {
                     name: request.description,
                 }),
@@ -250,7 +256,7 @@ export const AdminLectureList = {
         }
 
         if (request.lectureHallId !== undefined) {
-            promises.push(
+            promises.push(() =>
                 post("/api/setLectureHall", {
                     streamIds: [lectureId],
                     lectureHall: request.lectureHallId,
@@ -259,7 +265,7 @@ export const AdminLectureList = {
         }
 
         if (request.isChatEnabled !== undefined) {
-            promises.push(
+            promises.push(() =>
                 patch(`/api/stream/${lectureId}/chat/enabled`, {
                     lectureId,
                     isChatEnabled: request.isChatEnabled,
@@ -267,17 +273,15 @@ export const AdminLectureList = {
             );
         }
 
-        /* if (request.isCustomThumbnailEnabled !== undefined) {
-            promises.push(
-                put(`/api/stream/${lectureId}/customThumbnail/enabled`, {
-                    lectureId,
-                    thumbnailFile: request.thumbnailFile,
-                }),
-            );
-        }*/
+        let errors = 0;
+        for (const promise of promises) {
+            const res = await promise();
+            if (res.status !== StatusCodes.OK) {
+                errors++;
+            }
+        }
 
-        const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
-        if (errors.length > 0) {
+        if (errors > 0) {
             console.error(errors);
             throw Error("Failed to update all data.");
         }
@@ -290,6 +294,16 @@ export const AdminLectureList = {
      */
     saveSeriesMetadata: async (courseId: number, lectureId: number): Promise<void> => {
         await post(`/api/course/${courseId}/updateLectureSeries/${lectureId}`);
+    },
+
+    /**
+     * Updates date time of a lecture.
+     * @param courseId
+     * @param lectureId
+     * @param request
+     */
+    updateStartEnd: async function (courseId: number, lectureId: number, { start, end }: UpdateLectureStartEndRequest) {
+        await post(`/api/course/${courseId}/updateStartEnd/${lectureId}`, { start, end });
     },
 
     /**

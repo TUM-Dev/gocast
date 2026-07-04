@@ -1046,7 +1046,7 @@ func TestLectureHallSetLH(t *testing.T) {
 	t.Run("POST/api/setLectureHall", func(t *testing.T) {
 		url := "/api/setLectureHall"
 		lectureHall := testutils.LectureHall
-		fpvStream := testutils.StreamFPVLive
+		fpvStream := testutils.StreamFPVNotLive
 		request := setLectureHallRequest{
 			StreamIDs:     []uint{fpvStream.ID},
 			LectureHallID: lectureHall.ID,
@@ -1079,6 +1079,25 @@ func TestLectureHallSetLH(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
+			},
+			"can not change lecture hall for live stream": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamsByIds(request.StreamIDs).
+								Return([]model.Stream{testutils.StreamFPVLive}, nil).
+								AnyTimes()
+							return streamsMock
+						}(),
+					}
+					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         request,
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not unset lecture hall": {
 				Router: func(r *gin.Engine) {

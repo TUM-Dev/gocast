@@ -409,6 +409,16 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 		return
 	}
 
+	for _, stream := range streams {
+		if stream.LiveNow {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "can not change lecture hall for live lecture",
+			})
+			return
+		}
+	}
+
 	if req.LectureHallID == 0 {
 		err = r.StreamsDao.UnsetLectureHall(req.StreamIDs)
 		if err != nil {
