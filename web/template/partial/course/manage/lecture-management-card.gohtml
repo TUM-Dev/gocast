@@ -306,13 +306,35 @@
                     >
                         <label :for="startId" class="grow mr-2">
                             <span class="text-sm text-5">Start</span>
-                            <input class="tl-input"
-                               name="newStartDate"
-                               :id="startId"
-                               x-change-set-listen="changeSet.startDate"
-                               x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().startDate, 'Y-m-d H:i'))"
-                               x-init="flatpickr($el, {enableTime: true, time_24hr: true, altInput: true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true, onChange: (date) => changeSet.patch('start', flatpickr.formatDate(date[0], 'Z')) })"
-                           />
+                                <input class="tl-input"
+                                   name="newStartDate"
+                                   :id="startId"
+                                   x-change-set-listen="changeSet.startDate"
+                                   x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().startDate, 'Y-m-d H:i'))"
+                                   x-init="flatpickr($el, {
+                                       enableTime: true,
+                                       time_24hr: true,
+                                       altInput: true,
+                                       altFormat:'Y-m-d H:i',
+                                       dateFormat:'Z',
+                                       allowInput: true,
+                                       onChange: (date) => {
+                                           if (date.length > 0) {
+                                               changeSet.patch('start', flatpickr.formatDate(date[0], 'Z'))
+                                           }
+                                       },
+                                       onValueUpdate: (date) => {
+                                           if (date.length > 0) {
+                                               changeSet.patch('start', flatpickr.formatDate(date[0], 'Z'))
+                                           }
+                                       },
+                                       onClose: (date) => {
+                                           if (date.length > 0) {
+                                               changeSet.patch('start', flatpickr.formatDate(date[0], 'Z'))
+                                           }
+                                       }
+                                   })"
+                               />
                         </label>
                         <template x-if="!lectureData.premiere && !lectureData.vodup">
                             <label :for="endId">
@@ -321,20 +343,53 @@
                                       x-text="lectureData.durationFormatted">
 
                                 </span>
-                                <input class="tl-input"
-                                   name="newEndTime"
-                                   :id="endId"
-                                   x-change-set-listen="changeSet.endDate"
-                                   x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().endDate, 'H:i'))"
-                                   x-init="flatpickr($el, {enableTime: true, noCalendar: true, altInput: true, altFormat: 'H:i', time_24hr: true, allowInput: true, onChange: (date) => {
-                                        const startDate = changeSet.get().startDate;
-                                        let val = date[0];
-                                        val.setDate(startDate.getDate());
-                                        val.setMonth(startDate.getMonth());
-                                        val.setFullYear(startDate.getFullYear());
-                                        changeSet.patch('end', flatpickr.formatDate(val, 'Z'))
-                                   }})"
-                                />
+                                    <input class="tl-input"
+                                       name="newEndTime"
+                                       :id="endId"
+                                       x-change-set-listen="changeSet.endDate"
+                                       x-on-change-set-update="$el._flatpickr.setDate(flatpickr.formatDate(changeSet.get().endDate, 'H:i'))"
+                                    x-init="flatpickr($el, {
+                                           enableTime: true,
+                                           noCalendar: true,
+                                           altInput: true,
+                                           altFormat: 'H:i',
+                                           time_24hr: true,
+                                           allowInput: true,
+                                           onChange: (date) => {
+                                               if (date.length === 0) {
+                                                   return;
+                                               }
+                                               const startDate = changeSet.get().startDate;
+                                               const val = new Date(date[0].getTime());
+                                               val.setDate(startDate.getDate());
+                                               val.setMonth(startDate.getMonth());
+                                               val.setFullYear(startDate.getFullYear());
+                                               changeSet.patch('end', flatpickr.formatDate(val, 'Z'))
+                                           },
+                                           onValueUpdate: (date) => {
+                                               if (date.length === 0) {
+                                                   return;
+                                               }
+                                               const startDate = changeSet.get().startDate;
+                                               const val = new Date(date[0].getTime());
+                                               val.setDate(startDate.getDate());
+                                               val.setMonth(startDate.getMonth());
+                                               val.setFullYear(startDate.getFullYear());
+                                               changeSet.patch('end', flatpickr.formatDate(val, 'Z'))
+                                           },
+                                           onClose: (date) => {
+                                               if (date.length === 0) {
+                                                   return;
+                                               }
+                                               const startDate = changeSet.get().startDate;
+                                               const val = new Date(date[0].getTime());
+                                               val.setDate(startDate.getDate());
+                                               val.setMonth(startDate.getMonth());
+                                               val.setFullYear(startDate.getFullYear());
+                                               changeSet.patch('end', flatpickr.formatDate(val, 'Z'))
+                                           }
+                                       })"
+                                    />
                             </label>
                         </template>
                     </article>

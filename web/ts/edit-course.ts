@@ -155,7 +155,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 computedProperty<Lecture, string>(
                     "startTimeFormatted",
                     (changeSet) => {
-                        return changeSet.startDate.toLocaleDateString("en-US", timeFormatOptions);
+                        return changeSet.startDate.toLocaleTimeString("en-US", timeFormatOptions);
                     },
                     ["start"],
                 ),
@@ -452,6 +452,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 end,
             } = this.lectureData;
             const changedKeys = this.changeSet.changedKeys();
+            const hasDateTimeChanges = changedKeys.includes("start") || changedKeys.includes("end");
 
             try {
                 // Saving new meta data
@@ -471,7 +472,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 });
 
                 // Save new date and time
-                if (changedKeys.includes("start") || changedKeys.includes("end")) {
+                if (hasDateTimeChanges) {
                     const startDate = new Date(start);
                     const endDate = new Date(end);
                     endDate.setFullYear(startDate.getFullYear());
@@ -524,6 +525,11 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
 
             this.changeSet.commit({ discardKeys: this.videoFiles.map((v) => v.info.key) });
             this.uiEditMode = UIEditMode.none;
+
+            // Fallback for stale collapsed card render after time edits.
+            if (hasDateTimeChanges) {
+                window.location.reload();
+            }
         },
         previewThumbnail(file: File) {
             if (file && file.type.startsWith("image/")) {
