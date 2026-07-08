@@ -6,10 +6,13 @@ services:
   tum-live:
     container_name: tum-live
     depends_on:
-      - db
-    build: .
-    ports:
-      - "8081:8081"
+      db:
+        condition: service_started
+      meili-internal:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: Dockerfile-local
     volumes:
       - ./config.yaml:/etc/TUM-Live/config.yaml
       - ./branding/branding.yaml:/etc/TUM-Live/branding.yaml
@@ -18,27 +21,52 @@ services:
     environment:
       - DBHOST=db
       - TZ=Europe/Berlin
-  worker:
-    container_name: tum-live-worker
+    ports:
+      - "8081:8081"
+    # extra_hosts:       # Only needed if you use wsl
+    #   - "localhost:host-gateway"
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z localhost 8081 || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 60s
+  runner:
+    container_name: tum-live-runner
     depends_on:
-      - tum-live
-      - vod-service    # Omitted for local development due to size. Comment out to use voice-service
-    build: worker
+      tum-live:
+        condition: service_healthy
+    build:
+      context: runner/
+      dockerfile: Dockerfile
     platform: linux/amd64
     environment:
-      - Token=abc
-      - Host=worker
-      - MainBase=tum-live
-      - VodURLTemplate=http://localhost:8089/vod/%s.mp4/playlist.m3u8
-      - LrzUploadUrl=http://vod-service:8089
-      - DEBUG-MODE=true
+      - STORAGE_PATH=/storage/mass
+      - SEGMENT_PATH=/storage/live
+      - REALHOST=runner
+      - "EDGE_SERVER=http://localhost:8089"
+      - "GOCAST_SERVER=tum-live:50056"
     volumes:
-      - recordings:/recordings
-      - mass:/mass
+      - runner_data:/storage/live
+      - vod:/storage/mass
+    ports:
+      - "52735:52735"
+      - "9947:9947"
+    # extra_hosts:      # Only needed if you use wsl
+    #   - "ingest.tum.live:host-gateway"
+  ingest:
+    container_name: tum-live-ingest
+    build:
+      context: ingest/
+      dockerfile: Dockerfile-local
+    platform: linux/amd64
+    ports:
+      - "1935:1935"
   edge:
     container_name: tum-live-edge
     depends_on:
-      - tum-live
+      tum-live:
+        condition: service_healthy
     build: worker/edge
     environment:
       - VOD_DIR=/vod
@@ -46,16 +74,6 @@ services:
       - ADMIN_TOKEN=123
     ports:
       - "8089:8089"
-    volumes:
-      - recordings:/recordings
-      - vod:/vod
-  vod-service:
-    container_name: tum-live-vod-service
-    depends_on:
-      - tum-live
-    build: vod-service
-    environment:
-      - OUTPUT_DIR=/vod
     volumes:
       - vod:/vod
   db:
@@ -70,6 +88,81 @@ services:
       - ./tum-live-starter.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
+  worker:
+    container_name: tum-live-worker
+    depends_on:
+      tum-live:
+        condition: service_started
+      vod-service:
+        condition: service_started
+      runner:
+        condition: service_started
+    build: worker
+    platform: linux/amd64
+    environment:
+      - Token=abc
+      - Host=worker
+      - MainBase=tum-live
+      - VodURLTemplate=http://localhost:8089/vod/%s.mp4/playlist.m3u8
+      - LrzUploadUrl=http://vod-service:8089
+      - DEBUG-MODE=true
+    volumes:
+      - recordings:/recordings
+      - mass:/mass
+  vod-service:
+    container_name: tum-live-vod-service
+    depends_on:
+      runner:
+        condition: service_started
+    build:
+        context: vod-service
+        dockerfile: Dockerfile-local
+    environment:
+      - OUTPUT_DIR=/vod
+    volumes:
+      - vod:/vod
+  meili-internal: 
+    image: getmeili/meilisearch:latest
+    # KEIN container_name! (Docker generiert einen eindeutigen Namen)
+    ports:
+      - "7700:7700"     # Extern 7701 nutzen, um Konflikt mit 7700 zu vermeiden
+    environment:
+      - MEILI_HTTP_ADDR=0.0.0.0:7700
+      - MEILI_MASTER_KEY=MASTER_KEY
+      - MEILI_NO_ANALYTICS=true
+    volumes:
+      - meili_gocast_data:/meili_data # Eigener Volume-Name
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1:7700/health || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+  prometheus:
+    container_name: tum-live-prometheus
+    image: prom/prometheus
+    depends_on:
+      runner:
+        condition: service_started
+      edge:
+        condition: service_started
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+  docs:
+    container_name: gocast-docs
+    image: node:20
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docs_v2:/app
+    command: sh -c "npm install && npm run start -- --host 0.0.0.0"
 # Omitted for local development due to size. Comment out to use voice-service
 #  voice-service:
 #    container_name: tum-live-voice-service
@@ -83,7 +176,10 @@ services:
 #      - mass:/mass
 
 volumes:
-  recordings:
-  mass:
   vod:
   mariadb-data:
+  runner_data:
+  mass:
+  meili_gocast_data:
+  recordings:
+  prometheus-data:
