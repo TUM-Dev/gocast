@@ -23,14 +23,14 @@ services:
       - TZ=Europe/Berlin
     ports:
       - "8081:8081"
-    extra_hosts:       # Only needed if you use wsl
-      - "localhost:host-gateway"
+    # extra_hosts:       # Only needed if you use wsl
+    #   - "localhost:host-gateway"
     healthcheck:
       test: [ "CMD-SHELL", "nc -z localhost 8081 || exit 1" ]
       interval: 5s
       timeout: 3s
       retries: 15
-      start_period: 60s # Gibt dem Dienst Zeit zum Booten
+      start_period: 60s
   runner:
     container_name: tum-live-runner
     depends_on:
@@ -52,8 +52,14 @@ services:
       - vod:/storage/mass
     ports:
       - "52735:52735"
+<<<<<<< Updated upstream
     extra_hosts:      # Only needed if you use wsl
       - "ingest.tum.live:host-gateway"
+=======
+      - "9947:9947"
+    # extra_hosts:      # Only needed if you use wsl
+    #   - "ingest.tum.live:host-gateway"
+>>>>>>> Stashed changes
   ingest:
     container_name: tum-live-ingest
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
@@ -92,6 +98,10 @@ services:
   worker:
     container_name: tum-live-worker
     depends_on:
+      tum-live:
+        condition: service_started
+      vod-service:
+        condition: service_started
       runner:
         condition: service_started
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
@@ -102,7 +112,7 @@ services:
       - Host=worker
       - MainBase=tum-live
       - VodURLTemplate=http://localhost:8089/vod/%s.mp4/playlist.m3u8
-      - LrzUploadUrl=http://vod-service:8080
+      - LrzUploadUrl=http://vod-service:8089
       - DEBUG-MODE=true
     volumes:
       - recordings:/recordings
@@ -119,7 +129,7 @@ services:
       - OUTPUT_DIR=/vod
     volumes:
       - vod:/vod
-  meili-internal:        # Service-Name geändert
+  meili-internal: 
     image: getmeili/meilisearch:latest
     # KEIN container_name! (Docker generiert einen eindeutigen Namen)
     ports:
@@ -136,6 +146,22 @@ services:
       timeout: 3s
       retries: 10
       start_period: 20s
+  prometheus:
+    container_name: tum-live-prometheus
+    image: prom/prometheus
+    depends_on:
+      runner:
+        condition: service_started
+      edge:
+        condition: service_started
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
 # Omitted for local development due to size. Comment out to use voice-service
 #  voice-service:
 #    container_name: tum-live-voice-service
@@ -155,3 +181,4 @@ volumes:
   mass:
   meili_gocast_data:
   recordings:
+  prometheus-data:

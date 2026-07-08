@@ -22,7 +22,7 @@ services:
     container_name: tum-live-worker
     depends_on:
       - tum-live
-      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
+      - vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build: worker
     platform: linux/amd64
     environment:
