@@ -36,7 +36,6 @@ services:
     depends_on:
       tum-live:
         condition: service_healthy
-      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build:
       context: runner/
       dockerfile: Dockerfile
@@ -57,7 +56,6 @@ services:
     #   - "ingest.tum.live:host-gateway"
   ingest:
     container_name: tum-live-ingest
-      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build:
       context: ingest/
       dockerfile: Dockerfile-local
@@ -99,7 +97,6 @@ services:
         condition: service_started
       runner:
         condition: service_started
-      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build: worker
     platform: linux/amd64
     environment:
@@ -157,6 +154,15 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+  docs:
+    container_name: gocast-docs
+    image: node:20
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docs_v2:/app
+    command: sh -c "npm install && npm run start -- --host 0.0.0.0"
 # Omitted for local development due to size. Comment out to use voice-service
 #  voice-service:
 #    container_name: tum-live-voice-service
