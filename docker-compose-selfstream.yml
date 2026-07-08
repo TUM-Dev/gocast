@@ -52,14 +52,9 @@ services:
       - vod:/storage/mass
     ports:
       - "52735:52735"
-<<<<<<< Updated upstream
-    extra_hosts:      # Only needed if you use wsl
-      - "ingest.tum.live:host-gateway"
-=======
       - "9947:9947"
     # extra_hosts:      # Only needed if you use wsl
     #   - "ingest.tum.live:host-gateway"
->>>>>>> Stashed changes
   ingest:
     container_name: tum-live-ingest
       #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
