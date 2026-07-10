@@ -49,7 +49,7 @@ require (
 	github.com/soheilhy/cmux v0.1.5
 	github.com/tum-dev/gocast/runner v0.0.0-20260706075444-2efdfad50587
 	go.uber.org/mock v0.6.0
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/oauth2 v0.34.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260706201446-f0a921348800
