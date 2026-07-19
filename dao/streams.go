@@ -46,6 +46,9 @@ type StreamsDao interface {
 	UpdateStream(stream model.Stream) error
 	SaveWorkerForStream(stream model.Stream, worker model.Worker) error
 	ClearWorkersForStream(stream model.Stream) error
+	SaveRunnerJobForStream(streamID uint, version model.StreamVersion, runnerHostname, jobID string) error
+	GetRunnerJobsForStream(streamID uint) ([]model.StreamRunnerJob, error)
+	ClearRunnerJobsForStream(streamID uint) error
 	UpdateSilences(silences []model.Silence, streamID string) error
 	DeleteSilences(streamID string) error
 	UpdateStreamFullAssoc(vod *model.Stream) error
@@ -495,6 +498,28 @@ func (d streamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker
 func (d streamsDao) ClearWorkersForStream(stream model.Stream) error {
 	defer Cache.Clear()
 	return DB.Model(&stream).Association("StreamWorkers").Clear()
+}
+
+// SaveRunnerJobForStream records that a runner is executing a job for a given stream version.
+func (d streamsDao) SaveRunnerJobForStream(streamID uint, version model.StreamVersion, runnerHostname, jobID string) error {
+	return DB.Create(&model.StreamRunnerJob{
+		StreamID:       streamID,
+		Version:        version,
+		RunnerHostname: runnerHostname,
+		JobID:          jobID,
+	}).Error
+}
+
+// GetRunnerJobsForStream retrieves all runner jobs currently tracked for a given stream.
+func (d streamsDao) GetRunnerJobsForStream(streamID uint) ([]model.StreamRunnerJob, error) {
+	var res []model.StreamRunnerJob
+	err := DB.Where("stream_id = ?", streamID).Find(&res).Error
+	return res, err
+}
+
+// ClearRunnerJobsForStream deletes all tracked runner jobs for a stream.
+func (d streamsDao) ClearRunnerJobsForStream(streamID uint) error {
+	return DB.Unscoped().Where("stream_id = ?", streamID).Delete(&model.StreamRunnerJob{}).Error
 }
 
 func (d streamsDao) DeleteSilences(streamID string) error {

@@ -57,6 +57,20 @@ func (mr *MockStreamsDaoMockRecorder) AddVodView(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVodView", reflect.TypeOf((*MockStreamsDao)(nil).AddVodView), id)
 }
 
+// ClearRunnerJobsForStream mocks base method.
+func (m *MockStreamsDao) ClearRunnerJobsForStream(streamID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearRunnerJobsForStream", streamID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearRunnerJobsForStream indicates an expected call of ClearRunnerJobsForStream.
+func (mr *MockStreamsDaoMockRecorder) ClearRunnerJobsForStream(streamID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearRunnerJobsForStream", reflect.TypeOf((*MockStreamsDao)(nil).ClearRunnerJobsForStream), streamID)
+}
+
 // ClearWorkersForStream mocks base method.
 func (m *MockStreamsDao) ClearWorkersForStream(stream model.Stream) error {
 	m.ctrl.T.Helper()
@@ -279,6 +293,21 @@ func (mr *MockStreamsDaoMockRecorder) GetLiveStreamsInLectureHall(lectureHallId 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveStreamsInLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).GetLiveStreamsInLectureHall), lectureHallId)
 }
 
+// GetRunnerJobsForStream mocks base method.
+func (m *MockStreamsDao) GetRunnerJobsForStream(streamID uint) ([]model.StreamRunnerJob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRunnerJobsForStream", streamID)
+	ret0, _ := ret[0].([]model.StreamRunnerJob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRunnerJobsForStream indicates an expected call of GetRunnerJobsForStream.
+func (mr *MockStreamsDaoMockRecorder) GetRunnerJobsForStream(streamID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunnerJobsForStream", reflect.TypeOf((*MockStreamsDao)(nil).GetRunnerJobsForStream), streamID)
+}
+
 // GetSoonStartingStreamInfo mocks base method.
 func (m *MockStreamsDao) GetSoonStartingStreamInfo(user *model.User, slug string, year int, term string) (string, string, error) {
 	m.ctrl.T.Helper()
@@ -477,6 +506,20 @@ func (m *MockStreamsDao) SavePRESURL(stream *model.Stream, url string) {
 func (mr *MockStreamsDaoMockRecorder) SavePRESURL(stream, url any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePRESURL", reflect.TypeOf((*MockStreamsDao)(nil).SavePRESURL), stream, url)
+}
+
+// SaveRunnerJobForStream mocks base method.
+func (m *MockStreamsDao) SaveRunnerJobForStream(streamID uint, version model.StreamVersion, runnerHostname, jobID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveRunnerJobForStream", streamID, version, runnerHostname, jobID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveRunnerJobForStream indicates an expected call of SaveRunnerJobForStream.
+func (mr *MockStreamsDaoMockRecorder) SaveRunnerJobForStream(streamID, version, runnerHostname, jobID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveRunnerJobForStream", reflect.TypeOf((*MockStreamsDao)(nil).SaveRunnerJobForStream), streamID, version, runnerHostname, jobID)
 }
 
 // SaveStream mocks base method.
