@@ -99,19 +99,19 @@ func (mr *MockRunnerDaoMockRecorder) GetAll(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockRunnerDao)(nil).GetAll), arg0)
 }
 
-// GetAvailable mocks base method.
-func (m *MockRunnerDao) GetAvailable(arg0 context.Context) (model.Runner, error) {
+// ReserveRunner mocks base method.
+func (m *MockRunnerDao) ReserveRunner(arg0 context.Context) (model.Runner, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAvailable", arg0)
+	ret := m.ctrl.Call(m, "ReserveRunner", arg0)
 	ret0, _ := ret[0].(model.Runner)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAvailable indicates an expected call of GetAvailable.
-func (mr *MockRunnerDaoMockRecorder) GetAvailable(arg0 any) *gomock.Call {
+// ReserveRunner indicates an expected call of ReserveRunner.
+func (mr *MockRunnerDaoMockRecorder) ReserveRunner(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailable", reflect.TypeOf((*MockRunnerDao)(nil).GetAvailable), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReserveRunner", reflect.TypeOf((*MockRunnerDao)(nil).ReserveRunner), arg0)
 }
 
 // Update mocks base method.

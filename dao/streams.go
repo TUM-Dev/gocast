@@ -65,6 +65,7 @@ type StreamsDao interface {
 	DeleteUnit(id uint)
 	DeleteStreamsWithTumID(ids []uint)
 	UpdateLectureSeries(model.Stream) error
+	UpdateLectureSeriesTime(model.Stream) error
 	DeleteLectureSeries(string) error
 }
 
@@ -208,6 +209,38 @@ func (d streamsDao) UpdateLectureSeries(stream model.Stream) error {
 		"description": stream.Description,
 	}).Error
 	return err
+}
+
+// UpdateLectureSeriesTime applies the time-of-day and duration of stream to every other stream in
+// its series, while keeping each of those streams on their own original date.
+func (d streamsDao) UpdateLectureSeriesTime(stream model.Stream) error {
+	defer Cache.Clear()
+
+	if stream.SeriesIdentifier == "" {
+		return nil
+	}
+
+	var streams []model.Stream
+	if err := DB.Where("`series_identifier` = ? AND `deleted_at` IS NULL AND `id` != ?",
+		stream.SeriesIdentifier, stream.ID).Find(&streams).Error; err != nil {
+		return err
+	}
+
+	duration := stream.End.Sub(stream.Start)
+	return DB.Transaction(func(tx *gorm.DB) error {
+		for _, s := range streams {
+			newStart := time.Date(s.Start.Year(), s.Start.Month(), s.Start.Day(),
+				stream.Start.Hour(), stream.Start.Minute(), stream.Start.Second(), 0, s.Start.Location())
+			newEnd := newStart.Add(duration)
+			if err := tx.Model(&model.Stream{}).Where("id = ?", s.ID).Updates(map[string]interface{}{
+				"start": newStart,
+				"end":   newEnd,
+			}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (d streamsDao) DeleteLectureSeries(seriesIdentifier string) error {

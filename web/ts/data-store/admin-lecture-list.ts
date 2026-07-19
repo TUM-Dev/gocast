@@ -121,6 +121,21 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
+    /**
+     * Updates the start/end time of a lecture, optionally applying the time-of-day and duration
+     * to every other lecture in its series (each keeping its own date).
+     */
+    async updateLectureTime(courseId: number, lectureId: number, start: string, end: string, applyToSeries: boolean) {
+        await AdminLectureList.updateTime(courseId, lectureId, start, end);
+        if (applyToSeries) {
+            await AdminLectureList.applyTimeToSeries(courseId, lectureId);
+        }
+
+        // A series-wide update shifts other lectures' times too, which can't be reconstructed
+        // locally without re-deriving each lecture's own date - refetch instead.
+        await this.getData(courseId, true);
+    }
+
     async uploadAttachmentFile(courseId: number, lectureId: number, file: File) {
         const res = await AdminLectureList.uploadAttachmentFile(courseId, lectureId, file);
         const newFile = new LectureFile({

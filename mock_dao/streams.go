@@ -605,6 +605,20 @@ func (mr *MockStreamsDaoMockRecorder) UpdateLectureSeries(arg0 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLectureSeries", reflect.TypeOf((*MockStreamsDao)(nil).UpdateLectureSeries), arg0)
 }
 
+// UpdateLectureSeriesTime mocks base method.
+func (m *MockStreamsDao) UpdateLectureSeriesTime(arg0 model.Stream) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLectureSeriesTime", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLectureSeriesTime indicates an expected call of UpdateLectureSeriesTime.
+func (mr *MockStreamsDaoMockRecorder) UpdateLectureSeriesTime(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLectureSeriesTime", reflect.TypeOf((*MockStreamsDao)(nil).UpdateLectureSeriesTime), arg0)
+}
+
 // UpdateSilences mocks base method.
 func (m *MockStreamsDao) UpdateSilences(silences []model.Silence, streamID string) error {
 	m.ctrl.T.Helper()

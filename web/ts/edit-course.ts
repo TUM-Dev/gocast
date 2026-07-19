@@ -40,6 +40,19 @@ export enum FileType {
     thumb_custom,
 }
 
+function formatTimeOfDay(date: Date): string {
+    const hh = date.getHours().toString().padStart(2, "0");
+    const mm = date.getMinutes().toString().padStart(2, "0");
+    return `${hh}:${mm}`;
+}
+
+function combineDateAndTime(date: Date, timeOfDay: string): string {
+    const [hours, minutes] = timeOfDay.split(":").map(Number);
+    const combined = new Date(date);
+    combined.setHours(hours, minutes, 0, 0);
+    return combined.toISOString();
+}
+
 export class LectureList {
     courseId: number;
     lectures: Lecture[] = [];
@@ -123,6 +136,15 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
         changeSet: null as ChangeSet<Lecture> | null,
         lectureData: null as Lecture | null,
 
+        // Time editing. Kept separate from the changeSet above because it has its own
+        // propagation rule (time-of-day + duration only, keeping each lecture's own date) that
+        // doesn't match the "apply verbatim to the whole series" rule used for name/description.
+        seriesSize: 0,
+        applyTimeToSeries: false,
+        startInput: "",
+        endInput: "",
+        timeDirty: false,
+
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
@@ -152,6 +174,9 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             this.changeSet = new ChangeSet<Lecture>(lecture, customComparator, (data, dirtyState) => {
                 this.lectureData = data;
                 this.isDirty = dirtyState.isDirty;
+                if (!this.timeDirty) {
+                    this.resetTimeInputs();
+                }
             });
 
             // This updates the state live in background
@@ -160,10 +185,37 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 if (update) {
                     this.changeSet.updateState(update);
                     this.syncCustomThumbnailUi();
+                    this.seriesSize = update.seriesIdentifier
+                        ? lectureList.filter((l) => l.seriesIdentifier === update.seriesIdentifier).length
+                        : 0;
                 }
             });
 
             this.syncCustomThumbnailUi();
+        },
+
+        isSeriesLecture(): boolean {
+            return (this.lectureData?.seriesIdentifier?.length ?? 0) > 0;
+        },
+
+        /**
+         * Resets the time inputs to the currently committed lecture data, discarding any edits.
+         */
+        resetTimeInputs() {
+            if (!this.lectureData) return;
+            if (this.isSeriesLecture()) {
+                this.startInput = formatTimeOfDay(this.lectureData.startDate);
+                this.endInput = formatTimeOfDay(this.lectureData.endDate);
+            } else {
+                this.startInput = this.lectureData.start;
+                this.endInput = this.lectureData.end;
+            }
+            this.timeDirty = false;
+            this.applyTimeToSeries = false;
+        },
+
+        onTimeInputChange() {
+            this.timeDirty = true;
         },
 
         getCustomThumbnailFile() {
@@ -338,6 +390,7 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
          */
         discardEdit() {
             this.changeSet.reset();
+            this.resetTimeInputs();
             this.uiEditMode = UIEditMode.none;
         },
 
@@ -373,6 +426,29 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                         saveSeries: this.uiEditMode === UIEditMode.series,
                     },
                 });
+
+                // Saving the lecture time
+                if (this.timeDirty) {
+                    const start = this.isSeriesLecture()
+                        ? combineDateAndTime(this.lectureData.startDate, this.startInput)
+                        : this.startInput;
+                    const end = this.isSeriesLecture()
+                        ? combineDateAndTime(this.lectureData.startDate, this.endInput)
+                        : this.endInput;
+
+                    if (new Date(end).getTime() <= new Date(start).getTime()) {
+                        throw new Error("Lecture end time must be after the start time.");
+                    }
+
+                    await DataStore.adminLectureList.updateLectureTime(
+                        courseId,
+                        lectureId,
+                        start,
+                        end,
+                        this.applyTimeToSeries,
+                    );
+                    this.resetTimeInputs();
+                }
 
                 // Saving VideoSections
                 if (changedKeys.includes("videoSections")) {
