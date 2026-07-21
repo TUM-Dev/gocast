@@ -144,6 +144,7 @@ func run(ctx context.Context) error {
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
 		runner_manager.WithCamService(camService),
+		runner_manager.WithLiveStateNotifier(api.NotifyViewersLiveState),
 	}
 	var subtitleClient pb.SubtitleGeneratorClient
 	if tools.Cfg.VoiceService.Host != "" {

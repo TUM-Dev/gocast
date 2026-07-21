@@ -235,7 +235,6 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	if err != nil {
 		logger.Error("Can't set stream not live", "err", err)
 	}
-	NotifyViewersLiveState(uint(request.StreamID), false)
 
 	return &pb.Status{Ok: true}, nil
 }
@@ -600,7 +599,6 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		default:
 			s.StreamsDao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
-		NotifyViewersLiveState(stream.Model.ID, true)
 		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 

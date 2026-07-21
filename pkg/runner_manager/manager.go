@@ -53,11 +53,19 @@ type Manager struct {
 	camsHandledLock sync.Mutex
 
 	lightLock sync.Mutex
+
+	liveStateNotifier LiveStateNotifier
+	liveNotified      map[uint]bool
+	liveNotifiedLock  sync.Mutex
 }
 
 type CamService interface {
 	For(address string, cameraType model.CameraType) (camera.Cam, error)
 }
+
+// LiveStateNotifier is called whenever a stream transitions into or out of the live state,
+// so that other parts of the application (e.g. the websocket hub) can react to it.
+type LiveStateNotifier func(streamID uint, live bool)
 
 // New returns a new instance of Manager with the given Options
 func New(dao dao.DaoWrapper, opts ...Option) *Manager {
@@ -69,6 +77,7 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 		})).With("service", "runner_manager"),
 		streamStartLock: sync.Mutex{},
 		camsHandled:     make(map[uint]bool),
+		liveNotified:    make(map[uint]bool),
 	}
 	m.applyOpts(opts)
 	return &m
@@ -148,6 +157,14 @@ func WithSubtitleClient(client pb.SubtitleGeneratorClient, auth string) Option {
 	return func(m *Manager) {
 		m.subtitleClient = client
 		m.subtitleAuth = auth
+	}
+}
+
+// WithLiveStateNotifier registers a callback invoked when a stream starts or stops being live,
+// e.g. to notify viewers via websocket.
+func WithLiveStateNotifier(notifier LiveStateNotifier) Option {
+	return func(m *Manager) {
+		m.liveStateNotifier = notifier
 	}
 }
 
@@ -256,6 +273,8 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	}
 	m.streamStartLock.Unlock()
 
+	m.notifyLiveState(stream.ID, true)
+
 	err = m.handleCamera(ctx, stream)
 	if err != nil {
 		log.Error("failed to handle camera", "stream", stream.ID, "err", err)
@@ -267,6 +286,28 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	}
 
 	return nil
+}
+
+// notifyLiveState invokes the configured LiveStateNotifier, making sure viewers are only notified
+// once per stream when going live, even though streamStarted is called once per stream version.
+func (m *Manager) notifyLiveState(streamID uint, live bool) {
+	if m.liveStateNotifier == nil {
+		return
+	}
+	if live {
+		m.liveNotifiedLock.Lock()
+		alreadyNotified := m.liveNotified[streamID]
+		m.liveNotified[streamID] = true
+		m.liveNotifiedLock.Unlock()
+		if alreadyNotified {
+			return
+		}
+	} else {
+		m.liveNotifiedLock.Lock()
+		delete(m.liveNotified, streamID)
+		m.liveNotifiedLock.Unlock()
+	}
+	m.liveStateNotifier(streamID, live)
 }
 
 var errNotNoLectureSource = fmt.Errorf("no source configured for this lecture hall ip")
@@ -575,10 +616,12 @@ func (m *Manager) handleLightsOff(stream model.Stream) (err error) {
 
 func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.StreamEndNotification) error {
 	m.logger.Debug("streamEnd", "payload", notification)
-	err := m.dao.StreamsDao.SetStreamNotLiveById(uint(notification.GetStream().GetId()))
+	streamID := uint(notification.GetStream().GetId())
+	err := m.dao.StreamsDao.SetStreamNotLiveById(streamID)
 	if err != nil {
 		return err
 	}
+	m.notifyLiveState(streamID, false)
 
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(notification.GetStream().GetId(), 10))
 	if err != nil {
