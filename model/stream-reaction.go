@@ -7,8 +7,8 @@ type StreamReaction struct {
 	gorm.Model
 
 	Reaction string `gorm:"not null" json:"reaction"`
-	StreamID uint   `gorm:"not null" json:"streamID"`
-	UserID   uint   `gorm:"not null" json:"userID"`
+	StreamID uint   `gorm:"not null;uniqueIndex:idx_stream_reaction_stream_user" json:"streamID"`
+	UserID   uint   `gorm:"not null;uniqueIndex:idx_stream_reaction_stream_user" json:"userID"`
 	// Name string `gorm:"column:name;type:text;not null;default:'unnamed'"`
 }
 

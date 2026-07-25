@@ -18,12 +18,18 @@ type StreamReactionDao interface {
 	// Create a new StreamReaction for the database
 	Create(context.Context, *model.StreamReaction) error
 
+	// Update an existing StreamReaction.
+	Update(context.Context, *model.StreamReaction) error
+
 	// Delete a StreamReaction by id.
 	Delete(context.Context, uint) error
 
 	GetByStream(context.Context, uint) ([]model.StreamReaction, error)
 
 	GetByStreamWithinMinutes(context.Context, uint, uint) ([]model.StreamReaction, error)
+
+	// GetByStreamAndUser gets the StreamReaction a user has for a stream, if any
+	GetByStreamAndUser(context.Context, uint, uint) (model.StreamReaction, error)
 
 	GetNumbersOfReactions(context.Context, uint) (map[string]int, error)
 
@@ -53,6 +59,12 @@ func (d streamReactionDao) Create(c context.Context, it *model.StreamReaction) e
 	return d.db.WithContext(c).Create(it).Error
 }
 
+// Update an existing StreamReaction. Also bumps UpdatedAt, which the recency
+// window in GetByStreamWithinMinutes relies on.
+func (d streamReactionDao) Update(c context.Context, it *model.StreamReaction) error {
+	return d.db.WithContext(c).Save(it).Error
+}
+
 // Delete a StreamReaction by id.
 func (d streamReactionDao) Delete(c context.Context, id uint) error {
 	return d.db.WithContext(c).Delete(&model.StreamReaction{}, id).Error
@@ -63,10 +75,15 @@ func (d streamReactionDao) GetByStream(c context.Context, streamID uint) (res []
 	return res, d.db.WithContext(c).Where("stream_id = ?", streamID).Find(&res).Error
 }
 
-// GetByStream gets a StreamReaction by stream within the last ... minutes.
+// GetByStreamWithinMinutes gets a StreamReaction by stream that was last updated within the last ... minutes and filtering on updated_at
 func (d streamReactionDao) GetByStreamWithinMinutes(c context.Context, streamID uint, minutes uint) (res []model.StreamReaction, err error) {
 	time_specified := time.Now().Add(-time.Duration(minutes) * time.Minute)
-	return res, d.db.WithContext(c).Where("stream_id = ? AND created_at > ?", streamID, time_specified).Find(&res).Error
+	return res, d.db.WithContext(c).Where("stream_id = ? AND updated_at > ?", streamID, time_specified).Find(&res).Error
+}
+
+// GetByStreamAndUser gets the StreamReaction a user currently has for a stream, if any.
+func (d streamReactionDao) GetByStreamAndUser(c context.Context, streamID uint, userID uint) (res model.StreamReaction, err error) {
+	return res, d.db.WithContext(c).Where("stream_id = ? AND user_id = ?", streamID, userID).First(&res).Error
 }
 
 // GetNumbersOfReactions gets the number of reactions grouped by reactions for a stream.
@@ -85,7 +102,7 @@ func (d streamReactionDao) GetNumbersOfReactions(c context.Context, streamID uin
 	return reactionMap, err
 }
 
-// GetLastReactionOfUser gets the last reaction of a user.
+// GetLastReactionOfUser gets the most recently written reaction of a user (across all streams)
 func (d streamReactionDao) GetLastReactionOfUser(c context.Context, userID uint) (res model.StreamReaction, err error) {
-	return res, d.db.WithContext(c).Where("user_id = ?", userID).Last(&res).Error
+	return res, d.db.WithContext(c).Where("user_id = ?", userID).Order("updated_at desc").First(&res).Error
 }

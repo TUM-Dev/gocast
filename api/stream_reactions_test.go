@@ -154,7 +154,7 @@ func TestAddReactionCooldown(t *testing.T) {
 		t,
 		model.StreamReaction{
 			Model: gorm.Model{
-				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
 			},
 			Reaction: "👍",
 		},

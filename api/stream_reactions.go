@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -93,7 +94,7 @@ func (r StreamReactionRoutes) addReaction(c *gin.Context) {
 
 	lastReaction, _ := r.DaoWrapper.StreamReactionDao.GetLastReactionOfUser(c, user.ID)
 	// This contains the cooldown logic, to change this value change the time.Duration(10) to the desired cooldown time
-	if lastReaction.Reaction != "" && lastReaction.CreatedAt.Add(time.Duration(10)*time.Second).After(time.Now()) {
+	if lastReaction.Reaction != "" && lastReaction.UpdatedAt.Add(time.Duration(10)*time.Second).After(time.Now()) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusTooManyRequests,
 			CustomMessage: "cooldown not over",
@@ -101,21 +102,42 @@ func (r StreamReactionRoutes) addReaction(c *gin.Context) {
 		return
 	}
 
-	reactionObj := model.StreamReaction{
-		Reaction: reaction.Reaction,
-		StreamID: stream.ID,
-		UserID:   user.ID,
-	}
-
-	err = r.DaoWrapper.StreamReactionDao.Create(c, &reactionObj)
-	if err != nil {
+	// A user reacts again: it is either updated or a no-op for same reaction
+	existing, err := r.DaoWrapper.StreamReactionDao.GetByStreamAndUser(c, stream.ID, user.ID)
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		reactionObj := model.StreamReaction{
+			Reaction: reaction.Reaction,
+			StreamID: stream.ID,
+			UserID:   user.ID,
+		}
+		if err := r.DaoWrapper.StreamReactionDao.Create(c, &reactionObj); err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not create reaction",
+				Err:           err,
+			})
+			return
+		}
+	case err != nil:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not create reaction",
+			CustomMessage: "can not look up existing reaction",
 			Err:           err,
 		})
 		return
+	case existing.Reaction != reaction.Reaction:
+		existing.Reaction = reaction.Reaction
+		if err := r.DaoWrapper.StreamReactionDao.Update(c, &existing); err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not update reaction",
+				Err:           err,
+			})
+			return
+		}
 	}
+
 	NotifyAdminsOnReaction(stream.ID, reaction.Reaction)
 	c.JSON(http.StatusOK, "")
 }

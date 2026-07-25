@@ -701,5 +701,15 @@ func GetStreamReactionMock(t *testing.T, lastReaction model.StreamReaction, crea
 		Create(gomock.Any(), gomock.Any()).
 		Return(createErr).
 		AnyTimes()
+	reactionMock.
+		EXPECT().
+		GetByStreamAndUser(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(model.StreamReaction{}, gorm.ErrRecordNotFound).
+		AnyTimes()
+	reactionMock.
+		EXPECT().
+		Update(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
 	return reactionMock
 }
