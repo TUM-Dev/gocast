@@ -223,31 +223,36 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             return this.lectureData[key];
         },
 
-        onAttachmentFileDrop(e) {
-            const files = [...(e.dataTransfer?.files ?? [])];
+        async onAttachmentFileDrop(e) {
+            const files = Array.from(e.dataTransfer?.files ?? []);
 
-            if (files.length > 0) {
-                for (const file of files) {
-                    DataStore.adminLectureList.uploadAttachmentFile(
-                        this.lectureData.courseId,
-                        this.lectureData.lectureId,
-                        file,
-                    );
+            try {
+                if (files.length > 0) {
+                    for (const file of files as File[]) {
+                        await DataStore.adminLectureList.uploadAttachmentFile(
+                            this.lectureData.courseId,
+                            this.lectureData.lectureId,
+                            file,
+                        );
+                    }
+                    return;
                 }
-                return;
-            }
 
-            const droppedFile =
-                e.dataTransfer?.items?.[0]?.kind === "file" ? e.dataTransfer.items[0].getAsFile() : null;
-            if (!droppedFile) {
-                return;
-            }
+                const droppedFile =
+                    e.dataTransfer?.items?.[0]?.kind === "file" ? e.dataTransfer.items[0].getAsFile() : null;
+                if (!droppedFile) {
+                    return;
+                }
 
-            DataStore.adminLectureList.uploadAttachmentFile(
-                this.lectureData.courseId,
-                this.lectureData.lectureId,
-                droppedFile,
-            );
+                await DataStore.adminLectureList.uploadAttachmentFile(
+                    this.lectureData.courseId,
+                    this.lectureData.lectureId,
+                    droppedFile,
+                );
+            } catch (err) {
+                console.error(err);
+                this.lastErrors = [err.message || "Failed to upload attachment(s)"];
+            }
         },
 
         deleteAttachment(id: number) {
