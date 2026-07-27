@@ -300,7 +300,7 @@ export const AdminLectureList = {
      * @param lectureId
      * @param sections
      */
-    addSections: async (lectureId: number, sections: VideoSection[]): Promise<VideoSection[]> => {
+    addSections: async (lectureId: number, sections: VideoSection[]): Promise<void> => {
         const result = await post(
             `/api/stream/${lectureId}/sections`,
             sections.map((s) => ({
