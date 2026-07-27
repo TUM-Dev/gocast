@@ -237,7 +237,8 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
                 return;
             }
 
-            const droppedFile = e.dataTransfer?.items?.[0]?.kind === "file" ? e.dataTransfer.items[0].getAsFile() : null;
+            const droppedFile =
+                e.dataTransfer?.items?.[0]?.kind === "file" ? e.dataTransfer.items[0].getAsFile() : null;
             if (!droppedFile) {
                 return;
             }
