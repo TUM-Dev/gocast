@@ -137,6 +137,16 @@
     .primary {
         @apply bg-blue-500 text-white hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-800;
     }
+
+    .copy-tooltip {
+        @apply pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-700 px-3 py-1.5 text-sm font-normal text-white shadow-md dark:bg-gray-500;
+    }
+
+    .copy-tooltip::after {
+        content: "";
+        @apply absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45;
+        background-color: inherit;
+    }
 }
 
 .tl-select {
@@ -360,6 +370,19 @@ input[type='checkbox']:checked + label {
 
 .h-16\/6 {
     height: calc((6 / 16) * 100vw) !important;
+}
+
+/* Mobile sidebar panel height - uses a reasonable fixed height on mobile instead of video aspect ratio */
+.h-sidebar-mobile {
+    height: 60vh !important;
+    max-height: 400px !important;
+}
+
+@media (min-width: 768px) {
+    .md\:h-16\/9 {
+        height: calc((9 / 16) * 100vw) !important;
+        max-height: calc(100vh - 200px) !important;
+    }
 }
 
 @media (min-width: 1024px) {

@@ -4,7 +4,11 @@ formatters:
   enable:
     - gofmt
     - gofumpt
-
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/TUM-Dev/gocast
 
 # For a description for each linter, see https://golangci-lint.run/usage/linters/.
 linters:

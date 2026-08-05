@@ -23,7 +23,18 @@
                     <a :href="`/w/${lectureData.courseSlug}/${lectureData.lectureId}`"><span
                                 x-text="lectureData.startDateFormatted"></span> <i class="fas fa-external-link"></i></a>
                 </div>
-                <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
+                <div class="text-3 font-sans ml-6"
+                    x-data="{
+                        showKeys: false,
+                        copied: null,
+                        copyTimeout: null,
+                        copyAndShow(value, key) {
+                            global.copyToClipboard(value)
+                            this.copied = key
+                            clearTimeout(this.copyTimeout)
+                            this.copyTimeout = setTimeout(() => this.copied = null, 1500)
+                        }
+                    }">
                     <span x-text="lectureData.startTimeFormatted"></span>
                     -
                     <span x-text="lectureData.endTimeFormatted"></span>
@@ -40,13 +51,31 @@
                         </span>
                         <span class="font-semibold">Stream Server:</span>
                         <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey)"></i>
+                        <span class="relative inline-block">
+                            <i class="fas fa-clipboard hover:text-purple-500 cursor-pointer"
+                            @click="copyAndShow('{{$ingestBase}}{{$course.Slug}}-' + lectureData.lectureId + '?secret=' + lectureData.streamKey, 'stream-server')"></i>
+
+                            <span x-cloak
+                                x-show="copied === 'stream-server'"
+                                role="status"
+                                class="copy-tooltip bg-blue-500 dark:bg-indigo-600">
+                                Copied
+                            </span>
+                        </span>
                         <br>
                         <span class="font-semibold">Stream Key:</span>
                         <span x-text="lectureData.courseSlug + '-' + lectureData.lectureId"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard(lectureData.courseSlug + '-' + lectureData.lectureId)"></i>
+                        <span class="relative inline-block">
+                            <i class="fas fa-clipboard hover:text-purple-500 cursor-pointer"
+                            @click="copyAndShow(lectureData.courseSlug + '-' + lectureData.lectureId, 'stream-key')"></i>
+
+                            <span x-cloak
+                                x-show="copied === 'stream-key'"
+                                role="status"
+                                class="copy-tooltip bg-blue-500 dark:bg-indigo-600">
+                                Copied
+                            </span>
+                        </span>
                         <br>
                         {{if ne $user.Role 1}}
                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
@@ -140,7 +169,8 @@
                 </div>
                 <div x-show="lectureData.isLiveNow"
                      class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
-                    Live
+                    <i title="This lecture is hidden" x-show="lectureData.private" class="fas fa-eye-slash mr-2"></i>
+                    <span> Live </span>
                 </div>
                 <div x-show="!lectureData.isRecording && lectureData.isPast"
                      class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
@@ -148,7 +178,8 @@
                 </div>
                 <div x-show="!lectureData.isPast && !lectureData.isLiveNow && !lectureData.isRecording"
                      class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
-                    Scheduled
+                    <i title="This lecture is hidden" x-show="lectureData.private" class="fas fa-eye-slash mr-2"></i>
+                    <span> Scheduled</span>
                 </div>
                 <div x-data="{ moreDropdownOpen: false,
                                toggleMoreDropdown() {
@@ -379,6 +410,39 @@
                         <span class="ml-3 text-sm font-medium text-3">Chat Enabled</span>
                     </label>
                 </section>
+            </div>
+                <section>
+                    <label class="relative inline-flex items-center cursor-pointer left-3" >
+                        <input type="checkbox" class="sr-only peer" :checked="uploadThumbnailPanelOpen" @change="uploadThumbnailPanelOpen = $event.target.checked"/>
+                        <div
+                             class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
+                        dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
+                        peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
+                        after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600" ></div>
+                        <span class="ml-3 text-sm font-medium text-3">Upload Custom Thumbnail</span>
+                    </label>
+                    <div
+                                @drop.prevent="(e) => onCustomThumbnailUpload(e)"
+                                @dragover.prevent=""
+                                class="tl-textarea grow mt-4 p-6 border-2 border-dashed border-gray-300 rounded-lg"
+                                placeholder="Drop thumbnail here."
+                                autocomplete="off"
+                                x-show="uploadThumbnailPanelOpen">
+                            Drop thumbnail here.
+                    </div>
+                    <div class="mt-3" x-show="uploadThumbnailPanelOpen">
+                        <input type="file" x-ref="thumbnailFileInput" accept="image/*" class="hidden" @change="onCustomThumbnailFileSelected" />
+                        <button @click="$refs.thumbnailFileInput.click()" type="button" class="px-4 py-2 bg-indigo-500 text-white rounded">
+                            Select thumbnail from file browser
+                        </button>
+                        <a :href="customThumbnailUrl(false)" target="_blank" rel="noopener" class="ml-3 text-indigo-600 underline" x-show="thumbnailSrc || hasCustomThumbnail()">
+                            Open current thumbnail
+                        </a>
+                    </div>
+                    <img :src="thumbnailSrc" alt="Thumbnail Preview" class="mt-4" x-show="thumbnailSrc">
+                    <button @click="deleteCustomThumbnail" class="mt-2 px-4 py-2 bg-red-500 text-white rounded" x-show="thumbnailSrc || hasCustomThumbnail()">Delete uploaded thumbnail</button>
+                    <!--input type="file" id="thumbnailUpload" class="hidden" accept="image/*" @change="onAttachmentFileDrop"-->
                 <div>
                     <button :disabled="isSaving" @click="discardEdit();"
                             class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
@@ -391,7 +455,7 @@
                             x-text="isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>
                 </div>
-            </div>
+            </section>
         </div>
 
         <template x-if="lecture.isCopying">

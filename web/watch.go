@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -19,8 +18,6 @@ import (
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {
-	span := sentry.StartSpan(c, "GET /w", sentry.WithTransactionName("GET /w"))
-	defer span.Finish()
 	var data WatchPageData
 	err := data.Prepare(c, r.LectureHallsDao)
 	if err != nil {
@@ -29,7 +26,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +50,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
 		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
 		if err != nil {
-			sentry.CaptureException(err)
+			logger.Error("Error getting lecture hall by id", "err", err)
 		} else {
 			data.Presets = lectureHall.CameraPresets
 		}
@@ -127,17 +124,6 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
 	}
-	// Check if user wants to use beta stream mode
-	mode, err := tumLiveContext.User.GetDefaultMode()
-	if err != nil {
-		logger.Error("Couldn't decode user setting", "err", err)
-	}
-
-	if _, dvr := c.GetQuery("dvr"); dvr || mode.Beta {
-		data.DVR = "?dvr"
-	} else {
-		data.DVR = ""
-	}
 
 	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
@@ -146,14 +132,14 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
 	}
 	if c.Query("video_only") == "1" {
-		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
-		if err != nil {
+		if err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data); err != nil {
 			logger.Error("couldn't render template", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	} else {
-		err := templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", data)
-		if err != nil {
+		if err := templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", data); err != nil {
 			logger.Error("couldn't render template", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
 }
@@ -169,8 +155,7 @@ type WatchPageData struct {
 	Progress        model.StreamProgress
 	IndexData       IndexData
 	Description     template.HTML
-	CutOffLength    int    // The maximum length for the preview of a description.
-	DVR             string // ?dvr if dvr is enabled, empty string otherwise
+	CutOffLength    int // The maximum length for the preview of a description.
 	LectureHallName string
 	ChatData        ChatData
 }

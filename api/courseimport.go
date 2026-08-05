@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
-	"errors"
+	"database/sql"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -13,19 +13,19 @@ import (
 	"unicode"
 
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
+	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	uuid "github.com/satori/go.uuid"
 )
 
 func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	resp := ""
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
@@ -40,7 +40,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	var req importReq
 	err := c.BindJSON(&req)
 	if err != nil {
-		sentry.CaptureException(errors.New("could not bind JSON request"))
+		logger.Error("could not bind JSON request", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not bind JSON request",
@@ -70,6 +70,11 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			continue
 		}
 		token := strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15]
+		l := sql.NullString{Valid: false}
+		if courseReq.Language == "de" || courseReq.Language == "en" {
+			l.Valid = true
+			l.String = courseReq.Language
+		}
 		course := model.Course{
 			UserID:              tumLiveContext.User.ID,
 			Name:                courseReq.Title,
@@ -84,6 +89,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			Streams:             nil,
 			Users:               nil,
 			Token:               token,
+			Language:            l,
 		}
 
 		var streams []model.Stream
@@ -115,6 +121,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 		}
 		var users []*model.User
 		for _, contact := range courseReq.Contacts {
+
 			if !contact.MainContact {
 				continue
 			}
@@ -257,7 +264,7 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	ical.Filter()
 	ical.Sort()
 	courses := ical.GroupByCourse()
-	courses, err = campus.LoadCourseContacts(courses)
+	courses, err = campus.EnrichCourse(courses)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

@@ -31,6 +31,9 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream end in context"))
 	}
+	if streamEnd.Before(time.Now()) {
+		return nil
+	}
 	streamVersion, ok := d["streamVersion"].(string)
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream end in context"))

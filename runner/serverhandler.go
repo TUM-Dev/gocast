@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 

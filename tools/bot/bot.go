@@ -4,10 +4,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/microcosm-cc/bluemonday"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/getsentry/sentry-go"
-	"github.com/microcosm-cc/bluemonday"
 )
 
 // Bot is the bot that will be used to send messages to the chat.
@@ -146,7 +146,6 @@ func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
 
 	liveViewers, err := statsDao.GetStreamNumLiveViews(streamID)
 	if err != nil {
-		sentry.CaptureException(err)
 		logger.Error("Failed to get current live viewers", "err", err)
 		return false
 	}

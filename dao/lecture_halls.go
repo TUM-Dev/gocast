@@ -3,9 +3,10 @@ package dao
 import (
 	"time"
 
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate go tool mockgen -source=lecture_halls.go -destination ../mock_dao/lecture_halls.go
@@ -25,6 +26,13 @@ type LectureHallsDao interface {
 	UnsetDefaults(lectureHallID string) error
 
 	DeleteLectureHall(id uint) error
+
+	GetLiveStateForPwrCtrl() ([]PwrCtrlLiveState, error)
+}
+
+type PwrCtrlLiveState struct {
+	PwrCtrlIP string
+	NumLive   uint
 }
 
 type lectureHallsDao struct {
@@ -33,6 +41,14 @@ type lectureHallsDao struct {
 
 func NewLectureHallsDao() LectureHallsDao {
 	return lectureHallsDao{db: DB}
+}
+
+func (d lectureHallsDao) GetLiveStateForPwrCtrl() ([]PwrCtrlLiveState, error) {
+	var result []PwrCtrlLiveState
+
+	err := DB.Raw(`select lh.pwr_ctrl_ip, (select count(*) from tumlive.streams s where s.lecture_hall_id=lh.id and s.live_now and s.deleted_at is NULL) num_live from tumlive.lecture_halls lh
+	where lh.pwr_ctrl_ip is not NULL and lh.deleted_at is NULL`).Scan(&result).Error
+	return result, err
 }
 
 func (d lectureHallsDao) CreateLectureHall(lectureHall model.LectureHall) {

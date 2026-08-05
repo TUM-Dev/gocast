@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"github.com/TUM-Dev/gocast/worker/cfg"
 	"net/http"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/TUM-Dev/gocast/worker/cfg"
 )
 
 func TestUpload(t *testing.T) {
@@ -71,7 +72,7 @@ func createDummyFile(filesize uint) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	f, err := os.OpenFile(file.Name(), os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(file.Name(), os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		return "", err
 	}

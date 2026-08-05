@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"gorm.io/gorm"
+
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
-	"gorm.io/gorm"
 )
 
 func UpdateUserSettings(db *gorm.DB, user *model.User, req *protobuf.UpdateUserSettingsRequest) (settings []model.UserSetting, err error) {

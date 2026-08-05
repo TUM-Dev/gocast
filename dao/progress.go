@@ -1,9 +1,10 @@
 package dao
 
 import (
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate go tool mockgen -source=progress.go -destination ../mock_dao/progress.go

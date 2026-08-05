@@ -31,10 +31,12 @@ storage
 .idea/**/dictionaries
 .idea/**/shelf
 .idea/copilot/
+.idea/copilot.*
 
 # Generated files
 .idea/**/contentModel.xml
 .idea/misc.xml
+.idea/go.imports.xml
 
 # Sensitive or high-churn files
 .idea/**/dataSources/

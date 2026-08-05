@@ -1,4 +1,4 @@
-FROM amd64/golang:1.24.1-alpine3.21 AS builder
+FROM golang:1.26 AS builder
 
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/worker
@@ -11,7 +11,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '
 
 FROM bluenviron/mediamtx:latest AS rtsp
 
-FROM alpine:3.18
+FROM alpine:3.24
 ADD entrypoint.sh /entrypoint.sh
 ADD mediamtx.yml /mediamtx.yml
 RUN chmod +x /entrypoint.sh

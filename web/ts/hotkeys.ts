@@ -1,4 +1,5 @@
 import videojs from "video.js";
+import { getPlayers } from "./TUMLiveVjs";
 
 // VideoJS uses `import * as keycode from "keycode";`
 // However, keycode uses deprecated event.keyCode https://github.com/timoxley/keycode/issues/52
@@ -21,7 +22,7 @@ const vjsIcon = (icon) => `vjs-icon-${icon}`;
  * @param keys An iterable of strings, each naming a key code as per {@link KeyboardEvent#key}.
  * @param event The event to match.
  */
-const matchKeys = (keys: Iterable<string>, event: videojs.KeyboardEvent) =>
+const matchKeys = (keys: Iterable<string>, event: KeyboardEvent) =>
     Array.from(keys).includes(event.key) ? event.key : undefined;
 
 const matches = (match, player, event) =>
@@ -30,8 +31,10 @@ const matches = (match, player, event) =>
 const getIcon = (icon, player, event) => (typeof icon === "function" ? icon(player, event) : icon);
 
 const handleWithClick = (name) => (player, event) => {
-    const ButtonComponent = videojs.getComponent(name);
-    ButtonComponent.prototype.handleClick.call(player, event);
+    const component = player.getChild("controlBar").getChild(name);
+    if (component) {
+        component.handleClick(event);
+    }
 };
 
 const handleFullscreen = (player, event) => {
@@ -42,9 +45,26 @@ const handleFullscreen = (player, event) => {
     return vjsIcon(isFullscreen ? "fullscreen-exit" : "fullscreen-enter");
 };
 
-const handleSeek = (forward: boolean) => (player, event) => {
+const handleSeek = (forward: boolean, seekingTime: number) => (player, event) => {
     const controlBar = player.controlBar;
-    (forward ? controlBar.seekForward : controlBar.seekBack).handleClick(event);
+    const button = forward ? controlBar.getChild("skipForward") : controlBar.getChild("skipBackward");
+
+    // If skip button exists and is visible, use it
+    if (button && !button.hasClass("vjs-hidden")) {
+        button.handleClick(event);
+    } else {
+        // Fallback: manually seek all players by the user's preferred seeking time
+        const allPlayers = getPlayers();
+        const seekAmount = forward ? seekingTime : -seekingTime;
+
+        allPlayers.forEach((p) => {
+            const currentTime = p.currentTime();
+            const newTime = currentTime + seekAmount;
+            // Clamp to valid range
+            const duration = p.duration();
+            p.currentTime(Math.max(0, Math.min(newTime, duration)));
+        });
+    }
 };
 
 const handleVolume = (up: boolean, step = 0.05) =>
@@ -115,7 +135,7 @@ interface Hotkeys {
  * See {@link handleHotkeys}.
  */
 // see https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values for documentation
-export const defaultOptions = {
+const getDefaultOptions = (seekingTime: number) => ({
     hotkeys: {
         fullscreen: {
             match: ["f", "F"],
@@ -135,12 +155,12 @@ export const defaultOptions = {
         // "Right" is for IE+old Firefox, same with other arrows below
         seekForward: {
             match: ["l", "L", "ArrowRight", "Right"],
-            handle: handleSeek(true),
+            handle: handleSeek(true, seekingTime),
             icon: `${vjsIcon("replay")} -scale-x-100 rotate-45`,
         },
         seekBack: {
             match: ["j", "J", "ArrowLeft", "Left"],
-            handle: handleSeek(false),
+            handle: handleSeek(false, seekingTime),
             icon: `${vjsIcon("replay")} -rotate-45`,
         },
         volumeUp: {
@@ -178,11 +198,12 @@ export const defaultOptions = {
             handle: handleWithClick("SkipSilenceToggle"),
         },
     } as Hotkeys,
-};
+});
 
 /**
  * Factory function for hotkey handler.
- * @param extraOptions Merged with {@link defaultOptions}.
+ * @param seekingTime The user's preferred seeking time in seconds
+ * @param extraOptions Merged with default options.
  *  Each action is an entry in the `extraOptions.hotkeys` property, and replaces the default actions if given.
  *  Each value should have three properties: `match` may be an iterable of strings, in which case the action is triggered
  *  if one of those keys is pressed (as per {@link KeyboardEvent#key}), or a function, which receives as its arguments
@@ -193,10 +214,11 @@ export const defaultOptions = {
  *  that returns a class string. Alternatively, `handle` may return such a class string, which is used if `icon` is not set.
  *  Custom actions are also supported.
  */
-export function handleHotkeys(extraOptions = {}) {
+export function handleHotkeys(seekingTime: number, extraOptions = {}) {
+    const defaultOptions = getDefaultOptions(seekingTime);
     const options = videojs.mergeOptions(defaultOptions, extraOptions) as typeof defaultOptions;
 
-    return function (event: videojs.KeyboardEvent) {
+    return function (event: KeyboardEvent) {
         // ignore events where Alt, Ctrl or Meta is pressed
         // note: we are processing keydown events
         if (event.altKey || event.ctrlKey || event.metaKey) return;

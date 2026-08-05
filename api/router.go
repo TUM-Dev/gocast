@@ -1,9 +1,11 @@
 package api
 
 import (
-	"github.com/TUM-Dev/gocast/dao"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/gin-gonic/gin"
+
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/pkg/runner_manager"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 // ConfigChatRouter configure gin router for chat (without gzip)
@@ -25,7 +27,11 @@ func ConfigRealtimeRouter(router *gin.RouterGroup) {
 }
 
 // ConfigGinRouter for non ws endpoints
-func ConfigGinRouter(router *gin.Engine) {
+func ConfigGinRouter(
+	router *gin.Engine,
+	manager *runner_manager.Manager,
+	camService CamService,
+) {
 	daoWrapper := dao.NewDaoWrapper()
 
 	router.Use(tools.ErrorHandler)
@@ -35,7 +41,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
-	configGinLectureHallApiRouter(router, daoWrapper, tools.NewPresetUtility(daoWrapper.LectureHallsDao))
+	configGinLectureHallApiRouter(router, daoWrapper, camService, tools.Cfg.Paths.Static)
 	configProgressRouter(router, daoWrapper)
 	configSeekStatsRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)
@@ -49,4 +55,5 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinBookmarksRouter(router, daoWrapper)
 	configMaintenanceRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
+	configSelfstreamRouter(router, daoWrapper, manager)
 }

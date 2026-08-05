@@ -4,7 +4,6 @@ package api
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,12 +17,12 @@ import (
 	"time"
 
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
-	"github.com/getsentry/sentry-go"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -34,7 +33,7 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/camera"
+	subtitle_proto "github.com/TUM-Dev/gocast/voice-service/pb"
 	"github.com/TUM-Dev/gocast/worker/pb"
 )
 
@@ -45,6 +44,9 @@ var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configura
 type server struct {
 	pb.UnimplementedFromWorkerServer
 	dao.DaoWrapper
+
+	subtitleClient subtitle_proto.SubtitleGeneratorClient
+	subtitleAuth   string
 }
 
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
@@ -171,6 +173,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 var lightLock = sync.Mutex{}
 
 // NotifyStreamStart handles workers notification about streams being started
+//
 // Deprecated: this is now "NotifyStreamStarted"
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
@@ -235,51 +238,6 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	NotifyViewersLiveState(uint(request.StreamID), false)
 
 	return &pb.Status{Ok: true}, nil
-}
-
-func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
-	if stream.LectureHallID == 0 {
-		return nil
-	}
-	course, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), stream.CourseID)
-	if err != nil {
-		return err
-	}
-	lectureHall, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
-	if err != nil {
-		return err
-	}
-	var preferences []model.CameraPresetPreference
-	// make sure there is an empty list if no preferences are found (null or empty string in db)
-	if course.CameraPresetPreferences == "" {
-		course.CameraPresetPreferences = "[]"
-	}
-	err = json.Unmarshal([]byte(course.CameraPresetPreferences), &preferences)
-	if err != nil {
-		return err
-	}
-	for _, preference := range preferences {
-		if preference.LectureHallID == stream.LectureHallID {
-			switch lectureHall.CameraType {
-			case model.Axis:
-				return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
-			case model.Panasonic:
-				return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(preference.PresetID)
-			}
-		}
-	}
-	// no preset found for this lecture hall, use default
-	defaultPreset, err := daoWrapper.CameraPresetDao.GetDefaultCameraPreset(lectureHall.ID)
-	if err != nil {
-		return err
-	}
-	switch lectureHall.CameraType {
-	case model.Axis:
-		return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
-	case model.Panasonic:
-		return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(defaultPreset.PresetID)
-	}
-	return nil
 }
 
 func handleLightOnSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
@@ -419,18 +377,65 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	}
 	stream.Recording = true
 	stream.Private = course.VodPrivate
+	var modelVersion model.StreamVersion
 	switch req.SourceType {
 	case "CAM":
+		modelVersion = model.CAM
 		stream.PlaylistUrlCAM = req.HLSUrl
 	case "PRES":
+		modelVersion = model.PRES
 		stream.PlaylistUrlPRES = req.HLSUrl
 	default:
+		modelVersion = model.COMB
 		stream.PlaylistUrl = req.HLSUrl
 	}
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
+
+	err = s.requestSubtitles(ctx, stream, modelVersion)
+	if err != nil {
+		logger.Error("failed to request subtitles", "stream", stream.ID, "version", modelVersion, "err", err)
+	}
+
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s *server) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) error {
+	if s.subtitleClient == nil {
+		return nil // nothing to do
+	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return err
+	}
+	if course.ShouldGenerateSubtitles(version, stream.LectureHallID) {
+		outCtx := context.Background()
+		if s.subtitleAuth != "" {
+			outCtx = metadata.AppendToOutgoingContext(outCtx, "auth", s.subtitleAuth)
+		}
+		// sign playlist so that subtitle generator can access it
+		err = tools.SetSignedPlaylists(&stream, &model.User{}, false)
+		if err != nil {
+			logger.Error("can't sign playlists for subtitle generation", "err", err)
+		}
+		var url string
+		switch version {
+		case model.COMB:
+			url = stream.PlaylistUrl
+		case model.PRES:
+			url = stream.PlaylistUrlPRES
+		default:
+			url = stream.PlaylistUrlCAM
+		}
+		_, err = s.subtitleClient.Generate(outCtx, &subtitle_proto.GenerateRequest{
+			StreamId:   int32(stream.ID),
+			SourceFile: url,
+			Language:   course.Language.String,
+		})
+		return err
+	}
+	return nil
 }
 
 // NotifyThumbnailsFinished receives and handles messages from workers about finished thumbnails.
@@ -553,10 +558,6 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	worker, err := s.WorkerDao.GetWorkerByID(ctx, request.WorkerID)
-	if err != nil {
-		return nil, err
-	}
 	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
 	if err != nil {
 		logger.Error("Can't find stream", "err", err)
@@ -571,10 +572,6 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		err := handleLightOnSwitch(stream, s.DaoWrapper)
 		if err != nil {
 			logger.Error("Can't handle light on switch", "err", err)
-		}
-		err = handleCameraPositionSwitch(stream, s.DaoWrapper)
-		if err != nil {
-			logger.Error("Can't handle camera position switch", "err", err)
 		}
 		err = s.DaoWrapper.DeleteSilences(fmt.Sprintf("%d", stream.ID))
 		if err != nil {
@@ -593,19 +590,6 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
 		if err != nil {
 			logger.Error("Can't set StreamLiveNowTimestamp", "err", err)
-		}
-
-		time.Sleep(time.Second * 5)
-		if !isHlsUrlOk(request.HlsUrl) {
-			sentry.WithScope(func(scope *sentry.Scope) {
-				scope.SetExtra("URL", request.HlsUrl)
-				scope.SetExtra("StreamID", request.StreamID)
-				scope.SetExtra("LectureHall", stream.LectureHallID)
-				scope.SetExtra("Worker", worker.Host)
-				scope.SetExtra("Version", request.SourceType)
-				sentry.CaptureException(errors.New("DVR URL 404s"))
-			})
-			request.HlsUrl = strings.ReplaceAll(request.HlsUrl, "?dvr", "")
 		}
 
 		switch request.GetSourceType() {
@@ -645,6 +629,9 @@ func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingPro
 	}
 }
 
+// isHlsUrlOk checks if the given HLS URL is valid and accessible
+//
+//nolint:unused
 func isHlsUrlOk(url string) bool {
 	r, err := http.Get(url)
 	if err != nil {
@@ -746,19 +733,16 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 			err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 			if err != nil {
 				logger.Warn("Can't set stream undone", "err", err)
-				sentry.CaptureException(err)
 				continue
 			}
 			courseForStream, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
 			if err != nil {
 				logger.Warn("Can't get course for stream, skipping", "err", err)
-				sentry.CaptureException(err)
 				continue
 			}
 			lectureHallForStream, err := daoWrapper.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
 			if err != nil {
 				logger.Error("Can't get lecture hall for stream, skipping", "err", err)
-				sentry.CaptureException(err)
 				continue
 			}
 
@@ -794,7 +778,6 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			logger.Warn("Can't set stream undone", "err", err)
-			sentry.CaptureException(err)
 			continue
 		}
 		if len(streams[i].Files) == 0 {
@@ -1093,7 +1076,7 @@ func getWorkerWithLeastWorkload(workers []model.Worker) int {
 }
 
 // ServeWorkerGRPC initializes a gRPC server on port 50052
-func ServeWorkerGRPC() {
+func ServeWorkerGRPC(subtitleClient subtitle_proto.SubtitleGeneratorClient, subtitleAuth string) {
 	logger.Info("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
@@ -1107,7 +1090,7 @@ func ServeWorkerGRPC() {
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper()})
+	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper(), subtitleClient: subtitleClient, subtitleAuth: subtitleAuth})
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {

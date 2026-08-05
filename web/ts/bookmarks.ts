@@ -68,8 +68,16 @@ export class BookmarkDialog {
     }
 
     reset(): void {
-        const player = getPlayers()[0];
-        const time = Time.FromSeconds(player.currentTime()).toObject();
+        let elapsedSeconds: number;
+        const streamStartAttr = document.body.dataset.streamStartTime;
+        if (streamStartAttr) {
+            const streamStart = parseInt(streamStartAttr, 10);
+            elapsedSeconds = Math.max(0, Math.floor((Date.now() - streamStart) / 1000));
+        } else {
+            elapsedSeconds = Math.floor(getPlayers()[0].currentTime());
+        }
+
+        const time = Time.FromSeconds(elapsedSeconds).toObject();
         this.request = {
             StreamID: this.streamId,
             Description: "",

@@ -3,9 +3,10 @@ package dao
 import (
 	"errors"
 
-	"github.com/TUM-Dev/gocast/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 //go:generate go tool mockgen -source=video-seek.go -destination ../mock_dao/video-seek.go

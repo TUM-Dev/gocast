@@ -12,11 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/meilisearch/meilisearch-go"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/gin-gonic/gin"
-	"github.com/meilisearch/meilisearch-go"
 )
 
 func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, meiliSearchInstance tools.MeiliSearchInterface) {

@@ -11,9 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -63,6 +64,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
 			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
+			admins.POST("/", routes.putCustomLiveThumbnail)
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
@@ -100,16 +102,15 @@ type liveStreamDto struct {
 
 func (r streamRoutes) getThumbs(c *gin.Context) {
 	ctx, exists := c.Get("TUMLiveContext")
-	tumLiveContext := ctx.(tools.TUMLiveContext)
-
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
 		})
 		return
 	}
+	tumLiveContext := ctx.(tools.TUMLiveContext)
 	file, err := r.GetFileById(c.Param("fid"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -142,6 +143,11 @@ func (r streamRoutes) getVODThumbs(c *gin.Context) {
 	queryType := c.Query("type")
 
 	if queryType == "" {
+		if customThumb, err := r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_CUSTOM); err == nil {
+			c.File(customThumb.Path)
+			return
+		}
+
 		thumb, err := tumLiveContext.Stream.GetLGThumbnail()
 		if err != nil {
 			_ = c.Error(tools.RequestError{
@@ -178,8 +184,20 @@ func (r streamRoutes) getLiveThumbs(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
-	path := pathprovider.LiveThumbnail(streamId)
-	c.File(path)
+
+	file, err := r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_CUSTOM)
+	if err == nil {
+		c.File(file.Path)
+		return
+	}
+
+	file, err = r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_LG_CAM_PRES)
+	if err != nil {
+		path := pathprovider.LiveThumbnail(streamId)
+		c.File(path)
+		return
+	}
+	c.File(file.Path)
 }
 
 func (r streamRoutes) getSubtitles(c *gin.Context) {
@@ -268,7 +286,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 
 	var alert alertMessage
 	if err := c.ShouldBindJSON(&alert); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -279,7 +297,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	// Get lecture hall of the stream that has issues.
 	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not get lecturehall by id", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get lecturehall by id",
@@ -291,7 +309,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	// Get course of the stream that has issues.
 	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not get course by id", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not get course by id",
@@ -329,7 +347,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 
 	// Set messaging strategy as specified in strategy pattern
 	if err = alertBot.SendAlert(botInfo, r.StatisticsDao); err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not send bot alert", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not send bot alert",
@@ -693,16 +711,6 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 			})
 			return
 		}
-	case "url":
-		path = c.PostForm("file_url")
-		_, filename = filepath.Split(path)
-		if path == "" {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
-				CustomMessage: "missing form parameter 'file_url'",
-			})
-			return
-		}
 	default:
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -770,7 +778,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	var request subtitleRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("can not bind body", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind body",
@@ -808,7 +816,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	// request to voice-service for subtitles
 	client, err := GetSubtitleGeneratorClient()
 	if err != nil {
-		sentry.CaptureException(err)
+		logger.Error("could not connect to voice-service", "err", err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not connect to voice-service",
@@ -818,13 +826,16 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	}
 	defer client.CloseConn()
 
-	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
+	outCtx := context.Background()
+	if tools.Cfg.VoiceService.AuthToken != "" {
+		outCtx = metadata.AppendToOutgoingContext(outCtx, "auth", tools.Cfg.VoiceService.AuthToken)
+	}
+	_, err = client.Generate(outCtx, &pb.GenerateRequest{
 		StreamId:   int32(stream.ID),
 		SourceFile: playlist,
 		Language:   request.Language,
 	})
 	if err != nil {
-		sentry.CaptureException(err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not call generate on voice_client",
@@ -893,4 +904,99 @@ func (r streamRoutes) updateChatEnabled(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
 		return
 	}
+}
+
+func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	streamID := tumLiveContext.Stream.ID
+	course := tumLiveContext.Course
+	file, err := c.FormFile("file")
+	if err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid file",
+			Err:           err,
+		})
+		return
+	}
+
+	filename := file.Filename
+	fileUuid := uuid.NewV1()
+
+	// Enforce reasonable file size limit for thumbnails.
+	if file.Size > MAX_FILE_SIZE {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "File too large",
+			Err:           errors.New("uploaded file exceeds maximum allowed size"),
+		})
+		return
+	}
+	// Validate that the uploaded file is an image (MIME type and file extension).
+	contentType := file.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid file type",
+			Err:           errors.New("uploaded file is not an image"),
+		})
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+	default:
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Unsupported image format",
+			Err:           errors.New("unsupported image file extension"),
+		})
+		return
+	}
+
+	filesFolder := filepath.Join(
+		tools.Cfg.Paths.Mass,
+		fmt.Sprintf("%s.%d.%s", course.Name, course.Year, course.TeachingTerm),
+		"files")
+
+	if err := os.MkdirAll(filesFolder, os.ModePerm); err != nil {
+		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Failed to create thumbnail folder",
+			Err:           err,
+		})
+		return
+	}
+
+	path := filepath.Join(
+		filesFolder,
+		fmt.Sprintf("%s%s", fileUuid, filepath.Ext(filename)))
+
+	if err := c.SaveUploadedFile(file, path); err != nil {
+		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Failed to save file",
+			Err:           err,
+		})
+		return
+	}
+
+	thumb := model.File{
+		StreamID:   streamID,
+		Path:       path,
+		Filename:   file.Filename,
+		Type:       model.FILETYPE_THUMB_CUSTOM,
+		CourseName: course.Name,
+	}
+
+	if err := r.DaoWrapper.FileDao.SetThumbnail(streamID, thumb); err != nil {
+		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Failed to set thumbnail",
+			Err:           err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, thumb.ID)
 }

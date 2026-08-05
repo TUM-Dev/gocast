@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -22,10 +21,6 @@ import (
 var VersionTag string
 
 func (r mainRoutes) MainPage(c *gin.Context) {
-	tName := sentry.WithTransactionName("GET /")
-	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
-	defer spanMain.Finish()
-
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
 		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
@@ -39,14 +34,15 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData := NewIndexDataWithContext(c)
 	indexData.LoadCurrentNotifications(r.ServerNotificationDao)
 	indexData.SetYearAndTerm(c)
-	indexData.LoadSemesters(spanMain, r.CoursesDao)
-	indexData.LoadCoursesForRole(c, spanMain, r.CoursesDao)
+	indexData.LoadSemesters(r.CoursesDao)
+	indexData.LoadCoursesForRole(c, r.CoursesDao)
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadPublicCourses(r.CoursesDao)
 	indexData.LoadPinnedCourses()
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
 		logger.Error("Could not execute template: 'index.gohtml'", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -71,11 +67,14 @@ func (r mainRoutes) InfoPage(id uint, name string) gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
+		if err := templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
 			IndexData
 			Text template.HTML
 			Name string
-		}{indexData, text.Render(), name})
+		}{indexData, text.Render(), name}); err != nil {
+			logger.Error("Could not execute template: 'info-page.gohtml'", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
 	}
 }
 
@@ -167,8 +166,8 @@ func (d *IndexData) SetYearAndTerm(c *gin.Context) {
 }
 
 // LoadSemesters Load available Semesters from the database into the IndexData object
-func (d *IndexData) LoadSemesters(spanMain *sentry.Span, coursesDao dao.CoursesDao) {
-	d.Semesters = coursesDao.GetAvailableSemesters(spanMain.Context(), false)
+func (d *IndexData) LoadSemesters(coursesDao dao.CoursesDao) {
+	d.Semesters = coursesDao.GetAvailableSemesters(context.Background(), false)
 }
 
 // LoadLivestreams Load non-hidden, currently live streams into the IndexData object.
@@ -223,13 +222,13 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 }
 
 // LoadCoursesForRole Load all courses of user. Distinguishes between admin, lecturer, and normal users.
-func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, coursesDao dao.CoursesDao) {
+func (d *IndexData) LoadCoursesForRole(c *gin.Context, coursesDao dao.CoursesDao) {
 	var courses []model.Course
 
 	if d.TUMLiveContext.User != nil {
 		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
-			courses = coursesDao.GetAllCoursesForSemester(spanMain.Context(), d.CurrentYear, d.CurrentTerm)
+			courses = coursesDao.GetAllCoursesForSemester(context.Background(), d.CurrentYear, d.CurrentTerm)
 		case model.LecturerType:
 			{
 				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm)

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +18,6 @@ import (
 	"time"
 
 	"github.com/RBG-TUM/commons"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
@@ -278,18 +278,38 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 func (r coursesRoutes) getPinned(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
+	yearStr := c.Query("year")
+	term := c.Query("term")
+
+	var year int
+	var err error
+	filterBySemester := false
+
+	if yearStr != "" && term != "" {
+		year, err = strconv.Atoi(yearStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
+			return
+		}
+		filterBySemester = true
+	}
+
 	var pinnedCourses []model.Course
 	if tumLiveContext.User != nil {
 		pinnedCourses = tumLiveContext.User.PinnedCourses
-	} else {
-		pinnedCourses = []model.Course{}
 	}
 
 	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	user := tumLiveContext.User
-	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
+
+	resp := make([]model.CourseDTO, 0)
 	for _, course := range pinnedCourses {
-		if tumLiveContext.User.IsEligibleToSearchForCourse(course) {
+		if filterBySemester {
+			if course.Year != year || course.TeachingTerm != term {
+				continue
+			}
+		}
+		if user == nil || user.IsEligibleToSearchForCourse(course) {
 			resp = append(resp, course.ToDTO(user))
 		}
 	}
@@ -347,7 +367,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 				CustomMessage: "can't find course",
 			})
 		} else {
-			sentry.CaptureException(err)
+			logger.Error("can't retrieve course", "err", err)
 			_ = c.Error(tools.RequestError{
 				Err:           err,
 				Status:        http.StatusInternalServerError,
@@ -765,7 +785,7 @@ type lhResp struct {
 func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		logger.Error("context should exist but doesn't")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
@@ -1381,6 +1401,21 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		return
 	}
 
+	lang := sql.NullString{}
+	switch req.Lang {
+	case "de", "en":
+		lang.Valid = true
+		lang.String = req.Lang
+	case "":
+		lang.Valid = false
+	default:
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid Teaching Language. Allowed: en, de or none.",
+		})
+		return
+	}
+
 	course := model.Course{
 		UserID:              tumLiveContext.User.ID,
 		Name:                req.Name,
@@ -1393,6 +1428,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		ChatEnabled:         req.EnChat,
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
+		Language:            lang,
 	}
 	if tumLiveContext.User.Role != model.AdminType {
 		course.Admins = []model.User{*tumLiveContext.User}
@@ -1507,11 +1543,13 @@ type createCourseRequest struct {
 	Name         string
 	Slug         string
 	TeachingTerm string
+	Lang         string
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
 	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		fmt.Println(err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}

@@ -1,0 +1,642 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "account (Account API)",
+    "version" : "5.1.0-SNAPSHOT-490b359",
+    "contact" : {
+      "name" : "CAMPUSonline",
+      "url" : "https://www.campusonline.at",
+      "email" : "campusonline@tugraz.at"
+    },
+    "description" : "The account API provides information on users, user accounts, user profiles, and user account attributes."
+  },
+  "components" : {
+    "securitySchemes" : {
+      "co-service-account" : {
+        "type" : "oauth2",
+        "flows" : {
+          "clientCredentials" : {
+            "scopes" : {
+              "co-auth-all.read" : "With this scope you can read all auth resources.",
+              "co-auth-all.write" : "With this scope you can write all auth resources"
+            },
+            "tokenUrl" : "https://review.campus.tum.de/RSYSTEM/co/co-auth/swagger/token"
+          }
+        }
+      }
+    },
+    "schemas" : {
+      "AccountStatus" : {
+        "type" : "string",
+        "enum" : [ "OK", "GESPERRT", "BEENDET", "FRAGLICH", "VERBOTEN", "INAKTIV" ],
+        "description" : "Enum representing the status of an account.\n\n* **OK**: Account is in good standing.\n* **GESPERRT**: Account is locked.\n* **BEENDET**: Account is terminated.\n* **FRAGLICH**: Account status is questionable.\n* **VERBOTEN**: Account is forbidden.\n* **INAKTIV**: Account is inactive.\n"
+      },
+      "AccountTypeAttributeListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AccountTypeAttributeResource"
+            }
+          }
+        }
+      },
+      "AccountTypeAttributeResource" : {
+        "type" : "object",
+        "description" : "An account type attribute is a key-value pair that is assigned to an account type.The key consists of a service key and an attribute key. The value is the actual value of the attribute.",
+        "properties" : {
+          "serviceKey" : {
+            "type" : "string",
+            "description" : "The key of the associated service."
+          },
+          "attributeKey" : {
+            "type" : "string",
+            "description" : "The key of the attribute. Only unique within the serviceKey."
+          },
+          "value" : {
+            "type" : "string",
+            "description" : "The value of the attribute."
+          },
+          "accountTypeKey" : {
+            "type" : "string",
+            "description" : "The key of the associated account type."
+          }
+        }
+      },
+      "AccountTypeListResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AccountTypeResource"
+            }
+          }
+        }
+      },
+      "AccountTypeResource" : {
+        "type" : "object",
+        "description" : "Account types categorize the different accounts of a user. For example, a person who has both the roles of student and staff may have two different accounts for CAMPUSonline. However, due to the separation of profile roles and account types, this is not necessarily the case. A person with multiple profile roles can also have just one account.",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "The unique human readable key for an account type."
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/I18nValueResource",
+            "type" : "object",
+            "description" : "The human-readable name of an account type in different languages."
+          }
+        }
+      },
+      "ErrorResource" : {
+        "type" : "object",
+        "required" : [ "type" ],
+        "description" : "All erroneous requests result in this CAMPUSonline specific error resource.",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "format" : "uri",
+            "default" : "about:blank"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "stackTrace" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "diagnosticContext" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Contains error-specific values that place the general error message in a specific context (e.g. listing a specific course number)."
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32",
+            "examples" : [ 503 ],
+            "description" : "The http status code is included in the error resource.",
+            "exclusiveMaximum" : 600,
+            "minimum" : 100
+          }
+        }
+      },
+      "I18nValueResource" : {
+        "type" : "object",
+        "description" : "Used for multilingual texts. It consists of a map where the key is Language.key from the Language enum and the value is the text in the corresponding language.",
+        "properties" : {
+          "value" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "UserAccountAttributePageResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAccountAttributeResource"
+            },
+            "description" : "List of results on this page. It is an empty list if there are no results."
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "description" : "Cursor value for the next page. Absent if no more results. Null with offset pagination, as cursor pagination is not used."
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Limit for results per page, as per the limit query parameter. Conforms to the maximum value allowed by this API."
+          },
+          "offset" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Offset for the results, as per the offset query parameter. With offset pagination, the nextCursor field is absent, indicating no cursor pagination."
+          },
+          "sort" : {
+            "type" : "string",
+            "description" : "This value reflects the current sorting."
+          },
+          "sortableFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "All sortable fields that can be used in the sort query parameter."
+          },
+          "totalCount" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Total count for the results. With nextCursor pagination, the totalCount field is absent, indicating no offset pagination."
+          }
+        }
+      },
+      "UserAccountAttributeResource" : {
+        "type" : "object",
+        "description" : "An account type attribute is a key-value pair that is assigned to an account type.The key consists of a service key and an attribute key. The value is the actual value of the attribute.",
+        "properties" : {
+          "accountUid" : {
+            "type" : "string",
+            "description" : "The key of the associated user account."
+          },
+          "serviceKey" : {
+            "type" : "string",
+            "description" : "The key of the associated service."
+          },
+          "attributeKey" : {
+            "type" : "string",
+            "description" : "The key of the attribute. Only unique within the serviceKey."
+          },
+          "value" : {
+            "type" : "string",
+            "description" : "The value of the attribute."
+          }
+        }
+      },
+      "UserAccountResource" : {
+        "type" : "object",
+        "description" : "A valid user account allows the user to log in to CAMPUSonline.\nA person can have multiple user accounts of different account types.\nA user account is also associated with multiple attributes.\n",
+        "properties" : {
+          "accountUid" : {
+            "type" : "string",
+            "description" : "Unique identifier for the account."
+          },
+          "personUid" : {
+            "type" : "string",
+            "description" : "Unique identifier for the person associated with the account."
+          },
+          "accountTypeKey" : {
+            "type" : "string",
+            "description" : "Key representing the type of the account."
+          },
+          "accountStatusKey" : {
+            "$ref" : "#/components/schemas/AccountStatus",
+            "type" : "string",
+            "description" : "Status of the account."
+          },
+          "username" : {
+            "type" : "string",
+            "description" : "Username associated with the account."
+          },
+          "externalIdentityId" : {
+            "type" : "string",
+            "description" : "External identity identifier associated with the account."
+          },
+          "email" : {
+            "type" : "string",
+            "description" : "Email address associated with the account."
+          }
+        }
+      },
+      "UserPageResource" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserResource"
+            },
+            "description" : "List of results on this page. It is an empty list if there are no results."
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "description" : "Cursor value for the next page. Absent if no more results. Null with offset pagination, as cursor pagination is not used."
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Limit for results per page, as per the limit query parameter. Conforms to the maximum value allowed by this API."
+          },
+          "offset" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Offset for the results, as per the offset query parameter. With offset pagination, the nextCursor field is absent, indicating no cursor pagination."
+          },
+          "sort" : {
+            "type" : "string",
+            "description" : "This value reflects the current sorting."
+          },
+          "sortableFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "All sortable fields that can be used in the sort query parameter."
+          },
+          "totalCount" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Total count for the results. With nextCursor pagination, the totalCount field is absent, indicating no offset pagination."
+          }
+        }
+      },
+      "UserResource" : {
+        "type" : "object",
+        "description" : "A user is a natural person who possesses at least one account in CAMPUSonline.Not every natural person managed in CAMPUSonline is a user of the system.",
+        "properties" : {
+          "personUid" : {
+            "type" : "string",
+            "description" : "A user is identified by their unique personUid."
+          },
+          "accounts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAccountResource"
+            },
+            "description" : "A user can have one or more accounts of different account types."
+          }
+        }
+      }
+    }
+  },
+  "paths" : {
+    "/account-type-attributes" : {
+      "get" : {
+        "summary" : "Returns a list of account types along with their associated account attributes. The attributes assigned to each account type influence the derived account attributes of a user.",
+        "operationId" : "AccountTypeAttributesRestService_getAccountTypeAttributes",
+        "tags" : [ "Account Attributes" ],
+        "parameters" : [ {
+          "description" : "Only return Account Type attributes that are associated with the account type with the account_type_key.",
+          "name" : "account_type_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Only return Account Type attributes that are associated with the attribute with the attribute_key.",
+          "name" : "attribute_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Only return Account Type attributes that are associated with the service with the service_key.",
+          "name" : "service_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Eine Liste von Account-Typ-Attribute.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountTypeAttributeListResource"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-account.read" ]
+        } ],
+        "x-audience" : "external-public",
+        "x-scopes" : [ "co-account.read" ],
+        "description" : "Scopes: [co-account.read]"
+      }
+    },
+    "/account-types" : {
+      "get" : {
+        "summary" : "Returns a list of all possible account types.",
+        "operationId" : "AccountTypeRestService_getAccountTypes",
+        "tags" : [ "Account Types" ],
+        "responses" : {
+          "200" : {
+            "description" : "A list resource of all account types will be returned.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountTypeListResource"
+                }
+              }
+            }
+          },
+          "default" : {
+            "description" : "Error occurred - see status code and problem object for more information.",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResource"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-account.read" ]
+        } ],
+        "x-audience" : "external-public",
+        "x-scopes" : [ "co-account.read" ],
+        "description" : "Scopes: [co-account.read]"
+      }
+    },
+    "/user-account-attributes" : {
+      "get" : {
+        "summary" : "Retrieves a paginated list of user account attributes based on the provided filter criteria.",
+        "description" : "Scopes: [co-account.read]\nThe user account attributes are associated with the user account and can be used to store additional information about the user account.",
+        "operationId" : "UserAccountAttributesRestService_getAttributes",
+        "tags" : [ "Account Attributes" ],
+        "parameters" : [ {
+          "description" : "Only return user account attributes that are associated with the account with the account_uid.",
+          "name" : "account_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "Only return user account attributes that are associated with the attribute with the attribute_key.",
+          "name" : "attribute_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Parameter used to navigate through the pages of the current QueryPageResource. To move to the next page, the value of this parameter should be the ‘nextCursor' field from the previous QueryPageResource. If there are no more pages, ‘nextCursor’ will be empty. Note: When the ‘offset’ or ‘sort’ parameters are used, no ‘nextCursor’ will be calculated, as offset-based paging is used instead of cursor-based paging.",
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Specifies the maximum number of results to return per page and is essential for controlling pagination size.",
+          "example" : 1000,
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "The starting index for the page of results. If not specified, defaults to the beginning. Using this parameter disables cursor pagination.",
+          "name" : "offset",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "Only return user account attributes that are associated with the service with the service_key.",
+          "name" : "service_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Allows for sophisticated sorting of query results. It's structured as a comma-separated list, where each element specifies a field to sort by, optionally prefixed with a + or - to denote an ascending or descending order, respectively. By default, sorting is done in ascending order if no prefix is used. Additionally, the handling of null values can be customised by appending -nl (Nulls Last) or -nf (Nulls First) to each field.",
+          "name" : "sort",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Only return user account attributes that have the provided values.",
+          "name" : "values",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "A paginated list of user account attributes.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserAccountAttributePageResource"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-account.read" ]
+        } ],
+        "x-audience" : "external-public",
+        "x-scopes" : [ "co-account.read" ]
+      }
+    },
+    "/users/search" : {
+      "post" : {
+        "summary" : "An endpoint for retrieving or searching through all account resources of natural persons. For security reasons, even though this operation is read-only, it is implemented as a POST endpoint. This ensures that the username is never passed as a query parameter, preventing it from appearing in access logs.",
+        "operationId" : "UsersRestService_getUsers",
+        "tags" : [ "Users" ],
+        "parameters" : [ {
+          "description" : "An account has an account status, which can be filtered using this parameter.",
+          "name" : "account_status_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "$ref" : "#/components/schemas/AccountStatus"
+            }
+          }
+        }, {
+          "description" : "A user can have multiple accounts of different account types. This parameter allows filtering users who possess at least one of the specified account types.",
+          "name" : "account_type_key",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "The result is restricted to those users who possess an account with the specified account_uid. Multiple account_uid's can also be passed at once.",
+          "name" : "account_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "Parameter used to navigate through the pages of the current QueryPageResource. To move to the next page, the value of this parameter should be the ‘nextCursor' field from the previous QueryPageResource. If there are no more pages, ‘nextCursor’ will be empty. Note: When the ‘offset’ or ‘sort’ parameters are used, no ‘nextCursor’ will be calculated, as offset-based paging is used instead of cursor-based paging.",
+          "name" : "cursor",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Each account has an associated email address. This parameter allows filtering users by specific email addresses.",
+          "name" : "email",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "An identifier that links an account in CAMPUSonline with an account in a central account management system. Multiple CAMPUSonline accounts can be linked to the same account in a central account management system. However, these should address the same natural person.",
+          "name" : "external_identity_id",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "Specifies the maximum number of results to return per page and is essential for controlling pagination size.",
+          "example" : 1000,
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "The starting index for the page of results. If not specified, defaults to the beginning. Using this parameter disables cursor pagination.",
+          "name" : "offset",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "description" : "Each natural person in CAMPUSonline has a unique person_uid, which is used to identify the user. This parameter allows filtering to a specific user. Multiple person_uid's can also be passed at once.",
+          "name" : "person_uid",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "description" : "Allows for sophisticated sorting of query results. It's structured as a comma-separated list, where each element specifies a field to sort by, optionally prefixed with a + or - to denote an ascending or descending order, respectively. By default, sorting is done in ascending order if no prefix is used. Additionally, the handling of null values can be customised by appending -nl (Nulls Last) or -nf (Nulls First) to each field.",
+          "name" : "sort",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Each account has an associated username. This parameter allows filtering users by specific usernames.",
+          "name" : "username",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserPageResource"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "co-service-account" : [ "co-account.read" ]
+        } ],
+        "x-audience" : "external-public",
+        "x-scopes" : [ "co-account.read" ],
+        "description" : "Scopes: [co-account.read]"
+      }
+    }
+  },
+  "tags" : [ {
+    "name" : "Account Attributes",
+    "x-audience" : "external-public",
+    "description" : "Account are associated with attributes.The attributes can be used to store additional information about the account."
+  }, {
+    "name" : "Account Types",
+    "description" : "A user can have multiple accounts of different account-types.The account-types can be created and changed via configuration. Currently, the account types are derived from the \"benutzergruppen\" table, which is also used to manage different profile roles in CAMPUSonline. ",
+    "x-audience" : "external-public"
+  }, {
+    "name" : "Users",
+    "description" : "A user is a natural person who owns one or more accounts of different account types in CAMPUSonline. This endpoint provides the ability to list all users of the system and search through their account data.",
+    "x-audience" : "external-public"
+  } ],
+  "servers" : [ {
+    "url" : "https://review.campus.tum.de/RSYSTEM/co/co-auth/account/api"
+  } ]
+}

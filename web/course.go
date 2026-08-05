@@ -7,8 +7,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/getsentry/sentry-go"
-	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -119,7 +117,6 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, fmt.Sprintf("/course/%d/%s/%s", course.Year, course.TeachingTerm, course.Slug))
 		return
 	default:
-		sentry.CaptureException(err)
 		logger.Error("Error getting current or next lecture for course", "err", err)
 	}
 	description := ""
@@ -157,14 +154,13 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
 			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course})
 		if err != nil {
-			sentrygin.GetHubFromContext(c).CaptureException(err)
+			logger.Error("could not execute template: 'course-overview.gohtml'", "err", err)
 		}
 		return
 	}
 
 	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(tumLiveContext.Course.ID, tumLiveContext.User.ID)
 	if err != nil {
-		sentry.CaptureException(err)
 		logger.Error("loading streamsWithWatchState and progresses for a given course and user failed", "err", err)
 	}
 
@@ -197,13 +193,12 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	// Create JSON encoded info about which streamsWithWatchState are watched. Used by the client to track the watched status.
 	encoded, err := json.Marshal(clientWatchState)
 	if err != nil {
-		sentry.CaptureException(err)
 		logger.Error("marshalling watched infos for client failed", "err", err)
 	}
 	err = templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
 		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, WatchedData: string(encoded)})
 	if err != nil {
-		sentrygin.GetHubFromContext(c).CaptureException(err)
+		logger.Error("could not execute template: 'course-overview.gohtml'", "err", err)
 	}
 }
 

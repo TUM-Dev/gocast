@@ -15,6 +15,7 @@ export interface UpdateLectureMetaRequest {
     description?: string;
     lectureHallId?: number;
     isChatEnabled?: boolean;
+    isCustomThumbnailEnabled?: boolean;
 }
 
 export class LectureFile {
@@ -167,6 +168,7 @@ export interface Lecture {
     hasStats: boolean;
     isChatEnabled: boolean;
     isConverting: boolean;
+    isCustomThumbnailEnabled: boolean;
     isLiveNow: boolean;
     isPast: boolean;
     isRecording: boolean;
@@ -264,6 +266,15 @@ export const AdminLectureList = {
                 }),
             );
         }
+
+        /* if (request.isCustomThumbnailEnabled !== undefined) {
+            promises.push(
+                put(`/api/stream/${lectureId}/customThumbnail/enabled`, {
+                    lectureId,
+                    thumbnailFile: request.thumbnailFile,
+                }),
+            );
+        }*/
 
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
         if (errors.length > 0) {
@@ -371,23 +382,13 @@ export const AdminLectureList = {
     ) => {
         return await uploadFile(`/api/stream/${lectureId}/files?type=file`, file, listener);
     },
-
-    /**
-     * Upload a url as attachment for a lecture
-     * @param courseId
-     * @param lectureId
-     * @param url
-     * @param listener
-     */
-    uploadAttachmentUrl: async (
+    uploadThumbnailFile: async (
         courseId: number,
         lectureId: number,
-        url: string,
+        file: File,
         listener: PostFormDataListener = {},
     ) => {
-        const vodUploadFormData = new FormData();
-        vodUploadFormData.append("file_url", url);
-        return postFormData(`/api/stream/${lectureId}/files?type=url`, vodUploadFormData, listener);
+        return await uploadFile(`/api/stream/${lectureId}/`, file, listener);
     },
 
     deleteAttachment: async (courseId: number, lectureId: number, attachmentId: number) => {

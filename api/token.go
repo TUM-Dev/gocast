@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
-	"github.com/gin-gonic/gin"
-	uuid "github.com/satori/go.uuid"
 )
 
 func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {

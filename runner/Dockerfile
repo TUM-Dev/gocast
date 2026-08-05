@@ -1,4 +1,4 @@
-FROM amd64/golang:1.23-alpine3.22 as builder
+FROM golang:1.26 AS builder
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/runner
 COPY . .
@@ -8,12 +8,7 @@ RUN GO111MODULE=on go mod download
 ARG version=dev
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '-static' -X main.V=${version}" -o /runner cmd/runner/main.go
 
-FROM bluenviron/mediamtx:1.1.0 as mediamtx
-
-FROM alpine:3.18
-ADD entrypoint.sh /entrypoint.sh
-ADD mediamtx.yml /mediamtx.yml
-RUN chmod +x /entrypoint.sh
+FROM alpine:3.24
 
 RUN apk add --no-cache \
   ffmpeg \
@@ -21,7 +16,5 @@ RUN apk add --no-cache \
 
 COPY --from=builder /runner /runner
 RUN chmod +x /runner
-COPY --from=mediamtx /mediamtx /mediamtx
-RUN chmod +x /mediamtx
 
-CMD ["/entrypoint.sh"]
+CMD ["/runner"]

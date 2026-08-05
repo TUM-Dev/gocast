@@ -126,6 +126,21 @@ func (mr *MockLectureHallsDaoMockRecorder) GetLectureHallByPartialName(name any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureHallByPartialName", reflect.TypeOf((*MockLectureHallsDao)(nil).GetLectureHallByPartialName), name)
 }
 
+// GetLiveStateForPwrCtrl mocks base method.
+func (m *MockLectureHallsDao) GetLiveStateForPwrCtrl() ([]dao.PwrCtrlLiveState, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLiveStateForPwrCtrl")
+	ret0, _ := ret[0].([]dao.PwrCtrlLiveState)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLiveStateForPwrCtrl indicates an expected call of GetLiveStateForPwrCtrl.
+func (mr *MockLectureHallsDaoMockRecorder) GetLiveStateForPwrCtrl() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveStateForPwrCtrl", reflect.TypeOf((*MockLectureHallsDao)(nil).GetLiveStateForPwrCtrl))
+}
+
 // GetStreamsForLectureHallIcal mocks base method.
 func (m *MockLectureHallsDao) GetStreamsForLectureHallIcal(userId uint, lectureHalls []uint, all bool) ([]dao.CalendarResult, error) {
 	m.ctrl.T.Helper()

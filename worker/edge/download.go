@@ -24,8 +24,11 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "video/mp4")
 	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", jwtClaims.GetFileName()))
 	c := exec.Command("ffmpeg",
+		"-fflags", "+genpts", // generating correct time labels for the whole length
 		"-i", "http://0.0.0.0"+port+strings.ReplaceAll(r.URL.String(), "download=1", ""),
-		"-c", "copy", "-bsf:a", "aac_adtstoasc", "-movflags", "frag_keyframe", "-f", "mp4", "-")
+		"-c", "copy", "-bsf:a", "aac_adtstoasc",
+		"-movflags", "frag_keyframe+empty_moov+default_base_moof", // optimizing for streams
+		"-f", "mp4", "-")
 	c.Stdout = w
 	err := c.Start()
 	if err != nil {
