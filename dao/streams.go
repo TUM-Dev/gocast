@@ -49,6 +49,11 @@ type StreamsDao interface {
 	SaveRunnerJobForStream(streamID uint, version model.StreamVersion, runnerHostname, jobID string) error
 	GetRunnerJobsForStream(streamID uint) ([]model.StreamRunnerJob, error)
 	ClearRunnerJobsForStream(streamID uint) error
+	ClearRunnerJobForStream(streamID uint, version model.StreamVersion) error
+	HasRunnerJobForStreamVersion(streamID uint, version model.StreamVersion) (bool, error)
+	CountRunnerJobsForStream(streamID uint) (int64, error)
+	ClearRunnerJobsByHostname(hostname string) error
+	GetStaleStreams(ctx context.Context) ([]model.Stream, error)
 	UpdateSilences(silences []model.Silence, streamID string) error
 	DeleteSilences(streamID string) error
 	UpdateStreamFullAssoc(vod *model.Stream) error
@@ -553,6 +558,54 @@ func (d streamsDao) GetRunnerJobsForStream(streamID uint) ([]model.StreamRunnerJ
 // ClearRunnerJobsForStream deletes all tracked runner jobs for a stream.
 func (d streamsDao) ClearRunnerJobsForStream(streamID uint) error {
 	return DB.Unscoped().Where("stream_id = ?", streamID).Delete(&model.StreamRunnerJob{}).Error
+}
+
+// ClearRunnerJobForStream deletes the runner job for a specific stream version.
+func (d streamsDao) ClearRunnerJobForStream(streamID uint, version model.StreamVersion) error {
+	return DB.Unscoped().Where("stream_id = ? AND version = ?", streamID, version).Delete(&model.StreamRunnerJob{}).Error
+}
+
+// HasRunnerJobForStreamVersion checks whether a runner job already exists for the given stream and version.
+func (d streamsDao) HasRunnerJobForStreamVersion(streamID uint, version model.StreamVersion) (bool, error) {
+	var count int64
+	err := DB.Model(&model.StreamRunnerJob{}).Where("stream_id = ? AND version = ?", streamID, version).Count(&count).Error
+	return count > 0, err
+}
+
+// CountRunnerJobsForStream returns the number of runner jobs currently tracked for a stream.
+func (d streamsDao) CountRunnerJobsForStream(streamID uint) (int64, error) {
+	var count int64
+	err := DB.Model(&model.StreamRunnerJob{}).Where("stream_id = ?", streamID).Count(&count).Error
+	return count, err
+}
+
+// ClearRunnerJobsByHostname deletes all runner jobs assigned to a given runner hostname.
+func (d streamsDao) ClearRunnerJobsByHostname(hostname string) error {
+	return DB.Unscoped().Where("runner_hostname = ?", hostname).Delete(&model.StreamRunnerJob{}).Error
+}
+
+// GetStaleStreams finds streams marked as live that are likely stuck:
+// no runner jobs exist, or all assigned runners have not been seen recently,
+// or the stream's scheduled end time has long passed.
+func (d streamsDao) GetStaleStreams(ctx context.Context) ([]model.Stream, error) {
+	var streams []model.Stream
+	err := DB.WithContext(ctx).
+		Raw(`SELECT DISTINCT s.* FROM streams s
+			WHERE s.live_now = true AND s.deleted_at IS NULL AND (
+				-- no runner jobs exist for this stream
+				NOT EXISTS (SELECT 1 FROM stream_runner_jobs srj WHERE srj.stream_id = s.id AND srj.deleted_at IS NULL)
+				-- or all assigned runners have gone silent
+				OR NOT EXISTS (
+					SELECT 1 FROM stream_runner_jobs srj
+					JOIN runners r ON r.hostname = srj.runner_hostname
+					WHERE srj.stream_id = s.id AND srj.deleted_at IS NULL
+					AND r.last_seen > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+				)
+				-- or the stream's end time passed more than 10 minutes ago
+				OR s.end < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+			)`).
+		Scan(&streams).Error
+	return streams, err
 }
 
 func (d streamsDao) DeleteSilences(streamID string) error {
