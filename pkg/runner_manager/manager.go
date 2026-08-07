@@ -101,7 +101,7 @@ func (m *Manager) TriggerDueStreams() error {
 			protobuf.StreamVersion_STREAM_VERSION_CAMERA,
 		}
 		for _, version := range versions {
-			client, err := m.getClient(ctx)
+			runner, client, err := m.getClient(ctx)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("getClient: %w", err))
 				continue
@@ -113,6 +113,12 @@ func (m *Manager) TriggerDueStreams() error {
 				continue
 			}
 			m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", version).Info("started Stream")
+			if resp.GetJobId() != "" {
+				err = m.dao.StreamsDao.SaveRunnerJobForStream(s.ID, modelStreamVersion(version), runner.Hostname, resp.GetJobId())
+				if err != nil {
+					errs = append(errs, fmt.Errorf("SaveRunnerJobForStream: %w", err))
+				}
+			}
 		}
 	}
 	if len(errs) > 0 {
@@ -225,16 +231,28 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	}
 }
 
-func (m *Manager) getClient(ctx context.Context) (protobuf.RunnerServiceClient, error) {
+func (m *Manager) getClient(ctx context.Context) (model.Runner, protobuf.RunnerServiceClient, error) {
 	r, err := m.dao.RunnerDao.ReserveRunner(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("reserve available runner: %w", err)
+		return model.Runner{}, nil, fmt.Errorf("reserve available runner: %w", err)
 	}
 	conn, err := dialRunner(r)
 	if err != nil {
-		return nil, fmt.Errorf("dial runner: %w", err)
+		return model.Runner{}, nil, fmt.Errorf("dial runner: %w", err)
 	}
-	return protobuf.NewRunnerServiceClient(conn), nil
+	return r, protobuf.NewRunnerServiceClient(conn), nil
+}
+
+// modelStreamVersion maps a protobuf.StreamVersion to the model.StreamVersion used for DB storage.
+func modelStreamVersion(version protobuf.StreamVersion) model.StreamVersion {
+	switch version {
+	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+		return model.PRES
+	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+		return model.CAM
+	default:
+		return model.COMB
+	}
 }
 
 func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNotification) error {
@@ -329,7 +347,7 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		return errors.New("stream rejected")
 	}
 
-	client, err := m.getClient(ctx)
+	runner, client, err := m.getClient(ctx)
 	if err != nil {
 		m.logger.Error("Could not get client", "err", err)
 		return err
@@ -340,7 +358,12 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		m.logger.Error("Could not start selfstream", "err", err)
 		return err
 	}
-	m.logger.With("stream", stream.ID, "job", resp.JobId, "version", model.COMB).Info("started Stream")
+	m.logger.With("stream", stream.ID, "job", resp.GetJobId(), "version", model.COMB).Info("started Stream")
+	if resp.GetJobId() != "" {
+		if err := m.dao.StreamsDao.SaveRunnerJobForStream(stream.ID, model.COMB, runner.Hostname, resp.GetJobId()); err != nil {
+			m.logger.Error("Could not save runner job for stream", "err", err)
+		}
+	}
 	return nil
 }
 
@@ -588,6 +611,57 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 	err = m.handleLightsOff(stream)
 	if err != nil {
 		log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
+	}
+	return nil
+}
+
+// EndStream cancels all runner jobs tracked for the given stream, e.g. when an admin manually
+// stops a stream. It is a no-op if no runner jobs are tracked for the stream (e.g. because it
+// is running on a legacy worker instead).
+func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool) error {
+	jobs, err := m.dao.StreamsDao.GetRunnerJobsForStream(streamID)
+	if err != nil {
+		return fmt.Errorf("get runner jobs for stream: %w", err)
+	}
+
+	var errs []error
+	for _, job := range jobs {
+		if err := m.endRunnerJob(ctx, job, discardVoD); err != nil {
+			errs = append(errs, err)
+			m.logger.Error("could not end runner job", "stream", streamID, "runner", job.RunnerHostname, "job", job.JobID, "err", err)
+		}
+	}
+
+	if err := m.dao.StreamsDao.ClearRunnerJobsForStream(streamID); err != nil {
+		errs = append(errs, fmt.Errorf("clear runner jobs for stream: %w", err))
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("end stream: %v", errs)
+	}
+	return nil
+}
+
+func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, discardVoD bool) error {
+	runner, err := m.dao.RunnerDao.Get(ctx, job.RunnerHostname)
+	if err != nil {
+		return fmt.Errorf("get runner %s: %w", job.RunnerHostname, err)
+	}
+	conn, err := dialRunner(runner)
+	if err != nil {
+		return fmt.Errorf("dial runner %s: %w", job.RunnerHostname, err)
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	client := protobuf.NewRunnerServiceClient(conn)
+	_, err = client.RequestStreamEnd(ctx, &protobuf.StreamEndRequest{
+		JobId:      ptr.Take(job.JobID),
+		DiscardVod: ptr.Take(discardVoD),
+	})
+	if err != nil {
+		return fmt.Errorf("request stream end for job %s: %w", job.JobID, err)
 	}
 	return nil
 }

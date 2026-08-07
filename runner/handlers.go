@@ -40,6 +40,7 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
 	cancel, ok := r.jobs[req.GetJobId()]
 	if ok {
+		r.discard[req.GetJobId()] = req.GetDiscardVod()
 		cancel()
 		return nil, nil
 	}

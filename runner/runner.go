@@ -45,6 +45,7 @@ type Runner struct {
 	draining bool
 	JobCount chan int
 	jobs     map[string]context.CancelFunc
+	discard  map[string]bool
 
 	hlsServer *HLSServer
 
@@ -70,6 +71,7 @@ func NewRunner(v string) *Runner {
 		log:           log,
 		JobCount:      make(chan int),
 		jobs:          make(map[string]context.CancelFunc),
+		discard:       make(map[string]bool),
 		draining:      false,
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
 		stats:         vmstats,
@@ -174,6 +176,7 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 		defer func() {
 			cancel()
 			delete(r.jobs, job)
+			delete(r.discard, job)
 			r.JobCount <- -1
 		}()
 		for _, action := range a {
@@ -192,6 +195,12 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 				} else {
 					break // escape retry loop on no error
 				}
+			}
+			// VoD creation (MkVOD, CheckVoD, MkThumb) is intentionally skipped once the
+			// recording is discarded, right after StreamEnd notifies gocast the stream has ended.
+			if r.discard[job] && reflect.ValueOf(action).Pointer() == reflect.ValueOf(actions.StreamEnd).Pointer() {
+				logger.With("job", job).Info("discarding recording, skipping VoD creation")
+				break
 			}
 		}
 	}()
