@@ -326,6 +326,62 @@
                     </article>
                 </section>
 
+                <header class="border-b dark:border-gray-600 w-full">
+                    <h6 class="text-sm text-5 font-light">Schedule</h6>
+                </header>
+
+                <section x-show="!isSeriesLecture()" class="grid grid-cols-2 gap-3">
+                    <article x-data="{ id: $id('text-input') }">
+                        <label :for="id" class="text-sm text-5">Start</label>
+                        <input :id="id"
+                               class="tl-input w-full" type="text"
+                               placeholder="2021-04-08 14:00"
+                               x-ref="start" x-model="startInput"
+                               x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput: true, altFormat: 'Y-m-d H:i', dateFormat: 'Z', allowInput: true})"
+                               @change="onTimeInputChange" autocomplete="off">
+                    </article>
+                    <article x-data="{ id: $id('text-input') }">
+                        <label :for="id" class="text-sm text-5">End</label>
+                        <input :id="id"
+                               class="tl-input w-full" type="text"
+                               placeholder="2021-04-08 16:00"
+                               x-ref="end" x-model="endInput"
+                               x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput: true, altFormat: 'Y-m-d H:i', dateFormat: 'Z', allowInput: true})"
+                               @change="onTimeInputChange" autocomplete="off">
+                    </article>
+                </section>
+
+                <section x-show="isSeriesLecture()">
+                    <p class="text-xs text-3 mb-2">
+                        This lecture is part of a series, so only the time of day can be changed here &mdash;
+                        each lecture keeps its own date.
+                    </p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <article x-data="{ id: $id('text-input') }">
+                            <label :for="id" class="text-sm text-5">Start time</label>
+                            <input :id="id"
+                                   class="tl-input w-full" type="text"
+                                   placeholder="14:00"
+                                   x-ref="startSeries" x-model="startInput"
+                                   x-init="flatpickr($refs.startSeries, {enableTime: true, noCalendar: true, time_24hr: true, dateFormat: 'H:i', allowInput: true})"
+                                   @change="onTimeInputChange" autocomplete="off">
+                        </article>
+                        <article x-data="{ id: $id('text-input') }">
+                            <label :for="id" class="text-sm text-5">End time</label>
+                            <input :id="id"
+                                   class="tl-input w-full" type="text"
+                                   placeholder="16:00"
+                                   x-ref="endSeries" x-model="endInput"
+                                   x-init="flatpickr($refs.endSeries, {enableTime: true, noCalendar: true, time_24hr: true, dateFormat: 'H:i', allowInput: true})"
+                                   @change="onTimeInputChange" autocomplete="off">
+                        </article>
+                    </div>
+                    <label class="flex items-center mt-2 cursor-pointer">
+                        <input type="checkbox" x-model="applyTimeToSeries" class="w-auto mr-2">
+                        <span class="text-sm text-3">Apply to all <span x-text="seriesSize"></span> lectures in this series</span>
+                    </label>
+                </section>
+
                 <div x-show="!lectureData.isPast && !lectureData.isRecording"
                      class="p-3 border dark:border-gray-600 rounded mt-3">
                     {{if eq $user.Role 1}}
@@ -450,7 +506,7 @@
                     </button>
                     <button
                             @click="saveEdit();"
-                            :disabled="!isDirty || isSaving"
+                            :disabled="(!isDirty && !timeDirty) || isSaving"
                             class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
                             x-text="isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>

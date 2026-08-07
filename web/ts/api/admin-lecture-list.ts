@@ -293,6 +293,28 @@ export const AdminLectureList = {
     },
 
     /**
+     * Updates the start/end time of a single lecture.
+     * @param courseId
+     * @param lectureId
+     * @param start ISO 8601 datetime string
+     * @param end ISO 8601 datetime string
+     */
+    updateTime: async (courseId: number, lectureId: number, start: string, end: string): Promise<void> => {
+        await put(`/api/course/${courseId}/updateLectureTime/${lectureId}`, { start, end });
+    },
+
+    /**
+     * Applies the time-of-day and duration of the given lecture to every other lecture in its
+     * series, keeping each of those lectures on its own date. The lecture's own time must already
+     * be saved via updateTime before calling this.
+     * @param courseId
+     * @param lectureId
+     */
+    applyTimeToSeries: async (courseId: number, lectureId: number): Promise<void> => {
+        await post(`/api/course/${courseId}/updateLectureSeriesTime/${lectureId}`);
+    },
+
+    /**
      * Add sections to a lecture
      * @param lectureId
      * @param sections

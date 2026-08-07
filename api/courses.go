@@ -73,6 +73,8 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.POST("/renameLecture/:streamID", routes.renameLecture)
 			courses.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
 			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
+			courses.PUT("/updateLectureTime/:streamID", routes.updateLectureTime)
+			courses.POST("/updateLectureSeriesTime/:streamID", routes.updateLectureSeriesTime)
 			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 			courses.POST("/submitCut", routes.submitCut)
 
@@ -1061,6 +1063,68 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 	}
 }
 
+type updateLectureTimeRequest struct {
+	Start time.Time `json:"start" binding:"required"`
+	End   time.Time `json:"end" binding:"required"`
+}
+
+func (r coursesRoutes) updateLectureTime(c *gin.Context) {
+	sIDInt, err := strconv.Atoi(c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid streamID",
+			Err:           err,
+		})
+		return
+	}
+	sID := uint(sIDInt)
+	var req updateLectureTimeRequest
+	if err = c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
+		return
+	}
+	if !req.End.After(req.Start) {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "end must be after start",
+		})
+		return
+	}
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+	stream.Start = req.Start
+	stream.End = req.End
+	if err = r.StreamsDao.UpdateStream(stream); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture time",
+			Err:           err,
+		})
+		return
+	}
+	wsMsg := gin.H{
+		"start": stream.Start,
+		"end":   stream.End,
+	}
+	if msg, err := json.Marshal(wsMsg); err == nil {
+		broadcastStream(sID, msg)
+	} else {
+		logger.Error("couldn't marshal stream time update ws msg", "err", err)
+	}
+}
+
 func (r coursesRoutes) fetchLectures(c *gin.Context) {
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
@@ -1093,6 +1157,31 @@ func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
 		return
 	}
 	// Series changes could be theoretically broadcasted here through the websocket to live listeners.
+}
+
+// updateLectureSeriesTime propagates the time-of-day and duration of the stream identified by
+// :streamID to every other stream in its series, keeping each of those streams on its own date.
+// The stream's own Start/End must already be persisted (via updateLectureTime) before calling this.
+func (r coursesRoutes) updateLectureSeriesTime(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+
+	if err = r.StreamsDao.UpdateLectureSeriesTime(stream); err != nil {
+		logger.Error("couldn't update lecture series time", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture series time",
+			Err:           err,
+		})
+		return
+	}
 }
 
 type renameLectureRequest struct {
