@@ -241,7 +241,8 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 				switch n.Data.(type) {
 				case *protobuf.Notification_StreamEnd,
 					*protobuf.Notification_StreamStart,
-					*protobuf.Notification_VodReady:
+					*protobuf.Notification_VodReady,
+					*protobuf.Notification_ThumbnailReady:
 					b = unbounded
 				}
 				err := retry.Do(ctx, b, r.sendNotification(n))
