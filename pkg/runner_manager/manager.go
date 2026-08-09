@@ -87,14 +87,15 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 type Option func(m *Manager)
 
 func (m *Manager) TriggerDueStreams() error {
-	m.logger.Info("Triggering due streams")
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
-
-	m.logger.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
 	if err != nil {
 		return err
 	}
+	if len(streams) == 0 {
+		return nil
+	}
+	m.logger.Info("Triggering due streams", "count", len(streams))
 
 	var errs []error
 
