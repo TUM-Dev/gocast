@@ -154,7 +154,7 @@ func (s *Stream) GetThumbIdForSource(source string) uint {
 			return file.ID
 		}
 	}
-	log.WithField("fileType", fileType).Error("Could not find thumbnail for file type")
+	log.WithField("fileType", fileType).Warn("Could not find thumbnail for file type")
 	return FILETYPE_INVALID
 }
 
