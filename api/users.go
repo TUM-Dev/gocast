@@ -802,6 +802,13 @@ func (r usersRoutes) updatePreferredView(c *gin.Context) {
 func (r usersRoutes) exportPersonalData(c *gin.Context) {
 	var resp personalData
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
 	resp.UserData = struct {
 		Name      string    `json:"name,omitempty"`
 		LastName  *string   `json:"last_name,omitempty"`
