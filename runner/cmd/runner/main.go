@@ -40,7 +40,7 @@ func main() {
 	<-ctx.Done()
 	slog.Info("Received signal")
 	shouldShutdown = true
-	r.Drain()
+	r.Drain(ctx)
 
 	// let drainage propagate
 	time.Sleep(time.Second)

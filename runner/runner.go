@@ -139,16 +139,19 @@ func (r *Runner) Run(ctx context.Context) {
 	}()
 }
 
-func (r *Runner) Drain() {
+func (r *Runner) Drain(ctx context.Context) {
 	r.log.Info("Runner set to drain.")
 	r.draining = true
-	r.notifications <- &protobuf.Notification{
+	select {
+	case r.notifications <- &protobuf.Notification{
 		Data: &protobuf.Notification_Heartbeat{
 			Heartbeat: &protobuf.HeartbeatNotification{
 				Hostname: ptr.Take(config.Config.Hostname),
 				Draining: ptr.Take(r.draining),
 			},
 		},
+	}:
+	case <-ctx.Done():
 	}
 }
 
