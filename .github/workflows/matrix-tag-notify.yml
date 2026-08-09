@@ -22,10 +22,21 @@ jobs:
           PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -n1)
 
           if [ -z "$PREV_TAG" ]; then
-            COMMIT_LOG=$(git log "${TAG}" --pretty=format:"- %s (%h)" | head -50)
+            LOG_RANGE="${TAG}"
           else
-            COMMIT_LOG=$(git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" | head -50)
+            LOG_RANGE="${PREV_TAG}..${TAG}"
           fi
+
+          REPO="${{ github.repository }}"
+          COMMIT_LOG=""
+          while IFS='|' read -r hash subject author; do
+            if [[ "$subject" =~ \(#([0-9]+)\)[[:space:]]*$ ]]; then
+              PR_NUM="${BASH_REMATCH[1]}"
+              COMMIT_LOG+="- [$subject](https://github.com/${REPO}/pull/${PR_NUM}) by ${author}"$'\n'
+            else
+              COMMIT_LOG+="- [$subject](https://github.com/${REPO}/commit/${hash}) by ${author}"$'\n'
+            fi
+          done < <(git log "${LOG_RANGE}" --pretty=format:"%H|%s|%aN" | head -50)
 
           # Escape for GitHub output (multiline)
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
