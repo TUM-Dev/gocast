@@ -83,7 +83,7 @@ type streamsDao struct {
 
 func (d streamsDao) GetDueStreamsForRunners() ([]model.Stream, error) {
 	var res []model.Stream
-	err := DB.Debug().Model(&model.Stream{}).
+	err := DB.Model(&model.Stream{}).
 		Joins("JOIN courses c ON c.id = streams.course_id").
 		Joins("JOIN lecture_halls lh on streams.lecture_hall_id = lh.id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
