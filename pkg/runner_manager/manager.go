@@ -240,14 +240,18 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
-		m.logger.Debug("Heartbeat", "d", notification)
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
 		}
+		newDraining := notification.GetHeartbeat().GetDraining()
+		newJobCount := notification.GetHeartbeat().GetJobCount()
+		if runner.Draining != newDraining || runner.JobCount != newJobCount {
+			m.logger.Info("Runner state changed", "hostname", notification.GetHeartbeat().GetHostname(), "draining", newDraining, "jobCount", newJobCount)
+		}
 		runner.LastSeen = time.Now()
-		runner.Draining = notification.GetHeartbeat().GetDraining()
-		runner.JobCount = notification.GetHeartbeat().GetJobCount()
+		runner.Draining = newDraining
+		runner.JobCount = newJobCount
 		err = m.dao.RunnerDao.Update(ctx, &runner)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "update runner: %v", err)
