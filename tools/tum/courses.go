@@ -36,7 +36,7 @@ func PrefetchCourses(dao dao.DaoWrapper) func() {
 		}
 		index := client.Index("PREFETCHED_COURSES")
 		_, err = index.AddDocuments(&res, "courseID")
-		logger.Info(string(rune(len(res))))
+		logger.Info("Prefetched courses", "count", len(res))
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
