@@ -167,8 +167,10 @@ func (d usersDao) UpsertUser(user *model.User) error {
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// User not found, try create
-		err = DB.Create(&user).Error
-		return fmt.Errorf("create user failed: %w", err)
+		if err = DB.Create(&user).Error; err != nil {
+			return fmt.Errorf("create user failed: %w", err)
+		}
+		return nil
 	} else if err != nil {
 		return fmt.Errorf("lookup user by matriculation_number failed: %w", err)
 	}
