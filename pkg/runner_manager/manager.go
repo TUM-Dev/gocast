@@ -809,17 +809,20 @@ func (m *Manager) UpdateLights() {
 	}
 
 	for _, r := range res {
+		if r.PwrCtrlIP == "" {
+			continue
+		}
 		client := go_anel_pwrctrl.New(r.PwrCtrlIP, tools.Cfg.Auths.PwrCrtlAuth)
 		for i := range 3 {
 			if r.NumLive > 0 {
 				err = client.TurnOn(i)
 				if err != nil {
-					m.logger.Error("Couldn't set the power control to on", "Err", err)
+					m.logger.Warn("Couldn't set the power control to on", "Err", err, "ip", r.PwrCtrlIP)
 				}
 			} else {
 				err = client.TurnOff(i)
 				if err != nil {
-					m.logger.Error("Couldn't set the power control to off", "Err", err)
+					m.logger.Warn("Couldn't set the power control to off", "Err", err, "ip", r.PwrCtrlIP)
 				}
 			}
 		}
