@@ -54,7 +54,9 @@ func run(ctx context.Context) error {
 
 	web.VersionTag = VersionTag
 
-	gormJSONLogger := slogGorm.New()
+	gormJSONLogger := slogGorm.New(
+		slogGorm.WithSlowThreshold(500 * time.Millisecond),
+	)
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
