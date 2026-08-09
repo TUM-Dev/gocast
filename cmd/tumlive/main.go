@@ -286,7 +286,7 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager) {
 	// fetch live stream previews
 	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "*/1 * * * *")
 	// reap streams stuck in live state due to runner crash or lost notifications
-	_ = tools.Cron.AddFunc("reapStaleStreams", m.ReapStaleStreams, "*/1 * * * *")
+	_ = tools.Cron.AddFunc("reapStaleStreams", m.ReapStaleStreams, "1/30 * * * *")
 	// apply correct live lights
 	_ = tools.Cron.AddFunc("updateLights", m.UpdateLights, "1/5 * * * *")
 
