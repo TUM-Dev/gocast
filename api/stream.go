@@ -414,12 +414,14 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 		streamIDs = append(streamIDs, stream.ID)
 	}
 	streamProgresses := make(map[uint]model.StreamProgress)
-	res, err := r.LoadProgress(tumLiveContext.User.ID, streamIDs)
-	if err != nil {
-		logger.Error("Couldn't load progresses", "err", err)
-	} else {
-		for _, progress := range res {
-			streamProgresses[progress.StreamID] = progress
+	if user != nil {
+		res, err := r.LoadProgress(user.ID, streamIDs)
+		if err != nil {
+			logger.Error("Couldn't load progresses", "err", err)
+		} else {
+			for _, progress := range res {
+				streamProgresses[progress.StreamID] = progress
+			}
 		}
 	}
 
