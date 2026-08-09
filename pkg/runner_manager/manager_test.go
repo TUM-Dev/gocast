@@ -25,15 +25,20 @@ func TestManagerOptions(t *testing.T) {
 }
 
 // TestEndStream_NoJobs verifies that ending a stream with no tracked runner jobs
-// (e.g. because it ran on a legacy worker, or never started) is a no-op that doesn't
-// error and still clears any (empty) job records.
+// (e.g. because it ran on a legacy worker, or never started) still sets the stream
+// not-live and doesn't error.
 func TestEndStream_NoJobs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
 	streamsDao.EXPECT().GetRunnerJobsForStream(uint(1)).Return([]model.StreamRunnerJob{}, nil)
-	streamsDao.EXPECT().ClearRunnerJobsForStream(uint(1)).Return(nil)
+	streamsDao.EXPECT().SetStreamNotLiveById(uint(1)).Return(nil)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "1").Return(model.Stream{}, nil)
+	streamsDao.EXPECT().GetLiveStreamsInLectureHall(uint(0)).Return(nil, nil)
 
-	m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+	lectureHallsDao := mock_dao.NewMockLectureHallsDao(ctrl)
+	lectureHallsDao.EXPECT().GetLectureHallByID(uint(0)).Return(model.LectureHall{}, nil)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao, LectureHallsDao: lectureHallsDao})
 
 	if err := m.EndStream(context.Background(), 1, false); err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -85,12 +90,18 @@ func TestEndStream_CallsRequestStreamEndOnCorrectRunner(t *testing.T) {
 	streamsDao.EXPECT().GetRunnerJobsForStream(uint(42)).Return([]model.StreamRunnerJob{
 		{StreamID: 42, Version: model.COMB, RunnerHostname: host, JobID: "job-123"},
 	}, nil)
-	streamsDao.EXPECT().ClearRunnerJobsForStream(uint(42)).Return(nil)
+	streamsDao.EXPECT().ClearRunnerJobForStream(uint(42), model.COMB).Return(nil)
+	streamsDao.EXPECT().SetStreamNotLiveById(uint(42)).Return(nil)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "42").Return(model.Stream{}, nil)
+	streamsDao.EXPECT().GetLiveStreamsInLectureHall(uint(0)).Return(nil, nil)
 
 	runnerDao := mock_dao.NewMockRunnerDao(ctrl)
 	runnerDao.EXPECT().Get(gomock.Any(), host).Return(runner, nil)
 
-	m := New(dao.DaoWrapper{StreamsDao: streamsDao, RunnerDao: runnerDao})
+	lectureHallsDao := mock_dao.NewMockLectureHallsDao(ctrl)
+	lectureHallsDao.EXPECT().GetLectureHallByID(uint(0)).Return(model.LectureHall{}, nil)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao, RunnerDao: runnerDao, LectureHallsDao: lectureHallsDao})
 
 	if err := m.EndStream(context.Background(), 42, true); err != nil {
 		t.Fatalf("expected no error, got %v", err)
