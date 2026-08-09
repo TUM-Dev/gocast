@@ -57,6 +57,34 @@ func (mr *MockStreamsDaoMockRecorder) AddVodView(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVodView", reflect.TypeOf((*MockStreamsDao)(nil).AddVodView), id)
 }
 
+// ClearRunnerJobForStream mocks base method.
+func (m *MockStreamsDao) ClearRunnerJobForStream(streamID uint, version model.StreamVersion) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearRunnerJobForStream", streamID, version)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearRunnerJobForStream indicates an expected call of ClearRunnerJobForStream.
+func (mr *MockStreamsDaoMockRecorder) ClearRunnerJobForStream(streamID, version any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearRunnerJobForStream", reflect.TypeOf((*MockStreamsDao)(nil).ClearRunnerJobForStream), streamID, version)
+}
+
+// ClearRunnerJobsByHostname mocks base method.
+func (m *MockStreamsDao) ClearRunnerJobsByHostname(hostname string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearRunnerJobsByHostname", hostname)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearRunnerJobsByHostname indicates an expected call of ClearRunnerJobsByHostname.
+func (mr *MockStreamsDaoMockRecorder) ClearRunnerJobsByHostname(hostname any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearRunnerJobsByHostname", reflect.TypeOf((*MockStreamsDao)(nil).ClearRunnerJobsByHostname), hostname)
+}
+
 // ClearRunnerJobsForStream mocks base method.
 func (m *MockStreamsDao) ClearRunnerJobsForStream(streamID uint) error {
 	m.ctrl.T.Helper()
@@ -83,6 +111,21 @@ func (m *MockStreamsDao) ClearWorkersForStream(stream model.Stream) error {
 func (mr *MockStreamsDaoMockRecorder) ClearWorkersForStream(stream any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearWorkersForStream", reflect.TypeOf((*MockStreamsDao)(nil).ClearWorkersForStream), stream)
+}
+
+// CountRunnerJobsForStream mocks base method.
+func (m *MockStreamsDao) CountRunnerJobsForStream(streamID uint) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountRunnerJobsForStream", streamID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountRunnerJobsForStream indicates an expected call of CountRunnerJobsForStream.
+func (mr *MockStreamsDaoMockRecorder) CountRunnerJobsForStream(streamID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountRunnerJobsForStream", reflect.TypeOf((*MockStreamsDao)(nil).CountRunnerJobsForStream), streamID)
 }
 
 // CreateOrGetTestCourse mocks base method.
@@ -324,6 +367,21 @@ func (mr *MockStreamsDaoMockRecorder) GetSoonStartingStreamInfo(user, slug, year
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSoonStartingStreamInfo", reflect.TypeOf((*MockStreamsDao)(nil).GetSoonStartingStreamInfo), user, slug, year, term)
 }
 
+// GetStaleStreams mocks base method.
+func (m *MockStreamsDao) GetStaleStreams(ctx context.Context) ([]model.Stream, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStaleStreams", ctx)
+	ret0, _ := ret[0].([]model.Stream)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStaleStreams indicates an expected call of GetStaleStreams.
+func (mr *MockStreamsDaoMockRecorder) GetStaleStreams(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStaleStreams", reflect.TypeOf((*MockStreamsDao)(nil).GetStaleStreams), ctx)
+}
+
 // GetStreamByID mocks base method.
 func (m *MockStreamsDao) GetStreamByID(ctx context.Context, id string) (model.Stream, error) {
 	m.ctrl.T.Helper()
@@ -442,6 +500,21 @@ func (m *MockStreamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worke
 func (mr *MockStreamsDaoMockRecorder) GetWorkersForStream(stream any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkersForStream", reflect.TypeOf((*MockStreamsDao)(nil).GetWorkersForStream), stream)
+}
+
+// HasRunnerJobForStreamVersion mocks base method.
+func (m *MockStreamsDao) HasRunnerJobForStreamVersion(streamID uint, version model.StreamVersion) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasRunnerJobForStreamVersion", streamID, version)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasRunnerJobForStreamVersion indicates an expected call of HasRunnerJobForStreamVersion.
+func (mr *MockStreamsDaoMockRecorder) HasRunnerJobForStreamVersion(streamID, version any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasRunnerJobForStreamVersion", reflect.TypeOf((*MockStreamsDao)(nil).HasRunnerJobForStreamVersion), streamID, version)
 }
 
 // RemoveTranscodingProgress mocks base method.

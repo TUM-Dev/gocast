@@ -110,6 +110,17 @@ func (m *Manager) TriggerDueStreams() error {
 			protobuf.StreamVersion_STREAM_VERSION_CAMERA,
 		}
 		for _, version := range versions {
+			// Skip if a runner job already exists for this stream+version (prevents double-triggering)
+			exists, err := m.dao.StreamsDao.HasRunnerJobForStreamVersion(s.ID, modelStreamVersion(version))
+			if err != nil {
+				errs = append(errs, fmt.Errorf("HasRunnerJobForStreamVersion: %w", err))
+				continue
+			}
+			if exists {
+				m.logger.Debug("skipping already-triggered stream version", "stream", s.ID, "version", version)
+				continue
+			}
+
 			runner, client, err := m.getClient(ctx)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("getClient: %w", err))
@@ -216,6 +227,13 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("create runner: %v", err)
 	}
+
+	// Clean orphaned jobs from previous runner process — the old job UUIDs no longer exist
+	// in the new runner. The stale reaper will detect affected streams and set them not-live.
+	if err := m.dao.StreamsDao.ClearRunnerJobsByHostname(req.GetHostname()); err != nil {
+		m.logger.Error("failed to clear orphaned runner jobs on re-registration", "hostname", req.GetHostname(), "err", err)
+	}
+
 	return &protobuf.RegisterResponse{}, nil
 }
 
@@ -640,8 +658,24 @@ func (m *Manager) handleLightsOff(stream model.Stream) (err error) {
 func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.StreamEndNotification) error {
 	m.logger.Debug("streamEnd", "payload", notification)
 	streamID := uint(notification.GetStream().GetId())
-	err := m.dao.StreamsDao.SetStreamNotLiveById(streamID)
+	version := modelStreamVersion(notification.GetStreamVersion())
+
+	// Delete the runner job for this specific version
+	if err := m.dao.StreamsDao.ClearRunnerJobForStream(streamID, version); err != nil {
+		m.logger.Error("failed to clear runner job for version", "stream", streamID, "version", version, "err", err)
+	}
+
+	// Only set stream not-live when all versions have ended
+	remaining, err := m.dao.StreamsDao.CountRunnerJobsForStream(streamID)
 	if err != nil {
+		return fmt.Errorf("count runner jobs: %w", err)
+	}
+	if remaining > 0 {
+		m.logger.Debug("stream version ended, other versions still running", "stream", streamID, "version", version, "remaining", remaining)
+		return nil
+	}
+
+	if err := m.dao.StreamsDao.SetStreamNotLiveById(streamID); err != nil {
 		return err
 	}
 	m.notifyLiveState(streamID, false)
@@ -651,8 +685,11 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 		return err
 	}
 
-	err = m.handleLightsOff(stream)
-	if err != nil {
+	m.camsHandledLock.Lock()
+	delete(m.camsHandled, streamID)
+	m.camsHandledLock.Unlock()
+
+	if err := m.handleLightsOff(stream); err != nil {
 		log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
 	}
 	return nil
@@ -672,11 +709,28 @@ func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool)
 		if err := m.endRunnerJob(ctx, job, discardVoD); err != nil {
 			errs = append(errs, err)
 			m.logger.Error("could not end runner job", "stream", streamID, "runner", job.RunnerHostname, "job", job.JobID, "err", err)
+			continue
+		}
+		// Only clear the job record if the runner acknowledged the cancellation
+		if err := m.dao.StreamsDao.ClearRunnerJobForStream(streamID, job.Version); err != nil {
+			errs = append(errs, fmt.Errorf("clear runner job for stream version %s: %w", job.Version, err))
 		}
 	}
 
-	if err := m.dao.StreamsDao.ClearRunnerJobsForStream(streamID); err != nil {
-		errs = append(errs, fmt.Errorf("clear runner jobs for stream: %w", err))
+	// Always set stream not-live — this is the authoritative admin action
+	if err := m.dao.StreamsDao.SetStreamNotLiveById(streamID); err != nil {
+		errs = append(errs, fmt.Errorf("set stream not live: %w", err))
+	}
+	m.notifyLiveState(streamID, false)
+
+	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(uint64(streamID), 10))
+	if err == nil {
+		m.camsHandledLock.Lock()
+		delete(m.camsHandled, streamID)
+		m.camsHandledLock.Unlock()
+		if err := m.handleLightsOff(stream); err != nil {
+			m.logger.Error("failed to turn off lights on EndStream", "stream", streamID, "err", err)
+		}
 	}
 
 	if len(errs) > 0 {
@@ -711,6 +765,35 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 
 func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
 	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+}
+
+// ReapStaleStreams finds streams that are stuck in live state and cleans them up.
+// This handles the case where the runner crashes and can never deliver StreamEndNotification.
+func (m *Manager) ReapStaleStreams() {
+	ctx := context.Background()
+	streams, err := m.dao.StreamsDao.GetStaleStreams(ctx)
+	if err != nil {
+		m.logger.Error("failed to get stale streams", "err", err)
+		return
+	}
+	for _, s := range streams {
+		m.logger.Warn("reaping stale stream", "stream", s.ID, "name", s.Name)
+		if err := m.dao.StreamsDao.SetStreamNotLiveById(s.ID); err != nil {
+			m.logger.Error("failed to set stale stream not-live", "stream", s.ID, "err", err)
+		}
+		if err := m.dao.StreamsDao.ClearRunnerJobsForStream(s.ID); err != nil {
+			m.logger.Error("failed to clear runner jobs for stale stream", "stream", s.ID, "err", err)
+		}
+		m.notifyLiveState(s.ID, false)
+
+		m.camsHandledLock.Lock()
+		delete(m.camsHandled, s.ID)
+		m.camsHandledLock.Unlock()
+
+		if err := m.handleLightsOff(s); err != nil {
+			m.logger.Error("failed to turn off lights for stale stream", "stream", s.ID, "err", err)
+		}
+	}
 }
 
 func (m *Manager) UpdateLights() {
