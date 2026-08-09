@@ -87,14 +87,15 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 type Option func(m *Manager)
 
 func (m *Manager) TriggerDueStreams() error {
-	m.logger.Info("Triggering due streams")
 	ctx := context.Background()
 	streams, err := m.dao.GetDueStreamsForRunners()
-
-	m.logger.Info(fmt.Sprintf("%d streams to start for runner", len(streams)))
 	if err != nil {
 		return err
 	}
+	if len(streams) == 0 {
+		return nil
+	}
+	m.logger.Info("Triggering due streams", "count", len(streams))
 
 	var errs []error
 
@@ -240,14 +241,18 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
-		m.logger.Debug("Heartbeat", "d", notification)
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
 		}
+		newDraining := notification.GetHeartbeat().GetDraining()
+		newJobCount := notification.GetHeartbeat().GetJobCount()
+		if runner.Draining != newDraining || runner.JobCount != newJobCount {
+			m.logger.Info("Runner state changed", "hostname", notification.GetHeartbeat().GetHostname(), "draining", newDraining, "jobCount", newJobCount)
+		}
 		runner.LastSeen = time.Now()
-		runner.Draining = notification.GetHeartbeat().GetDraining()
-		runner.JobCount = notification.GetHeartbeat().GetJobCount()
+		runner.Draining = newDraining
+		runner.JobCount = newJobCount
 		err = m.dao.RunnerDao.Update(ctx, &runner)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "update runner: %v", err)
@@ -804,17 +809,20 @@ func (m *Manager) UpdateLights() {
 	}
 
 	for _, r := range res {
+		if r.PwrCtrlIP == "" {
+			continue
+		}
 		client := go_anel_pwrctrl.New(r.PwrCtrlIP, tools.Cfg.Auths.PwrCrtlAuth)
 		for i := range 3 {
 			if r.NumLive > 0 {
 				err = client.TurnOn(i)
 				if err != nil {
-					m.logger.Error("Couldn't set the power control to on", "Err", err)
+					m.logger.Warn("Couldn't set the power control to on", "Err", err, "ip", r.PwrCtrlIP)
 				}
 			} else {
 				err = client.TurnOff(i)
 				if err != nil {
-					m.logger.Error("Couldn't set the power control to off", "Err", err)
+					m.logger.Warn("Couldn't set the power control to off", "Err", err, "ip", r.PwrCtrlIP)
 				}
 			}
 		}
