@@ -172,17 +172,8 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
     }
 
     async addSections(courseId: number, lectureId: number, videoSections: VideoSection[]) {
-        const newSections = await AdminLectureList.addSections(lectureId, videoSections);
-
-        this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
-                return {
-                    ...s,
-                    videoSections: [...s.videoSections, ...newSections],
-                };
-            }
-            return s;
-        });
+        await AdminLectureList.addSections(lectureId, videoSections);
+        await this.fetch(courseId, true);
         await this.triggerUpdate(courseId);
     }
 
