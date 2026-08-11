@@ -279,20 +279,35 @@ export function lectureEditor(lecture: Lecture): AlpineComponent {
             return this.lectureData[key];
         },
 
-        onAttachmentFileDrop(e) {
-            if (e.dataTransfer.items) {
-                const item = e.dataTransfer.items[0];
-                const { kind } = item;
-                switch (kind) {
-                    case "file": {
-                        DataStore.adminLectureList.uploadAttachmentFile(
+        async onAttachmentFileDrop(e) {
+            const files = Array.from(e.dataTransfer?.files ?? []);
+
+            try {
+                if (files.length > 0) {
+                    for (const file of files as File[]) {
+                        await DataStore.adminLectureList.uploadAttachmentFile(
                             this.lectureData.courseId,
                             this.lectureData.lectureId,
-                            item.getAsFile(),
+                            file,
                         );
-                        break;
                     }
+                    return;
                 }
+
+                const droppedFile =
+                    e.dataTransfer?.items?.[0]?.kind === "file" ? e.dataTransfer.items[0].getAsFile() : null;
+                if (!droppedFile) {
+                    return;
+                }
+
+                await DataStore.adminLectureList.uploadAttachmentFile(
+                    this.lectureData.courseId,
+                    this.lectureData.lectureId,
+                    droppedFile,
+                );
+            } catch (err) {
+                console.error(err);
+                this.lastErrors = [err.message || "Failed to upload attachment(s)"];
             }
         },
 
