@@ -88,27 +88,6 @@ services:
       - ./tum-live-starter.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
-  worker:
-    container_name: tum-live-worker
-    depends_on:
-      tum-live:
-        condition: service_started
-      vod-service:
-        condition: service_started
-      runner:
-        condition: service_started
-    build: worker
-    platform: linux/amd64
-    environment:
-      - Token=abc
-      - Host=worker
-      - MainBase=tum-live
-      - VodURLTemplate=http://localhost:8089/vod/%s.mp4/playlist.m3u8
-      - LrzUploadUrl=http://vod-service:8089
-      - DEBUG-MODE=true
-    volumes:
-      - recordings:/recordings
-      - mass:/mass
   vod-service:
     container_name: tum-live-vod-service
     depends_on:
@@ -179,7 +158,5 @@ volumes:
   vod:
   mariadb-data:
   runner_data:
-  mass:
   meili_gocast_data:
-  recordings:
   prometheus-data:
