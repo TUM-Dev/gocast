@@ -178,7 +178,9 @@ func (r *Runner) InitApiGrpc() {
 	}
 }
 
-func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog.Logger) string {
+// RunAction runs a in the background and returns the id of the created job.
+// The actions in a run even after the job was cancelled, afterwards either vod or discard runs.
+func (r *Runner) RunAction(a, vod, discard []actions.Action, data map[string]any, logger *slog.Logger) string {
 	// create new context to avoid cancellation on grpc request termination
 	c, cancel := context.WithCancel(context.Background())
 	job := uuid.New().String()
@@ -195,7 +197,8 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 			r.jobsMu.Unlock()
 			r.JobCount <- -1
 		}()
-		for _, action := range a {
+
+		run := func(action actions.Action) {
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
 				log.Info("running action")
@@ -206,24 +209,33 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
-						break // escape retry loop on unrecoverable error
+						return // escape retry loop on unrecoverable error
 					}
 				} else {
-					break // escape retry loop on no error
+					return // escape retry loop on no error
 				}
 			}
-			// VoD creation (MkVOD, CheckVoD, MkThumb) is intentionally skipped once the
-			// recording is discarded, right after StreamEnd notifies gocast the stream has ended.
-			r.jobsMu.Lock()
-			shouldDiscard := r.discard[job]
-			r.jobsMu.Unlock()
-			if shouldDiscard && reflect.ValueOf(action).Pointer() == reflect.ValueOf(actions.StreamEnd).Pointer() {
-				logger.With("job", job).Info("discarding recording, skipping VoD creation")
-				break
-			}
+		}
+
+		for _, action := range a {
+			run(action)
+		}
+		next := vod
+		if r.discarded(job) {
+			logger.With("job", job).Info("discarding recording, skipping VoD creation")
+			next = discard
+		}
+		for _, action := range next {
+			run(action)
 		}
 	}()
 	return job
+}
+
+func (r *Runner) discarded(job string) bool {
+	r.jobsMu.Lock()
+	defer r.jobsMu.Unlock()
+	return r.discard[job]
 }
 
 func (r *Runner) handleNotifications(ctx context.Context) {
