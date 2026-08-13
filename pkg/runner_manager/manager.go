@@ -763,6 +763,11 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 		DiscardVod: ptr.Take(discardVoD),
 	})
 	if err != nil {
+		// a job the runner doesn't know is already over, which is what we want anyway
+		if status.Code(err) == codes.NotFound {
+			m.logger.Info("runner does not know job, considering it ended", "runner", job.RunnerHostname, "job", job.JobID)
+			return nil
+		}
 		return fmt.Errorf("request stream end for job %s: %w", job.JobID, err)
 	}
 	return nil
