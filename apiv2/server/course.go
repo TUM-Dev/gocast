@@ -39,8 +39,19 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 	for _, stream := range streams {
 		courseForLiveStream, seen := courses[stream.CourseID]
 		if !seen {
-			courseForLiveStream, _ = a.dao.GetCourseById(ctx, stream.CourseID)
+			courseForLiveStream, err = a.dao.GetCourseById(ctx, stream.CourseID)
+			if err != nil {
+				a.log.Error("could not load the course of a live stream",
+					"streamID", stream.ID, "courseID", stream.CourseID, "err", err)
+			}
 			courses[stream.CourseID] = courseForLiveStream
+		}
+
+		// A course that failed to load, or that Find reported as a zero value because
+		// the row is gone, has Visibility "" — which every rule waves through, listing
+		// it to everyone under an empty name.
+		if courseForLiveStream.ID == 0 {
+			continue
 		}
 
 		if !visibility.Listed(user, courseForLiveStream) {
