@@ -132,13 +132,51 @@ stand up.
 
 ## Migrating another page
 
+A migration finishes by **deleting the page it replaces**, in the same pull request.
+Running the two versions side by side buys less than it looks like: the build is
+embedded in the binary, so moving a page back is a code change and a deploy either way,
+and the browser tests are what actually establish that the new page works. Keeping the
+old one around instead just leaves two implementations to maintain.
+
+**Build it**
+
 1. Build the page here and add its path to the router in `src/router/index.ts`.
 2. Add the same path to `spaRoutes` in `web/router.go`.
-3. Keep the route's existing auth middleware so the server still gates it.
+3. Keep the route's existing auth middleware. The server still gates the page; the
+   client only decides what to offer.
+4. If the page needs something server-side that a client cannot do — reading or writing
+   a cookie it depends on — add a `spaRouteHooks` entry. Data fetching is not that:
+   it belongs in the API.
 
-Removing the path from `spaRoutes` reverts the page — the template handler is still
-registered, so nothing else has to change. `web/spa_test.go` covers the Go half of
-this wiring.
+**Prove it**
+
+5. Walk the old page and list what it does, including the parts nobody uses often:
+   every control, every role that sees something different, every error state.
+6. Cover the ones that fail *silently* in `e2e/`. Anything that writes needs a test
+   that reads the value back — settings whose Go getter returns the stored string
+   verbatim have to be written unencoded, and the only place that shows is a page
+   outside the SPA.
+
+**Delete it**
+
+7. Remove the template handler and pass `nil` to `registerPage` for the path.
+8. Delete the `.gohtml`. Its partials are resolved at render time, not at boot, so a
+   partial another page still includes fails only when someone loads that page —
+   `grep` each one before removing it. This is the one deletion the compiler cannot
+   check for you.
+9. Delete the DAO methods and v1 endpoints the page used. The compiler catches a DAO
+   method that still has callers; it says nothing about an HTTP route, so check the
+   legacy TypeScript in `web/ts` for anything still calling the endpoint.
+10. Regenerate mocks if a DAO interface changed: `make mocks`.
+
+**Rolling back** is `git revert` of that pull request. Taking the path out of
+`spaRoutes` on its own no longer works once the template is gone, and the server says
+so at boot rather than serving a 404 — as it does when the frontend build is missing
+for a page that has no template left. `web/spa_test.go` covers both.
+
+Pages where parity cannot be established cheaply — the watch page, course
+administration — are the reason `registerPage` still takes a legacy handler at all.
+Serve both for those, and keep the entry in `spaRoutes` as the switch.
 
 ## Styling
 

@@ -14,22 +14,7 @@ import (
 	"github.com/TUM-Dev/gocast/tools/tum"
 )
 
-type userSettingsData struct {
-	IndexData IndexData
-}
-
 const redirCookieName = "redirURL"
-
-func (r mainRoutes) settingsPage(c *gin.Context) {
-	d := userSettingsData{IndexData: NewIndexData()}
-	d.IndexData.TUMLiveContext = c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	err := templateExecutor.ExecuteTemplate(c.Writer, "user-settings.gohtml", d.IndexData)
-	if err != nil {
-		logger.Error("Error executing template user-settings.gohtml", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-}
 
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
@@ -148,20 +133,6 @@ func SetLoginRedirectCookie(c *gin.Context) {
 		// Use 10 minutes for expiry as the user may not login immediately. The cookie is deleted after login.
 		c.SetCookie(redirCookieName, redirUrlStr, 600, "/", "", tools.CookieSecure, true)
 	}
-}
-
-func (r mainRoutes) LoginPage(c *gin.Context) {
-	SetLoginRedirectCookie(c)
-
-	// A failed attempt redirects back here rather than rendering inline, so the error
-	// arrives as a query parameter.
-	d := NewLoginPageData(c.Query(loginErrorQuery) != "")
-	d.UseSAML = tools.Cfg.Saml != nil
-	if d.UseSAML {
-		d.IDPName = tools.Cfg.Saml.IdpName
-		d.IDPColor = tools.Cfg.Saml.IdpColor
-	}
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
 
 func (r mainRoutes) LogoutPage(c *gin.Context) {
