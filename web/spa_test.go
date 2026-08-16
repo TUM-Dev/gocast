@@ -118,6 +118,83 @@ func TestLoginRouteKeepsSettingTheRedirectCookie(t *testing.T) {
 	}
 }
 
+// Once a template is deleted the SPA build stops being optional for that page.
+func TestPageHandlerRequiresABuildForPagesWithNoTemplate(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	const migrated = "/settings"
+	const notMigrated = "/not-migrated"
+	if !spaRoutes[migrated] {
+		t.Fatalf("%s is expected to be listed in spaRoutes", migrated)
+	}
+	if spaRoutes[notMigrated] {
+		t.Fatalf("%s is unexpectedly listed in spaRoutes", notMigrated)
+	}
+
+	legacy := func(c *gin.Context) {}
+
+	tests := []struct {
+		name     string
+		path     string
+		legacy   gin.HandlerFunc
+		spaBuilt bool
+		wantErr  bool
+	}{
+		{
+			name:     "a fully migrated page without a build stops the server",
+			path:     migrated,
+			legacy:   nil,
+			spaBuilt: false,
+			wantErr:  true,
+		},
+		{
+			name:     "a page still holding its template falls back instead",
+			path:     migrated,
+			legacy:   legacy,
+			spaBuilt: false,
+		},
+		{
+			// The rollback that no longer works: nothing is left to serve the path.
+			name:     "a rolled-back page with no template left stops the server",
+			path:     notMigrated,
+			legacy:   nil,
+			spaBuilt: true,
+			wantErr:  true,
+		},
+		{
+			name:     "a migrated page with a build is served the shell",
+			path:     migrated,
+			legacy:   nil,
+			spaBuilt: true,
+		},
+		{
+			name:     "an unmigrated page is served its template",
+			path:     notMigrated,
+			legacy:   legacy,
+			spaBuilt: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, err := pageHandler(tt.path, tt.legacy, tt.spaBuilt)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected an error, got none")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if handler == nil {
+				t.Error("no handler returned")
+			}
+		})
+	}
+}
+
 func TestSPAAssetsAreEmbedded(t *testing.T) {
 	spaIsBuilt(t)
 

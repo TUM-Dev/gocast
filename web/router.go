@@ -35,13 +35,12 @@ var spaFS embed.FS
 // client router decides what to render.
 const spaShellPath = "spa/index.html"
 
-// spaRoutes lists the paths served by the SPA instead of a server-rendered template.
+// spaRoutes lists the paths served by the SPA instead of a template. Adding a path
+// moves one page across; it must also exist in frontend/src/router/index.ts or the
+// shell loads and renders nothing.
 //
-// This is the switchboard for the incremental migration: adding a path here moves one
-// page to the SPA, and removing it moves the page back. The legacy handler stays
-// registered in code either way, so a rollback needs no other change. Paths listed
-// here must also exist in the client router (frontend/src/router/index.ts), otherwise
-// the shell loads and renders nothing.
+// Removing a path moves the page back, but only while its template handler is still
+// registered — see registerPage.
 var spaRoutes = map[string]bool{
 	"/settings": true,
 	"/login":    true,
@@ -105,7 +104,7 @@ func spaAvailable() bool {
 // /static untouched.
 func configSPARouter(router *gin.Engine) {
 	if !spaAvailable() {
-		logger.Info("no SPA build found, serving all pages from templates")
+		logger.Info("no SPA build found, not mounting its assets")
 		return
 	}
 
@@ -150,21 +149,50 @@ func serveSPAShell(c *gin.Context) {
 
 // registerPage registers a page route, serving the SPA where it has taken the page
 // over and the given template handler everywhere else.
+//
+// legacy may be nil for a page whose server-rendered version has been deleted. Such a
+// page has no fallback, so a missing frontend build is a broken deployment rather than
+// something to work around: the panic below stops the server at boot instead of
+// letting it serve 404s on a page that used to work.
 func registerPage(group *gin.RouterGroup, method, path string, legacy gin.HandlerFunc) {
-	if !spaRoutes[path] || !spaAvailable() {
-		group.Handle(method, path, legacy)
-		return
-	}
-
-	handler := serveSPAShell
-	if hook, ok := spaRouteHooks[path]; ok {
-		handler = func(c *gin.Context) {
-			hook(c)
-			serveSPAShell(c)
-		}
+	handler, err := pageHandler(path, legacy, spaAvailable())
+	if err != nil {
+		panic(err)
 	}
 
 	group.Handle(method, path, handler)
+}
+
+// pageHandler decides which of the two frontends answers a path. Split out from
+// registerPage so the decision can be tested without a build present.
+func pageHandler(path string, legacy gin.HandlerFunc, spaBuilt bool) (gin.HandlerFunc, error) {
+	if !spaRoutes[path] {
+		if legacy == nil {
+			// Either the path was removed from spaRoutes to roll a page back after its
+			// template was deleted, or it was never added in the first place.
+			return nil, fmt.Errorf("page %q has no template handler and is not in spaRoutes", path)
+		}
+		return legacy, nil
+	}
+
+	if !spaBuilt {
+		if legacy == nil {
+			return nil, fmt.Errorf("page %q is served by the SPA and has no template handler, but no SPA build is present: run `npm run build` in frontend/ (or `make spa`)", path)
+		}
+		// A developer who has not built the frontend still gets a working server.
+		logger.Info("no SPA build found, serving page from its template", "path", path)
+		return legacy, nil
+	}
+
+	hook, hooked := spaRouteHooks[path]
+	if !hooked {
+		return serveSPAShell, nil
+	}
+
+	return func(c *gin.Context) {
+		hook(c)
+		serveSPAShell(c)
+	}, nil
 }
 
 func configGinStaticRouter(router *gin.Engine) {
@@ -255,7 +283,7 @@ func configMainRoute(router *gin.Engine) {
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
-	registerPage(&router.RouterGroup, http.MethodGet, "/login", routes.LoginPage)
+	registerPage(&router.RouterGroup, http.MethodGet, "/login", nil)
 	router.GET("/logout", routes.LogoutPage)
 	router.GET("/setPassword/:key", routes.CreatePasswordPage)
 	router.POST("/setPassword/:key", routes.CreatePasswordPage)
@@ -283,7 +311,7 @@ func configMainRoute(router *gin.Engine) {
 	// The auth middleware stays on the route even when the SPA serves it, so an
 	// anonymous visitor is redirected to /login by the server rather than after the
 	// shell has loaded and failed a request.
-	registerPage(loggedIn, http.MethodGet, "/settings", routes.settingsPage)
+	registerPage(loggedIn, http.MethodGet, "/settings", nil)
 
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
