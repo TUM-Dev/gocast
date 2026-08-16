@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
+	"github.com/TUM-Dev/gocast/apiv2/visibility"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
@@ -177,7 +178,7 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not eligible to access course content"))
 	}
 
-	if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+	if !visibility.StreamVisible(user, course, stream) {
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access private stream"))
 	}
 

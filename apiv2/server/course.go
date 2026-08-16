@@ -12,6 +12,7 @@ import (
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/apiv2/visibility"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/tum"
 )
@@ -27,27 +28,24 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 
 	resp := make([]*protobuf.CourseStream, 0)
 
-	for _, stream := range streams {
-		courseForLiveStream, _ := a.dao.GetCourseById(ctx, stream.CourseID)
+	// GetCourseById is uncached and preloads four relations, and a course with
+	// several streams live at once would ask for it on every pass.
+	courses := make(map[uint]model.Course)
 
-		// only show streams for logged-in users if they are logged in
-		if courseForLiveStream.IsLoggedIn() && user == nil {
+	for _, stream := range streams {
+		courseForLiveStream, seen := courses[stream.CourseID]
+		if !seen {
+			courseForLiveStream, _ = a.dao.GetCourseById(ctx, stream.CourseID)
+			courses[stream.CourseID] = courseForLiveStream
+		}
+
+		if !visibility.Listed(user, courseForLiveStream) {
 			continue
 		}
-		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.IsEnrolled() {
-			if !user.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
-				continue
-			}
-		}
-		// Only show hidden streams to course admins
-		if courseForLiveStream.IsHidden() && (user == nil || !user.IsAdminOfCourse(courseForLiveStream)) {
+		if !visibility.StreamVisible(user, courseForLiveStream, stream) {
 			continue
 		}
-		// Only show private streams to course admins
-		if stream.Private && (user == nil || !user.IsAdminOfCourse(courseForLiveStream)) {
-			continue
-		}
+
 		var lectureHall *model.LectureHall
 		if stream.LectureHallID != 0 {
 			lh, err := a.dao.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
@@ -132,15 +130,15 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
-	if (course.IsLoggedIn() && user == nil) || (course.IsEnrolled() && !user.IsAllowedToWatchPrivateCourse(course)) {
+	// Reachable rather than Listed: a hidden course is unlisted, not private.
+	if !visibility.Reachable(user, course) {
 		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 
-	streams := make([]*protobuf.Stream, 0, len(course.Streams))
-	for _, stream := range course.Streams {
-		if !stream.Private || user.IsAdminOfCourse(course) {
-			streams = append(streams, h.ParseStreamToProto(stream, course, user))
-		}
+	visible := visibility.VisibleStreams(user, course)
+	streams := make([]*protobuf.Stream, 0, len(visible))
+	for _, stream := range visible {
+		streams = append(streams, h.ParseStreamToProto(stream, course, user))
 	}
 
 	courseDTO := h.ParseCourseToProto(course, user)
