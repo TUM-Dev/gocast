@@ -23,13 +23,12 @@ type caller struct {
 }
 
 // interceptors returns the chain every unary RPC passes through, outermost first.
-//
-// Logging wraps resolution so that the time spent authenticating a request is
-// counted against the request rather than disappearing.
+// Resolution must precede authorization, which needs to know who is calling.
 func (a *API) interceptors() grpc.ServerOption {
 	return grpc.ChainUnaryInterceptor(
 		a.logRequest,
 		a.resolveCaller,
+		a.authorize,
 	)
 }
 
