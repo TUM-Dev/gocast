@@ -223,6 +223,30 @@
         ]
       }
     },
+    "/config": {
+      "get": {
+        "summary": "Get the frontend configuration.",
+        "description": "Returns the deployment's branding, version and links. Answers before anyone has signed in, because the frontend needs it to render its shell.",
+        "operationId": "MetaService_getFrontendConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetFrontendConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "API Status"
+        ]
+      }
+    },
     "/courses": {
       "get": {
         "summary": "Get public courses.",
@@ -1089,6 +1113,18 @@
         }
       }
     },
+    "protobufBranding": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "description": "Branding is the deployment's own name for itself, configured in branding.yaml."
+    },
     "protobufCameraPreset": {
       "type": "object",
       "properties": {
@@ -1270,6 +1306,29 @@
       "properties": {
         "course": {
           "$ref": "#/definitions/protobufCourse"
+        }
+      }
+    },
+    "protobufGetFrontendConfigResponse": {
+      "type": "object",
+      "properties": {
+        "branding": {
+          "$ref": "#/definitions/protobufBranding"
+        },
+        "versionTag": {
+          "type": "string",
+          "description": "versionTag is the build's version, or \"development\" for an unversioned build."
+        },
+        "wikiUrl": {
+          "type": "string",
+          "description": "wikiUrl and canonicalUrl are empty when the deployment has not configured them."
+        },
+        "canonicalUrl": {
+          "type": "string"
+        },
+        "isFreshInstallation": {
+          "type": "boolean",
+          "description": "isFreshInstallation reports that the database holds no users yet, so the\nfrontend can offer to create the first account instead of a login form."
         }
       }
     },

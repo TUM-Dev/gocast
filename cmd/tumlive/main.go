@@ -53,6 +53,7 @@ func run(ctx context.Context) error {
 	defer api.RealtimeInstance.CloseAll()
 
 	web.VersionTag = VersionTag
+	tools.VersionTag = VersionTag
 
 	gormJSONLogger := slogGorm.New(
 		slogGorm.WithSlowThreshold(500 * time.Millisecond),

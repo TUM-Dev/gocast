@@ -27,6 +27,7 @@ var services = []service{
 		gateway:  protobuf.RegisterMetaServiceHandlerFromEndpoint,
 		policies: map[string]accessPolicy{
 			"healthCheck":            public,
+			"getFrontendConfig":      public,
 			"getSemesters":           public,
 			"getServerNotifications": public,
 			"getNotifications":       authenticated,

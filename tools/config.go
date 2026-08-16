@@ -205,3 +205,8 @@ var jwtKey *rsa.PrivateKey
 
 // CookieSecure sets whether to use secure cookies or not, defaults to false in dev mode, true in production
 var CookieSecure = false
+
+// VersionTag is the build's version, set from main via ldflags, "development" when
+// unstamped. Here rather than in web so the v2 API need not import the frontend it is
+// replacing.
+var VersionTag = "development"

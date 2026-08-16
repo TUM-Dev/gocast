@@ -72,6 +72,7 @@ func TestEveryServiceInTheProtoIsPoliced(t *testing.T) {
 func TestOnlyExpectedMethodsArePublic(t *testing.T) {
 	want := map[string]bool{
 		"healthCheck":            true,
+		"getFrontendConfig":      true,
 		"getLoginOptions":        true,
 		"resetPassword":          true,
 		"getSemesters":           true,

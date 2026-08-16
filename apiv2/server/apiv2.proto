@@ -57,6 +57,18 @@ service MetaService {
     };
   }
 
+  rpc getFrontendConfig(google.protobuf.Empty) returns (GetFrontendConfigResponse) {
+    option (google.api.http) = {get: "/config"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "API Status"
+      summary: "Get the frontend configuration."
+      description:
+        "Returns the deployment's branding, version and links. Answers "
+        "before anyone has signed in, because the frontend needs it to "
+        "render its shell."
+    };
+  }
+
   rpc getSemesters(google.protobuf.Empty) returns (GetSemestersResponse) {
     option (google.api.http) = {get: "/semesters"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -326,6 +338,24 @@ service StreamService {
 
 message HealthCheckResponse {
   string status = 1;
+}
+
+// Branding is the deployment's own name for itself, configured in branding.yaml.
+message Branding {
+  string title = 1;
+  string description = 2;
+}
+
+message GetFrontendConfigResponse {
+  Branding branding = 1;
+  // versionTag is the build's version, or "development" for an unversioned build.
+  string version_tag = 2;
+  // wikiUrl and canonicalUrl are empty when the deployment has not configured them.
+  string wiki_url = 3;
+  string canonical_url = 4;
+  // isFreshInstallation reports that the database holds no users yet, so the
+  // frontend can offer to create the first account instead of a login form.
+  bool is_fresh_installation = 5;
 }
 
 ///////////////////////////////
