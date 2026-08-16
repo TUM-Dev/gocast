@@ -20,8 +20,6 @@ import (
 
 // GetStream returns a stream by its ID including the course and lecture hall
 func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*protobuf.CourseStream, error) {
-	a.log.Info("GetStream")
-
 	user, stream, course, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
@@ -46,8 +44,6 @@ func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*p
 
 // GetVideoSections returns a list of video sections for a stream
 func (a *API) GetVideoSections(ctx context.Context, req *protobuf.GetVideoSectionsRequest) (*protobuf.GetVideoSectionsResponse, error) {
-	a.log.Info("GetVideoSections")
-
 	_, _, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
@@ -69,8 +65,6 @@ func (a *API) GetVideoSections(ctx context.Context, req *protobuf.GetVideoSectio
 
 // GetStreamPlaylist returns the playlist for a stream
 func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlaylistRequest) (*protobuf.GetStreamPlaylistResponse, error) {
-	a.log.Info("GetStreamPlaylist")
-
 	user, _, course, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
@@ -122,8 +116,6 @@ func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlay
 
 // GetSubtitles returns the subtitles for a stream in a specific language
 func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesRequest) (*httpbody.HttpBody, error) {
-	a.log.Info("GetSubtitles")
-
 	_, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
@@ -147,8 +139,6 @@ func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesReques
 
 // GetThumbs returns the thumbnails for a stream
 func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*httpbody.HttpBody, error) {
-	a.log.Info("GetThumbs")
-
 	_, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err

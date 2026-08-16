@@ -18,8 +18,6 @@ import (
 
 // GetLiveCourses retrieves the currently live courses and their streams.
 func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf.GetLiveCoursesResponse, error) {
-	a.log.Info("GetLiveCourses")
-
 	streams, err := a.dao.GetCurrentLive(ctx)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusNotFound, err)
@@ -80,8 +78,6 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 
 // GetPublicCourses retrieves the public courses for a given semester.
 func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCoursesRequest) (*protobuf.GetPublicCoursesResponse, error) {
-	a.log.Info("GetPublicCourses")
-
 	user, _ := a.getCurrent(ctx) // ignore error as endpoint can also be used by logged-out users
 
 	year, term := tum.GetCurrentSemester()
@@ -114,8 +110,6 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 
 // GetCourseBySlug retrieves a course by its slug, year, and term.
 func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlugRequest) (*protobuf.GetCourseBySlugResponse, error) {
-	a.log.Info("GetCourseBySlug")
-
 	user, _ := a.getCurrent(ctx) // ignore error as endpoint can also be used by logged-out users
 
 	if req.Slug == "" {
@@ -157,8 +151,6 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 
 // GetUserCourses retrieves the courses for a user for a given semester.
 func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRequest) (*protobuf.GetUserCoursesResponse, error) {
-	a.log.Info("GetUserCourses")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -200,8 +192,6 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 
 // GetPinnedCourses retrieves the pinned courses for a user.
 func (a *API) GetPinnedCourses(ctx context.Context, req *emptypb.Empty) (*protobuf.GetPinnedCoursesResponse, error) {
-	a.log.Info("GetPinnedCourses")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -218,8 +208,6 @@ func (a *API) GetPinnedCourses(ctx context.Context, req *emptypb.Empty) (*protob
 
 // GetPinForCourse checks if the user has pinned the course.
 func (a *API) GetPinForCourse(ctx context.Context, req *protobuf.GetPinForCourseRequest) (*protobuf.GetPinForCourseResponse, error) {
-	a.log.Info("GetPinForCourse")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -236,8 +224,6 @@ func (a *API) GetPinForCourse(ctx context.Context, req *protobuf.GetPinForCourse
 
 // PinCourse pins or unpins a course for the user.
 func (a *API) PinCourse(ctx context.Context, req *protobuf.PinCourseRequest) (*protobuf.PinCourseResponse, error) {
-	a.log.Info("PinCourse")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
