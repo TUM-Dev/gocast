@@ -14,6 +14,7 @@ import (
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/apiv2/visibility"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 )
@@ -70,12 +71,11 @@ func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlay
 		return nil, err
 	}
 
+	visible := visibility.VisibleStreams(user, course)
+
 	// Create mapping of stream id to progress for all progresses of user
-	var streamIDs []uint
-	for _, stream := range course.Streams {
-		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
-			continue
-		}
+	streamIDs := make([]uint, 0, len(visible))
+	for _, stream := range visible {
 		streamIDs = append(streamIDs, stream.ID)
 	}
 	// user is nil for anonymous callers on publicly visible courses.
@@ -95,10 +95,7 @@ func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlay
 	}
 
 	var result []*protobuf.StreamPlaylistEntry
-	for _, stream := range course.Streams {
-		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
-			continue
-		}
+	for _, stream := range visible {
 		result = append(result, &protobuf.StreamPlaylistEntry{
 			StreamId:       uint32(stream.ID),
 			CourseSlug:     course.Slug,

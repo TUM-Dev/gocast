@@ -77,3 +77,39 @@ func TestGetLiveCoursesHidesRestrictedCoursesFromAnonymousCallers(t *testing.T) 
 		t.Errorf("anonymous caller saw %v, want only [public]", got)
 	}
 }
+
+// GetCourseById is uncached and preloads four relations, so a course with several
+// lectures live at once was fetched once per stream.
+func TestGetLiveCoursesLoadsEachCourseOnce(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	streamsMock := mock_dao.NewMockStreamsDao(ctrl)
+	streamsMock.EXPECT().GetCurrentLive(gomock.Any()).Return([]model.Stream{
+		{Model: gorm.Model{ID: 1}, CourseID: 1, LiveNow: true},
+		{Model: gorm.Model{ID: 2}, CourseID: 1, LiveNow: true},
+		{Model: gorm.Model{ID: 3}, CourseID: 2, LiveNow: true},
+		{Model: gorm.Model{ID: 4}, CourseID: 1, LiveNow: true},
+	}, nil).Times(1)
+
+	public := func(id uint) model.Course {
+		return model.Course{Model: gorm.Model{ID: id}, Visibility: "public", UserID: 42}
+	}
+
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+	// Two distinct courses across four streams: exactly two lookups.
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(public(1), nil).Times(1)
+	coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(2)).Return(public(2), nil).Times(1)
+
+	api := &API{
+		dao: dao.DaoWrapper{StreamsDao: streamsMock, CoursesDao: coursesMock},
+		log: slog.Default(),
+	}
+
+	resp, err := api.GetLiveCourses(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatalf("GetLiveCourses: %v", err)
+	}
+	if len(resp.LiveCourses) != 4 {
+		t.Errorf("got %d entries, want all 4 streams", len(resp.LiveCourses))
+	}
+}
