@@ -253,20 +253,32 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/search", routes.SearchPage)
 
 	// admins
-	adminGroup := router.Group("/")
-	adminGroup.GET("/admin/users", routes.AdminPage)
-	adminGroup.GET("/admin/lectureHalls", routes.AdminPage)
-	adminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
-	adminGroup.GET("/admin/workers", routes.AdminPage)
-	adminGroup.GET("/admin/runners", routes.AdminPage)
-	adminGroup.GET("/admin/server-notifications", routes.AdminPage)
-	adminGroup.GET("/admin/server-stats", routes.AdminPage)
-	adminGroup.GET("/admin/course-import", routes.AdminPage)
-	adminGroup.GET("/admin/token", routes.AdminPage)
-	adminGroup.GET("/admin/infopages", routes.AdminPage)
-	adminGroup.GET("/admin/notifications", routes.AdminPage)
-	adminGroup.GET("/admin/audits", routes.AdminPage)
-	adminGroup.GET("/admin/maintenance", routes.AdminPage)
+	//
+	// AdminPage checks only that someone is signed in, so without these any student
+	// could render every tab. The template hid the links, which is not a guard.
+	//
+	// Split by what each page administers. Both permissions belong to admins today;
+	// the distinction is what makes an operator role a change to the role table.
+	serverAdminGroup := router.Group("/")
+	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
+	serverAdminGroup.GET("/admin/lectureHalls", routes.AdminPage)
+	serverAdminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
+	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
+	serverAdminGroup.GET("/admin/runners", routes.AdminPage)
+	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
+	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
+	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
+	serverAdminGroup.GET("/admin/infopages", routes.AdminPage)
+	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
+	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
+	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
+
+	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
+	// same permission.
+	userAdminGroup := router.Group("/")
+	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
+	userAdminGroup.GET("/admin/users", routes.AdminPage)
+	userAdminGroup.GET("/admin/token", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
