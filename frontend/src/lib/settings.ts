@@ -48,17 +48,31 @@ export interface CurrentUser {
   settings: UserSettings;
 }
 
-/** Defaults mirroring the getters in model/user.go for users who set nothing. */
-const DEFAULT_PLAYBACK_SPEEDS: PlaybackSpeed[] = [
+/**
+ * Defaults for a user who has never saved playback speeds.
+ *
+ * Must stay identical to model.defaultPlaybackSpeeds in model/user.go, entries and
+ * enabled flags alike: the first change a user makes is saved as the whole array, so
+ * anything wrong here is written to their account the moment they toggle a speed.
+ */
+const DEFAULT_PLAYBACK_SPEEDS: readonly PlaybackSpeed[] = [
   { speed: 0.25, enabled: false },
-  { speed: 0.5, enabled: false },
-  { speed: 0.75, enabled: false },
+  { speed: 0.5, enabled: true },
+  { speed: 0.75, enabled: true },
   { speed: 1, enabled: true },
-  { speed: 1.25, enabled: false },
+  { speed: 1.25, enabled: true },
   { speed: 1.5, enabled: true },
-  { speed: 1.75, enabled: false },
+  { speed: 1.75, enabled: true },
   { speed: 2, enabled: true },
+  { speed: 2.5, enabled: false },
+  { speed: 3, enabled: false },
+  { speed: 3.5, enabled: false },
 ];
+
+/** A fresh copy, so a component mutating its settings cannot alter the defaults. */
+function defaultPlaybackSpeeds(): PlaybackSpeed[] {
+  return DEFAULT_PLAYBACK_SPEEDS.map((entry) => ({ ...entry }));
+}
 
 /**
  * Settings whose value is stored as a bare string rather than as JSON.
@@ -124,7 +138,7 @@ function parseSettings(user: User): UserSettings {
     greeting: decodeRawString(byType.get(UserSettingType.GREETING), "Moin"),
     playbackSpeeds: decode(
       byType.get(UserSettingType.CUSTOM_PLAYBACK_SPEEDS),
-      DEFAULT_PLAYBACK_SPEEDS,
+      defaultPlaybackSpeeds(),
     ),
     customSpeeds: decode(byType.get(UserSettingType.USER_DEFINED_SPEEDS), [] as number[]),
     seekingTime: decode(byType.get(UserSettingType.SEEKING_TIME), 10),
