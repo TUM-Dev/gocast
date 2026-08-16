@@ -4,6 +4,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,12 +32,33 @@ func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
 	return a.resolveCurrent(ctx)
 }
 
+// ErrNoCredentials means nothing was presented to authenticate with, as opposed to
+// something presented and rejected. On endpoints serving anonymous callers the first
+// answers normally and the second is an expired token that needs a 401 to refresh.
+var ErrNoCredentials = errors.New("no credentials presented")
+
+// currentOrAnonymous returns the caller, or nil when the request carried no
+// credentials. For endpoints that serve anonymous callers: a rejected credential is
+// a 401 rather than a silent downgrade to the logged-out view.
+func (a *API) currentOrAnonymous(ctx context.Context) (*model.User, error) {
+	user, err := a.getCurrent(ctx)
+	if err == nil {
+		return user, nil
+	}
+
+	if errors.Is(err, ErrNoCredentials) {
+		return nil, nil
+	}
+
+	return nil, e.WithStatus(http.StatusUnauthorized, err)
+}
+
 // resolveCurrent authenticates the request from its metadata.
 // It returns a User or an error if one occurs.
 func (a *API) resolveCurrent(ctx context.Context) (*model.User, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, errors.New("no metadata")
+		return nil, fmt.Errorf("%w: no metadata", ErrNoCredentials)
 	}
 
 	jwtStr, err := a.extractJWTFromMetadata(md)
@@ -64,7 +86,7 @@ func (a *API) extractJWTFromMetadata(md metadata.MD) (string, error) {
 
 	cookies, ok := md["grpcgateway-cookie"]
 	if !ok || len(cookies) < 1 {
-		return "", errors.New("no bearer token or session cookie present")
+		return "", fmt.Errorf("%w: no bearer token or session cookie", ErrNoCredentials)
 	}
 
 	return extractTokenFromCookie(cookies[0])
@@ -97,7 +119,7 @@ func extractTokenFromCookie(cookieHeader string) (string, error) {
 		}
 	}
 
-	return "", errors.New("jwt cookie not found")
+	return "", fmt.Errorf("%w: no jwt cookie", ErrNoCredentials)
 }
 
 // parseJWT parses the JWT string.
@@ -170,7 +192,10 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 		}
 	}
 
-	user, _ := a.getCurrent(ctx)
+	user, err := a.currentOrAnonymous(ctx)
+	if err != nil {
+		return nil, stream, course, err
+	}
 	if !user.IsEligibleToWatchCourse(course) {
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not eligible to access course content"))
 	}
