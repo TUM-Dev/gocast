@@ -20,7 +20,11 @@ onMounted(async () => {
   // Nothing to load on a page reached before signing in: there the token request can
   // only fail, and a 401 in the console on the login page reads as a broken deployment.
   if (route.meta.anonymous) return;
-  void auth.load();
+  // Fire and forget: the header is decoration, and the store leaves itself unloaded
+  // when the request fails for anything but a 401, so the next caller retries. Caught
+  // all the same — an uncaught rejection here is a console error on every page load
+  // while the API is down.
+  auth.load().catch(() => {});
 });
 </script>
 

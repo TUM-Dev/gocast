@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/lib/api";
 import { useAuthStore } from "./auth";
 
 /**
@@ -58,5 +59,31 @@ describe("the auth store", () => {
 
     await expect(auth.load()).rejects.toThrow("network");
     await expect(auth.load(true)).resolves.toEqual(user);
+  });
+
+  it("stays unloaded when the request fails for a reason other than a 401", async () => {
+    // A 500 or a dropped connection leaves the question open. Marking the store
+    // loaded there strands a signed-in user with a Login button for the life of the
+    // page, because load() short-circuits on `loaded` and nothing asks again.
+    const auth = useAuthStore();
+    fetchCurrentUser.mockRejectedValueOnce(new Error("network down"));
+
+    await expect(auth.load()).rejects.toThrow("network down");
+    expect(auth.loaded).toBe(false);
+
+    fetchCurrentUser.mockResolvedValueOnce(user);
+    await expect(auth.load()).resolves.toEqual(user);
+    expect(auth.loaded).toBe(true);
+  });
+
+  it("treats a 401 as a conclusive answer and does not ask again", async () => {
+    const auth = useAuthStore();
+    fetchCurrentUser.mockRejectedValueOnce(new ApiError(401, "no session"));
+
+    await expect(auth.load()).resolves.toBeNull();
+    expect(auth.loaded).toBe(true);
+
+    await auth.load();
+    expect(fetchCurrentUser).toHaveBeenCalledTimes(1);
   });
 });
