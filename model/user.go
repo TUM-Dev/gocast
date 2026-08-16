@@ -240,17 +240,13 @@ type argonParams struct {
 	keyLength   uint32
 }
 
-// IsAdminOfCourse checks if the user is an admin of the course
+// IsAdminOfCourse checks if the user is an admin of the course.
+//
+// Prefer CanAdminister in new code: it expresses the same rule in the permission
+// vocabulary rather than naming a role. This stays as the one that ~49 call sites
+// already use, and delegates so there is only ever one implementation of the rule.
 func (u *User) IsAdminOfCourse(course Course) bool {
-	if u == nil {
-		return false
-	}
-	for _, c := range u.AdministeredCourses {
-		if c.ID == course.ID {
-			return true
-		}
-	}
-	return u.Role == AdminType || course.UserID == u.ID
+	return u.CanAdminister(course)
 }
 
 // IsAllowedToWatchPrivateCourse checks if the user is allowed to watch a private course.
