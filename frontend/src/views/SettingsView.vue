@@ -67,10 +67,18 @@ async function save(type: UserSettingType, value: unknown, note: string): Promis
     error.value = message(err);
     // The server rejected the write, so the local value no longer reflects what is
     // stored. Reload rather than leaving a stale value on screen.
-    const user = await auth.load(true);
-    if (user) {
-      settings.value = user.settings;
-      initialName.value = user.settings.preferredName;
+    try {
+      const user = await auth.load(true);
+      if (user) {
+        settings.value = user.settings;
+        initialName.value = user.settings.preferredName;
+      }
+    } catch {
+      // The reload failed too, so the screen keeps the value the user typed. Leave
+      // the write error showing — it is the actionable one — and do not let this
+      // escape: most callers invoke save() as `void save(...)`, where a rejection
+      // surfaces as an unhandled promise rejection rather than as anything a user
+      // can see.
     }
   }
 }
