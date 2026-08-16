@@ -51,6 +51,8 @@ func (a *API) UpdateProgress(ctx context.Context, req *protobuf.UpdateProgressRe
 		return nil, err
 	}
 
+	// Non-nil because the RPC is declared authenticated in services.go;
+	// authorizeUserForStreamCourse alone would return no user on a public course.
 	progress := model.StreamProgress{
 		StreamID: stream.ID,
 		UserID:   user.ID,
