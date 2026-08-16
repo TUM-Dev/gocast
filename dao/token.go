@@ -57,7 +57,7 @@ func (d tokenDao) GetAllTokens(user *model.User) ([]AllTokensDto, error) {
 		Joins("JOIN users u ON u.id = tokens.user_id").
 		Where("tokens.deleted_at IS NULL")
 
-	if user.Role != model.AdminType {
+	if !user.Can(model.PermManageUsers) {
 		query = query.Where("tokens.user_id = ?", user.ID)
 	}
 

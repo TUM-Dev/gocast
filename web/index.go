@@ -199,11 +199,11 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 			}
 		}
 		// Only show hidden streams to admins
-		if courseForLiveStream.IsHidden() && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+		if courseForLiveStream.IsHidden() && !tumLiveContext.User.Can(model.PermViewAllCourses) {
 			continue
 		}
 		var lectureHall *model.LectureHall
-		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+		if tumLiveContext.User.Can(model.PermViewAllCourses) && stream.LectureHallID != 0 {
 			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 			if err != nil {
 				logger.Error("Error getting lecture hall by id", "err", err)

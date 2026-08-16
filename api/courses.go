@@ -49,7 +49,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 		lecturers := api.Group("")
 		{
-			lecturers.Use(tools.AtLeastLecturer)
+			lecturers.Use(tools.RequirePermission(model.PermLecture))
 			lecturers.POST("/courseInfo", routes.courseInfo)
 			lecturers.POST("/createCourse", routes.createCourse)
 			lecturers.POST("/createTestCourse", routes.createTestCourse)
@@ -1519,7 +1519,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		Streams:             []model.Stream{},
 		Language:            lang,
 	}
-	if tumLiveContext.User.Role != model.AdminType {
+	if !tumLiveContext.User.Can(model.PermAdministerAllCourses) {
 		course.Admins = []model.User{*tumLiveContext.User}
 	}
 
@@ -1697,7 +1697,7 @@ func (r coursesRoutes) copyStream(c *gin.Context) {
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	isAdmin := tlctx.User.Role == model.AdminType
+	isAdmin := tlctx.User.Can(model.PermAdministerAllCourses)
 
 	if !isAdmin {
 		targetCourseAdmins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(request.TargetCourse)
