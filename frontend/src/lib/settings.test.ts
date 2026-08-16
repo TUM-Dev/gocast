@@ -124,6 +124,42 @@ describe("fetchCurrentUser", () => {
     });
   });
 
+  it("defaults playback speeds to the same list model/user.go uses", async () => {
+    // The first toggle a user makes saves this whole array, so a mismatch here is
+    // written to their account: speeds the player offered silently turn off, and any
+    // entry missing here is removed as an option altogether.
+    respondWithSettings([]);
+
+    const user = await fetchCurrentUser();
+
+    expect(user.settings.playbackSpeeds).toEqual([
+      { speed: 0.25, enabled: false },
+      { speed: 0.5, enabled: true },
+      { speed: 0.75, enabled: true },
+      { speed: 1, enabled: true },
+      { speed: 1.25, enabled: true },
+      { speed: 1.5, enabled: true },
+      { speed: 1.75, enabled: true },
+      { speed: 2, enabled: true },
+      { speed: 2.5, enabled: false },
+      { speed: 3, enabled: false },
+      { speed: 3.5, enabled: false },
+    ]);
+  });
+
+  it("gives each load its own copy of the defaults", async () => {
+    // SettingsView toggles `entry.enabled` in place. Handing out the module-level
+    // array would let one user's unsaved toggle persist into the next load, which is
+    // exactly what the failed-save path reloads to undo.
+    respondWithSettings([]);
+
+    const first = await fetchCurrentUser();
+    first.settings.playbackSpeeds[0].enabled = true;
+
+    const second = await fetchCurrentUser();
+    expect(second.settings.playbackSpeeds[0].enabled).toBe(false);
+  });
+
   it("unwraps a name that was stored JSON-encoded", async () => {
     // Heals rows written before the encoding was fixed, rather than showing quotes.
     respondWithSettings([{ type: "PREFERRED_NAME", value: '"Hansi"' }]);
