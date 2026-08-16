@@ -152,10 +152,7 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 
 	stream, err := a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, stream, course, e.WithStatus(http.StatusNotFound, err)
-		}
-		return nil, stream, course, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, stream, course, e.FromGorm(err, "can't find stream")
 	}
 
 	course, err = a.dao.GetCourseById(ctx, stream.CourseID)

@@ -70,10 +70,7 @@ func (a *API) UpdateBookmark(ctx context.Context, req *protobuf.UpdateBookmarkRe
 
 	bookmark, err := a.dao.BookmarkDao.GetByID(uint(req.BookmarkId))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, e.WithStatus(http.StatusNotFound, errors.New("Invalid bookmark ID"))
-		}
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, e.FromGorm(err, "Invalid bookmark ID")
 	}
 
 	if bookmark.UserID != user.ID {
@@ -102,10 +99,7 @@ func (a *API) DeleteBookmark(ctx context.Context, req *protobuf.DeleteBookmarkRe
 
 	bookmark, err := a.dao.BookmarkDao.GetByID(uint(req.BookmarkId))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, e.WithStatus(http.StatusNotFound, errors.New("Invalid bookmark ID"))
-		}
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, e.FromGorm(err, "Invalid bookmark ID")
 	}
 
 	if bookmark.UserID != user.ID {

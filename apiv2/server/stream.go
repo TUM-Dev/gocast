@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/genproto/googleapis/api/httpbody"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
@@ -122,10 +121,7 @@ func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesReques
 
 	subtitlesObj, err := a.dao.GetByStreamIDandLang(ctx, stream.ID, lang)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, e.WithStatus(http.StatusNotFound, err)
-		}
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, e.FromGorm(err, "no subtitles for this stream in the requested language")
 	}
 
 	return &httpbody.HttpBody{
