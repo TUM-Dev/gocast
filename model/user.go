@@ -24,7 +24,9 @@ const (
 	GenericType  = 3
 	StudentType  = 4
 
-	maxUsernameLength = 80
+	// MaxUsernameLength bounds both the account name and the preferred name a user
+	// may set; the name column is varchar(80).
+	MaxUsernameLength = 80
 )
 
 var (
@@ -492,10 +494,10 @@ func (u *User) GetLoginString() string {
 // BeforeCreate is a GORM hook that is called before a new user is created.
 // Users won't be saved if any of these apply:
 // - username is empty (after trimming)
-// - username is too long (>maxUsernameLength)
+// - username is too long (>MaxUsernameLength)
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	u.Name = strings.TrimSpace(u.Name)
-	if len(u.Name) > maxUsernameLength {
+	if len(u.Name) > MaxUsernameLength {
 		return ErrUsernameTooLong
 	}
 	if len(u.Name) == 0 {
