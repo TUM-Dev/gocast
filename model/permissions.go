@@ -88,5 +88,11 @@ func (u *User) CanAdminister(c Course) bool {
 		}
 	}
 
+	// A user with no ID was never persisted, so it owns nothing. Without this the
+	// zero value matches every course whose owner is unset.
+	if u.ID == 0 {
+		return false
+	}
+
 	return c.UserID == u.ID
 }
