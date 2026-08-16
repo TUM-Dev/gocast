@@ -157,6 +157,26 @@
     @apply mb-[15px] flex items-center justify-between text-[1.5em] font-bold;
   }
 
+  /*
+   * The popup body is a two-column list. Without these the keyboard shortcuts render
+   * as a run-on list: the alignment comes entirely from the width on `strong`.
+   */
+  .tum-live-popup ul {
+    @apply list-none border-t border-t-gray-300 p-0;
+  }
+
+  .tum-live-popup li {
+    @apply border-b border-b-gray-300 py-2.5;
+  }
+
+  .tum-live-popup strong {
+    @apply mr-5 inline-block w-[380px] font-bold;
+  }
+
+  .tum-live-popup b {
+    @apply font-bold;
+  }
+
   .tum-live-settings-grid {
     @apply grid gap-y-5 content-start lg:w-3/6 md:w-4/5 w-full p-6 text-3;
   }
@@ -171,5 +191,13 @@
 
   .tum-live-footer a {
     @apply text-sm font-light text-5 md:py-0 py-1;
+  }
+
+  /*
+   * Notification bodies are raw HTML from the database and routinely contain links,
+   * which preflight has stripped of styling. From web/assets/css/main.css.
+   */
+  .notificationBody a {
+    @apply underline;
   }
 }
