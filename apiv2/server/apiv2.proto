@@ -75,6 +75,15 @@ service API {
     };
   }
 
+  rpc getLoginOptions(google.protobuf.Empty) returns (GetLoginOptionsResponse) {
+    option (google.api.http) = {get: "/login-options"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get available login methods."
+      description: "Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication."
+    };
+  }
+
   rpc updateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse) {
     option (google.api.http) = {
       patch: "/users/settings"
@@ -342,10 +351,24 @@ message UserSetting {
   string value = 4;
 }
 
+// UserSettingType identifies a single user preference.
+//
+// The values are model.UserSettingType - 1 (see apiv2/helpers/parser.go), so this
+// enum has to stay aligned with the constants in model/user.go. Values were
+// previously unnamed beyond CUSTOM_PLAYBACK_SPEEDS and travelled as bare numbers.
 enum UserSettingType {
   PREFERRED_NAME = 0;
   GREETING = 1;
+  // The per-speed enabled flags, stored as a JSON array.
   CUSTOM_PLAYBACK_SPEEDS = 2;
+  SEEKING_TIME = 3;
+  // Speeds the user added themselves, stored as a JSON array.
+  USER_DEFINED_SPEEDS = 4;
+  AUTO_SKIP = 5;
+  // Mirrors model.defaultMode, which is no longer used. Present only to keep the
+  // numbering aligned with model.UserSettingType.
+  DEFAULT_MODE = 6 [deprecated = true];
+  LECTURE_VIEW = 7;
 }
 
 ///////////////////////////////
@@ -374,6 +397,16 @@ message UpdateUserSettingsResponse {
 
 message ResetPasswordResponse {
   string message = 1;
+}
+
+message GetLoginOptionsResponse {
+  // Whether an identity provider is configured. When false, only the username and
+  // password form applies.
+  bool use_saml = 1;
+  // Display name of the identity provider, shown on its sign-in button.
+  string idp_name = 2;
+  // Brand colour for that button, as a CSS colour. May be empty.
+  string idp_color = 3;
 }
 
 message ExportPersonalDataResponse {

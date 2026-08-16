@@ -73,7 +73,9 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 // LoggedIn is a middleware that checks if the user is logged in and redirects to the login page if not
 func LoggedIn(c *gin.Context) {
 	if c.MustGet("TUMLiveContext").(TUMLiveContext).User == nil {
-		c.Redirect(http.StatusFound, "/login")
+		// Pass the page along so the login flow can return to it, as the course and
+		// admin middlewares below do.
+		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 		c.Abort()
 	}
 }

@@ -99,15 +99,26 @@ func (d usersDao) GetAllAdminsAndLecturers(users *[]model.User) (err error) {
 }
 
 func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
-	if cached, found := Cache.Get(fmt.Sprintf("userById%d", id)); found {
+	if cached, found := Cache.Get(userCacheKey(id)); found {
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
 	dbErr := DB.Preload("AdministeredCourses").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
-		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
+		Cache.SetWithTTL(userCacheKey(id), foundUser, 1, time.Second*10)
 	}
 	return foundUser, dbErr
+}
+
+func userCacheKey(id uint) string {
+	return fmt.Sprintf("userById%d", id)
+}
+
+// InvalidateUserCache drops the cached copy of a user and its settings. Anything
+// writing to a user must call it: the entry lives ten seconds, long enough for a
+// client to read back the value from before its own write.
+func InvalidateUserCache(id uint) {
+	Cache.Del(userCacheKey(id))
 }
 
 func (d usersDao) CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error) {

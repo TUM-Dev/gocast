@@ -38,15 +38,38 @@ func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
 	return a.getUserFromClaims(ctx, claims)
 }
 
-// extractJWTFromMetadata extracts the JWT cookie from the metadata.
-// It returns a string or an error if one occurs.
+// extractJWTFromMetadata extracts the caller's JWT from the request metadata.
+//
+// A bearer token wins over the session cookie; the cookie is only still supported for
+// the server-rendered pages and can go once the last one does. grpc-gateway forwards
+// `Authorization` unprefixed and `Cookie` as `grpcgateway-cookie`.
 func (a *API) extractJWTFromMetadata(md metadata.MD) (string, error) {
+	if token, ok := extractBearerToken(md); ok {
+		return token, nil
+	}
+
 	cookies, ok := md["grpcgateway-cookie"]
 	if !ok || len(cookies) < 1 {
-		return "", errors.New("missing cookie header")
+		return "", errors.New("no bearer token or session cookie present")
 	}
 
 	return extractTokenFromCookie(cookies[0])
+}
+
+// extractBearerToken returns the token from an `Authorization: Bearer <token>`
+// header, if one is present and non-empty.
+func extractBearerToken(md metadata.MD) (string, bool) {
+	for _, header := range md["authorization"] {
+		rest, found := strings.CutPrefix(header, "Bearer ")
+		if !found {
+			continue
+		}
+		if token := strings.TrimSpace(rest); token != "" {
+			return token, true
+		}
+	}
+
+	return "", false
 }
 
 // extractTokenFromCookie extracts the actual JWT from the cookie header.
@@ -93,6 +116,13 @@ func (a *API) getUserFromClaims(ctx context.Context, claims *tools.JWTClaims) (*
 	user, err := a.dao.GetUserByID(ctx, claims.UserID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	// GetUserByID uses gorm's Find, which reports a missing row as a zero-value user
+	// and a nil error. Without the ID check, a token naming a deleted user would
+	// authenticate as user 0.
+	if err != nil || user.ID == 0 {
+		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("no user for the presented credentials"))
 	}
 
 	return &user, nil

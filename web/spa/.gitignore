@@ -1,0 +1,7 @@
+# Build output from frontend/ (`npm run build`).
+#
+# The output is generated, so it is not tracked — but this directory must exist for
+# the `//go:embed all:spa` directive in web/router.go to resolve on a fresh checkout,
+# which is why .gitignore and .gitkeep are committed.
+index.html
+assets/

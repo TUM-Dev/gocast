@@ -1,0 +1,76 @@
+/**
+ * User notifications for the header bell.
+ *
+ * Read state is client-side only, so the list is cached in localStorage under the same
+ * key as web/ts/notifications.ts and refetched at most every ten minutes.
+ */
+
+import { GetNotificationsResponseSchema } from "@/gen/server/apiv2_pb";
+import { apiGetMessage } from "./api";
+
+const STORAGE_KEY = "notifications";
+const LAST_FETCH_KEY = "lastNotificationFetch";
+const REFETCH_AFTER_MS = 10 * 60 * 1000;
+
+export interface Notification {
+  /**
+   * Stable identity for read tracking, derived from the content because
+   * protobuf.UserGroupNotification has no id field. Adding one would make it exact.
+   */
+  key: string;
+  title?: string;
+  body: string;
+  read: boolean;
+}
+
+function readCache(): Notification[] {
+  try {
+    const cached = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+    return Array.isArray(cached) ? (cached as Notification[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCache(notifications: Notification[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+}
+
+/** Marks everything currently known as read, so the bell's indicator clears. */
+export function markAllRead(notifications: Notification[]): void {
+  for (const notification of notifications) {
+    notification.read = true;
+  }
+  writeCache(notifications);
+}
+
+/**
+ * Returns the user's notifications, preserving read flags for ones already seen, and
+ * serving the cache without a request when the last fetch was recent.
+ */
+export async function fetchNotifications(force = false): Promise<Notification[]> {
+  const cached = readCache();
+  const lastFetch = Number.parseInt(localStorage.getItem(LAST_FETCH_KEY) ?? "0", 10);
+
+  if (!force && Date.now() - lastFetch <= REFETCH_AFTER_MS) {
+    return cached;
+  }
+
+  const readByKey = new Map(cached.map((n) => [n.key, n.read]));
+  const res = await apiGetMessage(GetNotificationsResponseSchema, "/notifications");
+
+  const notifications: Notification[] = res.notifications.map((n) => {
+    const key = `${n.createdAt?.seconds ?? 0}:${n.title}:${n.body}`;
+    return {
+      key,
+      title: n.title === "" ? undefined : n.title,
+      body: n.body,
+      read: readByKey.get(key) ?? false,
+    };
+  });
+
+  writeCache(notifications);
+  localStorage.setItem(LAST_FETCH_KEY, Date.now().toString());
+
+  return notifications;
+}
