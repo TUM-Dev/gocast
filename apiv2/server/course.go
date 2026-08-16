@@ -24,7 +24,11 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 		return nil, e.WithStatus(http.StatusNotFound, err)
 	}
 
-	user, _ := a.getCurrent(ctx) // ignore error as endpoint can also be used by logged-out users
+	// Anonymous callers are welcome; a rejected credential is not.
+	user, err := a.currentOrAnonymous(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	resp := make([]*protobuf.CourseStream, 0)
 
@@ -76,7 +80,11 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 
 // GetPublicCourses retrieves the public courses for a given semester.
 func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCoursesRequest) (*protobuf.GetPublicCoursesResponse, error) {
-	user, _ := a.getCurrent(ctx) // ignore error as endpoint can also be used by logged-out users
+	// Anonymous callers are welcome; a rejected credential is not.
+	user, err := a.currentOrAnonymous(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	year, term := tum.GetCurrentSemester()
 	if req.Year != 0 {
@@ -88,7 +96,6 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 
 	var courses []model.Course
 
-	var err error
 	if user != nil {
 		courses, err = a.dao.GetPublicAndLoggedInCourses(year, term)
 	} else {
@@ -108,7 +115,11 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 
 // GetCourseBySlug retrieves a course by its slug, year, and term.
 func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlugRequest) (*protobuf.GetCourseBySlugResponse, error) {
-	user, _ := a.getCurrent(ctx) // ignore error as endpoint can also be used by logged-out users
+	// Anonymous callers are welcome; a rejected credential is not.
+	user, err := a.currentOrAnonymous(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if req.Slug == "" {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("slug must not be empty"))

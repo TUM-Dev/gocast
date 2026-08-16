@@ -3,12 +3,14 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"testing"
 
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
@@ -123,4 +125,64 @@ func TestLogRequestPassesTheHandlerResultThrough(t *testing.T) {
 			t.Errorf("got code %v, want %v", status.Code(err), codes.PermissionDenied)
 		}
 	})
+}
+
+// An expired token used to be indistinguishable from none on anonymous endpoints,
+// silently downgrading a signed-in client. These pin the two apart.
+func TestCurrentOrAnonymous(t *testing.T) {
+	api := &API{log: slog.Default()}
+
+	withCaller := func(u *model.User, err error) context.Context {
+		return context.WithValue(context.Background(), callerKey{}, &caller{user: u, err: err})
+	}
+
+	t.Run("no credentials is an anonymous caller, not an error", func(t *testing.T) {
+		user, err := api.currentOrAnonymous(withCaller(nil, fmt.Errorf("%w: no bearer token or session cookie", ErrNoCredentials)))
+		if err != nil {
+			t.Fatalf("anonymous request errored: %v", err)
+		}
+		if user != nil {
+			t.Errorf("got user %v, want none", user)
+		}
+	})
+
+	t.Run("a rejected credential is a 401 so the client refreshes", func(t *testing.T) {
+		_, err := api.currentOrAnonymous(withCaller(nil, errors.New("token is expired")))
+		if got := status.Code(err); got != codes.Unauthenticated {
+			t.Errorf("code = %v, want %v — a 403 would leave the client with no way to recover", got, codes.Unauthenticated)
+		}
+	})
+
+	t.Run("a signed-in caller is returned", func(t *testing.T) {
+		hansi := &model.User{Model: gorm.Model{ID: 7}}
+		user, err := api.currentOrAnonymous(withCaller(hansi, nil))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if user != hansi {
+			t.Errorf("got %v, want the resolved user", user)
+		}
+	})
+}
+
+// The sentinel only helps if the paths meaning "nothing presented" carry it.
+func TestResolveCurrentReportsMissingCredentials(t *testing.T) {
+	api := &API{log: slog.Default()}
+
+	tests := map[string]context.Context{
+		"no metadata at all": context.Background(),
+		"metadata without a credential": metadata.NewIncomingContext(
+			context.Background(), metadata.MD{}),
+		"a cookie header with no jwt cookie": metadata.NewIncomingContext(
+			context.Background(), metadata.Pairs("grpcgateway-cookie", "theme=dark")),
+	}
+
+	for name, ctx := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := api.resolveCurrent(ctx)
+			if !errors.Is(err, ErrNoCredentials) {
+				t.Errorf("got %v, want it to wrap ErrNoCredentials", err)
+			}
+		})
+	}
 }
