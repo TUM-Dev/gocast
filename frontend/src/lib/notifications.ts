@@ -1,15 +1,23 @@
 /**
  * User notifications for the header bell.
  *
- * Read state is client-side only, so the list is cached in localStorage under the same
- * key as web/ts/notifications.ts and refetched at most every ten minutes.
+ * Read state is client-side only, so the list is cached in localStorage and refetched
+ * at most every ten minutes.
+ *
+ * The keys are deliberately not the ones web/ts/notifications.ts uses. Sharing them
+ * looked like it would carry read state between the two frontends, but the entries are
+ * not interchangeable: the legacy list matches on a database `id`, which
+ * protobuf.UserGroupNotification has no field for, and this one matches on a `key`
+ * derived from the content, which legacy entries lack. Whichever wrote last, the other
+ * matched nothing — showing every notification unread, or rendering rows keyed
+ * `undefined`. Adding `id` to the proto would make one shared cache possible.
  */
 
 import { GetNotificationsResponseSchema } from "@/gen/server/apiv2_pb";
 import { apiGetMessage } from "./api";
 
-const STORAGE_KEY = "notifications";
-const LAST_FETCH_KEY = "lastNotificationFetch";
+const STORAGE_KEY = "spa.notifications";
+const LAST_FETCH_KEY = "spa.lastNotificationFetch";
 const REFETCH_AFTER_MS = 10 * 60 * 1000;
 
 export interface Notification {
