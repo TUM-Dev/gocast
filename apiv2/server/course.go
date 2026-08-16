@@ -25,7 +25,8 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 		return nil, e.WithStatus(http.StatusNotFound, err)
 	}
 
-	user := &model.User{}
+	user, _ := a.getCurrent(ctx) // ignore error as endpoint can also be used by logged-out users
+
 	resp := make([]*protobuf.CourseStream, 0)
 
 	for _, stream := range streams {
