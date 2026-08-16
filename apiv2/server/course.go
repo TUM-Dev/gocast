@@ -124,10 +124,7 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 
 	course, err := a.dao.GetCourseBySlugYearAndTerm(ctx, req.Slug, term, year)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, e.WithStatus(http.StatusNotFound, errors.New("can't find course"))
-		}
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, e.FromGorm(err, "can't find course")
 	}
 
 	// Reachable rather than Listed: a hidden course is unlisted, not private.
