@@ -55,6 +55,20 @@ func (a *API) UpdateUserSettings(ctx context.Context, req *protobuf.UpdateUserSe
 	return &protobuf.UpdateUserSettingsResponse{UserSettings: resp}, nil
 }
 
+// GetLoginOptions reports which login methods this deployment offers, so that a
+// client can render the right controls before anyone has authenticated.
+func (a *API) GetLoginOptions(ctx context.Context, req *emptypb.Empty) (*protobuf.GetLoginOptionsResponse, error) {
+	a.log.Info("GetLoginOptions")
+
+	resp := &protobuf.GetLoginOptionsResponse{UseSaml: tools.Cfg.Saml != nil}
+	if resp.UseSaml {
+		resp.IdpName = tools.Cfg.Saml.IdpName
+		resp.IdpColor = tools.Cfg.Saml.IdpColor
+	}
+
+	return resp, nil
+}
+
 // ResetPassword resets the password for the user with the given username.
 func (a *API) ResetPassword(ctx context.Context, req *protobuf.ResetPasswordRequest) (*protobuf.ResetPasswordResponse, error) {
 	a.log.Info("ResetPassword")

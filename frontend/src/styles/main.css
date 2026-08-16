@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Component classes ported from web/assets/css. Only what the migrated pages use is
+ * carried over; each migration brings its own classes across.
+ *
+ * Definitions are copied rather than reinterpreted, so a migrated page and a legacy
+ * page render identically when a user navigates between them.
+ */
+
+@layer base {
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-xl;
+  }
+
+  h3 {
+    @apply text-lg;
+  }
+
+  body {
+    @apply bg-white dark:bg-primary;
+  }
+
+  /* The contrast ladder, text-1 highest to text-9 lowest, in both themes. */
+  .text-1 {
+    @apply text-black dark:text-white;
+  }
+
+  .text-2 {
+    @apply text-gray-900 dark:text-gray-100;
+  }
+
+  .text-3 {
+    @apply text-gray-800 dark:text-gray-200;
+  }
+
+  .text-4 {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  .text-5 {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+
+  .text-6 {
+    @apply text-gray-500 dark:text-gray-500;
+  }
+
+  .text-7 {
+    @apply text-gray-400 dark:text-gray-600;
+  }
+
+  .text-8 {
+    @apply text-gray-300 dark:text-gray-700;
+  }
+
+  .text-9 {
+    @apply text-gray-200 dark:text-gray-800;
+  }
+}
+
+@layer components {
+  .tum-live-bg {
+    @apply bg-white dark:bg-secondary;
+  }
+
+  .tum-live-bg-primary {
+    @apply bg-blue-500 dark:bg-indigo-600 disabled:bg-blue-400/50 disabled:dark:bg-indigo-500/50;
+  }
+
+  .tum-live-border-primary {
+    @apply border-blue-500 dark:border-indigo-600;
+  }
+
+  .tum-live-input {
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+  }
+
+  .tum-live-input:focus {
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
+  }
+
+  .tum-live-input-submit {
+    @apply font-semibold rounded;
+  }
+
+  .tum-live-button-primary {
+    @apply text-white tum-live-bg-primary;
+  }
+
+  .tum-live-button-secondary {
+    @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-button-tertiary {
+    @apply bg-gray-100 hover:bg-gray-800 hover:text-white dark:bg-gray-800 dark:hover:bg-gray-600;
+  }
+
+  .tum-live-button-muted {
+    @apply bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-700;
+  }
+
+  .tum-live-font-primary {
+    @apply text-blue-500 dark:text-indigo-600;
+  }
+
+  .tum-live-button {
+    @apply rounded-full px-3 py-1 text-sm font-semibold;
+  }
+
+  .tum-live-icon-button {
+    @apply flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 active:bg-gray-100/50 disabled:opacity-20 dark:hover:text-white dark:active:bg-gray-700/50;
+  }
+
+  .tum-live-menu {
+    @apply tum-live-bg text-3 h-fit rounded-lg border text-sm shadow-lg dark:border-gray-800 dark:shadow-gray-900/75;
+  }
+
+  .tum-live-menu > header {
+    @apply border-b px-4 py-2 dark:border-gray-800;
+  }
+
+  .tum-live-menu > header:has(.close) {
+    @apply flex items-center justify-between;
+  }
+
+  .tum-live-menu .tum-live-menu-item {
+    @apply my-2 flex w-full items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-menu .tum-live-menu-item.active {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  .tum-live-menu .tum-live-menu-item .icon-wrapper {
+    width: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .tum-live-popup-container {
+    @apply fixed left-0 top-0 flex h-full w-full items-center justify-center bg-black/50;
+  }
+
+  .tum-live-popup {
+    @apply relative h-[70%] max-h-[600px] w-[70%] max-w-[800px] overflow-auto rounded-md p-5;
+  }
+
+  .tum-live-popup h2 {
+    @apply mb-[15px] flex items-center justify-between text-[1.5em] font-bold;
+  }
+
+  .tum-live-settings-grid {
+    @apply grid gap-y-5 content-start lg:w-3/6 md:w-4/5 w-full p-6 text-3;
+  }
+
+  .tum-live-settings-grid > section > h2 {
+    @apply text-sm text-5 mb-1;
+  }
+
+  .tum-live-footer {
+    @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
+  }
+
+  .tum-live-footer a {
+    @apply text-sm font-light text-5 md:py-0 py-1;
+  }
+}

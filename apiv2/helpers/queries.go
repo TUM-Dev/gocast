@@ -12,11 +12,16 @@ import (
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 )
 
 func UpdateUserSettings(db *gorm.DB, user *model.User, req *protobuf.UpdateUserSettingsRequest) (settings []model.UserSetting, err error) {
 	userID := user.ID
+
+	// These writes bypass the DAO, so the cached user has to be dropped here or a
+	// client reading a setting straight back gets the value from before the write.
+	defer dao.InvalidateUserCache(userID)
 
 	// value shouldn't be an empty string if name is changed
 	for _, setting := range req.UserSettings {

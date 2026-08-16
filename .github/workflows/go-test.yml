@@ -17,6 +17,11 @@ jobs:
       - name: Install modules
         working-directory: ./web
         run: npm ci
+      # web/spa_test.go skips when no SPA build is present, so build it here or the
+      # router wiring goes untested.
+      - name: Build SPA
+        working-directory: ./frontend
+        run: npm ci && npm run build
       - name: Install Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:

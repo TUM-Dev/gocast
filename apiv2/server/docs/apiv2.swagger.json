@@ -457,6 +457,30 @@
         ]
       }
     },
+    "/login-options": {
+      "get": {
+        "summary": "Get available login methods.",
+        "description": "Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.",
+        "operationId": "API_getLoginOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetLoginOptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/notifications": {
       "get": {
         "summary": "Get notifications.",
@@ -1253,6 +1277,23 @@
       },
       "title": "/////////////////////////////\n///// COURSE_RESPONSE ///////\n/////////////////////////////"
     },
+    "protobufGetLoginOptionsResponse": {
+      "type": "object",
+      "properties": {
+        "useSaml": {
+          "type": "boolean",
+          "description": "Whether an identity provider is configured. When false, only the username and\npassword form applies."
+        },
+        "idpName": {
+          "type": "string",
+          "description": "Display name of the identity provider, shown on its sign-in button."
+        },
+        "idpColor": {
+          "type": "string",
+          "description": "Brand colour for that button, as a CSS colour. May be empty."
+        }
+      }
+    },
     "protobufGetNotificationsResponse": {
       "type": "object",
       "properties": {
@@ -1757,9 +1798,15 @@
       "enum": [
         "PREFERRED_NAME",
         "GREETING",
-        "CUSTOM_PLAYBACK_SPEEDS"
+        "CUSTOM_PLAYBACK_SPEEDS",
+        "SEEKING_TIME",
+        "USER_DEFINED_SPEEDS",
+        "AUTO_SKIP",
+        "DEFAULT_MODE",
+        "LECTURE_VIEW"
       ],
-      "default": "PREFERRED_NAME"
+      "default": "PREFERRED_NAME",
+      "description": "UserSettingType identifies a single user preference.\n\nThe values are model.UserSettingType - 1 (see apiv2/helpers/parser.go), so this\nenum has to stay aligned with the constants in model/user.go. Values were\npreviously unnamed beyond CUSTOM_PLAYBACK_SPEEDS and travelled as bare numbers.\n\n - CUSTOM_PLAYBACK_SPEEDS: The per-speed enabled flags, stored as a JSON array.\n - USER_DEFINED_SPEEDS: Speeds the user added themselves, stored as a JSON array.\n - DEFAULT_MODE: Mirrors model.defaultMode, which is no longer used. Present only to keep the\nnumbering aligned with model.UserSettingType."
     },
     "protobufVideoSection": {
       "type": "object",

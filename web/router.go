@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -23,6 +24,36 @@ var templateFS embed.FS
 //go:embed assets/*
 //go:embed node_modules
 var staticFS embed.FS
+
+// spaFS holds the built single-page app (`npm run build` writes it to web/spa). Only
+// the directory is tracked, so a checkout without a build still compiles.
+//
+//go:embed all:spa
+var spaFS embed.FS
+
+// spaShellPath is the SPA's entry document. Every SPA-owned route serves it; the
+// client router decides what to render.
+const spaShellPath = "spa/index.html"
+
+// spaRoutes lists the paths served by the SPA instead of a server-rendered template.
+//
+// This is the switchboard for the incremental migration: adding a path here moves one
+// page to the SPA, and removing it moves the page back. The legacy handler stays
+// registered in code either way, so a rollback needs no other change. Paths listed
+// here must also exist in the client router (frontend/src/router/index.ts), otherwise
+// the shell loads and renders nothing.
+var spaRoutes = map[string]bool{
+	"/settings": true,
+	"/login":    true,
+}
+
+// spaRouteHooks holds work a route must still do server-side, run before the shell is
+// written. For things the client cannot do, such as cookies — not data fetching.
+var spaRouteHooks = map[string]gin.HandlerFunc{
+	// Stored server-side because an external identity provider takes the browser
+	// off-site and brings it back without the original query string.
+	"/login": SetLoginRedirectCookie,
+}
 
 var templatePaths = []string{
 	"template/*.gohtml",
@@ -53,8 +84,87 @@ func ConfigGinRouter(router *gin.Engine) {
 	tools.SetTemplateExecutor(templateExecutor)
 
 	configGinStaticRouter(router)
+	configSPARouter(router)
 	configSaml(router, dao.NewDaoWrapper())
 	configMainRoute(router)
+}
+
+// spaAvailable reports whether a built SPA is present. Without one, pages fall back
+// to their template handlers, keeping the Go and frontend builds independent.
+func spaAvailable() bool {
+	if VersionTag == "development" {
+		_, err := os.Stat("web/" + spaShellPath)
+		return err == nil
+	}
+
+	_, err := fs.Stat(spaFS, spaShellPath)
+	return err == nil
+}
+
+// configSPARouter mounts the SPA's hashed assets under their own prefix, leaving
+// /static untouched.
+func configSPARouter(router *gin.Engine) {
+	if !spaAvailable() {
+		logger.Info("no SPA build found, serving all pages from templates")
+		return
+	}
+
+	if VersionTag != "development" {
+		assets, err := fs.Sub(spaFS, "spa")
+		if err != nil {
+			logger.Error("can't mount SPA assets", "err", err)
+			return
+		}
+		router.StaticFS("/spa-assets", http.FS(assets))
+		return
+	}
+
+	router.Static("/spa-assets", "web/spa")
+}
+
+// readSPAShell returns the SPA's entry document, from disk in development so a
+// rebuild is picked up without a restart.
+func readSPAShell() ([]byte, error) {
+	if VersionTag == "development" {
+		return os.ReadFile("web/" + spaShellPath)
+	}
+
+	return fs.ReadFile(spaFS, spaShellPath)
+}
+
+// serveSPAShell responds with the SPA's entry document. Written directly rather than
+// through http.FileServer, which would redirect /index.html to its directory.
+func serveSPAShell(c *gin.Context) {
+	shell, err := readSPAShell()
+	if err != nil {
+		logger.Error("can't read SPA shell", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// The shell names content-hashed assets from its own build, so a cached copy
+	// would ask a new binary for files it no longer has. Assets stay cacheable.
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusOK, "text/html; charset=utf-8", shell)
+}
+
+// registerPage registers a page route, serving the SPA where it has taken the page
+// over and the given template handler everywhere else.
+func registerPage(group *gin.RouterGroup, method, path string, legacy gin.HandlerFunc) {
+	if !spaRoutes[path] || !spaAvailable() {
+		group.Handle(method, path, legacy)
+		return
+	}
+
+	handler := serveSPAShell
+	if hook, ok := spaRouteHooks[path]; ok {
+		handler = func(c *gin.Context) {
+			hook(c)
+			serveSPAShell(c)
+		}
+	}
+
+	group.Handle(method, path, handler)
 }
 
 func configGinStaticRouter(router *gin.Engine) {
@@ -145,7 +255,7 @@ func configMainRoute(router *gin.Engine) {
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
-	router.GET("/login", routes.LoginPage)
+	registerPage(&router.RouterGroup, http.MethodGet, "/login", routes.LoginPage)
 	router.GET("/logout", routes.LogoutPage)
 	router.GET("/setPassword/:key", routes.CreatePasswordPage)
 	router.POST("/setPassword/:key", routes.CreatePasswordPage)
@@ -170,7 +280,10 @@ func configMainRoute(router *gin.Engine) {
 
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
-	loggedIn.GET("/settings", routes.settingsPage)
+	// The auth middleware stays on the route even when the SPA serves it, so an
+	// anonymous visitor is redirected to /login by the server rather than after the
+	// shell has loaded and failed a request.
+	registerPage(loggedIn, http.MethodGet, "/settings", routes.settingsPage)
 
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {

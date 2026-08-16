@@ -78,6 +78,12 @@ func (a *API) Proxy() func(c *gin.Context) {
 			a.handleDocs(c)
 			return
 		}
+		// Beside the gateway rather than through it: it reads a cookie, which the
+		// gateway deliberately abstracts away.
+		if c.Request.URL.Path == "/api/v2/auth/token" {
+			a.handleAuthToken(c)
+			return
+		}
 		http.StripPrefix("/api/v2", mux).ServeHTTP(c.Writer, c.Request)
 	}
 }

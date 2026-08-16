@@ -84,8 +84,14 @@ func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlay
 		}
 		streamIDs = append(streamIDs, stream.ID)
 	}
+	// user is nil for anonymous callers on publicly visible courses.
+	var userID uint
+	if user != nil {
+		userID = user.ID
+	}
+
 	streamProgresses := make(map[uint]model.StreamProgress)
-	res, err := a.dao.LoadProgress(user.ID, streamIDs)
+	res, err := a.dao.LoadProgress(userID, streamIDs)
 	if err != nil {
 		a.log.Error("Couldn't load progresses", "err", err)
 	} else {
