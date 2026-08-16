@@ -39,15 +39,21 @@ export const useAuthStore = defineStore("auth", () => {
     loading.value = true;
     try {
       user.value = await fetchCurrentUser();
+      loaded.value = true;
     } catch (err) {
+      // A 401 is an answer: nobody is signed in. Anything else — a 500, a dropped
+      // connection — leaves the question open, so `loaded` stays false and the next
+      // caller tries again. Marking it loaded there would strand a signed-in user
+      // with a Login button for the life of the page, since load() short-circuits
+      // on `loaded` and nothing would ever ask again.
       if (err instanceof ApiError && err.isUnauthenticated) {
         user.value = null;
+        loaded.value = true;
       } else {
         throw err;
       }
     } finally {
       loading.value = false;
-      loaded.value = true;
     }
 
     return user.value;
