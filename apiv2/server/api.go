@@ -25,13 +25,18 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 )
 
-// API is the grpc server for the v2 api
+// API is the grpc server for the v2 api. It implements all four services, which are
+// split for grouping rather than to be deployed apart: one process, one gateway mux,
+// one set of interceptors.
 type API struct {
 	db  *gorm.DB
 	dao dao.DaoWrapper
 	log *slog.Logger
 
-	protobuf.UnimplementedAPIServer
+	protobuf.UnimplementedMetaServiceServer
+	protobuf.UnimplementedUserServiceServer
+	protobuf.UnimplementedCourseServiceServer
+	protobuf.UnimplementedStreamServiceServer
 }
 
 // New creates a new API and assigns the given db and a logger
@@ -58,7 +63,10 @@ func (a *API) Run(lis net.Listener) error {
 		a.interceptors(),
 	)
 
-	protobuf.RegisterAPIServer(grpcServer, a)
+	for _, svc := range services {
+		svc.register(grpcServer, a)
+	}
+
 	reflection.Register(grpcServer)
 	return grpcServer.Serve(lis)
 }
@@ -69,10 +77,14 @@ func (a *API) Proxy() func(c *gin.Context) {
 	mux := runtime.NewServeMux()
 	// DEPRECATED: opts := []grpc.DialOption{grpc.WithInsecure()}
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err := protobuf.RegisterAPIHandlerFromEndpoint(context.Background(), mux, ":8081", opts)
-	if err != nil {
-		a.log.With("err", err).Error("can't register grpc handler")
-		os.Exit(1)
+
+	// Every service registers onto the same mux, so the REST surface stays one flat
+	// set of paths however the services are cut.
+	for _, svc := range services {
+		if err := svc.gateway(context.Background(), mux, ":8081", opts); err != nil {
+			a.log.With("err", err, "service", svc.desc.ServiceName).Error("can't register grpc handler")
+			os.Exit(1)
+		}
 	}
 
 	// actual proxy method forwards the request to the grpc gateway server
