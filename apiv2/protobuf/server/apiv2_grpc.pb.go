@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	MetaService_HealthCheck_FullMethodName            = "/protobuf.MetaService/healthCheck"
+	MetaService_GetFrontendConfig_FullMethodName      = "/protobuf.MetaService/getFrontendConfig"
 	MetaService_GetSemesters_FullMethodName           = "/protobuf.MetaService/getSemesters"
 	MetaService_GetNotifications_FullMethodName       = "/protobuf.MetaService/getNotifications"
 	MetaService_GetServerNotifications_FullMethodName = "/protobuf.MetaService/getServerNotifications"
@@ -34,6 +35,7 @@ const (
 // Endpoints that describe the deployment rather than any resource in it.
 type MetaServiceClient interface {
 	HealthCheck(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthCheckResponse, error)
+	GetFrontendConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFrontendConfigResponse, error)
 	GetSemesters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSemestersResponse, error)
 	GetNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNotificationsResponse, error)
 	GetServerNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServerNotificationsResponse, error)
@@ -51,6 +53,16 @@ func (c *metaServiceClient) HealthCheck(ctx context.Context, in *emptypb.Empty, 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HealthCheckResponse)
 	err := c.cc.Invoke(ctx, MetaService_HealthCheck_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metaServiceClient) GetFrontendConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFrontendConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFrontendConfigResponse)
+	err := c.cc.Invoke(ctx, MetaService_GetFrontendConfig_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +106,7 @@ func (c *metaServiceClient) GetServerNotifications(ctx context.Context, in *empt
 // Endpoints that describe the deployment rather than any resource in it.
 type MetaServiceServer interface {
 	HealthCheck(context.Context, *emptypb.Empty) (*HealthCheckResponse, error)
+	GetFrontendConfig(context.Context, *emptypb.Empty) (*GetFrontendConfigResponse, error)
 	GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error)
 	GetNotifications(context.Context, *emptypb.Empty) (*GetNotificationsResponse, error)
 	GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error)
@@ -109,6 +122,9 @@ type UnimplementedMetaServiceServer struct{}
 
 func (UnimplementedMetaServiceServer) HealthCheck(context.Context, *emptypb.Empty) (*HealthCheckResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method HealthCheck not implemented")
+}
+func (UnimplementedMetaServiceServer) GetFrontendConfig(context.Context, *emptypb.Empty) (*GetFrontendConfigResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFrontendConfig not implemented")
 }
 func (UnimplementedMetaServiceServer) GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSemesters not implemented")
@@ -154,6 +170,24 @@ func _MetaService_HealthCheck_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetaServiceServer).HealthCheck(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetaService_GetFrontendConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).GetFrontendConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetaService_GetFrontendConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).GetFrontendConfig(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -222,6 +256,10 @@ var MetaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "healthCheck",
 			Handler:    _MetaService_HealthCheck_Handler,
+		},
+		{
+			MethodName: "getFrontendConfig",
+			Handler:    _MetaService_GetFrontendConfig_Handler,
 		},
 		{
 			MethodName: "getSemesters",
