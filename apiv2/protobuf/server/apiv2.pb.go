@@ -4088,24 +4088,31 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\vTARGET_USER\x10\x01\x12\x12\n" +
 	"\x0eTARGET_STUDENT\x10\x02\x12\x13\n" +
 	"\x0fTARGET_LECTURER\x10\x03\x12\x10\n" +
-	"\fTARGET_ADMIN\x10\x042\xe6*\n" +
-	"\x03API\x12\xce\x01\n" +
+	"\fTARGET_ADMIN\x10\x042\xb0\x06\n" +
+	"\vMetaService\x12\xce\x01\n" +
 	"\vhealthCheck\x12\x16.google.protobuf.Empty\x1a\x1d.protobuf.HealthCheckResponse\"\x87\x01\x92Au\n" +
 	"\n" +
-	"API Status\x12\x11API healthcheck .\x1aTIf this endpoint does not return 200, the API is experiencing a catastrophic outage.\x82\xd3\xe4\x93\x02\t\x12\a/status\x12\x80\x01\n" +
+	"API Status\x12\x11API healthcheck .\x1aTIf this endpoint does not return 200, the API is experiencing a catastrophic outage.\x82\xd3\xe4\x93\x02\t\x12\a/status\x12\xbf\x01\n" +
+	"\fgetSemesters\x12\x16.google.protobuf.Empty\x1a\x1e.protobuf.GetSemestersResponse\"w\x92Ab\n" +
+	"\tSemesters\x12\x18Get available semesters.\x1a;Retrieves all available semesters and the current semester.\x82\xd3\xe4\x93\x02\f\x12\n" +
+	"/semesters\x12\xbb\x01\n" +
+	"\x10getNotifications\x12\x16.google.protobuf.Empty\x1a\".protobuf.GetNotificationsResponse\"k\x92AR\n" +
+	"\rNotifications\x12\x12Get notifications.\x1a-Retrieves notifications for the current user.\x82\xd3\xe4\x93\x02\x10\x12\x0e/notifications\x12\xcf\x01\n" +
+	"\x16getServerNotifications\x12\x16.google.protobuf.Empty\x1a(.protobuf.GetServerNotificationsResponse\"s\x92AS\n" +
+	"\rNotifications\x12\x19Get server notifications.\x1a'Retrieves current server notifications.\x82\xd3\xe4\x93\x02\x17\x12\x15/server-notifications2\xcc\a\n" +
+	"\vUserService\x12\x80\x01\n" +
 	"\agetUser\x12\x16.google.protobuf.Empty\x1a\x19.protobuf.GetUserResponse\"B\x92A.\n" +
-	"\x04User\x12\tGet user.\x1a\x1bRetrieves the current user.\x82\xd3\xe4\x93\x02\v\x12\t/users/me\x12\xac\x01\n" +
-	"\rresetPassword\x12\x1e.protobuf.ResetPasswordRequest\x1a\x1f.protobuf.ResetPasswordResponse\"Z\x92A7\n" +
-	"\x04User\x12\x14Reset user password.\x1a\x19Resets the user password.\x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/users/reset-password\x12\x8b\x02\n" +
-	"\x0fgetLoginOptions\x12\x16.google.protobuf.Empty\x1a!.protobuf.GetLoginOptionsResponse\"\xbc\x01\x92A\xa2\x01\n" +
-	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options\x12\xd2\x01\n" +
+	"\x04User\x12\tGet user.\x1a\x1bRetrieves the current user.\x82\xd3\xe4\x93\x02\v\x12\t/users/me\x12\xd2\x01\n" +
 	"\x12updateUserSettings\x12#.protobuf.UpdateUserSettingsRequest\x1a$.protobuf.UpdateUserSettingsResponse\"q\x92AQ\n" +
 	"\x04User\x12#Update the current user's settings.\x1a$Updates the current user's settings.\x82\xd3\xe4\x93\x02\x17:\x01*b\x01*2\x0f/users/settings\x12\xa7\x01\n" +
 	"\x12exportPersonalData\x12\x16.google.protobuf.Empty\x1a$.protobuf.ExportPersonalDataResponse\"S\x92A;\n" +
-	"\x04User\x12\x11Export user data.\x1a Exports the current user's data.\x82\xd3\xe4\x93\x02\x0f\x12\r/users/export\x12\xbf\x01\n" +
-	"\fgetSemesters\x12\x16.google.protobuf.Empty\x1a\x1e.protobuf.GetSemestersResponse\"w\x92Ab\n" +
-	"\tSemesters\x12\x18Get available semesters.\x1a;Retrieves all available semesters and the current semester.\x82\xd3\xe4\x93\x02\f\x12\n" +
-	"/semesters\x12\xc0\x01\n" +
+	"\x04User\x12\x11Export user data.\x1a Exports the current user's data.\x82\xd3\xe4\x93\x02\x0f\x12\r/users/export\x12\xac\x01\n" +
+	"\rresetPassword\x12\x1e.protobuf.ResetPasswordRequest\x1a\x1f.protobuf.ResetPasswordResponse\"Z\x92A7\n" +
+	"\x04User\x12\x14Reset user password.\x1a\x19Resets the user password.\x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/users/reset-password\x12\x8b\x02\n" +
+	"\x0fgetLoginOptions\x12\x16.google.protobuf.Empty\x1a!.protobuf.GetLoginOptionsResponse\"\xbc\x01\x92A\xa2\x01\n" +
+	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\xef\n" +
+	"\n" +
+	"\rCourseService\x12\xc0\x01\n" +
 	"\x10getPublicCourses\x12!.protobuf.GetPublicCoursesRequest\x1a\".protobuf.GetPublicCoursesResponse\"e\x92AR\n" +
 	"\aCourses\x12\x13Get public courses.\x1a2Retrieves the public courses for a given semester.\x82\xd3\xe4\x93\x02\n" +
 	"\x12\b/courses\x12\xc1\x01\n" +
@@ -4120,7 +4127,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0fgetPinForCourse\x12 .protobuf.GetPinForCourseRequest\x1a!.protobuf.GetPinForCourseResponse\"l\x92AI\n" +
 	"\aCourses\x12\x13Get pin for course.\x1a)Checks if the user has pinned the course.\x82\xd3\xe4\x93\x02\x1a\x12\x18/courses/{course_id}/pin\x12\xb4\x01\n" +
 	"\tpinCourse\x12\x1a.protobuf.PinCourseRequest\x1a\x1b.protobuf.PinCourseResponse\"n\x92AH\n" +
-	"\aCourses\x12\x16Pin or unpin a course.\x1a%Pins or unpins a course for the user.\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/courses/{course_id}/pin\x12\xdb\x01\n" +
+	"\aCourses\x12\x16Pin or unpin a course.\x1a%Pins or unpins a course for the user.\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/courses/{course_id}/pin2\xae\x12\n" +
+	"\rStreamService\x12\xdb\x01\n" +
 	"\tgetStream\x12\x1a.protobuf.GetStreamRequest\x1a\x16.protobuf.CourseStream\"\x99\x01\x92As\n" +
 	"\aStreams\x123Get stream and course by course slug and stream ID.\x1a3Retrieves a stream and its course by its stream ID.\x82\xd3\xe4\x93\x02\x1d\x12\x1b/streams/{slug}/{stream_id}\x12\xf2\x01\n" +
 	"\x10getVideoSections\x12!.protobuf.GetVideoSectionsRequest\x1a\".protobuf.GetVideoSectionsResponse\"\x96\x01\x92Ag\n" +
@@ -4144,11 +4152,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0eupdateBookmark\x12\x1f.protobuf.UpdateBookmarkRequest\x1a .protobuf.UpdateBookmarkResponse\"a\x92A>\n" +
 	"\tBookmarks\x12\x12Update a bookmark.\x1a\x1dUpdates an existing bookmark.\x82\xd3\xe4\x93\x02\x1a\x1a\x18/bookmarks/{bookmark_id}\x12\xa2\x01\n" +
 	"\x0edeleteBookmark\x12\x1f.protobuf.DeleteBookmarkRequest\x1a\x16.google.protobuf.Empty\"W\x92A4\n" +
-	"\tBookmarks\x12\x12Delete a bookmark.\x1a\x13Deletes a bookmark.\x82\xd3\xe4\x93\x02\x1a*\x18/bookmarks/{bookmark_id}\x12\xbb\x01\n" +
-	"\x10getNotifications\x12\x16.google.protobuf.Empty\x1a\".protobuf.GetNotificationsResponse\"k\x92AR\n" +
-	"\rNotifications\x12\x12Get notifications.\x1a-Retrieves notifications for the current user.\x82\xd3\xe4\x93\x02\x10\x12\x0e/notifications\x12\xcf\x01\n" +
-	"\x16getServerNotifications\x12\x16.google.protobuf.Empty\x1a(.protobuf.GetServerNotificationsResponse\"s\x92AS\n" +
-	"\rNotifications\x12\x19Get server notifications.\x1a'Retrieves current server notifications.\x82\xd3\xe4\x93\x02\x17\x12\x15/server-notificationsB\x8c\x04\x92A\xf6\x03\x12\xb8\x03\n" +
+	"\tBookmarks\x12\x12Delete a bookmark.\x1a\x13Deletes a bookmark.\x82\xd3\xe4\x93\x02\x1a*\x18/bookmarks/{bookmark_id}B\x8c\x04\x92A\xf6\x03\x12\xb8\x03\n" +
 	"\n" +
 	"gocast API\x12\xaa\x02The shiny new gocast API!\n" +
 	"This API is designed to be a user-friendly and easy-to-use interface for third party services.\n" +
@@ -4287,60 +4291,60 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	56, // 45: protobuf.GetNotificationsResponse.notifications:type_name -> protobuf.UserGroupNotification
 	57, // 46: protobuf.GetServerNotificationsResponse.server_notifications:type_name -> protobuf.ServerNotification
 	61, // 47: protobuf.LectureHall.camera_presets:type_name -> protobuf.CameraPreset
-	63, // 48: protobuf.API.healthCheck:input_type -> google.protobuf.Empty
-	63, // 49: protobuf.API.getUser:input_type -> google.protobuf.Empty
-	7,  // 50: protobuf.API.resetPassword:input_type -> protobuf.ResetPasswordRequest
-	63, // 51: protobuf.API.getLoginOptions:input_type -> google.protobuf.Empty
-	6,  // 52: protobuf.API.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
-	63, // 53: protobuf.API.exportPersonalData:input_type -> google.protobuf.Empty
-	63, // 54: protobuf.API.getSemesters:input_type -> google.protobuf.Empty
-	25, // 55: protobuf.API.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
-	26, // 56: protobuf.API.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
-	27, // 57: protobuf.API.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
-	63, // 58: protobuf.API.getPinnedCourses:input_type -> google.protobuf.Empty
-	63, // 59: protobuf.API.getLiveCourses:input_type -> google.protobuf.Empty
-	28, // 60: protobuf.API.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
-	29, // 61: protobuf.API.pinCourse:input_type -> protobuf.PinCourseRequest
-	44, // 62: protobuf.API.getStream:input_type -> protobuf.GetStreamRequest
-	45, // 63: protobuf.API.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
-	47, // 64: protobuf.API.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
-	46, // 65: protobuf.API.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
-	48, // 66: protobuf.API.getThumbs:input_type -> protobuf.GetThumbsRequest
-	52, // 67: protobuf.API.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
-	53, // 68: protobuf.API.updateProgress:input_type -> protobuf.UpdateProgressRequest
-	18, // 69: protobuf.API.addBookmark:input_type -> protobuf.AddBookmarkRequest
-	17, // 70: protobuf.API.getBookmarks:input_type -> protobuf.GetBookmarksRequest
-	19, // 71: protobuf.API.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
-	20, // 72: protobuf.API.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
-	63, // 73: protobuf.API.getNotifications:input_type -> google.protobuf.Empty
-	63, // 74: protobuf.API.getServerNotifications:input_type -> google.protobuf.Empty
-	3,  // 75: protobuf.API.healthCheck:output_type -> protobuf.HealthCheckResponse
-	8,  // 76: protobuf.API.getUser:output_type -> protobuf.GetUserResponse
-	10, // 77: protobuf.API.resetPassword:output_type -> protobuf.ResetPasswordResponse
-	11, // 78: protobuf.API.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
-	9,  // 79: protobuf.API.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
-	12, // 80: protobuf.API.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
-	39, // 81: protobuf.API.getSemesters:output_type -> protobuf.GetSemestersResponse
-	31, // 82: protobuf.API.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
-	32, // 83: protobuf.API.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
-	33, // 84: protobuf.API.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
-	34, // 85: protobuf.API.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
-	30, // 86: protobuf.API.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
-	36, // 87: protobuf.API.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
-	35, // 88: protobuf.API.pinCourse:output_type -> protobuf.PinCourseResponse
-	37, // 89: protobuf.API.getStream:output_type -> protobuf.CourseStream
-	49, // 90: protobuf.API.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
-	51, // 91: protobuf.API.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
-	64, // 92: protobuf.API.getSubtitles:output_type -> google.api.HttpBody
-	64, // 93: protobuf.API.getThumbs:output_type -> google.api.HttpBody
-	54, // 94: protobuf.API.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
-	42, // 95: protobuf.API.updateProgress:output_type -> protobuf.StreamProgress
-	22, // 96: protobuf.API.addBookmark:output_type -> protobuf.AddBookmarkResponse
-	21, // 97: protobuf.API.getBookmarks:output_type -> protobuf.GetBookmarksResponse
-	23, // 98: protobuf.API.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
-	63, // 99: protobuf.API.deleteBookmark:output_type -> google.protobuf.Empty
-	58, // 100: protobuf.API.getNotifications:output_type -> protobuf.GetNotificationsResponse
-	59, // 101: protobuf.API.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
+	63, // 48: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
+	63, // 49: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
+	63, // 50: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
+	63, // 51: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
+	63, // 52: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
+	6,  // 53: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
+	63, // 54: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
+	7,  // 55: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
+	63, // 56: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
+	25, // 57: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
+	26, // 58: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
+	27, // 59: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
+	63, // 60: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
+	63, // 61: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
+	28, // 62: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
+	29, // 63: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
+	44, // 64: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
+	45, // 65: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
+	47, // 66: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
+	46, // 67: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
+	48, // 68: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
+	52, // 69: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
+	53, // 70: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
+	18, // 71: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
+	17, // 72: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
+	19, // 73: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
+	20, // 74: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
+	3,  // 75: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
+	39, // 76: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
+	58, // 77: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
+	59, // 78: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
+	8,  // 79: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
+	9,  // 80: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
+	12, // 81: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
+	10, // 82: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
+	11, // 83: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
+	31, // 84: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
+	32, // 85: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
+	33, // 86: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
+	34, // 87: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
+	30, // 88: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
+	36, // 89: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
+	35, // 90: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
+	37, // 91: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
+	49, // 92: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
+	51, // 93: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
+	64, // 94: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
+	64, // 95: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
+	54, // 96: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
+	42, // 97: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
+	22, // 98: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
+	21, // 99: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
+	23, // 100: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
+	63, // 101: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
 	75, // [75:102] is the sub-list for method output_type
 	48, // [48:75] is the sub-list for method input_type
 	48, // [48:48] is the sub-list for extension type_name
@@ -4362,7 +4366,7 @@ func file_server_apiv2_proto_init() {
 			NumEnums:      3,
 			NumMessages:   59,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   4,
 		},
 		GoTypes:           file_server_apiv2_proto_goTypes,
 		DependencyIndexes: file_server_apiv2_proto_depIdxs,

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"gorm.io/gorm"
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
@@ -19,23 +20,50 @@ import (
 // being added without anyone deciding who may call them. Walking the descriptor makes
 // that unskippable: a new RPC fails here until its policy is written down.
 func TestEveryMethodHasAPolicy(t *testing.T) {
-	for _, m := range protobuf.API_ServiceDesc.Methods {
-		full := method(m.MethodName)
-		if _, ok := methodPolicies[full]; !ok {
-			t.Errorf("%s has no access policy; add one to methodPolicies in policy.go", full)
+	declared := map[string]bool{}
+
+	for _, svc := range services {
+		for _, m := range svc.desc.Methods {
+			full := method(svc.desc, m.MethodName)
+			declared[full] = true
+			if _, ok := methodPolicies[full]; !ok {
+				t.Errorf("%s has no access policy; add one to methodPolicies in policy.go", full)
+			}
 		}
 	}
 
 	// The other direction: a policy for a method that no longer exists reads like a
 	// rule but enforces nothing.
-	declared := make(map[string]bool, len(protobuf.API_ServiceDesc.Methods))
-	for _, m := range protobuf.API_ServiceDesc.Methods {
-		declared[method(m.MethodName)] = true
-	}
 	for name := range methodPolicies {
 		if !declared[name] {
-			t.Errorf("%s has a policy but is not a method of the service", name)
+			t.Errorf("%s has a policy but is not a method of any service", name)
 		}
+	}
+}
+
+// The tests above are exhaustive only over the services in `services`, so one added
+// to the proto but not there would go unchecked. Compare against the proto itself.
+func TestEveryServiceInTheProtoIsPoliced(t *testing.T) {
+	fd, err := protoregistry.GlobalFiles.FindFileByPath("server/apiv2.proto")
+	if err != nil {
+		t.Fatalf("could not find the proto file descriptor: %v", err)
+	}
+
+	known := map[string]bool{}
+	for _, svc := range services {
+		known[svc.desc.ServiceName] = true
+	}
+
+	inProto := fd.Services()
+	for i := 0; i < inProto.Len(); i++ {
+		name := string(inProto.Get(i).FullName())
+		if !known[name] {
+			t.Errorf("service %s is defined in the proto but missing from `services` in policy.go", name)
+		}
+	}
+
+	if inProto.Len() != len(services) {
+		t.Errorf("proto defines %d services, policy.go lists %d", inProto.Len(), len(services))
 	}
 }
 
@@ -58,13 +86,15 @@ func TestOnlyExpectedMethodsArePublic(t *testing.T) {
 		"getServerNotifications": true,
 	}
 
-	for _, m := range protobuf.API_ServiceDesc.Methods {
-		policy := methodPolicies[method(m.MethodName)]
-		if policy.anonymous != want[m.MethodName] {
-			if policy.anonymous {
-				t.Errorf("%s is reachable without credentials but is not in the expected list", m.MethodName)
-			} else {
-				t.Errorf("%s is expected to be public but requires credentials", m.MethodName)
+	for _, svc := range services {
+		for _, m := range svc.desc.Methods {
+			policy := methodPolicies[method(svc.desc, m.MethodName)]
+			if policy.anonymous != want[m.MethodName] {
+				if policy.anonymous {
+					t.Errorf("%s is reachable without credentials but is not in the expected list", m.MethodName)
+				} else {
+					t.Errorf("%s is expected to be public but requires credentials", m.MethodName)
+				}
 			}
 		}
 	}
@@ -97,40 +127,40 @@ func TestAuthorize(t *testing.T) {
 	}{
 		{
 			name:       "an undeclared method is refused",
-			fullMethod: "/protobuf.API/methodThatDoesNotExist",
+			fullMethod: "/protobuf.UserService/methodThatDoesNotExist",
 			ctx:        withUser(admin, nil),
 			wantCode:   codes.PermissionDenied,
 		},
 		{
 			name:       "a public method runs without credentials",
-			fullMethod: method("getPublicCourses"),
+			fullMethod: method(&protobuf.CourseService_ServiceDesc, "getPublicCourses"),
 			ctx:        withUser(nil, errors.New("no credentials")),
 			wantCode:   codes.OK,
 			wantCalled: true,
 		},
 		{
 			name:       "an authenticated method refuses an anonymous caller",
-			fullMethod: method("getUser"),
+			fullMethod: method(&protobuf.UserService_ServiceDesc, "getUser"),
 			ctx:        withUser(nil, errors.New("no credentials")),
 			wantCode:   codes.Unauthenticated,
 		},
 		{
 			name:       "an authenticated method runs for any signed-in user",
-			fullMethod: method("getUser"),
+			fullMethod: method(&protobuf.UserService_ServiceDesc, "getUser"),
 			ctx:        withUser(student, nil),
 			wantCode:   codes.OK,
 			wantCalled: true,
 		},
 		{
 			name:       "a permission-gated method refuses a user without it",
-			fullMethod: method("getUser"),
+			fullMethod: method(&protobuf.UserService_ServiceDesc, "getUser"),
 			policy:     &accessPolicy{permission: model.PermAdministerServer},
 			ctx:        withUser(student, nil),
 			wantCode:   codes.PermissionDenied,
 		},
 		{
 			name:       "a permission-gated method runs for a user who holds it",
-			fullMethod: method("getUser"),
+			fullMethod: method(&protobuf.UserService_ServiceDesc, "getUser"),
 			policy:     &accessPolicy{permission: model.PermAdministerServer},
 			ctx:        withUser(admin, nil),
 			wantCode:   codes.OK,
