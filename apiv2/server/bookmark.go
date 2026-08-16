@@ -16,8 +16,6 @@ import (
 
 // AddBookmark adds a new bookmark.
 func (a *API) AddBookmark(ctx context.Context, req *protobuf.AddBookmarkRequest) (*protobuf.AddBookmarkResponse, error) {
-	a.log.Info("AddBookmark")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -42,8 +40,6 @@ func (a *API) AddBookmark(ctx context.Context, req *protobuf.AddBookmarkRequest)
 
 // GetBookmarks retrieves bookmarks by stream ID.
 func (a *API) GetBookmarks(ctx context.Context, req *protobuf.GetBookmarksRequest) (*protobuf.GetBookmarksResponse, error) {
-	a.log.Info("GetBookmarks")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -67,8 +63,6 @@ func (a *API) GetBookmarks(ctx context.Context, req *protobuf.GetBookmarksReques
 
 // UpdateBookmark updates an existing bookmark.
 func (a *API) UpdateBookmark(ctx context.Context, req *protobuf.UpdateBookmarkRequest) (*protobuf.UpdateBookmarkResponse, error) {
-	a.log.Info("UpdateBookmark")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -101,8 +95,6 @@ func (a *API) UpdateBookmark(ctx context.Context, req *protobuf.UpdateBookmarkRe
 
 // DeleteBookmark deletes a bookmark.
 func (a *API) DeleteBookmark(ctx context.Context, req *protobuf.DeleteBookmarkRequest) (*emptypb.Empty, error) {
-	a.log.Info("DeleteBookmark")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)

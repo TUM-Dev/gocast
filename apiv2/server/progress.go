@@ -13,8 +13,6 @@ import (
 
 // GetProgressBatch returns a batch of watch progresses for a list of streams for the current user
 func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBatchRequest) (*protobuf.GetProgressBatchResponse, error) {
-	a.log.Info("GetProgressBatch")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, err
@@ -48,8 +46,6 @@ func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBat
 
 // UpdateProgress updates the watch progress for a stream
 func (a *API) UpdateProgress(ctx context.Context, req *protobuf.UpdateProgressRequest) (*protobuf.StreamProgress, error) {
-	a.log.Info("UpdateProgress")
-
 	user, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err

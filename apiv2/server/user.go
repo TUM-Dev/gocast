@@ -20,8 +20,6 @@ import (
 // GetUser retrieves the current user based on the context.
 // It returns a GetUserResponse or an error if one occurs.
 func (a *API) GetUser(ctx context.Context, req *emptypb.Empty) (*protobuf.GetUserResponse, error) {
-	a.log.Info("GetUser")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -34,8 +32,6 @@ func (a *API) GetUser(ctx context.Context, req *emptypb.Empty) (*protobuf.GetUse
 
 // UpdateUserSettings updates the profile settings for the current user.
 func (a *API) UpdateUserSettings(ctx context.Context, req *protobuf.UpdateUserSettingsRequest) (*protobuf.UpdateUserSettingsResponse, error) {
-	a.log.Info("UpdateUserSettings")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -58,8 +54,6 @@ func (a *API) UpdateUserSettings(ctx context.Context, req *protobuf.UpdateUserSe
 // GetLoginOptions reports which login methods this deployment offers, so that a
 // client can render the right controls before anyone has authenticated.
 func (a *API) GetLoginOptions(ctx context.Context, req *emptypb.Empty) (*protobuf.GetLoginOptionsResponse, error) {
-	a.log.Info("GetLoginOptions")
-
 	resp := &protobuf.GetLoginOptionsResponse{UseSaml: tools.Cfg.Saml != nil}
 	if resp.UseSaml {
 		resp.IdpName = tools.Cfg.Saml.IdpName
@@ -71,8 +65,6 @@ func (a *API) GetLoginOptions(ctx context.Context, req *emptypb.Empty) (*protobu
 
 // ResetPassword resets the password for the user with the given username.
 func (a *API) ResetPassword(ctx context.Context, req *protobuf.ResetPasswordRequest) (*protobuf.ResetPasswordResponse, error) {
-	a.log.Info("ResetPassword")
-
 	user, err := a.dao.UsersDao.GetUserByEmail(ctx, req.Email)
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		// wrong username/email -> pass
@@ -105,8 +97,6 @@ func (a *API) ResetPassword(ctx context.Context, req *protobuf.ResetPasswordRequ
 
 // ExportPersonalData exports the personal data of the current user.
 func (a *API) ExportPersonalData(ctx context.Context, req *emptypb.Empty) (*protobuf.ExportPersonalDataResponse, error) {
-	a.log.Info("ExportPersonalData")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)

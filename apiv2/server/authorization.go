@@ -17,9 +17,22 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// getCurrent retrieves the current user based on the context.
-// It returns a User or an error if one occurs.
+// getCurrent returns the user making the request, or an error if there is none.
+//
+// The resolveCaller interceptor does the work once per request; this reads what it
+// left behind, and falls back to resolving inline when no interceptor has run (a
+// unit test calling a handler directly).
 func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
+	if c, ok := ctx.Value(callerKey{}).(*caller); ok {
+		return c.user, c.err
+	}
+
+	return a.resolveCurrent(ctx)
+}
+
+// resolveCurrent authenticates the request from its metadata.
+// It returns a User or an error if one occurs.
+func (a *API) resolveCurrent(ctx context.Context) (*model.User, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, errors.New("no metadata")

@@ -47,13 +47,16 @@ func New(db *gorm.DB) *API {
 // Run starts the grpc server on port 12544 and the grpc gateway on ::8081/api/v2
 func (a *API) Run(lis net.Listener) error {
 	a.log.Info("Running")
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
-		MaxConnectionAgeGrace: time.Second * 5,
-		Time:                  time.Minute * 10,
-		Timeout:               time.Second * 20,
-	}))
+	grpcServer := grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     time.Minute,
+			MaxConnectionAge:      time.Minute,
+			MaxConnectionAgeGrace: time.Second * 5,
+			Time:                  time.Minute * 10,
+			Timeout:               time.Second * 20,
+		}),
+		a.interceptors(),
+	)
 
 	protobuf.RegisterAPIServer(grpcServer, a)
 	reflection.Register(grpcServer)
