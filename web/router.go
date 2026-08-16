@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
@@ -239,7 +240,7 @@ func configMainRoute(router *gin.Engine) {
 
 	// lecturers
 	atLeastLecturerGroup := router.Group("/")
-	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
+	atLeastLecturerGroup.Use(tools.RequirePermission(model.PermLecture))
 	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
 	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
 

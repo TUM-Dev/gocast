@@ -35,7 +35,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/init", routes.InitUser)
 
 	admins := router.Group("/api")
-	admins.Use(tools.Admin)
+	admins.Use(tools.RequirePermission(model.PermManageUsers))
 	admins.POST("/createUser", routes.CreateUser)
 	admins.POST("/deleteUser", routes.DeleteUser)
 	admins.GET("/searchUser", routes.SearchUser)
@@ -43,7 +43,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	admins.POST("/users/impersonate", routes.impersonateUser)
 
 	lecturers := router.Group("/api")
-	lecturers.Use(tools.AtLeastLecturer)
+	lecturers.Use(tools.RequirePermission(model.PermLecture))
 	lecturers.GET("/searchUserForCourse", routes.SearchUserForCourse)
 
 	courseAdmins := router.Group("/api/course/:courseID")

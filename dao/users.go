@@ -83,7 +83,9 @@ func (d usersDao) IsUserAdmin(ctx context.Context, uid uint) (res bool, err erro
 	if err != nil {
 		return false, err
 	}
-	return user.Role == 1, nil
+	// Left as a role query: its two callers ask different questions — administers
+	// every course, and is too privileged to delete — so it needs splitting first.
+	return user.Role == model.AdminType, nil
 }
 
 func (d usersDao) GetUserByEmail(ctx context.Context, email string) (user model.User, err error) {

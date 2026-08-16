@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -48,4 +49,81 @@ func serveWithContext(t *testing.T, target string, ctx TUMLiveContext) *httptest
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
 	return rec
+}
+
+// RequirePermission is the single gate in front of thirteen route groups.
+func TestRequirePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// The forbidden path renders the error page, which needs an executor installed.
+	SetTemplateExecutor(stubTemplateExecutor{})
+
+	tests := []struct {
+		name     string
+		ctx      TUMLiveContext
+		required model.Permission
+		want     int
+	}{
+		{
+			name:     "an admin holds server administration",
+			ctx:      TUMLiveContext{User: &model.User{Role: model.AdminType}},
+			required: model.PermAdministerServer,
+			want:     http.StatusOK,
+		},
+		{
+			name:     "a lecturer may lecture",
+			ctx:      TUMLiveContext{User: &model.User{Role: model.LecturerType}},
+			required: model.PermLecture,
+			want:     http.StatusOK,
+		},
+		{
+			name:     "a lecturer may not administer the server",
+			ctx:      TUMLiveContext{User: &model.User{Role: model.LecturerType}},
+			required: model.PermAdministerServer,
+			want:     http.StatusForbidden,
+		},
+		{
+			name:     "a lecturer may not manage users",
+			ctx:      TUMLiveContext{User: &model.User{Role: model.LecturerType}},
+			required: model.PermManageUsers,
+			want:     http.StatusForbidden,
+		},
+		{
+			name:     "a student may not lecture",
+			ctx:      TUMLiveContext{User: &model.User{Role: model.StudentType}},
+			required: model.PermLecture,
+			want:     http.StatusForbidden,
+		},
+		{
+			// The gate runs before anything establishes there is a user.
+			name:     "an anonymous caller is refused, not a panic",
+			ctx:      TUMLiveContext{},
+			required: model.PermLecture,
+			want:     http.StatusForbidden,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.Use(func(c *gin.Context) { c.Set("TUMLiveContext", tt.ctx) })
+			router.GET("/gated", RequirePermission(tt.required), func(c *gin.Context) {
+				c.Status(http.StatusOK)
+			})
+
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/gated", nil))
+
+			if rec.Code != tt.want {
+				t.Errorf("status = %d, want %d", rec.Code, tt.want)
+			}
+		})
+	}
+}
+
+type stubTemplateExecutor struct{}
+
+func (stubTemplateExecutor) ExecuteTemplate(w io.Writer, _ string, _ interface{}) error {
+	_, err := w.Write([]byte("forbidden"))
+	return err
 }

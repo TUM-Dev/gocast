@@ -18,7 +18,7 @@ func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := tokenRoutes{daoWrapper}
 	g := r.Group("/api/token")
 	g.POST("/proxy/:token", routes.fetchStreamKey)
-	g.Use(tools.AtLeastLecturer)
+	g.Use(tools.RequirePermission(model.PermLecture))
 	g.POST("/create", routes.createToken)
 	g.DELETE("/:id", routes.deleteToken)
 }
@@ -48,7 +48,7 @@ func (r tokenRoutes) deleteToken(c *gin.Context) {
 	}
 
 	// only the user who created the token or an admin can delete it
-	if token.UserID != tumLiveContext.User.ID && tumLiveContext.User.Role != model.AdminType {
+	if token.UserID != tumLiveContext.User.ID && !tumLiveContext.User.Can(model.PermManageUsers) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusForbidden,
 			CustomMessage: "not allowed to delete token",
@@ -88,7 +88,7 @@ func (r tokenRoutes) createToken(c *gin.Context) {
 		})
 		return
 	}
-	if req.Scope == model.TokenScopeAdmin && tumLiveContext.User.Role != model.AdminType {
+	if req.Scope == model.TokenScopeAdmin && !tumLiveContext.User.Can(model.PermManageUsers) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "not an admin",
@@ -171,7 +171,7 @@ func (r *tokenRoutes) fetchStreamKey(c *gin.Context) {
 		return
 
 	}
-	if user.Role != model.LecturerType && user.Role != model.AdminType {
+	if !user.Can(model.PermLecture) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusUnauthorized,
 			CustomMessage: "user is not a lecturer or admin",
