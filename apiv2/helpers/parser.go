@@ -138,7 +138,13 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 	return s
 }
 
+// ParseLectureHallToProto converts a LectureHall model to its protobuf representation.
+// Nil is normal for a stream not held in one, and maps to an absent message.
 func ParseLectureHallToProto(lh *model.LectureHall) *protobuf.LectureHall {
+	if lh == nil {
+		return nil
+	}
+
 	return &protobuf.LectureHall{
 		Id:   uint32(lh.ID),
 		Name: lh.Name,
