@@ -116,4 +116,13 @@ func TestCanAdminister(t *testing.T) {
 			}
 		})
 	}
+
+	// Ownership matches on ID and both halves are zero here, which is why this needs
+	// its own case.
+	t.Run("an unpersisted user does not administer an unowned course", func(t *testing.T) {
+		unowned := Course{Model: gorm.Model{ID: 9}}
+		if (&User{}).CanAdminister(unowned) {
+			t.Error("the zero value of a user administers a course with no owner")
+		}
+	})
 }
