@@ -20,7 +20,7 @@ import (
 func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf.GetLiveCoursesResponse, error) {
 	a.log.Info("GetLiveCourses")
 
-	streams, err := a.dao.GetCurrentLive(context.Background())
+	streams, err := a.dao.GetCurrentLive(ctx)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, e.WithStatus(http.StatusNotFound, err)
 	}
@@ -30,7 +30,7 @@ func (a *API) GetLiveCourses(ctx context.Context, req *emptypb.Empty) (*protobuf
 	resp := make([]*protobuf.CourseStream, 0)
 
 	for _, stream := range streams {
-		courseForLiveStream, _ := a.dao.GetCourseById(context.Background(), stream.CourseID)
+		courseForLiveStream, _ := a.dao.GetCourseById(ctx, stream.CourseID)
 
 		// only show streams for logged-in users if they are logged in
 		if courseForLiveStream.IsLoggedIn() && user == nil {
@@ -130,7 +130,7 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 		term = req.Term
 	}
 
-	course, err := a.dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, term, year)
+	course, err := a.dao.GetCourseBySlugYearAndTerm(ctx, req.Slug, term, year)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, e.WithStatus(http.StatusNotFound, errors.New("can't find course"))
@@ -179,7 +179,7 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 		courses = a.dao.GetAllCoursesForSemester(ctx, year, term)
 	case model.LecturerType:
 		courses = user.CoursesForSemester(year, term)
-		coursesForLecturer, err := a.dao.GetAdministeredCoursesByUserId(context.Background(), user.ID, term, year)
+		coursesForLecturer, err := a.dao.GetAdministeredCoursesByUserId(ctx, user.ID, term, year)
 		if err == nil {
 			courses = append(courses, coursesForLecturer...)
 		}

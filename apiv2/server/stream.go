@@ -131,7 +131,7 @@ func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesReques
 
 	lang := req.Lang
 
-	subtitlesObj, err := a.dao.GetByStreamIDandLang(context.Background(), stream.ID, lang)
+	subtitlesObj, err := a.dao.GetByStreamIDandLang(ctx, stream.ID, lang)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, e.WithStatus(http.StatusNotFound, err)
