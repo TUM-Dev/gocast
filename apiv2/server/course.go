@@ -152,7 +152,13 @@ func (a *API) GetCourseBySlug(ctx context.Context, req *protobuf.GetCourseBySlug
 
 	// Reachable rather than Listed: a hidden course is unlisted, not private.
 	if !visibility.Reachable(user, course) {
-		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("unauthorized"))
+		// 401 only tells an anonymous caller that signing in may help. For a caller
+		// who is already signed in it would send the frontend back to the login page
+		// for a course that logging in again will not unlock, so that is a 403.
+		if user == nil {
+			return nil, e.WithStatus(http.StatusUnauthorized, errors.New("course requires a login"))
+		}
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("user may not access this course"))
 	}
 
 	visible := visibility.VisibleStreams(user, course)

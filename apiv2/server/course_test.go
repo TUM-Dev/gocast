@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
@@ -239,5 +241,55 @@ func TestGetPinnedCoursesDropsCoursesTheCallerMayNoLongerSee(t *testing.T) {
 	// loggedin is reachable because they are signed in; enrolled and hidden are not.
 	if len(got) != 2 || got[0] != "public" || got[1] != "loggedin" {
 		t.Errorf("got %v, want [public loggedin]", got)
+	}
+}
+
+// An anonymous caller and a signed-in one both fail visibility.Reachable on an
+// enrolled course, but only the first can do anything about it. Telling the second to
+// authenticate sends the frontend to a login page that will not unlock the course.
+func TestGetCourseBySlugSeparatesLoginFromForbidden(t *testing.T) {
+	course := model.Course{
+		Model:        gorm.Model{ID: 1},
+		Slug:         "enrolled",
+		Visibility:   "enrolled",
+		TeachingTerm: "W",
+		Year:         2026,
+		// A real owner: an unset one would make the zero-value user an admin.
+		UserID: 42,
+	}
+
+	tests := []struct {
+		name string
+		user *model.User
+		want codes.Code
+	}{
+		{name: "anonymous", user: nil, want: codes.Unauthenticated},
+		{name: "signed in without enrollment", user: &model.User{Model: gorm.Model{ID: 7}}, want: codes.PermissionDenied},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+
+			coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+			coursesMock.EXPECT().GetCourseBySlugYearAndTerm(gomock.Any(), "enrolled", "W", 2026).
+				Return(course, nil).Times(1)
+
+			api := &API{
+				dao: dao.DaoWrapper{CoursesDao: coursesMock},
+				log: slog.Default(),
+			}
+
+			ctx := context.WithValue(context.Background(), callerKey{}, &caller{user: tt.user})
+			_, err := api.GetCourseBySlug(ctx, &protobuf.GetCourseBySlugRequest{
+				Slug: "enrolled",
+				Year: 2026,
+				Term: "W",
+			})
+
+			if got := status.Code(err); got != tt.want {
+				t.Errorf("GetCourseBySlug returned %v (%v), want %v", got, err, tt.want)
+			}
+		})
 	}
 }
