@@ -173,6 +173,9 @@ type Config struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
+	// MetricsPort is the port the Prometheus endpoint listens on, separate from the
+	// web port so the metrics are not exposed to the internet. Empty disables it.
+	MetricsPort      string `yaml:"metricsPort"`
 	VodURLTemplate   string `yaml:"vodURLTemplate"`
 	CanonicalURL     string `yaml:"canonicalURL"`
 	WikiURL          string `yaml:"wikiURL"`

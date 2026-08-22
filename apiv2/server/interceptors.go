@@ -26,6 +26,7 @@ type caller struct {
 // Resolution must precede authorization, which needs to know who is calling.
 func (a *API) interceptors() grpc.ServerOption {
 	return grpc.ChainUnaryInterceptor(
+		serverMetrics.UnaryServerInterceptor(),
 		a.logRequest,
 		a.resolveCaller,
 		a.authorize,
@@ -53,11 +54,11 @@ func (a *API) logRequest(
 	// the most common failure and would bury the ones needing attention.
 	switch code {
 	case codes.OK:
-		log.Info("rpc")
+		log.Debug("rpc")
 	case codes.Unknown, codes.Internal, codes.DataLoss, codes.Unavailable:
 		log.Error("rpc failed", "err", err)
 	default:
-		log.Info("rpc rejected", "err", err)
+		log.Debug("rpc rejected", "err", err)
 	}
 
 	return resp, err
