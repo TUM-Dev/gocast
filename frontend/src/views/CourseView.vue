@@ -2,9 +2,9 @@
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
-import LiveStreamCard from "@/components/LiveStreamCard.vue";
-import StartPageLayout from "@/components/StartPageLayout.vue";
-import VodCard from "@/components/VodCard.vue";
+import LiveStreamCard from "@/components/start-page/LiveStreamCard.vue";
+import StartPageLayout from "@/components/start-page/StartPageLayout.vue";
+import VodCard from "@/components/start-page/VodCard.vue";
 import { ApiError } from "@/lib/api";
 import { calendarUrl, fetchCourse, type Course } from "@/lib/courses";
 import { groupLectures } from "@/lib/lecture-groups";

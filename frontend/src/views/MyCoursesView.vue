@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import CourseListView from "@/components/CourseListView.vue";
-import StartPageLayout from "@/components/StartPageLayout.vue";
+import CourseListView from "@/components/start-page/CourseListView.vue";
+import StartPageLayout from "@/components/start-page/StartPageLayout.vue";
 import { useCourseStore } from "@/stores/courses";
 
 const courses = useCourseStore();

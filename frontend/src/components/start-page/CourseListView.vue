@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CourseListItem from "@/components/CourseListItem.vue";
+import CourseListItem from "@/components/start-page/CourseListItem.vue";
 import type { Course } from "@/lib/courses";
 
 /**

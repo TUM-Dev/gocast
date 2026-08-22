@@ -24,7 +24,7 @@ vi.mock("@/lib/streams", async (importOriginal) => ({
   fetchProgress,
 }));
 // The layout has its own tests, and mounting it would start loading listings.
-vi.mock("@/components/StartPageLayout.vue", () => ({
+vi.mock("@/components/start-page/StartPageLayout.vue", () => ({
   default: { template: "<div><slot /></div>" },
 }));
 

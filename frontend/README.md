@@ -291,9 +291,14 @@ that exact rather than merely stable.
 
 ## The start page's shell
 
-`StartPageLayout.vue` is the frame the four start page routes share: the sidebar, and
-the column beside it that each view fills through a slot. `StartPageSidenav.vue` is the
-sidebar itself, ported from `home.gohtml` with its classes copied verbatim.
+Everything the start page renders lives in `src/components/start-page/`; the six
+components left directly in `src/components/` are the application shell, reachable from
+every page. Nothing in the shell imports from the folder, which is what keeps the split
+meaningful rather than decorative.
+
+`start-page/StartPageLayout.vue` is the frame the four routes share: the sidebar, and
+the column beside it that each view fills through a slot. `start-page/StartPageSidenav.vue`
+is the sidebar itself, ported from `home.gohtml` with its classes copied verbatim.
 
 Two pieces of shared state sit behind it:
 

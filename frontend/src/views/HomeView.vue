@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 
-import CourseListItem from "@/components/CourseListItem.vue";
-import LiveStreamCard from "@/components/LiveStreamCard.vue";
-import StartPageLayout from "@/components/StartPageLayout.vue";
-import StreamThumbnail from "@/components/StreamThumbnail.vue";
+import CourseListItem from "@/components/start-page/CourseListItem.vue";
+import LiveStreamCard from "@/components/start-page/LiveStreamCard.vue";
+import StartPageLayout from "@/components/start-page/StartPageLayout.vue";
+import StreamThumbnail from "@/components/start-page/StreamThumbnail.vue";
 import { courseUrl, type Course } from "@/lib/courses";
 import { fetchServerNotifications, type ServerNotification } from "@/lib/notifications";
 import {
