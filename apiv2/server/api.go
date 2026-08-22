@@ -67,6 +67,10 @@ func (a *API) Run(lis net.Listener) error {
 		svc.register(grpcServer, a)
 	}
 
+	// Pre-creates the series for every method, so a method that has not been called
+	// yet reads as zero rather than as a gap.
+	serverMetrics.InitializeMetrics(grpcServer)
+
 	reflection.Register(grpcServer)
 	return grpcServer.Serve(lis)
 }

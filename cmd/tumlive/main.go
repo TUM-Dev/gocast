@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -259,6 +261,29 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	g.Go(func() error {
 		return m.Serve()
 	})
+
+	// Metrics get their own listener: the scrape target stays inside the cluster,
+	// unlike everything served on the web port.
+	if port := tools.Cfg.MetricsPort; port != "" {
+		metricsMux := http.NewServeMux()
+		metricsMux.Handle("/metrics", apiv2.MetricsHandler())
+		metrics := &http.Server{
+			Addr:              ":" + port,
+			Handler:           metricsMux,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+		g.Go(func() error {
+			slog.Info("serving metrics", "port", port)
+			if err := metrics.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				return err
+			}
+			return nil
+		})
+		g.Go(func() error {
+			<-ctx.Done()
+			return metrics.Shutdown(context.WithoutCancel(ctx))
+		})
+	}
 
 	if err = g.Wait(); err != nil && ctx.Err() != nil {
 		// webserver gracefully shut down
