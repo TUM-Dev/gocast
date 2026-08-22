@@ -165,15 +165,18 @@ const isTodayLecture = (lecture: Stream) => isToday(lecture);
       </header>
 
       <div class="grid grid-cols-1 gap-x-8 xl:grid-cols-3">
-        <div class="col-span-full" :class="{ 'tum-live-course-view-item': live.length > 0 }">
-          <section v-if="live.length > 0">
+        <section v-if="live.length > 0" class="tum-live-course-view-item col-span-full">
+          <!-- LiveStreamCard is a grid cell (`col-span-full lg:col-span-1`): without a
+               grid around it the card fills the content width and its 16:9 thumbnail
+               grows with it. Same columns as the start page's live row. -->
+          <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
             <LiveStreamCard
               v-for="entry in live"
               :key="entry.stream.id"
               :livestream="entry"
             />
           </section>
-        </div>
+        </section>
 
         <section v-if="upcoming.length > 0" class="tum-live-course-view-item col-span-full">
           <section class="tum-live-upcoming">

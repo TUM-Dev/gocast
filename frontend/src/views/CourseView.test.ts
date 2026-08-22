@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
 import CourseView from "./CourseView.vue";
 import { ApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
+import { useCourseStore } from "@/stores/courses";
 
 /**
  * The course page sorts one list of lectures into three — live, scheduled, recorded —
@@ -241,5 +242,24 @@ describe("watch progress", () => {
     await render();
 
     expect(fetchProgress).toHaveBeenCalledWith([1]);
+  });
+});
+
+describe("a lecture that is live", () => {
+  // LiveStreamCard is written as a grid cell (`col-span-full lg:col-span-1`). Dropped
+  // into a plain block it spans the content width, and its 16:9 thumbnail grows to
+  // match — one thumbnail across the whole page.
+  it("lays the cards out in a grid", async () => {
+    const course = makeCourse([lecture(1, -HOUR, { liveNow: true })]);
+    fetchCourse.mockResolvedValue(course);
+
+    const store = useCourseStore();
+    store.liveStreams = [{ course, stream: course.streams[0], viewers: 0 }] as never;
+
+    const wrapper = await render();
+
+    const card = wrapper.find(".tum-live-stream");
+    expect(card.exists()).toBe(true);
+    expect(card.element.parentElement?.classList.contains("grid")).toBe(true);
   });
 });
