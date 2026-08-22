@@ -19,7 +19,30 @@ export interface FrontendConfig {
   isFreshInstallation: boolean;
 }
 
-export async function fetchConfig(): Promise<FrontendConfig> {
+/**
+ * Shared across callers and kept for the life of the page.
+ *
+ * Nothing here changes without a deployment, and the footer alone mounts twice on
+ * the start page -- once for the desktop layout and once inside the sidebar for the
+ * mobile one -- so without this the page asks the same question twice on every load.
+ * A failure is not cached, so the next caller retries.
+ */
+let pending: Promise<FrontendConfig> | null = null;
+
+export function fetchConfig(): Promise<FrontendConfig> {
+  pending ??= request().catch((err: unknown) => {
+    pending = null;
+    throw err;
+  });
+  return pending;
+}
+
+/** Drops the cached configuration. For tests. */
+export function resetConfig(): void {
+  pending = null;
+}
+
+async function request(): Promise<FrontendConfig> {
   const res = await apiGetMessagePublic(GetFrontendConfigResponseSchema, "/config");
 
   return {

@@ -316,6 +316,28 @@ The layout waits for `getSemesters` before loading any listing. Which semester "
 semester in the URL" means is the server's answer, and fetching for `undefined` and
 then again for the resolved semester would double every request on a first visit.
 
+## What a start page load costs
+
+Around a dozen API calls, which matters less than how deep they stack — they share one
+HTTP/2 connection and add up to some 15ms of server time. What a visitor waits for is
+the number of *rounds*:
+
+1. `/config`, `/semesters`, `/server-notifications` and the token mint, all at once
+2. `/users/me` alongside the four course listings
+3. `/progress` and the thumbnails, which need stream ids from the listings
+
+Three rounds, about 220ms at 50ms of latency. Two things keep it there, and both are
+easy to undo by accident:
+
+- **The course store asks `hasSession()`, not the auth store.** It only needs to know
+  whether to call the endpoints that require a user, and minting a token answers that;
+  waiting for `/users/me` put all four listings a round behind it for the same answer.
+- **`fetchConfig` is shared and cached.** The footer mounts twice on the start page,
+  once per layout, and both ask.
+
+Anything new that mounts on this page and fetches should join round 1 or 2 rather than
+adding a fourth.
+
 ## Three ways to call the API
 
 Which request helper in `src/lib/api.ts` a module uses follows from the endpoint's
