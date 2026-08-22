@@ -11,8 +11,8 @@ import {
   type Course,
   type LiveStream,
 } from "@/lib/courses";
+import { hasSession } from "@/lib/api";
 import { sameSemester, type Semester } from "@/lib/semesters";
-import { useAuthStore } from "./auth";
 
 /**
  * The course listings the start page is built from, held for one semester at a time.
@@ -63,15 +63,16 @@ export const useCourseStore = defineStore("courses", () => {
   async function fetchInto(target: Semester | undefined): Promise<void> {
     loading.value = true;
     try {
-      // The store shares one request however many components ask, so this is free
-      // where the shell has already asked. Anonymous visitors skip the two listings
+      // Only whether there is a session, not who it belongs to. Waiting for the user's
+      // profile put all four listings a round trip behind it, for an answer the token
+      // endpoint had already given. Anonymous visitors still skip the two listings
       // that would only answer them with a 401.
-      const user = await useAuthStore().load();
+      const signedIn = await hasSession();
 
       const [publicResult, userResult, pinnedResult, liveResult] = await Promise.all([
         fetchPublicCourses(target),
-        user ? fetchUserCourses(target) : Promise.resolve([]),
-        user ? fetchPinnedCourses() : Promise.resolve([]),
+        signedIn ? fetchUserCourses(target) : Promise.resolve([]),
+        signedIn ? fetchPinnedCourses() : Promise.resolve([]),
         fetchLiveStreams(),
       ]);
 

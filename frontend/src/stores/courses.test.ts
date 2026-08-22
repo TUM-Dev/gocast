@@ -16,14 +16,14 @@ const {
   fetchPinnedCourses,
   fetchLiveStreams,
   setCoursePinned,
-  load,
+  hasSession,
 } = vi.hoisted(() => ({
   fetchPublicCourses: vi.fn(),
   fetchUserCourses: vi.fn(),
   fetchPinnedCourses: vi.fn(),
   fetchLiveStreams: vi.fn(),
   setCoursePinned: vi.fn(),
-  load: vi.fn(),
+  hasSession: vi.fn(),
 }));
 
 vi.mock("@/lib/courses", async (importOriginal) => ({
@@ -35,7 +35,10 @@ vi.mock("@/lib/courses", async (importOriginal) => ({
   setCoursePinned,
 }));
 
-vi.mock("./auth", () => ({ useAuthStore: () => ({ load }) }));
+vi.mock("@/lib/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api")>()),
+  hasSession,
+}));
 
 const course = (id: number, name: string, pinned = false) =>
   ({ id, name, pinned, slug: name.toLowerCase() }) as never;
@@ -46,7 +49,7 @@ const summer = { year: 2026, term: "S" } as const;
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
-  load.mockResolvedValue({ id: 1 });
+  hasSession.mockResolvedValue(true);
   fetchPublicCourses.mockResolvedValue([course(1, "Public")]);
   fetchUserCourses.mockResolvedValue([course(2, "Mine")]);
   fetchPinnedCourses.mockResolvedValue([course(3, "Pinned", true)]);
@@ -98,7 +101,7 @@ describe("loading", () => {
 
   it("skips the listings that need a user when nobody is signed in", async () => {
     // Both 401 for an anonymous caller, so asking is two failed requests per page.
-    load.mockResolvedValue(null);
+    hasSession.mockResolvedValue(false);
     const store = useCourseStore();
 
     await store.load(winter);

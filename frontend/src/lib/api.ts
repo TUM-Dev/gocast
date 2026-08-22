@@ -167,6 +167,18 @@ export async function apiFetchPublic<T>(path: string, init: RequestInit = {}): P
 }
 
 /**
+ * Whether the browser has a session to authenticate with.
+ *
+ * Answers from the token endpoint rather than from the user's profile, which is a
+ * round trip further on: minting a token succeeds exactly when there is a session, so
+ * anything that only needs to know whether to call an authenticated endpoint can ask
+ * here and start a round trip earlier.
+ */
+export async function hasSession(): Promise<boolean> {
+  return (await tokenOrNull()) !== null;
+}
+
+/**
  * Request for an endpoint that answers anonymous callers but shows a signed-in one
  * more — the course listings, which gain the logged-in-only courses, and the
  * thumbnails and streams behind them.
