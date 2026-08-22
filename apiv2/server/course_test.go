@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -154,5 +155,89 @@ func TestGetLiveCoursesSkipsStreamsWhoseCourseIsGone(t *testing.T) {
 	}
 	if resp.LiveCourses[0].Course.Slug != "real" {
 		t.Errorf("got course %q, want real", resp.LiveCourses[0].Course.Slug)
+	}
+}
+
+// asCaller builds the context the resolveCaller interceptor would have left behind.
+func asCaller(u *model.User) context.Context {
+	return context.WithValue(context.Background(), callerKey{}, &caller{user: u})
+}
+
+// A lecturer's enrolled and administered courses overlap, and GetUserCourses appends
+// one list to the other. The v1 start page ran the result through commons.Unique;
+// without that the same course is offered twice.
+func TestGetUserCoursesDeduplicates(t *testing.T) {
+	shared := model.Course{
+		Model: gorm.Model{ID: 1}, Name: "Shared", Slug: "shared",
+		Year: 2026, TeachingTerm: "W", Visibility: "loggedin", UserID: 42,
+	}
+
+	lecturer := &model.User{
+		Model: gorm.Model{ID: 7},
+		Role:  model.LecturerType,
+		// Enrolled in the course they also administer.
+		Courses:             []model.Course{shared},
+		AdministeredCourses: []model.Course{shared},
+	}
+
+	ctrl := gomock.NewController(t)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+	coursesMock.EXPECT().GetAdministeredCoursesByUserId(gomock.Any(), uint(7), "W", 2026).
+		Return([]model.Course{shared}, nil).Times(1)
+
+	api := &API{dao: dao.DaoWrapper{CoursesDao: coursesMock}, log: slog.Default()}
+
+	resp, err := api.GetUserCourses(asCaller(lecturer), &protobuf.GetUserCoursesRequest{Year: 2026, Term: "W"})
+	if err != nil {
+		t.Fatalf("GetUserCourses: %v", err)
+	}
+
+	if len(resp.Courses) != 1 {
+		var got []string
+		for _, c := range resp.Courses {
+			got = append(got, c.Slug)
+		}
+		t.Fatalf("got %d courses (%v), want the shared course once", len(resp.Courses), got)
+	}
+}
+
+// A pin outlives the access that created it: the course can be made enrolled-only, or
+// hidden, long after someone pinned it. Listing it then names a course the caller
+// cannot open.
+func TestGetPinnedCoursesDropsCoursesTheCallerMayNoLongerSee(t *testing.T) {
+	course := func(id uint, visibility string) model.Course {
+		return model.Course{
+			Model: gorm.Model{ID: id}, Name: visibility, Slug: visibility,
+			Visibility: visibility, UserID: 42,
+		}
+	}
+
+	user := &model.User{
+		Model: gorm.Model{ID: 7},
+		Role:  model.StudentType,
+		PinnedCourses: []model.Course{
+			course(1, "public"),
+			course(2, "loggedin"),
+			// Enrolled in none of them, and an administrator of none.
+			course(3, "enrolled"),
+			course(4, "hidden"),
+		},
+	}
+
+	api := &API{log: slog.Default()}
+
+	resp, err := api.GetPinnedCourses(asCaller(user), &emptypb.Empty{})
+	if err != nil {
+		t.Fatalf("GetPinnedCourses: %v", err)
+	}
+
+	var got []string
+	for _, c := range resp.Courses {
+		got = append(got, c.Slug)
+	}
+
+	// loggedin is reachable because they are signed in; enrolled and hidden are not.
+	if len(got) != 2 || got[0] != "public" || got[1] != "loggedin" {
+		t.Errorf("got %v, want [public loggedin]", got)
 	}
 }

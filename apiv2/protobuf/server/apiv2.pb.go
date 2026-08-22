@@ -1586,10 +1586,21 @@ type Course struct {
 	Streams                 []*Stream              `protobuf:"bytes,12,rep,name=streams,proto3" json:"streams,omitempty"`
 	CameraPresetPreferences string                 `protobuf:"bytes,13,opt,name=camera_preset_preferences,json=cameraPresetPreferences,proto3" json:"camera_preset_preferences,omitempty"`
 	SourcePreferences       string                 `protobuf:"bytes,14,opt,name=source_preferences,json=sourcePreferences,proto3" json:"source_preferences,omitempty"`
-	LastRecordingId         uint32                 `protobuf:"varint,15,opt,name=last_recording_id,json=lastRecordingId,proto3" json:"last_recording_id,omitempty"`
-	NextLectureId           uint32                 `protobuf:"varint,16,opt,name=next_lecture_id,json=nextLectureId,proto3" json:"next_lecture_id,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// The most recent recorded lecture, absent when the course has none.
+	LastRecording *Stream `protobuf:"bytes,17,opt,name=last_recording,json=lastRecording,proto3,oneof" json:"last_recording,omitempty"`
+	// The next lecture that has not ended yet, absent when the course has none.
+	NextLecture *Stream `protobuf:"bytes,18,opt,name=next_lecture,json=nextLecture,proto3,oneof" json:"next_lecture,omitempty"`
+	// One of "public", "loggedin", "enrolled" or "hidden". Listings that reach the
+	// caller are already filtered by it; it is here so the page can mark a hidden
+	// course as such for the administrators who do see it.
+	Visibility string `protobuf:"bytes,19,opt,name=visibility,proto3" json:"visibility,omitempty"`
+	// Whether the calling user has pinned this course. False for anonymous callers.
+	Pinned bool `protobuf:"varint,20,opt,name=pinned,proto3" json:"pinned,omitempty"`
+	// Whether the calling user administers this course, as opposed to being a global
+	// admin. Drives the per-course admin link.
+	IsAdmin       bool `protobuf:"varint,21,opt,name=is_admin,json=isAdmin,proto3" json:"is_admin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Course) Reset() {
@@ -1720,18 +1731,39 @@ func (x *Course) GetSourcePreferences() string {
 	return ""
 }
 
-func (x *Course) GetLastRecordingId() uint32 {
+func (x *Course) GetLastRecording() *Stream {
 	if x != nil {
-		return x.LastRecordingId
+		return x.LastRecording
 	}
-	return 0
+	return nil
 }
 
-func (x *Course) GetNextLectureId() uint32 {
+func (x *Course) GetNextLecture() *Stream {
 	if x != nil {
-		return x.NextLectureId
+		return x.NextLecture
 	}
-	return 0
+	return nil
+}
+
+func (x *Course) GetVisibility() string {
+	if x != nil {
+		return x.Visibility
+	}
+	return ""
+}
+
+func (x *Course) GetPinned() bool {
+	if x != nil {
+		return x.Pinned
+	}
+	return false
+}
+
+func (x *Course) GetIsAdmin() bool {
+	if x != nil {
+		return x.IsAdmin
+	}
+	return false
 }
 
 type GetPublicCoursesRequest struct {
@@ -2507,8 +2539,11 @@ type Stream struct {
 	IsPlanned        bool                   `protobuf:"varint,30,opt,name=is_planned,json=isPlanned,proto3" json:"is_planned,omitempty"`
 	IsComingUp       bool                   `protobuf:"varint,31,opt,name=is_coming_up,json=isComingUp,proto3" json:"is_coming_up,omitempty"`
 	HlsUrl           string                 `protobuf:"bytes,32,opt,name=hls_url,json=hlsUrl,proto3" json:"hls_url,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// False for a private lecture. Only a course administrator is ever sent one, so
+	// this marks the lectures that the rest of the course cannot see.
+	IsPubliclyVisible bool `protobuf:"varint,33,opt,name=is_publicly_visible,json=isPubliclyVisible,proto3" json:"is_publicly_visible,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *Stream) Reset() {
@@ -2735,6 +2770,13 @@ func (x *Stream) GetHlsUrl() string {
 		return x.HlsUrl
 	}
 	return ""
+}
+
+func (x *Stream) GetIsPubliclyVisible() bool {
+	if x != nil {
+		return x.IsPubliclyVisible
+	}
+	return false
 }
 
 type StreamPlaylistEntry struct {
@@ -3818,6 +3860,9 @@ type LectureHall struct {
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	CameraPresets []*CameraPreset        `protobuf:"bytes,3,rep,name=camera_presets,json=cameraPresets,proto3" json:"camera_presets,omitempty"`
+	// Where the room is, on whatever campus map the deployment points at. The live
+	// lecture badge links to it.
+	ExternalUrl   string `protobuf:"bytes,4,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3871,6 +3916,13 @@ func (x *LectureHall) GetCameraPresets() []*CameraPreset {
 		return x.CameraPresets
 	}
 	return nil
+}
+
+func (x *LectureHall) GetExternalUrl() string {
+	if x != nil {
+		return x.ExternalUrl
+	}
+	return ""
 }
 
 type CameraPreset struct {
@@ -4035,7 +4087,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x13AddBookmarkResponse\x12.\n" +
 	"\bbookmark\x18\x01 \x01(\v2\x12.protobuf.BookmarkR\bbookmark\"H\n" +
 	"\x16UpdateBookmarkResponse\x12.\n" +
-	"\bbookmark\x18\x01 \x01(\v2\x12.protobuf.BookmarkR\bbookmark\"\x96\x05\n" +
+	"\bbookmark\x18\x01 \x01(\v2\x12.protobuf.BookmarkR\bbookmark\"\xe1\x06\n" +
 	"\x06Course\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -4052,9 +4104,16 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10vod_chat_enabled\x18\v \x01(\bR\x0evodChatEnabled\x12*\n" +
 	"\astreams\x18\f \x03(\v2\x10.protobuf.StreamR\astreams\x12:\n" +
 	"\x19camera_preset_preferences\x18\r \x01(\tR\x17cameraPresetPreferences\x12-\n" +
-	"\x12source_preferences\x18\x0e \x01(\tR\x11sourcePreferences\x12*\n" +
-	"\x11last_recording_id\x18\x0f \x01(\rR\x0flastRecordingId\x12&\n" +
-	"\x0fnext_lecture_id\x18\x10 \x01(\rR\rnextLectureId\"A\n" +
+	"\x12source_preferences\x18\x0e \x01(\tR\x11sourcePreferences\x12<\n" +
+	"\x0elast_recording\x18\x11 \x01(\v2\x10.protobuf.StreamH\x00R\rlastRecording\x88\x01\x01\x128\n" +
+	"\fnext_lecture\x18\x12 \x01(\v2\x10.protobuf.StreamH\x01R\vnextLecture\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"visibility\x18\x13 \x01(\tR\n" +
+	"visibility\x12\x16\n" +
+	"\x06pinned\x18\x14 \x01(\bR\x06pinned\x12\x19\n" +
+	"\bis_admin\x18\x15 \x01(\bR\aisAdminB\x11\n" +
+	"\x0f_last_recordingB\x0f\n" +
+	"\r_next_lectureJ\x04\b\x0f\x10\x10J\x04\b\x10\x10\x11R\x11last_recording_idR\x0fnext_lecture_id\"A\n" +
 	"\x17GetPublicCoursesRequest\x12\x12\n" +
 	"\x04year\x18\x01 \x01(\rR\x04year\x12\x12\n" +
 	"\x04term\x18\x02 \x01(\tR\x04term\"T\n" +
@@ -4094,7 +4153,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x04year\x18\x02 \x01(\rR\x04year\"v\n" +
 	"\x14GetSemestersResponse\x12,\n" +
 	"\acurrent\x18\x01 \x01(\v2\x12.protobuf.SemesterR\acurrent\x120\n" +
-	"\tsemesters\x18\x02 \x03(\v2\x12.protobuf.SemesterR\tsemesters\"\xe0\a\n" +
+	"\tsemesters\x18\x02 \x03(\v2\x12.protobuf.SemesterR\tsemesters\"\x90\b\n" +
 	"\x06Stream\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -4127,7 +4186,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"is_planned\x18\x1e \x01(\bR\tisPlanned\x12 \n" +
 	"\fis_coming_up\x18\x1f \x01(\bR\n" +
 	"isComingUp\x12\x17\n" +
-	"\ahls_url\x18  \x01(\tR\x06hlsUrl\"\xd9\x02\n" +
+	"\ahls_url\x18  \x01(\tR\x06hlsUrl\x12.\n" +
+	"\x13is_publicly_visible\x18! \x01(\bR\x11isPubliclyVisible\"\xd9\x02\n" +
 	"\x13StreamPlaylistEntry\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\rR\bstreamId\x12\x1f\n" +
 	"\vcourse_slug\x18\x02 \x01(\tR\n" +
@@ -4203,11 +4263,12 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x18GetNotificationsResponse\x12E\n" +
 	"\rnotifications\x18\x01 \x03(\v2\x1f.protobuf.UserGroupNotificationR\rnotifications\"q\n" +
 	"\x1eGetServerNotificationsResponse\x12O\n" +
-	"\x14server_notifications\x18\x01 \x03(\v2\x1c.protobuf.ServerNotificationR\x13serverNotifications\"p\n" +
+	"\x14server_notifications\x18\x01 \x03(\v2\x1c.protobuf.ServerNotificationR\x13serverNotifications\"\x93\x01\n" +
 	"\vLectureHall\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12=\n" +
-	"\x0ecamera_presets\x18\x03 \x03(\v2\x16.protobuf.CameraPresetR\rcameraPresets\"T\n" +
+	"\x0ecamera_presets\x18\x03 \x03(\v2\x16.protobuf.CameraPresetR\rcameraPresets\x12!\n" +
+	"\fexternal_url\x18\x04 \x01(\tR\vexternalUrl\"T\n" +
 	"\fCameraPreset\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -4412,95 +4473,97 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	18, // 18: protobuf.UpdateBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
 	40, // 19: protobuf.Course.semester:type_name -> protobuf.Semester
 	42, // 20: protobuf.Course.streams:type_name -> protobuf.Stream
-	39, // 21: protobuf.GetLiveCoursesResponse.live_courses:type_name -> protobuf.CourseStream
-	26, // 22: protobuf.GetPublicCoursesResponse.courses:type_name -> protobuf.Course
-	26, // 23: protobuf.GetCourseBySlugResponse.course:type_name -> protobuf.Course
-	26, // 24: protobuf.GetUserCoursesResponse.courses:type_name -> protobuf.Course
-	26, // 25: protobuf.GetPinnedCoursesResponse.courses:type_name -> protobuf.Course
-	26, // 26: protobuf.CourseStream.course:type_name -> protobuf.Course
-	42, // 27: protobuf.CourseStream.stream:type_name -> protobuf.Stream
-	62, // 28: protobuf.CourseStream.lecture_hall:type_name -> protobuf.LectureHall
-	40, // 29: protobuf.GetSemestersResponse.current:type_name -> protobuf.Semester
-	40, // 30: protobuf.GetSemestersResponse.semesters:type_name -> protobuf.Semester
-	64, // 31: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
-	64, // 32: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
-	64, // 33: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
-	57, // 34: protobuf.Stream.downloads:type_name -> protobuf.Download
-	64, // 35: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
-	44, // 36: protobuf.StreamPlaylistEntry.stream_progress:type_name -> protobuf.StreamProgress
-	64, // 37: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
-	1,  // 38: protobuf.GetThumbsRequest.thumb_type:type_name -> protobuf.VideoType
-	45, // 39: protobuf.GetVideoSectionsResponse.sections:type_name -> protobuf.VideoSection
-	43, // 40: protobuf.GetStreamPlaylistResponse.entries:type_name -> protobuf.StreamPlaylistEntry
-	44, // 41: protobuf.GetProgressBatchResponse.progress_batch:type_name -> protobuf.StreamProgress
-	2,  // 42: protobuf.UserGroupNotification.target:type_name -> protobuf.NotificationTarget
-	64, // 43: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
-	64, // 44: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
-	64, // 45: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
-	58, // 46: protobuf.GetNotificationsResponse.notifications:type_name -> protobuf.UserGroupNotification
-	59, // 47: protobuf.GetServerNotificationsResponse.server_notifications:type_name -> protobuf.ServerNotification
-	63, // 48: protobuf.LectureHall.camera_presets:type_name -> protobuf.CameraPreset
-	65, // 49: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
-	65, // 50: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
-	65, // 51: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
-	65, // 52: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
-	65, // 53: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
-	65, // 54: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
-	8,  // 55: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
-	65, // 56: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
-	9,  // 57: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
-	65, // 58: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
-	27, // 59: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
-	28, // 60: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
-	29, // 61: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
-	65, // 62: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
-	65, // 63: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
-	30, // 64: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
-	31, // 65: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
-	46, // 66: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
-	47, // 67: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
-	49, // 68: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
-	48, // 69: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
-	50, // 70: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
-	54, // 71: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
-	55, // 72: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
-	20, // 73: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
-	19, // 74: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
-	21, // 75: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
-	22, // 76: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
-	3,  // 77: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
-	5,  // 78: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
-	41, // 79: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
-	60, // 80: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
-	61, // 81: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
-	10, // 82: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
-	11, // 83: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
-	14, // 84: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
-	12, // 85: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
-	13, // 86: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
-	33, // 87: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
-	34, // 88: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
-	35, // 89: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
-	36, // 90: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
-	32, // 91: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
-	38, // 92: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
-	37, // 93: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
-	39, // 94: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
-	51, // 95: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
-	53, // 96: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
-	66, // 97: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
-	66, // 98: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
-	56, // 99: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
-	44, // 100: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
-	24, // 101: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
-	23, // 102: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
-	25, // 103: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
-	65, // 104: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
-	77, // [77:105] is the sub-list for method output_type
-	49, // [49:77] is the sub-list for method input_type
-	49, // [49:49] is the sub-list for extension type_name
-	49, // [49:49] is the sub-list for extension extendee
-	0,  // [0:49] is the sub-list for field type_name
+	42, // 21: protobuf.Course.last_recording:type_name -> protobuf.Stream
+	42, // 22: protobuf.Course.next_lecture:type_name -> protobuf.Stream
+	39, // 23: protobuf.GetLiveCoursesResponse.live_courses:type_name -> protobuf.CourseStream
+	26, // 24: protobuf.GetPublicCoursesResponse.courses:type_name -> protobuf.Course
+	26, // 25: protobuf.GetCourseBySlugResponse.course:type_name -> protobuf.Course
+	26, // 26: protobuf.GetUserCoursesResponse.courses:type_name -> protobuf.Course
+	26, // 27: protobuf.GetPinnedCoursesResponse.courses:type_name -> protobuf.Course
+	26, // 28: protobuf.CourseStream.course:type_name -> protobuf.Course
+	42, // 29: protobuf.CourseStream.stream:type_name -> protobuf.Stream
+	62, // 30: protobuf.CourseStream.lecture_hall:type_name -> protobuf.LectureHall
+	40, // 31: protobuf.GetSemestersResponse.current:type_name -> protobuf.Semester
+	40, // 32: protobuf.GetSemestersResponse.semesters:type_name -> protobuf.Semester
+	64, // 33: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
+	64, // 34: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
+	64, // 35: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
+	57, // 36: protobuf.Stream.downloads:type_name -> protobuf.Download
+	64, // 37: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
+	44, // 38: protobuf.StreamPlaylistEntry.stream_progress:type_name -> protobuf.StreamProgress
+	64, // 39: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
+	1,  // 40: protobuf.GetThumbsRequest.thumb_type:type_name -> protobuf.VideoType
+	45, // 41: protobuf.GetVideoSectionsResponse.sections:type_name -> protobuf.VideoSection
+	43, // 42: protobuf.GetStreamPlaylistResponse.entries:type_name -> protobuf.StreamPlaylistEntry
+	44, // 43: protobuf.GetProgressBatchResponse.progress_batch:type_name -> protobuf.StreamProgress
+	2,  // 44: protobuf.UserGroupNotification.target:type_name -> protobuf.NotificationTarget
+	64, // 45: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
+	64, // 46: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
+	64, // 47: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
+	58, // 48: protobuf.GetNotificationsResponse.notifications:type_name -> protobuf.UserGroupNotification
+	59, // 49: protobuf.GetServerNotificationsResponse.server_notifications:type_name -> protobuf.ServerNotification
+	63, // 50: protobuf.LectureHall.camera_presets:type_name -> protobuf.CameraPreset
+	65, // 51: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
+	65, // 52: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
+	65, // 53: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
+	65, // 54: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
+	65, // 55: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
+	65, // 56: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
+	8,  // 57: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
+	65, // 58: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
+	9,  // 59: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
+	65, // 60: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
+	27, // 61: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
+	28, // 62: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
+	29, // 63: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
+	65, // 64: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
+	65, // 65: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
+	30, // 66: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
+	31, // 67: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
+	46, // 68: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
+	47, // 69: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
+	49, // 70: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
+	48, // 71: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
+	50, // 72: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
+	54, // 73: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
+	55, // 74: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
+	20, // 75: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
+	19, // 76: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
+	21, // 77: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
+	22, // 78: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
+	3,  // 79: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
+	5,  // 80: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
+	41, // 81: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
+	60, // 82: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
+	61, // 83: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
+	10, // 84: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
+	11, // 85: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
+	14, // 86: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
+	12, // 87: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
+	13, // 88: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
+	33, // 89: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
+	34, // 90: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
+	35, // 91: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
+	36, // 92: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
+	32, // 93: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
+	38, // 94: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
+	37, // 95: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
+	39, // 96: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
+	51, // 97: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
+	53, // 98: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
+	66, // 99: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
+	66, // 100: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
+	56, // 101: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
+	44, // 102: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
+	24, // 103: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
+	23, // 104: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
+	25, // 105: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
+	65, // 106: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
+	79, // [79:107] is the sub-list for method output_type
+	51, // [51:79] is the sub-list for method input_type
+	51, // [51:51] is the sub-list for extension type_name
+	51, // [51:51] is the sub-list for extension extendee
+	0,  // [0:51] is the sub-list for field type_name
 }
 
 func init() { file_server_apiv2_proto_init() }
@@ -4508,6 +4571,7 @@ func file_server_apiv2_proto_init() {
 	if File_server_apiv2_proto != nil {
 		return
 	}
+	file_server_apiv2_proto_msgTypes[23].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[47].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

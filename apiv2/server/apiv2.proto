@@ -543,8 +543,26 @@ message Course {
   repeated Stream streams = 12;
   string camera_preset_preferences = 13;
   string source_preferences = 14;
-  uint32 last_recording_id = 15;
-  uint32 next_lecture_id = 16;
+
+  // Superseded by last_recording and next_lecture, which carry the whole stream. A
+  // listing needs the start date and the duration, not only an id to fetch them with.
+  reserved 15, 16;
+  reserved "last_recording_id", "next_lecture_id";
+
+  // The most recent recorded lecture, absent when the course has none.
+  optional Stream last_recording = 17;
+  // The next lecture that has not ended yet, absent when the course has none.
+  optional Stream next_lecture = 18;
+
+  // One of "public", "loggedin", "enrolled" or "hidden". Listings that reach the
+  // caller are already filtered by it; it is here so the page can mark a hidden
+  // course as such for the administrators who do see it.
+  string visibility = 19;
+  // Whether the calling user has pinned this course. False for anonymous callers.
+  bool pinned = 20;
+  // Whether the calling user administers this course, as opposed to being a global
+  // admin. Drives the per-course admin link.
+  bool is_admin = 21;
 }
 
 ///////////////////////////////
@@ -669,6 +687,9 @@ message Stream {
   bool is_planned = 30;
   bool is_coming_up = 31;
   string hls_url = 32;
+  // False for a private lecture. Only a course administrator is ever sent one, so
+  // this marks the lectures that the rest of the course cannot see.
+  bool is_publicly_visible = 33;
 }
 
 message StreamPlaylistEntry {
@@ -831,6 +852,9 @@ message LectureHall {
   uint32 id = 1;
   string name = 2;
   repeated CameraPreset camera_presets = 3;
+  // Where the room is, on whatever campus map the deployment points at. The live
+  // lecture badge links to it.
+  string external_url = 4;
 }
 
 message CameraPreset {

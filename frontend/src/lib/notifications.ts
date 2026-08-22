@@ -13,8 +13,11 @@
  * `undefined`. Adding `id` to the proto would make one shared cache possible.
  */
 
-import { GetNotificationsResponseSchema } from "@/gen/server/apiv2_pb";
-import { apiGetMessage } from "./api";
+import {
+  GetNotificationsResponseSchema,
+  GetServerNotificationsResponseSchema,
+} from "@/gen/server/apiv2_pb";
+import { apiGetMessage, apiGetMessagePublic } from "./api";
 
 const STORAGE_KEY = "spa.notifications";
 const LAST_FETCH_KEY = "spa.lastNotificationFetch";
@@ -81,4 +84,26 @@ export async function fetchNotifications(force = false): Promise<Notification[]>
   localStorage.setItem(LAST_FETCH_KEY, Date.now().toString());
 
   return notifications;
+}
+
+/**
+ * A banner the operators put across the top of the start page — planned downtime, a
+ * degraded service. Unrelated to the notifications above: nobody is the recipient, so
+ * there is no read state and nothing is cached.
+ */
+export interface ServerNotification {
+  /** Raw HTML, written by an administrator and rendered as markup on the old page. */
+  html: string;
+  /** Warnings are styled as such; the rest are informational. */
+  warn: boolean;
+}
+
+/** Current server notifications. Answers anonymous callers, as the banner is for all. */
+export async function fetchServerNotifications(): Promise<ServerNotification[]> {
+  const res = await apiGetMessagePublic(
+    GetServerNotificationsResponseSchema,
+    "/server-notifications",
+  );
+
+  return res.serverNotifications.map((n) => ({ html: n.text, warn: n.warn }));
 }

@@ -60,11 +60,12 @@ jobs:
         with:
           go-version: 1.26.x
 
-      # The starter dump creates the schema and the example courses, users and streams
-      # the pages render. The server migrates it forward on boot, so an old dump is
-      # fine. Run through the mariadb image rather than a client on the runner, so the
-      # client version always matches the server and nothing depends on what happens to
-      # be preinstalled.
+      # The starter dump is the fixture: its users, courses and lectures are what the
+      # visibility tests assert on, and every account in it has the password "password".
+      # The server migrates the 2022 schema forward on boot, so an old dump is fine.
+      # Run through the mariadb image rather than a client on the runner, so the client
+      # version always matches the server and nothing depends on what happens to be
+      # preinstalled.
       - name: Seed the database
         run: |
           docker run --rm --network host -v "$PWD:/repo:ro" mariadb:11 \
@@ -102,11 +103,6 @@ jobs:
           echo "server did not start within two minutes"
           cat server.log
           exit 1
-
-      # After the server, so that the account is created against the migrated schema
-      # rather than the 2022 one in the dump.
-      - name: Create the test account
-        run: go run ./frontend/e2e/seeduser
 
       - name: Install Playwright browsers
         working-directory: ./frontend

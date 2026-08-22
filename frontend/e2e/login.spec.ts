@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { login, password, sessionCookie, username } from "./helpers";
+import { login, password, sessionCookie } from "./helpers";
+import { users } from "./seed";
 
 /**
  * Signing in spans both frontends: the page is rendered by the SPA, the credentials
@@ -15,7 +16,7 @@ test.describe("login", () => {
     await page.goto("/settings");
     await expect(page).toHaveURL(/\/login/);
 
-    await page.getByLabel("Username").fill(username);
+    await page.getByLabel("Username").fill(users.studi1.username);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Login" }).click();
 
@@ -25,7 +26,7 @@ test.describe("login", () => {
 
   test("reports a wrong password without starting a session", async ({ page }) => {
     await page.goto("/login");
-    await page.getByLabel("Username").fill(username);
+    await page.getByLabel("Username").fill(users.studi1.username);
     await page.getByLabel("Password").fill("not-the-password");
     await page.getByRole("button", { name: "Login" }).click();
 
@@ -37,7 +38,7 @@ test.describe("login", () => {
   });
 
   test("keeps the session across a page the SPA owns and one it does not", async ({ page }) => {
-    await login(page, "/settings");
+    await login(page, users.studi1, "/settings");
     const cookie = await sessionCookie(page);
     expect(cookie).toBeTruthy();
 
@@ -52,7 +53,7 @@ test.describe("login", () => {
   });
 
   test("signing out clears the session", async ({ page }) => {
-    await login(page, "/settings");
+    await login(page, users.studi1, "/settings");
     await page.goto("/logout");
 
     expect(await sessionCookie(page)).toBeFalsy();
@@ -71,7 +72,7 @@ test.describe("login", () => {
       }
     });
 
-    await login(page, "/settings");
+    await login(page, users.studi1, "/settings");
     expect(apiRequests).toEqual([]);
   });
 });
