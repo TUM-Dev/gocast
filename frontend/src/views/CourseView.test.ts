@@ -33,7 +33,7 @@ vi.mock("@/stores/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/stores/auth")>()),
   redirectToLogin,
 }));
-vi.mock("@/components/StartPageLayout.vue", () => ({
+vi.mock("@/components/start-page/StartPageLayout.vue", () => ({
   default: { template: "<div><slot /></div>" },
 }));
 

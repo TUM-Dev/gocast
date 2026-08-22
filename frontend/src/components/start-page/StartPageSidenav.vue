@@ -9,7 +9,7 @@ import { useCourseStore } from "@/stores/courses";
 import { useSemesterStore } from "@/stores/semester";
 import { useSidenavStore } from "@/stores/sidenav";
 
-import AppFooter from "./AppFooter.vue";
+import AppFooter from "@/components/AppFooter.vue";
 
 /**
  * The start page's sidebar, ported from web/template/home.gohtml. Classes are copied
