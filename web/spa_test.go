@@ -195,6 +195,75 @@ func TestPageHandlerRequiresABuildForPagesWithNoTemplate(t *testing.T) {
 	}
 }
 
+// A hook may answer the request instead of preparing for the shell: the start page's
+// fresh-installation check renders the onboarding page and aborts. Appending the shell
+// to that would send both.
+func TestPageHandlerLetsAHookAnswerTheRequest(t *testing.T) {
+	spaIsBuilt(t)
+
+	gin.SetMode(gin.TestMode)
+
+	const path = "/settings"
+	if !spaRoutes[path] {
+		t.Fatalf("%s is expected to be listed in spaRoutes", path)
+	}
+
+	original, had := spaRouteHooks[path]
+	t.Cleanup(func() {
+		if had {
+			spaRouteHooks[path] = original
+		} else {
+			delete(spaRouteHooks, path)
+		}
+	})
+
+	spaRouteHooks[path] = func(c *gin.Context) {
+		c.String(http.StatusOK, "answered by the hook")
+		c.Abort()
+	}
+
+	handler, err := pageHandler(path, nil, true)
+	if err != nil {
+		t.Fatalf("pageHandler: %v", err)
+	}
+
+	router := gin.New()
+	router.GET(path, handler)
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+
+	if body := rec.Body.String(); strings.Contains(body, "/spa-assets/") {
+		t.Errorf("the shell was written after an aborting hook, got: %q", truncate(body))
+	}
+	if !strings.Contains(rec.Body.String(), "answered by the hook") {
+		t.Errorf("the hook's response was not sent, got: %q", truncate(rec.Body.String()))
+	}
+}
+
+// A hook that only prepares — the login page's redirect cookie — must still let the
+// shell through.
+func TestPageHandlerServesTheShellAfterANonAbortingHook(t *testing.T) {
+	spaIsBuilt(t)
+
+	gin.SetMode(gin.TestMode)
+
+	handler, err := pageHandler("/login", nil, true)
+	if err != nil {
+		t.Fatalf("pageHandler: %v", err)
+	}
+
+	router := gin.New()
+	router.GET("/login", handler)
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/login", nil))
+
+	if !strings.Contains(rec.Body.String(), "/spa-assets/") {
+		t.Errorf("the shell was not served, got: %q", truncate(rec.Body.String()))
+	}
+}
+
 func TestSPAAssetsAreEmbedded(t *testing.T) {
 	spaIsBuilt(t)
 

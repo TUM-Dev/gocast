@@ -61,11 +61,31 @@ test:
 	go test -race ./...
 	cd frontend; npm test
 
-# Browser tests against a running server. Not part of `test`: these need the server and
-# its database up, and they sign in as an account that has to exist first.
+# Loads tum-live-starter.sql into the development database, dropping whatever was
+# there. That dump is the fixture the browser tests assert against — its users, courses
+# and lectures — so they need it as written, not as some earlier run left it. The
+# server migrates the 2022 schema forward on boot.
 #
-#   go run ./frontend/e2e/seeduser   # once, and again whenever the database is reset
-#   make run                         # in another terminal
+# Runs the client inside the database container so its version always matches the
+# server's and nothing depends on what is installed on the host. docker-compose.yml
+# names the container mariadb_container; override for a differently named one:
+#
+#   make e2e_db DB_CONTAINER=mariadb_container
+DB_CONTAINER ?= mariadb-tumlive
+
+.PHONY: e2e_db
+e2e_db:
+	@docker inspect -f . $(DB_CONTAINER) >/dev/null 2>&1 || { \
+		echo "no container named $(DB_CONTAINER); pass DB_CONTAINER=<name>"; exit 1; }
+	docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample \
+		-e "DROP DATABASE IF EXISTS tumlive;"
+	docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample < tum-live-starter.sql
+
+# Browser tests against a running server. Not part of `test`: these need the server and
+# its database up.
+#
+#   make e2e_db   # and again whenever a run has left settings changed
+#   make run      # in another terminal
 #   make test_e2e
 .PHONY: test_e2e
 test_e2e:

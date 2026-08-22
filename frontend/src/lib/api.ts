@@ -65,9 +65,34 @@ function getToken(forceRefresh = false): Promise<string> {
   return pendingToken;
 }
 
+/**
+ * Remembers that there is no session to mint a token from, so the endpoints that
+ * serve anonymous callers stop asking for one on every request. Only ever set from a
+ * 401: a token request that failed for any other reason has not answered the question.
+ */
+let sessionAbsent = false;
+
 /** Drops the cached token, e.g. after logging out. */
 export function clearToken(): void {
   accessToken = null;
+  sessionAbsent = false;
+}
+
+/** A token, or null when nobody is signed in. Anything else still throws. */
+async function tokenOrNull(): Promise<string | null> {
+  if (sessionAbsent) {
+    return null;
+  }
+
+  try {
+    return await getToken();
+  } catch (err) {
+    if (err instanceof ApiError && err.isUnauthenticated) {
+      sessionAbsent = true;
+      return null;
+    }
+    throw err;
+  }
 }
 
 async function toApiError(res: Response): Promise<ApiError> {
@@ -141,8 +166,36 @@ export async function apiFetchPublic<T>(path: string, init: RequestInit = {}): P
   return (await res.json()) as T;
 }
 
+/**
+ * Request for an endpoint that answers anonymous callers but shows a signed-in one
+ * more — the course listings, which gain the logged-in-only courses, and the
+ * thumbnails and streams behind them.
+ *
+ * Neither apiFetch nor apiFetchPublic fits: the first fails for a visitor who is
+ * simply not signed in, and the second would quietly show a signed-in user the
+ * anonymous view of the site.
+ *
+ * Signing in is a full page load — the form posts to Go — so a session that appears
+ * later in the life of this module is not a case that arises.
+ */
+export async function apiFetchOptionalAuth<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = await tokenOrNull();
+  if (token === null) {
+    return apiFetchPublic<T>(path, init);
+  }
+  return apiFetch<T>(path, init);
+}
+
 export function apiGet<T>(path: string): Promise<T> {
   return apiFetch<T>(path, { method: "GET" });
+}
+
+export function apiPost<T>(path: string, body: unknown): Promise<T> {
+  return apiFetch<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 export function apiPatch<T>(path: string, body: unknown): Promise<T> {
@@ -183,6 +236,15 @@ export async function apiGetMessagePublic<Desc extends DescMessage>(
   return fromJson(schema, json, JSON_READ_OPTIONS);
 }
 
+/** Typed GET for endpoints that serve anonymous callers but show more to a user. */
+export async function apiGetMessageOptionalAuth<Desc extends DescMessage>(
+  schema: Desc,
+  path: string,
+): Promise<MessageShape<Desc>> {
+  const json = await apiFetchOptionalAuth<JsonValue>(path, { method: "GET" });
+  return fromJson(schema, json, JSON_READ_OPTIONS);
+}
+
 /** Typed POST for endpoints that do not require authentication. */
 export async function apiPostMessagePublic<Req extends DescMessage, Res extends DescMessage>(
   requestSchema: Req,
@@ -195,6 +257,17 @@ export async function apiPostMessagePublic<Req extends DescMessage, Res extends 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(toJson(requestSchema, message)),
   });
+  return fromJson(responseSchema, json, JSON_READ_OPTIONS);
+}
+
+/** Typed POST for endpoints that require authentication. */
+export async function apiPostMessage<Req extends DescMessage, Res extends DescMessage>(
+  requestSchema: Req,
+  responseSchema: Res,
+  path: string,
+  message: MessageShape<Req>,
+): Promise<MessageShape<Res>> {
+  const json = await apiPost<JsonValue>(path, toJson(requestSchema, message));
   return fromJson(responseSchema, json, JSON_READ_OPTIONS);
 }
 

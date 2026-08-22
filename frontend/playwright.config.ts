@@ -7,18 +7,19 @@ import { defineConfig, devices } from "@playwright/test";
  * reaches: gin choosing between the SPA shell and a template, the session cookie
  * surviving login and redirects, and the bearer token minted from it.
  *
- * The server needs a database, so bring it up and seed the account first:
+ * They run against the database in tum-live-starter.sql and nothing else: the users,
+ * courses and lectures they assert on are the ones that dump defines, described in
+ * e2e/seed.ts. Load it, then start the server, which migrates it forward:
  *
- *   go run ./frontend/e2e/seeduser
+ *   make e2e_db
  *   go run cmd/tumlive/main.go
  *   cd frontend && npm run test:e2e
  *
- * Point E2E_BASE_URL elsewhere to run against a deployed instance.
+ * E2E_BASE_URL points them elsewhere, but only at a deployment holding the same
+ * fixture — the visibility assertions name particular courses.
  */
 
 export const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:8081";
-export const username = process.env.E2E_USERNAME ?? "e2e@localhost";
-export const password = process.env.E2E_PASSWORD ?? "e2e-password";
 
 export default defineConfig({
   testDir: "./e2e",

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from "@/stores/auth";
+import { useSidenavStore } from "@/stores/sidenav";
 
 import GlobalSearch from "./GlobalSearch.vue";
 import NotificationsMenu from "./NotificationsMenu.vue";
@@ -25,6 +26,8 @@ withDefaults(
 const emit = defineEmits<{ "toggle-sidenav": [] }>();
 
 const auth = useAuthStore();
+// Read rather than emitted: the button shows whether the sidebar it opens is open.
+const sidenav = useSidenavStore();
 
 // Served by Go from the branding directory, so it must not be bundled as an asset.
 const LOGO_URL = "/logo.svg";
@@ -43,7 +46,7 @@ const LOGO_URL = "/logo.svg";
         class="tum-live-icon-button p-3 text-lg md:hidden"
         @click="emit('toggle-sidenav')"
       >
-        <i class="fa-solid fa-bars"></i>
+        <i class="fa-solid fa-bars" :class="{ 'rotate-90': sidenav.open }"></i>
       </button>
       <!-- A full navigation: "/" is still served by a template. -->
       <a href="/" class="mx-3" id="logo" title="Start">

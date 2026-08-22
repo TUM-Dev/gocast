@@ -585,24 +585,29 @@ func (d streamsDao) ClearRunnerJobsByHostname(hostname string) error {
 }
 
 // GetStaleStreams finds streams marked as live that are likely stuck:
-// no runner jobs exist, or all assigned runners have not been seen recently,
-// or the stream's scheduled end time has long passed.
+// their scheduled end time has long passed, or the runners carrying them have
+// gone silent.
+//
+// A stream with no runner jobs at all is not stale by that fact alone -- it was
+// never handed to a runner in the first place -- so it is only reaped once its
+// end time has passed.
 func (d streamsDao) GetStaleStreams(ctx context.Context) ([]model.Stream, error) {
 	var streams []model.Stream
 	err := DB.WithContext(ctx).
 		Raw(`SELECT DISTINCT s.* FROM streams s
 			WHERE s.live_now = true AND s.deleted_at IS NULL AND (
-				-- no runner jobs exist for this stream
-				NOT EXISTS (SELECT 1 FROM stream_runner_jobs srj WHERE srj.stream_id = s.id AND srj.deleted_at IS NULL)
-				-- or all assigned runners have gone silent
-				OR NOT EXISTS (
-					SELECT 1 FROM stream_runner_jobs srj
-					JOIN runners r ON r.hostname = srj.runner_hostname
-					WHERE srj.stream_id = s.id AND srj.deleted_at IS NULL
-					AND r.last_seen > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+				-- the stream's end time passed more than 10 minutes ago
+				s.end < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+				-- or it has runner jobs, and every runner holding one has gone silent
+				OR (
+					EXISTS (SELECT 1 FROM stream_runner_jobs srj WHERE srj.stream_id = s.id AND srj.deleted_at IS NULL)
+					AND NOT EXISTS (
+						SELECT 1 FROM stream_runner_jobs srj
+						JOIN runners r ON r.hostname = srj.runner_hostname
+						WHERE srj.stream_id = s.id AND srj.deleted_at IS NULL
+						AND r.last_seen > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+					)
 				)
-				-- or the stream's end time passed more than 10 minutes ago
-				OR s.end < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
 			)`).
 		Scan(&streams).Error
 	return streams, err

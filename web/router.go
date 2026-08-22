@@ -43,12 +43,19 @@ const spaShellPath = "spa/index.html"
 // Removing a path moves the page back, but only while its template handler is still
 // registered — see registerPage.
 var spaRoutes = map[string]bool{
-	"/settings": true,
-	"/login":    true,
+	"/settings":                 true,
+	"/login":                    true,
+	"/":                         true,
+	"/courses/mine":             true,
+	"/courses/public":           true,
+	"/course/:year/:term/:slug": true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
 // written. For things the client cannot do, such as cookies — not data fetching.
+//
+// A hook may also answer the request itself; see pageHandler. Hooks that need a
+// database are registered in configMainRoute rather than here.
 var spaRouteHooks = map[string]gin.HandlerFunc{
 	// Stored server-side because an external identity provider takes the browser
 	// off-site and brings it back without the original query string.
@@ -192,6 +199,12 @@ func pageHandler(path string, legacy gin.HandlerFunc, spaBuilt bool) (gin.Handle
 
 	return func(c *gin.Context) {
 		hook(c)
+		// A hook may answer the request instead of preparing for the shell: the
+		// fresh-installation check on "/" renders the onboarding page and aborts.
+		// Writing the shell after that would append it to a finished response.
+		if c.IsAborted() {
+			return
+		}
 		serveSPAShell(c)
 	}, nil
 }
@@ -215,10 +228,18 @@ func configGinStaticRouter(router *gin.Engine) {
 	})
 }
 
+// newStartPage registers the four routes of the start page, all served by the SPA,
+// plus the semester redirect that predates it.
 func newStartPage(router *gin.Engine, routes *mainRoutes) {
-	router.GET("/", routes.home)
+	registerPage(&router.RouterGroup, http.MethodGet, "/", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/courses/mine", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/courses/public", nil)
+	// Kept as a path rather than a query parameter because it is the URL people have
+	// bookmarked; the client router matches the same shape.
+	registerPage(&router.RouterGroup, http.MethodGet, "/course/:year/:term/:slug", nil)
+
+	// Not a page of its own: it redirects into the semester query the start page uses.
 	router.GET("/semester/:year/:term", routes.semesterRedirect)
-	router.GET("/course/:year/:term/:slug", routes.courseRedirect)
 }
 
 func oldStartPage(router *gin.Engine, routes *mainRoutes) {
@@ -236,6 +257,9 @@ func oldStartPage(router *gin.Engine, routes *mainRoutes) {
 func configMainRoute(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
+	// Registered here rather than in the package-level table, which holds only hooks
+	// that need nothing but the request. Must precede the registerPage calls below.
+	spaRouteHooks["/"] = routes.onboardingIfFresh
 	streamGroup := router.Group("/")
 
 	// lecturers
@@ -340,26 +364,29 @@ type mainRoutes struct {
 	dao.DaoWrapper
 }
 
-func (r mainRoutes) home(c *gin.Context) {
+// onboardingIfFresh answers "/" itself while the deployment has no users, offering to
+// create the first account instead of a start page nobody can sign in to.
+//
+// This stays server-side because the shell would otherwise render the start page for
+// a moment before finding out. GetFrontendConfig reports the same flag, so the
+// onboarding page can move to the client once it is migrated too.
+func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
 		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		c.Abort()
 		return
 	}
-	if isFresh {
-		if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
-			logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-		}
+	if !isFresh {
 		return
 	}
 
-	indexData := NewIndexDataWithContext(c)
-
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
-		logger.Error("Could not execute template: 'home.gohtml'", "err", err)
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
+		logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
+		return
 	}
+	c.Abort()
 }
 
 func (r mainRoutes) SearchPage(c *gin.Context) {
@@ -373,12 +400,6 @@ func (r mainRoutes) SearchPage(c *gin.Context) {
 func (r mainRoutes) semesterRedirect(c *gin.Context) {
 	c.Redirect(http.StatusFound,
 		fmt.Sprintf("/?year=%s&term=%s", c.Param("year"), c.Param("term")))
-}
-
-func (r mainRoutes) courseRedirect(c *gin.Context) {
-	c.Redirect(http.StatusFound,
-		fmt.Sprintf("/?year=%s&term=%s&slug=%s&view=3",
-			c.Param("year"), c.Param("term"), c.Param("slug")))
 }
 
 func (r mainRoutes) HealthCheck(context *gin.Context) {

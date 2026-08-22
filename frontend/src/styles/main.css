@@ -185,6 +185,211 @@
     @apply text-sm text-5 mb-1;
   }
 
+  /* Start page content. From web/assets/css/home.css. */
+  .tum-live-button-tertiary > i {
+    @apply mr-2;
+  }
+
+  .tum-live-button-tertiary.active {
+    @apply bg-gray-800 text-white dark:bg-gray-600;
+  }
+
+  .tum-live-badge {
+    @apply rounded-full px-2 py-1;
+  }
+
+  .tum-live-badge > i {
+    @apply mr-1;
+  }
+
+  .tum-live-thumbnail {
+    @apply relative mb-2 rounded-lg bg-gray-100 bg-cover transition-all duration-500 hover:shadow-xl dark:bg-gray-800 dark:shadow-gray-900/75;
+  }
+
+  .tum-live-thumbnail-progress {
+    @apply absolute bottom-0 w-full;
+  }
+
+  .tum-live-thumbnail-progress > div {
+    @apply relative h-2 w-full rounded-b-lg bg-gray-500/50;
+  }
+
+  .tum-live-thumbnail-progress > div > span {
+    @apply tum-live-bg-primary absolute left-0 h-2 rounded-bl-lg;
+  }
+
+  .tum-live-content-grid {
+    @apply grid h-full gap-y-8 pb-4;
+  }
+
+  .tum-live-content-grid-item > h3 {
+    @apply px-3 font-bold;
+  }
+
+  .tum-live-stream .course {
+    @apply text-5 break-words rounded-lg py-1 leading-relaxed hover:cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-stream .title {
+    @apply block font-medium hover:underline;
+  }
+
+  .tum-live-stream .date,
+  .tum-live-stream-row .date {
+    @apply mt-1 inline flex items-center font-light;
+  }
+
+  .tum-live-stream .description,
+  .tum-live-stream-row .description {
+    @apply flex items-center;
+  }
+
+  .tum-live-stream-row {
+    @apply flex flex-col md:flex-row md:items-center md:px-0;
+  }
+
+  .tum-live-stream-row:not(:last-child) {
+    @apply mb-2;
+  }
+
+  .tum-live-stream-row .title {
+    @apply mt-3 block font-semibold hover:underline md:mt-0;
+  }
+
+  .tum-live-course-list > header {
+    @apply mb-8 flex items-center justify-between;
+  }
+
+  .tum-live-course-list > header > h1 {
+    @apply flex items-center px-3 font-bold;
+  }
+
+  .tum-live-course-list > header > button {
+    @apply tum-live-button tum-live-button-secondary;
+  }
+
+  .tum-live-course-list-item {
+    @apply rounded-lg px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-course-list-item .title {
+    @apply text-3 block text-sm font-semibold hover:cursor-pointer hover:underline lg:text-base;
+  }
+
+  .tum-live-course-list-item .links {
+    @apply text-5 flex flex-col text-sm font-light lg:flex-row lg:items-center;
+  }
+
+  .tum-live-course-list-item .links > *:not(:first-child) {
+    @apply pt-1 lg:pl-2 lg:pt-0;
+  }
+
+  .tum-live-notification {
+    @apply text-4 rounded-lg border px-3 py-1 text-sm;
+  }
+
+  .tum-live-notification > .icon {
+    @apply mr-2;
+  }
+
+  .tum-live-notification-info {
+    @apply border-blue-500/25 bg-blue-100/50 dark:border-indigo-600/50 dark:bg-indigo-500/25;
+  }
+
+  .tum-live-notification-warn {
+    @apply border-amber-300/50 bg-amber-200/25 dark:border-amber-500/50 dark:bg-amber-400/25;
+  }
+
+  .tum-live-notification-warn > .icon {
+    @apply text-amber-500/75 dark:text-amber-200/75;
+  }
+
+  .tum-live-notification-info > .icon {
+    @apply text-blue-500/75 dark:text-indigo-600/75;
+  }
+
+  .tum-live-course-view {
+    @apply pb-5;
+  }
+
+  .tum-live-course-view > header {
+    @apply mb-8 grid gap-2 text-center;
+  }
+
+  .tum-live-course-view > header .year {
+    @apply text-5 mb-0 font-semibold uppercase;
+  }
+
+  .tum-live-course-view > header .name {
+    @apply font-bold;
+  }
+
+  .tum-live-course-view > header .button-area {
+    @apply flex items-center justify-center space-x-4;
+  }
+
+  .tum-live-course-view-item {
+    @apply py-4;
+  }
+
+  .tum-live-course-view-item:not(:last-child) {
+    @apply border-b dark:border-gray-800;
+  }
+
+  .tum-live-course-view-item > header {
+    @apply mb-3 flex flex-col items-center md:flex-row;
+  }
+
+  .tum-live-course-view-item > header > h3 {
+    @apply mb-2 font-bold md:mb-0 md:mr-2;
+  }
+
+  .tum-live-upcoming {
+    @apply grid gap-y-3;
+  }
+
+  .tum-live-upcoming .tum-live-upcoming-item {
+    @apply rounded-lg border-l-4 border-amber-500 bg-amber-500/25 px-3 py-2 text-sm;
+  }
+
+  /* The start page sidebar. From web/assets/css/home.css. */
+  .tum-live-side-navigation {
+    @apply text-3 sticky top-0 shrink-0 flex-col overflow-y-scroll font-light;
+  }
+
+  .tum-live-side-navigation-group {
+    @apply mx-5 grid content-baseline py-4;
+  }
+
+  /*
+   * Every group but the last two gets a rule under it: the last is the mobile footer,
+   * which brings its own. Copied as-is — the selector counts children, so it depends
+   * on the sidebar's markup order.
+   */
+  .tum-live-side-navigation-group:not(:nth-last-child(-n + 2)) {
+    @apply border-b dark:border-gray-800;
+  }
+
+  .tum-live-side-navigation-group > header {
+    @apply flex items-center px-3 pb-2 font-semibold;
+  }
+
+  .tum-live-side-navigation-group > header > i {
+    @apply mr-2 text-xs;
+  }
+
+  .tum-live-side-navigation-group-item {
+    @apply rounded-lg px-3 py-2 text-left text-sm;
+  }
+
+  .tum-live-side-navigation-group-item.hover {
+    @apply hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-side-navigation-group-item > i {
+    @apply mr-2 text-xs;
+  }
+
   .tum-live-footer {
     @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
   }
@@ -200,4 +405,19 @@
   .notificationBody a {
     @apply underline;
   }
+}
+
+/*
+ * The scrolling panes hide their scrollbars, so the sidebar and the content area do
+ * not each draw one. From web/assets/css/home.css.
+ */
+#content::-webkit-scrollbar,
+.tum-live-side-navigation::-webkit-scrollbar {
+  display: none;
+}
+
+#content,
+.tum-live-side-navigation {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

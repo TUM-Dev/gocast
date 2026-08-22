@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, apiGet, clearToken } from "./api";
+import { ApiError, apiFetchOptionalAuth, apiGet, clearToken } from "./api";
 
 /**
  * These cover the credential handling rather than any single endpoint: the token is
@@ -119,5 +119,53 @@ describe("apiGet", () => {
 
     await expect(apiGet("/users/me")).rejects.toBeInstanceOf(ApiError);
     expect(calls()).toHaveLength(2);
+  });
+});
+
+/**
+ * The listings that answer anonymous callers but show a signed-in one more. Getting
+ * this wrong is silent both ways: an anonymous visitor sees an error page for being
+ * logged out, or a signed-in user quietly sees the logged-out view of the site.
+ */
+describe("apiFetchOptionalAuth", () => {
+  it("sends the token when there is a session", async () => {
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+
+    await apiFetchOptionalAuth("/courses");
+
+    expect(calls()).toEqual([TOKEN_URL, "/api/v2/courses"]);
+    expect(authHeaderOf(1)).toBe("Bearer token-1");
+  });
+
+  it("falls back to an unauthenticated request when nobody is signed in", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ message: "no session" }, 401))
+      .mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+
+    await apiFetchOptionalAuth("/courses");
+
+    expect(calls()).toEqual([TOKEN_URL, "/api/v2/courses"]);
+    expect(authHeaderOf(1)).toBeNull();
+  });
+
+  it("does not ask for a token again once there is known to be no session", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ message: "no session" }, 401))
+      .mockImplementation(() => Promise.resolve(jsonResponse({ ok: 1 })));
+
+    await apiFetchOptionalAuth("/courses");
+    await apiFetchOptionalAuth("/courses/live");
+
+    // One doomed token request for the page, not one per listing.
+    expect(calls()).toEqual([TOKEN_URL, "/api/v2/courses", "/api/v2/courses/live"]);
+  });
+
+  it("propagates a token failure that is not a missing session", async () => {
+    // A 500 leaves the question open; treating it as "logged out" would show the
+    // anonymous view to a user who is signed in.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: "boom" }, 500));
+
+    await expect(apiFetchOptionalAuth("/courses")).rejects.toBeInstanceOf(ApiError);
+    expect(calls()).toEqual([TOKEN_URL]);
   });
 });

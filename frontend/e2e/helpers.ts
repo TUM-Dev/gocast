@@ -1,8 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 
-import { password, username } from "../playwright.config";
+import { password, users, type SeedUser } from "./seed";
 
-export { password, username };
+export { password };
 
 /** The cookie the Go server sets on a successful login. */
 export const SESSION_COOKIE = "jwt";
@@ -11,11 +11,15 @@ export const SESSION_COOKIE = "jwt";
  * Signs in the way a person does: through the real form, letting the browser follow
  * the redirect the server sends. Nothing here reaches into the API, so a break in the
  * session handling shows up as a failing test rather than being papered over.
+ *
+ * The user is named rather than defaulted wherever what they can see is the point.
+ * `users.studi1` is the default for the tests where it is not: an ordinary student
+ * with no administrative rights anywhere.
  */
-export async function login(page: Page, to = "/"): Promise<void> {
+export async function login(page: Page, user: SeedUser = users.studi1, to = "/"): Promise<void> {
   await page.goto("/login");
 
-  await page.getByLabel("Username").fill(username);
+  await page.getByLabel("Username").fill(user.username);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).not.toHaveURL(/\/login/);

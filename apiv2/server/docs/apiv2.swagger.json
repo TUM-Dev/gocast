@@ -1206,13 +1206,25 @@
         "sourcePreferences": {
           "type": "string"
         },
-        "lastRecordingId": {
-          "type": "integer",
-          "format": "int64"
+        "lastRecording": {
+          "$ref": "#/definitions/protobufStream",
+          "description": "The most recent recorded lecture, absent when the course has none."
         },
-        "nextLectureId": {
-          "type": "integer",
-          "format": "int64"
+        "nextLecture": {
+          "$ref": "#/definitions/protobufStream",
+          "description": "The next lecture that has not ended yet, absent when the course has none."
+        },
+        "visibility": {
+          "type": "string",
+          "description": "One of \"public\", \"loggedin\", \"enrolled\" or \"hidden\". Listings that reach the\ncaller are already filtered by it; it is here so the page can mark a hidden\ncourse as such for the administrators who do see it."
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Whether the calling user has pinned this course. False for anonymous callers."
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Whether the calling user administers this course, as opposed to being a global\nadmin. Drives the per-course admin link."
         }
       }
     },
@@ -1513,6 +1525,10 @@
             "type": "object",
             "$ref": "#/definitions/protobufCameraPreset"
           }
+        },
+        "externalUrl": {
+          "type": "string",
+          "description": "Where the room is, on whatever campus map the deployment points at. The live\nlecture badge links to it."
         }
       }
     },
@@ -1682,6 +1698,10 @@
         },
         "hlsUrl": {
           "type": "string"
+        },
+        "isPubliclyVisible": {
+          "type": "boolean",
+          "description": "False for a private lecture. Only a course administrator is ever sent one, so\nthis marks the lectures that the rest of the course cannot see."
         }
       }
     },

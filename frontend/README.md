@@ -5,7 +5,15 @@ The Vite single-page app that is gradually replacing the server-rendered templat
 which one answers, so pages move over one at a time and can be moved back just as
 easily.
 
-Currently migrated: **`/settings`**, **`/login`**.
+Currently migrated: **`/settings`**, **`/login`**, and the start page — `/`,
+`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug`.
+
+Two things the start page had and this one does not, both waiting on the v1 API:
+
+- **The viewer count on live cards.** The number lives in the chat session map that
+  `api/chat.go` keeps in memory, which `GetLiveCourses` has no way to reach.
+- **The search typeahead.** `AppHeader` submits to `/search` instead, because the
+  Meilisearch endpoints behind the dropdown exist only on v1.
 
 ## Running it
 
@@ -95,7 +103,7 @@ that is inert without `--localstorage-file` and shadows the DOM environment's.
 ## Browser tests
 
 ```sh
-go run ./frontend/e2e/seeduser   # once, and again after the database is reset
+make e2e_db                      # load tum-live-starter.sql, dropping what was there
 go run cmd/tumlive/main.go       # in another terminal
 cd frontend && npm run test:e2e  # or `make test_e2e` from the repo root
 ```
@@ -103,23 +111,69 @@ cd frontend && npm run test:e2e  # or `make test_e2e` from the repo root
 Playwright, against a running server — deliberately not part of `npm test`, which must
 stay runnable with nothing else up. These cover what the unit tests structurally
 cannot: which frontend answers a given path, the session cookie surviving login and
-redirects, and the bearer token minted from that cookie.
+redirects, the bearer token minted from that cookie, and what each kind of caller is
+actually shown.
+
+**The fixture is `tum-live-starter.sql` and nothing else.** The suite creates no
+accounts and inserts no rows; it signs in as the six users that dump defines, all of
+which have the password `password`. `e2e/seed.ts` restates the dump — who administers
+what, who is enrolled in what, which lecture is live — so the expectations can be
+checked against the SQL by eye, and every spec reads its expectations from there rather
+than repeating course names.
+
+The dump carries a fixture section at the end, added so that every rule the start page
+applies has a case: a course of each of the four visibilities, a private lecture, a
+live lecture in a hidden course, watch progress, a pin on a course its owner may no
+longer see, scheduled lectures, and a server notification of each kind.
+
+**Some of its lectures are dated relative to when it is loaded**, because "today" and
+"starting in half an hour" cannot be written as fixed dates. Reload with `make e2e_db`
+before a run; lectures left over from a load days ago have gone stale, and the tests
+that depend on them will fail. The one for "today" is dated late in the evening so it
+stays ahead of the clock — after 23:45 that test skips itself rather than failing.
 
 - **`login.spec.ts`** — the round trip from a protected page to `/login` and back, a
   rejected password, one session spanning a migrated and a legacy page, and that
   credentials never reach the API.
-- **`settings.spec.ts`** — that a saved setting is read back by this page after a
-  reload *and* by the server-rendered start page, which is the only place the encoding
-  regression was ever visible.
+- **`settings.spec.ts`** — that a saved setting is read back after a reload, and that
+  the greeting is stored as the bytes its Go getter reads. It once had to look at the
+  server-rendered start page for that, because a client that encodes on write and
+  decodes on read hides the fault from itself; that page is the SPA now, so it asserts
+  the stored value over the wire instead.
 - **`migration.spec.ts`** — the shell served for migrated paths and not for others, and
   the cookie-to-bearer bridge.
+- **`start-page.spec.ts`** — that the page fills for a signed-in caller *and* for an
+  anonymous one, and that the old `?view=` URLs still land somewhere. The anonymous
+  case is there because it once broke outright: the page loads the semester list before
+  anything else, and asking for that with a bearer token failed for a visitor with no
+  session, leaving the whole page blank. Every unit test still passed.
+- **`visibility.spec.ts`** — the matrix: for each of the six users and for an anonymous
+  visitor, which courses are listed, which are theirs, which they may open by URL,
+  which live lectures they are shown, which lectures a course page lists, whether a
+  private one is among them, and who is offered the admin link. Asserted against the
+  rendered page, because a listing the server filters correctly and the page then
+  renders from the wrong array is exactly as wrong — and neither the Go tests nor the
+  component tests would notice.
+
+  The case worth knowing is `hidden`, where being listed and being reachable come
+  apart: the hidden course is in nobody's public listing, its live lecture reaches only
+  the lecturer administering it — not even the student enrolled in it — and yet a
+  direct link to the course opens for anyone, including a visitor who is not signed in.
+  That is the difference between unlisted and private, and it is easy to get wrong in
+  either direction.
 
 Two things to know before adding to them:
 
-- **The account outlives the run.** Every test changes a setting away from whatever is
-  currently stored rather than to a fixed value; a test written against a fixed
-  starting value passes once and then fails on the state its predecessor left behind.
-  For the same reason the suite runs with one worker.
+- **The accounts outlive the run.** `settings.spec.ts` writes to `studi2`, and changes
+  each setting away from whatever is currently stored rather than to a fixed value; a
+  test written against a fixed starting value passes once and then fails on the state
+  its predecessor left behind. `make e2e_db` puts the fixture back. For the same reason
+  the suite runs with one worker.
+- **The visibility tests only read**, so they neither depend on nor disturb that. Add
+  new expectations to `e2e/seed.ts`, not to the spec.
+- **Add cases to the dump, not to the tests.** A rule with no data behind it cannot be
+  covered here; the fixture section at the end of `tum-live-starter.sql` is where a new
+  one goes, with its expectation in `e2e/seed.ts`.
 - **A rejected password is slow when LDAP is configured.** The server falls back to
   LDAP before giving up, so `login.spec.ts` takes as long as that server takes to
   answer — and hangs until the test times out if the configured host does not exist.
@@ -129,6 +183,22 @@ The build is embedded into the binary, so a change here reaches the browser only
 
 The remaining gap is SAML, which needs an identity provider this suite has no way to
 stand up.
+
+## Start page URLs
+
+The server-rendered start page was one path with a `view` query parameter — `/?year=&
+term=&slug=&view=3` — driven by an Alpine state machine. Those URLs are in bookmarks
+and in browser history, so `legacyStartPageRedirect` in `src/router/index.ts`
+translates each of them into the route that replaced it.
+
+The replacements keep the shapes the server already had. `/course/:year/:term/:slug`
+and `/semester/:year/:term` are the targets `web/router.go` redirects to today, so
+links to them keep working unchanged; everything else carries the semester as
+`?year=&term=`, absent meaning whichever semester is current.
+
+There is deliberately no `/course/:slug` for the current semester, although the API
+would support it: gin panics when two parameters with different names share a
+position, so it could never be registered beside `/course/:year/:term/:slug`.
 
 ## Migrating another page
 
@@ -146,7 +216,9 @@ old one around instead just leaves two implementations to maintain.
    client only decides what to offer.
 4. If the page needs something server-side that a client cannot do — reading or writing
    a cookie it depends on — add a `spaRouteHooks` entry. Data fetching is not that:
-   it belongs in the API.
+   it belongs in the API. A hook may also answer the request itself by calling
+   `c.Abort()`, which is how `/` still renders the onboarding page on a deployment
+   that has no users yet.
 
 **Prove it**
 
@@ -216,6 +288,49 @@ Notification read state is client-side, kept in localStorage under the same key 
 legacy code uses. It keys on a hash of the notification's content because
 `protobuf.UserGroupNotification` has no id field; adding one to the proto would make
 that exact rather than merely stable.
+
+## The start page's shell
+
+`StartPageLayout.vue` is the frame the four start page routes share: the sidebar, and
+the column beside it that each view fills through a slot. `StartPageSidenav.vue` is the
+sidebar itself, ported from `home.gohtml` with its classes copied verbatim.
+
+Two pieces of shared state sit behind it:
+
+- **`stores/courses.ts`** holds the three listings for one semester at a time. The
+  sidebar and the view beside it show the same listings, and the server-rendered page
+  fetched each of them twice for exactly that reason. Only the semester being looked at
+  is kept — caching every semester a user visits grows without bound for the sake of a
+  back button that reloads in well under a second. `togglePin` tells the server before
+  it touches any listing, so a pin that failed to save is never left looking saved.
+- **`stores/sidenav.ts`** is whether the sidebar is showing on a narrow screen. It is
+  shared because the button that opens it is in the header and the sidebar is in the
+  page — the same split the `navigation` toggle in `web/ts/views/home.ts` had.
+
+The layout waits for `getSemesters` before loading any listing. Which semester "no
+semester in the URL" means is the server's answer, and fetching for `undefined` and
+then again for the resolved semester would double every request on a first visit.
+
+## Three ways to call the API
+
+Which request helper in `src/lib/api.ts` a module uses follows from the endpoint's
+policy in `apiv2/server/services.go`, and getting it wrong fails quietly:
+
+- **`apiGetMessage`** — for `authenticated` endpoints (`/courses/enrolled`,
+  `/courses/pinned`, `/progress`). Mints a bearer token and refreshes it once on a 401.
+- **`apiGetMessagePublic`** — for `public` endpoints reached *before* login
+  (`/login-options`). Sends no token, because minting one from a session that does not
+  exist fails for the wrong reason.
+- **`apiGetMessageOptionalAuth`** — for `public` endpoints that show a signed-in caller
+  **more**: `/courses` gains the logged-in-only courses, and `/courses/live`,
+  `/courses/{slug}` and the thumbnails gain whatever the caller administers. Sends the
+  token when a session can produce one and falls back to an anonymous request when it
+  cannot. Neither of the other two is safe here — the first fails for a visitor who is
+  simply not signed in, and the second shows a signed-in user the logged-out view of
+  the site.
+
+The "no session" answer is remembered for the life of the page, so an anonymous visitor
+makes one doomed token request rather than one per listing.
 
 ## The generated API client
 

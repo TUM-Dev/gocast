@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/RBG-TUM/commons"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
@@ -199,6 +200,10 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	// A lecturer's enrolled and administered courses overlap, and the lecturer branch
+	// above appends one to the other. Without this the same course is listed twice.
+	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+
 	resp := make([]*protobuf.Course, len(courses))
 	for i, course := range courses {
 		resp[i] = h.ParseCourseToProto(course, user)
@@ -214,10 +219,16 @@ func (a *API) GetPinnedCourses(ctx context.Context, req *emptypb.Empty) (*protob
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
 	}
 
-	pinnedCourses := user.PinnedCourses
-	resp := make([]*protobuf.Course, len(pinnedCourses))
-	for i, course := range pinnedCourses {
-		resp[i] = h.ParseCourseToProto(course, user)
+	// A pin outlives the access that created it: a course can be made enrolled-only,
+	// or hidden, long after someone pinned it. Listed is the same rule the other
+	// listings use, so a course the caller may no longer see drops out here too
+	// rather than showing a name they cannot open.
+	resp := make([]*protobuf.Course, 0, len(user.PinnedCourses))
+	for _, course := range user.PinnedCourses {
+		if !visibility.Listed(user, course) {
+			continue
+		}
+		resp = append(resp, h.ParseCourseToProto(course, user))
 	}
 
 	return &protobuf.GetPinnedCoursesResponse{Courses: resp}, nil
