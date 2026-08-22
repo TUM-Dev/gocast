@@ -482,7 +482,7 @@
                 <!-- Stream actions -->
                 <div class="pt-2 md:pt-0">
                     <div class="justify-start md:justify-center gap-2 text-lg flex flex-wrap shrink-0">
-                        {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+                        {{if .IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course}}
                             <div class="rounded-lg px-3 text-4 py-2 h-fit w-fit bg-gray-100 dark:bg-secondary-light space-x-2">
                             <a
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"

@@ -242,18 +242,6 @@ func newStartPage(router *gin.Engine, routes *mainRoutes) {
 	router.GET("/semester/:year/:term", routes.semesterRedirect)
 }
 
-func oldStartPage(router *gin.Engine, routes *mainRoutes) {
-	old := router.Group("/old")
-	{
-		old.GET("/", routes.MainPage)
-		old.GET("/semester/:year/:term", routes.MainPage)
-
-		course := old.Group("/course")
-		course.Use(tools.InitCourse(routes.DaoWrapper))
-		course.GET("/:year/:teachingTerm/:slug", routes.CoursePage)
-	}
-}
-
 func configMainRoute(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
@@ -326,7 +314,6 @@ func configMainRoute(router *gin.Engine) {
 	router.POST("/setPassword/:key", routes.CreatePasswordPage)
 
 	// home & course pages
-	oldStartPage(router, &routes)
 	newStartPage(router, &routes)
 
 	// watch
