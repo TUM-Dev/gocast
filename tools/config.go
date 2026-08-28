@@ -95,6 +95,11 @@ func initConfig() {
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
 	}
+	if len(Cfg.AllowedReactions) > 0 {
+		logger.Debug("Allowed reactions", "reactions", Cfg.AllowedReactions)
+	} else {
+		logger.Warn("No allowed reactions configured")
+	}
 }
 
 type Config struct {
@@ -175,12 +180,13 @@ type Config struct {
 	} `yaml:"meili"`
 	// MetricsPort is the port the Prometheus endpoint listens on, separate from the
 	// web port so the metrics are not exposed to the internet. Empty disables it.
-	MetricsPort      string `yaml:"metricsPort"`
-	VodURLTemplate   string `yaml:"vodURLTemplate"`
-	CanonicalURL     string `yaml:"canonicalURL"`
-	WikiURL          string `yaml:"wikiURL"`
-	RtmpProxyURL     string `yaml:"rtmpProxyURL"`
-	RtmpProxyService string `yaml:"rtmpProxyService"`
+	MetricsPort      string   `yaml:"metricsPort"`
+	VodURLTemplate   string   `yaml:"vodURLTemplate"`
+	CanonicalURL     string   `yaml:"canonicalURL"`
+	WikiURL          string   `yaml:"wikiURL"`
+	RtmpProxyURL     string   `yaml:"rtmpProxyURL"`
+	RtmpProxyService string   `yaml:"rtmpProxyService"`
+	AllowedReactions []string `yaml:"allowedReactions"`
 }
 
 type MailConfig struct {

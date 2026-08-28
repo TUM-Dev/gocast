@@ -8,10 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -625,34 +623,6 @@ func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingPro
 		}
 
 	}
-}
-
-// isHlsUrlOk checks if the given HLS URL is valid and accessible
-//
-//nolint:unused
-func isHlsUrlOk(url string) bool {
-	r, err := http.Get(url)
-	if err != nil {
-		return false
-	}
-	all, err := io.ReadAll(r.Body)
-	if err != nil {
-		return false
-	}
-	re := regexp.MustCompile(`chunklist.*\.m3u8`)
-	x := re.Find(all)
-	if x == nil {
-		return false
-	}
-	y := strings.ReplaceAll(r.Request.URL.String(), "playlist.m3u8", string(x))
-	get, err := http.Get(y)
-	if err != nil {
-		return false
-	}
-	if get.StatusCode == http.StatusNotFound {
-		return false
-	}
-	return true
 }
 
 func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course model.Course, workers []model.Worker, sourceType string, source string) {

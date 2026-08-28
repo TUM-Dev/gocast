@@ -29,7 +29,7 @@
 </head>
 <body x-data="{'streamID': {{$stream.Model.ID}} }" class="w-full">
     {{template "header" .IndexData.TUMLiveContext}}
-    <div class="h-full w-full flex flex-col items-center" x-data="interaction.videoInformationContext({{$stream.ID}});">
+    <div class="h-full w-full flex flex-col items-center" x-data="interaction.videoInformationContext({{$stream.Model.ID}});">
         <!-- Heading with Lecture and Course Name -->
         <div class="flex flex-row items-center pt-2">
             <a href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><h1 class="text-gray-900 dark:text-gray-200 mb-0">{{$stream.Name}}</h1></a>
@@ -38,7 +38,7 @@
         </div>
 
         <div class="flex flex-row w-full">
-            <div class="flex flex-col w-full pl-5 pt-3">
+            <div class="flex flex-col w-fit pl-5 pt-3">
                 <div class="flex flex-row items-center justify-between" style="width: 25vw;">
                     <div x-init="interaction.periodicUpdateLiveTimeLeft( '{{.Lecture.End}}' );" class="flex flex-row items-center justify-start gap-1">
                         <div class="pulsing-circle"></div>
@@ -46,7 +46,7 @@
                     </div>
                     <span class="text-2 text-gray-800 dark:text-gray-200 mt-1" id="time"></span>
                 </div>
-                <div class="w-full flex flex-row gap-2">
+                <div class="w-fit flex flex-row gap-2">
                     <div class="flex flex-col h-full" style="width: 25vw">
                         <!-- Video Player -->
                         <div style="width: 100%; height: fit-content;">
@@ -133,6 +133,23 @@
                 </div>
             </div>
 
+            <div class="w-full flex flex-col items-center pt-3">
+                <div x-init="watch.liveReactionListener.init('{{$stream.Model.ID}}'); reactions = await watch.getAllowedReactions({{$stream.Model.ID}})" x-on:reactionupdatepercentages.window="e => {percentages = e.detail.data;}"
+                     x-on:reactionupdate.window="e => {console.log(e); highlightedReaction = e.detail.data.reaction; setTimeout(() => {highlightedReaction = ''}, 1000)}"
+                    class="w-fit flex flex-row p-5 gap-x-10" x-data="{reactions: [], highlightedReaction: '', percentages: {}}">
+                    <!-- Next line is used for tailwind to compile classes -->
+                    <span class="hidden opacity-100"></span>
+                    <template x-for="reaction in reactions">
+                        <div class="flex flex-col items-center">
+                            <span x-text="reaction" class="text-5xl text-white" :class="highlightedReaction == reaction ? 'opacity-100' : 'opacity-25'"></span>
+                            <span x-text="percentages[reaction] ? ((parseFloat(percentages[reaction]) * 100).toFixed(2)).toString() + '%' : '0%'" class="text-white pt-2"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- TODO: Add live view count and live view history -->
+
             <!-- Chat -->
             {{if and $course.ChatEnabled $stream.ChatEnabled}}
                 <div
@@ -164,15 +181,19 @@
                     <!--Footer-->
                     <div class="flex justify-start pt-2">
                         <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then((response) => {if (response.ok) showModal=false; else throw new Error('Response not ok');}).catch((err) => {
-                                            console.log('Some error occurred while ending the stream:', err);
-                                        });">
+                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`)
+                                    .then((response) => {
+                                        if (response.ok) showModal = false;
+                                    })
+                                    .catch(console.error)">
                             Yes
                         </button>
                         <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then((response) => {if (response.ok) showModal=false; else throw new Error('Response not ok');}).catch((err) => {
-                                            console.log('Some error occurred while ending the stream:', err);
-                                        });">
+                                @click="fetch(`/api/stream/${streamID}/end?discard=${true}`)
+                                    .then((response) => {
+                                        if (response.ok) showModal = false;
+                                    })
+                                    .catch(console.error)">
                             No
                         </button>
                         <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"

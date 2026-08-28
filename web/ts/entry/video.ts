@@ -9,3 +9,4 @@ export * from "../subtitle-search";
 export * from "../components/video-sections";
 // Lecture Units are currently not used, so we don't include them in the bundle at the moment
 export * from "../interval-updates";
+export * from "../api/stream-reactions";

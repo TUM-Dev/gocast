@@ -33,6 +33,7 @@ const (
 
 func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, manager *runner_manager.Manager) {
 	routes := streamRoutes{daoWrapper, manager}
+	reactionRoutes := StreamReactionRoutes{daoWrapper}
 
 	stream := router.Group("/api/stream")
 	{
@@ -47,6 +48,9 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, ma
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
 
 			streamById.GET("/playlist", routes.getStreamPlaylist)
+
+			streamById.POST("/reaction", reactionRoutes.addReaction)
+			streamById.GET("/reaction/allowed", reactionRoutes.allowedReactions)
 
 			thumbs := streamById.Group("/thumbs")
 			{

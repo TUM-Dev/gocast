@@ -116,6 +116,7 @@ func run(ctx context.Context) error {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.StreamReaction{},
 		&model.Runner{},
 		&model.StreamRunnerJob{},
 	)
