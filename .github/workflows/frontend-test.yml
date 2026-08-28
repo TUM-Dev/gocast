@@ -1,0 +1,129 @@
+name: "Frontend"
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install modules
+        working-directory: ./frontend
+        run: npm ci
+      - name: Typecheck
+        working-directory: ./frontend
+        run: npm run typecheck
+      - name: Test
+        working-directory: ./frontend
+        run: npm test
+      # Building here also guards the Go side: web/spa_test.go skips when no build is
+      # present, so without this the router wiring would go unverified in CI.
+      - name: Build
+        working-directory: ./frontend
+        run: npm run build
+
+  # Browser tests against a real server: a MariaDB seeded from the starter dump, the
+  # Go binary serving both frontends, and Playwright driving Chromium against it. This
+  # is the only job that can see gin choosing between the SPA shell and a template, or
+  # the session cookie surviving a login redirect.
+  #
+  # The server runs on the config.yaml in the repository root, unchanged — the same
+  # file a developer starts with, which is the point: if it stops being enough to boot
+  # a working server, this job says so. Two of its settings matter here. The db block
+  # has to match the service container below, and the ldap block has to stay disabled:
+  # with it, a rejected password falls back to LDAP and the login test waits for
+  # ldap://abc.de to answer, which it never will.
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:12
+        env:
+          MARIADB_ROOT_PASSWORD: example
+          MARIADB_DATABASE: tumlive
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: 1.26.x
+
+      # The starter dump is the fixture: its users, courses and lectures are what the
+      # visibility tests assert on, and every account in it has the password "password".
+      # The server migrates the 2022 schema forward on boot, so an old dump is fine.
+      # Run through the mariadb image rather than a client on the runner, so the client
+      # version always matches the server and nothing depends on what happens to be
+      # preinstalled.
+      - name: Seed the database
+        run: |
+          docker run --rm --network host -v "$PWD:/repo:ro" mariadb:11 \
+            sh -c 'mariadb -h 127.0.0.1 -P 3306 -u root -pexample < /repo/tum-live-starter.sql'
+
+      # web/router.go embeds web/node_modules, so this is needed to compile at all, not
+      # just to make the icons show up.
+      - name: Install template assets
+        working-directory: ./web
+        run: npm ci
+
+      # Without a build, every migrated route falls back to its template and the suite
+      # would test the frontend it is replacing.
+      - name: Build the SPA
+        working-directory: ./frontend
+        run: npm ci && npm run build
+
+      - name: Start the server
+        run: |
+          go run cmd/tumlive/main.go > server.log 2>&1 &
+          echo $! > server.pid
+          for _ in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://localhost:8081/login; then
+              echo "server is up"
+              exit 0
+            fi
+            # Compiling and the first migration take a while; fail early if it died.
+            if ! kill -0 "$(cat server.pid)" 2>/dev/null; then
+              echo "server exited before it started serving"
+              cat server.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "server did not start within two minutes"
+          cat server.log
+          exit 1
+
+      - name: Install Playwright browsers
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the browser tests
+        working-directory: ./frontend
+        run: npm run test:e2e
+
+      - name: Collect the server log
+        if: failure()
+        run: cat server.log
+
+      # Traces and screenshots for the failing tests; Playwright is configured to keep
+      # them only on failure.
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7

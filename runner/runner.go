@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,7 +45,9 @@ type Runner struct {
 
 	draining bool
 	JobCount chan int
+	jobsMu   sync.Mutex
 	jobs     map[string]context.CancelFunc
+	discard  map[string]bool
 
 	hlsServer *HLSServer
 
@@ -56,6 +59,10 @@ type Runner struct {
 	notifications chan *protobuf.Notification
 	Metrics       *metrics.Broker
 	Version       string
+
+	connMu        sync.Mutex
+	managerConn   *grpc.ClientConn
+	managerClient protobuf.RunnerManagerServiceClient
 }
 
 func NewRunner(v string) *Runner {
@@ -70,6 +77,7 @@ func NewRunner(v string) *Runner {
 		log:           log,
 		JobCount:      make(chan int),
 		jobs:          make(map[string]context.CancelFunc),
+		discard:       make(map[string]bool),
 		draining:      false,
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
 		stats:         vmstats,
@@ -112,12 +120,15 @@ func (r *Runner) Run(ctx context.Context) {
 		for {
 			select {
 			case <-ticker.C:
+				r.jobsMu.Lock()
+				jobCount := uint64(len(r.jobs))
+				r.jobsMu.Unlock()
 				r.notifications <- &protobuf.Notification{
 					Data: &protobuf.Notification_Heartbeat{
 						Heartbeat: &protobuf.HeartbeatNotification{
 							Hostname: ptr.Take(config.Config.Hostname),
 							Draining: ptr.Take(r.draining),
-							JobCount: ptr.Take(uint64(len(r.jobs))),
+							JobCount: ptr.Take(jobCount),
 						},
 					},
 				}
@@ -128,16 +139,19 @@ func (r *Runner) Run(ctx context.Context) {
 	}()
 }
 
-func (r *Runner) Drain() {
+func (r *Runner) Drain(ctx context.Context) {
 	r.log.Info("Runner set to drain.")
 	r.draining = true
-	r.notifications <- &protobuf.Notification{
+	select {
+	case r.notifications <- &protobuf.Notification{
 		Data: &protobuf.Notification_Heartbeat{
 			Heartbeat: &protobuf.HeartbeatNotification{
 				Hostname: ptr.Take(config.Config.Hostname),
 				Draining: ptr.Take(r.draining),
 			},
 		},
+	}:
+	case <-ctx.Done():
 	}
 }
 
@@ -169,11 +183,16 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 	c, cancel := context.WithCancel(context.Background())
 	job := uuid.New().String()
 	r.JobCount <- 1
+	r.jobsMu.Lock()
 	r.jobs[job] = cancel
+	r.jobsMu.Unlock()
 	go func() {
 		defer func() {
 			cancel()
+			r.jobsMu.Lock()
 			delete(r.jobs, job)
+			delete(r.discard, job)
+			r.jobsMu.Unlock()
 			r.JobCount <- -1
 		}()
 		for _, action := range a {
@@ -193,23 +212,46 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 					break // escape retry loop on no error
 				}
 			}
+			// VoD creation (MkVOD, CheckVoD, MkThumb) is intentionally skipped once the
+			// recording is discarded, right after StreamEnd notifies gocast the stream has ended.
+			r.jobsMu.Lock()
+			shouldDiscard := r.discard[job]
+			r.jobsMu.Unlock()
+			if shouldDiscard && reflect.ValueOf(action).Pointer() == reflect.ValueOf(actions.StreamEnd).Pointer() {
+				logger.With("job", job).Info("discarding recording, skipping VoD creation")
+				break
+			}
 		}
 	}()
 	return job
 }
 
 func (r *Runner) handleNotifications(ctx context.Context) {
-	b := retry.NewFibonacci(1 * time.Second)
-	b = retry.WithJitter(500*time.Millisecond, b)
-	b = retry.WithMaxRetries(10, b)
+	bounded := retry.NewFibonacci(1 * time.Second)
+	bounded = retry.WithJitter(500*time.Millisecond, bounded)
+	bounded = retry.WithMaxRetries(10, bounded)
+
+	// Critical notifications retry indefinitely until delivered or runner shuts down
+	unbounded := retry.NewFibonacci(1 * time.Second)
+	unbounded = retry.WithJitter(500*time.Millisecond, unbounded)
+	unbounded = retry.WithCappedDuration(30*time.Second, unbounded)
 
 	for {
 		select {
 		case n := <-r.notifications:
 			go func() {
+				b := bounded
+				switch n.Data.(type) {
+				case *protobuf.Notification_StreamEnd,
+					*protobuf.Notification_StreamStart,
+					*protobuf.Notification_VodReady,
+					*protobuf.Notification_ThumbnailReady:
+					b = unbounded
+				}
 				err := retry.Do(ctx, b, r.sendNotification(n))
 				if err != nil {
-					r.log.Error("failed to send notification", "error", err)
+					r.log.Error("failed to send notification", "error", err,
+						"type", fmt.Sprintf("%T", n.Data))
 				}
 			}()
 		case <-ctx.Done():
@@ -234,12 +276,13 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 		default:
 			r.log.Debug("send notification", "notification", notification)
 		}
-		conn, err := r.dialIn()
+		conn, err := r.getManagerClient()
 		if err != nil {
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
 		_, err = conn.Notify(ctx, notification)
 		if err != nil {
+			r.invalidateManagerConn()
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
 		return nil
@@ -253,9 +296,11 @@ func getFunctionName(i interface{}) string {
 // Cleanup is called on force shutdown while actions are still running.
 // it cancels all running actions
 func (r *Runner) Cleanup() {
+	r.jobsMu.Lock()
 	for _, cancelFunc := range r.jobs {
 		cancelFunc()
 	}
+	r.jobsMu.Unlock()
 	// sleep 1 second longer than our commands default waitDelay
 	time.Sleep(time.Second * 11)
 }

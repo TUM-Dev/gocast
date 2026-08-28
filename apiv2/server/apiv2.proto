@@ -38,9 +38,14 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   produces: "application/json"
 };
 
-service API {
-  // HEALTHCHECK (./api.go)
+// The API is split into one service per domain. The split is for grouping only:
+// every method keeps the HTTP path in its google.api.http annotation and the tag in
+// its openapiv2_operation, so neither the REST surface nor the generated docs change
+// shape. All four are served by the same process and registered on the same gateway
+// mux.
 
+// Endpoints that describe the deployment rather than any resource in it.
+service MetaService {
   rpc healthCheck(google.protobuf.Empty) returns (HealthCheckResponse) {
     option (google.api.http) = {get: "/status"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -52,26 +57,57 @@ service API {
     };
   }
 
-  // USER ENDPOINTS (./user.go)
+  rpc getFrontendConfig(google.protobuf.Empty) returns (GetFrontendConfigResponse) {
+    option (google.api.http) = {get: "/config"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "API Status"
+      summary: "Get the frontend configuration."
+      description:
+        "Returns the deployment's branding, version and links. Answers "
+        "before anyone has signed in, because the frontend needs it to "
+        "render its shell."
+    };
+  }
 
+  rpc getSemesters(google.protobuf.Empty) returns (GetSemestersResponse) {
+    option (google.api.http) = {get: "/semesters"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Semesters"
+      summary: "Get available semesters."
+      description:
+        "Retrieves all available semesters and the current "
+        "semester."
+    };
+  }
+
+  rpc getNotifications(google.protobuf.Empty) returns (GetNotificationsResponse) {
+    option (google.api.http) = {get: "/notifications"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Get notifications."
+      description: "Retrieves notifications for the current user."
+    };
+  }
+
+  rpc getServerNotifications(google.protobuf.Empty) returns (GetServerNotificationsResponse) {
+    option (google.api.http) = {get: "/server-notifications"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Get server notifications."
+      description: "Retrieves current server notifications."
+    };
+  }
+}
+
+// The signed-in user's own account, and the endpoints the login page needs
+// before anyone is signed in.
+service UserService {
   rpc getUser(google.protobuf.Empty) returns (GetUserResponse) {
     option (google.api.http) = {get: "/users/me"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "User"
       summary: "Get user."
       description: "Retrieves the current user."
-    };
-  }
-
-  rpc resetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
-    option (google.api.http) = {
-      post: "/users/reset-password"
-      body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "User"
-      summary: "Reset user password."
-      description: "Resets the user password."
     };
   }
 
@@ -97,21 +133,30 @@ service API {
     };
   }
 
-  // SEMESTER ENDPOINTS (./semester.go)
-
-  rpc getSemesters(google.protobuf.Empty) returns (GetSemestersResponse) {
-    option (google.api.http) = {get: "/semesters"};
+  rpc resetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/users/reset-password"
+      body: "*"
+    };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Semesters"
-      summary: "Get available semesters."
-      description:
-        "Retrieves all available semesters and the current "
-        "semester."
+      tags: "User"
+      summary: "Reset user password."
+      description: "Resets the user password."
     };
   }
 
-  // COURSE ENDPOINTS (./course.go)
+  rpc getLoginOptions(google.protobuf.Empty) returns (GetLoginOptionsResponse) {
+    option (google.api.http) = {get: "/login-options"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Get available login methods."
+      description: "Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication."
+    };
+  }
+}
 
+// Courses and the caller's relationship to them.
+service CourseService {
   rpc getPublicCourses(GetPublicCoursesRequest) returns (GetPublicCoursesResponse) {
     option (google.api.http) = {get: "/courses"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -179,9 +224,11 @@ service API {
       description: "Pins or unpins a course for the user."
     };
   }
+}
 
-  // STREAM ENDPOINTS (./stream.go)
-
+// Individual streams and everything scoped to one: sections, subtitles,
+// thumbnails, watch progress and bookmarks.
+service StreamService {
   rpc getStream(GetStreamRequest) returns (CourseStream) {
     option (google.api.http) = {get: "/streams/{slug}/{stream_id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -227,8 +274,6 @@ service API {
     };
   }
 
-  // PROGRESS ENDPOINTS (./progress.go)
-
   rpc getProgressBatch(GetProgressBatchRequest) returns (GetProgressBatchResponse) {
     option (google.api.http) = {get: "/progress"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -249,8 +294,6 @@ service API {
       description: "Updates the watch progress of a stream for the current user."
     };
   }
-
-  // BOOKMARK ENDPOINTS (./bookmark.go)
 
   rpc addBookmark(AddBookmarkRequest) returns (AddBookmarkResponse) {
     option (google.api.http) = {post: "/bookmarks"};
@@ -287,26 +330,6 @@ service API {
       description: "Deletes a bookmark."
     };
   }
-
-  // NOTIFICATION ENDPOINTS (./notification.go)
-
-  rpc getNotifications(google.protobuf.Empty) returns (GetNotificationsResponse) {
-    option (google.api.http) = {get: "/notifications"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Notifications"
-      summary: "Get notifications."
-      description: "Retrieves notifications for the current user."
-    };
-  }
-
-  rpc getServerNotifications(google.protobuf.Empty) returns (GetServerNotificationsResponse) {
-    option (google.api.http) = {get: "/server-notifications"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Notifications"
-      summary: "Get server notifications."
-      description: "Retrieves current server notifications."
-    };
-  }
 }
 
 ///////////////////////////////
@@ -315,6 +338,24 @@ service API {
 
 message HealthCheckResponse {
   string status = 1;
+}
+
+// Branding is the deployment's own name for itself, configured in branding.yaml.
+message Branding {
+  string title = 1;
+  string description = 2;
+}
+
+message GetFrontendConfigResponse {
+  Branding branding = 1;
+  // versionTag is the build's version, or "development" for an unversioned build.
+  string version_tag = 2;
+  // wikiUrl and canonicalUrl are empty when the deployment has not configured them.
+  string wiki_url = 3;
+  string canonical_url = 4;
+  // isFreshInstallation reports that the database holds no users yet, so the
+  // frontend can offer to create the first account instead of a login form.
+  bool is_fresh_installation = 5;
 }
 
 ///////////////////////////////
@@ -342,10 +383,24 @@ message UserSetting {
   string value = 4;
 }
 
+// UserSettingType identifies a single user preference.
+//
+// The values are model.UserSettingType - 1 (see apiv2/helpers/parser.go), so this
+// enum has to stay aligned with the constants in model/user.go. Values were
+// previously unnamed beyond CUSTOM_PLAYBACK_SPEEDS and travelled as bare numbers.
 enum UserSettingType {
   PREFERRED_NAME = 0;
   GREETING = 1;
+  // The per-speed enabled flags, stored as a JSON array.
   CUSTOM_PLAYBACK_SPEEDS = 2;
+  SEEKING_TIME = 3;
+  // Speeds the user added themselves, stored as a JSON array.
+  USER_DEFINED_SPEEDS = 4;
+  AUTO_SKIP = 5;
+  // Mirrors model.defaultMode, which is no longer used. Present only to keep the
+  // numbering aligned with model.UserSettingType.
+  DEFAULT_MODE = 6 [deprecated = true];
+  LECTURE_VIEW = 7;
 }
 
 ///////////////////////////////
@@ -374,6 +429,16 @@ message UpdateUserSettingsResponse {
 
 message ResetPasswordResponse {
   string message = 1;
+}
+
+message GetLoginOptionsResponse {
+  // Whether an identity provider is configured. When false, only the username and
+  // password form applies.
+  bool use_saml = 1;
+  // Display name of the identity provider, shown on its sign-in button.
+  string idp_name = 2;
+  // Brand colour for that button, as a CSS colour. May be empty.
+  string idp_color = 3;
 }
 
 message ExportPersonalDataResponse {
@@ -478,8 +543,26 @@ message Course {
   repeated Stream streams = 12;
   string camera_preset_preferences = 13;
   string source_preferences = 14;
-  uint32 last_recording_id = 15;
-  uint32 next_lecture_id = 16;
+
+  // Superseded by last_recording and next_lecture, which carry the whole stream. A
+  // listing needs the start date and the duration, not only an id to fetch them with.
+  reserved 15, 16;
+  reserved "last_recording_id", "next_lecture_id";
+
+  // The most recent recorded lecture, absent when the course has none.
+  optional Stream last_recording = 17;
+  // The next lecture that has not ended yet, absent when the course has none.
+  optional Stream next_lecture = 18;
+
+  // One of "public", "loggedin", "enrolled" or "hidden". Listings that reach the
+  // caller are already filtered by it; it is here so the page can mark a hidden
+  // course as such for the administrators who do see it.
+  string visibility = 19;
+  // Whether the calling user has pinned this course. False for anonymous callers.
+  bool pinned = 20;
+  // Whether the calling user administers this course, as opposed to being a global
+  // admin. Drives the per-course admin link.
+  bool is_admin = 21;
 }
 
 ///////////////////////////////
@@ -604,6 +687,9 @@ message Stream {
   bool is_planned = 30;
   bool is_coming_up = 31;
   string hls_url = 32;
+  // False for a private lecture. Only a course administrator is ever sent one, so
+  // this marks the lectures that the rest of the course cannot see.
+  bool is_publicly_visible = 33;
 }
 
 message StreamPlaylistEntry {
@@ -766,6 +852,9 @@ message LectureHall {
   uint32 id = 1;
   string name = 2;
   repeated CameraPreset camera_presets = 3;
+  // Where the room is, on whatever campus map the deployment points at. The live
+  // lecture badge links to it.
+  string external_url = 4;
 }
 
 message CameraPreset {

@@ -15,7 +15,7 @@ import (
 func configServerNotificationsRoutes(engine *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := serverNotificationRoutes{daoWrapper}
 	adminGroup := engine.Group("/api/serverNotification")
-	adminGroup.Use(tools.Admin)
+	adminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
 	adminGroup.POST("/:notificationId", routes.updateServerNotification)
 	adminGroup.POST("/create", routes.createServerNotification)
 }

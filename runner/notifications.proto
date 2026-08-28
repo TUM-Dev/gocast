@@ -27,6 +27,7 @@ message StreamStartNotification {
 
 message StreamEndNotification {
   StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
 }
 
 message HeartbeatNotification {

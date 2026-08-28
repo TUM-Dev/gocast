@@ -15,7 +15,16 @@
   },
   "tags": [
     {
-      "name": "API"
+      "name": "MetaService"
+    },
+    {
+      "name": "UserService"
+    },
+    {
+      "name": "CourseService"
+    },
+    {
+      "name": "StreamService"
     }
   ],
   "host": "tum.live",
@@ -35,7 +44,7 @@
       "get": {
         "summary": "Get bookmarks by stream ID.",
         "description": "Retrieves bookmarks by stream ID.",
-        "operationId": "API_getBookmarks",
+        "operationId": "StreamService_getBookmarks",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -66,7 +75,7 @@
       "post": {
         "summary": "Add a bookmark.",
         "description": "Adds a new bookmark.",
-        "operationId": "API_addBookmark",
+        "operationId": "StreamService_addBookmark",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -126,7 +135,7 @@
       "delete": {
         "summary": "Delete a bookmark.",
         "description": "Deletes a bookmark.",
-        "operationId": "API_deleteBookmark",
+        "operationId": "StreamService_deleteBookmark",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -158,7 +167,7 @@
       "put": {
         "summary": "Update a bookmark.",
         "description": "Updates an existing bookmark.",
-        "operationId": "API_updateBookmark",
+        "operationId": "StreamService_updateBookmark",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -214,11 +223,35 @@
         ]
       }
     },
+    "/config": {
+      "get": {
+        "summary": "Get the frontend configuration.",
+        "description": "Returns the deployment's branding, version and links. Answers before anyone has signed in, because the frontend needs it to render its shell.",
+        "operationId": "MetaService_getFrontendConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetFrontendConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "API Status"
+        ]
+      }
+    },
     "/courses": {
       "get": {
         "summary": "Get public courses.",
         "description": "Retrieves the public courses for a given semester.",
-        "operationId": "API_getPublicCourses",
+        "operationId": "CourseService_getPublicCourses",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -257,7 +290,7 @@
       "get": {
         "summary": "Get user courses.",
         "description": "Retrieves the enrolled courses for a user for a given semester.",
-        "operationId": "API_getUserCourses",
+        "operationId": "CourseService_getUserCourses",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -296,7 +329,7 @@
       "get": {
         "summary": "Get currently live courses with streams.",
         "description": "Retrieves the currently live courses with their streams.",
-        "operationId": "API_getLiveCourses",
+        "operationId": "CourseService_getLiveCourses",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -320,7 +353,7 @@
       "get": {
         "summary": "Get pinned courses.",
         "description": "Retrieves the pinned courses for a user.",
-        "operationId": "API_getPinnedCourses",
+        "operationId": "CourseService_getPinnedCourses",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -344,7 +377,7 @@
       "get": {
         "summary": "Get pin for course.",
         "description": "Checks if the user has pinned the course.",
-        "operationId": "API_getPinForCourse",
+        "operationId": "CourseService_getPinForCourse",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -375,7 +408,7 @@
       "post": {
         "summary": "Pin or unpin a course.",
         "description": "Pins or unpins a course for the user.",
-        "operationId": "API_pinCourse",
+        "operationId": "CourseService_pinCourse",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -403,7 +436,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/APIpinCourseBody"
+              "$ref": "#/definitions/CourseServicepinCourseBody"
             }
           }
         ],
@@ -416,7 +449,7 @@
       "get": {
         "summary": "Get course by slug.",
         "description": "Retrieves a course by its slug, year, and term.",
-        "operationId": "API_getCourseBySlug",
+        "operationId": "CourseService_getCourseBySlug",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -457,11 +490,35 @@
         ]
       }
     },
+    "/login-options": {
+      "get": {
+        "summary": "Get available login methods.",
+        "description": "Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.",
+        "operationId": "UserService_getLoginOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetLoginOptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/notifications": {
       "get": {
         "summary": "Get notifications.",
         "description": "Retrieves notifications for the current user.",
-        "operationId": "API_getNotifications",
+        "operationId": "MetaService_getNotifications",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -485,7 +542,7 @@
       "get": {
         "summary": "Get watch progress for a batch of streams.",
         "description": "Retrieves all watch progresses for the current user.",
-        "operationId": "API_getProgressBatch",
+        "operationId": "StreamService_getProgressBatch",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -522,7 +579,7 @@
       "patch": {
         "summary": "Update watch progress for stream.",
         "description": "Updates the watch progress of a stream for the current user.",
-        "operationId": "API_updateProgress",
+        "operationId": "StreamService_updateProgress",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -550,7 +607,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/APIupdateProgressBody"
+              "$ref": "#/definitions/StreamServiceupdateProgressBody"
             }
           }
         ],
@@ -563,7 +620,7 @@
       "get": {
         "summary": "Get available semesters.",
         "description": "Retrieves all available semesters and the current semester.",
-        "operationId": "API_getSemesters",
+        "operationId": "MetaService_getSemesters",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -587,7 +644,7 @@
       "get": {
         "summary": "Get server notifications.",
         "description": "Retrieves current server notifications.",
-        "operationId": "API_getServerNotifications",
+        "operationId": "MetaService_getServerNotifications",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -611,7 +668,7 @@
       "get": {
         "summary": "API healthcheck .",
         "description": "If this endpoint does not return 200, the API is experiencing a catastrophic outage.",
-        "operationId": "API_healthCheck",
+        "operationId": "MetaService_healthCheck",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -635,7 +692,7 @@
       "get": {
         "summary": "Get stream and course by course slug and stream ID.",
         "description": "Retrieves a stream and its course by its stream ID.",
-        "operationId": "API_getStream",
+        "operationId": "StreamService_getStream",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -674,7 +731,7 @@
       "get": {
         "summary": "Get stream playlist by course slug and stream ID.",
         "description": "Retrieves the playlist for a stream including watch progress.",
-        "operationId": "API_getStreamPlaylist",
+        "operationId": "StreamService_getStreamPlaylist",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -713,7 +770,7 @@
       "get": {
         "summary": "Get video sections by course slug and stream ID.",
         "description": "Retrieves the video sections for a stream.",
-        "operationId": "API_getVideoSections",
+        "operationId": "StreamService_getVideoSections",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -752,7 +809,7 @@
       "get": {
         "summary": "Get subtitles by course slug, stream ID, and language.",
         "description": "Retrieves the subtitles for a stream in a specific language.",
-        "operationId": "API_getSubtitles",
+        "operationId": "StreamService_getSubtitles",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -797,7 +854,7 @@
       "get": {
         "summary": "Get thumbs by course slug, stream ID, and optional thumb type.",
         "description": "Retrieves the thumbs for a stream.",
-        "operationId": "API_getThumbs",
+        "operationId": "StreamService_getThumbs",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -848,7 +905,7 @@
       "get": {
         "summary": "Export user data.",
         "description": "Exports the current user's data.",
-        "operationId": "API_exportPersonalData",
+        "operationId": "UserService_exportPersonalData",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -872,7 +929,7 @@
       "get": {
         "summary": "Get user.",
         "description": "Retrieves the current user.",
-        "operationId": "API_getUser",
+        "operationId": "UserService_getUser",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -896,7 +953,7 @@
       "post": {
         "summary": "Reset user password.",
         "description": "Resets the user password.",
-        "operationId": "API_resetPassword",
+        "operationId": "UserService_resetPassword",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -930,7 +987,7 @@
       "patch": {
         "summary": "Update the current user's settings.",
         "description": "Updates the current user's settings.",
-        "operationId": "API_updateUserSettings",
+        "operationId": "UserService_updateUserSettings",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -962,7 +1019,7 @@
     }
   },
   "definitions": {
-    "APIpinCourseBody": {
+    "CourseServicepinCourseBody": {
       "type": "object",
       "properties": {
         "pin": {
@@ -970,7 +1027,7 @@
         }
       }
     },
-    "APIupdateProgressBody": {
+    "StreamServiceupdateProgressBody": {
       "type": "object",
       "properties": {
         "progress": {
@@ -1056,6 +1113,18 @@
         }
       }
     },
+    "protobufBranding": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "description": "Branding is the deployment's own name for itself, configured in branding.yaml."
+    },
     "protobufCameraPreset": {
       "type": "object",
       "properties": {
@@ -1137,13 +1206,25 @@
         "sourcePreferences": {
           "type": "string"
         },
-        "lastRecordingId": {
-          "type": "integer",
-          "format": "int64"
+        "lastRecording": {
+          "$ref": "#/definitions/protobufStream",
+          "description": "The most recent recorded lecture, absent when the course has none."
         },
-        "nextLectureId": {
-          "type": "integer",
-          "format": "int64"
+        "nextLecture": {
+          "$ref": "#/definitions/protobufStream",
+          "description": "The next lecture that has not ended yet, absent when the course has none."
+        },
+        "visibility": {
+          "type": "string",
+          "description": "One of \"public\", \"loggedin\", \"enrolled\" or \"hidden\". Listings that reach the\ncaller are already filtered by it; it is here so the page can mark a hidden\ncourse as such for the administrators who do see it."
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Whether the calling user has pinned this course. False for anonymous callers."
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Whether the calling user administers this course, as opposed to being a global\nadmin. Drives the per-course admin link."
         }
       }
     },
@@ -1240,6 +1321,29 @@
         }
       }
     },
+    "protobufGetFrontendConfigResponse": {
+      "type": "object",
+      "properties": {
+        "branding": {
+          "$ref": "#/definitions/protobufBranding"
+        },
+        "versionTag": {
+          "type": "string",
+          "description": "versionTag is the build's version, or \"development\" for an unversioned build."
+        },
+        "wikiUrl": {
+          "type": "string",
+          "description": "wikiUrl and canonicalUrl are empty when the deployment has not configured them."
+        },
+        "canonicalUrl": {
+          "type": "string"
+        },
+        "isFreshInstallation": {
+          "type": "boolean",
+          "description": "isFreshInstallation reports that the database holds no users yet, so the\nfrontend can offer to create the first account instead of a login form."
+        }
+      }
+    },
     "protobufGetLiveCoursesResponse": {
       "type": "object",
       "properties": {
@@ -1252,6 +1356,23 @@
         }
       },
       "title": "/////////////////////////////\n///// COURSE_RESPONSE ///////\n/////////////////////////////"
+    },
+    "protobufGetLoginOptionsResponse": {
+      "type": "object",
+      "properties": {
+        "useSaml": {
+          "type": "boolean",
+          "description": "Whether an identity provider is configured. When false, only the username and\npassword form applies."
+        },
+        "idpName": {
+          "type": "string",
+          "description": "Display name of the identity provider, shown on its sign-in button."
+        },
+        "idpColor": {
+          "type": "string",
+          "description": "Brand colour for that button, as a CSS colour. May be empty."
+        }
+      }
     },
     "protobufGetNotificationsResponse": {
       "type": "object",
@@ -1404,6 +1525,10 @@
             "type": "object",
             "$ref": "#/definitions/protobufCameraPreset"
           }
+        },
+        "externalUrl": {
+          "type": "string",
+          "description": "Where the room is, on whatever campus map the deployment points at. The live\nlecture badge links to it."
         }
       }
     },
@@ -1573,6 +1698,10 @@
         },
         "hlsUrl": {
           "type": "string"
+        },
+        "isPubliclyVisible": {
+          "type": "boolean",
+          "description": "False for a private lecture. Only a course administrator is ever sent one, so\nthis marks the lectures that the rest of the course cannot see."
         }
       }
     },
@@ -1757,9 +1886,15 @@
       "enum": [
         "PREFERRED_NAME",
         "GREETING",
-        "CUSTOM_PLAYBACK_SPEEDS"
+        "CUSTOM_PLAYBACK_SPEEDS",
+        "SEEKING_TIME",
+        "USER_DEFINED_SPEEDS",
+        "AUTO_SKIP",
+        "DEFAULT_MODE",
+        "LECTURE_VIEW"
       ],
-      "default": "PREFERRED_NAME"
+      "default": "PREFERRED_NAME",
+      "description": "UserSettingType identifies a single user preference.\n\nThe values are model.UserSettingType - 1 (see apiv2/helpers/parser.go), so this\nenum has to stay aligned with the constants in model/user.go. Values were\npreviously unnamed beyond CUSTOM_PLAYBACK_SPEEDS and travelled as bare numbers.\n\n - CUSTOM_PLAYBACK_SPEEDS: The per-speed enabled flags, stored as a JSON array.\n - USER_DEFINED_SPEEDS: Speeds the user added themselves, stored as a JSON array.\n - DEFAULT_MODE: Mirrors model.defaultMode, which is no longer used. Present only to keep the\nnumbering aligned with model.UserSettingType."
     },
     "protobufVideoSection": {
       "type": "object",

@@ -172,7 +172,7 @@ func (c *Course) CompareTo(other Course) bool {
 }
 
 // IsLive returns whether the course has a lecture that is live
-func (c *Course) IsLive() bool {
+func (c Course) IsLive() bool {
 	for _, s := range c.Streams {
 		if s.LiveNow {
 			return true
@@ -213,7 +213,7 @@ func (c *Course) StreamTimes() []string {
 }
 
 // HasRecordings returns whether the course has any recordings.
-func (c *Course) HasRecordings() bool {
+func (c Course) HasRecordings() bool {
 	for i := range c.Streams {
 		if c.Streams[i].Recording {
 			return true

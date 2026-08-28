@@ -37,7 +37,7 @@ func ConfigGinRouter(
 
 	router.Use(tools.ErrorHandler)
 
-	configGinStreamRestRouter(router, daoWrapper)
+	configGinStreamRestRouter(router, daoWrapper, manager)
 	configGinUsersRouter(router, daoWrapper)
 	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)

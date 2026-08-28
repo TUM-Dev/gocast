@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,19 +36,13 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	api := router.Group("/api")
 	{
-		api.GET("/courses/live", routes.getLive)
 		api.GET("/courses/public", routes.getPublic)
 		api.GET("/courses/users", routes.getUsers)
 		api.GET("/courses/users/pinned", routes.getPinned)
 
-		courseBySlug := api.Group("/courses/:slug")
-		{
-			courseBySlug.GET("/", routes.getCourseBySlug)
-		}
-
 		lecturers := api.Group("")
 		{
-			lecturers.Use(tools.AtLeastLecturer)
+			lecturers.Use(tools.RequirePermission(model.PermLecture))
 			lecturers.POST("/courseInfo", routes.courseInfo)
 			lecturers.POST("/createCourse", routes.createCourse)
 			lecturers.POST("/createTestCourse", routes.createTestCourse)
@@ -73,6 +66,8 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.POST("/renameLecture/:streamID", routes.renameLecture)
 			courses.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
 			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
+			courses.PUT("/updateLectureTime/:streamID", routes.updateLectureTime)
+			courses.POST("/updateLectureSeriesTime/:streamID", routes.updateLectureSeriesTime)
 			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 			courses.POST("/submitCut", routes.submitCut)
 
@@ -119,78 +114,6 @@ type createVODReq struct {
 type uploadVodMediaReq struct {
 	StreamID  string          `form:"streamID" binding:"required"`
 	VideoType model.VideoType `form:"videoType" binding:"required"`
-}
-
-func (r coursesRoutes) getLive(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	streams, err := r.GetCurrentLive(context.Background())
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "Could not load current livestream from database.",
-			Err:           err,
-		})
-		return
-	}
-
-	type CourseStream struct {
-		Course      model.CourseDTO
-		Stream      model.StreamDTO
-		LectureHall *model.LectureHallDTO
-		Viewers     uint
-	}
-
-	livestreams := make([]CourseStream, 0)
-
-	user := tumLiveContext.User
-	for _, stream := range streams {
-		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
-
-		// only show streams for logged-in users if they are logged in
-		if courseForLiveStream.IsLoggedIn() && tumLiveContext.User == nil {
-			continue
-		}
-		// only show "enrolled" streams to users which are enrolled or admins
-		if courseForLiveStream.IsEnrolled() {
-			if !tumLiveContext.User.IsAllowedToWatchPrivateCourse(courseForLiveStream) {
-				continue
-			}
-		}
-		// Only show hidden streams to course admins
-		if courseForLiveStream.IsHidden() && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
-			continue
-		}
-		// Only show private streams to course admins
-		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(courseForLiveStream)) {
-			continue
-		}
-		var lectureHall *model.LectureHall
-		if stream.LectureHallID != 0 {
-			lh, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
-			if err != nil {
-				logger.Error("Could not get Lecture Hall ID", "err", err)
-			} else {
-				lectureHall = &lh
-			}
-		}
-
-		viewers := uint(0)
-		for sID, sessions := range sessionsMap {
-			if sID == stream.ID {
-				viewers = uint(len(sessions))
-			}
-		}
-
-		livestreams = append(livestreams, CourseStream{
-			Course:      courseForLiveStream.ToDTO(user),
-			Stream:      stream.ToDTO(),
-			LectureHall: lectureHall.ToDTO(),
-			Viewers:     viewers,
-		})
-	}
-
-	c.JSON(http.StatusOK, livestreams)
 }
 
 func (r coursesRoutes) getPublic(c *gin.Context) {
@@ -321,104 +244,6 @@ func sortCourses(courses []model.Course) {
 	sort.Slice(courses, func(i, j int) bool {
 		return courses[i].CompareTo(courses[j])
 	})
-}
-
-func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	type URI struct {
-		Slug string `uri:"slug" binding:"required"`
-	}
-
-	type Query struct {
-		Year   int    `form:"year"`
-		Term   string `form:"term"`
-		UserID uint   `form:"userId"`
-	}
-
-	var uri URI
-	if err := c.ShouldBindUri(&uri); err != nil {
-		_ = c.Error(tools.RequestError{
-			Err:           err,
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid URI",
-		})
-		return
-	}
-
-	var query Query
-	if err := c.ShouldBindQuery(&query); err != nil {
-		_ = c.Error(tools.RequestError{
-			Err:           err,
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid query",
-		})
-		return
-	}
-
-	if query.Year == 0 || query.Term == "" {
-		query.Year, query.Term = tum.GetCurrentSemester()
-	}
-	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusNotFound,
-				CustomMessage: "can't find course",
-			})
-		} else {
-			logger.Error("can't retrieve course", "err", err)
-			_ = c.Error(tools.RequestError{
-				Err:           err,
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "can't retrieve course",
-			})
-		}
-		return
-	}
-
-	if (course.IsLoggedIn() && tumLiveContext.User == nil) || (course.IsEnrolled() && !tumLiveContext.User.IsEligibleToWatchCourse(course)) {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	user := tumLiveContext.User
-	var streams []model.Stream
-	for _, stream := range course.Streams {
-		if !stream.Private || (user != nil && user.IsAdminOfCourse(course)) {
-			streams = append(streams, stream)
-		}
-	}
-
-	streamsDTO := make([]model.StreamDTO, len(streams))
-	for i, s := range streams {
-		err := tools.SetSignedPlaylists(&s, &model.User{
-			Model: gorm.Model{ID: query.UserID},
-		}, course.DownloadsEnabled)
-		if err != nil {
-			_ = c.Error(tools.RequestError{
-				Err:           err,
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "can't sign stream",
-			})
-			return
-		}
-		streamsDTO[i] = s.ToDTO()
-	}
-
-	isAdmin := course.UserID == query.UserID
-	for _, user := range course.Admins {
-		if user.ID == query.UserID {
-			isAdmin = true
-			break
-		}
-	}
-
-	courseDTO := course.ToDTO(tumLiveContext.User)
-	courseDTO.Streams = streamsDTO
-	courseDTO.IsAdmin = isAdmin
-
-	c.JSON(http.StatusOK, courseDTO)
 }
 
 func (r coursesRoutes) createVOD(c *gin.Context) {
@@ -1061,6 +886,68 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 	}
 }
 
+type updateLectureTimeRequest struct {
+	Start time.Time `json:"start" binding:"required"`
+	End   time.Time `json:"end" binding:"required"`
+}
+
+func (r coursesRoutes) updateLectureTime(c *gin.Context) {
+	sIDInt, err := strconv.Atoi(c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid streamID",
+			Err:           err,
+		})
+		return
+	}
+	sID := uint(sIDInt)
+	var req updateLectureTimeRequest
+	if err = c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
+		return
+	}
+	if !req.End.After(req.Start) {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "end must be after start",
+		})
+		return
+	}
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+	stream.Start = req.Start
+	stream.End = req.End
+	if err = r.StreamsDao.UpdateStream(stream); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture time",
+			Err:           err,
+		})
+		return
+	}
+	wsMsg := gin.H{
+		"start": stream.Start,
+		"end":   stream.End,
+	}
+	if msg, err := json.Marshal(wsMsg); err == nil {
+		broadcastStream(sID, msg)
+	} else {
+		logger.Error("couldn't marshal stream time update ws msg", "err", err)
+	}
+}
+
 func (r coursesRoutes) fetchLectures(c *gin.Context) {
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
@@ -1093,6 +980,31 @@ func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
 		return
 	}
 	// Series changes could be theoretically broadcasted here through the websocket to live listeners.
+}
+
+// updateLectureSeriesTime propagates the time-of-day and duration of the stream identified by
+// :streamID to every other stream in its series, keeping each of those streams on its own date.
+// The stream's own Start/End must already be persisted (via updateLectureTime) before calling this.
+func (r coursesRoutes) updateLectureSeriesTime(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+
+	if err = r.StreamsDao.UpdateLectureSeriesTime(stream); err != nil {
+		logger.Error("couldn't update lecture series time", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture series time",
+			Err:           err,
+		})
+		return
+	}
 }
 
 type renameLectureRequest struct {
@@ -1430,7 +1342,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		Streams:             []model.Stream{},
 		Language:            lang,
 	}
-	if tumLiveContext.User.Role != model.AdminType {
+	if !tumLiveContext.User.Can(model.PermAdministerAllCourses) {
 		course.Admins = []model.User{*tumLiveContext.User}
 	}
 
@@ -1608,7 +1520,7 @@ func (r coursesRoutes) copyStream(c *gin.Context) {
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	isAdmin := tlctx.User.Role == model.AdminType
+	isAdmin := tlctx.User.Can(model.PermAdministerAllCourses)
 
 	if !isAdmin {
 		targetCourseAdmins, err := r.DaoWrapper.CoursesDao.GetCourseAdmins(request.TargetCourse)

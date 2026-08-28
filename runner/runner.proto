@@ -30,6 +30,7 @@ message StreamResponse {
 
 message StreamEndRequest {
   string job_id = 1;
+  bool discard_vod = 2;
 }
 
 message StreamEndResponse {

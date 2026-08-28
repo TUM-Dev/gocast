@@ -31,6 +31,10 @@ db:
   password: example
   user: root
 ingestbase: rtmp://ingest.tum.live/
+# Port for the prometheus /metrics endpoint. Keep it off the public internet.
+# Leave empty or omit to disable. Deliberately distinct from the edge worker's
+# 2112 and the runner's 9947, so all three can run side by side in development.
+metricsPort: "9948"
 jwtkey: # This is an example key, delete and restart to generate a proper one
   |
   -----BEGIN RSA PRIVATE KEY-----
@@ -60,13 +64,17 @@ jwtkey: # This is an example key, delete and restart to generate a proper one
   iWDdq6trmkWW8r6nVyankzcuAC0uoaZfzP0kf73rVvm+8y9UH38kaLuFaEQlutQT
   0D2sRiCzTBQY06fMx9m+zb9PRixyPIDGaM4He58EkZqWBf7qnHI2Og==
   -----END RSA PRIVATE KEY-----
-ldap:
-  basedn: dc=example,dc=de
-  password: secret
-  url: ldap://abc.de
-  user: user
-  userdn: uid=%s,ou=people,dc=example,dc=de
-  useForLogin: true
+# Leave disabled unless you have a reachable server: with useForLogin set, every
+# rejected password falls back to LDAP, so a wrong password takes as long as that
+# server takes to answer — and hangs if the host does not resolve. The end-to-end job
+# in .github/workflows/frontend-test.yml runs on this file and would hang with it.
+#ldap:
+#  basedn: dc=example,dc=de
+#  password: secret
+#  url: ldap://abc.de
+#  user: user
+#  userdn: uid=%s,ou=people,dc=example,dc=de
+#  useForLogin: true
 #saml:
 #  idpMetadataURL: https://login.tum.de/idp/shibboleth
 #  idpName: TUM Login

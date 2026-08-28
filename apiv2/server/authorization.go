@@ -4,6 +4,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,16 +14,51 @@ import (
 	"gorm.io/gorm"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
+	"github.com/TUM-Dev/gocast/apiv2/visibility"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// getCurrent retrieves the current user based on the context.
-// It returns a User or an error if one occurs.
+// getCurrent returns the user making the request, or an error if there is none.
+//
+// The resolveCaller interceptor does the work once per request; this reads what it
+// left behind, and falls back to resolving inline when no interceptor has run (a
+// unit test calling a handler directly).
 func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
+	if c, ok := ctx.Value(callerKey{}).(*caller); ok {
+		return c.user, c.err
+	}
+
+	return a.resolveCurrent(ctx)
+}
+
+// ErrNoCredentials means nothing was presented to authenticate with, as opposed to
+// something presented and rejected. On endpoints serving anonymous callers the first
+// answers normally and the second is an expired token that needs a 401 to refresh.
+var ErrNoCredentials = errors.New("no credentials presented")
+
+// currentOrAnonymous returns the caller, or nil when the request carried no
+// credentials. For endpoints that serve anonymous callers: a rejected credential is
+// a 401 rather than a silent downgrade to the logged-out view.
+func (a *API) currentOrAnonymous(ctx context.Context) (*model.User, error) {
+	user, err := a.getCurrent(ctx)
+	if err == nil {
+		return user, nil
+	}
+
+	if errors.Is(err, ErrNoCredentials) {
+		return nil, nil
+	}
+
+	return nil, e.WithStatus(http.StatusUnauthorized, err)
+}
+
+// resolveCurrent authenticates the request from its metadata.
+// It returns a User or an error if one occurs.
+func (a *API) resolveCurrent(ctx context.Context) (*model.User, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, errors.New("no metadata")
+		return nil, fmt.Errorf("%w: no metadata", ErrNoCredentials)
 	}
 
 	jwtStr, err := a.extractJWTFromMetadata(md)
@@ -38,15 +74,38 @@ func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
 	return a.getUserFromClaims(ctx, claims)
 }
 
-// extractJWTFromMetadata extracts the JWT cookie from the metadata.
-// It returns a string or an error if one occurs.
+// extractJWTFromMetadata extracts the caller's JWT from the request metadata.
+//
+// A bearer token wins over the session cookie; the cookie is only still supported for
+// the server-rendered pages and can go once the last one does. grpc-gateway forwards
+// `Authorization` unprefixed and `Cookie` as `grpcgateway-cookie`.
 func (a *API) extractJWTFromMetadata(md metadata.MD) (string, error) {
+	if token, ok := extractBearerToken(md); ok {
+		return token, nil
+	}
+
 	cookies, ok := md["grpcgateway-cookie"]
 	if !ok || len(cookies) < 1 {
-		return "", errors.New("missing cookie header")
+		return "", fmt.Errorf("%w: no bearer token or session cookie", ErrNoCredentials)
 	}
 
 	return extractTokenFromCookie(cookies[0])
+}
+
+// extractBearerToken returns the token from an `Authorization: Bearer <token>`
+// header, if one is present and non-empty.
+func extractBearerToken(md metadata.MD) (string, bool) {
+	for _, header := range md["authorization"] {
+		rest, found := strings.CutPrefix(header, "Bearer ")
+		if !found {
+			continue
+		}
+		if token := strings.TrimSpace(rest); token != "" {
+			return token, true
+		}
+	}
+
+	return "", false
 }
 
 // extractTokenFromCookie extracts the actual JWT from the cookie header.
@@ -60,7 +119,7 @@ func extractTokenFromCookie(cookieHeader string) (string, error) {
 		}
 	}
 
-	return "", errors.New("jwt cookie not found")
+	return "", fmt.Errorf("%w: no jwt cookie", ErrNoCredentials)
 }
 
 // parseJWT parses the JWT string.
@@ -95,6 +154,13 @@ func (a *API) getUserFromClaims(ctx context.Context, claims *tools.JWTClaims) (*
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	// GetUserByID uses gorm's Find, which reports a missing row as a zero-value user
+	// and a nil error. Without the ID check, a token naming a deleted user would
+	// authenticate as user 0.
+	if err != nil || user.ID == 0 {
+		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("no user for the presented credentials"))
+	}
+
 	return &user, nil
 }
 
@@ -108,10 +174,7 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 
 	stream, err := a.dao.GetStreamByID(ctx, strconv.FormatUint(uint64(req.GetStreamId()), 10))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, stream, course, e.WithStatus(http.StatusNotFound, err)
-		}
-		return nil, stream, course, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, stream, course, e.FromGorm(err, "can't find stream")
 	}
 
 	course, err = a.dao.GetCourseById(ctx, stream.CourseID)
@@ -129,12 +192,15 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 		}
 	}
 
-	user, _ := a.getCurrent(ctx)
+	user, err := a.currentOrAnonymous(ctx)
+	if err != nil {
+		return nil, stream, course, err
+	}
 	if !user.IsEligibleToWatchCourse(course) {
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not eligible to access course content"))
 	}
 
-	if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
+	if !visibility.StreamVisible(user, course, stream) {
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access private stream"))
 	}
 

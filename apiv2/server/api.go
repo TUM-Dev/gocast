@@ -25,13 +25,18 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 )
 
-// API is the grpc server for the v2 api
+// API is the grpc server for the v2 api. It implements all four services, which are
+// split for grouping rather than to be deployed apart: one process, one gateway mux,
+// one set of interceptors.
 type API struct {
 	db  *gorm.DB
 	dao dao.DaoWrapper
 	log *slog.Logger
 
-	protobuf.UnimplementedAPIServer
+	protobuf.UnimplementedMetaServiceServer
+	protobuf.UnimplementedUserServiceServer
+	protobuf.UnimplementedCourseServiceServer
+	protobuf.UnimplementedStreamServiceServer
 }
 
 // New creates a new API and assigns the given db and a logger
@@ -47,15 +52,25 @@ func New(db *gorm.DB) *API {
 // Run starts the grpc server on port 12544 and the grpc gateway on ::8081/api/v2
 func (a *API) Run(lis net.Listener) error {
 	a.log.Info("Running")
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
-		MaxConnectionAgeGrace: time.Second * 5,
-		Time:                  time.Minute * 10,
-		Timeout:               time.Second * 20,
-	}))
+	grpcServer := grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     time.Minute,
+			MaxConnectionAge:      time.Minute,
+			MaxConnectionAgeGrace: time.Second * 5,
+			Time:                  time.Minute * 10,
+			Timeout:               time.Second * 20,
+		}),
+		a.interceptors(),
+	)
 
-	protobuf.RegisterAPIServer(grpcServer, a)
+	for _, svc := range services {
+		svc.register(grpcServer, a)
+	}
+
+	// Pre-creates the series for every method, so a method that has not been called
+	// yet reads as zero rather than as a gap.
+	serverMetrics.InitializeMetrics(grpcServer)
+
 	reflection.Register(grpcServer)
 	return grpcServer.Serve(lis)
 }
@@ -66,16 +81,26 @@ func (a *API) Proxy() func(c *gin.Context) {
 	mux := runtime.NewServeMux()
 	// DEPRECATED: opts := []grpc.DialOption{grpc.WithInsecure()}
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err := protobuf.RegisterAPIHandlerFromEndpoint(context.Background(), mux, ":8081", opts)
-	if err != nil {
-		a.log.With("err", err).Error("can't register grpc handler")
-		os.Exit(1)
+
+	// Every service registers onto the same mux, so the REST surface stays one flat
+	// set of paths however the services are cut.
+	for _, svc := range services {
+		if err := svc.gateway(context.Background(), mux, ":8081", opts); err != nil {
+			a.log.With("err", err, "service", svc.desc.ServiceName).Error("can't register grpc handler")
+			os.Exit(1)
+		}
 	}
 
 	// actual proxy method forwards the request to the grpc gateway server
 	return func(c *gin.Context) {
 		if c.Request.Method == http.MethodGet && strings.HasPrefix(c.Request.URL.Path, "/api/v2/docs") {
 			a.handleDocs(c)
+			return
+		}
+		// Beside the gateway rather than through it: it reads a cookie, which the
+		// gateway deliberately abstracts away.
+		if c.Request.URL.Path == "/api/v2/auth/token" {
+			a.handleAuthToken(c)
 			return
 		}
 		http.StripPrefix("/api/v2", mux).ServeHTTP(c.Writer, c.Request)

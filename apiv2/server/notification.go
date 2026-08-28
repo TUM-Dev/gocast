@@ -14,8 +14,6 @@ import (
 
 // GetNotifications retrieves notifications for the current user.
 func (a *API) GetNotifications(ctx context.Context, req *emptypb.Empty) (*protobuf.GetNotificationsResponse, error) {
-	a.log.Info("GetNotifications")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusUnauthorized, err)
@@ -52,8 +50,6 @@ func (a *API) GetNotifications(ctx context.Context, req *emptypb.Empty) (*protob
 
 // GetServerNotifications retrieves current server notifications.
 func (a *API) GetServerNotifications(ctx context.Context, req *emptypb.Empty) (*protobuf.GetServerNotificationsResponse, error) {
-	a.log.Info("GetNotifications")
-
 	notifications, err := a.dao.ServerNotificationDao.GetCurrentServerNotifications()
 	if err != nil {
 		return nil, e.WithStatus(http.StatusBadRequest, err)

@@ -13,8 +13,6 @@ import (
 
 // GetProgressBatch returns a batch of watch progresses for a list of streams for the current user
 func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBatchRequest) (*protobuf.GetProgressBatchResponse, error) {
-	a.log.Info("GetProgressBatch")
-
 	user, err := a.getCurrent(ctx)
 	if err != nil {
 		return nil, err
@@ -25,22 +23,21 @@ func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBat
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("No stream IDs provided"))
 	}
 
-	progressResults := make([]*protobuf.StreamProgress, 0)
-	progressBatch, err := a.dao.GetProgressesForUser(user.ID)
+	// Filter in the database: a user can have thousands of progresses, of which a
+	// request asks for a handful.
+	streamIDs := make([]uint, len(ids))
+	for i, id := range ids {
+		streamIDs[i] = uint(id)
+	}
+
+	progressBatch, err := a.dao.LoadProgress(user.ID, streamIDs)
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
-	// Filter progresses for requested stream IDs
-	idSet := make(map[uint32]struct{}, len(ids))
-	for _, id := range ids {
-		idSet[id] = struct{}{}
-	}
-
+	progressResults := make([]*protobuf.StreamProgress, 0, len(progressBatch))
 	for _, progress := range progressBatch {
-		if _, found := idSet[uint32(progress.StreamID)]; found {
-			progressResults = append(progressResults, h.ParseStreamProgressToProto(progress))
-		}
+		progressResults = append(progressResults, h.ParseStreamProgressToProto(progress))
 	}
 
 	return &protobuf.GetProgressBatchResponse{ProgressBatch: progressResults}, nil
@@ -48,13 +45,13 @@ func (a *API) GetProgressBatch(ctx context.Context, req *protobuf.GetProgressBat
 
 // UpdateProgress updates the watch progress for a stream
 func (a *API) UpdateProgress(ctx context.Context, req *protobuf.UpdateProgressRequest) (*protobuf.StreamProgress, error) {
-	a.log.Info("UpdateProgress")
-
 	user, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
+	// Non-nil because the RPC is declared authenticated in services.go;
+	// authorizeUserForStreamCourse alone would return no user on a public course.
 	progress := model.StreamProgress{
 		StreamID: stream.ID,
 		UserID:   user.ID,

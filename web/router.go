@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
@@ -23,6 +25,42 @@ var templateFS embed.FS
 //go:embed assets/*
 //go:embed node_modules
 var staticFS embed.FS
+
+// spaFS holds the built single-page app (`npm run build` writes it to web/spa). Only
+// the directory is tracked, so a checkout without a build still compiles.
+//
+//go:embed all:spa
+var spaFS embed.FS
+
+// spaShellPath is the SPA's entry document. Every SPA-owned route serves it; the
+// client router decides what to render.
+const spaShellPath = "spa/index.html"
+
+// spaRoutes lists the paths served by the SPA instead of a template. Adding a path
+// moves one page across; it must also exist in frontend/src/router/index.ts or the
+// shell loads and renders nothing.
+//
+// Removing a path moves the page back, but only while its template handler is still
+// registered — see registerPage.
+var spaRoutes = map[string]bool{
+	"/settings":                 true,
+	"/login":                    true,
+	"/":                         true,
+	"/courses/mine":             true,
+	"/courses/public":           true,
+	"/course/:year/:term/:slug": true,
+}
+
+// spaRouteHooks holds work a route must still do server-side, run before the shell is
+// written. For things the client cannot do, such as cookies — not data fetching.
+//
+// A hook may also answer the request itself; see pageHandler. Hooks that need a
+// database are registered in configMainRoute rather than here.
+var spaRouteHooks = map[string]gin.HandlerFunc{
+	// Stored server-side because an external identity provider takes the browser
+	// off-site and brings it back without the original query string.
+	"/login": SetLoginRedirectCookie,
+}
 
 var templatePaths = []string{
 	"template/*.gohtml",
@@ -53,8 +91,122 @@ func ConfigGinRouter(router *gin.Engine) {
 	tools.SetTemplateExecutor(templateExecutor)
 
 	configGinStaticRouter(router)
+	configSPARouter(router)
 	configSaml(router, dao.NewDaoWrapper())
 	configMainRoute(router)
+}
+
+// spaAvailable reports whether a built SPA is present. Without one, pages fall back
+// to their template handlers, keeping the Go and frontend builds independent.
+func spaAvailable() bool {
+	if VersionTag == "development" {
+		_, err := os.Stat("web/" + spaShellPath)
+		return err == nil
+	}
+
+	_, err := fs.Stat(spaFS, spaShellPath)
+	return err == nil
+}
+
+// configSPARouter mounts the SPA's hashed assets under their own prefix, leaving
+// /static untouched.
+func configSPARouter(router *gin.Engine) {
+	if !spaAvailable() {
+		logger.Info("no SPA build found, not mounting its assets")
+		return
+	}
+
+	if VersionTag != "development" {
+		assets, err := fs.Sub(spaFS, "spa")
+		if err != nil {
+			logger.Error("can't mount SPA assets", "err", err)
+			return
+		}
+		router.StaticFS("/spa-assets", http.FS(assets))
+		return
+	}
+
+	router.Static("/spa-assets", "web/spa")
+}
+
+// readSPAShell returns the SPA's entry document, from disk in development so a
+// rebuild is picked up without a restart.
+func readSPAShell() ([]byte, error) {
+	if VersionTag == "development" {
+		return os.ReadFile("web/" + spaShellPath)
+	}
+
+	return fs.ReadFile(spaFS, spaShellPath)
+}
+
+// serveSPAShell responds with the SPA's entry document. Written directly rather than
+// through http.FileServer, which would redirect /index.html to its directory.
+func serveSPAShell(c *gin.Context) {
+	shell, err := readSPAShell()
+	if err != nil {
+		logger.Error("can't read SPA shell", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// The shell names content-hashed assets from its own build, so a cached copy
+	// would ask a new binary for files it no longer has. Assets stay cacheable.
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusOK, "text/html; charset=utf-8", shell)
+}
+
+// registerPage registers a page route, serving the SPA where it has taken the page
+// over and the given template handler everywhere else.
+//
+// legacy may be nil for a page whose server-rendered version has been deleted. Such a
+// page has no fallback, so a missing frontend build is a broken deployment rather than
+// something to work around: the panic below stops the server at boot instead of
+// letting it serve 404s on a page that used to work.
+func registerPage(group *gin.RouterGroup, method, path string, legacy gin.HandlerFunc) {
+	handler, err := pageHandler(path, legacy, spaAvailable())
+	if err != nil {
+		panic(err)
+	}
+
+	group.Handle(method, path, handler)
+}
+
+// pageHandler decides which of the two frontends answers a path. Split out from
+// registerPage so the decision can be tested without a build present.
+func pageHandler(path string, legacy gin.HandlerFunc, spaBuilt bool) (gin.HandlerFunc, error) {
+	if !spaRoutes[path] {
+		if legacy == nil {
+			// Either the path was removed from spaRoutes to roll a page back after its
+			// template was deleted, or it was never added in the first place.
+			return nil, fmt.Errorf("page %q has no template handler and is not in spaRoutes", path)
+		}
+		return legacy, nil
+	}
+
+	if !spaBuilt {
+		if legacy == nil {
+			return nil, fmt.Errorf("page %q is served by the SPA and has no template handler, but no SPA build is present: run `npm run build` in frontend/ (or `make spa`)", path)
+		}
+		// A developer who has not built the frontend still gets a working server.
+		logger.Info("no SPA build found, serving page from its template", "path", path)
+		return legacy, nil
+	}
+
+	hook, hooked := spaRouteHooks[path]
+	if !hooked {
+		return serveSPAShell, nil
+	}
+
+	return func(c *gin.Context) {
+		hook(c)
+		// A hook may answer the request instead of preparing for the shell: the
+		// fresh-installation check on "/" renders the onboarding page and aborts.
+		// Writing the shell after that would append it to a finished response.
+		if c.IsAborted() {
+			return
+		}
+		serveSPAShell(c)
+	}, nil
 }
 
 func configGinStaticRouter(router *gin.Engine) {
@@ -76,32 +228,31 @@ func configGinStaticRouter(router *gin.Engine) {
 	})
 }
 
+// newStartPage registers the four routes of the start page, all served by the SPA,
+// plus the semester redirect that predates it.
 func newStartPage(router *gin.Engine, routes *mainRoutes) {
-	router.GET("/", routes.home)
+	registerPage(&router.RouterGroup, http.MethodGet, "/", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/courses/mine", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/courses/public", nil)
+	// Kept as a path rather than a query parameter because it is the URL people have
+	// bookmarked; the client router matches the same shape.
+	registerPage(&router.RouterGroup, http.MethodGet, "/course/:year/:term/:slug", nil)
+
+	// Not a page of its own: it redirects into the semester query the start page uses.
 	router.GET("/semester/:year/:term", routes.semesterRedirect)
-	router.GET("/course/:year/:term/:slug", routes.courseRedirect)
-}
-
-func oldStartPage(router *gin.Engine, routes *mainRoutes) {
-	old := router.Group("/old")
-	{
-		old.GET("/", routes.MainPage)
-		old.GET("/semester/:year/:term", routes.MainPage)
-
-		course := old.Group("/course")
-		course.Use(tools.InitCourse(routes.DaoWrapper))
-		course.GET("/:year/:teachingTerm/:slug", routes.CoursePage)
-	}
 }
 
 func configMainRoute(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
+	// Registered here rather than in the package-level table, which holds only hooks
+	// that need nothing but the request. Must precede the registerPage calls below.
+	spaRouteHooks["/"] = routes.onboardingIfFresh
 	streamGroup := router.Group("/")
 
 	// lecturers
 	atLeastLecturerGroup := router.Group("/")
-	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
+	atLeastLecturerGroup.Use(tools.RequirePermission(model.PermLecture))
 	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
 	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
 
@@ -114,20 +265,32 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/search", routes.SearchPage)
 
 	// admins
-	adminGroup := router.Group("/")
-	adminGroup.GET("/admin/users", routes.AdminPage)
-	adminGroup.GET("/admin/lectureHalls", routes.AdminPage)
-	adminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
-	adminGroup.GET("/admin/workers", routes.AdminPage)
-	adminGroup.GET("/admin/runners", routes.AdminPage)
-	adminGroup.GET("/admin/server-notifications", routes.AdminPage)
-	adminGroup.GET("/admin/server-stats", routes.AdminPage)
-	adminGroup.GET("/admin/course-import", routes.AdminPage)
-	adminGroup.GET("/admin/token", routes.AdminPage)
-	adminGroup.GET("/admin/infopages", routes.AdminPage)
-	adminGroup.GET("/admin/notifications", routes.AdminPage)
-	adminGroup.GET("/admin/audits", routes.AdminPage)
-	adminGroup.GET("/admin/maintenance", routes.AdminPage)
+	//
+	// AdminPage checks only that someone is signed in, so without these any student
+	// could render every tab. The template hid the links, which is not a guard.
+	//
+	// Split by what each page administers. Both permissions belong to admins today;
+	// the distinction is what makes an operator role a change to the role table.
+	serverAdminGroup := router.Group("/")
+	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
+	serverAdminGroup.GET("/admin/lectureHalls", routes.AdminPage)
+	serverAdminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
+	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
+	serverAdminGroup.GET("/admin/runners", routes.AdminPage)
+	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
+	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
+	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
+	serverAdminGroup.GET("/admin/infopages", routes.AdminPage)
+	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
+	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
+	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
+
+	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
+	// same permission.
+	userAdminGroup := router.Group("/")
+	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
+	userAdminGroup.GET("/admin/users", routes.AdminPage)
+	userAdminGroup.GET("/admin/token", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
@@ -145,13 +308,12 @@ func configMainRoute(router *gin.Engine) {
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
-	router.GET("/login", routes.LoginPage)
+	registerPage(&router.RouterGroup, http.MethodGet, "/login", nil)
 	router.GET("/logout", routes.LogoutPage)
 	router.GET("/setPassword/:key", routes.CreatePasswordPage)
 	router.POST("/setPassword/:key", routes.CreatePasswordPage)
 
 	// home & course pages
-	oldStartPage(router, &routes)
 	newStartPage(router, &routes)
 
 	// watch
@@ -170,7 +332,10 @@ func configMainRoute(router *gin.Engine) {
 
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
-	loggedIn.GET("/settings", routes.settingsPage)
+	// The auth middleware stays on the route even when the SPA serves it, so an
+	// anonymous visitor is redirected to /login by the server rather than after the
+	// shell has loaded and failed a request.
+	registerPage(loggedIn, http.MethodGet, "/settings", nil)
 
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
@@ -186,26 +351,29 @@ type mainRoutes struct {
 	dao.DaoWrapper
 }
 
-func (r mainRoutes) home(c *gin.Context) {
+// onboardingIfFresh answers "/" itself while the deployment has no users, offering to
+// create the first account instead of a start page nobody can sign in to.
+//
+// This stays server-side because the shell would otherwise render the start page for
+// a moment before finding out. GetFrontendConfig reports the same flag, so the
+// onboarding page can move to the client once it is migrated too.
+func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
 		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		c.Abort()
 		return
 	}
-	if isFresh {
-		if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
-			logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-		}
+	if !isFresh {
 		return
 	}
 
-	indexData := NewIndexDataWithContext(c)
-
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
-		logger.Error("Could not execute template: 'home.gohtml'", "err", err)
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
+		logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
+		return
 	}
+	c.Abort()
 }
 
 func (r mainRoutes) SearchPage(c *gin.Context) {
@@ -219,12 +387,6 @@ func (r mainRoutes) SearchPage(c *gin.Context) {
 func (r mainRoutes) semesterRedirect(c *gin.Context) {
 	c.Redirect(http.StatusFound,
 		fmt.Sprintf("/?year=%s&term=%s", c.Param("year"), c.Param("term")))
-}
-
-func (r mainRoutes) courseRedirect(c *gin.Context) {
-	c.Redirect(http.StatusFound,
-		fmt.Sprintf("/?year=%s&term=%s&slug=%s&view=3",
-			c.Param("year"), c.Param("term"), c.Param("slug")))
 }
 
 func (r mainRoutes) HealthCheck(context *gin.Context) {

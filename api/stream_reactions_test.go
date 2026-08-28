@@ -30,7 +30,7 @@ func StreamReactionRouter(
 			StreamReactionDao: reactionDao,
 		}
 
-		configGinStreamRestRouter(r, wrapper)
+		configGinStreamRestRouter(r, wrapper, nil)
 	}
 }
 

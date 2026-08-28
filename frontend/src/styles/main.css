@@ -1,0 +1,423 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Component classes ported from web/assets/css. Only what the migrated pages use is
+ * carried over; each migration brings its own classes across.
+ *
+ * Definitions are copied rather than reinterpreted, so a migrated page and a legacy
+ * page render identically when a user navigates between them.
+ */
+
+@layer base {
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-xl;
+  }
+
+  h3 {
+    @apply text-lg;
+  }
+
+  body {
+    @apply bg-white dark:bg-primary;
+  }
+
+  /* The contrast ladder, text-1 highest to text-9 lowest, in both themes. */
+  .text-1 {
+    @apply text-black dark:text-white;
+  }
+
+  .text-2 {
+    @apply text-gray-900 dark:text-gray-100;
+  }
+
+  .text-3 {
+    @apply text-gray-800 dark:text-gray-200;
+  }
+
+  .text-4 {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  .text-5 {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+
+  .text-6 {
+    @apply text-gray-500 dark:text-gray-500;
+  }
+
+  .text-7 {
+    @apply text-gray-400 dark:text-gray-600;
+  }
+
+  .text-8 {
+    @apply text-gray-300 dark:text-gray-700;
+  }
+
+  .text-9 {
+    @apply text-gray-200 dark:text-gray-800;
+  }
+}
+
+@layer components {
+  .tum-live-bg {
+    @apply bg-white dark:bg-secondary;
+  }
+
+  .tum-live-bg-primary {
+    @apply bg-blue-500 dark:bg-indigo-600 disabled:bg-blue-400/50 disabled:dark:bg-indigo-500/50;
+  }
+
+  .tum-live-border-primary {
+    @apply border-blue-500 dark:border-indigo-600;
+  }
+
+  .tum-live-input {
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+  }
+
+  .tum-live-input:focus {
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
+  }
+
+  .tum-live-input-submit {
+    @apply font-semibold rounded;
+  }
+
+  .tum-live-button-primary {
+    @apply text-white tum-live-bg-primary;
+  }
+
+  .tum-live-button-secondary {
+    @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-button-tertiary {
+    @apply bg-gray-100 hover:bg-gray-800 hover:text-white dark:bg-gray-800 dark:hover:bg-gray-600;
+  }
+
+  .tum-live-button-muted {
+    @apply bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-700;
+  }
+
+  .tum-live-font-primary {
+    @apply text-blue-500 dark:text-indigo-600;
+  }
+
+  .tum-live-button {
+    @apply rounded-full px-3 py-1 text-sm font-semibold;
+  }
+
+  .tum-live-icon-button {
+    @apply flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 active:bg-gray-100/50 disabled:opacity-20 dark:hover:text-white dark:active:bg-gray-700/50;
+  }
+
+  .tum-live-menu {
+    @apply tum-live-bg text-3 h-fit rounded-lg border text-sm shadow-lg dark:border-gray-800 dark:shadow-gray-900/75;
+  }
+
+  .tum-live-menu > header {
+    @apply border-b px-4 py-2 dark:border-gray-800;
+  }
+
+  .tum-live-menu > header:has(.close) {
+    @apply flex items-center justify-between;
+  }
+
+  .tum-live-menu .tum-live-menu-item {
+    @apply my-2 flex w-full items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-menu .tum-live-menu-item.active {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  .tum-live-menu .tum-live-menu-item .icon-wrapper {
+    width: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .tum-live-popup-container {
+    @apply fixed left-0 top-0 flex h-full w-full items-center justify-center bg-black/50;
+  }
+
+  .tum-live-popup {
+    @apply relative h-[70%] max-h-[600px] w-[70%] max-w-[800px] overflow-auto rounded-md p-5;
+  }
+
+  .tum-live-popup h2 {
+    @apply mb-[15px] flex items-center justify-between text-[1.5em] font-bold;
+  }
+
+  /*
+   * The popup body is a two-column list. Without these the keyboard shortcuts render
+   * as a run-on list: the alignment comes entirely from the width on `strong`.
+   */
+  .tum-live-popup ul {
+    @apply list-none border-t border-t-gray-300 p-0;
+  }
+
+  .tum-live-popup li {
+    @apply border-b border-b-gray-300 py-2.5;
+  }
+
+  .tum-live-popup strong {
+    @apply mr-5 inline-block w-[380px] font-bold;
+  }
+
+  .tum-live-popup b {
+    @apply font-bold;
+  }
+
+  .tum-live-settings-grid {
+    @apply grid gap-y-5 content-start lg:w-3/6 md:w-4/5 w-full p-6 text-3;
+  }
+
+  .tum-live-settings-grid > section > h2 {
+    @apply text-sm text-5 mb-1;
+  }
+
+  /* Start page content. From web/assets/css/home.css. */
+  .tum-live-button-tertiary > i {
+    @apply mr-2;
+  }
+
+  .tum-live-button-tertiary.active {
+    @apply bg-gray-800 text-white dark:bg-gray-600;
+  }
+
+  .tum-live-badge {
+    @apply rounded-full px-2 py-1;
+  }
+
+  .tum-live-badge > i {
+    @apply mr-1;
+  }
+
+  .tum-live-thumbnail {
+    @apply relative mb-2 rounded-lg bg-gray-100 bg-cover transition-all duration-500 hover:shadow-xl dark:bg-gray-800 dark:shadow-gray-900/75;
+  }
+
+  .tum-live-thumbnail-progress {
+    @apply absolute bottom-0 w-full;
+  }
+
+  .tum-live-thumbnail-progress > div {
+    @apply relative h-2 w-full rounded-b-lg bg-gray-500/50;
+  }
+
+  .tum-live-thumbnail-progress > div > span {
+    @apply tum-live-bg-primary absolute left-0 h-2 rounded-bl-lg;
+  }
+
+  .tum-live-content-grid {
+    @apply grid h-full gap-y-8 pb-4;
+  }
+
+  .tum-live-content-grid-item > h3 {
+    @apply px-3 font-bold;
+  }
+
+  .tum-live-stream .course {
+    @apply text-5 break-words rounded-lg py-1 leading-relaxed hover:cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-stream .title {
+    @apply block font-medium hover:underline;
+  }
+
+  .tum-live-stream .date,
+  .tum-live-stream-row .date {
+    @apply mt-1 inline flex items-center font-light;
+  }
+
+  .tum-live-stream .description,
+  .tum-live-stream-row .description {
+    @apply flex items-center;
+  }
+
+  .tum-live-stream-row {
+    @apply flex flex-col md:flex-row md:items-center md:px-0;
+  }
+
+  .tum-live-stream-row:not(:last-child) {
+    @apply mb-2;
+  }
+
+  .tum-live-stream-row .title {
+    @apply mt-3 block font-semibold hover:underline md:mt-0;
+  }
+
+  .tum-live-course-list > header {
+    @apply mb-8 flex items-center justify-between;
+  }
+
+  .tum-live-course-list > header > h1 {
+    @apply flex items-center px-3 font-bold;
+  }
+
+  .tum-live-course-list > header > button {
+    @apply tum-live-button tum-live-button-secondary;
+  }
+
+  .tum-live-course-list-item {
+    @apply rounded-lg px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-course-list-item .title {
+    @apply text-3 block text-sm font-semibold hover:cursor-pointer hover:underline lg:text-base;
+  }
+
+  .tum-live-course-list-item .links {
+    @apply text-5 flex flex-col text-sm font-light lg:flex-row lg:items-center;
+  }
+
+  .tum-live-course-list-item .links > *:not(:first-child) {
+    @apply pt-1 lg:pl-2 lg:pt-0;
+  }
+
+  .tum-live-notification {
+    @apply text-4 rounded-lg border px-3 py-1 text-sm;
+  }
+
+  .tum-live-notification > .icon {
+    @apply mr-2;
+  }
+
+  .tum-live-notification-info {
+    @apply border-blue-500/25 bg-blue-100/50 dark:border-indigo-600/50 dark:bg-indigo-500/25;
+  }
+
+  .tum-live-notification-warn {
+    @apply border-amber-300/50 bg-amber-200/25 dark:border-amber-500/50 dark:bg-amber-400/25;
+  }
+
+  .tum-live-notification-warn > .icon {
+    @apply text-amber-500/75 dark:text-amber-200/75;
+  }
+
+  .tum-live-notification-info > .icon {
+    @apply text-blue-500/75 dark:text-indigo-600/75;
+  }
+
+  .tum-live-course-view {
+    @apply pb-5;
+  }
+
+  .tum-live-course-view > header {
+    @apply mb-8 grid gap-2 text-center;
+  }
+
+  .tum-live-course-view > header .year {
+    @apply text-5 mb-0 font-semibold uppercase;
+  }
+
+  .tum-live-course-view > header .name {
+    @apply font-bold;
+  }
+
+  .tum-live-course-view > header .button-area {
+    @apply flex items-center justify-center space-x-4;
+  }
+
+  .tum-live-course-view-item {
+    @apply py-4;
+  }
+
+  .tum-live-course-view-item:not(:last-child) {
+    @apply border-b dark:border-gray-800;
+  }
+
+  .tum-live-course-view-item > header {
+    @apply mb-3 flex flex-col items-center md:flex-row;
+  }
+
+  .tum-live-course-view-item > header > h3 {
+    @apply mb-2 font-bold md:mb-0 md:mr-2;
+  }
+
+  .tum-live-upcoming {
+    @apply grid gap-y-3;
+  }
+
+  .tum-live-upcoming .tum-live-upcoming-item {
+    @apply rounded-lg border-l-4 border-amber-500 bg-amber-500/25 px-3 py-2 text-sm;
+  }
+
+  /* The start page sidebar. From web/assets/css/home.css. */
+  .tum-live-side-navigation {
+    @apply text-3 sticky top-0 shrink-0 flex-col overflow-y-scroll font-light;
+  }
+
+  .tum-live-side-navigation-group {
+    @apply mx-5 grid content-baseline py-4;
+  }
+
+  /*
+   * Every group but the last two gets a rule under it: the last is the mobile footer,
+   * which brings its own. Copied as-is — the selector counts children, so it depends
+   * on the sidebar's markup order.
+   */
+  .tum-live-side-navigation-group:not(:nth-last-child(-n + 2)) {
+    @apply border-b dark:border-gray-800;
+  }
+
+  .tum-live-side-navigation-group > header {
+    @apply flex items-center px-3 pb-2 font-semibold;
+  }
+
+  .tum-live-side-navigation-group > header > i {
+    @apply mr-2 text-xs;
+  }
+
+  .tum-live-side-navigation-group-item {
+    @apply rounded-lg px-3 py-2 text-left text-sm;
+  }
+
+  .tum-live-side-navigation-group-item.hover {
+    @apply hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .tum-live-side-navigation-group-item > i {
+    @apply mr-2 text-xs;
+  }
+
+  .tum-live-footer {
+    @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
+  }
+
+  .tum-live-footer a {
+    @apply text-sm font-light text-5 md:py-0 py-1;
+  }
+
+  /*
+   * Notification bodies are raw HTML from the database and routinely contain links,
+   * which preflight has stripped of styling. From web/assets/css/main.css.
+   */
+  .notificationBody a {
+    @apply underline;
+  }
+}
+
+/*
+ * The scrolling panes hide their scrollbars, so the sidebar and the content area do
+ * not each draw one. From web/assets/css/home.css.
+ */
+#content::-webkit-scrollbar,
+.tum-live-side-navigation::-webkit-scrollbar {
+  display: none;
+}
+
+#content,
+.tum-live-side-navigation {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}

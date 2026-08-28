@@ -233,7 +233,6 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	if err != nil {
 		logger.Error("Can't set stream not live", "err", err)
 	}
-	NotifyViewersLiveState(uint(request.StreamID), false)
 
 	return &pb.Status{Ok: true}, nil
 }
@@ -598,7 +597,6 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		default:
 			s.StreamsDao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
-		NotifyViewersLiveState(stream.Model.ID, true)
 		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 
@@ -965,47 +963,6 @@ func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateV
 		}
 	}
 	return nil
-}
-
-// NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
-func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper dao.DaoWrapper) {
-	workers, err := daoWrapper.StreamsDao.GetWorkersForStream(stream)
-	if err != nil {
-		logger.Error("Could not get workers for stream", "err", err)
-		return
-	}
-
-	if len(workers) == 0 {
-		logger.Error("No workers for stream found")
-		return
-	}
-
-	// Iterate over all workers that are used for the given stream
-	for _, currentWorker := range workers {
-		req := pb.EndStreamRequest{
-			StreamID:   uint32(stream.ID),
-			WorkerID:   currentWorker.WorkerID,
-			DiscardVoD: discardVoD,
-		}
-		conn, err := dialIn(currentWorker)
-		if err != nil {
-			logger.Error("Unable to dial server", "err", err)
-			continue
-		}
-		client := pb.NewToWorkerClient(conn)
-		resp, err := client.RequestStreamEnd(context.Background(), &req)
-		if err != nil || !resp.Ok {
-			logger.Error("Could not end stream", "err", err)
-		}
-		endConnection(conn)
-	}
-
-	// All workers for stream are assumed to be done
-	err = daoWrapper.StreamsDao.ClearWorkersForStream(stream)
-	if err != nil {
-		logger.Error("Could not delete workers for stream", "err", err)
-		return
-	}
 }
 
 func (s server) NotifyTranscodingFailure(ctx context.Context, request *pb.NotifyTranscodingFailureRequest) (*pb.NotifyTranscodingFailureResponse, error) {

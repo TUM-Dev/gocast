@@ -16,7 +16,7 @@ func configMaintenanceRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := maintenanceRoutes{DaoWrapper: daoWrapper}
 
 	g := router.Group("/api/maintenance")
-	g.Use(tools.Admin)
+	g.Use(tools.RequirePermission(model.PermAdministerServer))
 	{
 		g.POST("/generateThumbnails", routes.generateThumbnails)
 		g.GET("/generateThumbnails/status", routes.getThumbGenProgress)
