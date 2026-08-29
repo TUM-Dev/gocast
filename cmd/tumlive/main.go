@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -267,6 +268,13 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	if port := tools.Cfg.MetricsPort; port != "" {
 		metricsMux := http.NewServeMux()
 		metricsMux.Handle("/metrics", apiv2.MetricsHandler())
+		// Registered explicitly rather than by blank import, which would only reach
+		// http.DefaultServeMux. pprof.Index serves the goroutine/heap/allocs sub-paths.
+		metricsMux.HandleFunc("/debug/pprof/", pprof.Index)
+		metricsMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		metricsMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		metricsMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		metricsMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 		metrics := &http.Server{
 			Addr:              ":" + port,
 			Handler:           metricsMux,
