@@ -13,12 +13,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install modules
         working-directory: ./web
         run: npm ci
+      # web/spa_test.go skips when no SPA build is present, so build it here or the
+      # router wiring goes untested.
+      - name: Build SPA
+        working-directory: ./frontend
+        run: npm ci && npm run build
       - name: Install Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version: ${{ matrix.go-version }}
       - name: go test

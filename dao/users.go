@@ -33,7 +33,6 @@ type UsersDao interface {
 	PinCourse(user model.User, course model.Course, pin bool) error
 	UpsertUser(user *model.User) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
-	AddUserSetting(userSetting *model.UserSetting) error
 }
 
 type usersDao struct {
@@ -84,7 +83,9 @@ func (d usersDao) IsUserAdmin(ctx context.Context, uid uint) (res bool, err erro
 	if err != nil {
 		return false, err
 	}
-	return user.Role == 1, nil
+	// Left as a role query: its two callers ask different questions — administers
+	// every course, and is too privileged to delete — so it needs splitting first.
+	return user.Role == model.AdminType, nil
 }
 
 func (d usersDao) GetUserByEmail(ctx context.Context, email string) (user model.User, err error) {
@@ -99,15 +100,26 @@ func (d usersDao) GetAllAdminsAndLecturers(users *[]model.User) (err error) {
 }
 
 func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
-	if cached, found := Cache.Get(fmt.Sprintf("userById%d", id)); found {
+	if cached, found := Cache.Get(userCacheKey(id)); found {
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
 	dbErr := DB.Preload("AdministeredCourses").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
-		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
+		Cache.SetWithTTL(userCacheKey(id), foundUser, 1, time.Second*10)
 	}
 	return foundUser, dbErr
+}
+
+func userCacheKey(id uint) string {
+	return fmt.Sprintf("userById%d", id)
+}
+
+// InvalidateUserCache drops the cached copy of a user and its settings. Anything
+// writing to a user must call it: the entry lives ten seconds, long enough for a
+// client to read back the value from before its own write.
+func InvalidateUserCache(id uint) {
+	Cache.Del(userCacheKey(id))
 }
 
 func (d usersDao) CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error) {
@@ -167,8 +179,10 @@ func (d usersDao) UpsertUser(user *model.User) error {
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// User not found, try create
-		err = DB.Create(&user).Error
-		return fmt.Errorf("create user failed: %w", err)
+		if err = DB.Create(&user).Error; err != nil {
+			return fmt.Errorf("create user failed: %w", err)
+		}
+		return nil
 	} else if err != nil {
 		return fmt.Errorf("lookup user by matriculation_number failed: %w", err)
 	}
@@ -215,13 +229,4 @@ func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 type courseUsers struct {
 	CourseID uint
 	UserID   uint
-}
-
-func (d usersDao) AddUserSetting(userSetting *model.UserSetting) error {
-	defer Cache.Clear()
-	err := d.db.Exec("DELETE FROM user_settings WHERE user_id = ? AND type = ?", userSetting.UserID, userSetting.Type).Error
-	if err != nil {
-		return err
-	}
-	return d.db.Create(userSetting).Error
 }

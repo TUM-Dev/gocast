@@ -98,7 +98,7 @@ func liveRunnerPageUpdateOnSubscribe(psc *realtime.Context) {
 
 	if tumLiveContext.User != nil {
 		userId = tumLiveContext.User.ID
-		if tumLiveContext.User.Role != model.AdminType {
+		if !tumLiveContext.User.Can(model.PermAdministerServer) {
 			err = errors.New("user is not admin")
 			logger.Error("User is not admin", "err", err)
 			return
@@ -228,7 +228,7 @@ type runnerRoutes struct {
 
 func configRunnerRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := r.Group("/api/runners")
-	g.Use(tools.Admin)
+	g.Use(tools.RequirePermission(model.PermAdministerServer))
 
 	routes := runnerRoutes{dao: daoWrapper.RunnerDao}
 

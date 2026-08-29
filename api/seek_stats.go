@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,10 @@ func (r seekStatsRoutes) reportSeek(c *gin.Context) {
 	}
 
 	if err := r.VideoSeekDao.Add(c.Param("streamID"), req.Position); err != nil {
+		if errors.Is(err, dao.ErrPositionOutOfRange) {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
 		logger.Error("Could not add seek hit", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

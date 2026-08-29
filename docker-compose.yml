@@ -16,7 +16,6 @@ services:
     volumes:
       - ./config.yaml:/etc/TUM-Live/config.yaml
       - ./branding/branding.yaml:/etc/TUM-Live/branding.yaml
-      - mass:/mass
     restart: always
     environment:
       - DBHOST=db
@@ -74,6 +73,7 @@ services:
       - ADMIN_TOKEN=123
     ports:
       - "8089:8089"
+      - "2112:2112"
     volumes:
       - vod:/vod
   db:

@@ -8,9 +8,9 @@ import (
 type Subtitles struct {
 	gorm.Model
 
-	StreamID uint   `gorm:"not null"`
+	StreamID uint   `gorm:"not null;index:idx_subtitles_stream_id_language"`
 	Content  string `gorm:"not null"` // the .srt content provided by the voice-service
-	Language string `gorm:"not null"`
+	Language string `gorm:"not null;index:idx_subtitles_stream_id_language"`
 }
 
 // TableName returns the name of the table for the Subtitles model in the database.

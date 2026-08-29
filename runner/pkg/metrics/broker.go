@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -18,6 +19,7 @@ type Broker struct {
 	StreamErrors         *prometheus.CounterVec
 	ConvertingProgresses *prometheus.GaugeVec
 	ConvertingErrors     *prometheus.CounterVec
+	Uptime               prometheus.GaugeFunc
 }
 
 // Option represents a functional option for configuring a Broker.
@@ -33,6 +35,7 @@ type Option func(broker *Broker)
 //
 //	b.Streams.With(b.With().Stream(123).Input("rtmp://1.2.3.4/src")).Set(5)  // Set active streams
 func NewBroker(options ...Option) *Broker {
+	startedAt := time.Now()
 	b := &Broker{
 		port: 9947,
 		Streams: promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -61,6 +64,13 @@ func NewBroker(options ...Option) *Broker {
 			Name:      "n_converting_errs",
 			Help:      "Number of failures during conversion",
 		}, []string{"stream_id", "stream_version"}),
+		Uptime: promauto.NewGaugeFunc(prometheus.GaugeOpts{
+			Namespace: "runner",
+			Name:      "uptime_seconds",
+			Help:      "Runner process uptime in seconds",
+		}, func() float64 {
+			return time.Since(startedAt).Seconds()
+		}),
 	}
 	for _, option := range options {
 		option(b)

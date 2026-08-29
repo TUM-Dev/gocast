@@ -1,0 +1,7 @@
+{{define "stream-reactions"}}{{- /*gotype: github.com/TUM-Dev/gocast/model.Stream*/ -}}
+<div class="flex flex-row flex-wrap w-full justify-center gap-2" x-data="{reactions: []}" x-init="reactions = await watch.getAllowedReactions({{.Model.ID}})">
+    <template x-for="reaction in reactions">
+        <button @click="watch.addReaction(reaction, {{.Model.ID}})" class="align-middle mt-1 text-5 hover:text-1 font-light tum-live-button-secondary rounded-2xl w-fit text-5xl" x-text="reaction"></button>
+    </template>
+</div>
+{{end}}

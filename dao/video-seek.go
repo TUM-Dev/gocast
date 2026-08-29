@@ -13,6 +13,9 @@ import (
 
 const maxChunksPerVideo = 150
 
+// ErrPositionOutOfRange is returned when a reported seek position exceeds the stream duration.
+var ErrPositionOutOfRange = errors.New("position is bigger than stream duration")
+
 type VideoSeekDao interface {
 	Add(streamID string, pos float64) error
 	Get(streamID string) ([]model.VideoSeekChunk, error)
@@ -33,8 +36,7 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 	}
 
 	if (pos / float64(stream.Duration.Int32)) > 1 {
-		logger.Error("position is bigger than stream duration")
-		return errors.New("position is bigger than stream duration")
+		return ErrPositionOutOfRange
 	}
 
 	chunkTimeRange := float64(stream.Duration.Int32) / maxChunksPerVideo

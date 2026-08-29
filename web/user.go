@@ -14,22 +14,7 @@ import (
 	"github.com/TUM-Dev/gocast/tools/tum"
 )
 
-type userSettingsData struct {
-	IndexData IndexData
-}
-
 const redirCookieName = "redirURL"
-
-func (r mainRoutes) settingsPage(c *gin.Context) {
-	d := userSettingsData{IndexData: NewIndexData()}
-	d.IndexData.TUMLiveContext = c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	err := templateExecutor.ExecuteTemplate(c.Writer, "user-settings.gohtml", d.IndexData)
-	if err != nil {
-		logger.Error("Error executing template user-settings.gohtml", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-}
 
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
@@ -54,8 +39,15 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 		}
 	}
 
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
+	// Redirect rather than render the login template inline: the login page may be
+	// served by the SPA, which would otherwise be replaced mid-flow by a
+	// server-rendered page. The redirect URL cookie set by LoginPage survives this, so
+	// the user still lands where they were headed once they get their password right.
+	c.Redirect(http.StatusFound, "/login?"+loginErrorQuery+"=1")
 }
+
+// loginErrorQuery marks a failed login attempt when redirecting back to the login page.
+const loginErrorQuery = "error"
 
 // HandleValidLogin starts a session and redirects the user to the page they were trying to access.
 func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
@@ -123,7 +115,13 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 	return nil, err
 }
 
-func (r mainRoutes) LoginPage(c *gin.Context) {
+// SetLoginRedirectCookie stores where to send the user once they have logged in.
+//
+// It has to happen while serving the login page, before the user picks between the
+// internal form and an external identity provider, because an external login leaves
+// the site entirely and comes back without the original query string. It is exported
+// so that the route serving the SPA login page keeps the same behaviour.
+func SetLoginRedirectCookie(c *gin.Context) {
 	redirUrlStr := "/"
 	redirURL, err := getRedirectUrl(c)
 	if err == nil && redirURL.Scheme == "" && redirURL.Host == "" {
@@ -132,18 +130,9 @@ func (r mainRoutes) LoginPage(c *gin.Context) {
 
 	// Only set cookie if (potentially) needed.
 	if !strings.HasSuffix(redirUrlStr, "/") && !strings.HasSuffix(redirUrlStr, "/login") {
-		// We need to set the cookie here now as we don't know whether the user will choose an internal or external login.
 		// Use 10 minutes for expiry as the user may not login immediately. The cookie is deleted after login.
 		c.SetCookie(redirCookieName, redirUrlStr, 600, "/", "", tools.CookieSecure, true)
 	}
-
-	d := NewLoginPageData(false)
-	d.UseSAML = tools.Cfg.Saml != nil
-	if d.UseSAML {
-		d.IDPName = tools.Cfg.Saml.IdpName
-		d.IDPColor = tools.Cfg.Saml.IdpColor
-	}
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
 
 func (r mainRoutes) LogoutPage(c *gin.Context) {

@@ -56,11 +56,12 @@ func ParseBookmarkToProto(b model.Bookmark) *protobuf.Bookmark {
 }
 
 // ParseCourseToProto converts a Course model to its protobuf representation.
+//
+// Everything derived here is derived for u: the private lectures of a course the
+// caller does not administer are left out of the last recording and the next lecture,
+// and the pin is the caller's own.
 func ParseCourseToProto(c model.Course, u *model.User) *protobuf.Course {
-	lastRecordingID := c.GetLastRecording(u).ID
-	nextLectureID := c.GetNextLecture(u).ID
-
-	return &protobuf.Course{
+	course := &protobuf.Course{
 		Id:   uint32(c.ID),
 		Name: c.Name,
 		Slug: c.Slug,
@@ -77,9 +78,38 @@ func ParseCourseToProto(c model.Course, u *model.User) *protobuf.Course {
 		VodChatEnabled:          c.VodChatEnabled,
 		CameraPresetPreferences: c.CameraPresetPreferences,
 		SourcePreferences:       c.SourcePreferences,
-		LastRecordingId:         uint32(lastRecordingID),
-		NextLectureId:           uint32(nextLectureID),
+		Visibility:              c.Visibility,
+		Pinned:                  HasPinned(u, c),
+		IsAdmin:                 u.IsAdminOfCourse(c),
 	}
+
+	// Both getters answer with a zero-value stream when the course has none. Left
+	// absent rather than sent as a stream with id 0, which every caller would then
+	// have to know to test for — as the Alpine start page did.
+	if last := c.GetLastRecording(u); last.ID != 0 {
+		course.LastRecording = ParseStreamToProto(*last, c, u)
+	}
+	if next := c.GetNextLecture(u); next.ID != 0 {
+		course.NextLecture = ParseStreamToProto(*next, c, u)
+	}
+
+	return course
+}
+
+// HasPinned reports whether u has pinned c. It reads the PinnedCourses that
+// GetUserByID preloads, so it costs no query.
+func HasPinned(u *model.User, c model.Course) bool {
+	if u == nil {
+		return false
+	}
+
+	for _, pinned := range u.PinnedCourses {
+		if pinned.ID == c.ID {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ParseSemesterToProto converts a Semester model to its protobuf representation.
@@ -123,10 +153,20 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		IsPlanned:        stream.IsPlanned(),
 		IsComingUp:       stream.IsComingUp(),
 		HlsUrl:           stream.HLSUrl(),
+		// A private stream reaches nobody but a course administrator, so this marks
+		// the ones the page should show as withheld from everyone else.
+		IsPubliclyVisible: !stream.Private,
 	}
 
+	// The column is null until a recording has been processed. v1 answered with the
+	// scheduled length in the meantime — model.Stream.ToDTO — and a listing that shows
+	// no running time at all reads as a broken lecture rather than an unprocessed one.
+	duration := int32(stream.End.Sub(stream.Start).Seconds())
 	if stream.Duration.Valid {
-		s.Duration = uint32(stream.Duration.Int32)
+		duration = stream.Duration.Int32
+	}
+	if duration > 0 {
+		s.Duration = uint32(duration)
 	}
 
 	if course.DownloadsEnabled {
@@ -138,10 +178,17 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 	return s
 }
 
+// ParseLectureHallToProto converts a LectureHall model to its protobuf representation.
+// Nil is normal for a stream not held in one, and maps to an absent message.
 func ParseLectureHallToProto(lh *model.LectureHall) *protobuf.LectureHall {
+	if lh == nil {
+		return nil
+	}
+
 	return &protobuf.LectureHall{
-		Id:   uint32(lh.ID),
-		Name: lh.Name,
+		Id:          uint32(lh.ID),
+		Name:        lh.Name,
+		ExternalUrl: lh.ExternalURL,
 	}
 }
 

@@ -73,7 +73,9 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 // LoggedIn is a middleware that checks if the user is logged in and redirects to the login page if not
 func LoggedIn(c *gin.Context) {
 	if c.MustGet("TUMLiveContext").(TUMLiveContext).User == nil {
-		c.Redirect(http.StatusFound, "/login")
+		// Pass the page along so the login flow can return to it, as the course and
+		// admin middlewares below do.
+		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 		c.Abort()
 	}
 }
@@ -297,7 +299,7 @@ func OwnerOfCourse(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
+	if !tumLiveContext.User.Can(model.PermAdministerAllCourses) && (tumLiveContext.User == nil || tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
 		c.Status(http.StatusForbidden)
 		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 	}
@@ -324,31 +326,22 @@ func AdminOfCourse(c *gin.Context) {
 	c.AbortWithStatus(http.StatusForbidden) // user is not admin of course
 }
 
-func AtLeastLecturer(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Role != model.LecturerType) {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-	}
-}
-
-func Admin(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
+// RequirePermission aborts with Forbidden unless the caller holds the permission. A
+// route group states the capability it needs rather than the role that has it, so
+// moving a capability between roles is a change to model.rolePermissions alone.
+func RequirePermission(p model.Permission) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		foundContext, exists := c.Get("TUMLiveContext")
+		if !exists {
+			logger.Error("context should exist but doesn't")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		tumLiveContext := foundContext.(TUMLiveContext)
+		if !tumLiveContext.User.Can(p) {
+			c.Status(http.StatusForbidden)
+			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
+		}
 	}
 }
 
