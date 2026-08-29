@@ -53,8 +53,14 @@ func liveUpdateOnUnsubscribe(psc *realtime.Context) {
 
 	liveUpdateListenerMutex.Lock()
 	defer liveUpdateListenerMutex.Unlock()
+	// Subscribe registers the subscriber before running OnSubscribe, so an OnSubscribe
+	// that returned early still gets an OnUnsubscribe with no entry in the map.
+	listener, ok := liveUpdateListener[userId]
+	if !ok {
+		return
+	}
 	var newSessions []*realtime.Context
-	for _, session := range liveUpdateListener[userId].sessions {
+	for _, session := range listener.sessions {
 		if session != psc {
 			newSessions = append(newSessions, session)
 		}
@@ -62,7 +68,7 @@ func liveUpdateOnUnsubscribe(psc *realtime.Context) {
 	if len(newSessions) == 0 {
 		delete(liveUpdateListener, userId)
 	} else {
-		liveUpdateListener[userId].sessions = newSessions
+		listener.sessions = newSessions
 	}
 }
 
