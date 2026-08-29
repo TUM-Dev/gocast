@@ -59,6 +59,10 @@ type Manager struct {
 	liveNotifiedLock  sync.Mutex
 }
 
+// runnerDispatchTimeout bounds a single stream-start RPC to a runner. dialRunner is lazy,
+// so this also covers connection establishment to an unreachable runner.
+const runnerDispatchTimeout = 15 * time.Second
+
 type CamService interface {
 	For(address string, cameraType model.CameraType) (camera.Cam, error)
 }
@@ -87,7 +91,10 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 type Option func(m *Manager)
 
 func (m *Manager) TriggerDueStreams() error {
-	ctx := context.Background()
+	// The cron runs this every minute; bound a tick so a wedged runner can't pile up
+	// goroutines indefinitely.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 	streams, err := m.dao.GetDueStreamsForRunners()
 	if err != nil {
 		return err
@@ -408,7 +415,10 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		}
 		input = fmt.Sprintf("%s/%s-%d", tools.Cfg.IngestBase, course.Slug, s.ID)
 	}
-	return client.RequestStream(ctx, &protobuf.StreamRequest{
+	// Derived from ctx so a cancelled caller still aborts early.
+	rctx, cancel := context.WithTimeout(ctx, runnerDispatchTimeout)
+	defer cancel()
+	return client.RequestStream(rctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
 		Version:             ptr.Take(version),
 		End:                 timestamppb.New(s.End),

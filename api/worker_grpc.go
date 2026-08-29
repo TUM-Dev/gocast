@@ -49,6 +49,24 @@ type server struct {
 	subtitleAuth   string
 }
 
+// Bounds for worker RPCs. dialIn is lazy, so these also cover connection establishment:
+// without them an unreachable worker wedges the calling cron goroutine forever.
+const (
+	// workerDispatchTimeout applies to the short fire-and-forget calls.
+	workerDispatchTimeout = 15 * time.Second
+	// workerPreviewTimeout has to stay well below the one minute preview cron period.
+	workerPreviewTimeout = 15 * time.Second
+	// workerThumbTimeout applies to thumbnail combination, which reads two images.
+	workerThumbTimeout = 5 * time.Minute
+	// workerJobTimeout is an upper bound for the long synchronous media jobs, not a target.
+	workerJobTimeout = 30 * time.Minute
+)
+
+// rpcCtx returns a context bounding a single worker RPC. Callers must defer the cancel.
+func rpcCtx(timeout time.Duration) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), timeout)
+}
+
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
 	credentials := insecure.NewCredentials()
 	logger.Info("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
@@ -517,7 +535,9 @@ func generateCombinedThumb(streamID uint, dao dao.DaoWrapper) {
 		return
 	}
 	client := pb.NewToWorkerClient(wConn)
-	thumbnails, err := client.CombineThumbnails(context.Background(), &pb.CombineThumbnailsRequest{
+	ctx, cancel := rpcCtx(workerThumbTimeout)
+	defer cancel()
+	thumbnails, err := client.CombineThumbnails(ctx, &pb.CombineThumbnailsRequest{
 		PrimaryThumbnail:   thumbPres,
 		SecondaryThumbnail: thumbCam,
 		Path:               strings.ReplaceAll(thumbPres, "PRES", "CAM_PRES"),
@@ -715,7 +735,9 @@ func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course 
 	}
 	client := pb.NewToWorkerClient(conn)
 	req.WorkerId = workers[workerIndex].WorkerID
-	resp, err := client.RequestStream(context.Background(), &req)
+	ctx, cancel := rpcCtx(workerDispatchTimeout)
+	defer cancel()
+	resp, err := client.RequestStream(ctx, &req)
 	if err != nil || !resp.Ok {
 		logger.Error("could not assign stream!", "err", err)
 		workers[workerIndex].Workload-- // decrease workers load only by one (backoff)
@@ -812,7 +834,9 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		}
 		client := pb.NewToWorkerClient(conn)
 		req.WorkerID = workers[workerIndex].WorkerID
-		resp, err := client.RequestPremiere(context.Background(), &req)
+		ctx, cancel := rpcCtx(workerDispatchTimeout)
+		resp, err := client.RequestPremiere(ctx, &req)
+		cancel()
 		if err != nil || !resp.Ok {
 			logger.Error("could not assign premiere!", "err", err)
 			workers[workerIndex].Workload--
@@ -869,7 +893,9 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		WorkerID: workerID,
 		HLSUrl:   s.PlaylistUrl,
 	}
-	resp, err := client.GenerateLivePreview(context.Background(), &req)
+	ctx, cancel := rpcCtx(workerPreviewTimeout)
+	defer cancel()
+	resp, err := client.GenerateLivePreview(ctx, &req)
 	if err != nil {
 		return err
 	}
@@ -906,7 +932,9 @@ func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.
 		return err
 	}
 	client := pb.NewToWorkerClient(conn)
-	res, err := client.GenerateThumbnails(context.Background(),
+	ctx, cancel := rpcCtx(workerJobTimeout)
+	defer cancel()
+	res, err := client.GenerateThumbnails(ctx,
 		&pb.GenerateThumbnailRequest{
 			Path:          file.Path,
 			WorkerID:      workers[workerIndex].WorkerID,
@@ -917,6 +945,10 @@ func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.
 			TeachingTerm:  course.TeachingTerm,
 			Start:         timestamppb.New(stream.Start),
 		})
+	if err != nil {
+		logger.Error("thumbnail generation request failed", "err", err)
+		return err
+	}
 	if !res.Ok {
 		logger.Error("did not get response from worker for thumbnail generation request", "err", err)
 	}
@@ -947,7 +979,9 @@ func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 
 	client := pb.NewToWorkerClient(conn)
 
-	_, err = client.DeleteSectionImage(context.Background(), &pb.DeleteSectionImageRequest{Path: path})
+	ctx, cancel := rpcCtx(workerDispatchTimeout)
+	defer cancel()
+	_, err = client.DeleteSectionImage(ctx, &pb.DeleteSectionImageRequest{Path: path})
 	return err
 }
 
@@ -979,7 +1013,9 @@ func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateV
 	}
 
 	// make request
-	res, err := client.GenerateSectionImages(context.Background(), &pb.GenerateSectionImageRequest{
+	ctx, cancel := rpcCtx(workerJobTimeout)
+	defer cancel()
+	res, err := client.GenerateSectionImages(ctx, &pb.GenerateSectionImageRequest{
 		PlaylistURL:        parameters.playlistUrl,
 		CourseName:         parameters.courseName,
 		CourseYear:         parameters.courseYear,
