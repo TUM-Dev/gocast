@@ -59,6 +59,10 @@ type Manager struct {
 	liveNotifiedLock  sync.Mutex
 }
 
+// runnerDispatchTimeout bounds a single stream-start RPC to a runner. dialRunner is lazy,
+// so this also covers connection establishment to an unreachable runner.
+const runnerDispatchTimeout = 15 * time.Second
+
 type CamService interface {
 	For(address string, cameraType model.CameraType) (camera.Cam, error)
 }
@@ -87,7 +91,10 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 type Option func(m *Manager)
 
 func (m *Manager) TriggerDueStreams() error {
-	ctx := context.Background()
+	// The cron runs this every minute; bound a tick so a wedged runner can't pile up
+	// goroutines indefinitely.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 	streams, err := m.dao.GetDueStreamsForRunners()
 	if err != nil {
 		return err
@@ -122,28 +129,38 @@ func (m *Manager) TriggerDueStreams() error {
 				continue
 			}
 
-			runner, client, err := m.getClient(ctx)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("getClient: %w", err))
-				continue
-			}
-
-			resp, err := m.requestStreamVersion(ctx, s, client, lh, version)
-			if err != nil && !errors.Is(err, errNotNoLectureSource) {
-				errs = append(errs, fmt.Errorf("RequestStream %v: %w", version, err))
-				continue
-			}
-			m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", version).Info("started Stream")
-			if resp.GetJobId() != "" {
-				err = m.dao.StreamsDao.SaveRunnerJobForStream(s.ID, modelStreamVersion(version), runner.Hostname, resp.GetJobId())
-				if err != nil {
-					errs = append(errs, fmt.Errorf("SaveRunnerJobForStream: %w", err))
-				}
+			if err := m.triggerStreamVersion(ctx, s, lh, version); err != nil {
+				errs = append(errs, err)
 			}
 		}
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to start stream: %v", errs)
+	}
+	return nil
+}
+
+// triggerStreamVersion starts one version of a stream on a reserved runner. It owns the
+// runner connection for the duration of the call, so that a tick spanning several streams
+// and versions doesn't hold one connection open per iteration.
+func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion) error {
+	runner, client, conn, err := m.getClient(ctx)
+	if err != nil {
+		return fmt.Errorf("getClient: %w", err)
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	resp, err := m.requestStreamVersion(ctx, s, client, lh, version)
+	if err != nil && !errors.Is(err, errNotNoLectureSource) {
+		return fmt.Errorf("RequestStream %v: %w", version, err)
+	}
+	m.logger.With("stream", s.ID, "job", resp.GetJobId(), "version", version).Info("started Stream")
+	if resp.GetJobId() != "" {
+		if err := m.dao.StreamsDao.SaveRunnerJobForStream(s.ID, modelStreamVersion(version), runner.Hostname, resp.GetJobId()); err != nil {
+			return fmt.Errorf("SaveRunnerJobForStream: %w", err)
+		}
 	}
 	return nil
 }
@@ -271,16 +288,19 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	}
 }
 
-func (m *Manager) getClient(ctx context.Context) (model.Runner, protobuf.RunnerServiceClient, error) {
+// getClient reserves a runner and dials it. The caller owns the returned connection and
+// must close it: an un-closed grpc.ClientConn keeps its resolver and balancer goroutines
+// alive for the lifetime of the process. The connection is nil when an error is returned.
+func (m *Manager) getClient(ctx context.Context) (model.Runner, protobuf.RunnerServiceClient, *grpc.ClientConn, error) {
 	r, err := m.dao.RunnerDao.ReserveRunner(ctx)
 	if err != nil {
-		return model.Runner{}, nil, fmt.Errorf("reserve available runner: %w", err)
+		return model.Runner{}, nil, nil, fmt.Errorf("reserve available runner: %w", err)
 	}
 	conn, err := dialRunner(r)
 	if err != nil {
-		return model.Runner{}, nil, fmt.Errorf("dial runner: %w", err)
+		return model.Runner{}, nil, nil, fmt.Errorf("dial runner: %w", err)
 	}
-	return r, protobuf.NewRunnerServiceClient(conn), nil
+	return r, protobuf.NewRunnerServiceClient(conn), conn, nil
 }
 
 // modelStreamVersion maps a protobuf.StreamVersion to the model.StreamVersion used for DB storage.
@@ -395,7 +415,10 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		}
 		input = fmt.Sprintf("%s/%s-%d", tools.Cfg.IngestBase, course.Slug, s.ID)
 	}
-	return client.RequestStream(ctx, &protobuf.StreamRequest{
+	// Derived from ctx so a cancelled caller still aborts early.
+	rctx, cancel := context.WithTimeout(ctx, runnerDispatchTimeout)
+	defer cancel()
+	return client.RequestStream(rctx, &protobuf.StreamRequest{
 		StreamId:            ptr.Take(uint64(s.ID)),
 		Version:             ptr.Take(version),
 		End:                 timestamppb.New(s.End),
@@ -411,11 +434,14 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		return errors.New("stream rejected")
 	}
 
-	runner, client, err := m.getClient(ctx)
+	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		m.logger.Error("Could not get client", "err", err)
 		return err
 	}
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
 	if err != nil && !errors.Is(err, errNotNoLectureSource) {

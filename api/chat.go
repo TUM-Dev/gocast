@@ -664,14 +664,15 @@ type submitPollOptionVote struct {
 func CollectStats(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		BroadcastStats(daoWrapper.StreamsDao)
-		for sID, sessions := range sessionsMap {
-			if len(sessions) == 0 {
+		for _, sID := range streamIDsWithSessions() {
+			viewers := len(sessionsFor(sID))
+			if viewers == 0 {
 				continue
 			}
 			stat := model.Stat{
 				Time:     time.Now(),
 				StreamID: sID,
-				Viewers:  uint(len(sessions)),
+				Viewers:  uint(viewers),
 				Live:     true,
 			}
 			if s, err := daoWrapper.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
