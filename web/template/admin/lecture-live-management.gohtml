@@ -142,7 +142,7 @@
                     <template x-for="reaction in reactions">
                         <div class="flex flex-col items-center">
                             <span x-text="reaction" class="text-5xl text-white" :class="highlightedReaction == reaction ? 'opacity-100' : 'opacity-25'"></span>
-                            <span x-text="percentages[reaction] ? ((parseFloat(percentages[reaction]) * 100).toFixed(2)).toString() + '%' : '0%'" class="text-white pt-2"></span>
+                            <span x-text="percentages[reaction] ? ((parseFloat(percentages[reaction]) * 100).toFixed(2)).toString() + '%' : '0%'" class="text-gray-900 dark:text-white pt-2"></span>
                         </div>
                     </template>
                 </div>

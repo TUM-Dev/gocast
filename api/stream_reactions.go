@@ -139,6 +139,7 @@ func (r StreamReactionRoutes) addReaction(c *gin.Context) {
 	}
 
 	NotifyAdminsOnReaction(stream.ID, reaction.Reaction)
+	NotifyAdminsOnReactionPercentages(c)
 	c.JSON(http.StatusOK, "")
 }
 
@@ -415,7 +416,7 @@ func NotifyAdminsOnReactionPercentages(context context.Context) {
 			totalReactions += count
 		}
 		if totalReactions == 0 {
-			// logger.Debug("no reactions for stream", "stream", stream)
+			streamReactionPercentages[stream] = make(map[string]float64)
 			continue
 		}
 
