@@ -4,7 +4,9 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/RBG-TUM/commons"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -14,6 +16,7 @@ import (
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/apiv2/visibility"
+	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/tum"
 )
@@ -106,6 +109,13 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 		term = req.Term
 	}
 
+	if user == nil {
+		key := fmt.Sprintf("publicCoursesSummary-%d-%s", year, term)
+		if cached, ok := dao.Cache.Get(key); ok {
+			return &protobuf.GetPublicCoursesResponse{Courses: cached.([]*protobuf.Course)}, nil
+		}
+	}
+
 	var courses []model.Course
 
 	if user != nil {
@@ -119,7 +129,15 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 
 	resp := make([]*protobuf.Course, len(courses))
 	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course, user)
+		if user == nil {
+			resp[i] = h.ParseCourseSummaryToProto(course, user)
+		} else {
+			resp[i] = h.ParseCourseToProto(course, user)
+		}
+	}
+
+	if user == nil {
+		dao.Cache.SetWithTTL(fmt.Sprintf("publicCoursesSummary-%d-%s", year, term), resp, 1, 6*time.Hour)
 	}
 
 	return &protobuf.GetPublicCoursesResponse{Courses: resp}, nil
