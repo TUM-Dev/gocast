@@ -56,7 +56,14 @@ func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
 	return conn, err
 }
 
+// endConnection closes a worker connection. Every un-closed grpc.ClientConn keeps its
+// resolver and balancer goroutines alive for the lifetime of the process, so callers must
+// close on the success path too, not just on errors.
 func endConnection(conn *grpc.ClientConn) {
+	// nil when dialing failed, so that callers can defer this right after dialIn.
+	if conn == nil {
+		return
+	}
 	if err := conn.Close(); err != nil {
 		logger.Error("Could not close connection to worker", "err", err)
 	}
@@ -504,6 +511,7 @@ func generateCombinedThumb(streamID uint, dao dao.DaoWrapper) {
 	}
 	w := workers[getWorkerWithLeastWorkload(workers)]
 	wConn, err := dialIn(w)
+	defer endConnection(wConn)
 	if err != nil {
 		logger.Warn("error dialing in", "err", err)
 		return
@@ -817,6 +825,9 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		workers := daoWrapper.WorkerDao.GetAliveWorkers()
+		if len(workers) == 0 {
+			return
+		}
 		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
 		if err != nil {
 			return
@@ -828,25 +839,24 @@ func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 			if s.PlaylistUrl == "" {
 				continue
 			}
-			workerIndex := getWorkerWithLeastWorkload(workers)
-			if len(workers) == 0 {
-				return
-			}
-			conn, err := dialIn(workers[workerIndex])
-			if err != nil {
-				logger.Error("Could not connect to worker", "err", err)
-				endConnection(conn)
-				continue
-			}
-			client := pb.NewToWorkerClient(conn)
-			workers[workerIndex].Workload++
-			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
-				workers[workerIndex].Workload--
-				logger.Error("Could not generate live preview", "err", err)
-				endConnection(conn)
-				continue
-			}
-			workers[workerIndex].Workload--
+			// The connection is owned by this iteration: a defer in the loop body itself
+			// would only run once the whole tick is over.
+			func() {
+				workerIndex := getWorkerWithLeastWorkload(workers)
+				conn, err := dialIn(workers[workerIndex])
+				defer endConnection(conn)
+				if err != nil {
+					logger.Error("Could not connect to worker", "err", err)
+					return
+				}
+				client := pb.NewToWorkerClient(conn)
+				workers[workerIndex].Workload++
+				defer func() { workers[workerIndex].Workload-- }()
+				if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
+					logger.Error("Could not generate live preview", "err", err)
+					return
+				}
+			}()
 		}
 	}
 }
