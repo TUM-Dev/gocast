@@ -161,7 +161,10 @@ func (d CoursesDaoImpl) GetPublicCourses(year int, term string) (courses []model
 	}
 	var publicCourses []model.Course
 
-	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+	err = DB.Debug().Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		// todo: This is only used  on the start page, which doesn't use any of the streams aside from
+		// the latest recording and the next upcoming livestream. We can filter out any other streams
+		// here to speed up the query.
 		return db.Order("start asc")
 	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?",
 		term, year).Error
