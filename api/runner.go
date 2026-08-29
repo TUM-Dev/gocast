@@ -63,8 +63,16 @@ func liveRunnerPageUpdateOnUnsubscribe(psc *realtime.Context) {
 	liveRunnerPageUpdateListenerMutex.Lock()
 	defer liveRunnerPageUpdateListenerMutex.Unlock()
 
+	// Subscribe registers the subscriber before running OnSubscribe, and OnSubscribe
+	// returns without registering for every non-admin, so the entry may not exist.
+	listener, ok := liveRunnerPageUpdateListener[userId]
+	if !ok {
+		logger.Debug("no live runner update subscription to remove", "user", psc.Client.Id)
+		return
+	}
+
 	var newSessions []*realtime.Context
-	for _, session := range liveRunnerPageUpdateListener[userId].sessions {
+	for _, session := range listener.sessions {
 		if session != psc {
 			newSessions = append(newSessions, session)
 		}
@@ -72,7 +80,7 @@ func liveRunnerPageUpdateOnUnsubscribe(psc *realtime.Context) {
 	if len(newSessions) == 0 {
 		delete(liveRunnerPageUpdateListener, userId)
 	} else {
-		liveRunnerPageUpdateListener[userId].sessions = newSessions
+		listener.sessions = newSessions
 	}
 	logger.Debug("Successfully unsubscribed from live runner updates")
 }
