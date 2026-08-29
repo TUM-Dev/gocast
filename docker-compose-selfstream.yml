@@ -36,7 +36,7 @@ services:
     depends_on:
       tum-live:
         condition: service_healthy
-      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
+      
     build:
       context: runner/
       dockerfile: Dockerfile
@@ -52,11 +52,11 @@ services:
       - vod:/storage/mass
     ports:
       - "52735:52735"
+      - "9947:9947"
     extra_hosts:      # Only needed if you use wsl
       - "ingest.tum.live:host-gateway"
   ingest:
     container_name: tum-live-ingest
-      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build:
       context: ingest/
       dockerfile: Dockerfile-local
@@ -75,6 +75,7 @@ services:
       - ADMIN_TOKEN=123
     ports:
       - "8089:8089"
+      - "2112:2112"
     volumes:
       - vod:/vod
   db:
@@ -94,7 +95,6 @@ services:
     depends_on:
       runner:
         condition: service_started
-      #- vod-service    # Omitted for local development due to size. Comment out to use voice-service
     build: worker
     platform: linux/amd64
     environment:

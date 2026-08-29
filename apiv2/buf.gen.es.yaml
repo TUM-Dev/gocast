@@ -1,0 +1,14 @@
+# Generates TypeScript message types and protojson (de)serialisation for frontend/.
+#
+# Deliberately separate from buf.gen.yaml: the Go plugins are installed with
+# `go install`, while protoc-gen-es comes from frontend/node_modules. Keeping the
+# templates apart means regenerating the server does not require an npm install, and
+# regenerating the client does not require the Go toolchain.
+#
+# Run it with `npm run proto` from frontend/, which puts the local plugin on PATH.
+version: v1
+plugins:
+  - name: es
+    out: ../frontend/src/gen
+    opt:
+      - target=ts

@@ -19,7 +19,7 @@ type auditRoutes struct {
 func configAuditRouter(r *gin.Engine, d dao.DaoWrapper) {
 	auditRouter := auditRoutes{d}
 	g := r.Group("/api")
-	g.Use(tools.Admin)
+	g.Use(tools.RequirePermission(model.PermAdministerServer))
 	{
 		g.GET("/audits", auditRouter.getAudits)
 	}

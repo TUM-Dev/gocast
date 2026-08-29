@@ -15,7 +15,7 @@ func configInfoPageRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
 	routes := infoPageRoutes{wrapper}
 	api := router.Group("/api")
 	{
-		api.Use(tools.Admin)
+		api.Use(tools.RequirePermission(model.PermAdministerServer))
 		api.PUT("/texts/:id", routes.updateText)
 	}
 }

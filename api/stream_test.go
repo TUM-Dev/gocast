@@ -24,7 +24,7 @@ import (
 )
 
 func StreamRouterWrapper(r *gin.Engine) {
-	configGinStreamRestRouter(r, dao.DaoWrapper{})
+	configGinStreamRestRouter(r, dao.DaoWrapper{}, nil)
 }
 
 func StreamDefaultRouter(t *testing.T) func(r *gin.Engine) {
@@ -33,7 +33,7 @@ func StreamDefaultRouter(t *testing.T) func(r *gin.Engine) {
 			StreamsDao: testutils.GetStreamMock(t),
 			CoursesDao: testutils.GetCoursesMock(t),
 		}
-		configGinStreamRestRouter(r, wrapper)
+		configGinStreamRestRouter(r, wrapper, nil)
 	}
 }
 
@@ -99,7 +99,7 @@ func TestStream(t *testing.T) {
 						}(),
 						TokenDao: testutils.GetTokenMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
@@ -120,7 +120,7 @@ func TestStream(t *testing.T) {
 						LectureHallsDao: testutils.GetLectureHallMock(t),
 						TokenDao:        testutils.GetTokenMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
@@ -138,7 +138,7 @@ func TestStream(t *testing.T) {
 						}(),
 						TokenDao: testutils.GetTokenMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
@@ -152,7 +152,7 @@ func TestStream(t *testing.T) {
 						LectureHallsDao: testutils.GetLectureHallMock(t),
 						TokenDao:        testutils.GetTokenMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
@@ -275,7 +275,7 @@ func TestStream(t *testing.T) {
 						}(),
 						CoursesDao: testutils.GetCoursesMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         gin.H{"private": false},
@@ -292,7 +292,7 @@ func TestStream(t *testing.T) {
 							return mock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         gin.H{"private": false},
@@ -327,7 +327,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return sectionMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
@@ -347,7 +347,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return sectionMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
@@ -392,7 +392,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return sectionMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
@@ -416,7 +416,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return sectionMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
@@ -486,7 +486,7 @@ func TestStreamVideoSections(t *testing.T) {
 						StreamsDao: testutils.GetStreamMock(t),
 						CoursesDao: testutils.GetCoursesMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Body:         nil,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -507,7 +507,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return sectionMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Body:         request,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -528,7 +528,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return sectionMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Body:         request,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -569,7 +569,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return sectionMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
@@ -602,7 +602,7 @@ func TestStreamVideoSections(t *testing.T) {
 							return fileMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
@@ -687,7 +687,7 @@ func TestAttachments(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
@@ -713,7 +713,7 @@ func TestAttachments(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Url:          endpoint + "?type=abc",
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -740,7 +740,7 @@ func TestAttachments(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Url:          endpoint + "?type=url",
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -767,7 +767,7 @@ func TestAttachments(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Url:          endpoint + "?type=file",
 				ContentType:  w.FormDataContentType(),
@@ -811,79 +811,6 @@ func TestAttachments(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusOK,
 			},*/
-			"type url, NewFile returns error": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: func() dao.StreamsDao {
-							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
-							streamsMock.
-								EXPECT().
-								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
-								Return(testutils.StreamFPVNotLive, nil).AnyTimes()
-							return streamsMock
-						}(),
-						CoursesDao: func() dao.CoursesDao {
-							coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-							coursesMock.
-								EXPECT().
-								GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
-								Return(testutils.CourseFPV, nil).
-								AnyTimes()
-							return coursesMock
-						}(),
-						FileDao: func() dao.FileDao {
-							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-							fileMock.EXPECT().NewFile(gomock.Any()).Return(errors.New(""))
-							return fileMock
-						}(),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Url:          endpoint + "?type=url",
-				ContentType:  "application/x-www-form-urlencoded",
-				Body:         "file_url=https://storage.com/test.txt",
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				ExpectedCode: http.StatusInternalServerError,
-			},
-			"type url, success": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: func() dao.StreamsDao {
-							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
-							streamsMock.
-								EXPECT().
-								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
-								Return(testutils.StreamFPVNotLive, nil).AnyTimes()
-							return streamsMock
-						}(),
-						CoursesDao: func() dao.CoursesDao {
-							coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-							coursesMock.
-								EXPECT().
-								GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
-								Return(testutils.CourseFPV, nil).
-								AnyTimes()
-							return coursesMock
-						}(),
-						FileDao: func() dao.FileDao {
-							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-							fileMock.EXPECT().NewFile(&model.File{
-								StreamID: testutils.StreamFPVLive.ID,
-								Path:     "https://storage.com/test.txt",
-								Filename: "test.txt",
-								Type:     model.FILETYPE_ATTACHMENT,
-							}).Return(nil)
-							return fileMock
-						}(),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Url:          endpoint + "?type=url",
-				ContentType:  "application/x-www-form-urlencoded",
-				Body:         "file_url=https://storage.com/test.txt",
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				ExpectedCode: http.StatusOK,
-			},
 		}.
 			Router(StreamRouterWrapper).
 			Method(http.MethodPost).
@@ -909,7 +836,7 @@ func TestAttachments(t *testing.T) {
 						StreamsDao: testutils.GetStreamMock(t),
 						CoursesDao: testutils.GetCoursesMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
@@ -928,7 +855,7 @@ func TestAttachments(t *testing.T) {
 							return fileMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
@@ -947,7 +874,7 @@ func TestAttachments(t *testing.T) {
 							return fileMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
@@ -970,7 +897,7 @@ func TestAttachments(t *testing.T) {
 							return fileMock
 						}(),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
@@ -985,7 +912,7 @@ func TestAttachments(t *testing.T) {
 						CoursesDao: testutils.GetCoursesMock(t),
 						FileDao:    testutils.GetFileMock(t),
 					}
-					configGinStreamRestRouter(r, wrapper)
+					configGinStreamRestRouter(r, wrapper, nil)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
@@ -1067,7 +994,7 @@ func TestPutCustomLiveThumbnail(t *testing.T) {
 						return fileMock
 					}(),
 				}
-				configGinStreamRestRouter(r, wrapper)
+				configGinStreamRestRouter(r, wrapper, nil)
 			},
 			Before: func() {
 				_ = os.MkdirAll(filesFolder, 0o755)
@@ -1088,7 +1015,7 @@ func TestPutCustomLiveThumbnail(t *testing.T) {
 						return fileMock
 					}(),
 				}
-				configGinStreamRestRouter(r, wrapper)
+				configGinStreamRestRouter(r, wrapper, nil)
 			},
 			Before: func() {
 				_ = os.MkdirAll(filesFolder, 0o755)
@@ -1130,7 +1057,7 @@ func TestSubtitles(t *testing.T) {
 						return subMock
 					}(),
 				}
-				configGinStreamRestRouter(r, wrapper)
+				configGinStreamRestRouter(r, wrapper, nil)
 			},
 			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 			ExpectedCode: http.StatusNotFound,
@@ -1149,7 +1076,7 @@ func TestSubtitles(t *testing.T) {
 						return subMock
 					}(),
 				}
-				configGinStreamRestRouter(r, wrapper)
+				configGinStreamRestRouter(r, wrapper, nil)
 			},
 			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 			ExpectedCode: http.StatusInternalServerError,
@@ -1168,7 +1095,7 @@ func TestSubtitles(t *testing.T) {
 						return subMock
 					}(),
 				}
-				configGinStreamRestRouter(r, wrapper)
+				configGinStreamRestRouter(r, wrapper, nil)
 			},
 			Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 			ExpectedCode:     http.StatusOK,

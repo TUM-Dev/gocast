@@ -38,9 +38,9 @@ require (
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
-	golang.org/x/image v0.38.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
+	golang.org/x/image v0.41.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260630182238-925bb5da69e7 // indirect
 )

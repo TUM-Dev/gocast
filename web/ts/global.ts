@@ -2,8 +2,6 @@ import { StatusCodes } from "http-status-codes";
 import { defineElements } from "./custom-elements/elements";
 
 export * from "./notifications";
-export * from "./user-settings";
-export * from "./start-page";
 export * from "./utilities/time";
 export * from "./custom-elements/elements";
 

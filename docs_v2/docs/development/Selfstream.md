@@ -18,14 +18,38 @@ There are two ways to run Selfstream-services:
    docker compose -f docker-compose-selfstream.yml up --build
    ```
 
+  :::tip
+  Use these commands for clean cache and full cleanup after docker compose up:
+  ```bash
+
+  # Start the sevice clean without the cache
+  docker compose -f docker-compose-selfstream.yml down -v --remove-orphans && docker compose -f docker-compose-selfstream.yml build --no-cache && docker compose -f docker-compose-selfstream.yml up
+
+  # Clean everythin up after ctrl + c
+  docker compose down -v && docker stop tum-live-ingest gocast-meili-internal-1 tum-live-runner && docker rm tum-live-runner tum-live-ingest gocast-meili-internal-1 && docker compose down -v
+
+  ``` 
+  :::
+
 Now you can follow the instructions in the [Starting the stream](#starting-the-stream) section to start your stream.
 
 ---
 
 ### 2. **Starting services locally**:
 
+#### 2.1 Bash file
+
+This is the best way to start everything locally to ensure a proper start of the setup but it makes the debugging a bit harder:
+
+```bash
+
+./docs_v2/bash-services-local.sh
+
+```
+
+#### 2.2 Starting everything locally
 :::warning
-Warning: This method doesn't insure that the services are running with the correct configuration, so it is recommended to see the logs after each service is started.
+Warning: This method doesn't insure that the services are running with the correct configuration, so it is recommended to see the logs for each service separately.
 :::
 
 If you prefer to run the services locally, you can start each service individually. This method requires more setup and configuration, but it allows for more flexibility in development. To start the services locally, follow these steps:
@@ -34,19 +58,21 @@ If you prefer to run the services locally, you can start each service individual
 You have to change the `externalAuthenticationURL` in the `ingest/mediamtx.yml` file by uncommenting the the line and changing the URL to `http://localhost:8081/api/selfstream/onPublish`. This is required for the `mediamtx` server to authenticate the stream correctly.
 :::
 
-   - Start the db and meilisearch first. We use hybrid approach to run db and meilisearch in docker. You can run the following command to start them:
-       ```bash
-       docker start meilisearch mariadb-tumlive
-       ```
-        :::info 
-        If you don't have them set up, please follow the instructions in the [DevSetup](./DevSetup.md#setup-database) guide to set them up.
-        ::: 
+- Set ingestbase to `127.0.0.1` in config.yaml 
 
-   - Start the backend. run this command in the `root`
+- Start the db and meilisearch first. We use hybrid approach to run db and meilisearch in docker. You can run the following command to start them:
+    ```bash
+    docker start meilisearch mariadb-tumlive
+    ```
+    :::info 
+    If you don't have them set up, please follow the instructions in the [DevSetup](./DevSetup.md#setup-database) guide to set them up.
+    ::: 
 
-     ```bash
-     go run ./cmd/tumlive
-     ```
+- Start the backend. run this command in the `root`
+
+  ```bash
+  go run ./cmd/tumlive
+    ```
 
 - Start the frontend:
 

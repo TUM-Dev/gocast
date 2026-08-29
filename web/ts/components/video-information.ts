@@ -31,6 +31,8 @@ export function videoInformationContext(streamId: number): AlpineComponent {
                     this.handleViewersUpdate(data);
                 } else if ("description" in data) {
                     this.handleDescriptionUpdate(data);
+                } else if ("live" in data) {
+                    this.handleLiveState(data);
                 }
             };
             SocketConnections.ws.subscribe(handler);
@@ -43,6 +45,13 @@ export function videoInformationContext(streamId: number): AlpineComponent {
         handleDescriptionUpdate(upd: { description: { full: string } }) {
             this.less = upd.description.full.length > CUTOFFLENGTH;
             this.description = upd.description.full;
+        },
+
+        handleLiveState(upd: { live: boolean }) {
+            if (upd.live) {
+                // stream just went live, reload the page to pick up the stream
+                window.location.reload();
+            }
         },
     } as AlpineComponent;
 }

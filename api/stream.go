@@ -21,6 +21,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/bot"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
@@ -30,8 +31,8 @@ const (
 	MAX_FILE_SIZE = 1000 * 1000 * 50 // 50 MB
 )
 
-func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := streamRoutes{daoWrapper}
+func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, manager *runner_manager.Manager) {
+	routes := streamRoutes{daoWrapper, manager}
 
 	stream := router.Group("/api/stream")
 	{
@@ -88,6 +89,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 type streamRoutes struct {
 	dao.DaoWrapper
+	manager *runner_manager.Manager
 }
 
 type liveStreamDto struct {
@@ -267,7 +269,14 @@ func (r streamRoutes) endStream(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	discardVoD := c.Request.URL.Query().Get("discard") == "true"
 	logger.Info("End stream: " + strconv.FormatBool(discardVoD))
-	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
+	if err := r.manager.EndStream(c.Request.Context(), tumLiveContext.Stream.ID, discardVoD); err != nil {
+		logger.Error("Could not end stream on runner", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not end stream",
+			Err:           err,
+		})
+	}
 }
 
 // reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
@@ -405,12 +414,14 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 		streamIDs = append(streamIDs, stream.ID)
 	}
 	streamProgresses := make(map[uint]model.StreamProgress)
-	res, err := r.LoadProgress(tumLiveContext.User.ID, streamIDs)
-	if err != nil {
-		logger.Error("Couldn't load progresses", "err", err)
-	} else {
-		for _, progress := range res {
-			streamProgresses[progress.StreamID] = progress
+	if user != nil {
+		res, err := r.LoadProgress(user.ID, streamIDs)
+		if err != nil {
+			logger.Error("Couldn't load progresses", "err", err)
+		} else {
+			for _, progress := range res {
+				streamProgresses[progress.StreamID] = progress
+			}
 		}
 	}
 
@@ -708,16 +719,6 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 				Status:        http.StatusInternalServerError,
 				CustomMessage: "could not save file with path: " + path,
 				Err:           err,
-			})
-			return
-		}
-	case "url":
-		path = c.PostForm("file_url")
-		_, filename = filepath.Split(path)
-		if path == "" {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
-				CustomMessage: "missing form parameter 'file_url'",
 			})
 			return
 		}

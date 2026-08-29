@@ -23,7 +23,18 @@
                     <a :href="`/w/${lectureData.courseSlug}/${lectureData.lectureId}`"><span
                                 x-text="lectureData.startDateFormatted"></span> <i class="fas fa-external-link"></i></a>
                 </div>
-                <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
+                <div class="text-3 font-sans ml-6"
+                    x-data="{
+                        showKeys: false,
+                        copied: null,
+                        copyTimeout: null,
+                        copyAndShow(value, key) {
+                            global.copyToClipboard(value)
+                            this.copied = key
+                            clearTimeout(this.copyTimeout)
+                            this.copyTimeout = setTimeout(() => this.copied = null, 1500)
+                        }
+                    }">
                     <span x-text="lectureData.startTimeFormatted"></span>
                     -
                     <span x-text="lectureData.endTimeFormatted"></span>
@@ -40,13 +51,31 @@
                         </span>
                         <span class="font-semibold">Stream Server:</span>
                         <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey)"></i>
+                        <span class="relative inline-block">
+                            <i class="fas fa-clipboard hover:text-purple-500 cursor-pointer"
+                            @click="copyAndShow('{{$ingestBase}}{{$course.Slug}}-' + lectureData.lectureId + '?secret=' + lectureData.streamKey, 'stream-server')"></i>
+
+                            <span x-cloak
+                                x-show="copied === 'stream-server'"
+                                role="status"
+                                class="copy-tooltip bg-blue-500 dark:bg-indigo-600">
+                                Copied
+                            </span>
+                        </span>
                         <br>
                         <span class="font-semibold">Stream Key:</span>
                         <span x-text="lectureData.courseSlug + '-' + lectureData.lectureId"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard(lectureData.courseSlug + '-' + lectureData.lectureId)"></i>
+                        <span class="relative inline-block">
+                            <i class="fas fa-clipboard hover:text-purple-500 cursor-pointer"
+                            @click="copyAndShow(lectureData.courseSlug + '-' + lectureData.lectureId, 'stream-key')"></i>
+
+                            <span x-cloak
+                                x-show="copied === 'stream-key'"
+                                role="status"
+                                class="copy-tooltip bg-blue-500 dark:bg-indigo-600">
+                                Copied
+                            </span>
+                        </span>
                         <br>
                         {{if ne $user.Role 1}}
                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
@@ -297,6 +326,62 @@
                     </article>
                 </section>
 
+                <header class="border-b dark:border-gray-600 w-full">
+                    <h6 class="text-sm text-5 font-light">Schedule</h6>
+                </header>
+
+                <section x-show="!isSeriesLecture()" class="grid grid-cols-2 gap-3">
+                    <article x-data="{ id: $id('text-input') }">
+                        <label :for="id" class="text-sm text-5">Start</label>
+                        <input :id="id"
+                               class="tl-input w-full" type="text"
+                               placeholder="2021-04-08 14:00"
+                               x-ref="start" x-model="startInput"
+                               x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput: true, altFormat: 'Y-m-d H:i', dateFormat: 'Z', allowInput: true})"
+                               @change="onTimeInputChange" autocomplete="off">
+                    </article>
+                    <article x-data="{ id: $id('text-input') }">
+                        <label :for="id" class="text-sm text-5">End</label>
+                        <input :id="id"
+                               class="tl-input w-full" type="text"
+                               placeholder="2021-04-08 16:00"
+                               x-ref="end" x-model="endInput"
+                               x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput: true, altFormat: 'Y-m-d H:i', dateFormat: 'Z', allowInput: true})"
+                               @change="onTimeInputChange" autocomplete="off">
+                    </article>
+                </section>
+
+                <section x-show="isSeriesLecture()">
+                    <p class="text-xs text-3 mb-2">
+                        This lecture is part of a series, so only the time of day can be changed here &mdash;
+                        each lecture keeps its own date.
+                    </p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <article x-data="{ id: $id('text-input') }">
+                            <label :for="id" class="text-sm text-5">Start time</label>
+                            <input :id="id"
+                                   class="tl-input w-full" type="text"
+                                   placeholder="14:00"
+                                   x-ref="startSeries" x-model="startInput"
+                                   x-init="flatpickr($refs.startSeries, {enableTime: true, noCalendar: true, time_24hr: true, dateFormat: 'H:i', allowInput: true})"
+                                   @change="onTimeInputChange" autocomplete="off">
+                        </article>
+                        <article x-data="{ id: $id('text-input') }">
+                            <label :for="id" class="text-sm text-5">End time</label>
+                            <input :id="id"
+                                   class="tl-input w-full" type="text"
+                                   placeholder="16:00"
+                                   x-ref="endSeries" x-model="endInput"
+                                   x-init="flatpickr($refs.endSeries, {enableTime: true, noCalendar: true, time_24hr: true, dateFormat: 'H:i', allowInput: true})"
+                                   @change="onTimeInputChange" autocomplete="off">
+                        </article>
+                    </div>
+                    <label class="flex items-center mt-2 cursor-pointer">
+                        <input type="checkbox" x-model="applyTimeToSeries" class="w-auto mr-2">
+                        <span class="text-sm text-3">Apply to all <span x-text="seriesSize"></span> lectures in this series</span>
+                    </label>
+                </section>
+
                 <div x-show="!lectureData.isPast && !lectureData.isRecording"
                      class="p-3 border dark:border-gray-600 rounded mt-3">
                     {{if eq $user.Role 1}}
@@ -421,7 +506,7 @@
                     </button>
                     <button
                             @click="saveEdit();"
-                            :disabled="!isDirty || isSaving"
+                            :disabled="(!isDirty && !timeDirty) || isSaving"
                             class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
                             x-text="isSaving ? 'loading ...' : (uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                     ></button>

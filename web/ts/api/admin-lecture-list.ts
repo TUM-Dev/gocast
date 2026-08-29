@@ -101,7 +101,10 @@ export type VideoSectionDelta = {
 
 // Checks if two video sections have the same id but different data
 export function videoSectionHasChanged(a: VideoSection, b: VideoSection) {
-    return a.id === b.id && (a.description !== b.description || videoSectionTimestamp(a) !== videoSectionTimestamp(b));
+    if (a == null || b == null || a.id !== b.id) {
+        return false;
+    }
+    return a.description !== b.description || videoSectionTimestamp(a) !== videoSectionTimestamp(b);
 }
 
 export function videoSectionGenKey(section: VideoSection): string {
@@ -125,7 +128,7 @@ export function videoSectionListDelta(oldSections: VideoSection[], newSections: 
 
         // Updating Video Sections
         const oldVideoSection = oldSections.find((oldSection: VideoSection) => oldSection.id === section.id);
-        if (videoSectionHasChanged(section, oldVideoSection)) {
+        if (oldVideoSection != null && videoSectionHasChanged(section, oldVideoSection)) {
             sectionsToUpdate.push(section);
         }
     }
@@ -293,15 +296,40 @@ export const AdminLectureList = {
     },
 
     /**
+     * Updates the start/end time of a single lecture.
+     * @param courseId
+     * @param lectureId
+     * @param start ISO 8601 datetime string
+     * @param end ISO 8601 datetime string
+     */
+    updateTime: async (courseId: number, lectureId: number, start: string, end: string): Promise<void> => {
+        await put(`/api/course/${courseId}/updateLectureTime/${lectureId}`, { start, end });
+    },
+
+    /**
+     * Applies the time-of-day and duration of the given lecture to every other lecture in its
+     * series, keeping each of those lectures on its own date. The lecture's own time must already
+     * be saved via updateTime before calling this.
+     * @param courseId
+     * @param lectureId
+     */
+    applyTimeToSeries: async (courseId: number, lectureId: number): Promise<void> => {
+        await post(`/api/course/${courseId}/updateLectureSeriesTime/${lectureId}`);
+    },
+
+    /**
      * Add sections to a lecture
      * @param lectureId
      * @param sections
      */
-    addSections: async (lectureId: number, sections: VideoSection[]): Promise<VideoSection[]> => {
+    addSections: async (lectureId: number, sections: VideoSection[]): Promise<void> => {
         const result = await post(
             `/api/stream/${lectureId}/sections`,
             sections.map((s) => ({
-                ...s,
+                description: s.description,
+                startHours: s.startHours,
+                startMinutes: s.startMinutes,
+                startSeconds: s.startSeconds,
                 streamID: lectureId,
             })),
         );
@@ -331,7 +359,10 @@ export const AdminLectureList = {
      * @param sectionId
      */
     deleteSection: async (lectureId: number, sectionId: number): Promise<void> => {
-        await del(`/api/stream/${lectureId}/sections/${sectionId}`);
+        const res = await del(`/api/stream/${lectureId}/sections/${sectionId}`);
+        if (res.status !== StatusCodes.ACCEPTED) {
+            throw Error(res.statusText);
+        }
     },
 
     /**
@@ -389,24 +420,6 @@ export const AdminLectureList = {
         listener: PostFormDataListener = {},
     ) => {
         return await uploadFile(`/api/stream/${lectureId}/`, file, listener);
-    },
-
-    /**
-     * Upload a url as attachment for a lecture
-     * @param courseId
-     * @param lectureId
-     * @param url
-     * @param listener
-     */
-    uploadAttachmentUrl: async (
-        courseId: number,
-        lectureId: number,
-        url: string,
-        listener: PostFormDataListener = {},
-    ) => {
-        const vodUploadFormData = new FormData();
-        vodUploadFormData.append("file_url", url);
-        return postFormData(`/api/stream/${lectureId}/files?type=url`, vodUploadFormData, listener);
     },
 
     deleteAttachment: async (courseId: number, lectureId: number, attachmentId: number) => {

@@ -18,11 +18,18 @@ func StreamEnd(_ context.Context, _ *slog.Logger, notify chan *protobuf.Notifica
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream id in context"))
 	}
+	streamEnd := &protobuf.StreamEndNotification{
+		Stream: &protobuf.StreamInfo{Id: ptr.Take(streamID)},
+	}
+	if versionStr, ok := d["streamVersion"].(string); ok {
+		if v, found := protobuf.StreamVersion_value[versionStr]; found {
+			sv := protobuf.StreamVersion(v)
+			streamEnd.StreamVersion = &sv
+		}
+	}
 	notify <- &protobuf.Notification{
 		Data: &protobuf.Notification_StreamEnd{
-			StreamEnd: &protobuf.StreamEndNotification{
-				Stream: &protobuf.StreamInfo{Id: ptr.Take(streamID)},
-			},
+			StreamEnd: streamEnd,
 		},
 	}
 	return nil

@@ -5,7 +5,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o /auth main.go
 
 FROM aler9/rtsp-simple-server:v1.12.2 AS rtsp
 
-FROM alpine:3.23
+FROM alpine:3.24
 
 COPY --from=rtsp /rtsp-simple-server /
 COPY --from=authBuilder /auth /auth

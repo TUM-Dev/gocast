@@ -928,3 +928,155 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2022-04-18 13:57:23
+
+-- ---------------------------------------------------------------------------
+-- Browser-test fixture
+-- ---------------------------------------------------------------------------
+--
+-- Everything above is the 2022 dump. Everything below exists so that the browser
+-- tests in frontend/e2e have a case for each visibility rule the start page
+-- applies, and so that a developer running the stack locally sees a page with
+-- something on it. frontend/e2e/seed.ts restates all of it for the assertions.
+--
+-- Three columns are added here that the 2022 dump predates. The server's
+-- automigration would add them on boot anyway; they are added first so that the
+-- rows below can fill them.
+--
+-- Times are relative to when this file is loaded, because "today" and "in half an
+-- hour" cannot be written as fixed dates. Reload before a test run --
+-- `make e2e_db` -- or the lectures dated from the last load will have gone stale.
+
+ALTER TABLE `streams` ADD COLUMN IF NOT EXISTS `private` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `lecture_halls` ADD COLUMN IF NOT EXISTS `external_url` longtext DEFAULT NULL;
+
+-- The many2many behind User.PinnedCourses.
+CREATE TABLE IF NOT EXISTS `pinned_courses` (
+  `user_id` bigint(20) unsigned NOT NULL,
+  `course_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`user_id`,`course_id`),
+  KEY `fk_pinned_courses_course` (`course_id`),
+  CONSTRAINT `fk_pinned_courses_course` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`),
+  CONSTRAINT `fk_pinned_courses_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- The live lecture badge links the room to a campus map.
+UPDATE `lecture_halls` SET `external_url` = 'https://nav.tum.de/room/5502.EG.001' WHERE `id` = 1;
+
+--
+-- Two more courses, for the two visibilities the dump did not cover.
+--
+-- `enrolled` is the strict one: not listed to anyone, and not openable by anyone
+-- who is not enrolled or administering it. `hidden` is the loose one -- unlisted,
+-- but still openable by direct link, which is what distinguishes it.
+--
+INSERT INTO `courses`
+  (`id`,`created_at`,`updated_at`,`user_id`,`name`,`slug`,`year`,`teaching_term`,
+   `live_enabled`,`vod_enabled`,`downloads_enabled`,`chat_enabled`,`visibility`)
+VALUES
+  (4,NOW(),NOW(),1,'Fortgeschrittene Bierkunde','bierkunde',2022,'S',1,1,1,0,'enrolled'),
+  (5,NOW(),NOW(),1,'Geheime Vorlesung','geheim',2022,'S',1,1,0,0,'hidden');
+
+-- prof1 administers the enrolled-only course, prof2 the hidden one, so that each
+-- lecturer has one course the other cannot reach.
+INSERT INTO `course_admins` (`course_id`,`user_id`) VALUES (4,2),(5,3);
+
+-- studi1 is enrolled in the enrolled-only course, studi2 in the hidden one. The
+-- other students are in neither, which is what makes them the negative cases.
+INSERT INTO `course_users` (`course_id`,`user_id`) VALUES (4,4),(5,5);
+
+--
+-- Lectures.
+--
+INSERT INTO `streams`
+  (`id`,`created_at`,`updated_at`,`name`,`description`,`course_id`,`start`,`end`,
+   `stream_key`,`playlist_url`,`playlist_url_pres`,`playlist_url_cam`,
+   `live_now`,`recording`,`private`,`lecture_hall_id`)
+VALUES
+  -- A recording in the enrolled-only course: reachable only through that course.
+  (9,NOW(),NOW(),'VL 1: Reinheitsgebot','',4,
+   '2022-05-02 12:00:00.000','2022-05-02 13:30:00.000','',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',0,1,0,NULL),
+
+  -- Live, in the hidden course. The live listing is filtered by the same rule the
+  -- course listing is, so this must reach its administrators and nobody else.
+  (10,NOW(),NOW(),'VL 1: Interne Vorführung','',5,
+   DATE_SUB(NOW(), INTERVAL 30 MINUTE), DATE_ADD(NOW(), INTERVAL 3 HOUR),'',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',1,0,0,1),
+
+  -- A private recording in a public course: withheld from everyone but the
+  -- administrators of that course, who see it marked as withheld.
+  (11,NOW(),NOW(),'VL 4: Interna','',1,
+   '2022-04-25 12:00:00.000','2022-04-25 12:45:00.000','',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',0,1,1,NULL),
+
+  -- Later today, so the start page has something under "Today". Dated at the end of
+  -- the day so that it stays ahead of the clock for as long as possible; between
+  -- 23:45 and midnight it has started and the section empties.
+  (12,NOW(),NOW(),'VL 5: Heute Abend','',1,
+   TIMESTAMP(CURDATE(),'23:45:00'), TIMESTAMP(CURDATE(),'23:59:00'),'',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',
+   'https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8',0,0,0,1),
+
+  -- Four scheduled lectures, which is more than the course page shows before it
+  -- offers the rest -- so the "Show all" control has something to reveal.
+  (13,NOW(),NOW(),'VL 6: Hefe','',1,
+   DATE_ADD(NOW(), INTERVAL 7 DAY), DATE_ADD(NOW(), INTERVAL 7 DAY) + INTERVAL 90 MINUTE,'',
+   '','','',0,0,0,1),
+  (14,NOW(),NOW(),'VL 7: Malz','',1,
+   DATE_ADD(NOW(), INTERVAL 14 DAY), DATE_ADD(NOW(), INTERVAL 14 DAY) + INTERVAL 90 MINUTE,'',
+   '','','',0,0,0,1),
+  (15,NOW(),NOW(),'VL 8: Hopfen','',1,
+   DATE_ADD(NOW(), INTERVAL 21 DAY), DATE_ADD(NOW(), INTERVAL 21 DAY) + INTERVAL 90 MINUTE,'',
+   '','','',0,0,0,1),
+  (16,NOW(),NOW(),'VL 9: Wasser','',1,
+   DATE_ADD(NOW(), INTERVAL 28 DAY), DATE_ADD(NOW(), INTERVAL 28 DAY) + INTERVAL 90 MINUTE,'',
+   '','','',0,0,0,1),
+
+  -- Starting within the half hour, which is what opens the waiting room. It stays
+  -- that way until it ends, three hours after this file is loaded. Deliberately in
+  -- the enrolled-only course, so it cannot disturb the "Today" section of the
+  -- students who are not in it.
+  (17,NOW(),NOW(),'VL 2: Verkostung','',4,
+   DATE_ADD(NOW(), INTERVAL 25 MINUTE), DATE_ADD(NOW(), INTERVAL 3 HOUR),'',
+   '','','',0,0,0,1);
+
+--
+-- The live lecture of Spieleentwicklung comes from the 2022 dump above, where it is
+-- dated to that year. A stream whose end has passed is reaped back to not-live by the
+-- stale-stream cron, so it has to run from now, like the hidden course's one does.
+--
+UPDATE `streams`
+SET `start` = DATE_SUB(NOW(), INTERVAL 30 MINUTE), `end` = DATE_ADD(NOW(), INTERVAL 3 HOUR)
+WHERE `id` = 7;
+
+--
+-- studi1 has watched one lecture of Einführung Brauereiwesen and is halfway
+-- through another, so that the watched marker, the progress bar and the
+-- "Hide watched" filter all have something to act on.
+--
+INSERT INTO `stream_progresses` (`progress`,`watched`,`stream_id`,`user_id`)
+VALUES (1,1,1,4),(0.5,0,2,4);
+
+--
+-- studi3 has pinned two courses, one of which they may not see: the pinned
+-- listing has to drop it, because a pin outlives the access that created it.
+--
+INSERT INTO `pinned_courses` (`user_id`,`course_id`) VALUES (6,1),(6,4);
+
+--
+-- One notification of each kind, active from before this file was loaded until
+-- long after it.
+--
+INSERT INTO `server_notifications` (`id`,`created_at`,`updated_at`,`text`,`warn`,`start`,`expires`)
+VALUES
+  (1,NOW(),NOW(),'Am Wochenende finden <b>Wartungsarbeiten</b> statt.',0,
+   DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY)),
+  (2,NOW(),NOW(),'Livestreams können heute unterbrochen sein.',1,
+   DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY));

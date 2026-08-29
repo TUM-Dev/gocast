@@ -173,6 +173,9 @@ type Config struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
+	// MetricsPort is the port the Prometheus endpoint listens on, separate from the
+	// web port so the metrics are not exposed to the internet. Empty disables it.
+	MetricsPort      string `yaml:"metricsPort"`
 	VodURLTemplate   string `yaml:"vodURLTemplate"`
 	CanonicalURL     string `yaml:"canonicalURL"`
 	WikiURL          string `yaml:"wikiURL"`
@@ -205,3 +208,8 @@ var jwtKey *rsa.PrivateKey
 
 // CookieSecure sets whether to use secure cookies or not, defaults to false in dev mode, true in production
 var CookieSecure = false
+
+// VersionTag is the build's version, set from main via ldflags, "development" when
+// unstamped. Here rather than in web so the v2 API need not import the frontend it is
+// replacing.
+var VersionTag = "development"

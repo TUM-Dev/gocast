@@ -374,7 +374,7 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 	}
 
 	semesterFilter := fmt.Sprintf("(year = %d AND semester = \"%s\")", semester.Year, semester.TeachingTerm)
-	if user != nil && user.Role == model.AdminType {
+	if user.Can(model.PermViewAllCourses) {
 		return semesterFilter
 	}
 
@@ -406,7 +406,7 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 // ignores either semesters or firstSemester/lastSemester, depending on semesters == nil
 func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	semesterFilter := meiliSemesterFilter(firstSemester, lastSemester, semesters)
-	if user != nil && user.Role == model.AdminType {
+	if user.Can(model.PermViewAllCourses) {
 		return semesterFilter
 	}
 

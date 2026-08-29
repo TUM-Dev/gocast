@@ -1,0 +1,62 @@
+name: Notify Matrix on Tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+    name: Send tag message via Matrix
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Get commits in tag
+        id: commits
+        run: |
+          TAG="${{ github.ref_name }}"
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -n1)
+
+          if [ -z "$PREV_TAG" ]; then
+            LOG_RANGE="${TAG}"
+          else
+            LOG_RANGE="${PREV_TAG}..${TAG}"
+          fi
+
+          REPO="${{ github.repository }}"
+          COMMIT_LOG=""
+          while IFS='|' read -r hash subject author; do
+            if [[ "$subject" =~ \(#([0-9]+)\)[[:space:]]*$ ]]; then
+              PR_NUM="${BASH_REMATCH[1]}"
+              COMMIT_LOG+="- [$subject](https://github.com/${REPO}/pull/${PR_NUM}) by ${author}"$'\n'
+            else
+              COMMIT_LOG+="- [$subject](https://github.com/${REPO}/commit/${hash}) by ${author}"$'\n'
+            fi
+          done < <(git log "${LOG_RANGE}" --pretty=format:"%H|%s|%aN" | head -50)
+
+          # Escape for GitHub output (multiline)
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "log<<${EOF}" >> "$GITHUB_OUTPUT"
+          echo "$COMMIT_LOG" >> "$GITHUB_OUTPUT"
+          echo "${EOF}" >> "$GITHUB_OUTPUT"
+
+          echo "prev_tag=${PREV_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Send message to Matrix channel
+        uses: fadenb/matrix-chat-message@89baab2b9ea06ffdd5f5b1ca80e9f888c3d7c9d3 # v0.0.6
+        with:
+          homeserver: 'matrix.org'
+          token: ${{ secrets.MATRIX_TOKEN }}
+          channel: '!BjvpZgjrupiZgiIbGg:in.tum.de'
+          message: |
+            🏷️ New release **${{ github.ref_name }}** created by ${{ github.event.sender.login }}
+
+            ## Commits${{ steps.commits.outputs.prev_tag && format(' since {0}', steps.commits.outputs.prev_tag) || '' }}
+
+            ${{ steps.commits.outputs.log }}
+
+            🔗 https://github.com/${{ github.repository }}/compare/${{ steps.commits.outputs.prev_tag }}...${{ github.ref_name }}
