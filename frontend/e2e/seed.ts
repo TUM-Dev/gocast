@@ -5,9 +5,7 @@
  * Everything here is a restatement of that file, so the two can be checked against
  * each other by eye. Nothing is created by the suite — the fixture is the dump.
  *
- * Reset it before a run:
- *
- *   make e2e_db
+ * `make test_e2e` reloads it before every run, so nothing here has to survive one.
  */
 
 /** Every seeded account shares this password; the dump stores one argon2 hash. */
@@ -192,7 +190,7 @@ export const unlistedLecture = "VL 3: Rückblick";
  * The time-dependent lectures, all in Einführung Brauereiwesen except the last.
  *
  * Their dates are relative to when the dump was loaded, because "today" cannot be
- * written as a fixed date. Reload with `make e2e_db` before a run.
+ * written as a fixed date, and `make test_e2e` reloads the dump before every run.
  */
 export const schedule = {
   /** Later today, so the start page has something under "Today". */
@@ -247,12 +245,8 @@ export const courseUrl = (slug: CourseKey): string => {
 };
 
 /**
- * What each role is told it may do, keyed by `model.User.Role`.
- *
- * A restatement of `rolePermissions` in model/permissions.go, as GET /users/me reports
- * it. Written out per role rather than derived, for the same reason the rest of this
- * file is: a test that computed the expectation the way the server does would agree
- * with the server however wrong both were.
+ * What each role is told it may do — `rolePermissions` restated. Written out rather
+ * than derived: an expectation computed the server's way agrees however wrong both are.
  */
 export const permissionsByRole: Record<number, string[]> = {
   1: [
@@ -262,22 +256,15 @@ export const permissionsByRole: Record<number, string[]> = {
     "users.manage",
     "lecture",
   ],
-  // A lecturer administers only the courses granted to them, which is not a
-  // permission — see `administers` above.
+  // A lecturer's courses are a grant, not a permission — see `administers` above.
   2: ["lecture"],
   4: [],
 };
 
 /**
- * The two runners, added to the dump for the administration page — runners register
- * themselves over gRPC, so a fixture has no other way to contain any.
- *
- * Both are dead and no fixture can do otherwise: model.Runner.Alive is a heartbeat
- * within the last five seconds, which nothing loaded ahead of a run can satisfy. The
- * live rendering is covered by the unit tests instead.
- *
- * `beta` is consumed by the delete test in runners.spec.ts and cannot be put back, so
- * reload with `make e2e_db` before a second run.
+ * The two runners, added to the dump because runners only register themselves over
+ * gRPC. Both are dead: liveness is a heartbeat within five seconds, so no fixture can
+ * seed a live one. `beta` is consumed by the delete test in runners.spec.ts.
  */
 export const runners = {
   alpha: { hostname: "runner-alpha", version: "1.4.2", jobCount: 2, draining: false },
