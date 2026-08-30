@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -123,7 +122,6 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 	if indexData.TUMLiveContext.Stream != nil {
 		description = indexData.TUMLiveContext.Stream.GetDescriptionHTML()
 	}
-	_ = CoursePageData{IndexData: indexData, HighlightPage: true}
 	d2 := WatchPageData{
 		IndexData:       indexData,
 		Description:     template.HTML(description),
@@ -134,78 +132,4 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 		logger.Error("Error executing template watch.gohtml", "err", err)
 		return
 	}
-}
-
-func (r mainRoutes) CoursePage(c *gin.Context) {
-	indexData := NewIndexData()
-	var tumLiveContext tools.TUMLiveContext
-	tumLiveContextQueried, found := c.Get("TUMLiveContext")
-	if found {
-		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
-		indexData.TUMLiveContext = tumLiveContext
-	} else {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// When a user is not logged-in, we don't need the progress data for watch page since
-	// it is only saved for logged-in users.
-	if tumLiveContext.User == nil {
-		err := templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
-			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course})
-		if err != nil {
-			logger.Error("could not execute template: 'course-overview.gohtml'", "err", err)
-		}
-		return
-	}
-
-	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(tumLiveContext.Course.ID, tumLiveContext.User.ID)
-	if err != nil {
-		logger.Error("loading streamsWithWatchState and progresses for a given course and user failed", "err", err)
-	}
-
-	tumLiveContext.Course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
-
-	for i := range tumLiveContext.Course.Streams {
-		err = tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, false)
-		if err != nil {
-			logger.Warn("Can't sign playlists", "err", err)
-		}
-	}
-
-	// watchedStateData is used by the client to track the which VoDs are watched.
-	type watchedStateData struct {
-		ID        uint   `json:"streamID"`
-		Month     string `json:"month"`
-		Watched   bool   `json:"watched"`
-		Recording bool   `json:"recording"`
-	}
-
-	clientWatchState := make([]watchedStateData, 0)
-	for _, s := range streamsWithWatchState {
-		clientWatchState = append(clientWatchState, watchedStateData{
-			ID:        s.Model.ID,
-			Month:     s.Start.Month().String(),
-			Watched:   s.Watched,
-			Recording: s.Recording,
-		})
-	}
-	// Create JSON encoded info about which streamsWithWatchState are watched. Used by the client to track the watched status.
-	encoded, err := json.Marshal(clientWatchState)
-	if err != nil {
-		logger.Error("marshalling watched infos for client failed", "err", err)
-	}
-	err = templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
-		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, WatchedData: string(encoded)})
-	if err != nil {
-		logger.Error("could not execute template: 'course-overview.gohtml'", "err", err)
-	}
-}
-
-// CoursePageData is the data for the course page.
-type CoursePageData struct {
-	IndexData     IndexData
-	Course        model.Course
-	HighlightPage bool
-	WatchedData   string
 }

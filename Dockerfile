@@ -2,13 +2,19 @@ FROM node:25 AS node
 
 WORKDIR /app
 COPY web web
+COPY frontend frontend
 
 ## remove generated files in case the developer build with npm before
 RUN rm -rf web/assets/ts-dist &&\
-    rm -rf web/assets/css-dist
+    rm -rf web/assets/css-dist &&\
+    rm -rf web/spa/assets web/spa/index.html
 
 WORKDIR /app/web
 RUN npm i --no-dev
+
+## build the single-page app serving the migrated pages; output lands in web/spa
+WORKDIR /app/frontend
+RUN npm ci && npm run build
 
 FROM golang:1.26 AS build-env
 
@@ -23,6 +29,7 @@ WORKDIR /go/src/app
 COPY . .
 COPY --from=node /app/web/assets ./web/assets
 COPY --from=node /app/web/node_modules ./web/node_modules
+COPY --from=node /app/web/spa ./web/spa
 
 # bundle version into binary if specified in build-args, dev otherwise.
 ARG version=dev

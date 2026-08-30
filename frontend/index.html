@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" />
+    <!--
+      Font Awesome, loaded the same way every server-rendered page loads it: straight
+      out of the node_modules the Go binary embeds (web/router.go). Sharing the file
+      keeps the icons identical across both frontends and costs no bundle weight.
+      When the node_modules embed is removed, this moves into the SPA's own assets.
+    -->
+    <link rel="stylesheet" href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" />
+    <title>TUM-Live</title>
+    <script>
+      // Applies the theme before first paint to avoid a flash of the wrong theme.
+      // Mirrors web/assets/init.js and shares its localStorage key, so toggling the
+      // theme on a migrated page carries over to the server-rendered ones.
+      (function () {
+        if (!("themeMode" in localStorage)) {
+          localStorage.themeMode = "system";
+        }
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var shouldBeDark =
+          localStorage.themeMode === "dark" ||
+          (localStorage.themeMode === "system" && prefersDark);
+        document.documentElement.classList.toggle("dark", shouldBeDark);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

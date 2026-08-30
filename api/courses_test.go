@@ -39,122 +39,6 @@ func TestCoursesCRUD(t *testing.T) {
 
 	dao.Cache = cache
 
-	t.Run("GET/api/courses/live", func(t *testing.T) {
-		url := "/api/courses/live"
-
-		streams := []model.Stream{
-			testutils.StreamGBSLive,
-			testutils.SelfStream,
-			testutils.StreamFPVLive,
-			testutils.StreamTensNetLive,
-		}
-
-		gbs := testutils.CourseGBS
-		gbs.Visibility = "hidden"
-		fpv := testutils.CourseFPV
-		fpv.Visibility = "loggedin"
-		tensNet := testutils.CourseTensNet
-
-		type CourseStream struct {
-			Course      model.CourseDTO
-			Stream      model.StreamDTO
-			LectureHall *model.LectureHallDTO
-			Viewers     uint
-		}
-
-		wrapper := dao.DaoWrapper{
-			StreamsDao: func() dao.StreamsDao {
-				mock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
-				mock.
-					EXPECT().
-					GetCurrentLive(gomock.Any()).
-					Return(streams, nil).
-					AnyTimes()
-				return mock
-			}(),
-			CoursesDao: func() dao.CoursesDao {
-				mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-				mock.
-					EXPECT().
-					GetCourseById(gomock.Any(), gbs.ID).
-					Return(gbs, nil).
-					AnyTimes()
-				mock.
-					EXPECT().
-					GetCourseById(gomock.Any(), fpv.ID).
-					Return(fpv, nil).
-					AnyTimes()
-				mock.
-					EXPECT().
-					GetCourseById(gomock.Any(), tensNet.ID).
-					Return(tensNet, nil).
-					AnyTimes()
-				return mock
-			}(),
-			LectureHallsDao: func() dao.LectureHallsDao {
-				mock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-				mock.
-					EXPECT().
-					GetLectureHallByID(gomock.Any()).
-					Return(testutils.LectureHall, nil).
-					AnyTimes()
-				return mock
-			}(),
-		}
-
-		gomino.TestCases{
-			"error": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: func() dao.StreamsDao {
-							mock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
-							mock.
-								EXPECT().
-								GetCurrentLive(gomock.Any()).
-								Return([]model.Stream{}, errors.New("")).
-								AnyTimes()
-							return mock
-						}(),
-					}
-					configGinCourseRouter(r, wrapper)
-				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusNotFound,
-			},
-			"success not loggedin": {
-				Router: func(r *gin.Engine) {
-					configGinCourseRouter(r, wrapper)
-				},
-				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
-				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: make([]CourseStream, 0),
-			},
-			"success loggedin": {
-				Router: func(r *gin.Engine) {
-					configGinCourseRouter(r, wrapper)
-				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusOK,
-				ExpectedResponse: []CourseStream{
-					{
-						Course:  fpv.ToDTO(testutils.TUMLiveContextAdmin.User),
-						Stream:  testutils.SelfStream.ToDTO(),
-						Viewers: 0,
-					},
-					{
-						Course:      fpv.ToDTO(testutils.TUMLiveContextAdmin.User),
-						Stream:      testutils.StreamFPVLive.ToDTO(),
-						LectureHall: testutils.LectureHall.ToDTO(),
-						Viewers:     0,
-					},
-				},
-			},
-		}.
-			Method(http.MethodGet).
-			Url(url).
-			Run(t, testutils.Equal)
-	})
-
 	t.Run("GET/api/courses/public", func(t *testing.T) {
 		url := "/api/courses/public"
 
@@ -337,88 +221,6 @@ func TestCoursesCRUD(t *testing.T) {
 		}.
 			Method(http.MethodGet).
 			Url(url).
-			Run(t, testutils.Equal)
-	})
-
-	t.Run("GET/api/courses/:slug/", func(t *testing.T) {
-		url := fmt.Sprintf("/api/courses/%s/", testutils.CourseTensNet.Slug)
-
-		response := testutils.CourseTensNet.ToDTO(testutils.TUMLiveContextAdmin.User)
-		response.Streams = []model.StreamDTO{
-			testutils.StreamTensNetLive.ToDTO(),
-		}
-
-		gomino.TestCases{
-			"invalid URI": {
-				Router:       CourseRouterWrapper,
-				Url:          "/api/courses//",
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusBadRequest,
-			},
-			"invalid query": {
-				Router:       CourseRouterWrapper,
-				Url:          fmt.Sprintf("%s?year=XX&term=W", url),
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusBadRequest,
-			},
-			"dao error not found": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						CoursesDao: func() dao.CoursesDao {
-							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-							mock.
-								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023).
-								Return(model.Course{}, gorm.ErrRecordNotFound).
-								AnyTimes()
-							return mock
-						}(),
-					}
-					configGinCourseRouter(r, wrapper)
-				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusNotFound,
-			},
-			"dao error internal": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						CoursesDao: func() dao.CoursesDao {
-							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-							mock.
-								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023).
-								Return(model.Course{}, errors.New("")).
-								AnyTimes()
-							return mock
-						}(),
-					}
-					configGinCourseRouter(r, wrapper)
-				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusInternalServerError,
-			},
-			"success": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						CoursesDao: func() dao.CoursesDao {
-							mock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-							mock.
-								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseTensNet.Slug, "S", 2023).
-								Return(testutils.CourseTensNet, nil).
-								AnyTimes()
-							return mock
-						}(),
-					}
-					configGinCourseRouter(r, wrapper)
-				},
-				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: response,
-			},
-		}.
-			Method(http.MethodGet).
-			Url(fmt.Sprintf("%s?year=2023&term=S", url)).
 			Run(t, testutils.Equal)
 	})
 
@@ -1303,6 +1105,97 @@ func TestCoursesLectureActions(t *testing.T) {
 			Url(url).
 			Run(t, testutils.Equal)
 	})
+	t.Run("POST/api/course/:courseID/updateLectureSeriesTime/:streamID", func(t *testing.T) {
+		url := fmt.Sprintf("/api/course/%d/updateLectureSeriesTime/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
+
+		gomino.TestCases{
+			"no context": {
+				Router:       CourseRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"not admin": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusForbidden,
+			},
+			"stream not found": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+								Return(testutils.StreamFPVLive, errors.New("")).
+								AnyTimes()
+							return streamsMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusNotFound,
+			},
+			"can not update lecture series time": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+								Return(testutils.StreamFPVLive, nil).
+								AnyTimes()
+							streamsMock.
+								EXPECT().
+								UpdateLectureSeriesTime(testutils.StreamFPVLive).
+								Return(errors.New("")).
+								AnyTimes()
+							return streamsMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+								Return(testutils.StreamFPVLive, nil).
+								AnyTimes()
+							streamsMock.
+								EXPECT().
+								UpdateLectureSeriesTime(testutils.StreamFPVLive).
+								Return(nil).
+								AnyTimes()
+							return streamsMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusOK,
+			},
+		}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
+	})
 	t.Run("DELETE/api/course/:courseID/deleteLectureSeries/:streamID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/deleteLectureSeries/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
 
@@ -1456,6 +1349,128 @@ func TestCoursesLectureActions(t *testing.T) {
 					configGinCourseRouter(r, wrapper)
 				},
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not find stream": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+								Return(testutils.StreamFPVLive, errors.New("")).
+								AnyTimes()
+							return streamsMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         body,
+				ExpectedCode: http.StatusNotFound,
+			},
+			"can not update stream": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+								Return(testutils.StreamFPVLive, nil).
+								AnyTimes()
+							streamsMock.
+								EXPECT().
+								UpdateStream(gomock.Any()).
+								Return(errors.New("")).
+								AnyTimes()
+							return streamsMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         body,
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: testutils.GetStreamMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         body,
+				ExpectedCode: http.StatusOK,
+			},
+		}.
+			Method(http.MethodPut).
+			Url(url).
+			Run(t, testutils.Equal)
+	})
+
+	t.Run("PUT/api/course/:courseID/updateLectureTime/:streamID", func(t *testing.T) {
+		url := fmt.Sprintf("/api/course/%d/updateLectureTime/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
+
+		body := updateLectureTimeRequest{
+			Start: testutils.StreamFPVLive.Start,
+			End:   testutils.StreamFPVLive.End,
+		}
+		invalidBody := updateLectureTimeRequest{
+			Start: testutils.StreamFPVLive.End,
+			End:   testutils.StreamFPVLive.Start,
+		}
+		gomino.TestCases{
+			"no context": {
+				Router:       CourseRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"not admin": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid streamID": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Url:          fmt.Sprintf("/api/course/%d/updateLectureTime/abc", testutils.CourseFPV.ID),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"invalid body": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"end before start": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         invalidBody,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not find stream": {

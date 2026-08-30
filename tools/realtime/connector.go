@@ -60,10 +60,20 @@ func (c *Connector) Message(clientId string, data []byte) {
 // Leave triggers the clients OnDisconnect handler and removes it from the Connector
 func (c *Connector) Leave(clientId string) {
 	client := c.clients.Get(clientId)
+	if client == nil {
+		return
+	}
+	// Removal must happen whatever a handler does: a panic escaping OnDisconnect used to
+	// skip it, retaining the client and everything its context points at forever.
+	defer c.clients.Remove(client.Id)
 	if c.hooks.OnDisconnect != nil {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("panic in OnDisconnect hook", "client", client.Id, "err", r)
+			}
+		}()
 		c.hooks.OnDisconnect(client)
 	}
-	c.clients.Remove(client.Id)
 }
 
 func (c *Connector) hook(hooks *Hooks) {

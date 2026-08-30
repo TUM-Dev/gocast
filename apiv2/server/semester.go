@@ -12,8 +12,6 @@ import (
 
 // GetSemesters retrieves all available semesters and the current semester.
 func (a *API) GetSemesters(ctx context.Context, req *emptypb.Empty) (*protobuf.GetSemestersResponse, error) {
-	a.log.Info("GetSemesters")
-
 	semesters := a.dao.GetAvailableSemesters(ctx, false)
 	year, term := tum.GetCurrentSemester()
 

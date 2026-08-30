@@ -138,6 +138,11 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			}
 			matrNr = s[0]
 		}
+		if firstName == "" {
+			logger.Error("SAML response missing givenName attribute", "lrzID", lrzID)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
 		user := model.User{
 			Name:                firstName,
 			LastName:            lastNameUser,

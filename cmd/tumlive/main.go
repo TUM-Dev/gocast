@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -53,8 +56,11 @@ func run(ctx context.Context) error {
 	defer api.RealtimeInstance.CloseAll()
 
 	web.VersionTag = VersionTag
+	tools.VersionTag = VersionTag
 
-	gormJSONLogger := slogGorm.New()
+	gormJSONLogger := slogGorm.New(
+		slogGorm.WithSlowThreshold(500 * time.Millisecond),
+	)
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
@@ -111,7 +117,9 @@ func run(ctx context.Context) error {
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
 		&model.Email{},
+		&model.StreamReaction{},
 		&model.Runner{},
+		&model.StreamRunnerJob{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)
@@ -144,6 +152,7 @@ func run(ctx context.Context) error {
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
 		runner_manager.WithCamService(camService),
+		runner_manager.WithLiveStateNotifier(api.NotifyViewersLiveState),
 	}
 	var subtitleClient pb.SubtitleGeneratorClient
 	if tools.Cfg.VoiceService.Host != "" {
@@ -255,6 +264,36 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		return m.Serve()
 	})
 
+	// Metrics get their own listener: the scrape target stays inside the cluster,
+	// unlike everything served on the web port.
+	if port := tools.Cfg.MetricsPort; port != "" {
+		metricsMux := http.NewServeMux()
+		metricsMux.Handle("/metrics", apiv2.MetricsHandler())
+		// Registered explicitly rather than by blank import, which would only reach
+		// http.DefaultServeMux. pprof.Index serves the goroutine/heap/allocs sub-paths.
+		metricsMux.HandleFunc("/debug/pprof/", pprof.Index)
+		metricsMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		metricsMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		metricsMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		metricsMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		metrics := &http.Server{
+			Addr:              ":" + port,
+			Handler:           metricsMux,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+		g.Go(func() error {
+			slog.Info("serving metrics", "port", port)
+			if err := metrics.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				return err
+			}
+			return nil
+		})
+		g.Go(func() error {
+			<-ctx.Done()
+			return metrics.Shutdown(context.WithoutCancel(ctx))
+		})
+	}
+
 	if err = g.Wait(); err != nil && ctx.Err() != nil {
 		// webserver gracefully shut down
 		return nil
@@ -283,6 +322,8 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager) {
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
 	// fetch live stream previews
 	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "*/1 * * * *")
+	// reap streams stuck in live state due to runner crash or lost notifications
+	_ = tools.Cron.AddFunc("reapStaleStreams", m.ReapStaleStreams, "1/30 * * * *")
 	// apply correct live lights
 	_ = tools.Cron.AddFunc("updateLights", m.UpdateLights, "1/5 * * * *")
 

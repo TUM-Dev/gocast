@@ -6,12 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
 func configWorkerRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := r.Group("/api/workers")
-	g.Use(tools.Admin)
+	g.Use(tools.RequirePermission(model.PermAdministerServer))
 
 	routes := workerRoutes{dao: daoWrapper.WorkerDao}
 

@@ -18,8 +18,8 @@ func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	{
 		notifications.GET("/", routes.getNotifications)
 		notifications.GET("/server", routes.getServerNotifications)
-		notifications.POST("/", tools.Admin, routes.createNotification)
-		notifications.DELETE("/:id", tools.Admin, routes.deleteNotification)
+		notifications.POST("/", tools.RequirePermission(model.PermAdministerServer), routes.createNotification)
+		notifications.DELETE("/:id", tools.RequirePermission(model.PermAdministerServer), routes.deleteNotification)
 	}
 }
 

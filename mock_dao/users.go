@@ -41,20 +41,6 @@ func (m *MockUsersDao) EXPECT() *MockUsersDaoMockRecorder {
 	return m.recorder
 }
 
-// AddUserSetting mocks base method.
-func (m *MockUsersDao) AddUserSetting(userSetting *model.UserSetting) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddUserSetting", userSetting)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddUserSetting indicates an expected call of AddUserSetting.
-func (mr *MockUsersDaoMockRecorder) AddUserSetting(userSetting any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserSetting", reflect.TypeOf((*MockUsersDao)(nil).AddUserSetting), userSetting)
-}
-
 // AddUsersToCourseByTUMIDs mocks base method.
 func (m *MockUsersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {
 	m.ctrl.T.Helper()

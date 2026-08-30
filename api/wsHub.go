@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,6 +32,28 @@ type sessionWrapper struct {
 	isAdminOfCourse bool
 }
 
+// sessionsFor returns a snapshot of the sessions watching a stream. Callers must go
+// through this rather than reading sessionsMap directly: iterating the map while another
+// goroutine writes it is a fatal runtime error, not a recoverable race.
+func sessionsFor(streamID uint) []*sessionWrapper {
+	wsMapLock.RLock()
+	defer wsMapLock.RUnlock()
+	return slices.Clone(sessionsMap[streamID])
+}
+
+// streamIDsWithSessions returns a snapshot of the streams that currently have sessions.
+func streamIDsWithSessions() []uint {
+	wsMapLock.RLock()
+	defer wsMapLock.RUnlock()
+	ids := make([]uint, 0, len(sessionsMap))
+	for id, sessions := range sessionsMap {
+		if len(sessions) > 0 {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
 var connHandler = func(context *realtime.Context) {
 	foundContext, exists := context.Get("TUMLiveContext") // get gin context
 	if !exists {
@@ -46,9 +69,10 @@ var connHandler = func(context *realtime.Context) {
 
 	wsMapLock.Lock()
 	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], &sessionData)
+	viewers := len(sessionsMap[tumLiveContext.Stream.ID])
 	wsMapLock.Unlock()
 
-	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
+	msg, _ := json.Marshal(gin.H{"viewers": viewers})
 	err := context.Send(msg)
 	if err != nil {
 		logger.Error("can't write initial stats to session", "err", err)
@@ -89,7 +113,8 @@ func sendServerMessage(msg string, t string, sessions ...*realtime.Context) {
 }
 
 func BroadcastStats(streamsDao dao.StreamsDao) {
-	for sID, sessions := range sessionsMap {
+	for _, sID := range streamIDsWithSessions() {
+		sessions := sessionsFor(sID)
 		if len(sessions) == 0 {
 			continue
 		}
@@ -103,12 +128,12 @@ func BroadcastStats(streamsDao dao.StreamsDao) {
 }
 
 func cleanupSessions() {
-	for id, sessions := range sessionsMap {
+	for _, id := range streamIDsWithSessions() {
 		roomName := strings.ReplaceAll(ChatRoomName, ":streamID", strconv.Itoa(int(id)))
 		var newSessions []*sessionWrapper
-		for i, session := range sessions {
+		for _, session := range sessionsFor(id) {
 			if RealtimeInstance.IsSubscribed(roomName, session.session.Client.Id) {
-				newSessions = append(newSessions, sessions[i])
+				newSessions = append(newSessions, session)
 			}
 		}
 		wsMapLock.Lock()
@@ -118,29 +143,13 @@ func cleanupSessions() {
 }
 
 func broadcastStream(streamID uint, msg []byte) {
-	sessions, f := sessionsMap[streamID]
-	if !f {
-		return
-	}
-	wsMapLock.Lock()
-	sessions = removeClosed(sessions)
-	wsMapLock.Unlock()
-
-	for _, wrapper := range sessions {
+	for _, wrapper := range removeClosed(sessionsFor(streamID)) {
 		_ = wrapper.session.Send(msg) // ignore "session closed" error, nothing we can do about it at this point
 	}
 }
 
 func broadcastStreamToAdmins(streamID uint, msg []byte) {
-	sessions, f := sessionsMap[streamID]
-	if !f {
-		return
-	}
-	wsMapLock.Lock()
-	sessions = removeClosed(sessions)
-	wsMapLock.Unlock()
-
-	for _, wrapper := range sessions {
+	for _, wrapper := range removeClosed(sessionsFor(streamID)) {
 		if wrapper.isAdminOfCourse {
 			_ = wrapper.session.Send(msg)
 		}

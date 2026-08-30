@@ -9,19 +9,17 @@ import (
 
 	"google.golang.org/genproto/googleapis/api/httpbody"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/apiv2/visibility"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 )
 
 // GetStream returns a stream by its ID including the course and lecture hall
 func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*protobuf.CourseStream, error) {
-	a.log.Info("GetStream")
-
 	user, stream, course, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
@@ -46,8 +44,6 @@ func (a *API) GetStream(ctx context.Context, req *protobuf.GetStreamRequest) (*p
 
 // GetVideoSections returns a list of video sections for a stream
 func (a *API) GetVideoSections(ctx context.Context, req *protobuf.GetVideoSectionsRequest) (*protobuf.GetVideoSectionsResponse, error) {
-	a.log.Info("GetVideoSections")
-
 	_, _, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
@@ -69,23 +65,26 @@ func (a *API) GetVideoSections(ctx context.Context, req *protobuf.GetVideoSectio
 
 // GetStreamPlaylist returns the playlist for a stream
 func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlaylistRequest) (*protobuf.GetStreamPlaylistResponse, error) {
-	a.log.Info("GetStreamPlaylist")
-
 	user, _, course, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
+	visible := visibility.VisibleStreams(user, course)
+
 	// Create mapping of stream id to progress for all progresses of user
-	var streamIDs []uint
-	for _, stream := range course.Streams {
-		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
-			continue
-		}
+	streamIDs := make([]uint, 0, len(visible))
+	for _, stream := range visible {
 		streamIDs = append(streamIDs, stream.ID)
 	}
+	// user is nil for anonymous callers on publicly visible courses.
+	var userID uint
+	if user != nil {
+		userID = user.ID
+	}
+
 	streamProgresses := make(map[uint]model.StreamProgress)
-	res, err := a.dao.LoadProgress(user.ID, streamIDs)
+	res, err := a.dao.LoadProgress(userID, streamIDs)
 	if err != nil {
 		a.log.Error("Couldn't load progresses", "err", err)
 	} else {
@@ -95,10 +94,7 @@ func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlay
 	}
 
 	var result []*protobuf.StreamPlaylistEntry
-	for _, stream := range course.Streams {
-		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
-			continue
-		}
+	for _, stream := range visible {
 		result = append(result, &protobuf.StreamPlaylistEntry{
 			StreamId:       uint32(stream.ID),
 			CourseSlug:     course.Slug,
@@ -116,8 +112,6 @@ func (a *API) GetStreamPlaylist(ctx context.Context, req *protobuf.GetStreamPlay
 
 // GetSubtitles returns the subtitles for a stream in a specific language
 func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesRequest) (*httpbody.HttpBody, error) {
-	a.log.Info("GetSubtitles")
-
 	_, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err
@@ -125,12 +119,9 @@ func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesReques
 
 	lang := req.Lang
 
-	subtitlesObj, err := a.dao.GetByStreamIDandLang(context.Background(), stream.ID, lang)
+	subtitlesObj, err := a.dao.GetByStreamIDandLang(ctx, stream.ID, lang)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, e.WithStatus(http.StatusNotFound, err)
-		}
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, e.FromGorm(err, "no subtitles for this stream in the requested language")
 	}
 
 	return &httpbody.HttpBody{
@@ -141,8 +132,6 @@ func (a *API) GetSubtitles(ctx context.Context, req *protobuf.GetSubtitlesReques
 
 // GetThumbs returns the thumbnails for a stream
 func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*httpbody.HttpBody, error) {
-	a.log.Info("GetThumbs")
-
 	_, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
 	if err != nil {
 		return nil, err

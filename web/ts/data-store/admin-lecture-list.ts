@@ -121,6 +121,21 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
         await this.triggerUpdate(courseId);
     }
 
+    /**
+     * Updates the start/end time of a lecture, optionally applying the time-of-day and duration
+     * to every other lecture in its series (each keeping its own date).
+     */
+    async updateLectureTime(courseId: number, lectureId: number, start: string, end: string, applyToSeries: boolean) {
+        await AdminLectureList.updateTime(courseId, lectureId, start, end);
+        if (applyToSeries) {
+            await AdminLectureList.applyTimeToSeries(courseId, lectureId);
+        }
+
+        // A series-wide update shifts other lectures' times too, which can't be reconstructed
+        // locally without re-deriving each lecture's own date - refetch instead.
+        await this.getData(courseId, true);
+    }
+
     async uploadAttachmentFile(courseId: number, lectureId: number, file: File) {
         const res = await AdminLectureList.uploadAttachmentFile(courseId, lectureId, file);
         const newFile = new LectureFile({
@@ -131,9 +146,11 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
             if (s.lectureId === lectureId) {
+                const updatedFiles = [...(s.files ?? []), newFile];
                 return {
                     ...s,
-                    files: [...s.files, newFile],
+                    files: updatedFiles,
+                    hasAttachments: updatedFiles.some((f) => f.fileType === FileType.attachment),
                 };
             }
             return s;
@@ -146,9 +163,11 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
 
         this.data[courseId] = (await this.getData(courseId)).map((s) => {
             if (s.lectureId === lectureId) {
+                const updatedFiles = (s.files ?? []).filter((a) => a.id !== attachmentId);
                 return {
                     ...s,
-                    files: [...s.files.filter((a) => a.id !== attachmentId)],
+                    files: updatedFiles,
+                    hasAttachments: updatedFiles.some((f) => f.fileType === FileType.attachment),
                 };
             }
             return s;
@@ -157,17 +176,8 @@ export class AdminLectureListProvider extends StreamableMapProvider<number, Lect
     }
 
     async addSections(courseId: number, lectureId: number, videoSections: VideoSection[]) {
-        const newSections = await AdminLectureList.addSections(lectureId, videoSections);
-
-        this.data[courseId] = (await this.getData(courseId)).map((s) => {
-            if (s.lectureId === lectureId) {
-                return {
-                    ...s,
-                    videoSections: [...s.videoSections, ...newSections],
-                };
-            }
-            return s;
-        });
+        await AdminLectureList.addSections(lectureId, videoSections);
+        await this.fetch(courseId, true);
         await this.triggerUpdate(courseId);
     }
 
