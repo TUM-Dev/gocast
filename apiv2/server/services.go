@@ -96,6 +96,15 @@ var services = []service{
 			// permission and nothing narrower. The handlers add no check of their own.
 			"listRunners":  requires(model.PermAdministerServer),
 			"deleteRunner": requires(model.PermAdministerServer),
+
+			// Accounts are a different permission from the rest of the service. Both
+			// belong to admins today; the split is what makes an operator role a
+			// change to the role table rather than to every call site.
+			"listStaff":      requires(model.PermManageUsers),
+			"searchUsers":    requires(model.PermManageUsers),
+			"createUser":     requires(model.PermManageUsers),
+			"updateUserRole": requires(model.PermManageUsers),
+			"deleteUser":     requires(model.PermManageUsers),
 		},
 	},
 }

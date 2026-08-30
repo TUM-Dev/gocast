@@ -81,27 +81,17 @@ e2e_db:
 		-e "DROP DATABASE IF EXISTS tumlive;"
 	docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample < tum-live-starter.sql
 
-# Browser tests. Not part of `test`: they need the database container up, and they
-# drive a real browser.
+# Browser tests. Not part of `test`: they need the database container and a browser.
 #
-#   make test_e2e
+# Some of these write, so the fixture is reloaded every run — once per run, not per
+# file, so a test that changes a seeded account breaks later files. The SPA is built
+# first, or the migrated pages fall back to their templates and fail confusingly.
 #
-# The fixture is reloaded first, every time, rather than left to whoever remembers.
-# Some of these tests write — settings, and the runner the delete test consumes, which
-# nothing can put back — so a second run against a fixture the first one changed fails
-# for reasons that have nothing to do with the code.
+# playwright.config.ts starts the server, after the reload: the dump is the 2022
+# schema and the server migrates it on boot, so reloading under a running one takes
+# away the tables it created.
 #
-# The SPA is built first for the same reason: without web/spa the migrated pages fall
-# back to their templates, and the tests that assert a page is served the shell fail
-# saying so, which reads as a routing bug rather than a missing build.
-#
-# The server is started by playwright.config.ts once the reload has finished, and
-# stopped afterwards. The order is the point: the dump is the 2022 schema and the
-# server migrates it forward on boot, creating tables the dump does not contain, so a
-# reload underneath a running server takes those away until it is restarted.
-#
-# To run them against a server of your own instead — the `npm run dev` loop, say —
-# name it and reload the fixture yourself:
+# To use a server of your own instead:
 #
 #   make e2e_db && make run          # in another terminal
 #   cd frontend && E2E_BASE_URL=http://localhost:8081 npm run test:e2e

@@ -75,6 +75,7 @@ var spaRoutes = map[string]bool{
 	"/courses/public":           true,
 	"/course/:year/:term/:slug": true,
 	"/admin/runners":            true,
+	"/admin/users":              true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -325,7 +326,7 @@ func configMainRoute(router *gin.Engine) {
 	// same permission.
 	userAdminGroup := router.Group("/")
 	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
-	userAdminGroup.GET("/admin/users", routes.AdminPage)
+	registerPage(userAdminGroup, http.MethodGet, "/admin/users", routes.AdminPage)
 	userAdminGroup.GET("/admin/token", routes.AdminPage)
 
 	// The spellings these pages had before the grammar above. Registered outside the

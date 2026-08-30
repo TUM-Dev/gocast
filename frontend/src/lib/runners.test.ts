@@ -116,7 +116,7 @@ describe("deleteRunner", () => {
     await deleteRunner("runner-1");
 
     const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
-    expect(url).toBe("/api/v2/runners/runner-1");
+    expect(url).toBe("/api/v2/admin/runners/runner-1");
     expect(init.method).toBe("DELETE");
   });
 
@@ -128,7 +128,7 @@ describe("deleteRunner", () => {
     await deleteRunner("odd/../name");
 
     const [url] = fetchMock.mock.calls.at(-1) as [string];
-    expect(url).toBe("/api/v2/runners/odd%2F..%2Fname");
+    expect(url).toBe("/api/v2/admin/runners/odd%2F..%2Fname");
   });
 });
 

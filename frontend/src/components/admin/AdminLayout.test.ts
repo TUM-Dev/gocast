@@ -8,13 +8,9 @@ import type { Permission } from "@/lib/settings";
 import { useAuthStore } from "@/stores/auth";
 
 /**
- * The sidebar offers a link exactly when following it works.
- *
- * That is worth testing because the template it replaces got it wrong: it gated the
- * whole Administration block on `Role == 1`, which stopped matching the server once
- * web/router.go split those routes across PermAdministerServer and PermManageUsers.
- * The nav is not a security boundary — the server refuses either way — but a link
- * that 403s is a bug, and so is a missing link to a page someone may use.
+ * The sidebar offers a link exactly when following it works. The template it replaces
+ * gated the whole block on `Role == 1`, which stopped matching the server once those
+ * routes split across two permissions.
  */
 
 const blank = { template: "<div />" };
@@ -22,7 +18,10 @@ const blank = { template: "<div />" };
 function makeRouter(): Router {
   return createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: "/admin/runners", name: "admin-runners", component: blank }],
+    routes: [
+      { path: "/admin/runners", name: "admin-runners", component: blank },
+      { path: "/admin/users", name: "admin-users", component: blank },
+    ],
   });
 }
 
@@ -52,9 +51,7 @@ describe("the administration sidebar", () => {
   });
 
   it("withholds the user pages from someone who only administers the server", async () => {
-    // web/router.go puts /admin/users and /admin/token behind PermManageUsers, not
-    // PermAdministerServer. Both belong to admins today, so the two only come apart
-    // when an operator role is added — which is the case this guards.
+    // Both belong to admins today, so they only come apart with an operator role.
     const wrapper = mountAs(["server.administer"]);
     await wrapper.vm.$nextTick();
 
@@ -69,6 +66,20 @@ describe("the administration sidebar", () => {
     expect(links(wrapper)).toEqual(["Users", "Token Management"]);
   });
 
+  it("routes both migrated pages in the client", async () => {
+    const wrapper = mountAs(["server.administer", "users.manage"]);
+    await wrapper.vm.$nextTick();
+
+    const migrated = wrapper
+      .findAll("nav a")
+      .filter((link) => ["Runners", "Users"].includes(link.text()));
+    expect(migrated).toHaveLength(2);
+    for (const link of migrated) {
+      // Both render the same href, so the class is what tells them apart.
+      expect(link.element.className).not.toContain("text-5");
+    }
+  });
+
   it("offers a lecturer their courses and no administration at all", async () => {
     const wrapper = mountAs(["lecture"]);
     await wrapper.vm.$nextTick();
@@ -77,8 +88,7 @@ describe("the administration sidebar", () => {
   });
 
   it("offers a student nothing", async () => {
-    // They cannot reach an admin page to see this, but a client-side navigation from
-    // one they can reach must not render a menu of links that all refuse them.
+    // A client-side navigation must not render a menu of links that all refuse them.
     const wrapper = mountAs([]);
     await wrapper.vm.$nextTick();
 
@@ -86,8 +96,7 @@ describe("the administration sidebar", () => {
   });
 
   it("routes the migrated page in the client and leaves the rest to the server", async () => {
-    // A RouterLink to a path the SPA does not own would match nothing and bounce
-    // through the server anyway; a plain href says what is actually happening.
+    // A plain href says what is actually happening.
     const wrapper = mountAs(["server.administer"]);
     await wrapper.vm.$nextTick();
 
