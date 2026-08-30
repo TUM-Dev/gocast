@@ -22,10 +22,8 @@ type accessPolicy struct {
 	// user will do.
 	permission model.Permission
 
-	// courseScoped means the RPC acts on one particular course, named by a
-	// `course_id` field on its request, and the caller must administer that course.
-	// Holding no permission at all is enough when the course was granted to them
-	// personally, which is the ordinary case for a lecturer.
+	// courseScoped requires the caller to administer the course named by the
+	// request's `course_id`. A lecturer needs no permission beyond that grant.
 	courseScoped bool
 }
 
@@ -37,21 +35,13 @@ var (
 	authenticated = accessPolicy{}
 )
 
-// requires builds a policy demanding a capability. No callers yet: every migrated
-// RPC is public or personal. It is here for the administrative endpoints.
-func requires(p model.Permission) accessPolicy { //nolint:unused // for the admin RPCs
+// requires builds a policy demanding a capability.
+func requires(p model.Permission) accessPolicy {
 	return accessPolicy{permission: p}
 }
 
-// requiresCourseAdmin builds a policy for an RPC acting on one course, which the
-// caller must administer. Its request must carry the course as `course_id`; see
-// CourseRequest.
-//
-// This is a policy rather than a line inside each handler on purpose. A helper called
-// at the top of a handler is opt-in, and the failure mode of forgetting it is an
-// endpoint that administers a course for anyone signed in — an omission that looks
-// like nothing at all in review. Declared here, TestEveryMethodHasAPolicy sees it,
-// and a handler that forgets to check is not a thing that can exist.
+// requiresCourseAdmin gates an RPC on administering the course its request names.
+// A policy rather than a handler-side check, so forgetting one cannot open an endpoint.
 func requiresCourseAdmin() accessPolicy { //nolint:unused // for the admin RPCs
 	return accessPolicy{courseScoped: true}
 }

@@ -267,3 +267,19 @@ export const permissionsByRole: Record<number, string[]> = {
   2: ["lecture"],
   4: [],
 };
+
+/**
+ * The two runners, added to the dump for the administration page — runners register
+ * themselves over gRPC, so a fixture has no other way to contain any.
+ *
+ * Both are dead and no fixture can do otherwise: model.Runner.Alive is a heartbeat
+ * within the last five seconds, which nothing loaded ahead of a run can satisfy. The
+ * live rendering is covered by the unit tests instead.
+ *
+ * `beta` is consumed by the delete test in runners.spec.ts and cannot be put back, so
+ * reload with `make e2e_db` before a second run.
+ */
+export const runners = {
+  alpha: { hostname: "runner-alpha", version: "1.4.2", jobCount: 2, draining: false },
+  beta: { hostname: "runner-beta", version: "1.3.0", jobCount: 0, draining: true },
+} as const;

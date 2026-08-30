@@ -5,8 +5,9 @@ The Vite single-page app that is gradually replacing the server-rendered templat
 which one answers, so pages move over one at a time and can be moved back just as
 easily.
 
-Currently migrated: **`/settings`**, **`/login`**, and the start page — `/`,
-`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug`.
+Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
+`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — and the first
+administration page, **`/admin/runners`**.
 
 Two things the start page had and this one does not, both waiting on the v1 API:
 
@@ -14,6 +15,31 @@ Two things the start page had and this one does not, both waiting on the v1 API:
   `api/chat.go` keeps in memory, which `GetLiveCourses` has no way to reach.
 - **The search typeahead.** `AppHeader` submits to `/search` instead, because the
   Meilisearch endpoints behind the dropdown exist only on v1.
+
+## The administration pages
+
+These move one page at a time, `/admin/runners` first. Three things about them differ
+from the pages above.
+
+**They are registered inside their permission group.** `web/router.go` calls
+`registerPage` on `serverAdminGroup`, so `RequirePermission` runs before the shell is
+served and someone without the permission gets a 403 instead of an empty page. The
+route guard here is not what protects them, and neither is the sidebar.
+
+**The sidebar links what the account can actually reach.** `AdminLayout.vue` gates each
+entry on the permission its route enforces, from the `permissions` list on
+`/users/me` — never on `role`, which would mean a second copy of the server's role
+table. Pages that have not migrated are plain `<a>` links, so they navigate to Go.
+
+**The sidebar's course tree is not here yet.** The server-rendered sidebar lists the
+courses you administer, grouped by semester. That needs an endpoint v2 does not have,
+so the Courses group links to the server-rendered schedule, which still has the tree.
+
+One thing worth knowing before adding the next page: `apiv2.proto` and `runner/*.proto`
+both declare `package protobuf` and are linked into the same binary, so their type
+names share a namespace. A collision panics at boot rather than failing to compile.
+That is why there is one `AdminService` rather than a service per resource, and why
+`apiv2/server/namespace_test.go` imports the runner's protobuf package.
 
 ## Running it
 
