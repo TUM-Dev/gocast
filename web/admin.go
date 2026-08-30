@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,8 +30,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
-	var users []model.User
-	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		logger.Error("couldn't query courses for user.", "err", err)
@@ -93,7 +90,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
-			Users:               users,
 			Courses:             courses,
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
@@ -117,8 +113,6 @@ func GetPageString(s string) string {
 	switch s {
 	case "":
 		return "schedule"
-	case "/admin/users":
-		return "users"
 	case "/admin/lecture-halls":
 		return "lectureHalls"
 	case "/admin/lecture-halls/new":
@@ -375,7 +369,6 @@ func (r mainRoutes) UpdateCourse(c *gin.Context) {
 
 type AdminPageData struct {
 	IndexData           IndexData
-	Users               []model.User
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
@@ -389,27 +382,6 @@ type AdminPageData struct {
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 	HasTestCourse       bool
-}
-
-func (apd AdminPageData) UsersAsJson() string {
-	type relevantUserInfo struct {
-		ID    uint   `json:"id"`
-		Name  string `json:"name"`
-		Role  uint   `json:"role"`
-		Email string `json:"email"`
-	}
-
-	users := make([]relevantUserInfo, len(apd.Users))
-	for i, user := range apd.Users {
-		users[i] = relevantUserInfo{
-			ID:    user.ID,
-			Name:  user.GetPreferredName(),
-			Role:  user.Role,
-			Email: user.Email.String,
-		}
-	}
-	jsonStr, _ := json.Marshal(users)
-	return string(jsonStr)
 }
 
 type EditCourseData struct {
