@@ -52,6 +52,21 @@ var rolePermissions = map[uint][]Permission{
 	StudentType: {},
 }
 
+// Permissions lists what the user may do, for a client deciding which controls to
+// offer; the server still decides every actual access. Capabilities rather than the
+// role, so a frontend need not reimplement rolePermissions. The result is a copy.
+func (u *User) Permissions() []Permission {
+	if u == nil {
+		return nil
+	}
+
+	held := rolePermissions[u.Role]
+	out := make([]Permission, len(held))
+	copy(out, held)
+
+	return out
+}
+
 // Can reports whether the user holds a permission.
 //
 // A nil user is anonymous and holds nothing, so callers can ask before establishing

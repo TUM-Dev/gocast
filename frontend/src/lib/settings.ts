@@ -40,12 +40,27 @@ export interface UserSettings {
   lectureView: LectureView;
 }
 
+/** A capability the signed-in user holds, as model/permissions.go spells it. */
+export type Permission =
+  | "server.administer"
+  | "courses.administer.all"
+  | "courses.view.all"
+  | "users.manage"
+  | "lecture";
+
 export interface CurrentUser {
   id: number;
   name: string;
   email: string;
   role: number;
+  /** What the interface should offer. Every endpoint still checks for itself. */
+  permissions: Permission[];
   settings: UserSettings;
+}
+
+/** Whether the user holds a capability. A user who is not signed in holds none. */
+export function can(user: CurrentUser | null, permission: Permission): boolean {
+  return user?.permissions.includes(permission) ?? false;
 }
 
 /**
@@ -162,6 +177,8 @@ export async function fetchCurrentUser(): Promise<CurrentUser> {
     name: res.user.name,
     email: res.user.email,
     role: res.user.role,
+    // Kept as the server named them, unrecognized ones included.
+    permissions: res.user.permissions as Permission[],
     settings: parseSettings(res.user),
   };
 }

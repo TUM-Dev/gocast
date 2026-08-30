@@ -1,19 +1,11 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
 import { apiAs, bearerToken } from "./helpers";
-import { users, type SeedUser } from "./seed";
+import { permissionsByRole, users, type SeedUser } from "./seed";
 
 /**
- * What the v2 API lets each caller reach.
- *
- * apiv2/server/policy_test.go covers the interceptor in isolation, with the policy
- * table in front of it and a mocked database behind. These assert the same decisions
- * end to end: through the gateway, against real sessions of the seeded accounts, on
- * the paths the proto's http annotations actually publish.
- *
- * The distinction that matters is between a policy and a handler. A policy decides
- * whether a caller reaches the endpoint at all — the subject here. What a handler
- * then shows them is the subject of visibility.spec.ts.
+ * What the v2 API lets each caller reach, end to end. policy_test.go covers the
+ * interceptor in isolation; visibility.spec.ts covers what a handler then shows.
  */
 
 /** GET as `token`'s owner, or anonymously when it is null. */
@@ -28,11 +20,7 @@ async function get(
   return response.status();
 }
 
-/**
- * Endpoints answering before anyone has signed in — the ones driving the login page
- * and the public listings. Each is listed in TestOnlyExpectedMethodsArePublic too, so
- * that widening access is an edit in two places that disagree loudly.
- */
+/** Also listed in TestOnlyExpectedMethodsArePublic, which disagrees loudly. */
 const publicPaths = [
   "/status",
   "/config",
@@ -58,8 +46,7 @@ test.describe("endpoints that answer anonymous callers", () => {
     test(`${path} answers without credentials`, async ({ playwright }) => {
       const context = await apiAs(playwright);
 
-      // No Authorization header at all, which is what a visitor's browser sends
-      // before it has a session to trade for a token.
+      // No Authorization header, as a visitor's browser sends.
       expect(await get(context, path, null)).toBe(200);
     });
   }
@@ -76,8 +63,7 @@ test.describe("endpoints that act on an account", () => {
 
   for (const path of authenticatedPaths) {
     test(`${path} answers an ordinary student`, async ({ playwright }) => {
-      // A student holds no permission whatsoever, so anything they reach is reached
-      // by being signed in and nothing else — which is what `authenticated` means.
+      // A student holds no permission, so this is `authenticated` and nothing more.
       const context = await apiAs(playwright, users.studi1);
       const token = await bearerToken(context);
       expect(token).not.toBeNull();
@@ -95,8 +81,7 @@ test.describe("credentials", () => {
   });
 
   test("every seeded account can obtain a token", async ({ playwright }) => {
-    // Roles differ in what they may do, never in whether they may authenticate. A
-    // role that could not get a token would look like a permission problem.
+    // Roles differ in what they may do, never in whether they may authenticate.
     for (const user of Object.values(users) as SeedUser[]) {
       const context = await apiAs(playwright, user);
 
@@ -106,11 +91,53 @@ test.describe("credentials", () => {
   });
 
   test("a rejected token is refused rather than treated as anonymous", async ({ playwright }) => {
-    // The difference between "nobody is signed in" and "these credentials are no
-    // good". An endpoint serving anonymous callers must not quietly downgrade the
-    // second to the first: the client needs the 401 to know to refresh.
+    // Not the same as "nobody is signed in": the client needs the 401 to refresh.
     const context = await apiAs(playwright);
 
     expect(await get(context, "/courses", "not-a-real-token")).toBe(401);
+  });
+});
+
+/**
+ * The capabilities GET /users/me reports. The SPA offers controls from these rather
+ * than from `role`, so a role gaining or losing one has to show up here.
+ */
+test.describe("the permissions a caller is told they hold", () => {
+  for (const [key, user] of Object.entries(users)) {
+    test(`${key} is sent exactly the permissions of role ${user.role}`, async ({ playwright }) => {
+      const context = await apiAs(playwright, user);
+      const token = await bearerToken(context);
+
+      const response = await context.get("/api/v2/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(response.status()).toBe(200);
+
+      // protojson omits an empty repeated field, so absent means none.
+      const held: string[] = (await response.json()).user.permissions ?? [];
+
+      expect(held.sort()).toEqual([...permissionsByRole[user.role]].sort());
+    });
+  }
+
+  test("a student is told they may do nothing at all", async ({ playwright }) => {
+    // The assertion above passes trivially if the field stops being sent at all.
+    const context = await apiAs(playwright, users.studi1);
+    const token = await bearerToken(context);
+
+    const response = await context.get("/api/v2/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    expect(body.user.permissions ?? []).toEqual([]);
+    // The admin holds five, so the field is not simply missing from every response.
+    const adminContext = await apiAs(playwright, users.admin);
+    const adminToken = await bearerToken(adminContext);
+    const adminResponse = await adminContext.get("/api/v2/users/me", {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect((await adminResponse.json()).user.permissions).toHaveLength(5);
   });
 });
