@@ -42,10 +42,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	if err != nil {
 		logger.Error("could not get workers", "err", err)
 	}
-	runners, err := r.RunnerDao.GetAll(c)
-	if err != nil {
-		logger.Error("could not get runners", "err", err)
-	}
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
@@ -103,7 +99,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			LectureHalls:        lectureHalls,
 			Page:                page,
 			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
-			Runners:             RunnersData{Runners: runners, RunnersJson: toJson(runners)},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
@@ -130,8 +125,6 @@ func GetPageString(s string) string {
 		return "createLectureHalls"
 	case "/admin/workers":
 		return "workers"
-	case "/admin/runners":
-		return "runners"
 	case "/admin/create-course":
 		return "createCourse"
 	case "/admin/course-import":
@@ -158,30 +151,6 @@ func GetPageString(s string) string {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
-}
-
-type RunnersData struct {
-	Runners     []model.Runner
-	RunnersJson string
-}
-
-func toJson(runners []model.Runner) string {
-	type runnerData struct {
-		model.Runner
-		Alive bool `json:"Alive"`
-	}
-	runnersData := make([]runnerData, len(runners))
-	for i, runner := range runners {
-		runnersData[i] = runnerData{
-			Runner: runner,
-			Alive:  runner.Alive(),
-		}
-	}
-	ret, err := json.Marshal(runnersData)
-	if err != nil {
-		return ""
-	}
-	return string(ret)
 }
 
 type TokensData struct {
@@ -411,7 +380,6 @@ type AdminPageData struct {
 	LectureHalls        []model.LectureHall
 	Page                string
 	Workers             WorkersData
-	Runners             RunnersData
 	Semesters           []model.Semester
 	CurY                int
 	CurT                string
