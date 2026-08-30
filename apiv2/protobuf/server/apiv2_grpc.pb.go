@@ -1359,3 +1359,175 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "server/apiv2.proto",
 }
+
+const (
+	AdminService_ListRunners_FullMethodName  = "/protobuf.AdminService/listRunners"
+	AdminService_DeleteRunner_FullMethodName = "/protobuf.AdminService/deleteRunner"
+)
+
+// AdminServiceClient is the client API for AdminService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Server administration: the things belonging to no particular course. The first
+// service behind a permission — everything above is either public or about the
+// caller's own account.
+//
+// One service for all of it rather than one per resource, because this file's proto
+// package is `protobuf`, and so is the one in runner/*.proto, which is compiled into
+// the same binary. The two namespaces are shared, and `RunnerService` is already
+// taken over there — a collision the linker does not catch and the server discovers
+// by panicking at boot. A single AdminService keeps that risk to one name instead of
+// one per admin page still to migrate.
+//
+// "Administrative" is not one permission, though: the accounts and token pages are
+// PermManageUsers rather than PermAdministerServer, and they belong here too. Policies
+// are declared per method in services.go, so the service groups the endpoints and says
+// nothing about what opens them.
+type AdminServiceClient interface {
+	ListRunners(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListRunnersResponse, error)
+	DeleteRunner(ctx context.Context, in *DeleteRunnerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+}
+
+type adminServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAdminServiceClient(cc grpc.ClientConnInterface) AdminServiceClient {
+	return &adminServiceClient{cc}
+}
+
+func (c *adminServiceClient) ListRunners(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListRunnersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRunnersResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListRunners_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteRunner(ctx context.Context, in *DeleteRunnerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteRunner_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AdminServiceServer is the server API for AdminService service.
+// All implementations must embed UnimplementedAdminServiceServer
+// for forward compatibility.
+//
+// Server administration: the things belonging to no particular course. The first
+// service behind a permission — everything above is either public or about the
+// caller's own account.
+//
+// One service for all of it rather than one per resource, because this file's proto
+// package is `protobuf`, and so is the one in runner/*.proto, which is compiled into
+// the same binary. The two namespaces are shared, and `RunnerService` is already
+// taken over there — a collision the linker does not catch and the server discovers
+// by panicking at boot. A single AdminService keeps that risk to one name instead of
+// one per admin page still to migrate.
+//
+// "Administrative" is not one permission, though: the accounts and token pages are
+// PermManageUsers rather than PermAdministerServer, and they belong here too. Policies
+// are declared per method in services.go, so the service groups the endpoints and says
+// nothing about what opens them.
+type AdminServiceServer interface {
+	ListRunners(context.Context, *emptypb.Empty) (*ListRunnersResponse, error)
+	DeleteRunner(context.Context, *DeleteRunnerRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedAdminServiceServer()
+}
+
+// UnimplementedAdminServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAdminServiceServer struct{}
+
+func (UnimplementedAdminServiceServer) ListRunners(context.Context, *emptypb.Empty) (*ListRunnersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListRunners not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteRunner(context.Context, *DeleteRunnerRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteRunner not implemented")
+}
+func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
+func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeAdminServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdminServiceServer will
+// result in compilation errors.
+type UnsafeAdminServiceServer interface {
+	mustEmbedUnimplementedAdminServiceServer()
+}
+
+func RegisterAdminServiceServer(s grpc.ServiceRegistrar, srv AdminServiceServer) {
+	// If the following call panics, it indicates UnimplementedAdminServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AdminService_ServiceDesc, srv)
+}
+
+func _AdminService_ListRunners_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListRunners(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListRunners_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListRunners(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteRunner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRunnerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteRunner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteRunner_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteRunner(ctx, req.(*DeleteRunnerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AdminService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "protobuf.AdminService",
+	HandlerType: (*AdminServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "listRunners",
+			Handler:    _AdminService_ListRunners_Handler,
+		},
+		{
+			MethodName: "deleteRunner",
+			Handler:    _AdminService_DeleteRunner_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "server/apiv2.proto",
+}

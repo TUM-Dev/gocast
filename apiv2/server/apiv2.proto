@@ -332,6 +332,41 @@ service StreamService {
   }
 }
 
+// Server administration: the things belonging to no particular course. The first
+// service behind a permission — everything above is either public or about the
+// caller's own account.
+//
+// One service for all of it rather than one per resource, because this file's proto
+// package is `protobuf`, and so is the one in runner/*.proto, which is compiled into
+// the same binary. The two namespaces are shared, and `RunnerService` is already
+// taken over there — a collision the linker does not catch and the server discovers
+// by panicking at boot. A single AdminService keeps that risk to one name instead of
+// one per admin page still to migrate.
+//
+// "Administrative" is not one permission, though: the accounts and token pages are
+// PermManageUsers rather than PermAdministerServer, and they belong here too. Policies
+// are declared per method in services.go, so the service groups the endpoints and says
+// nothing about what opens them.
+service AdminService {
+  rpc listRunners(google.protobuf.Empty) returns (ListRunnersResponse) {
+    option (google.api.http) = {get: "/runners"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Runners"
+      summary: "List the transcoding runners."
+      description: "Retrieves every registered runner with its current liveness and workload. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteRunner(DeleteRunnerRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/runners/{hostname}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Runners"
+      summary: "Delete a runner."
+      description: "Removes a runner registration. A runner that is still running re-registers on its next heartbeat. Requires the server.administer permission."
+    };
+  }
+}
+
 ///////////////////////////////
 ///// HEALTHCHECK_MESSAGE /////
 ///////////////////////////////
@@ -868,4 +903,42 @@ message CameraPreset {
   uint32 id = 1;
   string name = 2;
   string description = 3;
+}
+
+///////////////////////////////
+//////// RUNNER_MESSAGE ///////
+///////////////////////////////
+
+message Runner {
+  // Runners are keyed by hostname, which is their primary key in the database and
+  // what the delete endpoint takes. There is no numeric id.
+  string hostname = 1;
+  uint32 port = 2;
+  string version = 3;
+  // alive is derived from last_seen, which counts as dead after five seconds without
+  // a heartbeat. Computed here so a client does not reimplement that rule and quietly
+  // disagree with the scheduler about which runners can take work.
+  bool alive = 4;
+  // Jobs currently running, as of the last heartbeat.
+  uint64 job_count = 5;
+  // draining means the runner is shutting down and is being given no further jobs.
+  bool draining = 6;
+  google.protobuf.Timestamp last_seen = 7;
+  google.protobuf.Timestamp time_of_register = 8;
+}
+
+///////////////////////////////
+//////// RUNNER_REQUEST ///////
+///////////////////////////////
+
+message DeleteRunnerRequest {
+  string hostname = 1;
+}
+
+///////////////////////////////
+/////// RUNNER_RESPONSE ///////
+///////////////////////////////
+
+message ListRunnersResponse {
+  repeated Runner runners = 1;
 }
