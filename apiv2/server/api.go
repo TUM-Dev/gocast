@@ -37,6 +37,7 @@ type API struct {
 	protobuf.UnimplementedUserServiceServer
 	protobuf.UnimplementedCourseServiceServer
 	protobuf.UnimplementedStreamServiceServer
+	protobuf.UnimplementedAdminServiceServer
 }
 
 // New creates a new API and assigns the given db and a logger

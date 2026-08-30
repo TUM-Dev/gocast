@@ -164,6 +164,38 @@ func (a *API) getUserFromClaims(ctx context.Context, claims *tools.JWTClaims) (*
 	return &user, nil
 }
 
+// CourseRequest is the request of an RPC that acts on one course.
+type CourseRequest interface {
+	GetCourseId() uint32
+}
+
+// authorizeCourseAdmin checks the caller may administer the course the request names.
+func (a *API) authorizeCourseAdmin(ctx context.Context, user *model.User, req any, fullMethod string) error {
+	scoped, ok := req.(CourseRequest)
+	if !ok {
+		// Nothing to check against, so refusing is the only safe reading.
+		a.log.Error("course-scoped method whose request has no course_id, refusing", "method", fullMethod)
+		return e.WithStatus(http.StatusInternalServerError, errors.New("endpoint is misconfigured"))
+	}
+
+	course, err := a.dao.GetCourseById(ctx, uint(scoped.GetCourseId()))
+	if err != nil {
+		return e.FromGorm(err, "can't find course")
+	}
+
+	// Find reports a missing row as a zero-value course and a nil error.
+	if course.ID == 0 {
+		return e.WithStatus(http.StatusNotFound, errors.New("no such course"))
+	}
+
+	if !user.CanAdminister(course) {
+		// Same answer as a missing course, so status codes cannot enumerate them.
+		return e.WithStatus(http.StatusNotFound, errors.New("no such course"))
+	}
+
+	return nil
+}
+
 type StreamRequest interface {
 	GetStreamId() uint32
 }

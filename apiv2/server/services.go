@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // service is how one of the API's services is served over gRPC, exposed over REST,
@@ -84,6 +85,26 @@ var services = []service{
 			"getBookmarks":     authenticated,
 			"updateBookmark":   authenticated,
 			"deleteBookmark":   authenticated,
+		},
+	},
+	{
+		desc:     &protobuf.AdminService_ServiceDesc,
+		register: func(s grpc.ServiceRegistrar, a *API) { protobuf.RegisterAdminServiceServer(s, a) },
+		gateway:  protobuf.RegisterAdminServiceHandlerFromEndpoint,
+		policies: map[string]accessPolicy{
+			// Runners belong to no course, so administering them is the server-wide
+			// permission and nothing narrower. The handlers add no check of their own.
+			"listRunners":  requires(model.PermAdministerServer),
+			"deleteRunner": requires(model.PermAdministerServer),
+
+			// Accounts are a different permission from the rest of the service. Both
+			// belong to admins today; the split is what makes an operator role a
+			// change to the role table rather than to every call site.
+			"listStaff":      requires(model.PermManageUsers),
+			"searchUsers":    requires(model.PermManageUsers),
+			"createUser":     requires(model.PermManageUsers),
+			"updateUserRole": requires(model.PermManageUsers),
+			"deleteUser":     requires(model.PermManageUsers),
 		},
 	},
 }

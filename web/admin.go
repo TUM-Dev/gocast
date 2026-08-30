@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,8 +30,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
-	var users []model.User
-	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
 	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		logger.Error("couldn't query courses for user.", "err", err)
@@ -41,10 +38,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	workers, err := r.WorkerDao.GetAllWorkers()
 	if err != nil {
 		logger.Error("could not get workers", "err", err)
-	}
-	runners, err := r.RunnerDao.GetAll(c)
-	if err != nil {
-		logger.Error("could not get runners", "err", err)
 	}
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
@@ -97,13 +90,11 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
-			Users:               users,
 			Courses:             courses,
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
 			Page:                page,
 			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
-			Runners:             RunnersData{Runners: runners, RunnersJson: toJson(runners)},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
@@ -122,16 +113,12 @@ func GetPageString(s string) string {
 	switch s {
 	case "":
 		return "schedule"
-	case "/admin/users":
-		return "users"
-	case "/admin/lectureHalls":
+	case "/admin/lecture-halls":
 		return "lectureHalls"
-	case "/admin/lectureHalls/new":
+	case "/admin/lecture-halls/new":
 		return "createLectureHalls"
 	case "/admin/workers":
 		return "workers"
-	case "/admin/runners":
-		return "runners"
 	case "/admin/create-course":
 		return "createCourse"
 	case "/admin/course-import":
@@ -144,7 +131,7 @@ func GetPageString(s string) string {
 		return "notifications"
 	case "/admin/token":
 		return "token"
-	case "/admin/infopages":
+	case "/admin/info-pages":
 		return "info-pages"
 	case "/admin/server-stats":
 		return "serverStats"
@@ -158,30 +145,6 @@ func GetPageString(s string) string {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
-}
-
-type RunnersData struct {
-	Runners     []model.Runner
-	RunnersJson string
-}
-
-func toJson(runners []model.Runner) string {
-	type runnerData struct {
-		model.Runner
-		Alive bool `json:"Alive"`
-	}
-	runnersData := make([]runnerData, len(runners))
-	for i, runner := range runners {
-		runnersData[i] = runnerData{
-			Runner: runner,
-			Alive:  runner.Alive(),
-		}
-	}
-	ret, err := json.Marshal(runnersData)
-	if err != nil {
-		return ""
-	}
-	return string(ret)
 }
 
 type TokensData struct {
@@ -406,12 +369,10 @@ func (r mainRoutes) UpdateCourse(c *gin.Context) {
 
 type AdminPageData struct {
 	IndexData           IndexData
-	Users               []model.User
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
 	Workers             WorkersData
-	Runners             RunnersData
 	Semesters           []model.Semester
 	CurY                int
 	CurT                string
@@ -421,27 +382,6 @@ type AdminPageData struct {
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 	HasTestCourse       bool
-}
-
-func (apd AdminPageData) UsersAsJson() string {
-	type relevantUserInfo struct {
-		ID    uint   `json:"id"`
-		Name  string `json:"name"`
-		Role  uint   `json:"role"`
-		Email string `json:"email"`
-	}
-
-	users := make([]relevantUserInfo, len(apd.Users))
-	for i, user := range apd.Users {
-		users[i] = relevantUserInfo{
-			ID:    user.ID,
-			Name:  user.GetPreferredName(),
-			Role:  user.Role,
-			Email: user.Email.String,
-		}
-	}
-	jsonStr, _ := json.Marshal(users)
-	return string(jsonStr)
 }
 
 type EditCourseData struct {

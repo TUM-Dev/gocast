@@ -81,14 +81,22 @@ e2e_db:
 		-e "DROP DATABASE IF EXISTS tumlive;"
 	docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample < tum-live-starter.sql
 
-# Browser tests against a running server. Not part of `test`: these need the server and
-# its database up.
+# Browser tests. Not part of `test`: they need the database container and a browser.
 #
-#   make e2e_db   # and again whenever a run has left settings changed
-#   make run      # in another terminal
-#   make test_e2e
+# Some of these write, so the fixture is reloaded every run — once per run, not per
+# file, so a test that changes a seeded account breaks later files. The SPA is built
+# first, or the migrated pages fall back to their templates and fail confusingly.
+#
+# playwright.config.ts starts the server, after the reload: the dump is the 2022
+# schema and the server migrates it on boot, so reloading under a running one takes
+# away the tables it created.
+#
+# To use a server of your own instead:
+#
+#   make e2e_db && make run          # in another terminal
+#   cd frontend && E2E_BASE_URL=http://localhost:8081 npm run test:e2e
 .PHONY: test_e2e
-test_e2e:
+test_e2e: spa e2e_db
 	cd frontend; \
 	npx playwright install --with-deps chromium; \
 	npm run test:e2e

@@ -5,8 +5,9 @@ The Vite single-page app that is gradually replacing the server-rendered templat
 which one answers, so pages move over one at a time and can be moved back just as
 easily.
 
-Currently migrated: **`/settings`**, **`/login`**, and the start page — `/`,
-`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug`.
+Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
+`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — and two
+administration pages, **`/admin/runners`** and **`/admin/users`**.
 
 Two things the start page had and this one does not, both waiting on the v1 API:
 
@@ -14,6 +15,43 @@ Two things the start page had and this one does not, both waiting on the v1 API:
   `api/chat.go` keeps in memory, which `GetLiveCourses` has no way to reach.
 - **The search typeahead.** `AppHeader` submits to `/search` instead, because the
   Meilisearch endpoints behind the dropdown exist only on v1.
+
+## The administration pages
+
+These move one page at a time, `/admin/runners` first. Three things about them differ
+from the pages above.
+
+**They are not all behind the same permission.** `/admin/runners` needs
+`server.administer` and `/admin/users` needs `users.manage`. Both belong to admins
+today, so the two only come apart once an operator role exists — which is exactly why
+neither the routes nor the sidebar may conflate them.
+
+**They are registered inside their permission group.** `web/router.go` calls
+`registerPage` on `serverAdminGroup`, so `RequirePermission` runs before the shell is
+served and someone without the permission gets a 403 instead of an empty page. The
+route guard here is not what protects them, and neither is the sidebar.
+
+**The sidebar links what the account can actually reach.** `AdminLayout.vue` gates each
+entry on the permission its route enforces, from the `permissions` list on
+`/users/me` — never on `role`, which would mean a second copy of the server's role
+table. Pages that have not migrated are plain `<a>` links, so they navigate to Go.
+
+**The sidebar's course tree is not here yet.** The server-rendered sidebar lists the
+courses you administer, grouped by semester. That needs an endpoint v2 does not have,
+so the Courses group links to the server-rendered schedule, which still has the tree.
+
+**Two things on the users page are deliberately not v2.** Impersonation still posts to
+`/api/users/impersonate`, because it creates a session and the SPA does not manage
+session cookies — the same reason login posts to Go. And the two listings mask contact
+details differently: the staff list does not, search results do. That is inherited from
+the page it replaces, and preserved rather than tidied, because changing what an
+administrator can see is a decision about a privacy control rather than part of a port.
+
+One thing worth knowing before adding the next page: `apiv2.proto` and `runner/*.proto`
+both declare `package protobuf` and are linked into the same binary, so their type
+names share a namespace. A collision panics at boot rather than failing to compile.
+That is why there is one `AdminService` rather than a service per resource, and why
+`apiv2/server/namespace_test.go` imports the runner's protobuf package.
 
 ## Running it
 
@@ -103,12 +141,25 @@ that is inert without `--localstorage-file` and shadows the DOM environment's.
 ## Browser tests
 
 ```sh
-make e2e_db                      # load tum-live-starter.sql, dropping what was there
-go run cmd/tumlive/main.go       # in another terminal
-cd frontend && npm run test:e2e  # or `make test_e2e` from the repo root
+make test_e2e   # from the repo root
 ```
 
-Playwright, against a running server — deliberately not part of `npm test`, which must
+That builds the SPA, reloads `tum-live-starter.sql`, starts the server and stops it
+again. All four are prerequisites and all four used to be someone's job to remember,
+which meant a forgotten one surfaced as a failing assertion rather than as a missing
+step. The order matters too: the dump is the 2022 schema and the server migrates it
+forward on boot, creating tables the dump does not contain, so reloading underneath a
+running server takes those away until it is restarted.
+
+To use a server you are already running — the `npm run dev` loop, say — name it, and
+reload the fixture yourself:
+
+```sh
+make e2e_db && make run          # in another terminal
+cd frontend && E2E_BASE_URL=http://localhost:8081 npm run test:e2e
+```
+
+Playwright, against a real server — deliberately not part of `npm test`, which must
 stay runnable with nothing else up. These cover what the unit tests structurally
 cannot: which frontend answers a given path, the session cookie surviving login and
 redirects, the bearer token minted from that cookie, and what each kind of caller is
@@ -127,9 +178,10 @@ live lecture in a hidden course, watch progress, a pin on a course its owner may
 longer see, scheduled lectures, and a server notification of each kind.
 
 **Some of its lectures are dated relative to when it is loaded**, because "today" and
-"starting in half an hour" cannot be written as fixed dates. Reload with `make e2e_db`
-before a run; lectures left over from a load days ago have gone stale, and the tests
-that depend on them will fail. The one for "today" is dated late in the evening so it
+"starting in half an hour" cannot be written as fixed dates. `make test_e2e` reloads
+before every run so they are always fresh; running against a server of your own means
+reloading yourself, since lectures left over from a load days ago have gone stale and
+the tests that depend on them fail. The one for "today" is dated late in the evening so it
 stays ahead of the clock — after 23:45 that test skips itself rather than failing.
 
 - **`login.spec.ts`** — the round trip from a protected page to `/login` and back, a
@@ -164,11 +216,16 @@ stays ahead of the clock — after 23:45 that test skips itself rather than fail
 
 Two things to know before adding to them:
 
-- **The accounts outlive the run.** `settings.spec.ts` writes to `studi2`, and changes
-  each setting away from whatever is currently stored rather than to a fixed value; a
-  test written against a fixed starting value passes once and then fails on the state
-  its predecessor left behind. `make e2e_db` puts the fixture back. For the same reason
-  the suite runs with one worker.
+- **Writes outlive the run, so the fixture is reloaded before every one.**
+  `settings.spec.ts` writes to `studi2`, and changes each setting away from whatever is
+  currently stored rather than to a fixed value; a test written against a fixed
+  starting value would pass once and then fail on the state its predecessor left
+  behind. `runners.spec.ts` goes further and deletes a runner that nothing can
+  recreate — runners register themselves over gRPC. `make test_e2e` reloads the dump
+  first for exactly this reason. For the same reason the suite runs with one worker.
+  The reload is once per run and not once per file, so a test that changes a seeded
+  account breaks the later files that assert on it — `users.spec.ts` creates the
+  accounts it deletes and promotes rather than borrowing the seeded ones.
 - **The visibility tests only read**, so they neither depend on nor disturb that. Add
   new expectations to `e2e/seed.ts`, not to the spec.
 - **Add cases to the dump, not to the tests.** A rule with no data behind it cannot be

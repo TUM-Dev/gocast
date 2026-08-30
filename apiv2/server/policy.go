@@ -21,6 +21,10 @@ type accessPolicy struct {
 	// permission, when set, must be held by the caller. Empty means any signed-in
 	// user will do.
 	permission model.Permission
+
+	// courseScoped requires the caller to administer the course named by the
+	// request's `course_id`. A lecturer needs no permission beyond that grant.
+	courseScoped bool
 }
 
 var (
@@ -31,10 +35,15 @@ var (
 	authenticated = accessPolicy{}
 )
 
-// requires builds a policy demanding a capability. No callers yet: every migrated
-// RPC is public or personal. It is here for the administrative endpoints.
-func requires(p model.Permission) accessPolicy { //nolint:unused // for the admin RPCs
+// requires builds a policy demanding a capability.
+func requires(p model.Permission) accessPolicy {
 	return accessPolicy{permission: p}
+}
+
+// requiresCourseAdmin gates an RPC on administering the course its request names.
+// A policy rather than a handler-side check, so forgetting one cannot open an endpoint.
+func requiresCourseAdmin() accessPolicy { //nolint:unused // for the admin RPCs
+	return accessPolicy{courseScoped: true}
 }
 
 // methodPolicies maps every RPC to its policy, keyed by full gRPC method name,
@@ -86,6 +95,12 @@ func (a *API) authorize(
 
 	if policy.permission != "" && !user.Can(policy.permission) {
 		return nil, e.WithStatus(http.StatusForbidden, errors.New("insufficient permissions"))
+	}
+
+	if policy.courseScoped {
+		if err := a.authorizeCourseAdmin(ctx, user, req, info.FullMethod); err != nil {
+			return nil, err
+		}
 	}
 
 	return handler(ctx, req)

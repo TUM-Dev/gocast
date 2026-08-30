@@ -25,6 +25,9 @@
     },
     {
       "name": "StreamService"
+    },
+    {
+      "name": "AdminService"
     }
   ],
   "host": "tum.live",
@@ -40,6 +43,235 @@
     "application/json"
   ],
   "paths": {
+    "/admin/runners": {
+      "get": {
+        "summary": "List the transcoding runners.",
+        "description": "Retrieves every registered runner with its current liveness and workload. Requires the server.administer permission.",
+        "operationId": "AdminService_listRunners",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListRunnersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Runners"
+        ]
+      }
+    },
+    "/admin/runners/{hostname}": {
+      "delete": {
+        "summary": "Delete a runner.",
+        "description": "Removes a runner registration. A runner that is still running re-registers on its next heartbeat. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteRunner",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "hostname",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Runners"
+        ]
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "summary": "List the administrators and lecturers.",
+        "description": "Retrieves every account holding a staff role, with contact details unmasked. Requires the users.manage permission.",
+        "operationId": "AdminService_listStaff",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      },
+      "post": {
+        "summary": "Create a lecturer account.",
+        "description": "Creates an account with the lecturer role and emails an invitation to set a password. Requires the users.manage permission.",
+        "operationId": "AdminService_createUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufUserSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/admin/users/search": {
+      "get": {
+        "summary": "Search accounts.",
+        "description": "Searches every account by name, email or login. Contact details come back masked. The query must be at least three characters unless a role is given. Requires the users.manage permission.",
+        "operationId": "AdminService_searchUsers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "description": "At least three characters unless role is set, so an empty box lists nobody.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "role",
+            "description": "Restricts the search to one role. Absent means every role.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/admin/users/{userId}": {
+      "delete": {
+        "summary": "Delete an account.",
+        "description": "Deletes an account. Administrators cannot be deleted. Requires the users.manage permission.",
+        "operationId": "AdminService_deleteUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/admin/users/{userId}/role": {
+      "patch": {
+        "summary": "Change an account's role.",
+        "description": "Sets the role of an account. Requires the users.manage permission.",
+        "operationId": "AdminService_updateUserRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufUserSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AdminServiceupdateUserRoleBody"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
     "/bookmarks": {
       "get": {
         "summary": "Get bookmarks by stream ID.",
@@ -1019,6 +1251,15 @@
     }
   },
   "definitions": {
+    "AdminServiceupdateUserRoleBody": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "CourseServicepinCourseBody": {
       "type": "object",
       "properties": {
@@ -1243,6 +1484,17 @@
         "viewers": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "protobufCreateUserRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
         }
       }
     },
@@ -1532,6 +1784,30 @@
         }
       }
     },
+    "protobufListRunnersResponse": {
+      "type": "object",
+      "properties": {
+        "runners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufRunner"
+          }
+        }
+      }
+    },
+    "protobufListUsersResponse": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufUserSummary"
+          }
+        }
+      }
+    },
     "protobufNotificationTarget": {
       "type": "string",
       "enum": [
@@ -1564,6 +1840,43 @@
       "properties": {
         "message": {
           "type": "string"
+        }
+      }
+    },
+    "protobufRunner": {
+      "type": "object",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "Runners are keyed by hostname; there is no numeric id."
+        },
+        "port": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string"
+        },
+        "alive": {
+          "type": "boolean",
+          "description": "Derived from last_seen: dead after five seconds without a heartbeat. Sent\ncomputed so a client cannot disagree with the scheduler."
+        },
+        "jobCount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Jobs currently running, as of the last heartbeat."
+        },
+        "draining": {
+          "type": "boolean",
+          "description": "draining means the runner is shutting down and is being given no further jobs."
+        },
+        "lastSeen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timeOfRegister": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -1849,6 +2162,13 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What this user may do, as model/permissions.go spells it, so a client need not\nknow which role holds what. Not a substitute for the server's own checks."
         }
       }
     },
@@ -1895,6 +2215,30 @@
       ],
       "default": "PREFERRED_NAME",
       "description": "UserSettingType identifies a single user preference.\n\nThe values are model.UserSettingType - 1 (see apiv2/helpers/parser.go), so this\nenum has to stay aligned with the constants in model/user.go. Values were\npreviously unnamed beyond CUSTOM_PLAYBACK_SPEEDS and travelled as bare numbers.\n\n - CUSTOM_PLAYBACK_SPEEDS: The per-speed enabled flags, stored as a JSON array.\n - USER_DEFINED_SPEEDS: Speeds the user added themselves, stored as a JSON array.\n - DEFAULT_MODE: Mirrors model.defaultMode, which is no longer used. Present only to keep the\nnumbering aligned with model.UserSettingType."
+    },
+    "protobufUserSummary": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "description": "Masked on the endpoints that say so; a property of the endpoint, not the message."
+        },
+        "lrzId": {
+          "type": "string"
+        },
+        "role": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "description": "UserSummary is an account as the administration pages list it: who they are and\nwhat they may do, without the courses, settings and bookmarks that make up User."
     },
     "protobufVideoSection": {
       "type": "object",

@@ -17,8 +17,10 @@ const (
 type InfoPage struct {
 	gorm.Model
 
-	Name       string       `gorm:"not null"` // e.g. 'privacy', 'imprint',...
-	RawContent string       `gorm:"text; not null"`
+	Name string `gorm:"not null"` // e.g. 'privacy', 'imprint',...
+	// Says longtext because that is what the column is; `type:text` would narrow a
+	// live column for no reason.
+	RawContent string       `gorm:"type:longtext;not null"`
 	Type       InfoPageType `gorm:"not null; default: 1"`
 }
 
