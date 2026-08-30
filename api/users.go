@@ -36,10 +36,8 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	admins := router.Group("/api")
 	admins.Use(tools.RequirePermission(model.PermManageUsers))
-	admins.POST("/createUser", routes.CreateUser)
-	admins.POST("/deleteUser", routes.DeleteUser)
-	admins.GET("/searchUser", routes.SearchUser)
-	admins.POST("/users/update", routes.updateUser)
+	// Impersonation stays on v1: it creates a session, which the v2 API does not do.
+	// The SPA's user administration calls this one.
 	admins.POST("/users/impersonate", routes.impersonateUser)
 
 	lecturers := router.Group("/api")
@@ -80,41 +78,6 @@ func (r usersRoutes) impersonateUser(c *gin.Context) {
 		return
 	}
 	tools.StartSession(c, &tools.SessionData{Userid: u.ID})
-}
-
-func (r usersRoutes) updateUser(c *gin.Context) {
-	req := struct {
-		ID   uint `json:"id"`
-		Role uint `json:"role"`
-	}{}
-	if err := c.BindJSON(&req); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	user, err := r.UsersDao.GetUserByID(c, req.ID)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not get user by id",
-			Err:           err,
-		})
-		return
-	}
-	user.Role = req.Role
-	err = r.UsersDao.UpdateUser(user)
-	if err != nil {
-		logger.Error("can not update user", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not update user",
-			Err:           err,
-		})
-		return
-	}
 }
 
 func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err error) {
@@ -180,87 +143,11 @@ func (r usersRoutes) SearchUserForCourse(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func (r usersRoutes) SearchUser(c *gin.Context) {
-	users, err := r.prepareUserSearch(c)
-	if err != nil {
-		return
-	}
-	res := make([]userSearchDTO, len(users))
-	for i, user := range users {
-		email, err := tools.MaskEmail(user.Email.String)
-		if err != nil {
-			email = ""
-		}
-		lrzID := tools.MaskLogin(user.LrzID)
-		res[i] = userSearchDTO{
-			ID:    user.ID,
-			LrzID: lrzID,
-			Email: email,
-			Name:  user.GetPreferredName(),
-			Role:  user.Role,
-		}
-	}
-	c.JSON(http.StatusOK, res)
-}
-
 type userForLecturerDto struct {
 	ID       uint    `json:"id,omitempty"`
 	Name     string  `json:"name,omitempty"`
 	LastName *string `json:"lastName,omitempty"`
 	Login    string  `json:"login,omitempty"`
-}
-
-type userSearchDTO struct {
-	ID    uint   `json:"id"`
-	LrzID string `json:"lrz_id"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
-	Role  uint   `json:"role"`
-
-	// used by alpine
-	Changing bool `json:"changing"`
-}
-
-func (r usersRoutes) DeleteUser(c *gin.Context) {
-	var deleteRequest deleteUserRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	// currently admins can not be deleted.
-	res, err := r.UsersDao.IsUserAdmin(context.Background(), deleteRequest.Id)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not find user",
-			Err:           err,
-		})
-		return
-	}
-	if res {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "user is admin (admins can not be deleted)",
-		})
-		return
-	}
-
-	err = r.UsersDao.DeleteUser(context.Background(), deleteRequest.Id)
-	if err != nil {
-		logger.Error("can not delete user", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not delete user",
-			Err:           err,
-		})
-		return
-	}
-	c.Status(http.StatusOK)
 }
 
 func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
@@ -458,46 +345,6 @@ func (r usersRoutes) InitUser(c *gin.Context) {
 	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
-func (r usersRoutes) CreateUser(c *gin.Context) {
-	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not find users",
-			Err:           err,
-		})
-		return
-	}
-	if usersEmpty {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "No users in database. Use /api/users/init instead.",
-		})
-		return
-	}
-	var request createUserRequest
-	err = json.NewDecoder(c.Request.Body).Decode(&request)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-
-	createdUser, err := r.createUserHelper(request, model.LecturerType)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not create user",
-			Err:           err,
-		})
-		return
-	}
-	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
-}
-
 func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
 	u := model.User{
 		Name:  request.Name,
@@ -618,10 +465,6 @@ type personalData struct {
 		Message   string    `json:"message,omitempty"`
 		CreatedAt time.Time `json:"created_at"`
 	} `json:"chats,omitempty"`
-}
-
-type deleteUserRequest struct {
-	Id uint `json:"id"`
 }
 
 type createUserRequest struct {
