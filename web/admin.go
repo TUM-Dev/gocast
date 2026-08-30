@@ -124,9 +124,9 @@ func GetPageString(s string) string {
 		return "schedule"
 	case "/admin/users":
 		return "users"
-	case "/admin/lectureHalls":
+	case "/admin/lecture-halls":
 		return "lectureHalls"
-	case "/admin/lectureHalls/new":
+	case "/admin/lecture-halls/new":
 		return "createLectureHalls"
 	case "/admin/workers":
 		return "workers"
@@ -144,7 +144,7 @@ func GetPageString(s string) string {
 		return "notifications"
 	case "/admin/token":
 		return "token"
-	case "/admin/infopages":
+	case "/admin/info-pages":
 		return "info-pages"
 	case "/admin/server-stats":
 		return "serverStats"
