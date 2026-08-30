@@ -15,7 +15,7 @@
         </div>
         <form x-data="{name:'', streamProtocol: 1, combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}" @submit.prevent="
                     success = await admin.createLectureHall(name, parseInt(streamProtocol), combIP, presIP, camIP, cameraIp, pwrCtrlIp);
-                    setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);" class="grid gap-3 px-5 py-4 ">
+                    setTimeout(() => {window.location = '/admin/lecture-halls';}, 2000);" class="grid gap-3 px-5 py-4 ">
             <div class="text-sm">
                 <label for="name" class="block text-5">Name</label>
                 <input type="text" x-model="name" id="lh-form-name" placeholder="FMI_HS1" autofocus="" required
