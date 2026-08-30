@@ -20,6 +20,7 @@ func ParseUserToProto(u *model.User) *protobuf.User {
 		MatriculationNumber: u.MatriculationNumber,
 		LrzId:               u.LrzID,
 		Role:                uint32(u.Role),
+		Permissions:         permissionNames(u),
 		Settings:            []*protobuf.UserSetting{},
 	}
 
@@ -32,6 +33,17 @@ func ParseUserToProto(u *model.User) *protobuf.User {
 	}
 
 	return user
+}
+
+// permissionNames lists what the user may do, as the strings the proto carries.
+func permissionNames(u *model.User) []string {
+	held := u.Permissions()
+	names := make([]string, 0, len(held))
+	for _, p := range held {
+		names = append(names, string(p))
+	}
+
+	return names
 }
 
 // ParseUserSettingToProto converts a UserSetting model to its protobuf representation.

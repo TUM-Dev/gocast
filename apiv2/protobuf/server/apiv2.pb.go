@@ -397,8 +397,15 @@ type User struct {
 	Settings            []*UserSetting         `protobuf:"bytes,11,rep,name=settings,proto3" json:"settings,omitempty"`
 	Bookmarks           []*Bookmark            `protobuf:"bytes,12,rep,name=bookmarks,proto3" json:"bookmarks,omitempty"`
 	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// permissions lists what this user may do, as the constants in model/permissions.go
+	// spell them. Sent so a client can decide which controls to offer without knowing
+	// which role holds what; `role` above is the raw number and says nothing on its own.
+	//
+	// Never a substitute for the server's own checks: it says what the interface should
+	// offer, not what the API will allow.
+	Permissions   []string `protobuf:"bytes,14,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *User) Reset() {
@@ -518,6 +525,13 @@ func (x *User) GetBookmarks() []*Bookmark {
 func (x *User) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *User) GetPermissions() []string {
+	if x != nil {
+		return x.Permissions
 	}
 	return nil
 }
@@ -4001,7 +4015,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"versionTag\x12\x19\n" +
 	"\bwiki_url\x18\x03 \x01(\tR\awikiUrl\x12#\n" +
 	"\rcanonical_url\x18\x04 \x01(\tR\fcanonicalUrl\x122\n" +
-	"\x15is_fresh_installation\x18\x05 \x01(\bR\x13isFreshInstallation\"\x85\x04\n" +
+	"\x15is_fresh_installation\x18\x05 \x01(\bR\x13isFreshInstallation\"\xa7\x04\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -4017,7 +4031,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\bsettings\x18\v \x03(\v2\x15.protobuf.UserSettingR\bsettings\x120\n" +
 	"\tbookmarks\x18\f \x03(\v2\x12.protobuf.BookmarkR\tbookmarks\x129\n" +
 	"\n" +
-	"created_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"R\n" +
+	"created_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12 \n" +
+	"\vpermissions\x18\x0e \x03(\tR\vpermissions\"R\n" +
 	"\vUserSetting\x12-\n" +
 	"\x04type\x18\x03 \x01(\x0e2\x19.protobuf.UserSettingTypeR\x04type\x12\x14\n" +
 	"\x05value\x18\x04 \x01(\tR\x05value\"W\n" +

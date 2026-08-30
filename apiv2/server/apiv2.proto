@@ -376,6 +376,13 @@ message User {
   repeated UserSetting settings = 11;
   repeated Bookmark bookmarks = 12;
   google.protobuf.Timestamp created_at = 13;
+  // permissions lists what this user may do, as the constants in model/permissions.go
+  // spell them. Sent so a client can decide which controls to offer without knowing
+  // which role holds what; `role` above is the raw number and says nothing on its own.
+  //
+  // Never a substitute for the server's own checks: it says what the interface should
+  // offer, not what the API will allow.
+  repeated string permissions = 14;
 }
 
 message UserSetting {

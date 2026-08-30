@@ -1849,6 +1849,13 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "permissions lists what this user may do, as the constants in model/permissions.go\nspell them. Sent so a client can decide which controls to offer without knowing\nwhich role holds what; `role` above is the raw number and says nothing on its own.\n\nNever a substitute for the server's own checks: it says what the interface should\noffer, not what the API will allow."
         }
       }
     },
