@@ -127,7 +127,8 @@ test.describe("the runners API", () => {
 /**
  * Last in the file on purpose: it consumes `runner-beta`, and nothing can put it back
  * — runners register themselves over gRPC, so there is no endpoint that creates one.
- * Reload the fixture with `make e2e_db` before the next run.
+ * `make test_e2e` reloads the dump before every run, which is what makes a test that
+ * destroys part of the fixture acceptable at all.
  */
 test.describe("removing a runner", () => {
   test("removes the row and leaves the others alone", async ({ page }) => {

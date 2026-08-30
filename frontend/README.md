@@ -129,12 +129,25 @@ that is inert without `--localstorage-file` and shadows the DOM environment's.
 ## Browser tests
 
 ```sh
-make e2e_db                      # load tum-live-starter.sql, dropping what was there
-go run cmd/tumlive/main.go       # in another terminal
-cd frontend && npm run test:e2e  # or `make test_e2e` from the repo root
+make test_e2e   # from the repo root
 ```
 
-Playwright, against a running server — deliberately not part of `npm test`, which must
+That builds the SPA, reloads `tum-live-starter.sql`, starts the server and stops it
+again. All four are prerequisites and all four used to be someone's job to remember,
+which meant a forgotten one surfaced as a failing assertion rather than as a missing
+step. The order matters too: the dump is the 2022 schema and the server migrates it
+forward on boot, creating tables the dump does not contain, so reloading underneath a
+running server takes those away until it is restarted.
+
+To use a server you are already running — the `npm run dev` loop, say — name it, and
+reload the fixture yourself:
+
+```sh
+make e2e_db && make run          # in another terminal
+cd frontend && E2E_BASE_URL=http://localhost:8081 npm run test:e2e
+```
+
+Playwright, against a real server — deliberately not part of `npm test`, which must
 stay runnable with nothing else up. These cover what the unit tests structurally
 cannot: which frontend answers a given path, the session cookie surviving login and
 redirects, the bearer token minted from that cookie, and what each kind of caller is
@@ -153,9 +166,10 @@ live lecture in a hidden course, watch progress, a pin on a course its owner may
 longer see, scheduled lectures, and a server notification of each kind.
 
 **Some of its lectures are dated relative to when it is loaded**, because "today" and
-"starting in half an hour" cannot be written as fixed dates. Reload with `make e2e_db`
-before a run; lectures left over from a load days ago have gone stale, and the tests
-that depend on them will fail. The one for "today" is dated late in the evening so it
+"starting in half an hour" cannot be written as fixed dates. `make test_e2e` reloads
+before every run so they are always fresh; running against a server of your own means
+reloading yourself, since lectures left over from a load days ago have gone stale and
+the tests that depend on them fail. The one for "today" is dated late in the evening so it
 stays ahead of the clock — after 23:45 that test skips itself rather than failing.
 
 - **`login.spec.ts`** — the round trip from a protected page to `/login` and back, a
@@ -190,11 +204,13 @@ stays ahead of the clock — after 23:45 that test skips itself rather than fail
 
 Two things to know before adding to them:
 
-- **The accounts outlive the run.** `settings.spec.ts` writes to `studi2`, and changes
-  each setting away from whatever is currently stored rather than to a fixed value; a
-  test written against a fixed starting value passes once and then fails on the state
-  its predecessor left behind. `make e2e_db` puts the fixture back. For the same reason
-  the suite runs with one worker.
+- **Writes outlive the run, so the fixture is reloaded before every one.**
+  `settings.spec.ts` writes to `studi2`, and changes each setting away from whatever is
+  currently stored rather than to a fixed value; a test written against a fixed
+  starting value would pass once and then fail on the state its predecessor left
+  behind. `runners.spec.ts` goes further and deletes a runner that nothing can
+  recreate — runners register themselves over gRPC. `make test_e2e` reloads the dump
+  first for exactly this reason. For the same reason the suite runs with one worker.
 - **The visibility tests only read**, so they neither depend on nor disturb that. Add
   new expectations to `e2e/seed.ts`, not to the spec.
 - **Add cases to the dump, not to the tests.** A rule with no data behind it cannot be

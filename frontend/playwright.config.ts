@@ -1,22 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * End-to-end configuration.
+ * End-to-end configuration. Run with `make test_e2e`, which reloads the fixture in
+ * tum-live-starter.sql (see e2e/seed.ts) before the server below starts.
  *
- * These drive a real browser against a running server, covering what no unit test
- * reaches: gin choosing between the SPA shell and a template, the session cookie
- * surviving login and redirects, and the bearer token minted from it.
- *
- * They run against the database in tum-live-starter.sql and nothing else: the users,
- * courses and lectures they assert on are the ones that dump defines, described in
- * e2e/seed.ts. Load it, then start the server, which migrates it forward:
- *
- *   make e2e_db
- *   go run cmd/tumlive/main.go
- *   cd frontend && npm run test:e2e
- *
- * E2E_BASE_URL points them elsewhere, but only at a deployment holding the same
- * fixture — the visibility assertions name particular courses.
+ * E2E_BASE_URL points at a server that is already up and suppresses the one started
+ * here. Whatever it names has to hold the same fixture.
  */
 
 export const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:8081";
@@ -35,4 +24,22 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+
+  /*
+   * `reuseExistingServer` is off on purpose: reusing one would reuse a server that
+   * booted before the fixture was reloaded, which is what this exists to prevent.
+   * The timeout is generous because a cold `go run` compiles first.
+   */
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: "go run cmd/tumlive/main.go",
+        cwd: "..",
+        url: `${baseURL}/api/v2/status`,
+        reuseExistingServer: false,
+        timeout: 180_000,
+        // The access log is one line per request and buries the results.
+        stdout: "ignore",
+        stderr: "pipe",
+      },
 });
