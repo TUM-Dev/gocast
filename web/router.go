@@ -36,37 +36,21 @@ var spaFS embed.FS
 // client router decides what to render.
 const spaShellPath = "spa/index.html"
 
-// The URL grammar for /admin, settled before the pages move so that twenty-odd routes
-// do not each invent their own shape. gin panics when two parameters with different
-// names share a position, so the parameter names below are effectively permanent once
-// a sibling route exists — which is why this is written down rather than decided per
-// page.
+// The URL grammar for /admin. gin panics when two parameters with different names
+// share a position, so these shapes are effectively permanent once a sibling exists.
 //
-//  1. Kebab-case throughout: /admin/lecture-halls, not /admin/lectureHalls or
-//     /admin/infopages. Both spellings existed; the old ones now redirect.
-//  2. Collection segments are plural, and a resource is addressed under its
-//     collection: /admin/courses/:courseID, not /admin/course/:courseID.
-//  3. A lecture belongs to its course, so its pages nest rather than repeating the
-//     course in a flat path:
-//     /admin/courses/:courseID/lectures/:streamID/{units,cut,stats,live}, not
-//     /admin/units/:courseID/:streamID.
-//  4. What a page shows within itself belongs in the URL as a child route, not in
-//     Alpine or component state. Course administration is four tabs today whose
-//     selection cannot be linked to, bookmarked or gone back to; migrated, they are
-//     /admin/courses/:courseID/{lectures,settings,stats,participants}.
+//  1. Kebab-case: /admin/lecture-halls. The old spellings redirect.
+//  2. Plural collections: /admin/courses/:courseID.
+//  3. Lectures nest: /admin/courses/:courseID/lectures/:streamID/{units,cut,stats,live}.
+//  4. In-page tabs are child routes, not component state.
 //
-// Rules 2 and 3 are not yet true of the server-rendered pages: applying them would
-// churn every template and TypeScript entry point that links there, for pages that
-// are rewritten when they migrate anyway. They are normalized as each page moves, at
-// which point the old path gains a redirect beside the two below.
+// Rules 2 and 3 do not hold for the server-rendered pages yet; each is normalized as
+// it migrates, gaining a redirect beside the two below.
 
-// spaRoutes lists the paths served by the SPA instead of a template. Adding a path
-// moves one page across; it must also exist in frontend/src/router/index.ts, or the
-// shell is served for a path the client router does not match, which hands it straight
-// back here and reloads forever. spa-routes.test.ts over there enforces that.
-//
-// Removing a path moves the page back, but only while its template handler is still
-// registered — see registerPage.
+// spaRoutes lists the paths served by the SPA instead of a template. A path here must
+// also exist in frontend/src/router/index.ts or the browser reloads forever;
+// spa-routes.test.ts enforces that. Removing one moves the page back, but only while
+// its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
 	"/settings":                 true,
 	"/login":                    true,
@@ -269,10 +253,7 @@ func newStartPage(router *gin.Engine, routes *mainRoutes) {
 	router.GET("/semester/:year/:term", routes.semesterRedirect)
 }
 
-// redirectTo answers with a permanent redirect, for a path that has been renamed.
-// Permanent because the new spelling is the only one the templates link to: the old
-// one exists for bookmarks and for links sent between people, and both are better off
-// updated by the browser.
+// redirectTo permanently redirects a renamed path, for bookmarks and shared links.
 func redirectTo(path string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, path)
@@ -326,11 +307,10 @@ func configMainRoute(router *gin.Engine) {
 	// same permission.
 	userAdminGroup := router.Group("/")
 	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
-	registerPage(userAdminGroup, http.MethodGet, "/admin/users", routes.AdminPage)
+	registerPage(userAdminGroup, http.MethodGet, "/admin/users", nil)
 	userAdminGroup.GET("/admin/token", routes.AdminPage)
 
-	// The spellings these pages had before the grammar above. Registered outside the
-	// permission groups on purpose: a redirect reveals nothing, and the destination
+	// Outside the permission groups: a redirect reveals nothing, and the destination
 	// does the checking.
 	for from, to := range map[string]string{
 		"/admin/lectureHalls":     "/admin/lecture-halls",
