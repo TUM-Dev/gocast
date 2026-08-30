@@ -25,6 +25,9 @@
     },
     {
       "name": "StreamService"
+    },
+    {
+      "name": "AdminService"
     }
   ],
   "host": "tum.live",
@@ -613,6 +616,63 @@
         ],
         "tags": [
           "Progress"
+        ]
+      }
+    },
+    "/runners": {
+      "get": {
+        "summary": "List the transcoding runners.",
+        "description": "Retrieves every registered runner with its current liveness and workload. Requires the server.administer permission.",
+        "operationId": "AdminService_listRunners",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListRunnersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Runners"
+        ]
+      }
+    },
+    "/runners/{hostname}": {
+      "delete": {
+        "summary": "Delete a runner.",
+        "description": "Removes a runner registration. A runner that is still running re-registers on its next heartbeat. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteRunner",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "hostname",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Runners"
         ]
       }
     },
@@ -1532,6 +1592,18 @@
         }
       }
     },
+    "protobufListRunnersResponse": {
+      "type": "object",
+      "properties": {
+        "runners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufRunner"
+          }
+        }
+      }
+    },
     "protobufNotificationTarget": {
       "type": "string",
       "enum": [
@@ -1564,6 +1636,43 @@
       "properties": {
         "message": {
           "type": "string"
+        }
+      }
+    },
+    "protobufRunner": {
+      "type": "object",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "Runners are keyed by hostname, which is their primary key in the database and\nwhat the delete endpoint takes. There is no numeric id."
+        },
+        "port": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string"
+        },
+        "alive": {
+          "type": "boolean",
+          "description": "alive is derived from last_seen, which counts as dead after five seconds without\na heartbeat. Computed here so a client does not reimplement that rule and quietly\ndisagree with the scheduler about which runners can take work."
+        },
+        "jobCount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Jobs currently running, as of the last heartbeat."
+        },
+        "draining": {
+          "type": "boolean",
+          "description": "draining means the runner is shutting down and is being given no further jobs."
+        },
+        "lastSeen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timeOfRegister": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

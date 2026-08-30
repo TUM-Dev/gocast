@@ -254,3 +254,18 @@ func ParseVideoSectionToProto(section model.VideoSection) *protobuf.VideoSection
 		FileId:       uint32(section.FileID),
 	}
 }
+
+// ParseRunnerToProto converts a Runner model to its protobuf representation.
+// `alive` is derived here so a client cannot disagree with the scheduler about it.
+func ParseRunnerToProto(r model.Runner) *protobuf.Runner {
+	return &protobuf.Runner{
+		Hostname:       r.Hostname,
+		Port:           r.Port,
+		Version:        r.Version,
+		Alive:          r.Alive(),
+		JobCount:       r.JobCount,
+		Draining:       r.Draining,
+		LastSeen:       timestamppb.New(r.LastSeen),
+		TimeOfRegister: timestamppb.New(r.TimeOfRegister),
+	}
+}

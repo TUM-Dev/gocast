@@ -210,6 +210,11 @@ export function apiPost<T>(path: string, body: unknown): Promise<T> {
   });
 }
 
+/** DELETE, for endpoints that answer with an empty body. */
+export function apiDelete(path: string): Promise<void> {
+  return apiFetch<void>(path, { method: "DELETE" });
+}
+
 export function apiPatch<T>(path: string, body: unknown): Promise<T> {
   return apiFetch<T>(path, {
     method: "PATCH",
