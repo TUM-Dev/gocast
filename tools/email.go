@@ -42,7 +42,7 @@ func (m *Mailer) Run() {
 			if err != nil {
 				email.LastTry = time.Now()
 				email.Retries++
-				email.Errors += fmt.Sprintf("%v\n", err)
+				email.Errors = appendSendError(email.Errors, err)
 			} else {
 				email.Success = true
 			}
@@ -55,6 +55,33 @@ func (m *Mailer) Run() {
 			time.Sleep(sleepDur)
 		}
 	}
+}
+
+// maxStoredErrors bounds what one email's failures add up to. How big an error is
+// belongs to whatever produced it, not to this package.
+const maxStoredErrors = 4000
+
+// truncationMark keeps a cut first line from reading as a mangled error.
+const truncationMark = "[earlier attempts dropped]\n"
+
+// appendSendError records a failed attempt, keeping the most recent within the bound.
+func appendSendError(existing string, err error) string {
+	combined := existing + fmt.Sprintf("%v\n", err)
+	if len(combined) <= maxStoredErrors {
+		return combined
+	}
+
+	tail := combined[len(combined)-maxStoredErrors:]
+	// Resuming after a newline keeps the first line whole, and cannot leave the cut
+	// inside a multi-byte character.
+	if i := strings.IndexByte(tail, '\n'); i >= 0 {
+		tail = tail[i+1:]
+	} else {
+		// One error longer than the bound, so there is no line break to cut at.
+		tail = strings.ToValidUTF8(tail, "")
+	}
+
+	return truncationMark + tail
 }
 
 func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
@@ -122,16 +149,9 @@ func openssl(stdin []byte, args ...string) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// SendAccountInvite queues the mail inviting someone to set a password on an account
-// that was just created for them.
-//
-// Shared by the two APIs rather than written twice: it is the only thing standing
-// between a created account and a person who can sign in, and two copies of the link
-// and the wording would drift.
-//
-// The register link is single-use and created here, so calling this twice for one
-// address invalidates the first mail's link. Errors are returned rather than logged
-// so the caller can decide; v1 calls it from a goroutine and cannot.
+// SendAccountInvite queues the mail inviting someone to set a password on a new
+// account. The register link is single-use, so calling this twice invalidates the
+// first mail's.
 func SendAccountInvite(ctx context.Context, daoWrapper dao.DaoWrapper, email string) error {
 	user, err := daoWrapper.UsersDao.GetUserByEmail(ctx, email)
 	if err != nil {
