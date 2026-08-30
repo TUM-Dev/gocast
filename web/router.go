@@ -37,8 +37,9 @@ var spaFS embed.FS
 const spaShellPath = "spa/index.html"
 
 // spaRoutes lists the paths served by the SPA instead of a template. Adding a path
-// moves one page across; it must also exist in frontend/src/router/index.ts or the
-// shell loads and renders nothing.
+// moves one page across; it must also exist in frontend/src/router/index.ts, or the
+// shell is served for a path the client router does not match, which hands it straight
+// back here and reloads forever. spa-routes.test.ts over there enforces that.
 //
 // Removing a path moves the page back, but only while its template handler is still
 // registered — see registerPage.
