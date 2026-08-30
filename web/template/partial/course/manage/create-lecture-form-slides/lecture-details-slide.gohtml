@@ -17,9 +17,66 @@
         </label>
     </div>
 
-    <label for="name" x-show="!loading">
+    {{- /* Video Upload Mode - Batch UI */ -}}
+    <div x-show="formData.vodup && !loading" class="col-span-full">
+        <div class="space-y-3">
+            <template x-for="(lecture, index) in formData.batchLectures" :key="index">
+                <div class="flex gap-2 items-start">
+                    <div class="flex-1 grid grid-cols-2 gap-2">
+                        <label>
+                            <span class="text-sm text-5">Lecture Name</span>
+                            <input type="text" class="tl-input" x-model="lecture.title" 
+                                   @input="onUpdate"
+                                   @keydown.enter.prevent="$event.target.blur()" 
+                                   placeholder="L01: Binary Trees"/>
+                        </label>
+                        <label>
+                            <span class="text-sm text-5">Start Time</span>
+                            <input type="text" class="tl-input" 
+                                   x-model="lecture.start"
+                                   x-init="$nextTick(() => { 
+                                       if ($el && !$el._flatpickr) {
+                                           const fp = flatpickr($el, {
+                                               enableTime: true, 
+                                               time_24hr: true, 
+                                               altInput: true, 
+                                               altFormat: 'Y-m-d H:i', 
+                                               dateFormat: 'Z', 
+                                               allowInput: true,
+                                               onChange: function(selectedDates, dateStr) {
+                                                   lecture.start = dateStr;
+                                                   onUpdate();
+                                               }
+                                           }); 
+                                       } 
+                                   })"
+                                   @input="onUpdate"
+                                   @keydown.enter.prevent="$event.target.blur()" 
+                                   placeholder="2024-01-08 14:00"/>
+                        </label>
+                    </div>
+                    <button type="button" @click="removeBatchLectureRow(index)" 
+                            x-show="formData.batchLectures.length > 1"
+                            class="mt-6 text-red-500 hover:text-red-700 px-2" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </template>
+        </div>
+        <div class="mt-3 flex justify-center">
+            <button type="button" @click="addBatchLectureRow" class="text-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                <i class="fas fa-plus-circle mr-1"></i> Add Another Lecture
+            </button>
+        </div>
+    </div>
+
+    {{- /* Non-Video Upload Mode UI */ -}}
+    <label for="name" x-show="!loading && !formData.vodup">
         <span class="text-sm text-5">Lecture Name</span>
-        <input class="tl-input" name="name" id="name" x-model="formData.title" @change="onUpdate" placeholder="L01: Binary Trees"/>
+        <input class="tl-input" name="name" id="name" x-model="formData.title" 
+               @input="onUpdate" 
+               @keydown.enter.prevent="$event.target.blur()" 
+               placeholder="L01: Binary Trees"/>
     </label>
 
     <label x-show="!formData.premiere && !formData.vodup && !loading">
@@ -35,12 +92,23 @@
         </select>
     </label>
 
-    <label for="start" x-show="!loading && !formData.adHoc">
+    <label for="start" x-show="!loading && !formData.adHoc && !formData.vodup">
         <span class="text-sm text-5">Start</span>
         <input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start"
                x-ref="start"
-               x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true})"
-               @change="onStartChange"/>
+               x-init="flatpickr($refs.start, {
+                   enableTime: true, 
+                   time_24hr: true, 
+                   altInput: true, 
+                   altFormat: 'Y-m-d H:i', 
+                   dateFormat: 'Z', 
+                   allowInput: true,
+                   onChange: function(selectedDates, dateStr) {
+                       formData.start = dateStr;
+                       onStartChange();
+                   }
+               })"
+               @input="onStartChange"/>
     </label>
     <template x-if="!formData.premiere && !formData.vodup && !loading">
         <label for="end">
@@ -48,8 +116,18 @@
             <span x-show="formData.formatedDuration !== ''" class="text-sm font-light opacity-75"
                   x-text="`( ${formData.formatedDuration} )`"></span>
             <input class="tl-input" name="end" placeholder="16:00" id="end" x-model="formData.end" x-ref="end"
-                   x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true })"
-                   @change="onEndChange"/>
+                   x-init="flatpickr($refs.end, {
+                       enableTime: true, 
+                       noCalendar: true, 
+                       dateFormat: 'H:i', 
+                       time_24hr: true, 
+                       allowInput: true,
+                       onChange: function(selectedDates, dateStr) {
+                           formData.end = dateStr;
+                           onEndChange();
+                       }
+                   })"
+                   @input="onEndChange"/>
         </label>
     </template>
 

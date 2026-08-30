@@ -945,6 +945,7 @@ export function createLectureForm(args: { s: [] }) {
             combFile: [],
             presFile: [],
             camFile: [],
+            batchLectures: [{ title: "", start: "", combFile: [], presFile: [], camFile: [] }],
         },
         streams: args.s,
         loading: false,
@@ -973,6 +974,11 @@ export function createLectureForm(args: { s: [] }) {
         updateCreateType(newType: LectureCreateType) {
             this.createType = newType;
             this.formData.vodup = newType !== LectureCreateType.livestream;
+            // Reset batchLectures when switching modes
+            if (this.formData.vodup) {
+                this.formData.batchLectures = [{ title: "", start: "", combFile: [], presFile: [], camFile: [] }];
+            }
+            this.onUpdate();
         },
         updateLiveAdHoc(adHoc: boolean) {
             this.formData.adHoc = adHoc;
@@ -1025,6 +1031,29 @@ export function createLectureForm(args: { s: [] }) {
             this.onUpdate();
         },
 
+        addBatchLectureRow() {
+            this.formData.batchLectures.push({ title: "", start: "", combFile: [], presFile: [], camFile: [] });
+            this.onUpdate();
+        },
+
+        removeBatchLectureRow(index: number) {
+            if (this.formData.batchLectures.length > 1) {
+                this.formData.batchLectures.splice(index, 1);
+                this.onUpdate();
+            }
+        },
+
+        updateBatchLectureFiles(lectureIndex: number, type: string, files: File[]) {
+            if (type === "COMB") {
+                this.formData.batchLectures[lectureIndex].combFile = files;
+            } else if (type === "CAM") {
+                this.formData.batchLectures[lectureIndex].camFile = files;
+            } else if (type === "PRES") {
+                this.formData.batchLectures[lectureIndex].presFile = files;
+            }
+            this.onUpdate();
+        },
+
         // This function sets flags depending on the current tab and current data
         onUpdate() {
             this.error = false;
@@ -1040,13 +1069,22 @@ export function createLectureForm(args: { s: [] }) {
             if (this.currentTab === 1) {
                 this.onLastSlide = false;
                 if (this.formData.vodup) {
-                    // If user has chosen video on demand, there are 3 tabs (file upload tab)
-                    // => we are not on the last tab
+                    // Video upload mode - validate all lecture entries in batchLectures
                     this.canGoBack = true;
-                    this.canContinue = this.formData.start.length > 0;
-                    this.cannotContinueReason = "";
-                    if (this.formData.start.length <= 0) {
-                        this.cannotContinueReason += "The start time for the lecture has not been set yet!\n";
+
+                    const validLectures = this.formData.batchLectures.filter((lec) => lec.start.trim().length > 0);
+                    const invalidLectures = this.formData.batchLectures.filter((lec) => lec.start.trim().length === 0);
+
+                    if (validLectures.length === 0) {
+                        this.canContinue = false;
+                        this.cannotContinueReason = "The start time for the lecture has not been set yet!\n";
+                    } else if (invalidLectures.length > 0) {
+                        this.canContinue = false;
+                        this.cannotContinueReason =
+                            "Please specify a start time for all lectures or remove empty rows!\n";
+                    } else {
+                        this.canContinue = true;
+                        this.cannotContinueReason = "";
                     }
                 } else {
                     this.onLastSlide = true;
@@ -1064,15 +1102,31 @@ export function createLectureForm(args: { s: [] }) {
             }
 
             if (this.currentTab === 2) {
-                this.canContinue =
-                    (this.getMediaFiles().length > 0 && this.formData.vodup) ||
-                    (this.formData.adHoc && this.formData.end != "");
-                this.cannotContinueReason = "";
-                if (this.formData.vodup && this.getMediaFiles().length <= 0) {
-                    this.cannotContinueReason += "No media files!\n";
-                }
-                if (this.formData.adHoc && this.formData.end == "") {
-                    this.cannotContinueReason += "The end time for the lecture has not been set yet!\n";
+                if (this.formData.vodup) {
+                    // Video upload mode - validate files for valid lectures
+                    const validLectures = this.formData.batchLectures.filter((lec) => lec.start.trim().length > 0);
+                    const invalidLectures = this.formData.batchLectures.filter((lec) => lec.start.trim().length === 0);
+
+                    if (validLectures.length === 0 || invalidLectures.length > 0) {
+                        this.canContinue = false;
+                        this.cannotContinueReason =
+                            "Please specify a start time for all lectures or remove empty rows!\n";
+                    } else {
+                        const allHaveFiles = validLectures.every(
+                            (lec) => lec.combFile.length > 0 || lec.presFile.length > 0 || lec.camFile.length > 0,
+                        );
+                        this.canContinue = allHaveFiles;
+                        this.cannotContinueReason = "";
+                        if (!allHaveFiles) {
+                            this.cannotContinueReason = "All lectures must have at least one video file!\n";
+                        }
+                    }
+                } else if (this.formData.adHoc && this.formData.end != "") {
+                    this.canContinue = true;
+                    this.cannotContinueReason = "";
+                } else {
+                    this.canContinue = false;
+                    this.cannotContinueReason = "The end time for the lecture has not been set yet!\n";
                 }
 
                 this.canGoBack = true;
@@ -1152,16 +1206,18 @@ export function createLectureForm(args: { s: [] }) {
 
             if (this.formData.vodup) {
                 try {
-                    const streamId = await this.uploadVod();
+                    const streamIds = await this.uploadBatchVods();
                     const url = new URL(window.location.href);
-                    url.hash = `lectures:${streamId}`;
+                    url.hash = `lectures:${streamIds.join(",")}`;
                     window.location.assign(url);
                     window.location.reload();
                 } catch (e) {
+                    console.error("Batch upload error:", e);
                     this.currentTab = currentTab;
                     this.loading = false;
                     this.error = true;
                 }
+                return;
             } else {
                 const payload = {
                     title: this.formData.title,
@@ -1255,6 +1311,98 @@ export function createLectureForm(args: { s: [] }) {
             }
 
             return streamID;
+        },
+
+        async uploadBatchVods(): Promise<number[]> {
+            const streamIds: number[] = [];
+            const createdStreamIds: number[] = [];
+
+            // Filter to lectures with start time set
+            const lecturesToUpload = this.formData.batchLectures.filter((lec) => lec.start.trim().length > 0);
+
+            if (lecturesToUpload.length === 0) {
+                throw new Error("No lectures to upload");
+            }
+
+            try {
+                // Step 1: Create all VOD streams
+                for (let i = 0; i < lecturesToUpload.length; i++) {
+                    const lecture = lecturesToUpload[i];
+                    const { streamID } = await (
+                        await postData(
+                            `/api/course/${this.courseID}/createVOD?start=${encodeURIComponent(lecture.start)}&title=${encodeURIComponent(lecture.title)}`,
+                            {},
+                        )
+                    ).json();
+                    streamIds.push(streamID);
+                    createdStreamIds.push(streamID);
+
+                    // Dispatch progress for batch creation
+                    window.dispatchEvent(
+                        new CustomEvent("batchvoduploadprogress", {
+                            detail: {
+                                lectureIndex: i,
+                                lectureTitle: lecture.title || `Lecture ${i + 1}`,
+                                totalLectures: lecturesToUpload.length,
+                                phase: "creating",
+                            },
+                        }),
+                    );
+                }
+
+                // Step 2: Upload files for each stream
+                for (let i = 0; i < lecturesToUpload.length; i++) {
+                    const lecture = lecturesToUpload[i];
+                    const streamID = streamIds[i];
+
+                    const mediaUploads: MediaUpload[] = [];
+                    if (lecture.combFile.length > 0)
+                        mediaUploads.push({ file: lecture.combFile[0], type: "COMB", progress: 0 });
+                    if (lecture.presFile.length > 0)
+                        mediaUploads.push({ file: lecture.presFile[0], type: "PRES", progress: 0 });
+                    if (lecture.camFile.length > 0)
+                        mediaUploads.push({ file: lecture.camFile[0], type: "CAM", progress: 0 });
+
+                    for (const mediaUpload of mediaUploads) {
+                        await uploadFile(
+                            `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
+                            mediaUpload.file,
+                            {
+                                onProgress: (progress) => {
+                                    mediaUpload.progress = progress;
+                                    // Dispatch progress for individual file upload
+                                    const fileProgress = {
+                                        COMB: mediaUploads.find((e) => e.type == "COMB")?.progress ?? null,
+                                        PRES: mediaUploads.find((e) => e.type == "PRES")?.progress ?? null,
+                                        CAM: mediaUploads.find((e) => e.type == "CAM")?.progress ?? null,
+                                    };
+                                    window.dispatchEvent(
+                                        new CustomEvent("batchvoduploadprogress", {
+                                            detail: {
+                                                lectureIndex: i,
+                                                lectureTitle: lecture.title || `Lecture ${i + 1}`,
+                                                totalLectures: lecturesToUpload.length,
+                                                phase: "uploading",
+                                                files: fileProgress,
+                                            },
+                                        }),
+                                    );
+                                },
+                            },
+                        );
+                    }
+                }
+
+                return streamIds;
+            } catch (e) {
+                // Rollback: delete all created streams
+                if (createdStreamIds.length > 0) {
+                    await postData(`/api/course/${this.courseID}/deleteLectures`, {
+                        streamIDs: createdStreamIds,
+                    });
+                }
+                throw e;
+            }
         },
     };
 }
