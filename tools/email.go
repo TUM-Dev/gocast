@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 )
 
 type Mailer struct {
@@ -119,4 +120,42 @@ func openssl(stdin []byte, args ...string) ([]byte, error) {
 	}
 
 	return out.Bytes(), nil
+}
+
+// SendAccountInvite queues the mail inviting someone to set a password on an account
+// that was just created for them.
+//
+// Shared by the two APIs rather than written twice: it is the only thing standing
+// between a created account and a person who can sign in, and two copies of the link
+// and the wording would drift.
+//
+// The register link is single-use and created here, so calling this twice for one
+// address invalidates the first mail's link. Errors are returned rather than logged
+// so the caller can decide; v1 calls it from a goroutine and cannot.
+func SendAccountInvite(ctx context.Context, daoWrapper dao.DaoWrapper, email string) error {
+	user, err := daoWrapper.UsersDao.GetUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("no user with that address: %w", err)
+	}
+
+	registerLink, err := daoWrapper.UsersDao.CreateRegisterLink(ctx, user)
+	if err != nil {
+		return fmt.Errorf("creating the register link: %w", err)
+	}
+
+	body := fmt.Sprintf("Hello!\n"+
+		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
+		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
+		"If you have any further questions please reach out to "+Cfg.Mail.Sender, registerLink.RegisterSecret)
+
+	if err := daoWrapper.EmailDao.Create(ctx, &model.Email{
+		From:    Cfg.Mail.Sender,
+		To:      email,
+		Subject: "Setup your TUM-Live account",
+		Body:    body,
+	}); err != nil {
+		return fmt.Errorf("queueing the invitation: %w", err)
+	}
+
+	return nil
 }

@@ -4,12 +4,8 @@ import { apiAs, bearerToken, login } from "./helpers";
 import { runners, users } from "./seed";
 
 /**
- * The runners administration page, the first of the /admin pages served by the SPA.
- *
- * Two things are being checked, and they are not the same thing. That the page renders
- * what the fixture holds, and that the endpoints behind it are refused to everyone
- * without the server.administer permission — the page hiding a control is not a
- * substitute for the API refusing the call.
+ * The runners page renders the fixture, and the endpoints behind it refuse everyone
+ * without server.administer — a hidden control being no substitute for that.
  */
 
 test.describe("the runners page", () => {
@@ -30,8 +26,7 @@ test.describe("the runners page", () => {
   });
 
   test("shows a runner that has not been heard from as dead", async ({ page }) => {
-    // Every seeded runner is dead, and no fixture can do otherwise: liveness is a
-    // heartbeat within the last five seconds. See seed.ts.
+    // No fixture can seed a live runner: liveness is a heartbeat within five seconds.
     await login(page, users.admin, "/admin/runners");
 
     const alpha = page.getByRole("row", { name: new RegExp(runners.alpha.hostname) });
@@ -39,8 +34,7 @@ test.describe("the runners page", () => {
   });
 
   test("marks a draining runner as such", async ({ page }) => {
-    // Draining is why a runner stops taking work while still being registered. The old
-    // page had it commented out in a detail row that was never filled in.
+    // Why a runner stops taking work while still registered.
     await login(page, users.admin, "/admin/runners");
 
     const beta = page.getByRole("row", { name: new RegExp(runners.beta.hostname) });
@@ -57,9 +51,7 @@ test.describe("the runners page", () => {
   });
 
   test("is refused to a student by the server, not by the page", async ({ page }) => {
-    // web/router.go registers the route inside the permission group, so the shell is
-    // never sent. A page that merely rendered nothing would still have leaked that
-    // the route exists and left the API as the only real check.
+    // Registered inside the permission group, so the shell is never sent.
     await login(page, users.studi1);
 
     const response = await page.goto("/admin/runners");
@@ -80,7 +72,7 @@ test.describe("the runners API", () => {
     const context = await apiAs(playwright, users.admin);
     const token = await bearerToken(context);
 
-    const response = await context.get("/api/v2/runners", {
+    const response = await context.get("/api/v2/admin/runners", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -95,7 +87,7 @@ test.describe("the runners API", () => {
         const context = await apiAs(playwright, users[account]);
         const token = await bearerToken(context);
 
-        const response = await context.get("/api/v2/runners", {
+        const response = await context.get("/api/v2/admin/runners", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -103,12 +95,11 @@ test.describe("the runners API", () => {
       });
 
       test(`${account} may not delete a runner`, async ({ playwright }) => {
-        // The one that matters: a refused read is a hidden page, a refused write is
-        // the difference between an inconvenience and anyone clearing the fleet.
+        // The one that matters: a refused write, not just a hidden page.
         const context = await apiAs(playwright, users[account]);
         const token = await bearerToken(context);
 
-        const response = await context.delete(`/api/v2/runners/${runners.alpha.hostname}`, {
+        const response = await context.delete(`/api/v2/admin/runners/${runners.alpha.hostname}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -119,16 +110,14 @@ test.describe("the runners API", () => {
     test("an anonymous caller may not list runners", async ({ playwright }) => {
       const context = await apiAs(playwright);
 
-      expect((await context.get("/api/v2/runners")).status()).toBe(401);
+      expect((await context.get("/api/v2/admin/runners")).status()).toBe(401);
     });
   });
 });
 
 /**
- * Last in the file on purpose: it consumes `runner-beta`, and nothing can put it back
- * — runners register themselves over gRPC, so there is no endpoint that creates one.
- * `make test_e2e` reloads the dump before every run, which is what makes a test that
- * destroys part of the fixture acceptable at all.
+ * Last in the file: it consumes `runner-beta`, which nothing can recreate. Acceptable
+ * only because `make test_e2e` reloads the dump every run.
  */
 test.describe("removing a runner", () => {
   test("removes the row and leaves the others alone", async ({ page }) => {
@@ -137,8 +126,7 @@ test.describe("removing a runner", () => {
     const beta = page.getByRole("row", { name: new RegExp(runners.beta.hostname) });
     await expect(beta).toBeVisible();
 
-    // The prompt says the registration comes back if the runner is still running, so
-    // it has to be accepted rather than dismissed.
+    // The prompt has to be accepted rather than dismissed.
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: `Remove ${runners.beta.hostname}` }).click();
 

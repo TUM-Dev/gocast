@@ -5,36 +5,25 @@ import { can, type Permission } from "@/lib/settings";
 import { useAuthStore } from "@/stores/auth";
 
 /**
- * The frame every administration page sits in, ported from the sidebar in
- * web/template/admin/admin.gohtml.
+ * The frame every administration page sits in.
  *
- * Two things differ from the template deliberately.
+ * Each entry names the permission its route enforces, so a link is offered exactly
+ * when following it works; the template gated the whole block on `Role == 1`, which
+ * stopped matching the server once those routes split across two permissions.
  *
- * The template gated the whole Administration block on `Role == 1`, which stopped
- * agreeing with the server the moment web/router.go split those routes across
- * PermAdministerServer and PermManageUsers. Here each entry names the permission its
- * route actually enforces, so a link is offered exactly when following it works.
- *
- * And the sidebar's tree of administered courses per semester is not here: it needs a
- * "courses I administer" endpoint that v2 does not have yet. Until it does, the
- * Courses group links to the server-rendered schedule, which still has the tree. See
- * frontend/README.md.
+ * The sidebar's tree of administered courses needs an endpoint v2 does not have yet.
  */
 interface AdminLink {
   label: string;
   path: string;
   /** What web/router.go requires for this path. */
   permission: Permission;
-  /**
-   * Whether the SPA owns this page. The rest are still rendered by Go, so they are
-   * plain links: a RouterLink to one would match nothing and bounce through the
-   * server anyway.
-   */
+  /** Whether the SPA owns this page; the rest are plain links to Go. */
   migrated?: boolean;
 }
 
 const administration: AdminLink[] = [
-  { label: "Users", path: "/admin/users", permission: "users.manage" },
+  { label: "Users", path: "/admin/users", permission: "users.manage", migrated: true },
   { label: "Lecture Halls", path: "/admin/lecture-halls", permission: "server.administer" },
   { label: "Workers", path: "/admin/workers", permission: "server.administer" },
   { label: "Runners", path: "/admin/runners", permission: "server.administer", migrated: true },
