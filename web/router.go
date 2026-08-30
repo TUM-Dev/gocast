@@ -313,7 +313,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.GET("/admin/lecture-halls", routes.AdminPage)
 	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
 	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
-	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
 	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
