@@ -245,3 +245,25 @@ export const courseUrl = (slug: CourseKey): string => {
   const { year, term } = courses[slug];
   return `/course/${year}/${term}/${slug}`;
 };
+
+/**
+ * What each role is told it may do, keyed by `model.User.Role`.
+ *
+ * A restatement of `rolePermissions` in model/permissions.go, as GET /users/me reports
+ * it. Written out per role rather than derived, for the same reason the rest of this
+ * file is: a test that computed the expectation the way the server does would agree
+ * with the server however wrong both were.
+ */
+export const permissionsByRole: Record<number, string[]> = {
+  1: [
+    "server.administer",
+    "courses.administer.all",
+    "courses.view.all",
+    "users.manage",
+    "lecture",
+  ],
+  // A lecturer administers only the courses granted to them, which is not a
+  // permission — see `administers` above.
+  2: ["lecture"],
+  4: [],
+};
