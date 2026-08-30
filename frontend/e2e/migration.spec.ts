@@ -115,3 +115,30 @@ test.describe("the cookie-to-bearer bridge", () => {
     expect(mints).toBe(1);
   });
 });
+
+/** The odd spellings moved to kebab-case; bookmarks outlive a rename. */
+test.describe("renamed admin paths", () => {
+  const renamed = [
+    ["/admin/lectureHalls", "/admin/lecture-halls"],
+    ["/admin/lectureHalls/new", "/admin/lecture-halls/new"],
+    ["/admin/infopages", "/admin/info-pages"],
+  ];
+
+  for (const [from, to] of renamed) {
+    test(`${from} redirects to ${to}`, async ({ page }) => {
+      await login(page, users.admin);
+
+      await page.goto(from);
+      await expect(page).toHaveURL(to);
+    });
+  }
+
+  test("the redirect answers before checking who is asking", async ({ request }) => {
+    // Outside the permission groups, so the old path points a visitor at the new one
+    // instead of 403ing. Indistinguishable in the routing table, hence asserted.
+    const response = await request.get("/admin/lectureHalls", { maxRedirects: 0 });
+
+    expect(response.status()).toBe(301);
+    expect(response.headers()["location"]).toBe("/admin/lecture-halls");
+  });
+});
