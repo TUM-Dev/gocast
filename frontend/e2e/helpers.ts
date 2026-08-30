@@ -1,5 +1,6 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type APIRequest, type APIRequestContext, type Page } from "@playwright/test";
 
+import { baseURL } from "../playwright.config";
 import { password, users, type SeedUser } from "./seed";
 
 export { password };
@@ -36,4 +37,44 @@ export async function login(page: Page, user: SeedUser = users.studi1, to = "/")
 export async function sessionCookie(page: Page): Promise<string | undefined> {
   const cookies = await page.context().cookies();
   return cookies.find((cookie) => cookie.name === SESSION_COOKIE)?.value;
+}
+
+/**
+ * An API context calling as `user`, or anonymously when none is given.
+ *
+ * A context of its own per caller, rather than the shared `request` fixture, because
+ * the session lives in that context's cookie jar: one test comparing what two callers
+ * are allowed would otherwise have them overwrite each other.
+ */
+export async function apiAs(
+  playwright: { request: APIRequest },
+  user?: SeedUser,
+): Promise<APIRequestContext> {
+  const context = await playwright.request.newContext({ baseURL });
+
+  if (user) {
+    // The real form post, as in login(): the server sets the session cookie, and the
+    // context keeps it for everything called through it afterwards.
+    const response = await context.post("/login", {
+      form: { username: user.username, password },
+      maxRedirects: 0,
+    });
+    expect(response.status(), `could not sign in as ${user.username}`).toBe(302);
+  }
+
+  return context;
+}
+
+/**
+ * The bearer token a context's session is worth, as the SPA obtains it.
+ *
+ * Returns null when the context has no session: refusing to mint a token is how the
+ * server says nobody is signed in, which is an answer rather than a failure.
+ */
+export async function bearerToken(context: APIRequestContext): Promise<string | null> {
+  const response = await context.post("/api/v2/auth/token");
+  if (!response.ok()) {
+    return null;
+  }
+  return (await response.json()).access_token;
 }
