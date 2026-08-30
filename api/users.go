@@ -521,28 +521,10 @@ func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) 
 }
 
 func (r usersRoutes) forgotPassword(email string) {
-	u, err := r.UsersDao.GetUserByEmail(context.Background(), email)
-	if err != nil {
-		logger.Error("couldn't get user by email")
-		return
-	}
-	registerLink, err := r.UsersDao.CreateRegisterLink(context.Background(), u)
-	if err != nil {
-		logger.Error("couldn't create register link")
-		return
-	}
-	body := fmt.Sprintf("Hello!\n"+
-		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
-		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
-		"If you have any further questions please reach out to "+tools.Cfg.Mail.Sender, registerLink.RegisterSecret)
-	err = r.EmailDao.Create(context.Background(), &model.Email{
-		From:    tools.Cfg.Mail.Sender,
-		To:      email,
-		Subject: "Setup your TUM-Live account",
-		Body:    body,
-	})
-	if err != nil {
-		logger.Error("couldn't send password mail")
+	// The mail itself lives in tools so that apiv2 sends the same one; this is called
+	// from a goroutine and has nowhere to return an error to.
+	if err := tools.SendAccountInvite(context.Background(), r.DaoWrapper, email); err != nil {
+		logger.Error("couldn't invite user", "err", err)
 	}
 }
 

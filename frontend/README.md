@@ -6,8 +6,8 @@ which one answers, so pages move over one at a time and can be moved back just a
 easily.
 
 Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
-`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — and the first
-administration page, **`/admin/runners`**.
+`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — and two
+administration pages, **`/admin/runners`** and **`/admin/users`**.
 
 Two things the start page had and this one does not, both waiting on the v1 API:
 
@@ -20,6 +20,11 @@ Two things the start page had and this one does not, both waiting on the v1 API:
 
 These move one page at a time, `/admin/runners` first. Three things about them differ
 from the pages above.
+
+**They are not all behind the same permission.** `/admin/runners` needs
+`server.administer` and `/admin/users` needs `users.manage`. Both belong to admins
+today, so the two only come apart once an operator role exists — which is exactly why
+neither the routes nor the sidebar may conflate them.
 
 **They are registered inside their permission group.** `web/router.go` calls
 `registerPage` on `serverAdminGroup`, so `RequirePermission` runs before the shell is
@@ -34,6 +39,13 @@ table. Pages that have not migrated are plain `<a>` links, so they navigate to G
 **The sidebar's course tree is not here yet.** The server-rendered sidebar lists the
 courses you administer, grouped by semester. That needs an endpoint v2 does not have,
 so the Courses group links to the server-rendered schedule, which still has the tree.
+
+**Two things on the users page are deliberately not v2.** Impersonation still posts to
+`/api/users/impersonate`, because it creates a session and the SPA does not manage
+session cookies — the same reason login posts to Go. And the two listings mask contact
+details differently: the staff list does not, search results do. That is inherited from
+the page it replaces, and preserved rather than tidied, because changing what an
+administrator can see is a decision about a privacy control rather than part of a port.
 
 One thing worth knowing before adding the next page: `apiv2.proto` and `runner/*.proto`
 both declare `package protobuf` and are linked into the same binary, so their type
@@ -211,6 +223,9 @@ Two things to know before adding to them:
   behind. `runners.spec.ts` goes further and deletes a runner that nothing can
   recreate — runners register themselves over gRPC. `make test_e2e` reloads the dump
   first for exactly this reason. For the same reason the suite runs with one worker.
+  The reload is once per run and not once per file, so a test that changes a seeded
+  account breaks the later files that assert on it — `users.spec.ts` creates the
+  accounts it deletes and promotes rather than borrowing the seeded ones.
 - **The visibility tests only read**, so they neither depend on nor disturb that. Add
   new expectations to `e2e/seed.ts`, not to the spec.
 - **Add cases to the dump, not to the tests.** A rule with no data behind it cannot be
