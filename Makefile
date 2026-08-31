@@ -127,8 +127,11 @@ test_e2e: spa e2e_db
 # apiv2 because the exit hook that writes the counters is only registered when the main
 # package is covered — with apiv2 alone the run produces nothing at all. And the
 # counters are written as the server exits, so playwright.config.ts stops it with
-# SIGTERM; killed outright it writes nothing either. `-pkg` keeps the report to apiv2.
-E2E_COVER_PKG ?= github.com/TUM-Dev/gocast/apiv2/...
+# SIGTERM; killed outright it writes nothing either.
+#
+# `-pkg` keeps the report to the handlers. Widen it to `.../apiv2/...` for the rest,
+# which brings in the generated protobuf package and the percentage it drags down.
+E2E_COVER_PKG ?= github.com/TUM-Dev/gocast/apiv2/server
 E2E_COVER_DIR ?= cov/e2e
 
 .PHONY: test_e2e_cover
