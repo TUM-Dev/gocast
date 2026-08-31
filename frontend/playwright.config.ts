@@ -37,8 +37,9 @@ export default defineConfig({
         cwd: "..",
         url: `${baseURL}/api/v2/status`,
         reuseExistingServer: false,
-        timeout: 180_000,
-        // The access log is one line per request and buries the results.
+        timeout: 300_000,
+        // Not piped even on CI: one access-log line per request through the reporter
+        // slowed the suite enough to fail it. stderr still carries panics and errors.
         stdout: "ignore",
         stderr: "pipe",
       },
