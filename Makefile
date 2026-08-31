@@ -112,11 +112,15 @@ e2e_db:
 # To use a server of your own instead:
 #
 #   make e2e_db && make run          # in another terminal
-#   cd frontend && E2E_BASE_URL=http://localhost:8081 npm run test:e2e
+#   cd frontend && E2E_BASE_URL=http://localhost:8081 pnpm run test:e2e
+#
+# The browser install is deliberately not `--with-deps`: that shells out to apt-get
+# under sudo, which prompts for a password and then fails on any distribution without
+# it. The CI workflow asks for the system libraries there, where apt-get exists.
 .PHONY: test_e2e
 test_e2e: spa e2e_db
-	cd frontend; \
-	pnpm exec playwright install --with-deps chromium; \
+	cd frontend && \
+	pnpm exec playwright install chromium && \
 	pnpm run test:e2e
 
 .PHONY: lint
