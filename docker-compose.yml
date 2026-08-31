@@ -135,7 +135,7 @@ services:
       - "--storage.tsdb.path=/prometheus"
   docs:
     container_name: gocast-docs
-    image: node:20
+    image: node:24
     working_dir: /app
     ports:
       - "3000:3000"
