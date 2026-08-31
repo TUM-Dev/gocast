@@ -151,6 +151,10 @@ step. The order matters too: the dump is the 2022 schema and the server migrates
 forward on boot, creating tables the dump does not contain, so reloading underneath a
 running server takes those away until it is restarted.
 
+`make test_e2e_cover` runs the same suite against a `-cover` build and reports what it
+reached in `./apiv2`, which nothing else measures: the unit tests call handlers, these
+go through the gateway.
+
 To use a server you are already running — the `npm run dev` loop, say — name it, and
 reload the fixture yourself:
 

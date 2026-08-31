@@ -119,3 +119,6 @@ tumlive.service
 
 # Scratch output from .claude/skills/local-testing (screenshot diffs)
 .shots/
+
+# Coverage data from `make test_e2e_cover`.
+/cov/

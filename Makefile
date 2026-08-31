@@ -120,6 +120,31 @@ test_e2e: spa e2e_db
 	npx playwright install chromium && \
 	npm run test:e2e
 
+# Coverage for ./apiv2 measured from the browser tests, which are the only thing that
+# exercises the API through the gateway rather than by calling a handler.
+#
+# Two things about the build are load-bearing. cmd/tumlive is instrumented alongside
+# apiv2 because the exit hook that writes the counters is only registered when the main
+# package is covered — with apiv2 alone the run produces nothing at all. And the
+# counters are written as the server exits, so playwright.config.ts stops it with
+# SIGTERM; killed outright it writes nothing either. `-pkg` keeps the report to apiv2.
+E2E_COVER_PKG ?= github.com/TUM-Dev/gocast/apiv2/...
+E2E_COVER_DIR ?= cov/e2e
+
+.PHONY: test_e2e_cover
+test_e2e_cover: spa e2e_db
+	rm -rf $(E2E_COVER_DIR)
+	mkdir -p $(E2E_COVER_DIR)
+	go build -cover -coverpkg=./apiv2/...,./cmd/tumlive -o cov/tumlive ./cmd/tumlive
+	cd frontend && \
+	npx playwright install chromium && \
+	GOCOVERDIR=$(CURDIR)/$(E2E_COVER_DIR) E2E_SERVER_CMD=$(CURDIR)/cov/tumlive \
+	npm run test:e2e
+	go tool covdata percent -i=$(E2E_COVER_DIR) -pkg=$(E2E_COVER_PKG)
+	go tool covdata textfmt -i=$(E2E_COVER_DIR) -pkg=$(E2E_COVER_PKG) -o=$(E2E_COVER_DIR)/coverage.out
+	@echo
+	@echo "line-by-line: go tool cover -html=$(E2E_COVER_DIR)/coverage.out"
+
 .PHONY: lint
 lint:
 	golangci-lint run
