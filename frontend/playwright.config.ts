@@ -33,7 +33,9 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: "go run cmd/tumlive/main.go",
+        // E2E_SERVER_CMD names a prebuilt binary; `make test_e2e_cover` points it at
+        // one built with -cover.
+        command: process.env.E2E_SERVER_CMD ?? "go run cmd/tumlive/main.go",
         cwd: "..",
         url: `${baseURL}/api/v2/status`,
         reuseExistingServer: false,
@@ -42,5 +44,8 @@ export default defineConfig({
         // slowed the suite enough to fail it. stderr still carries panics and errors.
         stdout: "ignore",
         stderr: "pipe",
+        // A -cover binary writes its counters as it exits, so it has to be asked to
+        // rather than killed: the default SIGKILL leaves GOCOVERDIR empty.
+        gracefulShutdown: { signal: "SIGTERM", timeout: 30_000 },
       },
 });
