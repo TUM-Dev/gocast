@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -354,15 +355,15 @@ func getMeiliSearchMock(t *testing.T, daoWrapper dao.DaoWrapper) *mock_tools.Moc
 		func(q interface{}, limit interface{}, searchType interface{}, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 			streams, _ := tools.ToMeiliStreams(testutils.AllStreamsForSearchTests, daoWrapper)
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
-				{IndexUID: "COURSES", Hits: meiliCourseSliceToInterfaceSlice(tools.ToMeiliCourses(testutils.AllCoursesForSearchTests))},
-				{IndexUID: "STREAMS", Hits: meiliStreamSliceToInterfaceSlice(streams)},
+				{IndexUID: "COURSES", Hits: meiliCourseSliceToHitSlice(tools.ToMeiliCourses(testutils.AllCoursesForSearchTests))},
+				{IndexUID: "STREAMS", Hits: meiliStreamSliceToHitSlice(streams)},
 			}}
 		}).AnyTimes()
 
 	mock.EXPECT().Search(gomock.Any(), gomock.Any(), 4, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
 		func(q interface{}, limit interface{}, searchType interface{}, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
-				{IndexUID: "COURSES", Hits: meiliCourseSliceToInterfaceSlice(tools.ToMeiliCourses(testutils.AllCoursesForSearchTests))},
+				{IndexUID: "COURSES", Hits: meiliCourseSliceToHitSlice(tools.ToMeiliCourses(testutils.AllCoursesForSearchTests))},
 			}}
 		}).AnyTimes()
 
@@ -398,8 +399,8 @@ func getMeiliSearchMock(t *testing.T, daoWrapper dao.DaoWrapper) *mock_tools.Moc
 			}
 			returnStreams, _ := tools.ToMeiliStreams(streams, daoWrapper)
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
-				{IndexUID: "STREAMS", Hits: meiliStreamSliceToInterfaceSlice(returnStreams)},
-				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToInterfaceSlice(subtitles)},
+				{IndexUID: "STREAMS", Hits: meiliStreamSliceToHitSlice(returnStreams)},
+				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToHitSlice(subtitles)},
 			}}
 		}).AnyTimes()
 	return mock
@@ -411,33 +412,54 @@ func getMeiliSearchMockReturningEveryStreamAndSubtitle(t *testing.T, daoWrapper 
 		func(q interface{}, limit interface{}, searchType interface{}, courseFilter string, streamFilter string, subtitleFilter string) *meilisearch.MultiSearchResponse {
 			streams, _ := tools.ToMeiliStreams(testutils.AllStreamsForSearchTests, daoWrapper)
 			return &meilisearch.MultiSearchResponse{Results: []meilisearch.SearchResponse{
-				{IndexUID: "STREAMS", Hits: meiliStreamSliceToInterfaceSlice(streams)},
-				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToInterfaceSlice(testutils.AllSubtitlesForSearchTests)},
+				{IndexUID: "STREAMS", Hits: meiliStreamSliceToHitSlice(streams)},
+				{IndexUID: "SUBTITLES", Hits: meiliSubtitleSliceToHitSlice(testutils.AllSubtitlesForSearchTests)},
 			}}
 		}).AnyTimes()
 	return mock
 }
 
-func meiliCourseSliceToInterfaceSlice(cs []tools.MeiliCourse) []interface{} {
-	s := make([]interface{}, len(cs))
-	for i, c := range cs {
-		s[i] = c
+func meiliCourseSliceToHitSlice(cs []tools.MeiliCourse) []meilisearch.Hit {
+	hits := make([]meilisearch.Hit, 0, len(cs))
+
+	for _, c := range cs {
+		b, _ := json.Marshal(c)
+
+		var h meilisearch.Hit
+		_ = json.Unmarshal(b, &h)
+
+		hits = append(hits, h)
 	}
-	return s
+
+	return hits
 }
 
-func meiliStreamSliceToInterfaceSlice(cs []tools.MeiliStream) []interface{} {
-	s := make([]interface{}, len(cs))
-	for i, c := range cs {
-		s[i] = c
+func meiliStreamSliceToHitSlice(cs []tools.MeiliStream) []meilisearch.Hit {
+	hits := make([]meilisearch.Hit, 0, len(cs))
+
+	for _, c := range cs {
+		b, _ := json.Marshal(c)
+
+		var h meilisearch.Hit
+		_ = json.Unmarshal(b, &h)
+
+		hits = append(hits, h)
 	}
-	return s
+
+	return hits
 }
 
-func meiliSubtitleSliceToInterfaceSlice(cs []tools.MeiliSubtitles) []interface{} {
-	s := make([]interface{}, len(cs))
-	for i, c := range cs {
-		s[i] = c
+func meiliSubtitleSliceToHitSlice(cs []tools.MeiliSubtitles) []meilisearch.Hit {
+	hits := make([]meilisearch.Hit, 0, len(cs))
+
+	for _, c := range cs {
+		b, _ := json.Marshal(c)
+
+		var h meilisearch.Hit
+		_ = json.Unmarshal(b, &h)
+
+		hits = append(hits, h)
 	}
-	return s
+
+	return hits
 }

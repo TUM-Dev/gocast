@@ -15,8 +15,6 @@ Bei weiteren Fragen sind wir jederzeit unter live@rbg.tum.de (am besten als Antw
 Mit freundlichen Grüßen,
 IT Operations, Multimedia
 
-=======================
-
 Dear {{.Name}},
 
 This message was sent to you because you are listed as responsible for the course "{{.Course.Name}}" in TUMOnline which will take place in a room equipped with our livestreaming hardware. If you are not responsible for this course feel free to ignore this message.

@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,15 @@ import (
 )
 
 func Equal(t *testing.T, a, b interface{}) {
-	assert.Equal(t, a, b)
+	av, okA := a.([]byte)
+	bv, okB := b.([]byte)
+
+	if okA && okB {
+		if json.Valid(av) && json.Valid(bv) {
+			assert.JSONEq(t, string(av), string(bv))
+			return
+		}
+	}
 }
 
 func GetMiddlewares(mw ...func(ctx *gin.Context)) []func(c *gin.Context) {

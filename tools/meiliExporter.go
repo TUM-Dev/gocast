@@ -67,11 +67,11 @@ func (m *MeiliExporter) Export() {
 		return
 	}
 	index := m.c.Index("STREAMS")
-	_, err := index.DeleteAllDocuments()
+	_, err := index.DeleteAllDocuments(nil)
 	if err != nil {
 		logger.Warn("could not delete all old streams", "err", err)
 	}
-	_, err = m.c.Index("SUBTITLES").DeleteAllDocuments()
+	_, err = m.c.Index("SUBTITLES").DeleteAllDocuments(nil)
 	if err != nil {
 		logger.Warn("could not delete all old subtitles", "err", err)
 	}
@@ -114,21 +114,21 @@ func (m *MeiliExporter) Export() {
 				}
 
 				if len(meiliSubtitles) > 0 {
-					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, "ID")
+					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, nil)
 					if err != nil {
 						logger.Error("issue adding subtitles to meili", "err", err)
 					}
 				}
 			}
 		}
-		_, err := index.AddDocuments(&meilistreams, "ID")
+		_, err := index.AddDocuments(&meilistreams, nil)
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
 	})
 
 	coursesIndex := m.c.Index("COURSES")
-	_, err = coursesIndex.DeleteAllDocuments()
+	_, err = coursesIndex.DeleteAllDocuments(nil)
 	if err != nil {
 		logger.Warn("could not delete all old courses", "err", err)
 	}
@@ -145,7 +145,7 @@ func (m *MeiliExporter) Export() {
 				Visibility:   course.Visibility,
 			}
 		}
-		_, err := coursesIndex.AddDocumentsInBatches(meilicourses, 500, "ID")
+		_, err := coursesIndex.AddDocumentsInBatches(&meilicourses, 500, nil)
 		if err != nil {
 			logger.Error("issue adding courses to meili", "err", err)
 		}
