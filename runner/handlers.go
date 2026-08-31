@@ -26,12 +26,18 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 	a := []actions.Action{
 		actions.Stream,
 		actions.StreamEnd,
+	}
+	vod := []actions.Action{
 		actions.MkVOD,
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
+	// runs instead of vod if the stream is ended with discardVod
+	discard := []actions.Action{
+		actions.DiscardRecording,
+	}
 
-	jID := r.RunAction(a, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
+	jID := r.RunAction(a, vod, discard, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
 	r.log.Info("job added", "ID", jID)
 
 	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
@@ -39,14 +45,14 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 
 func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
 	r.jobsMu.Lock()
-	cancel, ok := r.jobs[req.GetJobId()]
+	j, ok := r.jobs[req.GetJobId()]
 	if ok {
-		r.discard[req.GetJobId()] = req.GetDiscardVod()
+		j.discard = req.GetDiscardVod()
 	}
 	r.jobsMu.Unlock()
 	if ok {
-		cancel()
-		return nil, nil
+		j.endStream()
+		return &protobuf.StreamEndResponse{}, nil
 	}
-	return nil, status.Errorf(codes.NotFound, "stream not found")
+	return nil, status.Errorf(codes.NotFound, "job %s not found", req.GetJobId())
 }

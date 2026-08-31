@@ -46,8 +46,7 @@ type Runner struct {
 	draining bool
 	JobCount chan int
 	jobsMu   sync.Mutex
-	jobs     map[string]context.CancelFunc
-	discard  map[string]bool
+	jobs     map[string]*job
 
 	hlsServer *HLSServer
 
@@ -76,8 +75,7 @@ func NewRunner(v string) *Runner {
 	return &Runner{
 		log:           log,
 		JobCount:      make(chan int),
-		jobs:          make(map[string]context.CancelFunc),
-		discard:       make(map[string]bool),
+		jobs:          make(map[string]*job),
 		draining:      false,
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
 		stats:         vmstats,
@@ -178,52 +176,74 @@ func (r *Runner) InitApiGrpc() {
 	}
 }
 
-func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog.Logger) string {
+// job is a running set of actions. endStream stops the live capture, cancel stops the whole job
+// and is only used on shutdown.
+type job struct {
+	endStream context.CancelFunc
+	cancel    context.CancelFunc
+	discard   bool
+}
+
+// RunAction runs a in the background and returns the id of the created job.
+// The actions in a run even after the stream was ended, afterwards either vod or discard runs.
+func (r *Runner) RunAction(a, vod, discard []actions.Action, data map[string]any, logger *slog.Logger) string {
 	// create new context to avoid cancellation on grpc request termination
-	c, cancel := context.WithCancel(context.Background())
-	job := uuid.New().String()
+	jobCtx, cancel := context.WithCancel(context.Background())
+	// ending a stream early only stops the capture, the post processing still has to run
+	streamCtx, endStream := context.WithCancel(jobCtx)
+	id := uuid.New().String()
 	r.JobCount <- 1
 	r.jobsMu.Lock()
-	r.jobs[job] = cancel
+	r.jobs[id] = &job{endStream: endStream, cancel: cancel}
 	r.jobsMu.Unlock()
 	go func() {
 		defer func() {
 			cancel()
 			r.jobsMu.Lock()
-			delete(r.jobs, job)
-			delete(r.discard, job)
+			delete(r.jobs, id)
 			r.jobsMu.Unlock()
 			r.JobCount <- -1
 		}()
-		for _, action := range a {
+
+		run := func(ctx context.Context, action actions.Action) {
 			for {
-				log := logger.With("action", getFunctionName(action)).With("job", job)
+				log := logger.With("action", getFunctionName(action)).With("job", id)
 				log.Info("running action")
 				s := time.Now()
-				err := action(c, log, r.notifications, data, r.Metrics)
+				err := action(ctx, log, r.notifications, data, r.Metrics)
 				log.Info("action completed", "duration", time.Since(s).String())
 				if err != nil {
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
-						break // escape retry loop on unrecoverable error
+						return // escape retry loop on unrecoverable error
 					}
 				} else {
-					break // escape retry loop on no error
+					return // escape retry loop on no error
 				}
 			}
-			// VoD creation (MkVOD, CheckVoD, MkThumb) is intentionally skipped once the
-			// recording is discarded, right after StreamEnd notifies gocast the stream has ended.
-			r.jobsMu.Lock()
-			shouldDiscard := r.discard[job]
-			r.jobsMu.Unlock()
-			if shouldDiscard && reflect.ValueOf(action).Pointer() == reflect.ValueOf(actions.StreamEnd).Pointer() {
-				logger.With("job", job).Info("discarding recording, skipping VoD creation")
-				break
-			}
+		}
+
+		for _, action := range a {
+			run(streamCtx, action)
+		}
+		next := vod
+		if r.discarded(id) {
+			logger.With("job", id).Info("discarding recording, skipping VoD creation")
+			next = discard
+		}
+		for _, action := range next {
+			run(jobCtx, action)
 		}
 	}()
-	return job
+	return id
+}
+
+func (r *Runner) discarded(id string) bool {
+	r.jobsMu.Lock()
+	defer r.jobsMu.Unlock()
+	j, ok := r.jobs[id]
+	return ok && j.discard
 }
 
 func (r *Runner) handleNotifications(ctx context.Context) {
@@ -297,8 +317,8 @@ func getFunctionName(i interface{}) string {
 // it cancels all running actions
 func (r *Runner) Cleanup() {
 	r.jobsMu.Lock()
-	for _, cancelFunc := range r.jobs {
-		cancelFunc()
+	for _, j := range r.jobs {
+		j.cancel()
 	}
 	r.jobsMu.Unlock()
 	// sleep 1 second longer than our commands default waitDelay
