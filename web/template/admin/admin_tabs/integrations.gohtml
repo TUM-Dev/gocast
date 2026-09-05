@@ -1,0 +1,77 @@
+{{define "integrations"}}
+<div x-data="new admin.IntegrationAdmin({{toJson .}})">
+    <h2 class="text-2xl text-1 my-4">Integrations</h2>
+    <p class="text-3 mb-4">Register external applications and manage their API keys.</p>
+
+    <p x-cloak x-show="error" x-text="error" role="alert" class="text-red-600 dark:text-red-400 mb-4"></p>
+    <p x-cloak x-show="busy" role="status" class="text-3 mb-4">
+        <i class="fas fa-spinner fa-spin mr-1"></i>Working…
+    </p>
+
+    <section x-cloak x-show="generatedKey" class="form-container" aria-labelledby="generated-key-title">
+        <h3 id="generated-key-title" class="form-container-title">
+            API key for <span class="overflow-wrap-anywhere" x-text="rows.find(row => row.id === generatedId)?.name"></span>
+        </h3>
+        <div class="form-container-body">
+            <p class="text-3 mb-3">Copy this key now. It will not be shown again.</p>
+            <label for="generated-integration-key" class="text-sm text-5">API key</label>
+            <div class="flex gap-2">
+                <input id="generated-integration-key" class="tl-input font-mono" readonly :value="generatedKey">
+                <button type="button" class="btn primary" :disabled="busy" @click="copy()">Copy</button>
+            </div>
+            <p x-cloak x-show="copied" x-text="copied" role="status" class="text-sm text-5 mt-2"></p>
+        </div>
+    </section>
+
+    <form class="form-container" @submit.prevent="create()">
+        <h3 class="form-container-title">Register integration</h3>
+        <div class="form-container-body grid md:grid-cols-2 gap-3">
+            <label>
+                <span class="text-sm text-5">Name</span>
+                <input class="tl-input" x-model="name" maxlength="100" required autocomplete="off">
+            </label>
+            <label>
+                <span class="text-sm text-5">Return URL</span>
+                <input class="tl-input" x-model="returnUrl" type="url" maxlength="2048" required
+                       placeholder="https://example.org/integration/callback" autocomplete="off">
+            </label>
+            <button type="submit" class="btn primary md:col-span-2" :disabled="busy">Register integration</button>
+        </div>
+    </form>
+
+    <section class="form-container" aria-labelledby="registered-integrations-title">
+        <h3 id="registered-integrations-title" class="form-container-title">Registered integrations</h3>
+        <div class="form-container-body overflow-x-auto">
+            <table x-show="rows.length" class="table-auto w-full text-3">
+                <thead>
+                <tr class="text-2 uppercase text-left">
+                    <th class="p-2">Name</th>
+                    <th class="p-2">Return URL</th>
+                    <th class="p-2">Key</th>
+                    <th class="p-2">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <template x-for="row in rows" :key="row.id">
+                    <tr>
+                        <td class="p-2" x-text="row.name"></td>
+                        <td class="p-2 break-all" x-text="row.returnUrl"></td>
+                        <td class="p-2" x-text="row.hasKey ? 'Active' : 'Revoked'"></td>
+                        <td class="p-2 flex gap-2">
+                            <button type="button" class="btn primary" :disabled="busy" @click="rotate(row)">
+                                Regenerate key
+                            </button>
+                            <button type="button" class="btn bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600"
+                                    :disabled="busy || !row.hasKey" @click="revoke(row)">
+                                Revoke key
+                            </button>
+                        </td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+            <p x-show="!rows.length" class="text-3">No integrations are registered.</p>
+        </div>
+    </section>
+</div>
+{{end}}
