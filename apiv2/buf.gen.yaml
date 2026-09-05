@@ -15,5 +15,8 @@ plugins:
       - allow_repeated_fields_in_body=true
   - name: openapiv2
     out: docs
+    strategy: all
     opt:
       - allow_repeated_fields_in_body=true
+      - allow_merge=true
+      - merge_file_name=server/apiv2

@@ -48,26 +48,29 @@ func TestEveryMethodHasAPolicy(t *testing.T) {
 // The tests above are exhaustive only over the services in `services`, so one added
 // to the proto but not there would go unchecked. Compare against the proto itself.
 func TestEveryServiceInTheProtoIsPoliced(t *testing.T) {
-	fd, err := protoregistry.GlobalFiles.FindFileByPath("server/apiv2.proto")
-	if err != nil {
-		t.Fatalf("could not find the proto file descriptor: %v", err)
-	}
-
 	known := map[string]bool{}
 	for _, svc := range services {
 		known[svc.desc.ServiceName] = true
 	}
 
-	inProto := fd.Services()
-	for i := 0; i < inProto.Len(); i++ {
-		name := string(inProto.Get(i).FullName())
-		if !known[name] {
-			t.Errorf("service %s is defined in the proto but missing from `services` in policy.go", name)
+	count := 0
+	for _, path := range apiProtoFiles(t) {
+		fd, err := protoregistry.GlobalFiles.FindFileByPath("server/" + path)
+		if err != nil {
+			t.Fatalf("could not find the proto file descriptor: %v", err)
+		}
+		inProto := fd.Services()
+		count += inProto.Len()
+		for i := 0; i < inProto.Len(); i++ {
+			name := string(inProto.Get(i).FullName())
+			if !known[name] {
+				t.Errorf("service %s is defined in the proto but missing from `services` in policy.go", name)
+			}
 		}
 	}
 
-	if inProto.Len() != len(services) {
-		t.Errorf("proto defines %d services, policy.go lists %d", inProto.Len(), len(services))
+	if count != len(services) {
+		t.Errorf("proto defines %d services, policy.go lists %d", count, len(services))
 	}
 }
 

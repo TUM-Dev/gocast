@@ -18,7 +18,11 @@ import (
 // Reaching this function at all means both descriptor sets registered; the lookups
 // below only make the failure legible when they did not.
 func TestProtoNamespaceIsSharedWithTheRunner(t *testing.T) {
-	// Every service this API serves has to resolve to this file, not the runner's.
+	apiFiles := map[string]bool{}
+	for _, path := range apiProtoFiles(t) {
+		apiFiles["server/"+path] = true
+	}
+	// Every service this API serves has to resolve to one of our files, not the runner's.
 	for _, svc := range services {
 		desc, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName(svc.desc.ServiceName))
 		if err != nil {
@@ -26,9 +30,9 @@ func TestProtoNamespaceIsSharedWithTheRunner(t *testing.T) {
 			continue
 		}
 
-		if path := desc.ParentFile().Path(); path != "server/apiv2.proto" {
+		if path := desc.ParentFile().Path(); !apiFiles[path] {
 			t.Errorf(
-				"%s resolves to %s, not server/apiv2.proto: the name is claimed by another proto "+
+				"%s resolves to %s, not an API proto: the name is claimed by another proto "+
 					"sharing the `protobuf` package",
 				svc.desc.ServiceName, path,
 			)
@@ -43,10 +47,19 @@ func TestProtoNamespaceIsSharedWithTheRunner(t *testing.T) {
 			continue
 		}
 
-		if path := desc.ParentFile().Path(); path == "server/apiv2.proto" {
-			t.Errorf("%s now resolves to apiv2.proto, taking over a name the runner owns", name)
+		if path := desc.ParentFile().Path(); apiFiles[path] {
+			t.Errorf("%s now resolves to %s, taking over a name the runner owns", name, path)
 		}
 	}
+}
+
+func apiProtoFiles(t *testing.T) []string {
+	t.Helper()
+	paths, err := filepath.Glob("*.proto")
+	if err != nil || len(paths) == 0 {
+		t.Fatalf("cannot find API protos: %v", err)
+	}
+	return paths
 }
 
 // protoDeclarations returns the top-level message, enum and service names a .proto
@@ -87,7 +100,12 @@ func protoDeclarations(t *testing.T, path string) map[string]string {
 // messages and enums, which is where it actually happened: adding a plain
 // `Notification` for the admin notifications page took down the process at boot.
 func TestApiv2DeclaresNoNameTheRunnerOwns(t *testing.T) {
-	apiv2Declarations := protoDeclarations(t, "apiv2.proto")
+	apiv2Declarations := map[string]string{}
+	for _, path := range apiProtoFiles(t) {
+		for name, kind := range protoDeclarations(t, path) {
+			apiv2Declarations[name] = kind
+		}
+	}
 
 	// Every .proto the runner has that declares `package protobuf`.
 	for _, runnerProto := range []string{
@@ -98,7 +116,7 @@ func TestApiv2DeclaresNoNameTheRunnerOwns(t *testing.T) {
 		for name, kind := range protoDeclarations(t, runnerProto) {
 			if ours, taken := apiv2Declarations[name]; taken {
 				t.Errorf(
-					"apiv2.proto declares %s %q, which %s already declares as a %s. Both files are "+
+					"the API declares %s %q, which %s already declares as a %s. Both files are "+
 						"`package protobuf` and the server links both, so this panics at startup. "+
 						"Give the apiv2 one a prefix naming its page.",
 					ours, name, filepath.Base(runnerProto), kind,

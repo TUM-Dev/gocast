@@ -38,6 +38,14 @@ var services = []service{
 		},
 	},
 	{
+		desc:     &protobuf.IntegrationService_ServiceDesc,
+		register: func(s grpc.ServiceRegistrar, a *API) { protobuf.RegisterIntegrationServiceServer(s, a) },
+		gateway:  protobuf.RegisterIntegrationServiceHandlerFromEndpoint,
+		policies: map[string]accessPolicy{
+			"redeemIntegrationAuthorization": integrationOnly,
+		},
+	},
+	{
 		desc:     &protobuf.UserService_ServiceDesc,
 		register: func(s grpc.ServiceRegistrar, a *API) { protobuf.RegisterUserServiceServer(s, a) },
 		gateway:  protobuf.RegisterUserServiceHandlerFromEndpoint,
