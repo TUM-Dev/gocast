@@ -117,6 +117,21 @@ func (mr *MockIntegrationGrantDaoMockRecorder) GetIntegrationByID(arg0, arg1 any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegrationByID", reflect.TypeOf((*MockIntegrationGrantDao)(nil).GetIntegrationByID), arg0, arg1)
 }
 
+// GetIntegrationGrantCourse mocks base method.
+func (m *MockIntegrationGrantDao) GetIntegrationGrantCourse(arg0 context.Context, arg1, arg2 uint) (model.Course, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIntegrationGrantCourse", arg0, arg1, arg2)
+	ret0, _ := ret[0].(model.Course)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIntegrationGrantCourse indicates an expected call of GetIntegrationGrantCourse.
+func (mr *MockIntegrationGrantDaoMockRecorder) GetIntegrationGrantCourse(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegrationGrantCourse", reflect.TypeOf((*MockIntegrationGrantDao)(nil).GetIntegrationGrantCourse), arg0, arg1, arg2)
+}
+
 // RedeemIntegrationAuthorizationCode mocks base method.
 func (m *MockIntegrationGrantDao) RedeemIntegrationAuthorizationCode(arg0 context.Context, arg1 uint, arg2, arg3 []byte, arg4 time.Time) (uint, uint, error) {
 	m.ctrl.T.Helper()

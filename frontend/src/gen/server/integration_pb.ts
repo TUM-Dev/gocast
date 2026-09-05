@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file server/integration.proto.
  */
 export const file_server_integration: GenFile = /*@__PURE__*/
-  fileDesc("ChhzZXJ2ZXIvaW50ZWdyYXRpb24ucHJvdG8SCHByb3RvYnVmIkQKJVJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlcXVlc3QSDAoEY29kZRgBIAEoCRINCgVzdGF0ZRgCIAEoCSJNCiZSZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXNwb25zZRIQCghncmFudF9pZBgBIAEoDRIRCgljb3Vyc2VfaWQYAiABKA0yxgIKEkludGVncmF0aW9uU2VydmljZRKvAgoecmVkZWVtSW50ZWdyYXRpb25BdXRob3JpemF0aW9uEi8ucHJvdG9idWYuUmVkZWVtSW50ZWdyYXRpb25BdXRob3JpemF0aW9uUmVxdWVzdBowLnByb3RvYnVmLlJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlc3BvbnNlIqkBkkF5CgxJbnRlZ3JhdGlvbnMSJFJlZGVlbSBhbiBpbnRlZ3JhdGlvbiBhdXRob3JpemF0aW9uLhpDQ29uc3VtZXMgYSBicm93c2VyIGFwcHJvdmFsIGNvZGUgZm9yIHRoZSBhdXRoZW50aWNhdGVkIGludGVncmF0aW9uLoLT5JMCJzoBKiIiL2ludGVncmF0aW9uL2F1dGhvcml6YXRpb25zL3JlZGVlbUISWhAuL2FwaXYyL3Byb3RvYnVmYgZwcm90bzM", [file_google_api_annotations, file_protoc_gen_openapiv2_options_annotations]);
+  fileDesc("ChhzZXJ2ZXIvaW50ZWdyYXRpb24ucHJvdG8SCHByb3RvYnVmIkQKJVJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlcXVlc3QSDAoEY29kZRgBIAEoCRINCgVzdGF0ZRgCIAEoCSJNCiZSZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXNwb25zZRIQCghncmFudF9pZBgBIAEoDRIRCgljb3Vyc2VfaWQYAiABKA0iLgoaR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iYAobR2V0SW50ZWdyYXRpb25HcmFudFJlc3BvbnNlEhEKCWNvdXJzZV9pZBgBIAEoDRIMCgRuYW1lGAIgASgJEgwKBHNsdWcYAyABKAkSEgoKdmlzaWJpbGl0eRgEIAEoCTLNBAoSSW50ZWdyYXRpb25TZXJ2aWNlEq8CCh5yZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb24SLy5wcm90b2J1Zi5SZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXF1ZXN0GjAucHJvdG9idWYuUmVkZWVtSW50ZWdyYXRpb25BdXRob3JpemF0aW9uUmVzcG9uc2UiqQGSQXkKDEludGVncmF0aW9ucxIkUmVkZWVtIGFuIGludGVncmF0aW9uIGF1dGhvcml6YXRpb24uGkNDb25zdW1lcyBhIGJyb3dzZXIgYXBwcm92YWwgY29kZSBmb3IgdGhlIGF1dGhlbnRpY2F0ZWQgaW50ZWdyYXRpb24ugtPkkwInOgEqIiIvaW50ZWdyYXRpb24vYXV0aG9yaXphdGlvbnMvcmVkZWVtEoQCChNnZXRJbnRlZ3JhdGlvbkdyYW50EiQucHJvdG9idWYuR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QaJS5wcm90b2J1Zi5HZXRJbnRlZ3JhdGlvbkdyYW50UmVzcG9uc2UinwGSQXYKDEludGVncmF0aW9ucxIZR2V0IGFuIGF1dGhvcml6ZWQgY291cnNlLhpLUmV0dXJucyBmaXhlZCBtZXRhZGF0YSBmb3IgdGhlIGNvdXJzZSBhdXRob3JpemVkIGJ5IHRoaXMgaW50ZWdyYXRpb24gZ3JhbnQugtPkkwIgEh4vaW50ZWdyYXRpb24vZ3JhbnRzL3tncmFudF9pZH1CEloQLi9hcGl2Mi9wcm90b2J1ZmIGcHJvdG8z", [file_google_api_annotations, file_protoc_gen_openapiv2_options_annotations]);
 
 /**
  * @generated from message protobuf.RedeemIntegrationAuthorizationRequest
@@ -59,6 +59,55 @@ export const RedeemIntegrationAuthorizationResponseSchema: GenMessage<RedeemInte
   messageDesc(file_server_integration, 1);
 
 /**
+ * @generated from message protobuf.GetIntegrationGrantRequest
+ */
+export type GetIntegrationGrantRequest = Message<"protobuf.GetIntegrationGrantRequest"> & {
+  /**
+   * @generated from field: uint32 grant_id = 1;
+   */
+  grantId: number;
+};
+
+/**
+ * Describes the message protobuf.GetIntegrationGrantRequest.
+ * Use `create(GetIntegrationGrantRequestSchema)` to create a new message.
+ */
+export const GetIntegrationGrantRequestSchema: GenMessage<GetIntegrationGrantRequest> = /*@__PURE__*/
+  messageDesc(file_server_integration, 2);
+
+/**
+ * @generated from message protobuf.GetIntegrationGrantResponse
+ */
+export type GetIntegrationGrantResponse = Message<"protobuf.GetIntegrationGrantResponse"> & {
+  /**
+   * @generated from field: uint32 course_id = 1;
+   */
+  courseId: number;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string slug = 3;
+   */
+  slug: string;
+
+  /**
+   * @generated from field: string visibility = 4;
+   */
+  visibility: string;
+};
+
+/**
+ * Describes the message protobuf.GetIntegrationGrantResponse.
+ * Use `create(GetIntegrationGrantResponseSchema)` to create a new message.
+ */
+export const GetIntegrationGrantResponseSchema: GenMessage<GetIntegrationGrantResponse> = /*@__PURE__*/
+  messageDesc(file_server_integration, 3);
+
+/**
  * Application endpoints use API keys rather than a user's session.
  *
  * @generated from service protobuf.IntegrationService
@@ -71,6 +120,14 @@ export const IntegrationService: GenService<{
     methodKind: "unary";
     input: typeof RedeemIntegrationAuthorizationRequestSchema;
     output: typeof RedeemIntegrationAuthorizationResponseSchema;
+  },
+  /**
+   * @generated from rpc protobuf.IntegrationService.getIntegrationGrant
+   */
+  getIntegrationGrant: {
+    methodKind: "unary";
+    input: typeof GetIntegrationGrantRequestSchema;
+    output: typeof GetIntegrationGrantResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_server_integration, 0);

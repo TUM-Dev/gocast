@@ -43,6 +43,7 @@ var services = []service{
 		gateway:  protobuf.RegisterIntegrationServiceHandlerFromEndpoint,
 		policies: map[string]accessPolicy{
 			"redeemIntegrationAuthorization": integrationOnly,
+			"getIntegrationGrant":            integrationOnly,
 		},
 	},
 	{

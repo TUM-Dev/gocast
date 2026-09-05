@@ -51,3 +51,24 @@ func (a *API) RedeemIntegrationAuthorization(ctx context.Context, req *protobuf.
 	}
 	return &protobuf.RedeemIntegrationAuthorizationResponse{GrantId: uint32(grantID), CourseId: uint32(courseID)}, nil
 }
+
+func (a *API) GetIntegrationGrant(ctx context.Context, req *protobuf.GetIntegrationGrantRequest) (*protobuf.GetIntegrationGrantResponse, error) {
+	if req.GetGrantId() == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("grant_id must be positive"))
+	}
+	integration, err := a.getCurrentIntegration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	course, err := a.dao.IntegrationGrantDao.GetIntegrationGrantCourse(ctx, uint(req.GetGrantId()), integration.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("grant not found"))
+	}
+	if err != nil {
+		a.log.Error("integration grant lookup failed", "err", err)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not read integration grant"))
+	}
+	return &protobuf.GetIntegrationGrantResponse{
+		CourseId: uint32(course.ID), Name: course.Name, Slug: course.Slug, Visibility: course.Visibility,
+	}, nil
+}

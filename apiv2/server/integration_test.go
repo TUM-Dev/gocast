@@ -178,3 +178,53 @@ func TestRedeemIntegrationAuthorizationReportsLookupFailures(t *testing.T) {
 		})
 	}
 }
+
+func TestGetIntegrationGrantMapsLiveCourseAndScopesLookup(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	integrationGrantDao := mock_dao.NewMockIntegrationGrantDao(ctrl)
+	integrationGrantDao.EXPECT().GetIntegrationGrantCourse(gomock.Any(), uint(123), uint(7)).Return(model.Course{
+		Model: gorm.Model{ID: 456}, Name: "Algorithms", Slug: "algo", Visibility: "hidden",
+	}, nil)
+	api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: integrationGrantDao}, log: slog.Default()}
+	ctx := context.WithValue(context.Background(), callerKey{}, &caller{integration: &model.Integration{ID: 7}})
+
+	response, err := api.GetIntegrationGrant(ctx, &protobuf.GetIntegrationGrantRequest{GrantId: 123})
+
+	require.NoError(t, err)
+	assert.Equal(t, &protobuf.GetIntegrationGrantResponse{
+		CourseId: 456, Name: "Algorithms", Slug: "algo", Visibility: "hidden",
+	}, response)
+}
+
+func TestGetIntegrationGrantRejectsZeroWithoutQuery(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: mock_dao.NewMockIntegrationGrantDao(ctrl)}, log: slog.Default()}
+
+	_, err := api.GetIntegrationGrant(context.Background(), &protobuf.GetIntegrationGrantRequest{})
+
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestGetIntegrationGrantReportsIneligibleAndDatabaseFailures(t *testing.T) {
+	for name, test := range map[string]struct {
+		err  error
+		code codes.Code
+		msg  string
+	}{
+		"missing revoked or other application": {gorm.ErrRecordNotFound, codes.NotFound, "grant not found"},
+		"database failure":                     {errors.New("database unavailable"), codes.Unknown, "could not read integration grant"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			integrationGrantDao := mock_dao.NewMockIntegrationGrantDao(ctrl)
+			integrationGrantDao.EXPECT().GetIntegrationGrantCourse(gomock.Any(), uint(123), uint(7)).Return(model.Course{}, test.err)
+			api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: integrationGrantDao}, log: slog.Default()}
+			ctx := context.WithValue(context.Background(), callerKey{}, &caller{integration: &model.Integration{ID: 7}})
+
+			_, err := api.GetIntegrationGrant(ctx, &protobuf.GetIntegrationGrantRequest{GrantId: 123})
+
+			assert.Equal(t, test.code, status.Code(err))
+			assert.Equal(t, test.msg, status.Convert(err).Message())
+		})
+	}
+}
