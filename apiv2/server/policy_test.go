@@ -152,6 +152,12 @@ func TestAuthorize(t *testing.T) {
 			wantCode:   codes.Unauthenticated,
 		},
 		{
+			name:       "an authenticated method falls back without the interceptor",
+			fullMethod: method(&protobuf.UserService_ServiceDesc, "getUser"),
+			ctx:        context.Background(),
+			wantCode:   codes.Unauthenticated,
+		},
+		{
 			name:       "an authenticated method runs for any signed-in user",
 			fullMethod: method(&protobuf.UserService_ServiceDesc, "getUser"),
 			ctx:        withUser(student, nil),

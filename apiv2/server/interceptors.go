@@ -18,8 +18,9 @@ type callerKey struct{}
 // caller is the result of resolving a request's credentials. The error is kept so
 // handlers can tell "not signed in" from "token rejected".
 type caller struct {
-	user *model.User
-	err  error
+	user        *model.User
+	integration *model.Integration
+	err         error
 }
 
 // interceptors returns the chain every unary RPC passes through, outermost first.
@@ -73,6 +74,11 @@ func (a *API) resolveCaller(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (any, error) {
-	user, err := a.resolveCurrent(ctx)
-	return handler(context.WithValue(ctx, callerKey{}, &caller{user: user, err: err}), req)
+	resolved := &caller{}
+	if policy, ok := methodPolicies[info.FullMethod]; ok && policy.integration {
+		resolved.integration, resolved.err = a.resolveIntegration(ctx)
+	} else {
+		resolved.user, resolved.err = a.resolveCurrent(ctx)
+	}
+	return handler(context.WithValue(ctx, callerKey{}, resolved), req)
 }
