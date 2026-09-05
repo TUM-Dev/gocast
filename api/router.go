@@ -51,6 +51,7 @@ func ConfigGinRouter(
 	configRunnerRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configInfoPageRouter(router, daoWrapper)
+	configIntegrationRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
 	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)

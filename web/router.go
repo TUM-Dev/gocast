@@ -284,6 +284,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
 	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
+	serverAdminGroup.GET("/admin/integrations", routes.AdminPage)
 
 	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
 	// same permission.
