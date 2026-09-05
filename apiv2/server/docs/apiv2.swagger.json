@@ -3752,6 +3752,39 @@
         ]
       }
     },
+    "/integration/grants/{grantId}": {
+      "get": {
+        "summary": "Get an authorized course.",
+        "description": "Returns fixed metadata for the course authorized by this integration grant.",
+        "operationId": "IntegrationService_getIntegrationGrant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetIntegrationGrantResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "grantId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Integrations"
+        ]
+      }
+    },
     "/login-options": {
       "get": {
         "summary": "Get available login methods.",
@@ -7410,6 +7443,24 @@
         "content": {
           "type": "string",
           "description": "Rendered from Markdown and sanitised server-side; the client must not do it again."
+        }
+      }
+    },
+    "protobufGetIntegrationGrantResponse": {
+      "type": "object",
+      "properties": {
+        "courseId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string"
         }
       }
     },

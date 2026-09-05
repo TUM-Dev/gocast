@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	IntegrationService_RedeemIntegrationAuthorization_FullMethodName = "/protobuf.IntegrationService/redeemIntegrationAuthorization"
+	IntegrationService_GetIntegrationGrant_FullMethodName            = "/protobuf.IntegrationService/getIntegrationGrant"
 )
 
 // IntegrationServiceClient is the client API for IntegrationService service.
@@ -29,6 +30,7 @@ const (
 // Application endpoints use API keys rather than a user's session.
 type IntegrationServiceClient interface {
 	RedeemIntegrationAuthorization(ctx context.Context, in *RedeemIntegrationAuthorizationRequest, opts ...grpc.CallOption) (*RedeemIntegrationAuthorizationResponse, error)
+	GetIntegrationGrant(ctx context.Context, in *GetIntegrationGrantRequest, opts ...grpc.CallOption) (*GetIntegrationGrantResponse, error)
 }
 
 type integrationServiceClient struct {
@@ -49,6 +51,16 @@ func (c *integrationServiceClient) RedeemIntegrationAuthorization(ctx context.Co
 	return out, nil
 }
 
+func (c *integrationServiceClient) GetIntegrationGrant(ctx context.Context, in *GetIntegrationGrantRequest, opts ...grpc.CallOption) (*GetIntegrationGrantResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIntegrationGrantResponse)
+	err := c.cc.Invoke(ctx, IntegrationService_GetIntegrationGrant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IntegrationServiceServer is the server API for IntegrationService service.
 // All implementations must embed UnimplementedIntegrationServiceServer
 // for forward compatibility.
@@ -56,6 +68,7 @@ func (c *integrationServiceClient) RedeemIntegrationAuthorization(ctx context.Co
 // Application endpoints use API keys rather than a user's session.
 type IntegrationServiceServer interface {
 	RedeemIntegrationAuthorization(context.Context, *RedeemIntegrationAuthorizationRequest) (*RedeemIntegrationAuthorizationResponse, error)
+	GetIntegrationGrant(context.Context, *GetIntegrationGrantRequest) (*GetIntegrationGrantResponse, error)
 	mustEmbedUnimplementedIntegrationServiceServer()
 }
 
@@ -68,6 +81,9 @@ type UnimplementedIntegrationServiceServer struct{}
 
 func (UnimplementedIntegrationServiceServer) RedeemIntegrationAuthorization(context.Context, *RedeemIntegrationAuthorizationRequest) (*RedeemIntegrationAuthorizationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RedeemIntegrationAuthorization not implemented")
+}
+func (UnimplementedIntegrationServiceServer) GetIntegrationGrant(context.Context, *GetIntegrationGrantRequest) (*GetIntegrationGrantResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIntegrationGrant not implemented")
 }
 func (UnimplementedIntegrationServiceServer) mustEmbedUnimplementedIntegrationServiceServer() {}
 func (UnimplementedIntegrationServiceServer) testEmbeddedByValue()                            {}
@@ -108,6 +124,24 @@ func _IntegrationService_RedeemIntegrationAuthorization_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IntegrationService_GetIntegrationGrant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIntegrationGrantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).GetIntegrationGrant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_GetIntegrationGrant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).GetIntegrationGrant(ctx, req.(*GetIntegrationGrantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IntegrationService_ServiceDesc is the grpc.ServiceDesc for IntegrationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -118,6 +152,10 @@ var IntegrationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "redeemIntegrationAuthorization",
 			Handler:    _IntegrationService_RedeemIntegrationAuthorization_Handler,
+		},
+		{
+			MethodName: "getIntegrationGrant",
+			Handler:    _IntegrationService_GetIntegrationGrant_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -387,7 +387,7 @@ makes one doomed token request rather than one per listing.
 
 ## The generated API client
 
-Message types live in `src/gen`, generated from `apiv2/server/apiv2.proto` by
+Message types live in `src/gen`, generated from the protos in `apiv2/server/` by
 `protoc-gen-es`:
 
 ```sh

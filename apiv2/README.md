@@ -12,7 +12,7 @@ You can generate the code documentation using `godoc` and find it at [http://loc
 
 ## File structure
 
-All proto messages can be found in `apiv2.proto`.
+All proto messages can be found in `server/apiv2.proto` and, for the integration API, `server/integration.proto`.
 The actual endpoints are implemented in `<./endpoint.go>.go`, custom erros in `./errors` and helper functions such as parsers, custom database queries, etc. in `./helpers`.
 
 ## Config

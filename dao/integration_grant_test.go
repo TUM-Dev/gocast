@@ -70,6 +70,11 @@ func TestIntegrationCourseGrants(t *testing.T) {
 	require.Equal(t, uint(2), courseID)
 	_, _, err = d.RedeemIntegrationAuthorizationCode(ctx, 1, codeHash, stateHash, time.Now())
 	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	course, err := d.GetIntegrationGrantCourse(ctx, grantID, 1)
+	require.NoError(t, err)
+	require.Equal(t, uint(2), course.ID)
+	_, err = d.GetIntegrationGrantCourse(ctx, grantID, 2)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	if err := d.RevokeIntegrationGrant(ctx, grantID, 1); !errors.Is(err, gorm.ErrRecordNotFound) {
 		t.Fatalf("revocation with wrong course: %v", err)
 	}
@@ -77,6 +82,8 @@ func TestIntegrationCourseGrants(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, _, err = d.RedeemIntegrationAuthorizationCode(ctx, 1, bytes.Repeat([]byte{2}, 32), stateHash, time.Now())
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	_, err = d.GetIntegrationGrantCourse(ctx, grantID, 1)
 	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	grants, err := d.GetCourseIntegrationGrants(ctx, 2)
 	if err != nil || len(grants) != 0 {
@@ -86,6 +93,9 @@ func TestIntegrationCourseGrants(t *testing.T) {
 	if err != nil || newID == grantID {
 		t.Fatalf("reapproval reused revoked grant: %d, %v", newID, err)
 	}
+	require.NoError(t, db.Delete(&model.Course{}, 2).Error)
+	_, err = d.GetIntegrationGrantCourse(ctx, newID, 1)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 }
 
 func TestRedeemIntegrationAuthorizationCodeIsAtomicAndRequiresLiveGrant(t *testing.T) {

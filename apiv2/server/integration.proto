@@ -18,6 +18,15 @@ service IntegrationService {
       description: "Consumes a browser approval code for the authenticated integration."
     };
   }
+
+  rpc getIntegrationGrant(GetIntegrationGrantRequest) returns (GetIntegrationGrantResponse) {
+    option (google.api.http) = {get: "/integration/grants/{grant_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Get an authorized course."
+      description: "Returns fixed metadata for the course authorized by this integration grant."
+    };
+  }
 }
 
 message RedeemIntegrationAuthorizationRequest {
@@ -28,4 +37,15 @@ message RedeemIntegrationAuthorizationRequest {
 message RedeemIntegrationAuthorizationResponse {
   uint32 grant_id = 1;
   uint32 course_id = 2;
+}
+
+message GetIntegrationGrantRequest {
+  uint32 grant_id = 1;
+}
+
+message GetIntegrationGrantResponse {
+  uint32 course_id = 1;
+  string name = 2;
+  string slug = 3;
+  string visibility = 4;
 }

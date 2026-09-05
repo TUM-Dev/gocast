@@ -20,6 +20,7 @@ type IntegrationGrantDao interface {
 	GetCourseForAuthorization(context.Context, uint) (model.Course, error)
 	ApproveIntegrationCourse(context.Context, uint, uint, []byte, []byte, time.Time) (uint, error)
 	RedeemIntegrationAuthorizationCode(context.Context, uint, []byte, []byte, time.Time) (uint, uint, error)
+	GetIntegrationGrantCourse(context.Context, uint, uint) (model.Course, error)
 	GetCourseIntegrationGrants(context.Context, uint) ([]model.IntegrationGrant, error)
 	RevokeIntegrationGrant(context.Context, uint, uint) error
 }
@@ -114,6 +115,15 @@ func (d integrationGrantDao) GetCourseIntegrationGrants(ctx context.Context, cou
 	err := d.db.WithContext(ctx).Preload("Integration").
 		Where("course_id = ? AND revoked_at IS NULL", courseID).Order("created_at, id").Find(&grants).Error
 	return grants, err
+}
+
+func (d integrationGrantDao) GetIntegrationGrantCourse(ctx context.Context, grantID, integrationID uint) (model.Course, error) {
+	var course model.Course
+	err := d.db.WithContext(ctx).Model(&model.Course{}).
+		Joins("JOIN integration_grants ON integration_grants.course_id = courses.id").
+		Where("integration_grants.id = ? AND integration_grants.integration_id = ? AND integration_grants.revoked_at IS NULL", grantID, integrationID).
+		First(&course).Error
+	return course, err
 }
 
 func (d integrationGrantDao) RevokeIntegrationGrant(ctx context.Context, grantID, courseID uint) error {
