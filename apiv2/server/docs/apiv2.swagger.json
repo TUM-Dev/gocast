@@ -36,6 +36,10 @@
     },
     {
       "name": "ChatService"
+    },
+    {
+      "name": "IntegrationService",
+      "description": "Application endpoints use API keys rather than a user's session."
     }
   ],
   "host": "tum.live",
@@ -3706,6 +3710,40 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/CourseServicedecideIntegrationAuthorizationBody"
+            }
+          }
+        ],
+        "tags": [
+          "Integrations"
+        ]
+      }
+    },
+    "/integration/authorizations/redeem": {
+      "post": {
+        "summary": "Redeem an integration authorization.",
+        "description": "Consumes a browser approval code for the authenticated integration.",
+        "operationId": "IntegrationService_redeemIntegrationAuthorization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufRedeemIntegrationAuthorizationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufRedeemIntegrationAuthorizationRequest"
             }
           }
         ],
@@ -8286,6 +8324,30 @@
       "properties": {
         "message": {
           "type": "string"
+        }
+      }
+    },
+    "protobufRedeemIntegrationAuthorizationRequest": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufRedeemIntegrationAuthorizationResponse": {
+      "type": "object",
+      "properties": {
+        "grantId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "courseId": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

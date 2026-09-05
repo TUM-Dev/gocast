@@ -33,7 +33,7 @@ test("authorizes an application, cancels, and revokes access in course settings"
   await expect(page).toHaveURL(/\/about\?/);
   expect(new URL(page.url()).searchParams.get("state")).toBe(state);
   expect(new URL(page.url()).searchParams.get("code")).toMatch(
-    /^[A-Za-z0-9_-]{43}$/,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
   );
   await page.goto("/admin/courses/1/settings");
   const applications = page.getByRole("table", {

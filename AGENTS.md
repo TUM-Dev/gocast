@@ -61,13 +61,13 @@ Regenerate deliberately; don't hand-edit the output.
 
 ```bash
 make mocks                 # go generate ./... -> mock_dao/, mock_tools/
-./apiv2/generate.sh        # apiv2.proto -> Go server + docs
-make proto_es              # apiv2.proto -> frontend/src/gen (TypeScript client)
+./apiv2/generate.sh        # server/*.proto -> Go server + docs
+make proto_es              # server/*.proto -> frontend/src/gen (TypeScript client)
 go run cmd/modelGen/modelGen.go <ModelName>   # scaffolds a model + dao
 ```
 
-The proto is one file, `apiv2/server/apiv2.proto`, and both sides generate from it.
-Change it and run both generators, or the Go and TypeScript halves drift.
+The protos live in `apiv2/server/`, and both sides generate from them.
+Change one and run both generators, or the Go and TypeScript halves drift.
 
 New API work belongs in `apiv2/` (Protobuf/Connect), not `api/`.
 

@@ -1,0 +1,31 @@
+syntax = "proto3";
+package protobuf;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "./apiv2/protobuf";
+// Application endpoints use API keys rather than a user's session.
+service IntegrationService {
+  rpc redeemIntegrationAuthorization(RedeemIntegrationAuthorizationRequest) returns (RedeemIntegrationAuthorizationResponse) {
+    option (google.api.http) = {
+      post: "/integration/authorizations/redeem"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Redeem an integration authorization."
+      description: "Consumes a browser approval code for the authenticated integration."
+    };
+  }
+}
+
+message RedeemIntegrationAuthorizationRequest {
+  string code = 1;
+  string state = 2;
+}
+
+message RedeemIntegrationAuthorizationResponse {
+  uint32 grant_id = 1;
+  uint32 course_id = 2;
+}

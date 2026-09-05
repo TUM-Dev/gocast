@@ -11,9 +11,9 @@ spa:
 	pnpm install --frozen-lockfile; \
 	pnpm run build
 
-# Regenerates the TypeScript client in frontend/src/gen from apiv2/server/apiv2.proto.
+# Regenerates the TypeScript client in frontend/src/gen from apiv2/server/*.proto.
 # The output is committed, so this only needs running when the proto changes; use it
-# together with apiv2/generate.sh, which regenerates the Go side from the same file.
+# together with apiv2/generate.sh, which regenerates the Go side from the same protos.
 .PHONY: proto_es
 proto_es:
 	cd frontend; \

@@ -29,7 +29,7 @@ import (
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
-// API is the grpc server for the v2 api. It implements all four services, which are
+// API is the grpc server for the v2 api. It implements the API's services, which are
 // split for grouping rather than to be deployed apart: one process, one gateway mux,
 // one set of interceptors.
 type API struct {
@@ -71,6 +71,7 @@ type API struct {
 	subtitleSearch tools.MeiliSearchInterface
 
 	protobuf.UnimplementedMetaServiceServer
+	protobuf.UnimplementedIntegrationServiceServer
 	protobuf.UnimplementedUserServiceServer
 	protobuf.UnimplementedCourseServiceServer
 	protobuf.UnimplementedStreamServiceServer
