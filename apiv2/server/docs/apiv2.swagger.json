@@ -2293,6 +2293,80 @@
         ]
       }
     },
+    "/courses/{courseId}/integrations": {
+      "get": {
+        "summary": "List applications authorized for a course.",
+        "description": "Lists active grants. Requires administering the course.",
+        "operationId": "CourseService_listCourseIntegrationGrants",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListCourseIntegrationGrantsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/integrations/{grantId}": {
+      "delete": {
+        "summary": "Revoke an application's access to a course.",
+        "description": "Revokes the active grant belonging to this course. Requires administering the course. A missing or revoked grant answers 404.",
+        "operationId": "CourseService_revokeCourseIntegrationGrant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "grantId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
     "/courses/{courseId}/lecture-halls": {
       "get": {
         "summary": "List the course's source settings per lecture hall.",
@@ -5361,6 +5435,18 @@
         }
       }
     },
+    "protobufCourseIntegrationGrant": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "protobufCourseInvitationResult": {
       "type": "object",
       "properties": {
@@ -6481,6 +6567,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufCourseAdminUser"
+          }
+        }
+      }
+    },
+    "protobufListCourseIntegrationGrantsResponse": {
+      "type": "object",
+      "properties": {
+        "grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseIntegrationGrant"
           }
         }
       }

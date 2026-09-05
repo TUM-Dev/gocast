@@ -409,6 +409,8 @@ func configMainRoute(router *gin.Engine) {
 
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
+	loggedIn.GET("/integration/authorize/:id", routes.integrationAuthorizationPage)
+	loggedIn.POST("/integration/authorize/:id", routes.authorizeIntegration)
 	// The auth middleware stays on the route even when the SPA serves it, so an
 	// anonymous visitor is redirected to /login by the server rather than after the
 	// shell has loaded and failed a request.

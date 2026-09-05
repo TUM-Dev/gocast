@@ -121,6 +121,8 @@ func run(ctx context.Context) error {
 		&model.Runner{},
 		&model.StreamRunnerJob{},
 		&model.Integration{},
+		&model.IntegrationGrant{},
+		&model.IntegrationAuthorizationCode{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)

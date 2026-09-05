@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.IndexData.Branding.Title}} | Authorize application access</title>
+    {{template "headImports" .IndexData.VersionTag}}
+</head>
+<body class="tum-live-bg min-h-screen text-1">
+{{template "header" .IndexData.TUMLiveContext}}
+<main class="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6">
+    <section class="form-container" aria-labelledby="approval-title">
+        <h1 id="approval-title" class="form-container-title">
+            <span class="block overflow-wrap-anywhere text-xl">{{.Integration.Name}}</span>
+            <span class="mt-1 block text-base font-medium">wants to connect to a course</span>
+        </h1>
+        <form method="post" action="/integration/authorize/{{.Integration.ID}}" class="min-w-0">
+            <input type="hidden" name="state" value="{{.State}}">
+            <div class="form-container-body min-w-0">
+                <p class="min-w-0 text-sm text-5">Signed in as <span class="overflow-wrap-anywhere font-medium text-3">{{.IndexData.TUMLiveContext.User.GetPreferredName}}</span></p>
+                {{if .Courses}}
+                <div class="min-w-0">
+                    <label for="course_id" class="mb-2 block font-medium">Course</label>
+                    <select id="course_id" name="course_id" class="tl-select min-w-0 max-w-full" required>
+                        {{range .Courses}}
+                            <option value="{{.ID}}">{{.Name}} ({{.TeachingTerm}} {{.Year}})</option>
+                        {{end}}
+                    </select>
+                </div>
+                {{else}}
+                <p class="rounded-lg border border-gray-200 p-4 text-3 dark:border-gray-700">You do not administer any courses that can be connected.</p>
+                {{end}}
+                <div class="min-w-0">
+                    <h2 class="font-medium">This application can</h2>
+                    <ul class="mt-2 grid gap-2 text-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-success mt-1 mr-3" aria-hidden="true"></i>
+                            <span>Identify the selected course</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-success mt-1 mr-3" aria-hidden="true"></i>
+                            <span>Read its name, slug, and visibility</span>
+                        </li>
+                    </ul>
+                    <p class="mt-3 text-sm text-5">It cannot access course settings or private videos.</p>
+                </div>
+            </div>
+            <div class="form-container-footer flex flex-wrap gap-3">
+                {{if .Courses}}
+                    <button type="submit" name="decision" value="approve" class="btn-primary">Authorize access</button>
+                {{end}}
+                <button type="submit" name="decision" value="cancel" class="btn">Cancel</button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

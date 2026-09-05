@@ -117,6 +117,8 @@ var services = []service{
 			// The course page, for its administrators. The handlers also refuse
 			// course 0, which the statistics queries read as every course.
 			"getCourseAdmin":                  requiresCourseAdmin(),
+			"listCourseIntegrationGrants":     requiresCourseAdmin(),
+			"revokeCourseIntegrationGrant":    requiresCourseAdmin(),
 			"updateCourseSettings":            requiresCourseAdmin(),
 			"copyCourse":                      requiresCourseAdmin(),
 			"deleteCourse":                    requiresCourseAdmin(),
