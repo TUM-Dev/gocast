@@ -23,6 +23,7 @@ type IntegrationGrantDao interface {
 	GetIntegrationGrantCourse(context.Context, uint, uint) (model.Course, error)
 	GetCourseIntegrationGrants(context.Context, uint) ([]model.IntegrationGrant, error)
 	RevokeIntegrationGrant(context.Context, uint, uint) error
+	RevokeIntegrationGrantForIntegration(context.Context, uint, uint) (model.Course, error)
 }
 
 type integrationGrantDao struct {
@@ -137,4 +138,25 @@ func (d integrationGrantDao) RevokeIntegrationGrant(ctx context.Context, grantID
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+// RevokeIntegrationGrantForIntegration revokes an active grant of the integration and
+// returns its course, also when the course was deleted. A grant that is unknown, belongs
+// to another integration or is already revoked returns a zero course and no error, so
+// the integration can repeat the call and learns nothing about other grants.
+func (d integrationGrantDao) RevokeIntegrationGrantForIntegration(ctx context.Context, grantID, integrationID uint) (model.Course, error) {
+	var course model.Course
+	err := d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&model.IntegrationGrant{}).
+			Where("id = ? AND integration_id = ? AND revoked_at IS NULL", grantID, integrationID).
+			Update("revoked_at", time.Now())
+		if result.Error != nil || result.RowsAffected == 0 {
+			return result.Error
+		}
+		return tx.Unscoped().Model(&model.Course{}).
+			Joins("JOIN integration_grants ON integration_grants.course_id = courses.id").
+			Where("integration_grants.id = ?", grantID).
+			First(&course).Error
+	})
+	return course, err
 }

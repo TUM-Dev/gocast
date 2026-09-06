@@ -2,6 +2,7 @@ syntax = "proto3";
 package protobuf;
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "./apiv2/protobuf";
@@ -27,6 +28,15 @@ service IntegrationService {
       description: "Returns fixed metadata for the course authorized by this integration grant."
     };
   }
+
+  rpc revokeIntegrationGrant(RevokeIntegrationGrantRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/integration/grants/{grant_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Revoke an integration grant."
+      description: "Revokes this integration's access through the specified grant. A grant that is unknown, belongs to another integration or is already revoked also answers success, so the call can be repeated."
+    };
+  }
 }
 
 message RedeemIntegrationAuthorizationRequest {
@@ -40,6 +50,10 @@ message RedeemIntegrationAuthorizationResponse {
 }
 
 message GetIntegrationGrantRequest {
+  uint32 grant_id = 1;
+}
+
+message RevokeIntegrationGrantRequest {
   uint32 grant_id = 1;
 }
 

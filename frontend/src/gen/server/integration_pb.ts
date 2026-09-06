@@ -5,6 +5,8 @@
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import { file_google_api_annotations } from "../google/api/annotations_pb";
+import type { EmptySchema } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_empty } from "@bufbuild/protobuf/wkt";
 import { file_protoc_gen_openapiv2_options_annotations } from "../protoc-gen-openapiv2/options/annotations_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file server/integration.proto.
  */
 export const file_server_integration: GenFile = /*@__PURE__*/
-  fileDesc("ChhzZXJ2ZXIvaW50ZWdyYXRpb24ucHJvdG8SCHByb3RvYnVmIkQKJVJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlcXVlc3QSDAoEY29kZRgBIAEoCRINCgVzdGF0ZRgCIAEoCSJNCiZSZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXNwb25zZRIQCghncmFudF9pZBgBIAEoDRIRCgljb3Vyc2VfaWQYAiABKA0iLgoaR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iYAobR2V0SW50ZWdyYXRpb25HcmFudFJlc3BvbnNlEhEKCWNvdXJzZV9pZBgBIAEoDRIMCgRuYW1lGAIgASgJEgwKBHNsdWcYAyABKAkSEgoKdmlzaWJpbGl0eRgEIAEoCTLNBAoSSW50ZWdyYXRpb25TZXJ2aWNlEq8CCh5yZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb24SLy5wcm90b2J1Zi5SZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXF1ZXN0GjAucHJvdG9idWYuUmVkZWVtSW50ZWdyYXRpb25BdXRob3JpemF0aW9uUmVzcG9uc2UiqQGSQXkKDEludGVncmF0aW9ucxIkUmVkZWVtIGFuIGludGVncmF0aW9uIGF1dGhvcml6YXRpb24uGkNDb25zdW1lcyBhIGJyb3dzZXIgYXBwcm92YWwgY29kZSBmb3IgdGhlIGF1dGhlbnRpY2F0ZWQgaW50ZWdyYXRpb24ugtPkkwInOgEqIiIvaW50ZWdyYXRpb24vYXV0aG9yaXphdGlvbnMvcmVkZWVtEoQCChNnZXRJbnRlZ3JhdGlvbkdyYW50EiQucHJvdG9idWYuR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QaJS5wcm90b2J1Zi5HZXRJbnRlZ3JhdGlvbkdyYW50UmVzcG9uc2UinwGSQXYKDEludGVncmF0aW9ucxIZR2V0IGFuIGF1dGhvcml6ZWQgY291cnNlLhpLUmV0dXJucyBmaXhlZCBtZXRhZGF0YSBmb3IgdGhlIGNvdXJzZSBhdXRob3JpemVkIGJ5IHRoaXMgaW50ZWdyYXRpb24gZ3JhbnQugtPkkwIgEh4vaW50ZWdyYXRpb24vZ3JhbnRzL3tncmFudF9pZH1CEloQLi9hcGl2Mi9wcm90b2J1ZmIGcHJvdG8z", [file_google_api_annotations, file_protoc_gen_openapiv2_options_annotations]);
+  fileDesc("ChhzZXJ2ZXIvaW50ZWdyYXRpb24ucHJvdG8SCHByb3RvYnVmIkQKJVJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlcXVlc3QSDAoEY29kZRgBIAEoCRINCgVzdGF0ZRgCIAEoCSJNCiZSZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXNwb25zZRIQCghncmFudF9pZBgBIAEoDRIRCgljb3Vyc2VfaWQYAiABKA0iLgoaR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iMQodUmV2b2tlSW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iYAobR2V0SW50ZWdyYXRpb25HcmFudFJlc3BvbnNlEhEKCWNvdXJzZV9pZBgBIAEoDRIMCgRuYW1lGAIgASgJEgwKBHNsdWcYAyABKAkSEgoKdmlzaWJpbGl0eRgEIAEoCTLEBwoSSW50ZWdyYXRpb25TZXJ2aWNlEq8CCh5yZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb24SLy5wcm90b2J1Zi5SZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXF1ZXN0GjAucHJvdG9idWYuUmVkZWVtSW50ZWdyYXRpb25BdXRob3JpemF0aW9uUmVzcG9uc2UiqQGSQXkKDEludGVncmF0aW9ucxIkUmVkZWVtIGFuIGludGVncmF0aW9uIGF1dGhvcml6YXRpb24uGkNDb25zdW1lcyBhIGJyb3dzZXIgYXBwcm92YWwgY29kZSBmb3IgdGhlIGF1dGhlbnRpY2F0ZWQgaW50ZWdyYXRpb24ugtPkkwInOgEqIiIvaW50ZWdyYXRpb24vYXV0aG9yaXphdGlvbnMvcmVkZWVtEoQCChNnZXRJbnRlZ3JhdGlvbkdyYW50EiQucHJvdG9idWYuR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QaJS5wcm90b2J1Zi5HZXRJbnRlZ3JhdGlvbkdyYW50UmVzcG9uc2UinwGSQXYKDEludGVncmF0aW9ucxIZR2V0IGFuIGF1dGhvcml6ZWQgY291cnNlLhpLUmV0dXJucyBmaXhlZCBtZXRhZGF0YSBmb3IgdGhlIGNvdXJzZSBhdXRob3JpemVkIGJ5IHRoaXMgaW50ZWdyYXRpb24gZ3JhbnQugtPkkwIgEh4vaW50ZWdyYXRpb24vZ3JhbnRzL3tncmFudF9pZH0S9AIKFnJldm9rZUludGVncmF0aW9uR3JhbnQSJy5wcm90b2J1Zi5SZXZva2VJbnRlZ3JhdGlvbkdyYW50UmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eSKYApJB7gEKDEludGVncmF0aW9ucxIcUmV2b2tlIGFuIGludGVncmF0aW9uIGdyYW50Lhq/AVJldm9rZXMgdGhpcyBpbnRlZ3JhdGlvbidzIGFjY2VzcyB0aHJvdWdoIHRoZSBzcGVjaWZpZWQgZ3JhbnQuIEEgZ3JhbnQgdGhhdCBpcyB1bmtub3duLCBiZWxvbmdzIHRvIGFub3RoZXIgaW50ZWdyYXRpb24gb3IgaXMgYWxyZWFkeSByZXZva2VkIGFsc28gYW5zd2VycyBzdWNjZXNzLCBzbyB0aGUgY2FsbCBjYW4gYmUgcmVwZWF0ZWQugtPkkwIgKh4vaW50ZWdyYXRpb24vZ3JhbnRzL3tncmFudF9pZH1CEloQLi9hcGl2Mi9wcm90b2J1ZmIGcHJvdG8z", [file_google_api_annotations, file_google_protobuf_empty, file_protoc_gen_openapiv2_options_annotations]);
 
 /**
  * @generated from message protobuf.RedeemIntegrationAuthorizationRequest
@@ -76,6 +78,23 @@ export const GetIntegrationGrantRequestSchema: GenMessage<GetIntegrationGrantReq
   messageDesc(file_server_integration, 2);
 
 /**
+ * @generated from message protobuf.RevokeIntegrationGrantRequest
+ */
+export type RevokeIntegrationGrantRequest = Message<"protobuf.RevokeIntegrationGrantRequest"> & {
+  /**
+   * @generated from field: uint32 grant_id = 1;
+   */
+  grantId: number;
+};
+
+/**
+ * Describes the message protobuf.RevokeIntegrationGrantRequest.
+ * Use `create(RevokeIntegrationGrantRequestSchema)` to create a new message.
+ */
+export const RevokeIntegrationGrantRequestSchema: GenMessage<RevokeIntegrationGrantRequest> = /*@__PURE__*/
+  messageDesc(file_server_integration, 3);
+
+/**
  * @generated from message protobuf.GetIntegrationGrantResponse
  */
 export type GetIntegrationGrantResponse = Message<"protobuf.GetIntegrationGrantResponse"> & {
@@ -105,7 +124,7 @@ export type GetIntegrationGrantResponse = Message<"protobuf.GetIntegrationGrantR
  * Use `create(GetIntegrationGrantResponseSchema)` to create a new message.
  */
 export const GetIntegrationGrantResponseSchema: GenMessage<GetIntegrationGrantResponse> = /*@__PURE__*/
-  messageDesc(file_server_integration, 3);
+  messageDesc(file_server_integration, 4);
 
 /**
  * Application endpoints use API keys rather than a user's session.
@@ -128,6 +147,14 @@ export const IntegrationService: GenService<{
     methodKind: "unary";
     input: typeof GetIntegrationGrantRequestSchema;
     output: typeof GetIntegrationGrantResponseSchema;
+  },
+  /**
+   * @generated from rpc protobuf.IntegrationService.revokeIntegrationGrant
+   */
+  revokeIntegrationGrant: {
+    methodKind: "unary";
+    input: typeof RevokeIntegrationGrantRequestSchema;
+    output: typeof EmptySchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_server_integration, 0);

@@ -3783,6 +3783,38 @@
         "tags": [
           "Integrations"
         ]
+      },
+      "delete": {
+        "summary": "Revoke an integration grant.",
+        "description": "Revokes this integration's access through the specified grant. A grant that is unknown, belongs to another integration or is already revoked also answers success, so the call can be repeated.",
+        "operationId": "IntegrationService_revokeIntegrationGrant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "grantId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Integrations"
+        ]
       }
     },
     "/login-options": {

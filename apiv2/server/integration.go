@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/model"
 )
 
 func (a *API) GetIntegration(ctx context.Context, _ *emptypb.Empty) (*protobuf.GetIntegrationResponse, error) {
@@ -71,4 +73,27 @@ func (a *API) GetIntegrationGrant(ctx context.Context, req *protobuf.GetIntegrat
 	return &protobuf.GetIntegrationGrantResponse{
 		CourseId: uint32(course.ID), Name: course.Name, Slug: course.Slug, Visibility: course.Visibility,
 	}, nil
+}
+
+func (a *API) RevokeIntegrationGrant(ctx context.Context, req *protobuf.RevokeIntegrationGrantRequest) (*emptypb.Empty, error) {
+	if req.GetGrantId() == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("grant_id must be positive"))
+	}
+	integration, err := a.getCurrentIntegration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	course, err := a.dao.IntegrationGrantDao.RevokeIntegrationGrantForIntegration(ctx, uint(req.GetGrantId()), integration.ID)
+	if err != nil {
+		a.log.Error("integration grant revocation failed", "err", err)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not revoke integration grant"))
+	}
+	if course.ID != 0 {
+		// No user acted; the integration is named in the message instead.
+		message := fmt.Sprintf("%s:'%s' revoke integration grant: %d by integration '%s' (%d)", course.Name, course.Slug, req.GetGrantId(), integration.Name, integration.ID)
+		if err := a.dao.AuditDao.Create(&model.Audit{Message: message, Type: model.AuditCourseEdit}); err != nil {
+			a.log.Error("can't write audit entry", "err", err, "message", message)
+		}
+	}
+	return &emptypb.Empty{}, nil
 }
