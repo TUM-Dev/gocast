@@ -228,3 +228,54 @@ func TestGetIntegrationGrantReportsIneligibleAndDatabaseFailures(t *testing.T) {
 		})
 	}
 }
+
+func TestRevokeIntegrationGrantScopesWriteAuditsOnceAndRepeatsSuccessfully(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	integrationGrantDao := mock_dao.NewMockIntegrationGrantDao(ctrl)
+	auditDao := mock_dao.NewMockAuditDao(ctrl)
+	course := model.Course{Model: gorm.Model{ID: 3}, Name: "Winter course", Slug: "winter"}
+	gomock.InOrder(
+		integrationGrantDao.EXPECT().RevokeIntegrationGrantForIntegration(gomock.Any(), uint(123), uint(7)).Return(course, nil),
+		integrationGrantDao.EXPECT().RevokeIntegrationGrantForIntegration(gomock.Any(), uint(123), uint(7)).Return(model.Course{}, nil),
+	)
+	auditDao.EXPECT().Create(gomock.Any()).DoAndReturn(func(audit *model.Audit) error {
+		assert.Nil(t, audit.User)
+		assert.Equal(t, model.AuditCourseEdit, audit.Type)
+		assert.Equal(t, "Winter course:'winter' revoke integration grant: 123 by integration 'Course portal' (7)", audit.Message)
+		return nil
+	})
+	api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: integrationGrantDao, AuditDao: auditDao}, log: slog.Default()}
+	ctx := context.WithValue(context.Background(), callerKey{}, &caller{integration: &model.Integration{ID: 7, Name: "Course portal"}})
+	request := &protobuf.RevokeIntegrationGrantRequest{GrantId: 123}
+
+	for range 2 {
+		response, err := api.RevokeIntegrationGrant(ctx, request)
+		require.NoError(t, err)
+		assert.Equal(t, &emptypb.Empty{}, response)
+	}
+}
+
+func TestRevokeIntegrationGrantRejectsZeroWithoutWrite(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: mock_dao.NewMockIntegrationGrantDao(ctrl)}, log: slog.Default()}
+
+	_, err := api.RevokeIntegrationGrant(context.Background(), &protobuf.RevokeIntegrationGrantRequest{})
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestRevokeIntegrationGrantHidesDatabaseFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	integrationGrantDao := mock_dao.NewMockIntegrationGrantDao(ctrl)
+	integrationGrantDao.EXPECT().RevokeIntegrationGrantForIntegration(gomock.Any(), uint(123), uint(7)).Return(model.Course{}, errors.New("secret database detail"))
+	api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: integrationGrantDao}, log: slog.Default()}
+	ctx := context.WithValue(context.Background(), callerKey{}, &caller{integration: &model.Integration{ID: 7}})
+
+	_, err := api.RevokeIntegrationGrant(ctx, &protobuf.RevokeIntegrationGrantRequest{GrantId: 123})
+	assert.Equal(t, codes.Unknown, status.Code(err))
+	assert.Equal(t, "could not revoke integration grant", status.Convert(err).Message())
+}
+
+func TestRevokeIntegrationGrantPolicyIsIntegrationOnly(t *testing.T) {
+	fullMethod := method(&protobuf.IntegrationService_ServiceDesc, "revokeIntegrationGrant")
+	assert.Equal(t, integrationOnly, methodPolicies[fullMethod])
+}

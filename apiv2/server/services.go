@@ -44,6 +44,7 @@ var services = []service{
 		policies: map[string]accessPolicy{
 			"redeemIntegrationAuthorization": integrationOnly,
 			"getIntegrationGrant":            integrationOnly,
+			"revokeIntegrationGrant":         integrationOnly,
 		},
 	},
 	{

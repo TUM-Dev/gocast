@@ -11,6 +11,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -171,6 +172,50 @@ func (x *GetIntegrationGrantRequest) GetGrantId() uint32 {
 	return 0
 }
 
+type RevokeIntegrationGrantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GrantId       uint32                 `protobuf:"varint,1,opt,name=grant_id,json=grantId,proto3" json:"grant_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeIntegrationGrantRequest) Reset() {
+	*x = RevokeIntegrationGrantRequest{}
+	mi := &file_server_integration_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeIntegrationGrantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeIntegrationGrantRequest) ProtoMessage() {}
+
+func (x *RevokeIntegrationGrantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_integration_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeIntegrationGrantRequest.ProtoReflect.Descriptor instead.
+func (*RevokeIntegrationGrantRequest) Descriptor() ([]byte, []int) {
+	return file_server_integration_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RevokeIntegrationGrantRequest) GetGrantId() uint32 {
+	if x != nil {
+		return x.GrantId
+	}
+	return 0
+}
+
 type GetIntegrationGrantResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CourseId      uint32                 `protobuf:"varint,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
@@ -183,7 +228,7 @@ type GetIntegrationGrantResponse struct {
 
 func (x *GetIntegrationGrantResponse) Reset() {
 	*x = GetIntegrationGrantResponse{}
-	mi := &file_server_integration_proto_msgTypes[3]
+	mi := &file_server_integration_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -195,7 +240,7 @@ func (x *GetIntegrationGrantResponse) String() string {
 func (*GetIntegrationGrantResponse) ProtoMessage() {}
 
 func (x *GetIntegrationGrantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_integration_proto_msgTypes[3]
+	mi := &file_server_integration_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -208,7 +253,7 @@ func (x *GetIntegrationGrantResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIntegrationGrantResponse.ProtoReflect.Descriptor instead.
 func (*GetIntegrationGrantResponse) Descriptor() ([]byte, []int) {
-	return file_server_integration_proto_rawDescGZIP(), []int{3}
+	return file_server_integration_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetIntegrationGrantResponse) GetCourseId() uint32 {
@@ -243,7 +288,7 @@ var File_server_integration_proto protoreflect.FileDescriptor
 
 const file_server_integration_proto_rawDesc = "" +
 	"\n" +
-	"\x18server/integration.proto\x12\bprotobuf\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"Q\n" +
+	"\x18server/integration.proto\x12\bprotobuf\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"Q\n" +
 	"%RedeemIntegrationAuthorizationRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\"`\n" +
@@ -251,6 +296,8 @@ const file_server_integration_proto_rawDesc = "" +
 	"\bgrant_id\x18\x01 \x01(\rR\agrantId\x12\x1b\n" +
 	"\tcourse_id\x18\x02 \x01(\rR\bcourseId\"7\n" +
 	"\x1aGetIntegrationGrantRequest\x12\x19\n" +
+	"\bgrant_id\x18\x01 \x01(\rR\agrantId\":\n" +
+	"\x1dRevokeIntegrationGrantRequest\x12\x19\n" +
 	"\bgrant_id\x18\x01 \x01(\rR\agrantId\"\x82\x01\n" +
 	"\x1bGetIntegrationGrantResponse\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x12\n" +
@@ -258,12 +305,14 @@ const file_server_integration_proto_rawDesc = "" +
 	"\x04slug\x18\x03 \x01(\tR\x04slug\x12\x1e\n" +
 	"\n" +
 	"visibility\x18\x04 \x01(\tR\n" +
-	"visibility2\xcd\x04\n" +
+	"visibility2\xc4\a\n" +
 	"\x12IntegrationService\x12\xaf\x02\n" +
 	"\x1eredeemIntegrationAuthorization\x12/.protobuf.RedeemIntegrationAuthorizationRequest\x1a0.protobuf.RedeemIntegrationAuthorizationResponse\"\xa9\x01\x92Ay\n" +
 	"\fIntegrations\x12$Redeem an integration authorization.\x1aCConsumes a browser approval code for the authenticated integration.\x82\xd3\xe4\x93\x02':\x01*\"\"/integration/authorizations/redeem\x12\x84\x02\n" +
 	"\x13getIntegrationGrant\x12$.protobuf.GetIntegrationGrantRequest\x1a%.protobuf.GetIntegrationGrantResponse\"\x9f\x01\x92Av\n" +
-	"\fIntegrations\x12\x19Get an authorized course.\x1aKReturns fixed metadata for the course authorized by this integration grant.\x82\xd3\xe4\x93\x02 \x12\x1e/integration/grants/{grant_id}B\x12Z\x10./apiv2/protobufb\x06proto3"
+	"\fIntegrations\x12\x19Get an authorized course.\x1aKReturns fixed metadata for the course authorized by this integration grant.\x82\xd3\xe4\x93\x02 \x12\x1e/integration/grants/{grant_id}\x12\xf4\x02\n" +
+	"\x16revokeIntegrationGrant\x12'.protobuf.RevokeIntegrationGrantRequest\x1a\x16.google.protobuf.Empty\"\x98\x02\x92A\xee\x01\n" +
+	"\fIntegrations\x12\x1cRevoke an integration grant.\x1a\xbf\x01Revokes this integration's access through the specified grant. A grant that is unknown, belongs to another integration or is already revoked also answers success, so the call can be repeated.\x82\xd3\xe4\x93\x02 *\x1e/integration/grants/{grant_id}B\x12Z\x10./apiv2/protobufb\x06proto3"
 
 var (
 	file_server_integration_proto_rawDescOnce sync.Once
@@ -277,20 +326,24 @@ func file_server_integration_proto_rawDescGZIP() []byte {
 	return file_server_integration_proto_rawDescData
 }
 
-var file_server_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_server_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_server_integration_proto_goTypes = []any{
 	(*RedeemIntegrationAuthorizationRequest)(nil),  // 0: protobuf.RedeemIntegrationAuthorizationRequest
 	(*RedeemIntegrationAuthorizationResponse)(nil), // 1: protobuf.RedeemIntegrationAuthorizationResponse
 	(*GetIntegrationGrantRequest)(nil),             // 2: protobuf.GetIntegrationGrantRequest
-	(*GetIntegrationGrantResponse)(nil),            // 3: protobuf.GetIntegrationGrantResponse
+	(*RevokeIntegrationGrantRequest)(nil),          // 3: protobuf.RevokeIntegrationGrantRequest
+	(*GetIntegrationGrantResponse)(nil),            // 4: protobuf.GetIntegrationGrantResponse
+	(*emptypb.Empty)(nil),                          // 5: google.protobuf.Empty
 }
 var file_server_integration_proto_depIdxs = []int32{
 	0, // 0: protobuf.IntegrationService.redeemIntegrationAuthorization:input_type -> protobuf.RedeemIntegrationAuthorizationRequest
 	2, // 1: protobuf.IntegrationService.getIntegrationGrant:input_type -> protobuf.GetIntegrationGrantRequest
-	1, // 2: protobuf.IntegrationService.redeemIntegrationAuthorization:output_type -> protobuf.RedeemIntegrationAuthorizationResponse
-	3, // 3: protobuf.IntegrationService.getIntegrationGrant:output_type -> protobuf.GetIntegrationGrantResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	3, // 2: protobuf.IntegrationService.revokeIntegrationGrant:input_type -> protobuf.RevokeIntegrationGrantRequest
+	1, // 3: protobuf.IntegrationService.redeemIntegrationAuthorization:output_type -> protobuf.RedeemIntegrationAuthorizationResponse
+	4, // 4: protobuf.IntegrationService.getIntegrationGrant:output_type -> protobuf.GetIntegrationGrantResponse
+	5, // 5: protobuf.IntegrationService.revokeIntegrationGrant:output_type -> google.protobuf.Empty
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -307,7 +360,7 @@ func file_server_integration_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_server_integration_proto_rawDesc), len(file_server_integration_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
