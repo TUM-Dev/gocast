@@ -179,8 +179,8 @@ func (r *Runner) InitApiGrpc() {
 }
 
 // RunAction runs a in the background and returns the id of the created job.
-// The actions in a run even after the job was cancelled, afterwards either vod or discard runs.
-func (r *Runner) RunAction(a, vod, discard []actions.Action, data map[string]any, logger *slog.Logger) string {
+// The actions in a run even after the job was cancelled, vod is skipped on discardVod.
+func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
 	// create new context to avoid cancellation on grpc request termination
 	c, cancel := context.WithCancel(context.Background())
 	job := uuid.New().String()
@@ -220,12 +220,12 @@ func (r *Runner) RunAction(a, vod, discard []actions.Action, data map[string]any
 		for _, action := range a {
 			run(action)
 		}
-		next := vod
 		if r.discarded(job) {
+			// the recording itself is deliberately left on disk, see livestreamCleanup
 			logger.With("job", job).Info("discarding recording, skipping VoD creation")
-			next = discard
+			return
 		}
-		for _, action := range next {
+		for _, action := range vod {
 			run(action)
 		}
 	}()

@@ -32,12 +32,7 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
-	// runs instead of vod if the stream is ended with discardVod
-	discard := []actions.Action{
-		actions.DiscardRecording,
-	}
-
-	jID := r.RunAction(a, vod, discard, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
+	jID := r.RunAction(a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
 	r.log.Info("job added", "ID", jID)
 
 	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
