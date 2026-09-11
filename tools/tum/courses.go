@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/TUM-Dev/CampusProxy/client"
+	meilisearch "github.com/meilisearch/meilisearch-go"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model/search"
@@ -35,7 +36,8 @@ func PrefetchCourses(dao dao.DaoWrapper) func() {
 			}
 		}
 		index := client.Index("PREFETCHED_COURSES")
-		_, err = index.AddDocuments(&res, "courseID")
+		primaryKey := "courseID"
+		_, err = index.AddDocuments(&res, &meilisearch.DocumentOptions{PrimaryKey: &primaryKey})
 		logger.Info("Prefetched courses", "count", len(res))
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)

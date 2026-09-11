@@ -210,7 +210,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 		switch res.IndexUID {
 		case "STREAMS":
 			hits := res.Hits
-			res.Hits = []any{}
+			res.Hits = []meilisearch.Hit{}
 			response.Results[i] = meilisearch.SearchResponse{}
 
 			var meiliStreams []SearchStreamDTO
@@ -237,7 +237,12 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 
 				meiliStream.CourseSlug = course.Slug
 				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
-					res.Hits = append(res.Hits, meiliStream)
+					hit, err := dtoToHit(meiliStream)
+					if err != nil {
+						logger.Warn("meilisearch response post processing streams hit conversion error", "err", err)
+					} else {
+						res.Hits = append(res.Hits, hit)
+					}
 				}
 
 				if len(res.Hits) >= int(limit) {
@@ -247,7 +252,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			response.Results[i] = res
 		case "COURSES":
 			hits := res.Hits
-			res.Hits = []any{}
+			res.Hits = []meilisearch.Hit{}
 			response.Results[i] = meilisearch.SearchResponse{}
 
 			var meiliCourses []SearchCourseDTO
@@ -265,7 +270,12 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			for _, meiliCourse := range meiliCourses {
 				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year)
 				if err == nil && user.IsEligibleToSearchForCourse(course) {
-					res.Hits = append(res.Hits, meiliCourse)
+					hit, err := dtoToHit(meiliCourse)
+					if err != nil {
+						logger.Warn("meilisearch response post processing courses hit conversion error", "err", err)
+					} else {
+						res.Hits = append(res.Hits, hit)
+					}
 				}
 
 				if len(res.Hits) >= int(limit) {
@@ -275,7 +285,7 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 			response.Results[i] = res
 		case "SUBTITLES":
 			hits := res.Hits
-			res.Hits = []any{}
+			res.Hits = []meilisearch.Hit{}
 			response.Results[i] = meilisearch.SearchResponse{}
 
 			var meiliSubtitles []SearchSubtitlesDTO
@@ -308,7 +318,12 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				meiliSubtitle.CourseYear = course.Year
 				meiliSubtitle.CourseTeachingTerm = course.TeachingTerm
 				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
-					res.Hits = append(res.Hits, meiliSubtitle)
+					hit, err := dtoToHit(meiliSubtitle)
+					if err != nil {
+						logger.Warn("meilisearch response post processing subtitles hit conversion error", "err", err)
+					} else {
+						res.Hits = append(res.Hits, hit)
+					}
 				}
 
 				if len(res.Hits) >= int(limit) {
@@ -670,4 +685,18 @@ func ToSearchSubtitleDTO(wrapper dao.DaoWrapper, subtitles ...tools.MeiliSubtitl
 		}
 	}
 	return res
+}
+
+func dtoToHit(v any) (meilisearch.Hit, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	var h meilisearch.Hit
+	if err := json.Unmarshal(b, &h); err != nil {
+		return nil, err
+	}
+
+	return h, nil
 }

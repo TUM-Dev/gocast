@@ -61,17 +61,24 @@ func NewMeiliExporter(d dao.DaoWrapper) *MeiliExporter {
 	return &MeiliExporter{c, d}
 }
 
+// docOptions returns the document options pinning the primary key. Meilisearch can
+// only infer a primary key when exactly one attribute contains "id"; our documents
+// carry several (e.g. ID and courseID), so it has to be set explicitly.
+func docOptions(primaryKey string) *meilisearch.DocumentOptions {
+	return &meilisearch.DocumentOptions{PrimaryKey: &primaryKey}
+}
+
 // Export exports all relevant search data to MeiliSearch Instance
 func (m *MeiliExporter) Export() {
 	if m == nil {
 		return
 	}
 	index := m.c.Index("STREAMS")
-	_, err := index.DeleteAllDocuments()
+	_, err := index.DeleteAllDocuments(nil)
 	if err != nil {
 		logger.Warn("could not delete all old streams", "err", err)
 	}
-	_, err = m.c.Index("SUBTITLES").DeleteAllDocuments()
+	_, err = m.c.Index("SUBTITLES").DeleteAllDocuments(nil)
 	if err != nil {
 		logger.Warn("could not delete all old subtitles", "err", err)
 	}
@@ -114,21 +121,21 @@ func (m *MeiliExporter) Export() {
 				}
 
 				if len(meiliSubtitles) > 0 {
-					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, "ID")
+					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, docOptions("ID"))
 					if err != nil {
 						logger.Error("issue adding subtitles to meili", "err", err)
 					}
 				}
 			}
 		}
-		_, err := index.AddDocuments(&meilistreams, "ID")
+		_, err := index.AddDocuments(&meilistreams, docOptions("ID"))
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
 	})
 
 	coursesIndex := m.c.Index("COURSES")
-	_, err = coursesIndex.DeleteAllDocuments()
+	_, err = coursesIndex.DeleteAllDocuments(nil)
 	if err != nil {
 		logger.Warn("could not delete all old courses", "err", err)
 	}
@@ -145,7 +152,7 @@ func (m *MeiliExporter) Export() {
 				Visibility:   course.Visibility,
 			}
 		}
-		_, err := coursesIndex.AddDocumentsInBatches(meilicourses, 500, "ID")
+		_, err := coursesIndex.AddDocumentsInBatches(&meilicourses, 500, docOptions("ID"))
 		if err != nil {
 			logger.Error("issue adding courses to meili", "err", err)
 		}
