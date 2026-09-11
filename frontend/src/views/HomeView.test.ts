@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 import HomeView from "./HomeView.vue";
@@ -80,6 +80,14 @@ async function render(listings: Record<string, unknown[]> = {}, signedIn = true)
 }
 
 beforeEach(async () => {
+  // The listings are filtered against the current time, so the clock has to be pinned:
+  // against a real one "later today" falls into tomorrow whenever the suite runs in the
+  // last hour of the day, which is how this failed in CI but never on a laptop. Noon
+  // *local* time keeps every offset below on the day the test means, in any timezone.
+  // Only Date is faked; the timers vue and flushPromises rely on stay real.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 8, 11, 12, 0, 0));
+
   setActivePinia(createPinia());
   vi.clearAllMocks();
   fetchServerNotifications.mockResolvedValue([]);
@@ -95,6 +103,10 @@ beforeEach(async () => {
   });
   await router.push("/");
   await router.isReady();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("Today", () => {
