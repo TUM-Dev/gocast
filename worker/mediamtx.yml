@@ -11,15 +11,20 @@ logDestinations: [stdout]
 readTimeout: 10s
 # Timeout of write operations.
 writeTimeout: 10s
-# Number of read buffers.
-# A higher value allows a wider throughput, a lower value allows to save RAM.
-readBufferCount: 512
+# Size of the queue of outgoing packets.
+# A higher value allows to increase throughput, a lower value allows to save RAM.
+writeQueueSize: 512
 # Maximum size of payload of outgoing UDP packets.
 # This can be decreased to avoid fragmentation on networks with a low UDP MTU.
 udpMaxPayloadSize: 1472
 
-# HTTP URL to perform external authentication.
-# Every time a user wants to authenticate, the server calls this URL
+###############################################
+# Authentication parameters
+
+# Authentication method; available values are "internal", "http" and "jwt".
+authMethod: http
+# HTTP URL called to perform authentication.
+# Every time a user wants to perform an action, the server calls this URL
 # with the POST method and a body containing:
 # {
 #   "ip": "ip",
@@ -28,77 +33,53 @@ udpMaxPayloadSize: 1472
 #   "path": "path",
 #   "protocol": "rtsp|rtmp|hls|webrtc",
 #   "id": "id",
-#   "action": "read|publish",
+#   "action": "publish|read|playback|api|metrics|pprof",
 #   "query": "query"
 # }
-# If the response code is 20x, authentication is accepted, otherwise
-# it is discarded.
-externalAuthenticationURL: http://localhost:8060/on_publish
+# If the response code is 20x, the action is allowed, otherwise it is forbidden.
+# The worker answers this on /on_publish (see worker/rest): it validates the
+# stream key and slug carried in the query for "publish", and allows every
+# other action.
+authHTTPAddress: http://localhost:8060/on_publish
 
-# Enable the HTTP API.
-api: no
+###############################################
+# API and metrics
+
+# Enable the control API server.
+api: false
 # Address of the API listener.
 apiAddress: 127.0.0.1:9997
 
 # Enable Prometheus-compatible metrics.
-metrics: no
+metrics: false
 # Address of the metrics listener.
 metricsAddress: 127.0.0.1:9998
 
-
 ###############################################
-# RTSP parameters
+# Server protocols
 
-# Disable support for the RTSP protocol.
-rtspDisable: yes
+# Only RTMP ingest is used; everything else stays off. srt and moq are
+# newer protocols that default to enabled, so they have to be named
+# explicitly or they open listeners nothing here uses.
+rtsp: false
+srt: false
+moq: false
 
-###############################################
-# RTMP parameters
-
-# Disable support for the RTMP protocol.
-rtmpDisable: no
-# Address of the RTMP listener. This is needed only when encryption is "no" or "optional".
+rtmp: true
+# Address of the RTMP listener.
 rtmpAddress: :1935
-# Encrypt connections with TLS (RTMPS).
-# Available values are "no", "strict", "optional".
+# Use the secure protocol variant (RTMPS).
 rtmpEncryption: "no"
 
-###############################################
-# HLS parameters
+hls: false
 
-# Disable support for the HLS protocol.
-hlsDisable: yes
+webrtc: false
 
 ###############################################
-# WebRTC parameters
+# Path settings
 
-# Disable support for the WebRTC protocol.
-webrtcDisable: yes
-
-###############################################
-# Path parameters
-
-# These settings are path-dependent, and the map key is the name of the path.
-# It's possible to use regular expressions by using a tilde as prefix.
-# For example, "~^(test1|test2)$" will match both "test1" and "test2".
-# For example, "~^prefix" will match all paths that start with "prefix".
-# The settings under the path "all" are applied to all paths that do not match
-# another entry.
 paths:
-  all:
-    # Source of the stream. This can be:
-    # * publisher -> the stream is published by a RTSP or RTMP client
-    # * rtsp://existing-url -> the stream is pulled from another RTSP server / camera
-    # * rtsps://existing-url -> the stream is pulled from another RTSP server / camera with RTSPS
-    # * rtmp://existing-url -> the stream is pulled from another RTMP server / camera
-    # * rtmps://existing-url -> the stream is pulled from another RTMP server / camera with RTMPS
-    # * http://existing-url/stream.m3u8 -> the stream is pulled from another HLS server
-    # * https://existing-url/stream.m3u8 -> the stream is pulled from another HLS server with HTTPS
-    # * udp://ip:port -> the stream is pulled from UDP, by listening on the specified IP and port
-    # * redirect -> the stream is provided by another path or server
-    # * rpiCamera -> the stream is provided by a Raspberry Pi Camera
+  # Settings under path "all_others" are applied to all paths that
+  # do not match another entry.
+  all_others:
     source: publisher
-
-    # If the source is an RTSP or RTSPS URL, this is the protocol that will be used to
-    # pull the stream. available values are "automatic", "udp", "multicast", "tcp".
-    sourceProtocol: automatic

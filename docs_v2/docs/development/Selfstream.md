@@ -55,7 +55,7 @@ Warning: This method doesn't insure that the services are running with the corre
 If you prefer to run the services locally, you can start each service individually. This method requires more setup and configuration, but it allows for more flexibility in development. To start the services locally, follow these steps:
 
 :::info
-You have to change the `externalAuthenticationURL` in the `ingest/mediamtx.yml` file by uncommenting the the line and changing the URL to `http://localhost:8081/api/selfstream/onPublish`. This is required for the `mediamtx` server to authenticate the stream correctly.
+You have to change the `authHTTPAddress` in the `ingest/mediamtx.yml` file by uncommenting the the line and changing the URL to `http://localhost:8081/api/selfstream/onPublish`. This is required for the `mediamtx` server to authenticate the stream correctly.
 :::
 
 - Set ingestbase to `127.0.0.1` in config.yaml 

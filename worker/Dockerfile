@@ -1,4 +1,4 @@
-FROM golang:1.26 AS builder
+FROM golang:1.27 AS builder
 
 
 WORKDIR /go/src/github.com/TUM-Dev/gocast/worker
@@ -9,7 +9,7 @@ RUN GO111MODULE=on go mod download
 ARG version=dev
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '-static' -X main.VersionTag=${version}" -o /worker cmd/worker/worker.go
 
-FROM bluenviron/mediamtx:latest AS rtsp
+FROM bluenviron/mediamtx:1.21.0 AS rtsp
 
 FROM alpine:3.24
 ADD entrypoint.sh /entrypoint.sh

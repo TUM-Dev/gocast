@@ -23,9 +23,9 @@ cleanup() {
 
     sed -i 's/^token: abc//' config.yaml
 
-    sed -i 's|^#externalAuthenticationURL: https://tum.live/api/selfstream/onPublish|externalAuthenticationURL: https://tum.live/api/selfstream/onPublish|' ingest/mediamtx.yml
+    sed -i 's|^#authHTTPAddress: https://tum.live/api/selfstream/onPublish|authHTTPAddress: https://tum.live/api/selfstream/onPublish|' ingest/mediamtx.yml
 
-    sed -i 's|^externalAuthenticationURL: http://localhost:8081/api/selfstream/onPublish|#externalAuthenticationURL: http://localhost:8081/api/selfstream/onPublish|' ingest/mediamtx.yml
+    sed -i 's|^authHTTPAddress: http://localhost:8081/api/selfstream/onPublish|#authHTTPAddress: http://localhost:8081/api/selfstream/onPublish|' ingest/mediamtx.yml
 
     sed -Ei 's|^ingestbase:.*|ingestbase: rtmp://ingest.tum.live/|' config.yaml
 
@@ -44,10 +44,10 @@ sed -i "s|var vodPath = .*|var vodPath = \"$MASS\"|" worker/edge/edge.go
 grep -q '^token:' config.yaml && sed -i 's/^token:.*/token: abc/' config.yaml || echo 'token: abc' >> config.yaml
 
 # Comment production
-sed -i 's|^externalAuthenticationURL: https://tum.live/api/selfstream/onPublish|#externalAuthenticationURL: https://tum.live/api/selfstream/onPublish|' ingest/mediamtx.yml
+sed -i 's|^authHTTPAddress: https://tum.live/api/selfstream/onPublish|#authHTTPAddress: https://tum.live/api/selfstream/onPublish|' ingest/mediamtx.yml
 
 # Uncomment local
-sed -i 's|^#externalAuthenticationURL: http://localhost:8081/api/selfstream/onPublish|externalAuthenticationURL: http://localhost:8081/api/selfstream/onPublish|' ingest/mediamtx.yml
+sed -i 's|^#authHTTPAddress: http://localhost:8081/api/selfstream/onPublish|authHTTPAddress: http://localhost:8081/api/selfstream/onPublish|' ingest/mediamtx.yml
 
 sed -Ei 's|^ingestbase:.*|ingestbase: rtmp://localhost|' config.yaml
 

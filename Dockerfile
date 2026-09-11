@@ -16,7 +16,7 @@ RUN npm i --no-dev
 WORKDIR /app/frontend
 RUN npm ci && npm run build
 
-FROM golang:1.26 AS build-env
+FROM golang:1.27 AS build-env
 
 RUN mkdir /gostuff
 WORKDIR /gostuff

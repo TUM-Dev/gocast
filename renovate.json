@@ -52,6 +52,14 @@
       "groupSlug": "npm-non-major",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Keep the Go toolchain in one PR: the golang base images and the go directive in every go.mod. CI reads its version from go.mod via go-version-file, so it follows automatically. Must stay last so it wins over the per-manager grouping above.",
+      "groupName": "go toolchain",
+      "groupSlug": "go-toolchain",
+      "matchDatasources": ["docker", "golang-version"],
+      "matchPackageNames": ["golang", "go"],
+      "enabled": true
     }
   ]
 }
