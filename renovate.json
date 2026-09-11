@@ -10,7 +10,15 @@
     "github.com/TUM-Dev/gocast/runner"
   ],
   "enabledManagers": ["npm", "gomod", "dockerfile", "docker-compose", "github-actions"],
-  "schedule": ["before 6am on Monday"],
+  "schedule": ["* 0-6 1 * *"],
+  "prCreation": "not-pending",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 0,
+  "vulnerabilityAlerts": {
+    "schedule": ["at any time"],
+    "labels": ["security"],
+    "prCreation": "immediate"
+  },
   "packageRules": [
     {
       "description": "Group all major updates by manager",
