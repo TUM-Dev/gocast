@@ -61,6 +61,13 @@ func NewMeiliExporter(d dao.DaoWrapper) *MeiliExporter {
 	return &MeiliExporter{c, d}
 }
 
+// docOptions returns the document options pinning the primary key. Meilisearch can
+// only infer a primary key when exactly one attribute contains "id"; our documents
+// carry several (e.g. ID and courseID), so it has to be set explicitly.
+func docOptions(primaryKey string) *meilisearch.DocumentOptions {
+	return &meilisearch.DocumentOptions{PrimaryKey: &primaryKey}
+}
+
 // Export exports all relevant search data to MeiliSearch Instance
 func (m *MeiliExporter) Export() {
 	if m == nil {
@@ -114,14 +121,14 @@ func (m *MeiliExporter) Export() {
 				}
 
 				if len(meiliSubtitles) > 0 {
-					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, nil)
+					_, err := m.c.Index("SUBTITLES").AddDocuments(&meiliSubtitles, docOptions("ID"))
 					if err != nil {
 						logger.Error("issue adding subtitles to meili", "err", err)
 					}
 				}
 			}
 		}
-		_, err := index.AddDocuments(&meilistreams, nil)
+		_, err := index.AddDocuments(&meilistreams, docOptions("ID"))
 		if err != nil {
 			logger.Error("issue adding documents to meili", "err", err)
 		}
@@ -145,7 +152,7 @@ func (m *MeiliExporter) Export() {
 				Visibility:   course.Visibility,
 			}
 		}
-		_, err := coursesIndex.AddDocumentsInBatches(&meilicourses, 500, nil)
+		_, err := coursesIndex.AddDocumentsInBatches(&meilicourses, 500, docOptions("ID"))
 		if err != nil {
 			logger.Error("issue adding courses to meili", "err", err)
 		}

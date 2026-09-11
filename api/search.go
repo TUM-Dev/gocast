@@ -238,7 +238,9 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				meiliStream.CourseSlug = course.Slug
 				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
 					hit, err := dtoToHit(meiliStream)
-					if err == nil {
+					if err != nil {
+						logger.Warn("meilisearch response post processing streams hit conversion error", "err", err)
+					} else {
 						res.Hits = append(res.Hits, hit)
 					}
 				}
@@ -269,7 +271,9 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				course, err := daoWrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, meiliCourse.Slug, meiliCourse.TeachingTerm, meiliCourse.Year)
 				if err == nil && user.IsEligibleToSearchForCourse(course) {
 					hit, err := dtoToHit(meiliCourse)
-					if err == nil {
+					if err != nil {
+						logger.Warn("meilisearch response post processing courses hit conversion error", "err", err)
+					} else {
 						res.Hits = append(res.Hits, hit)
 					}
 				}
@@ -315,7 +319,9 @@ func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrap
 				meiliSubtitle.CourseTeachingTerm = course.TeachingTerm
 				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
 					hit, err := dtoToHit(meiliSubtitle)
-					if err == nil {
+					if err != nil {
+						logger.Warn("meilisearch response post processing subtitles hit conversion error", "err", err)
+					} else {
 						res.Hits = append(res.Hits, hit)
 					}
 				}
