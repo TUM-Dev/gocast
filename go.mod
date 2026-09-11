@@ -1,6 +1,6 @@
 module github.com/TUM-Dev/gocast
 
-go 1.26.0
+go 1.27.0
 
 tool go.uber.org/mock/mockgen
 
