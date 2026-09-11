@@ -50,7 +50,7 @@ require (
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/soheilhy/cmux v0.1.5
-	github.com/tum-dev/gocast/runner v0.0.0-20260828191951-d5c18343bc99
+	github.com/tum-dev/gocast/runner v0.0.0-20260911225449-efd09b759020
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.52.0
 	golang.org/x/oauth2 v0.35.0
