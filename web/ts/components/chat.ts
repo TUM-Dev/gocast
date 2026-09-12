@@ -59,7 +59,6 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
 
         afterInitPopout() {
             this.__initpromise.then(() => {
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
                 this.deactivateReplay = () => {}; // for the popout chat this is simply a NOOP
                 this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.user)));
                 Alpine.nextTick(() => this.scrollToBottom());
