@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -89,10 +90,7 @@ func TestErrorHandler(t *testing.T) {
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
 		}
-		var body map[string]any
-		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
-			t.Fatalf("body %q is not JSON: %v", rec.Body.String(), err)
-		}
+		body := decodeJSONObject(t, rec)
 		want := map[string]any{"status": float64(http.StatusNotFound), "message": "no such stream", "error": "record not found"}
 		for k, v := range want {
 			if body[k] != v {
@@ -101,18 +99,55 @@ func TestErrorHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("turns a plain error into a 500 with the bare message", func(t *testing.T) {
+	t.Run("renders a RequestError without a cause and omits the error key", func(t *testing.T) {
 		rec := serveThroughErrorHandler(t, func(c *gin.Context) {
-			_ = c.Error(errors.New("database exploded"))
+			_ = c.Error(RequestError{Status: http.StatusForbidden, CustomMessage: "not your stream"})
+		})
+
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("status = %d, want %d", rec.Code, http.StatusForbidden)
+		}
+		body := decodeJSONObject(t, rec)
+		if body["status"] != float64(http.StatusForbidden) || body["message"] != "not your stream" {
+			t.Errorf("body = %v, want status/message for a forbidden request", body)
+		}
+		if _, ok := body["error"]; ok {
+			t.Errorf("body carries an %q key with no cause: %v", "error", body)
+		}
+	})
+
+	t.Run("turns a plain error into a 500 with the same object shape", func(t *testing.T) {
+		rec := serveThroughErrorHandler(t, func(c *gin.Context) {
+			_ = c.Error(errors.New("database exploded: dial tcp db.internal:3306"))
 		})
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d, want %d", rec.Code, http.StatusInternalServerError)
 		}
-		// The default branch serialises the raw message as a bare JSON string, not an
-		// object, so clients cannot parse both shapes the same way.
-		if got := rec.Body.String(); got != `"database exploded"` {
-			t.Errorf("body = %q, want %q", got, `"database exploded"`)
+		// Both branches must serialise the same object so a client can parse one shape.
+		body := decodeJSONObject(t, rec)
+		if body["status"] != float64(http.StatusInternalServerError) {
+			t.Errorf("body[%q] = %v, want %d", "status", body["status"], http.StatusInternalServerError)
+		}
+		if body["message"] != GenericInternalErrorMessage {
+			t.Errorf("body[%q] = %v, want %q", "message", body["message"], GenericInternalErrorMessage)
+		}
+		if _, ok := body["error"]; ok {
+			t.Errorf("an unexpected error must not expose a cause to the client: %v", body)
+		}
+	})
+
+	// Go error strings routinely carry SQL fragments, file paths and internal
+	// hostnames; none of that may reach the client.
+	t.Run("does not leak the internal error text", func(t *testing.T) {
+		rec := serveThroughErrorHandler(t, func(c *gin.Context) {
+			_ = c.Error(errors.New("database exploded: dial tcp db.internal:3306"))
+		})
+
+		for _, secret := range []string{"database exploded", "db.internal", "3306"} {
+			if strings.Contains(rec.Body.String(), secret) {
+				t.Errorf("body %q leaks %q", rec.Body.String(), secret)
+			}
 		}
 	})
 
@@ -165,4 +200,16 @@ func serveThroughErrorHandler(t *testing.T, handler gin.HandlerFunc) *httptest.R
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/thing", nil))
 	return rec
+}
+
+// decodeJSONObject fails the test unless the recorded body is a JSON object - both
+// ErrorHandler branches must emit the same shape.
+func decodeJSONObject(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
+	t.Helper()
+
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("body %q is not a JSON object: %v", rec.Body.String(), err)
+	}
+	return body
 }
