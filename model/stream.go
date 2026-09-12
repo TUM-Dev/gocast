@@ -204,16 +204,6 @@ func (s *Stream) TimeSlotReached() bool {
 	return time.Now().After(s.Start.Add(-time.Minute)) && time.Now().Before(s.End)
 }
 
-// IsStartingInOneDay returns whether the stream starts within 1 day
-func (s *Stream) IsStartingInOneDay() bool {
-	return s.Start.After(time.Now().Add(24 * time.Hour))
-}
-
-// IsStartingInMoreThanOneDay returns whether the stream starts in at least 2 days
-func (s *Stream) IsStartingInMoreThanOneDay() bool {
-	return s.Start.After(time.Now().Add(48 * time.Hour))
-}
-
 // IsPlanned returns whether the stream is planned or not
 func (s *Stream) IsPlanned() bool {
 	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
@@ -428,7 +418,13 @@ func (s *Stream) FirstSilenceAsProgress() float64 {
 		return 0
 	}
 	duration := s.End.Sub(s.Start).Seconds()
-	p := float64(s.Silences[0].End) / duration
+	// A zero (or negative) length slot would divide by zero and produce +Inf or,
+	// for a zero length silence, NaN. Neither marshals to valid JSON, which breaks
+	// every payload and template that embeds the progress. There is no meaningful
+	// fraction of an empty stream, so report no progress instead.
+	if duration <= 0 {
+		return 0
+	}
 
-	return p
+	return float64(s.Silences[0].End) / duration
 }

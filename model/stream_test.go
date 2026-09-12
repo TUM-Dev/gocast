@@ -167,65 +167,6 @@ func TestStreamTimeSlotReached(t *testing.T) {
 	}
 }
 
-// BUG (asserted as-is, not fixed): IsStartingInOneDay is documented as "starts
-// within 1 day" but returns Start.After(now+24h), i.e. the exact opposite. Both
-// predicates are currently unreferenced outside this file, so the cases below pin
-// the implemented behaviour rather than the documented one.
-func TestStreamIsStartingInOneDay(t *testing.T) {
-	tests := []struct {
-		name                    string
-		stream                  Stream
-		wantOneDay, wantTwoDays bool
-	}{
-		{
-			name:       "a stream later today is not after either threshold",
-			stream:     streamAt(2*time.Hour, 3*time.Hour),
-			wantOneDay: false, wantTwoDays: false,
-		},
-		{
-			name:       "a stream just under twenty-four hours out is not after the one day threshold",
-			stream:     streamAt(23*time.Hour, 24*time.Hour),
-			wantOneDay: false, wantTwoDays: false,
-		},
-		{
-			name:       "a stream just over twenty-four hours out is after the one day threshold only",
-			stream:     streamAt(25*time.Hour, 26*time.Hour),
-			wantOneDay: true, wantTwoDays: false,
-		},
-		{
-			name:       "a stream just under forty-eight hours out is still not after the two day threshold",
-			stream:     streamAt(47*time.Hour, 48*time.Hour),
-			wantOneDay: true, wantTwoDays: false,
-		},
-		{
-			name:       "a stream three days out is after both thresholds",
-			stream:     streamAt(72*time.Hour, 73*time.Hour),
-			wantOneDay: true, wantTwoDays: true,
-		},
-		{
-			name:       "a past stream is after neither threshold",
-			stream:     streamAt(-72*time.Hour, -71*time.Hour),
-			wantOneDay: false, wantTwoDays: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.stream.IsStartingInOneDay(); got != tt.wantOneDay {
-				t.Errorf("IsStartingInOneDay() = %v, want %v", got, tt.wantOneDay)
-			}
-			if got := tt.stream.IsStartingInMoreThanOneDay(); got != tt.wantTwoDays {
-				t.Errorf("IsStartingInMoreThanOneDay() = %v, want %v", got, tt.wantTwoDays)
-			}
-			// The 48h window is contained in the 24h one; a refactor that breaks the
-			// nesting would make the UI claim both "soon" and "far away".
-			if tt.stream.IsStartingInMoreThanOneDay() && !tt.stream.IsStartingInOneDay() {
-				t.Error("IsStartingInMoreThanOneDay() without IsStartingInOneDay()")
-			}
-		})
-	}
-}
-
 func TestStreamIsPlanned(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -868,21 +809,44 @@ func TestStreamFirstSilenceAsProgress(t *testing.T) {
 		})
 	}
 
-	// BUG (asserted as-is, not fixed): a zero-length slot divides by zero and yields
-	// +Inf, which serialises to invalid JSON and renders as a broken progress bar.
-	t.Run("a zero length stream divides by zero", func(t *testing.T) {
+	// A zero length slot used to divide by zero and yield +Inf (or NaN when the
+	// silence was empty too). Neither is representable in JSON, so the value has to
+	// stay finite: both the watch page template and the API embed it directly.
+	t.Run("a zero length stream reports no progress", func(t *testing.T) {
 		at := time.Date(2023, time.March, 7, 10, 0, 0, 0, time.UTC)
 		s := Stream{Start: at, End: at, Silences: []Silence{{Start: 0, End: 360}}}
-		if got := s.FirstSilenceAsProgress(); !math.IsInf(got, 1) {
-			t.Errorf("FirstSilenceAsProgress() = %v, want +Inf (current behaviour)", got)
+		if got := s.FirstSilenceAsProgress(); got != 0 {
+			t.Errorf("FirstSilenceAsProgress() = %v, want 0", got)
 		}
 	})
 
-	t.Run("a zero length stream with a zero length silence is not a number", func(t *testing.T) {
+	t.Run("a zero length stream with a zero length silence reports no progress", func(t *testing.T) {
 		at := time.Date(2023, time.March, 7, 10, 0, 0, 0, time.UTC)
 		s := Stream{Start: at, End: at, Silences: []Silence{{Start: 0, End: 0}}}
-		if got := s.FirstSilenceAsProgress(); !math.IsNaN(got) {
-			t.Errorf("FirstSilenceAsProgress() = %v, want NaN (current behaviour)", got)
+		if got := s.FirstSilenceAsProgress(); got != 0 {
+			t.Errorf("FirstSilenceAsProgress() = %v, want 0", got)
+		}
+	})
+
+	// The failure mode that actually bites: json.Marshal refuses +Inf and NaN, so
+	// any response carrying the progress would fail to serialise entirely.
+	t.Run("the progress always marshals to JSON", func(t *testing.T) {
+		at := time.Date(2023, time.March, 7, 10, 0, 0, 0, time.UTC)
+		streams := []Stream{
+			hourLong(Silence{Start: 0, End: 360}),
+			hourLong(),
+			{Start: at, End: at, Silences: []Silence{{Start: 0, End: 360}}},
+			{Start: at, End: at, Silences: []Silence{{Start: 0, End: 0}}},
+			{Start: at, End: at.Add(-time.Hour), Silences: []Silence{{Start: 0, End: 360}}},
+		}
+		for _, s := range streams {
+			got := s.FirstSilenceAsProgress()
+			if math.IsInf(got, 0) || math.IsNaN(got) {
+				t.Fatalf("FirstSilenceAsProgress() = %v, want a finite value", got)
+			}
+			if _, err := json.Marshal(got); err != nil {
+				t.Errorf("json.Marshal(%v) = %v, want no error", got, err)
+			}
 		}
 	})
 }
