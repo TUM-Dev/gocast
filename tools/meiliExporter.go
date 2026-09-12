@@ -152,7 +152,7 @@ func (m *MeiliExporter) Export() {
 				Visibility:   course.Visibility,
 			}
 		}
-		_, err := coursesIndex.AddDocumentsInBatches(&meilicourses, 500, docOptions("ID"))
+		_, err := coursesIndex.AddDocumentsInBatches(meilicourses, 500, docOptions("ID"))
 		if err != nil {
 			logger.Error("issue adding courses to meili", "err", err)
 		}
