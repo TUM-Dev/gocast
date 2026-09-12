@@ -30,6 +30,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
 	subtitle_proto "github.com/TUM-Dev/gocast/voice-service/pb"
 	"github.com/TUM-Dev/gocast/worker/pb"
@@ -1070,4 +1071,28 @@ func ServeWorkerGRPC(subtitleClient subtitle_proto.SubtitleGeneratorClient, subt
 			logger.Error("Can't serve grpc", "err", err)
 		}
 	}()
+}
+
+// generateVideoSectionImages generates the thumbnails for the given video sections.
+//
+// Section image generation is being moved from the workers to the runners: a runner
+// returns the images as bytes and gocast writes them itself, which keeps course
+// metadata out of the storage path entirely. Until every deployment runs runners,
+// this falls back to the worker when no runner can take the job.
+func generateVideoSectionImages(manager *runner_manager.Manager, daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
+	if len(parameters.sections) == 0 {
+		return nil
+	}
+	if manager != nil {
+		err := manager.RequestSectionImages(context.Background(), runner_manager.SectionImageRequest{
+			StreamID:    parameters.sections[0].StreamID,
+			PlaylistURL: parameters.playlistUrl,
+			Sections:    parameters.sections,
+		})
+		if err == nil {
+			return nil
+		}
+		logger.Warn("no runner took the section images job, falling back to a worker", "err", err)
+	}
+	return GenerateVideoSectionImages(daoWrapper, parameters)
 }

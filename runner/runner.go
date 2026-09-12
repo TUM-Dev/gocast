@@ -245,7 +245,8 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 				case *protobuf.Notification_StreamEnd,
 					*protobuf.Notification_StreamStart,
 					*protobuf.Notification_VodReady,
-					*protobuf.Notification_ThumbnailReady:
+					*protobuf.Notification_ThumbnailReady,
+					*protobuf.Notification_SectionImagesReady:
 					b = unbounded
 				}
 				err := retry.Do(ctx, b, r.sendNotification(n))
@@ -273,6 +274,11 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 					// strip data from this notification log to avoid noise
 				},
 			})
+		case *protobuf.Notification_SectionImagesReady:
+			r.log.Debug("send notification", "type", "SectionImagesReady",
+				"stream", notification.GetSectionImagesReady().GetStream().GetId(),
+				// strip the images from this notification log to avoid noise
+				"images", len(notification.GetSectionImagesReady().GetImages()))
 		default:
 			r.log.Debug("send notification", "notification", notification)
 		}
