@@ -12,11 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # The runner has node but not pnpm. corepack is no longer bundled with node as of
+      # 25, so install it rather than rely on the runner image still carrying it;
+      # installing corepack rather than pnpm keeps packageManager in each package.json
+      # the single place the pnpm version is pinned. --force because corepack's yarn
+      # shim collides with the one already on the runner.
+      - name: Set up pnpm
+        run: npm install -g corepack@latest --force && corepack enable pnpm
       - name: Install modules
         working-directory: ./web
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Run ESLint
         working-directory: ./web
-        # Deliberately the npm script rather than a second copy of the arguments:
+        # Deliberately the package script rather than a second copy of the arguments:
         # ESLint 10 dropped --ext, and the file set now lives in package.json.
-        run: npm run lint
+        run: pnpm run lint
