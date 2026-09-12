@@ -120,6 +120,7 @@ func run(ctx context.Context) error {
 		&model.StreamReaction{},
 		&model.Runner{},
 		&model.StreamRunnerJob{},
+		&model.Integration{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)

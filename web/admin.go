@@ -54,7 +54,15 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	var tokens []dao.AllTokensDto
 	var infopages []model.InfoPage
 	var serverNotifications []model.ServerNotification
+	var integrations []model.Integration
 	switch page {
+	case "integrations":
+		integrations, err = r.IntegrationDao.GetIntegrations()
+		if err != nil {
+			logger.Error("could not load integration administration", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
 	case "notifications":
 		found, err := r.NotificationsDao.GetAllNotifications()
 		if err != nil {
@@ -112,6 +120,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
 			HasTestCourse:       hasTestCourse,
+			Integrations:        integrations,
 		})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
@@ -144,6 +153,8 @@ func GetPageString(s string) string {
 		return "notifications"
 	case "/admin/token":
 		return "token"
+	case "/admin/integrations":
+		return "integrations"
 	case "/admin/infopages":
 		return "info-pages"
 	case "/admin/server-stats":
@@ -421,6 +432,7 @@ type AdminPageData struct {
 	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 	HasTestCourse       bool
+	Integrations        []model.Integration
 }
 
 func (apd AdminPageData) UsersAsJson() string {

@@ -15,3 +15,4 @@ export * from "../audits";
 export * from "../maintenance";
 export * from "../change-set";
 export * from "../api/runner";
+export * from "../integration-management";
