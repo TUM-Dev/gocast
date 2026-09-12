@@ -2,7 +2,6 @@ package sony
 
 import (
 	"fmt"
-	"net/http"
 
 	uuid "github.com/satori/go.uuid"
 
@@ -51,8 +50,9 @@ func (s *SonySRG) GetPresets() ([]model.CameraPreset, error) {
 	// Sony SRG-A40 cameras support up to 256 presets, but only a few are used (see panasonic.go)
 	presets := make([]model.CameraPreset, 0, 16)
 	for i := range 16 {
-		_, status, err := protocol.MakeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("http://%s/preset/presetimg%d.jpg", s.Ip, i+1))
-		if err != nil || status != http.StatusOK {
+		// A missing thumbnail answers 404, which MakeAuthenticatedRequest reports as an
+		// error: the first failing probe ends the listing, as before.
+		if _, _, err := protocol.MakeAuthenticatedRequest(&s.Auth, "GET", "", fmt.Sprintf("http://%s/preset/presetimg%d.jpg", s.Ip, i+1)); err != nil {
 			break
 		}
 		presets = append(presets, model.CameraPreset{
