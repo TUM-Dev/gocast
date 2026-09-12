@@ -97,6 +97,18 @@ service MetaService {
       description: "Retrieves current server notifications."
     };
   }
+
+  rpc getInfoPage(GetInfoPageRequest) returns (GetInfoPageResponse) {
+    option (google.api.http) = {get: "/info-pages/{name}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Info Pages"
+      summary: "Get an info page."
+      description:
+        "Returns the deployment's privacy policy, imprint or about page "
+        "as sanitised HTML. Public: these are the pages a visitor reads "
+        "before deciding to sign in."
+    };
+  }
 }
 
 // The signed-in user's own account, and the endpoints the login page needs
@@ -356,6 +368,19 @@ message GetFrontendConfigResponse {
   // isFreshInstallation reports that the database holds no users yet, so the
   // frontend can offer to create the first account instead of a login form.
   bool is_fresh_installation = 5;
+}
+
+// The name is the page's route -- "privacy", "imprint" or "about" -- not the editable
+// title stored beside its content.
+message GetInfoPageRequest {
+  string name = 1;
+}
+
+message GetInfoPageResponse {
+  // name echoes the requested route name.
+  string name = 1;
+  // Rendered from Markdown and sanitised server-side; the client must not do it again.
+  string content = 2;
 }
 
 ///////////////////////////////

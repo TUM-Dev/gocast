@@ -49,6 +49,9 @@ var spaRoutes = map[string]bool{
 	"/courses/mine":             true,
 	"/courses/public":           true,
 	"/course/:year/:term/:slug": true,
+	"/privacy":                  true,
+	"/imprint":                  true,
+	"/about":                    true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -256,10 +259,10 @@ func configMainRoute(router *gin.Engine) {
 	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
 	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
 
-	// info-pages (Make sure the IDs are correct!)
-	router.GET("/privacy", routes.InfoPage(1, "privacy"))
-	router.GET("/imprint", routes.InfoPage(2, "imprint"))
-	router.GET("/about", routes.InfoPage(3, "about"))
+	// info-pages. Public, so no middleware; the rows are getInfoPage's business now.
+	registerPage(&router.RouterGroup, http.MethodGet, "/privacy", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/imprint", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/about", nil)
 
 	// search
 	router.GET("/search", routes.SearchPage)
