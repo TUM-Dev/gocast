@@ -104,6 +104,10 @@ contents. Treat its users, courses and lectures as an API.
 - Comments should explain *why*, especially where the code looks odd. This codebase
   does that well; match it. Several comments exist specifically to stop someone
   "fixing" a deliberate choice — leave those in place.
+- **Releases are a tag push.** Everything downstream — images, Matrix notice, and the
+  GitHub release notes rendered from the commit log — hangs off it. Use the
+  **`release` skill** (`.claude/skills/release/`); don't hand-write a release body,
+  it gets overwritten on the next run.
 - Dependencies are Renovate's job. `renovate.json` carries version holds with the
   reason and the condition for removing each one; read it before pinning something by
   hand.
