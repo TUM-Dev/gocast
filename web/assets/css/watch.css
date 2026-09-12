@@ -1,3 +1,11 @@
+/*
+ * `@reference` makes the theme and variants available to `@apply` without
+ * emitting Tailwind's own output: this file is a supplement to home.css, which
+ * already carries preflight and the utilities.
+ */
+@reference "tailwindcss";
+@config "../../tailwind.config.js";
+
 .playlist-thumbnail {
     @apply relative bg-gray-100 dark:bg-gray-800 rounded-lg mr-4 bg-cover transition-all duration-500 hover:shadow-xl dark:shadow-gray-900/75;
 }

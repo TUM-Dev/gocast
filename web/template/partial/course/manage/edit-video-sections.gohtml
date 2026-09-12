@@ -63,7 +63,7 @@
                                          x-change-set-listen="sectionEditChangeSet"
                                          x-on-change-set-update.init="$el.innerText = friendlySectionTimestamp(sectionEditChangeSet.get())"
                                     ></div>
-                                    <div x-change-set-listen.text="sectionEditChangeSet.description" class="text-xs font-semibold text-3 ml-2 flex-grow"></div>
+                                    <div x-change-set-listen.text="sectionEditChangeSet.description" class="text-xs font-semibold text-3 ml-2 grow"></div>
                                     <div class="flex items-center py-1 pl-2 border-l dark:border-gray-600">
                                         <button class="text-5 py-1 px-3 rounded text-3 hover:bg-gray-200 dark:hover:bg-gray-600" @click="editMode = true">
                                             <i class="fa fa-edit"></i>
@@ -81,7 +81,7 @@
                                       x-data="{ isValid: false }"
                                       x-change-set-listen="sectionEditChangeSet"
                                       x-on-change-set-update="isValid = sectionEditChangeSet.isDirty() && isValidVideoSection(sectionEditChangeSet.get())"
-                                      class="flex flex-grow items-center p-2">
+                                      class="flex grow items-center p-2">
                                     <div class="text-sm mr-2">
                                         <label for="video-section-timestamp"
                                                class="block text-5">Timestamp</label>
@@ -91,31 +91,31 @@
                                                    name="startHours"
                                                    type="number" min="0" max="23" step="1"
                                                    placeholder="0"
-                                                   class="w-20 rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600">
+                                                   class="w-20 rounded px-4 py-3 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600">
                                             <span class="px-2 my-auto font-semibold text-5">:</span>
                                             <input id="startMinutes"
                                                    x-bind-change-set.int="sectionEditChangeSet"
                                                    name="startMinutes"
                                                    type="number" min="0" max="59" step="1"
                                                    placeholder="0"
-                                                   class="w-20 rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600">
+                                                   class="w-20 rounded px-4 py-3 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600">
                                             <span class="px-2 my-auto font-semibold text-5">:</span>
                                             <input id="startSeconds"
                                                    x-bind-change-set.int="sectionEditChangeSet"
                                                    name="startSeconds"
                                                    type="number" min="0" max="59" step="1"
                                                    placeholder="0"
-                                                   class="w-20 rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600">
+                                                   class="w-20 rounded px-4 py-3 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600">
                                         </div>
                                     </div>
-                                    <div class="text-sm flex-grow">
+                                    <div class="text-sm grow">
                                         <label for="video-section-description"
                                                class="block text-5">Description</label>
                                         <input x-bind-change-set="sectionEditChangeSet"
                                                name="description"
                                                id="video-section-description" type="text"
                                                autofocus="" required
-                                               class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                                               class="rounded px-4 py-3 mt-3 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                                     </div>
                                     <div class="flex flex-col ml-2">
                                         <button type="reset"

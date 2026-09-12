@@ -7,7 +7,6 @@ module.exports = {
         "./template/**/*.html",
         "./ts/**/*.ts",
     ],
-    mode: "jit",
     darkMode: "class", // or 'media' or 'false'
     theme: {
         extend: {
@@ -39,14 +38,6 @@ module.exports = {
             blur: {
                 xxs: "1px",
             },
-        },
-    },
-    variants: {
-        extend: {
-            backgroundColor: ["odd", "disabled"],
-            display: ["group-hover"],
-            textColor: ["visited"],
-            opacity: ["disabled"],
         },
     },
     plugins: [],

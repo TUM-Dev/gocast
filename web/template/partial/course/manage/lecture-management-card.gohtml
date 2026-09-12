@@ -44,7 +44,7 @@
                             class="bg-indigo-500 rounded px-2 py-0 font-semibold">
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
-                        <span class="rounded-sm bg-red-500 text-red-200 block p-4">
+                        <span class="rounded-xs bg-red-500 text-red-200 block p-4">
                             Self-Streaming is an experimental feature. By using it, you acknowledge, that a local
                             copy during the stream is <b>absolutely necessary</b> to ensure the availability of the
                             lecture in case something fails during processing of your stream.
@@ -144,7 +144,7 @@
                         <span x-cloak x-show="expand"
                               @click.outside="expand = false"
                               class="origin-top-left absolute top-full left-0 m-auto w-32
-                        dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
+                        dark:bg-secondary ring-1 ring-black/5 focus:outline-hidden"
                               role="menu" aria-orientation="vertical"
                               aria-labelledby="menu-button" tabindex="-1">
                             <span class="py-1" role="none">
@@ -290,7 +290,7 @@
                                 <i class="fa fa-xmark text-3"></i>
                             </div>
                             <input :id="video.inputId" class="hidden" :name="video.info.key" type="file" accept="video/mp4" x-bind-change-set.single="changeSet" @csupdate="(e) => { file = e.detail; }" />
-                            <div x-show="lectureData.isSaving && file !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
+                            <div x-show="lectureData.isSaving && file !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/80 flex justify-center items-center font-bold text-2xl">
                                 <span x-text="`${progress[video.info.type]}%`"></span>
                             </div>
                         </div>
@@ -458,7 +458,7 @@
                 <section class="flex items-center py-1 px-3">
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" name="isChatEnabled" class="sr-only peer" x-bind-change-set="changeSet" />
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-600
                         dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
                         peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
                         after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
@@ -471,7 +471,7 @@
                     <label class="relative inline-flex items-center cursor-pointer left-3" >
                         <input type="checkbox" class="sr-only peer" :checked="uploadThumbnailPanelOpen" @change="uploadThumbnailPanelOpen = $event.target.checked"/>
                         <div
-                             class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
+                             class="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-600
                         dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
                         peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
                         after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5

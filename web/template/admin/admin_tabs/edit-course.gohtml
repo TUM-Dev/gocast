@@ -25,7 +25,7 @@
             </div>
             {{if (eq $course.Year 1234)}}
                 <div x-data="{ show: true }" x-show="show" class="p-3 text-md border border-blue-500 text-blue-500 bg-blue-100 dark:bg-blue-200 dark:border-blue-700 dark:text-blue-700 rounded-lg flex items-center" role="alert">
-                    <div class="flex-shrink-0">
+                    <div class="shrink-0">
                         <i class="fa-solid fa-info-circle text-4 text-blue-500 dark:text-blue-700"></i>
                     </div>
                     <div class="ml-3" x-init="console.log('currentYear: {{$currentYear}}', 'currentTerm: {{$currentTerm}}', 'courseYear: {{$course.Year}}', 'courseTerm: {{$course.TeachingTerm}}')">
@@ -40,7 +40,7 @@
                 </div>
             {{else if or (ne $course.TeachingTerm $currentTerm) (ne $course.Year $currentYear)}}
                 <div x-data="{ show: true }" x-show="show" class="p-3 text-md border bg-yellow-100 border-yellow-600 text-yellow-600 dark:bg-yellow-200 dark:border-yellow-700 dark:text-yellow-700 rounded-lg flex items-center" role="alert">
-                    <div class="flex-shrink-0">
+                    <div class="shrink-0">
                         <i class="fa-solid fa-warning text-4 text-yellow-500 dark:text-yellow-700"></i>
                     </div>
                     <div class="ml-3" x-init="console.log('currentYear: {{$currentYear}}', 'currentTerm: {{$currentTerm}}', 'courseYear: {{$course.Year}}', 'courseTerm: {{$course.TeachingTerm}}')">

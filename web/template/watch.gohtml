@@ -89,7 +89,7 @@
     {{template "alert-modal" . }}
 {{end}}
 <div id="watchPageMainWrapper">
-    <div class="offscreen video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
+    <div class="offscreen video-description grow p-3 order-2 basis-full lg:order-0 lg:p-5 lg:mx-2">
         <div>
             <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm">
                 <span id="description">{{.Description}}</span>
@@ -101,7 +101,7 @@
          class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
         <div id="watchWrapper"
              x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }"
-             class="relative basis-full lg:order-none order-1 sticky top-0 lg:relative z-40"
+             class="relative basis-full lg:order-0 order-1 sticky top-0 lg:relative z-40"
              :class="sidebar !== watch.SidebarState.Hidden ? 'lg:basis-3/4 lg:h-16/6 h-16/9' : 'lg:basis-full h-16/9'">
             <noscript>
                 <p class="vjs-no-js">To view this video please enable JavaScript.</p>
@@ -252,7 +252,7 @@
                         x-on:updateseekbarsize.window="e => { size = e.detail; }"
                         x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
                         x-init="watch.seekbarOverlay.init($el);"
-                        class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] h-full"
+                        class="seekbar-overlay absolute bottom-[18px] bg-linear-to-t from-gray-800/60 h-full"
                         :style="{width: size.width, left: size.x}"
                 >
 
@@ -290,7 +290,7 @@
                             <div class="absolute bottom-0 top-0" :style="{ left: `${marker.position * 100}%` }">
                                 <!-- Section Separator -->
                                 <div x-show="marker.type === watch.MarkerType.sectionSep"
-                                     class="w-[2px] h-full bg-gradient-to-t from-black rounded-t"></div>
+                                     class="w-[2px] h-full bg-linear-to-t from-black rounded-t"></div>
 
                                 <!-- Bookmark Marker -->
                                 <div x-show="marker.type === watch.MarkerType.bookmark"
@@ -309,12 +309,12 @@
                             <div>
                                 <div
                                         class="absolute border-x-2 border-t-2 bottom-0 top-0 rounded-t"
-                                        :class="hoverPos.inRange(section.from, section.to) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
+                                        :class="hoverPos.inRange(section.from, section.to) ? 'bg-white/10 border-white/2' : 'bg-black/20 border-transparent'"
                                         :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%` }"
                                 ></div>
                                 <div
                                         x-show="hoverPos.inRange(section.from, section.to)"
-                                        class="absolute top-[-45px] text-center w-[100px] bg-black/[0.9] ml-[-50px] px-[12px] py-2 rounded"
+                                        class="absolute top-[-45px] text-center w-[100px] bg-black/90 ml-[-50px] px-[12px] py-2 rounded"
                                         :style="{ left: `${(section.from + (section.to - section.from) / 2) * 100}%` }"
                                 >
                                     <span class="size1" x-text="section.title"></span>
@@ -328,7 +328,7 @@
                         x-cloak
                         x-show="contextMenu.shown"
                         @click.outside="contextMenu = {...contextMenu, shown: false}"
-                        class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                        class="origin-top-left absolute w-72 py-2 bg-gray-800/90 border-gray-100 border rounded text-white text-sm"
                         :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
                         role="menu" aria-orientation="vertical" tabindex="-1">
                     <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
@@ -342,7 +342,7 @@
                         x-show="contextMenu.shown"
                         x-data="{share: new watch.ShareURL()}"
                         @click.outside="contextMenu = {...contextMenu, shown: false}"
-                        class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                        class="origin-top-left absolute w-72 py-2 bg-gray-800/90 border-gray-100 border rounded text-white text-sm"
                         :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
                         role="menu" aria-orientation="vertical" tabindex="-1">
                     <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
@@ -366,7 +366,7 @@
                         x-data="{ data: { bufferSeconds: 0, videoHeight: 0, videoWidth: 0, bandwidth: 0, mediaRequests: 0, mediaRequestsFailed: 0 } }"
                         x-show="videoStatsShown"
                         x-on:newvideostats.window="e => { data = e.detail }"
-                        class="origin-top-left absolute w-72 p-4 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                        class="origin-top-left absolute w-72 p-4 bg-gray-800/90 border-gray-100 border rounded text-white text-sm"
                         :style="{ top: '5px', left: '5px' }"
                         role="menu" aria-orientation="vertical" tabindex="-1">
                     <div class="flex justify-between align-middle pb-4">
@@ -411,7 +411,7 @@
             <div x-show="sidebar === watch.SidebarState.Chat"
                  :class="sidebar === watch.SidebarState.Chat ? 'lg:basis-1/4' : 'lg:basis-0'"
                  class="z-20 basis-full order-5 px-2
-                        h-sidebar-mobile md:h-16/9 lg:h-16/6 lg:order-none">
+                        h-sidebar-mobile md:h-16/9 lg:h-16/6 lg:order-0">
                 <div class="border dark:border-gray-800 rounded-lg h-full">
                     {{template "chat-component" .ChatData}}
                 </div>
@@ -422,7 +422,7 @@
         {{if .IndexData.TUMLiveContext.User}}
             <div id="bookmarks-desktop" x-cloak x-show="sidebar === watch.SidebarState.Bookmarks"
                  :class="sidebar === watch.SidebarState.Bookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="basis-full h-sidebar-mobile md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4">
+                 class="basis-full h-sidebar-mobile md:h-16/9 lg:h-16/6 px-2 lg:order-0 order-4">
                 {{template "bookmarks-modal" $stream.ID}}
             </div>
         {{end}}
@@ -430,7 +430,7 @@
         <!-- Transcript -->
         <div id="transcript-desktop" x-cloak x-show="sidebar === watch.SidebarState.Transcript && transcriptAvailable"
             :class="sidebar === watch.SidebarState.Transcript ? 'lg:basis-1/4' : 'lg:basis-0'"
-            class="basis-full h-sidebar-mobile md:h-16/9 lg:h-16/6 px-2 lg:order-none order-4">
+            class="basis-full h-sidebar-mobile md:h-16/9 lg:h-16/6 px-2 lg:order-0 order-4">
             {{template "transcript-modal" $stream.ID}}
         </div>
 
@@ -447,14 +447,14 @@
         {{if .IndexData.TUMLiveContext.User}}
             <div id="streams-box" x-cloak x-show="sidebar === watch.SidebarState.Streams"
                  :class="sidebar === watch.SidebarState.Streams ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="order-4 z-20 basis-full px-2 lg:order-none h-sidebar-mobile md:h-16/9 lg:h-16/6">
+                 class="order-4 z-20 basis-full px-2 lg:order-0 h-sidebar-mobile md:h-16/9 lg:h-16/6">
                 {{template "playlist" $stream.ID}}
             </div>
         {{end}}
 
         <!-- stream info container -->
         <!-- Title, course name, actions -->
-        <div class="basis-full relative order-2 p-4 md:p-5 lg:order-none w-full">
+        <div class="basis-full relative order-2 p-4 md:p-5 lg:order-0 w-full">
             <div class="flex flex-col justify-between align-middle pb-2 md:flex-row gap-3">
                 <!-- title and course-name -->
                 <div class="pb-3 border-b dark:border-gray-600 grid shrink mb-auto md:pb-0 md:border-0">
@@ -574,7 +574,7 @@
         </div>
         {{if and .IsAdminOfCourse $stream.LiveNow}}
             <!-- Admin control buttons -->
-            <div class="w-full p-3 lg:order-none order-2 lg:p-5">
+            <div class="w-full p-3 lg:order-0 order-2 lg:p-5">
                 <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Admin</h3>
                 <div class="md:space-x-2 lg:space-y-0 space-y-2 w-full">
                     {{/* Lecture hall is set, means no self-stream*/}}
@@ -626,7 +626,7 @@
         <div class="flex flex-col lg:flex-row basis-full order-4">
             <!-- Video Sections -->
             {{if $stream.VideoSections}}
-                <div class="p-2 order-4 lg:basis-1/2 lg:p-5 lg:order-none">
+                <div class="p-2 order-4 lg:basis-1/2 lg:p-5 lg:order-0">
                     {{template "videosections" $stream}}
                 </div>
             {{end}}
@@ -635,7 +635,7 @@
 
         <!-- Video description -->
         <template x-if="hasDescription()">
-            <div class="video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
+            <div class="video-description grow p-3 order-2 basis-full lg:order-0 lg:p-5 lg:mx-2">
                 <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                     <h3 class="text-4 font-semibold">Description</h3>
                 </div>

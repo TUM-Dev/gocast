@@ -32,7 +32,7 @@ function submit(): void {
       <input
         id="search-courses"
         v-model="query"
-        class="h-full w-full grow border-none bg-transparent px-3 outline-none"
+        class="h-full w-full grow border-none bg-transparent px-3 outline-hidden"
         type="text"
         placeholder="Search courses"
         @keyup.enter="submit"

@@ -5,7 +5,7 @@
           x-data="admin.createLectureForm({ s: {{toJson ($course.StreamTimes)}} })" @submit.prevent="submitData"
           x-init="courseID = {{.IndexData.TUMLiveContext.Course.Model.ID}}; $el.reset()">
 
-        <ol class="flex items-center w-full p-3 space-x-2 text-sm font-medium text-center text-gray-500 bg-white border-b border-gray-200 shadow-sm dark:text-gray-400 sm:text-base dark:bg-gray-800 dark:border-gray-700 sm:p-4">
+        <ol class="flex items-center w-full p-3 space-x-2 text-sm font-medium text-center text-gray-500 bg-white border-b border-gray-200 shadow-xs dark:text-gray-400 sm:text-base dark:bg-gray-800 dark:border-gray-700 sm:p-4">
             <li class="flex items-center " :class="currentTab === 0 ? `text-blue-500 dark:text-white` : `text-gray-400 dark:text-gray-500`">
                 <span class="flex items-center justify-center w-5 h-5 mr-2 text-xs border rounded-full shrink-0" :class="currentTab === 0 ? `border-blue-500 dark:border-white` : `border-gray-400 dark:border-gray-500`">
                     1
