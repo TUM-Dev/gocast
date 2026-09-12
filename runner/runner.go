@@ -240,29 +240,30 @@ func (r *Runner) discarded(job string) bool {
 	return r.discard[job]
 }
 
+// notificationBackoff returns a fresh backoff for sending n. Backoffs are stateful
+// (retry counter and fibonacci sequence), so every notification needs its own.
+func notificationBackoff(n *protobuf.Notification) retry.Backoff {
+	b := retry.NewFibonacci(1 * time.Second)
+	b = retry.WithJitter(500*time.Millisecond, b)
+
+	switch n.Data.(type) {
+	case *protobuf.Notification_StreamEnd,
+		*protobuf.Notification_StreamStart,
+		*protobuf.Notification_VodReady,
+		*protobuf.Notification_ThumbnailReady:
+		// Critical notifications retry indefinitely until delivered or runner shuts down
+		return retry.WithCappedDuration(30*time.Second, b)
+	default:
+		return retry.WithMaxRetries(10, b)
+	}
+}
+
 func (r *Runner) handleNotifications(ctx context.Context) {
-	bounded := retry.NewFibonacci(1 * time.Second)
-	bounded = retry.WithJitter(500*time.Millisecond, bounded)
-	bounded = retry.WithMaxRetries(10, bounded)
-
-	// Critical notifications retry indefinitely until delivered or runner shuts down
-	unbounded := retry.NewFibonacci(1 * time.Second)
-	unbounded = retry.WithJitter(500*time.Millisecond, unbounded)
-	unbounded = retry.WithCappedDuration(30*time.Second, unbounded)
-
 	for {
 		select {
 		case n := <-r.notifications:
 			go func() {
-				b := bounded
-				switch n.Data.(type) {
-				case *protobuf.Notification_StreamEnd,
-					*protobuf.Notification_StreamStart,
-					*protobuf.Notification_VodReady,
-					*protobuf.Notification_ThumbnailReady:
-					b = unbounded
-				}
-				err := retry.Do(ctx, b, r.sendNotification(n))
+				err := retry.Do(ctx, notificationBackoff(n), r.sendNotification(n))
 				if err != nil {
 					r.log.Error("failed to send notification", "error", err,
 						"type", fmt.Sprintf("%T", n.Data))
