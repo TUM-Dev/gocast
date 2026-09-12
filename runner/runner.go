@@ -178,21 +178,30 @@ func (r *Runner) InitApiGrpc() {
 	}
 }
 
-// RunAction runs the actions in a in the background and returns the id of the created job.
-// The actions in a keep running after the job's context was cancelled, which is what lets
-// StreamEnd report the end of a stream that was stopped early. The VoD actions are skipped
-// entirely when the stream was ended with discardVod.
-func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
-	// create new context to avoid cancellation on grpc request termination
-	c, cancel := context.WithCancel(context.Background())
+// RunAction runs the actions of a stream job in the background and returns the id of the
+// created job.
+//
+// The stream actions run under a context that RequestStreamEnd cancels to stop the capture
+// early. They keep running after that cancellation, which is what lets StreamEnd report the
+// end of a stream that was stopped early.
+//
+// Afterwards either the vod or the discard actions run, depending on whether the stream was
+// ended with discardVod. Both run under a context of their own: turning the segments that
+// were captured until the cancellation into a VoD is precisely what still has to happen
+// after a stream was ended early, so they must not inherit the cancelled stream context.
+func (r *Runner) RunAction(stream, vod, discard []actions.Action, data map[string]any, logger *slog.Logger) string {
+	// create new contexts to avoid cancellation on grpc request termination
+	streamCtx, endStream := context.WithCancel(context.Background())
+	afterCtx, endAfter := context.WithCancel(context.Background())
 	job := uuid.New().String()
 	r.JobCount <- 1
 	r.jobsMu.Lock()
-	r.jobs[job] = cancel
+	r.jobs[job] = endStream
 	r.jobsMu.Unlock()
 	go func() {
 		defer func() {
-			cancel()
+			endStream()
+			endAfter()
 			r.jobsMu.Lock()
 			delete(r.jobs, job)
 			delete(r.discard, job)
@@ -200,12 +209,12 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 			r.JobCount <- -1
 		}()
 
-		run := func(action actions.Action) {
+		run := func(ctx context.Context, action actions.Action) {
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
 				log.Info("running action")
 				s := time.Now()
-				err := action(c, log, r.notifications, data, r.Metrics)
+				err := action(ctx, log, r.notifications, data, r.Metrics)
 				log.Info("action completed", "duration", time.Since(s).String())
 				if err != nil {
 					log.Error("action error", "error", err) // use action specific logger
@@ -219,16 +228,16 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 			}
 		}
 
-		for _, action := range a {
-			run(action)
+		for _, action := range stream {
+			run(streamCtx, action)
 		}
+		after := vod
 		if r.discarded(job) {
-			// the recording itself is deliberately left on disk, see livestreamCleanup
 			logger.With("job", job).Info("discarding recording, skipping VoD creation")
-			return
+			after = discard
 		}
-		for _, action := range vod {
-			run(action)
+		for _, action := range after {
+			run(afterCtx, action)
 		}
 	}()
 	return job
