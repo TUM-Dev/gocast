@@ -55,7 +55,7 @@ export class TranscriptController {
 
     async fetchTranscript(player: Player): Promise<VTTCue[]> {
         const textTracks = player.textTracks();
-        let transcript: VTTCue[] = [];
+        let transcript: VTTCue[];
 
         // Try to find the selected track first
         transcript = this.getTranscriptFromTracks(textTracks, this.selectedTrackLabel);

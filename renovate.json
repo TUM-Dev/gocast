@@ -54,6 +54,24 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
+      "description": "Hold TypeScript on 5.x. TS 7 is the native port and no longer exports typescript/lib/tsc, which vue-tsc shells out to, and @typescript-eslint@8 peers typescript <6.1. Drop this once both support it.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7.0.0"
+    },
+    {
+      "description": "Hold FullCalendar on 6.x. @fullcalendar/daygrid, timegrid and list have no stable v7 release and peer on core ~6.1.x, so bumping core alone cannot install. v7 is also a rewrite on @full-ui/headless-calendar that drops the internal-common entry point web/ts/schedule.ts imports. Drop this once the plugin packages ship stable v7.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["fullcalendar", "@fullcalendar/**"],
+      "allowedVersions": "<7.0.0"
+    },
+    {
+      "description": "Hold ical.js on 1.x. Nothing imports it directly; it arrives through @fullcalendar/icalendar, which peers ical.js@^1.4. Drop this together with the FullCalendar hold above.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["ical.js"],
+      "allowedVersions": "<2.0.0"
+    },
+    {
       "description": "Keep the Go toolchain in one PR: the golang base images and the go directive in every go.mod. CI reads its version from go.mod via go-version-file, so it follows automatically. Must stay last so it wins over the per-manager grouping above.",
       "groupName": "go toolchain",
       "groupSlug": "go-toolchain",

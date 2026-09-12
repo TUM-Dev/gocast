@@ -12,7 +12,6 @@ export function videoInteractionContext(user: User) {
         type: InteractionType.Chat,
         user: user as User,
 
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         init() {},
 
         showChat() {

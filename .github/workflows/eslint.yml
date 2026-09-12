@@ -17,4 +17,6 @@ jobs:
         run: npm ci
       - name: Run ESLint
         working-directory: ./web
-        run: npx eslint . --ext .ts,.tsx
+        # Deliberately the npm script rather than a second copy of the arguments:
+        # ESLint 10 dropped --ext, and the file set now lives in package.json.
+        run: npm run lint
