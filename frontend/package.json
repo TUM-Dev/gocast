@@ -1,6 +1,7 @@
 {
   "name": "gocast-frontend",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.15.1",
   "private": true,
   "description": "Vite single-page frontend for GoCast, migrated page by page from the server-rendered templates in web/template.",
   "type": "module",
