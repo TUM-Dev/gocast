@@ -45,7 +45,7 @@
                 <input x-model="bookmark.request.Description"
                        type="text" name="bookmark-description" id="bookmark-description"
                        placeholder="Interesting..." autofocus="" required
-                       class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                       class="rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"/>
             </div>
             <div>
                 <label for="bookmark-timestamp" class="block text-5">Timestamp</label>
@@ -55,21 +55,21 @@
                            min="0" max="60" step="1"
                            id="bookmark-timestamp-hour"
                            placeholder="" required
-                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                     <span class="px-2 my-auto font-semibold text-5">:</span>
                     <input x-model="bookmark.request.Minutes"
                            type="number" name="bookmark-timestamp-minutes"
                            min="0" max="60" step="1"
                            id="bookmark-timestamp-minutes"
                            placeholder="" required
-                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                     <span class="px-2 my-auto font-semibold text-5">:</span>
                     <input x-model="bookmark.request.Seconds"
                            type="number" name="bookmark-timestamp-seconds"
                            min="0" max="60" step="1"
                            id="bookmark-timestamp-seconds"
                            placeholder="" required
-                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                 </div>
             </div>
             <button type="submit"
@@ -92,14 +92,14 @@
                 <div x-data="{bookmarkUpdater: {}}"
                      x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
                      class="flex">
-                    <button class="w-full relative group flex flex-grow items-center shrink-0 justify-between px-4 py-3
+                    <button class="w-full relative group flex grow items-center shrink-0 justify-between px-4 py-3
                                 disabled:hover:bg-white disabled:dark:hover:bg-secondary-light
                                 hover:bg-gray-100 dark:hover:bg-gray-600"
                             :class="bookmarkUpdater.show && 'rounded-r-none'"
                             :disabled="bookmarkUpdater.show"
                             @click="watch.jumpTo({ timeParts:{hours: b.hours, minutes: b.minutes, seconds: b.seconds} });">
                         <template x-if="!bookmarkUpdater.show">
-                            <div class="flex items-center justify-between flex-grow">
+                            <div class="flex items-center justify-between grow">
                                 <div>
                                     <p x-text="b.description"
                                        class="text-3 font-semibold text-sm text-left overflow-wrap-anywhere mb-2"></p>
@@ -123,14 +123,14 @@
                         <template x-if="bookmarkUpdater.show">
                             <form @submit.prevent="bookmarkUpdater.submit()"
                                   @reset.prevent="bookmarkUpdater.reset();"
-                                  class="grid gap-1 flex-grow text-xs">
-                                <div class="text-left flex-grow">
+                                  class="grid gap-1 grow text-xs">
+                                <div class="text-left grow">
                                     <label for="bookmark-description"
                                            class="block text-5">Description</label>
                                     <input x-model="bookmarkUpdater.request.Description"
                                            type="text" name="bookmark-description" id="bookmark-description"
                                            placeholder="Interesting..." autofocus="" required
-                                           class="text-3 rounded px-4 py-3 mt-1 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                                           class="text-3 rounded px-4 py-3 mt-1 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                                 </div>
                                 <div class="flex items-center">
                                     <button type="submit"

@@ -10,7 +10,7 @@
 {{template "header" .IndexData.TUMLiveContext}}
 
 <div x-data="{ token: '{{.Token}}', done: false }"
-     class="text-3 py-4 container bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg shadow-sm flex flex-col">
+     class="text-3 py-4 container bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg shadow-xs flex flex-col">
     <h1 class="text-2xl text-1 my-auto mt-4 font-medium">{{.Course.Name}}</h1>
     {{if .Course.Model.DeletedAt.Valid}}
         <div x-show="!done">

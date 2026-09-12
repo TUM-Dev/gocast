@@ -54,7 +54,7 @@
                         <div class = "w-full grow">
                             <label class = "block text-sm text-5" for="description">Description of the issue</label>
                             <textarea required name="description" rows="5" cols="0"
-                                      class="grow rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 resize-none"
+                                      class="grow rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600 resize-none"
                                       placeholder="Add a short description of the problem here."
                                       x-model="description"></textarea>
                         </div>
@@ -62,19 +62,19 @@
                     <p class="font-bold mb-2 text-3">Your contact information (optional)</p>
                     <div class="mt-3">
                         <label class = "block text-sm text-5" for="fname">Name</label>
-                        <input class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
+                        <input class="rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"
                                 name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
                                value="{{if .IndexData.TUMLiveContext.User}}{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}{{end}}">
                     </div>
                     <div class="mt-3">
                         <label class = "block text-sm text-5" for="mail">Mail</label>
-                        <input class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
+                        <input class="rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"
                                 name="mail" type="email" placeholder="maria.musterfrau@provider.de"
                                x-model="mail">
                     </div>
                     <div class="mt-3">
                         <label class = "block text-sm text-5" for="phone">Phone</label>
-                        <input class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
+                        <input class="rounded px-4 py-3 mt-1 text-4 focus:outline-hidden border-0 bg-gray-50 w-full dark:bg-gray-600"
                                 name="phone" type="text" placeholder="12345678" x-model="phone">
                     </div>
                     <!--Footer-->

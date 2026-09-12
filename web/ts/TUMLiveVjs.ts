@@ -697,9 +697,9 @@ export class Titlebar extends Component {
         dom.emptyEl(this.el());
 
         this.el().innerHTML = `
-        <div class="bg-gradient-to-b from-black/75 to-transparent pb-10 px-2 pt-2">
+        <div class="bg-linear-to-b from-black/75 to-transparent pb-10 px-2 pt-2">
             <div class="flex">
-            <div class="flex-grow">
+            <div class="grow">
                 <h1>
                     <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
                         window.location.origin + options.streamUrl

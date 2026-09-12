@@ -18,7 +18,7 @@
                await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
                showCourseSettingsModal = false;
                window.location.reload();
-            " class="border  border-gray-300  shadow-sm text-gray-600
+            " class="border  border-gray-300  shadow-xs text-gray-600
             hover:border-black hover:text-black
             bg-green-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
             dark:hover:text-white">Overwrite
@@ -27,11 +27,11 @@
                 admin.sendCourseSettingsForm({{.Model.ID}})
                 showCourseSettingsModal = false;
                 window.location.reload();
-            " class="border bg-orange-500 border-gray-300 shadow-sm text-gray-600
+            " class="border bg-orange-500 border-gray-300 shadow-xs text-gray-600
             hover:border-black hover:text-black
             dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
             dark:hover:text-white"><span x-text="isChatEnabledForCourse ? 'Enable' : 'Disable'"></span> Without Overwriting</button>
-            <button @click="showCourseSettingsModal = false;" class="border border-gray-300 shadow-sm text-gray-600
+            <button @click="showCourseSettingsModal = false;" class="border border-gray-300 shadow-xs text-gray-600
         hover:border-black hover:text-black
         bg-red-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
         dark:hover:text-white">Abort</button>

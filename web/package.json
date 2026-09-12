@@ -8,13 +8,13 @@
   },
   "scripts": {
     "postinstall": "npm run build && npm run tailwind-compile",
-    "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css && npx tailwindcss build -i assets/css/home.css --minify -o ./assets/css-dist/home.css && npx tailwindcss build -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
-    "tailwind-compile-home": "NODE_ENV=production npx tailwindcss build -i assets/css/home.css --minify -o ./assets/css-dist/home.css",
-    "tailwind-compile-watch": "NODE_ENV=production npx tailwindcss build -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
+    "tailwind-compile": "NODE_ENV=production npx @tailwindcss/cli -i assets/css/main.css --minify -o ./assets/css-dist/main.css && npx @tailwindcss/cli -i assets/css/home.css --minify -o ./assets/css-dist/home.css && npx @tailwindcss/cli -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
+    "tailwind-compile-home": "NODE_ENV=production npx @tailwindcss/cli -i assets/css/home.css --minify -o ./assets/css-dist/home.css",
+    "tailwind-compile-watch": "NODE_ENV=production npx @tailwindcss/cli -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
     "lint": "eslint ts",
     "lint-fix": "eslint ts --quiet --fix",
     "build": "webpack --config webpack.prod.js",
-    "build-dev": "webpack --config webpack.dev.js & npx tailwindcss build -i assets/css/main.css -o ./assets/css-dist/main.css --watch & npx tailwindcss build -i assets/css/home.css -o ./assets/css-dist/home.css --watch & npx tailwindcss build -i assets/css/watch.css -o ./assets/css-dist/watch.css --watch"
+    "build-dev": "webpack --config webpack.dev.js & npx @tailwindcss/cli -i assets/css/main.css -o ./assets/css-dist/main.css --watch & npx @tailwindcss/cli -i assets/css/home.css -o ./assets/css-dist/home.css --watch & npx @tailwindcss/cli -i assets/css/watch.css -o ./assets/css-dist/watch.css --watch"
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
@@ -53,6 +53,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
+    "@tailwindcss/cli": "^4.0.0",
     "autoprefixer": "^10.4.16",
     "css-loader": "^7.0.0",
     "eslint": "^10.0.0",
@@ -61,7 +62,7 @@
     "lodash": "^4.17.23",
     "postcss": "^8.5.23",
     "prettier": "^3.1.1",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^4.0.0",
     "top-twitter-emojis-map": "^1.0.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.9.3",

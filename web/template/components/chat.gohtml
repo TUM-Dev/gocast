@@ -96,7 +96,7 @@
                                                     :title="reactionGroup.namesPretty" {{/* e.g. ':eyes:' */}}
                                                     :disabled="!isLoggedIn()"
                                                     :class="reactionGroup.hasReacted ? 'border-blue-500/50 bg-blue-100/25 dark:border-indigo-600 dark:bg-indigo-900/25' : 'border-gray-500'"
-                                                    class="cursor-pointer m-1 px-2 h-6 border-[1px] rounded-full border-solid text-xs flex justify-start items-center disabled:cursor-default">
+                                                    class="cursor-pointer m-1 px-2 h-6 border rounded-full border-solid text-xs flex justify-start items-center disabled:cursor-default">
                                                 <span x-text="reactionGroup.emoji"></span>
                                                 <span x-text="reactionGroup.reactions.length" class="ml-2"></span>
                                             </button>
@@ -154,7 +154,7 @@
                                             </button>
                                             <div x-cloak x-show="m.ShowAdminTools.value"
                                                  @click.outside="m.ShowAdminTools.toggle(false)"
-                                                 class="tum-live-menu absolute right-0 bottom-full z-[60] w-32">
+                                                 class="tum-live-menu absolute right-0 bottom-full z-60 w-32">
                                                 <button @click="deleteMessage(m.ID)"
                                                         title="Delete Message" class="tum-live-menu-item">
                                                     <i class="fas fa-ban text-danger mr-3"></i>
@@ -200,7 +200,7 @@
                                                 <span x-show="!reply.visible" class="text-xs text-5 font-light">This message is currently only visible to you and admins.</span>
                                             </div>
                                             <div class="flex">
-                                                <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex-grow">
+                                                <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 grow">
                                                     <div class="flex justify-between">
                                                         <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="reply.message"></span>
                                                         <span class="hidden group-hover:inline text-xs text-5 font-light mt-auto"
@@ -276,7 +276,7 @@
                              @keypress="(e) => keypressAlphanumeric(e)" @keyup.backspace="backspace()"
                              @keyup.up="users.prev()" @keyup.down="users.next()"
                              @keyup.enter="addAddressee(users.selected())"
-                             class="max-h-56 overflow-y-hidden w-full pt-1 pb-2 px-2 space-y-1 outline-none">
+                             class="max-h-56 overflow-y-hidden w-full pt-1 pb-2 px-2 space-y-1 outline-hidden">
                         <template x-for="(user, i) in users.suggestions">
                             <button type="button" @click="addAddressee(user)"
                                     :class="users.index === i ? 'bg-gray-100 dark:bg-gray-600' : ''"
@@ -290,7 +290,7 @@
                              @keypress="(e) => keypressAlphanumeric(e)" @keyup.backspace="backspace()"
                              @keyup.up="emojis.prev()" @keyup.down="emojis.next()"
                              @keyup.enter="addEmoji(emojis.selected().emoji)"
-                             class="py-1 px-2 outline-none">
+                             class="py-1 px-2 outline-hidden">
                         <template x-for="(emoji, i) in emojis.suggestions">
                             <button type="button" @click="addEmoji(emoji.emoji)"
                                     :title="`:${emoji.short_names[0]}:`" x-text="emoji.emoji"
@@ -308,7 +308,7 @@
                                    :disabled="!isLoggedIn()"
                                    x-model="message"
                                    :placeholder="!isConnected() ? 'Reconnecting to chat...' : isLoggedIn() ? 'Send a message' : 'Log in to chat'"
-                                   class="tum-live-border border-b bg-transparent text-sm font-normal placeholder:text-sm focus:outline-none py-1 w-full"
+                                   class="tum-live-border border-b bg-transparent text-sm font-normal placeholder:text-sm focus:outline-hidden py-1 w-full"
                                       autocomplete="off"></textarea>
                         </label>
                         <section class="flex justify-between">
@@ -468,7 +468,7 @@
                             <label class="w-full">
                     <textarea
                             id="pollQuestion" spellcheck="true"
-                            class="bg-transparent w-full h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm focus:outline-none"
+                            class="bg-transparent w-full h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm focus:outline-hidden"
                             maxlength="500"
                             x-model="newPoll.question"
                             autocomplete="off"
@@ -483,7 +483,7 @@
                                                placeholder="Write a Poll-Answer ..." maxlength="240"
                                                spellcheck="true"
                                                x-model="option.answer"
-                                               class="bg-transparent w-full py-2 px-4 border-0 text-sm font-normal placeholder:text-sm focus:outline-none">
+                                               class="bg-transparent w-full py-2 px-4 border-0 text-sm font-normal placeholder:text-sm focus:outline-hidden">
                                     </label>
 
                                     <button class="tum-live-icon-button text-xs px-3"

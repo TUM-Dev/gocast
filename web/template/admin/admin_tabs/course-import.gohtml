@@ -111,11 +111,11 @@
                                         x-text="new Date(event.start).toISOString().slice(0, 16).replace('T',' ') + ' - ' + new Date(event.end).toISOString().slice(11, 16)"
                                         class="text-2"></span>
                                 </label>
-                                <div class="w-2/6 whitespace-nowrap overflow-x-hidden overflow-ellipsis"><i
+                                <div class="w-2/6 whitespace-nowrap overflow-x-hidden text-ellipsis"><i
                                         class="fas fa-location-arrow text-3 mr-2"></i><span class="text-5"
                                         x-text="event.room_name" :title="event.room_name"></span>
                                 </div>
-                                <div class="w-2/6 whitespace-nowrap overflow-x-hidden overflow-ellipsis ml-2"
+                                <div class="w-2/6 whitespace-nowrap overflow-x-hidden text-ellipsis ml-2"
                                     x-show="event.comment!==''">
                                     <i class="fas fa-info-circle text-warn mr-2"></i><span class="text-5"
                                         x-text="event.comment" :title="event.comment"></span>

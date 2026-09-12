@@ -4,13 +4,13 @@
     <div class="text-1 container mx-auto"
          x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', lang: 'de', numberAttendees: null, searchQuery: '', searchResults: [] , isSearchResultVisible: false}"
         x-init="$watch('year',(value)=>{ yearW = (value<2000) ? '' : (value%1000) + 1 })">
-        <div class="min-w-screen flex items-center justify-center">
+        <div class="flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
                 <h2 class="mb-0">Find your course from TUMOnline</h2>
                 <form id="createCourseForm" aria-haspopup="listbox" class="grid gap-3 mt-3">
                     <div class="flex space-x-1">
                         <label for="search-course" class="hidden">Search Course</label>
-                        <input class="w-full box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 dark:bg-gray-600 dark:text-white"
+                        <input class="w-full box-border rounded px-4 py-3 mt-3 focus:outline-hidden border-0 bg-gray-50 dark:bg-gray-600 dark:text-white"
                                id="search-course" type="search" autocomplete="off" placeholder="Search" x-model="searchQuery"
                                @change="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
                                @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
@@ -36,7 +36,7 @@
                     <h2>Manually enter Infos:</h2>
                     <div class="flex space-x-1">
                         <label for="name" class="hidden">Course Title</label>
-                        <input class="w-4/5 tl-input border !ml-0" id="name" name="name" type="text"
+                        <input class="w-4/5 tl-input border ml-0!" id="name" name="name" type="text"
                                autocomplete="off"
                                placeholder="Einführung in die Informatik (IN0001)"
                                x-model="title"
@@ -54,7 +54,7 @@
                     {{template "semester-selection"}}
                     <div class="flex space-x-1">
                         <label for="lang" class="hidden">Language</label>
-                        <select class="w-fill tl-input border !ml-0" id="name" name="name" type="text"
+                        <select class="w-fill tl-input border ml-0!" id="name" name="name" type="text"
                                autocomplete="off"
                                x-model="lang">
                             <option value="de">German</option>
