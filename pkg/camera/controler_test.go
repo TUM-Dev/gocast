@@ -1,11 +1,14 @@
 package camera
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/camera/axis"
 	"github.com/TUM-Dev/gocast/pkg/camera/panasonic"
+	"github.com/TUM-Dev/gocast/pkg/camera/protocol"
 	"github.com/TUM-Dev/gocast/pkg/camera/sony"
 )
 
@@ -89,9 +92,10 @@ func TestServiceFor(t *testing.T) {
 		}
 	})
 
-	// BUG: a camera type with no configured credentials yields an empty auth string,
-	// which protocol.MakeAuthenticatedRequest then splits on ":" and indexes at 1 --
-	// panicking on the first request. The factory itself still succeeds.
+	// A camera type with no configured credentials yields an empty auth string. The factory
+	// deliberately succeeds: protocol.MakeAuthenticatedRequest treats an empty credential as
+	// "no credentials configured" and sends the request unauthenticated, which some halls
+	// legitimately need. It used to index the ":"-split at 1 and panic on the first request.
 	t.Run("a camera type without credentials yields an empty auth rather than an error", func(t *testing.T) {
 		c, err := NewService(map[model.CameraType]string{}).For("10.0.0.1", model.Axis)
 		if err != nil {
@@ -101,8 +105,24 @@ func TestServiceFor(t *testing.T) {
 		if !ok {
 			t.Fatalf("got %T, want *axis.AxisCam", c)
 		}
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if got := r.Header.Get("Authorization"); got != "" {
+				t.Errorf("Authorization header = %q, want none", got)
+			}
+			_, _ = w.Write([]byte("anon"))
+		}))
+		defer srv.Close()
+
 		if cam.Auth != "" {
-			t.Errorf("auth = %q, want empty (see BUG note)", cam.Auth)
+			t.Errorf("auth = %q, want empty", cam.Auth)
+		}
+		// The empty credential must survive a real request without panicking.
+		buf, status, err := protocol.MakeAuthenticatedRequest(&cam.Auth, "GET", "", srv.URL)
+		if err != nil {
+			t.Fatalf("unexpected error requesting with an empty credential: %v", err)
+		}
+		if status != http.StatusOK || buf.String() != "anon" {
+			t.Errorf("got (%q, %d), want (%q, 200)", buf.String(), status, "anon")
 		}
 	})
 

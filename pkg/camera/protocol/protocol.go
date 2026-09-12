@@ -16,8 +16,15 @@ import (
 // Returns the response body as a buffer.
 func MakeAuthenticatedRequest(auth *string, method string, body string, url string) (*bytes.Buffer, int, error) {
 	client := http.DefaultClient
-	if auth != nil {
-		userPassword := strings.Split(*auth, ":")
+	// An empty credential means no credentials are configured for this camera type
+	// (camera.Service.For yields "" for a type missing from the auths map): talk to the
+	// camera unauthenticated. A non-empty credential must be "user:password"; anything
+	// else is a misconfiguration and is reported instead of being silently ignored.
+	if auth != nil && *auth != "" {
+		userPassword := strings.SplitN(*auth, ":", 2)
+		if len(userPassword) != 2 {
+			return nil, http.StatusBadRequest, fmt.Errorf("malformed camera credentials: expected \"user:password\"")
+		}
 		client = &http.Client{
 			Transport: &digest.Transport{
 				Username: userPassword[0],

@@ -2,11 +2,14 @@ package protocol
 
 import (
 	"bytes"
+	"crypto/md5"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -159,23 +162,107 @@ func TestMakeAuthenticatedRequest(t *testing.T) {
 		}
 	})
 
-	// BUG: the auth string is split on ":" and index 1 is read unconditionally, so any
-	// credential without a colon panics. camera.Service.For passes "" for a camera type
-	// that has no configured credentials, which makes this reachable from configuration
-	// alone. Pinned as current behaviour, not endorsed.
-	t.Run("a credential without a colon panics", func(t *testing.T) {
-		for _, auth := range []string{"", "userwithoutcolon"} {
-			func() {
-				defer func() {
-					if recover() == nil {
-						t.Errorf("auth %q: expected a panic (see BUG note); it no longer panics -- update this test", auth)
-					}
-				}()
-				a := auth
-				_, _, _ = MakeAuthenticatedRequest(&a, "GET", "", closedServerURL(t))
-			}()
+	// camera.Service.For hands out "" for a camera type missing from the auths map, so an
+	// empty credential is a configuration state, not malformed input: the request goes out
+	// unauthenticated rather than panicking or erroring.
+	t.Run("an empty credential sends an unauthenticated request", func(t *testing.T) {
+		auth := ""
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if got := r.Header.Get("Authorization"); got != "" {
+				t.Errorf("Authorization header = %q, want none", got)
+			}
+			_, _ = w.Write([]byte("anon"))
+		}))
+		defer srv.Close()
+
+		buf, status, err := MakeAuthenticatedRequest(&auth, "GET", "", srv.URL)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if status != http.StatusOK || buf.String() != "anon" {
+			t.Errorf("got (%q, %d), want (%q, 200)", buf.String(), status, "anon")
 		}
 	})
+
+	// A non-empty credential that is not "user:password" is a misconfiguration: it is
+	// reported rather than silently downgraded to an unauthenticated request, and it must
+	// never panic -- an unrecovered panic in a handler goroutine takes the server down.
+	t.Run("a credential without a colon errors instead of panicking", func(t *testing.T) {
+		auth := "userwithoutcolon"
+		buf, status, err := MakeAuthenticatedRequest(&auth, "GET", "", closedServerURL(t))
+		if err == nil {
+			t.Fatal("expected an error for a credential without a colon")
+		}
+		if buf != nil {
+			t.Errorf("buffer = %v, want nil", buf)
+		}
+		if status != http.StatusBadRequest {
+			t.Errorf("status = %d, want 400", status)
+		}
+	})
+
+	t.Run("a credential with an empty password is accepted", func(t *testing.T) {
+		auth := "user:"
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte("done"))
+		}))
+		defer srv.Close()
+
+		buf, status, err := MakeAuthenticatedRequest(&auth, "GET", "", srv.URL)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if status != http.StatusOK || buf.String() != "done" {
+			t.Errorf("got (%q, %d), want (%q, 200)", buf.String(), status, "done")
+		}
+	})
+
+	// A colon is a legal password character, so only the first one separates the pair: the
+	// password "pa:ss" must arrive whole rather than truncated to "pa".
+	t.Run("a password containing a colon is kept whole", func(t *testing.T) {
+		auth := "user:pa:ss"
+		const realm, nonce = "camera", "deadbeef"
+		var gotUser, gotResponse string
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			hdr := r.Header.Get("Authorization")
+			if hdr == "" {
+				w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Digest realm=%q, nonce=%q`, realm, nonce))
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			gotUser = digestParam(hdr, "username")
+			gotResponse = digestParam(hdr, "response")
+			_, _ = w.Write([]byte("done"))
+		}))
+		defer srv.Close()
+
+		if _, _, err := MakeAuthenticatedRequest(&auth, "GET", "", srv.URL); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if gotUser != "user" {
+			t.Errorf("username = %q, want %q", gotUser, "user")
+		}
+		ha1 := md5hex("user:" + realm + ":pa:ss")
+		ha2 := md5hex("GET:/")
+		if want := md5hex(ha1 + ":" + nonce + ":" + ha2); gotResponse != want {
+			t.Errorf("digest response = %q, want %q (password truncated at the colon?)", gotResponse, want)
+		}
+	})
+}
+
+func md5hex(s string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(s)))
+}
+
+// digestParam pulls one quoted parameter out of a Digest Authorization header.
+func digestParam(header, key string) string {
+	for _, part := range strings.Split(strings.TrimPrefix(header, "Digest "), ",") {
+		kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
+		if len(kv) == 2 && kv[0] == key {
+			return strings.Trim(kv[1], `"`)
+		}
+	}
+	return ""
 }
 
 func TestSaveResponseBuffer(t *testing.T) {
