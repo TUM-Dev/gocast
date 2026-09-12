@@ -250,7 +250,8 @@ func notificationBackoff(n *protobuf.Notification) retry.Backoff {
 	case *protobuf.Notification_StreamEnd,
 		*protobuf.Notification_StreamStart,
 		*protobuf.Notification_VodReady,
-		*protobuf.Notification_ThumbnailReady:
+		*protobuf.Notification_ThumbnailReady,
+		*protobuf.Notification_SectionImagesReady:
 		// Critical notifications retry indefinitely until delivered or runner shuts down
 		return retry.WithCappedDuration(30*time.Second, b)
 	default:
@@ -288,6 +289,11 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 					// strip data from this notification log to avoid noise
 				},
 			})
+		case *protobuf.Notification_SectionImagesReady:
+			r.log.Debug("send notification", "type", "SectionImagesReady",
+				"stream", notification.GetSectionImagesReady().GetStream().GetId(),
+				// strip the images from this notification log to avoid noise
+				"images", len(notification.GetSectionImagesReady().GetImages()))
 		default:
 			r.log.Debug("send notification", "notification", notification)
 		}

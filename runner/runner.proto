@@ -12,6 +12,9 @@ service RunnerService {
   // Requests a stream from a lecture hall
   rpc RequestStream (StreamRequest) returns (StreamResponse) {}
   rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+  // Requests thumbnails for the given video sections of an already recorded stream.
+  // The images are delivered asynchronously via SectionImagesReadyNotification.
+  rpc RequestSectionImages (SectionImageRequest) returns (SectionImageResponse) {}
 }
 
 message StreamRequest {
@@ -34,6 +37,24 @@ message StreamEndRequest {
 }
 
 message StreamEndResponse {
+}
+
+// SectionTimestamp is the offset into a recording at which a section starts.
+message SectionTimestamp {
+  uint64 section_id = 1;
+  uint32 hours = 2;
+  uint32 minutes = 3;
+  uint32 seconds = 4;
+}
+
+message SectionImageRequest {
+  uint64 stream_id = 1;
+  string playlist_url = 2;
+  repeated SectionTimestamp sections = 3;
+}
+
+message SectionImageResponse {
+  string job_id = 1;
 }
 
 // RunnerManagerService service defines communication from runners to gocast
