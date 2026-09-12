@@ -1080,3 +1080,35 @@ VALUES
    DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY)),
   (2,NOW(),NOW(),'Livestreams können heute unterbrochen sein.',1,
    DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY));
+
+--
+-- info_pages is not in the 2022 schema -- auto-migration creates it on boot -- so the
+-- fixture has to create it before it can fill it.
+--
+CREATE TABLE IF NOT EXISTS `info_pages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `deleted_at` datetime(3) DEFAULT NULL,
+  `name` longtext NOT NULL,
+  `raw_content` longtext NOT NULL,
+  `type` bigint(20) unsigned NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_info_pages_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- The three info pages. Ids are fixed; `name` is the editable title, so it
+-- deliberately does not match the route getInfoPage keys on.
+--
+-- Type 1 is Markdown. Privacy carries a script tag and an inline handler, so the
+-- server's sanitiser has something to strip.
+--
+INSERT INTO `info_pages` (`id`,`created_at`,`updated_at`,`name`,`raw_content`,`type`)
+VALUES
+  (1,NOW(),NOW(),'Privacy Policy',
+   '# Privacy\n\nWe keep what we must and no more.\n\n<script>alert(1)</script>\n<img src=x onerror="alert(2)">\n\n- Lecture recordings\n- Watch progress\n',1),
+  (2,NOW(),NOW(),'Imprint',
+   '# Imprint\n\nTechnische Universität München\n\nResponsible for content: RBG.\n',1),
+  (3,NOW(),NOW(),'About',
+   '# About\n\nGoCast is the lecture streaming platform of the TUM.\n\n[Source](https://github.com/TUM-Dev/gocast)\n',1);

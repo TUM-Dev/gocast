@@ -26,6 +26,7 @@ const (
 	MetaService_GetSemesters_FullMethodName           = "/protobuf.MetaService/getSemesters"
 	MetaService_GetNotifications_FullMethodName       = "/protobuf.MetaService/getNotifications"
 	MetaService_GetServerNotifications_FullMethodName = "/protobuf.MetaService/getServerNotifications"
+	MetaService_GetInfoPage_FullMethodName            = "/protobuf.MetaService/getInfoPage"
 )
 
 // MetaServiceClient is the client API for MetaService service.
@@ -39,6 +40,7 @@ type MetaServiceClient interface {
 	GetSemesters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSemestersResponse, error)
 	GetNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNotificationsResponse, error)
 	GetServerNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServerNotificationsResponse, error)
+	GetInfoPage(ctx context.Context, in *GetInfoPageRequest, opts ...grpc.CallOption) (*GetInfoPageResponse, error)
 }
 
 type metaServiceClient struct {
@@ -99,6 +101,16 @@ func (c *metaServiceClient) GetServerNotifications(ctx context.Context, in *empt
 	return out, nil
 }
 
+func (c *metaServiceClient) GetInfoPage(ctx context.Context, in *GetInfoPageRequest, opts ...grpc.CallOption) (*GetInfoPageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetInfoPageResponse)
+	err := c.cc.Invoke(ctx, MetaService_GetInfoPage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetaServiceServer is the server API for MetaService service.
 // All implementations must embed UnimplementedMetaServiceServer
 // for forward compatibility.
@@ -110,6 +122,7 @@ type MetaServiceServer interface {
 	GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error)
 	GetNotifications(context.Context, *emptypb.Empty) (*GetNotificationsResponse, error)
 	GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error)
+	GetInfoPage(context.Context, *GetInfoPageRequest) (*GetInfoPageResponse, error)
 	mustEmbedUnimplementedMetaServiceServer()
 }
 
@@ -134,6 +147,9 @@ func (UnimplementedMetaServiceServer) GetNotifications(context.Context, *emptypb
 }
 func (UnimplementedMetaServiceServer) GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetServerNotifications not implemented")
+}
+func (UnimplementedMetaServiceServer) GetInfoPage(context.Context, *GetInfoPageRequest) (*GetInfoPageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInfoPage not implemented")
 }
 func (UnimplementedMetaServiceServer) mustEmbedUnimplementedMetaServiceServer() {}
 func (UnimplementedMetaServiceServer) testEmbeddedByValue()                     {}
@@ -246,6 +262,24 @@ func _MetaService_GetServerNotifications_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetaService_GetInfoPage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInfoPageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).GetInfoPage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetaService_GetInfoPage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).GetInfoPage(ctx, req.(*GetInfoPageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetaService_ServiceDesc is the grpc.ServiceDesc for MetaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -272,6 +306,10 @@ var MetaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getServerNotifications",
 			Handler:    _MetaService_GetServerNotifications_Handler,
+		},
+		{
+			MethodName: "getInfoPage",
+			Handler:    _MetaService_GetInfoPage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

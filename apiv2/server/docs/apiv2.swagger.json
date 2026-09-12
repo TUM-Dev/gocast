@@ -490,6 +490,38 @@
         ]
       }
     },
+    "/info-pages/{name}": {
+      "get": {
+        "summary": "Get an info page.",
+        "description": "Returns the deployment's privacy policy, imprint or about page as sanitised HTML. Public: these are the pages a visitor reads before deciding to sign in.",
+        "operationId": "MetaService_getInfoPage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetInfoPageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Info Pages"
+        ]
+      }
+    },
     "/login-options": {
       "get": {
         "summary": "Get available login methods.",
@@ -1341,6 +1373,19 @@
         "isFreshInstallation": {
           "type": "boolean",
           "description": "isFreshInstallation reports that the database holds no users yet, so the\nfrontend can offer to create the first account instead of a login form."
+        }
+      }
+    },
+    "protobufGetInfoPageResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name echoes the requested route name."
+        },
+        "content": {
+          "type": "string",
+          "description": "Rendered from Markdown and sanitised server-side; the client must not do it again."
         }
       }
     },
