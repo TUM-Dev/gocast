@@ -73,6 +73,17 @@ Change it and run both generators, or the Go and TypeScript halves drift.
 
 New API work belongs in `apiv2/` (Protobuf/Connect), not `api/`.
 
+## v1 is being deleted — spend the effort on v2
+
+The migration's endpoint is v2 replacing v1, so refactoring v1 is work that gets
+thrown away. Keep edits to the legacy v1 API (`api/`, and the `web/` gohtml handlers)
+to the minimum the task needs: fix bugs, and do what a v2 change forces — no
+opportunistic cleanup. The higher bar applies on the v2 side instead: interceptors,
+declarative authorization, tests.
+
+When a shared package (`model/`, `dao/`, `tools/`) needs to change, prefer adding the
+new thing over rewriting v1's use of the old one.
+
 ## Database
 
 GORM `AutoMigrate` runs on boot from `cmd/tumlive/main.go`, so adding a field to a model
