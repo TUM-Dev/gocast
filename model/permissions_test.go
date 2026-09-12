@@ -126,3 +126,55 @@ func TestCanAdminister(t *testing.T) {
 		}
 	})
 }
+
+// Permissions is what a client is told; Can is what the server enforces. Drift
+// between them offers controls that every request behind them refuses.
+func TestPermissionsAgreesWithCan(t *testing.T) {
+	all := []Permission{
+		PermAdministerServer,
+		PermAdministerAllCourses,
+		PermViewAllCourses,
+		PermManageUsers,
+		PermLecture,
+	}
+
+	// The zero value included: a partially loaded user must be told it holds nothing.
+	for _, role := range []uint{AdminType, LecturerType, GenericType, StudentType, 0} {
+		user := &User{Role: role}
+
+		listed := map[Permission]bool{}
+		for _, p := range user.Permissions() {
+			listed[p] = true
+		}
+
+		for _, p := range all {
+			if listed[p] != user.Can(p) {
+				t.Errorf("role %d: Permissions() lists %q = %v, Can says %v", role, p, listed[p], user.Can(p))
+			}
+		}
+	}
+}
+
+// Anonymous callers reach the parser too, through the endpoints that serve them.
+func TestPermissionsOfAnonymousUser(t *testing.T) {
+	var user *User
+
+	if got := user.Permissions(); len(got) != 0 {
+		t.Errorf("Permissions() = %v, want none", got)
+	}
+}
+
+// Returning the table itself would let a caller corrupt the authorization model.
+func TestPermissionsDoesNotExposeTheTable(t *testing.T) {
+	user := &User{Role: LecturerType}
+
+	got := user.Permissions()
+	if len(got) == 0 {
+		t.Fatal("a lecturer holds no permissions at all")
+	}
+	got[0] = "something.else"
+
+	if !user.Can(PermLecture) {
+		t.Error("editing the returned slice changed what the role may do")
+	}
+}

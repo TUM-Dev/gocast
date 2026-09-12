@@ -20,7 +20,7 @@
                       this.error = res.error;
                       return;
                   }
-                  window.location = '/admin/lectureHalls';
+                  window.location = '/admin/lecture-halls';
               },
           }"
           @submit.prevent="submit()">
@@ -111,7 +111,7 @@
         </div>
 
         <div class="form-container-footer flex items-center justify-end gap-2">
-            <a href="/admin/lectureHalls" class="btn">Cancel</a>
+            <a href="/admin/lecture-halls" class="btn">Cancel</a>
             <button type="submit" class="btn-primary" :disabled="saving || !name.trim()">
                 <span x-show="!saving">Create</span>
                 <span x-cloak x-show="saving">Creating&hellip;</span>

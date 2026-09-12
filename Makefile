@@ -96,17 +96,57 @@ e2e_db:
 	{ echo "SET time_zone = '$(HOST_TZ_OFFSET)';"; cat tum-live-starter.sql; } | \
 		docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample
 
-# Browser tests against a running server. Not part of `test`: these need the server and
-# its database up.
+# Browser tests. Not part of `test`: they need the database container and a browser.
 #
-#   make e2e_db   # and again whenever a run has left settings changed
-#   make run      # in another terminal
-#   make test_e2e
+# Some of these write, so the fixture is reloaded every run — once per run, not per
+# file, so a test that changes a seeded account breaks later files. The SPA is built
+# first, or the migrated pages fall back to their templates and fail confusingly.
+#
+# playwright.config.ts starts the server, after the reload: the dump is the 2022
+# schema and the server migrates it on boot, so reloading under a running one takes
+# away the tables it created.
+#
+# To use a server of your own instead:
+#
+#   make e2e_db && make run          # in another terminal
+#   cd frontend && E2E_BASE_URL=http://localhost:8081 npm run test:e2e
+#
+# The browser install is deliberately not `--with-deps`: that shells out to apt-get
+# under sudo, which prompts for a password and then fails on any distribution without
+# it. The CI workflow asks for the system libraries there, where apt-get exists.
 .PHONY: test_e2e
-test_e2e:
-	cd frontend; \
-	npx playwright install --with-deps chromium; \
+test_e2e: spa e2e_db
+	cd frontend && \
+	npx playwright install chromium && \
 	npm run test:e2e
+
+# Coverage for ./apiv2 measured from the browser tests, which are the only thing that
+# exercises the API through the gateway rather than by calling a handler.
+#
+# Two things about the build are load-bearing. cmd/tumlive is instrumented alongside
+# apiv2 because the exit hook that writes the counters is only registered when the main
+# package is covered — with apiv2 alone the run produces nothing at all. And the
+# counters are written as the server exits, so playwright.config.ts stops it with
+# SIGTERM; killed outright it writes nothing either.
+#
+# `-pkg` keeps the report to the handlers. Widen it to `.../apiv2/...` for the rest,
+# which brings in the generated protobuf package and the percentage it drags down.
+E2E_COVER_PKG ?= github.com/TUM-Dev/gocast/apiv2/server
+E2E_COVER_DIR ?= cov/e2e
+
+.PHONY: test_e2e_cover
+test_e2e_cover: spa e2e_db
+	rm -rf $(E2E_COVER_DIR)
+	mkdir -p $(E2E_COVER_DIR)
+	go build -cover -coverpkg=./apiv2/...,./cmd/tumlive -o cov/tumlive ./cmd/tumlive
+	cd frontend && \
+	npx playwright install chromium && \
+	GOCOVERDIR=$(CURDIR)/$(E2E_COVER_DIR) E2E_SERVER_CMD=$(CURDIR)/cov/tumlive \
+	npm run test:e2e
+	go tool covdata percent -i=$(E2E_COVER_DIR) -pkg=$(E2E_COVER_PKG)
+	go tool covdata textfmt -i=$(E2E_COVER_DIR) -pkg=$(E2E_COVER_PKG) -o=$(E2E_COVER_DIR)/coverage.out
+	@echo
+	@echo "line-by-line: go tool cover -html=$(E2E_COVER_DIR)/coverage.out"
 
 .PHONY: lint
 lint:

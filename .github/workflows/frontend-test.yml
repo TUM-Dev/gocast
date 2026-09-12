@@ -77,7 +77,7 @@ jobs:
         run: |
           offset=$(date +%z | sed 's/..$/:&/')
           { echo "SET time_zone = '$offset';"; cat tum-live-starter.sql; } | \
-            docker run --rm -i --network host mariadb:11 \
+            docker run --rm -i --network host mariadb:12 \
               mariadb -h 127.0.0.1 -P 3306 -u root -pexample
 
       # web/router.go embeds web/node_modules, so this is needed to compile at all, not
@@ -92,38 +92,20 @@ jobs:
         working-directory: ./frontend
         run: npm ci && npm run build
 
-      - name: Start the server
-        run: |
-          go run cmd/tumlive/main.go > server.log 2>&1 &
-          echo $! > server.pid
-          for _ in $(seq 1 60); do
-            if curl -fsS -o /dev/null http://localhost:8081/login; then
-              echo "server is up"
-              exit 0
-            fi
-            # Compiling and the first migration take a while; fail early if it died.
-            if ! kill -0 "$(cat server.pid)" 2>/dev/null; then
-              echo "server exited before it started serving"
-              cat server.log
-              exit 1
-            fi
-            sleep 2
-          done
-          echo "server did not start within two minutes"
-          cat server.log
-          exit 1
+      # Its own step, so a compile failure reads as one and `go run` below starts warm.
+      - name: Build the server
+        run: go build ./...
 
       - name: Install Playwright browsers
         working-directory: ./frontend
         run: npx playwright install --with-deps chromium
 
+      # playwright.config.ts starts the server and stops it again. It has to start
+      # after the seeding above: the dump is the 2022 schema and the server migrates it
+      # forward on boot, so seeding under a running one takes away what it created.
       - name: Run the browser tests
         working-directory: ./frontend
         run: npm run test:e2e
-
-      - name: Collect the server log
-        if: failure()
-        run: cat server.log
 
       # Traces and screenshots for the failing tests; Playwright is configured to keep
       # them only on failure.

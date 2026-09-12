@@ -521,6 +521,43 @@ LOCK TABLES `register_links` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `runners`
+--
+-- Not in the original dump: runners only register themselves over gRPC. Columns
+-- follow model.Runner; AutoMigrate reconciles the table on boot.
+--
+
+DROP TABLE IF EXISTS `runners`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `runners` (
+  `hostname` varchar(191) NOT NULL,
+  `port` bigint(20) unsigned NOT NULL,
+  `last_seen` datetime(3) DEFAULT NULL,
+  `time_of_register` datetime(3) DEFAULT NULL,
+  `draining` tinyint(1) NOT NULL DEFAULT 0,
+  `job_count` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `version` longtext NOT NULL,
+  PRIMARY KEY (`hostname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `runners`
+--
+-- Both dead: Alive is `last_seen` within five seconds, which no fixture can satisfy.
+--
+
+LOCK TABLES `runners` WRITE;
+/*!40000 ALTER TABLE `runners` DISABLE KEYS */;
+INSERT INTO `runners` (`hostname`,`port`,`last_seen`,`time_of_register`,`draining`,`job_count`,`version`)
+VALUES
+  ('runner-alpha',50051,DATE_SUB(NOW(), INTERVAL 2 MINUTE),DATE_SUB(NOW(), INTERVAL 3 DAY),0,2,'1.4.2'),
+  ('runner-beta',50052,DATE_SUB(NOW(), INTERVAL 9 DAY),DATE_SUB(NOW(), INTERVAL 30 DAY),1,0,'1.3.0');
+/*!40000 ALTER TABLE `runners` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `server_notifications`
 --
 

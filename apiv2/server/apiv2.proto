@@ -332,6 +332,87 @@ service StreamService {
   }
 }
 
+// Server administration: everything belonging to no particular course.
+//
+// One service rather than one per resource, because runner/*.proto shares this proto
+// package and is linked into the same binary — `RunnerService` is already taken there,
+// and a collision only shows up as a panic at boot.
+//
+// It groups endpoints, not permissions: policies are per method in services.go, and
+// the account pages need PermManageUsers rather than PermAdministerServer.
+service AdminService {
+  rpc listRunners(google.protobuf.Empty) returns (ListRunnersResponse) {
+    option (google.api.http) = {get: "/admin/runners"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Runners"
+      summary: "List the transcoding runners."
+      description: "Retrieves every registered runner with its current liveness and workload. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteRunner(DeleteRunnerRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/runners/{hostname}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Runners"
+      summary: "Delete a runner."
+      description: "Removes a runner registration. A runner that is still running re-registers on its next heartbeat. Requires the server.administer permission."
+    };
+  }
+
+  // Two RPCs rather than one with a filter: searchUsers reaches every account and
+  // masks contact details, listStaff reaches only staff and does not.
+  rpc listStaff(google.protobuf.Empty) returns (ListUsersResponse) {
+    option (google.api.http) = {get: "/admin/users"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Users"
+      summary: "List the administrators and lecturers."
+      description: "Retrieves every account holding a staff role, with contact details unmasked. Requires the users.manage permission."
+    };
+  }
+
+  rpc searchUsers(SearchUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {get: "/admin/users/search"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Users"
+      summary: "Search accounts."
+      description: "Searches every account by name, email or login. Contact details come back masked. The query must be at least three characters unless a role is given. Requires the users.manage permission."
+    };
+  }
+
+  rpc createUser(CreateUserRequest) returns (UserSummary) {
+    option (google.api.http) = {
+      post: "/admin/users"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Users"
+      summary: "Create a lecturer account."
+      description: "Creates an account with the lecturer role and emails an invitation to set a password. Requires the users.manage permission."
+    };
+  }
+
+  rpc updateUserRole(UpdateUserRoleRequest) returns (UserSummary) {
+    option (google.api.http) = {
+      patch: "/admin/users/{user_id}/role"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Users"
+      summary: "Change an account's role."
+      description: "Sets the role of an account. Requires the users.manage permission."
+    };
+  }
+
+  rpc deleteUser(DeleteUserRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/users/{user_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Users"
+      summary: "Delete an account."
+      description: "Deletes an account. Administrators cannot be deleted. Requires the users.manage permission."
+    };
+  }
+}
+
 ///////////////////////////////
 ///// HEALTHCHECK_MESSAGE /////
 ///////////////////////////////
@@ -376,6 +457,9 @@ message User {
   repeated UserSetting settings = 11;
   repeated Bookmark bookmarks = 12;
   google.protobuf.Timestamp created_at = 13;
+  // What this user may do, as model/permissions.go spells it, so a client need not
+  // know which role holds what. Not a substitute for the server's own checks.
+  repeated string permissions = 14;
 }
 
 message UserSetting {
@@ -861,4 +945,88 @@ message CameraPreset {
   uint32 id = 1;
   string name = 2;
   string description = 3;
+}
+
+///////////////////////////////
+//////// RUNNER_MESSAGE ///////
+///////////////////////////////
+
+message Runner {
+  // Runners are keyed by hostname; there is no numeric id.
+  string hostname = 1;
+  uint32 port = 2;
+  string version = 3;
+  // Derived from last_seen: dead after five seconds without a heartbeat. Sent
+  // computed so a client cannot disagree with the scheduler.
+  bool alive = 4;
+  // Jobs currently running, as of the last heartbeat.
+  uint64 job_count = 5;
+  // draining means the runner is shutting down and is being given no further jobs.
+  bool draining = 6;
+  google.protobuf.Timestamp last_seen = 7;
+  google.protobuf.Timestamp time_of_register = 8;
+}
+
+///////////////////////////////
+//////// RUNNER_REQUEST ///////
+///////////////////////////////
+
+message DeleteRunnerRequest {
+  string hostname = 1;
+}
+
+///////////////////////////////
+/////// RUNNER_RESPONSE ///////
+///////////////////////////////
+
+message ListRunnersResponse {
+  repeated Runner runners = 1;
+}
+
+///////////////////////////////
+///// USER_ADMIN_MESSAGE //////
+///////////////////////////////
+
+// UserSummary is an account as the administration pages list it: who they are and
+// what they may do, without the courses, settings and bookmarks that make up User.
+message UserSummary {
+  uint32 id = 1;
+  string name = 2;
+  // Masked on the endpoints that say so; a property of the endpoint, not the message.
+  string email = 3;
+  string lrz_id = 4;
+  uint32 role = 5;
+}
+
+///////////////////////////////
+///// USER_ADMIN_REQUEST //////
+///////////////////////////////
+
+message SearchUsersRequest {
+  // At least three characters unless role is set, so an empty box lists nobody.
+  string query = 1;
+  // Restricts the search to one role. Absent means every role.
+  optional uint32 role = 2;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+}
+
+message UpdateUserRoleRequest {
+  uint32 user_id = 1;
+  uint32 role = 2;
+}
+
+message DeleteUserRequest {
+  uint32 user_id = 1;
+}
+
+///////////////////////////////
+///// USER_ADMIN_RESPONSE /////
+///////////////////////////////
+
+message ListUsersResponse {
+  repeated UserSummary users = 1;
 }

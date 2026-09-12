@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 )
 
 type Mailer struct {
@@ -41,7 +42,7 @@ func (m *Mailer) Run() {
 			if err != nil {
 				email.LastTry = time.Now()
 				email.Retries++
-				email.Errors += fmt.Sprintf("%v\n", err)
+				email.Errors = appendSendError(email.Errors, err)
 			} else {
 				email.Success = true
 			}
@@ -54,6 +55,33 @@ func (m *Mailer) Run() {
 			time.Sleep(sleepDur)
 		}
 	}
+}
+
+// maxStoredErrors bounds what one email's failures add up to. How big an error is
+// belongs to whatever produced it, not to this package.
+const maxStoredErrors = 4000
+
+// truncationMark keeps a cut first line from reading as a mangled error.
+const truncationMark = "[earlier attempts dropped]\n"
+
+// appendSendError records a failed attempt, keeping the most recent within the bound.
+func appendSendError(existing string, err error) string {
+	combined := existing + fmt.Sprintf("%v\n", err)
+	if len(combined) <= maxStoredErrors {
+		return combined
+	}
+
+	tail := combined[len(combined)-maxStoredErrors:]
+	// Resuming after a newline keeps the first line whole, and cannot leave the cut
+	// inside a multi-byte character.
+	if i := strings.IndexByte(tail, '\n'); i >= 0 {
+		tail = tail[i+1:]
+	} else {
+		// One error longer than the bound, so there is no line break to cut at.
+		tail = strings.ToValidUTF8(tail, "")
+	}
+
+	return truncationMark + tail
 }
 
 func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
@@ -119,4 +147,35 @@ func openssl(stdin []byte, args ...string) ([]byte, error) {
 	}
 
 	return out.Bytes(), nil
+}
+
+// SendAccountInvite queues the mail inviting someone to set a password on a new
+// account. The register link is single-use, so calling this twice invalidates the
+// first mail's.
+func SendAccountInvite(ctx context.Context, daoWrapper dao.DaoWrapper, email string) error {
+	user, err := daoWrapper.UsersDao.GetUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("no user with that address: %w", err)
+	}
+
+	registerLink, err := daoWrapper.UsersDao.CreateRegisterLink(ctx, user)
+	if err != nil {
+		return fmt.Errorf("creating the register link: %w", err)
+	}
+
+	body := fmt.Sprintf("Hello!\n"+
+		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
+		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
+		"If you have any further questions please reach out to "+Cfg.Mail.Sender, registerLink.RegisterSecret)
+
+	if err := daoWrapper.EmailDao.Create(ctx, &model.Email{
+		From:    Cfg.Mail.Sender,
+		To:      email,
+		Subject: "Setup your TUM-Live account",
+		Body:    body,
+	}); err != nil {
+		return fmt.Errorf("queueing the invitation: %w", err)
+	}
+
+	return nil
 }
