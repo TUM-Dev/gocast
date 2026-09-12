@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"regexp"
@@ -91,8 +92,11 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 		bufPtr += offset
 
 		// Stop scanning if the end of the buffer was reached or if the max
-		// desired visible characters was reached
-		if visibleCharacterMaxReached || bufPtr >= len(buf)-1 {
+		// desired visible characters was reached. bufPtr is a byte offset pointing
+		// at the *start* of a rune, so the end of the buffer is one whole rune --
+		// not one byte -- past it.
+		_, lastRuneSize := utf8.DecodeRune(buf[bufPtr:])
+		if visibleCharacterMaxReached || bufPtr+lastRuneSize >= len(buf) {
 			break
 		}
 
@@ -105,6 +109,18 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 
 		// Now find the expression sub-matches
 		matches := TagExpr.FindSubmatch(buf[bufPtr:])
+		if matches == nil || !bytes.HasPrefix(buf[bufPtr:], matches[0]) {
+			// TagExpr is unanchored, so a match that does not start at bufPtr belongs
+			// to some later tag. Either way this '<' does not open a tag -- it is
+			// literal text ("5 < 10") or a comment. Count it as a visible character
+			// and keep scanning past it.
+			visible++
+			if visible >= maxlen {
+				break
+			}
+			bufPtr++
+			continue
+		}
 		tagName := string(matches[2])
 
 		// Advance pointer to the end of the tag
