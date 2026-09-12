@@ -12,7 +12,7 @@ import (
 //go:generate go tool mockgen -source=lecture_halls.go -destination ../mock_dao/lecture_halls.go
 
 type LectureHallsDao interface {
-	CreateLectureHall(lectureHall model.LectureHall)
+	CreateLectureHall(lectureHall *model.LectureHall) error
 	SavePreset(preset model.CameraPreset) error
 	SaveLectureHallFullAssoc(lectureHall model.LectureHall)
 	SaveLectureHall(lectureHall model.LectureHall) error
@@ -51,8 +51,8 @@ func (d lectureHallsDao) GetLiveStateForPwrCtrl() ([]PwrCtrlLiveState, error) {
 	return result, err
 }
 
-func (d lectureHallsDao) CreateLectureHall(lectureHall model.LectureHall) {
-	DB.Create(&lectureHall)
+func (d lectureHallsDao) CreateLectureHall(lectureHall *model.LectureHall) error {
+	return DB.Create(lectureHall).Error
 }
 
 func (d lectureHallsDao) SavePreset(preset model.CameraPreset) error {

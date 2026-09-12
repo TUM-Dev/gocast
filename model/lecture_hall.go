@@ -78,9 +78,12 @@ func (l *LectureHall) ToDTO() *LectureHallDTO {
 
 // BeforeSave returns an error if either source is invalid.
 func (l *LectureHall) BeforeSave(*gorm.DB) error {
-	_, err := netip.ParseAddr(l.CameraIP)
-	if err != nil {
-		return fmt.Errorf("invalid camera IP address: %s", l.CameraIP)
+	// The Axis camera is optional - halls without one (VMP backed ones, for example)
+	// leave it empty - but an address that is set has to be a valid one.
+	if l.CameraIP != "" {
+		if _, err := netip.ParseAddr(l.CameraIP); err != nil {
+			return fmt.Errorf("invalid camera IP address: %s", l.CameraIP)
+		}
 	}
 	u, err := url.Parse(l.CombIP)
 	if err != nil {

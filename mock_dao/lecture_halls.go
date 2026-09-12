@@ -42,9 +42,11 @@ func (m *MockLectureHallsDao) EXPECT() *MockLectureHallsDaoMockRecorder {
 }
 
 // CreateLectureHall mocks base method.
-func (m *MockLectureHallsDao) CreateLectureHall(lectureHall model.LectureHall) {
+func (m *MockLectureHallsDao) CreateLectureHall(lectureHall *model.LectureHall) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateLectureHall", lectureHall)
+	ret := m.ctrl.Call(m, "CreateLectureHall", lectureHall)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // CreateLectureHall indicates an expected call of CreateLectureHall.

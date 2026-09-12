@@ -59,12 +59,15 @@ type lectureHallRoutes struct {
 }
 
 type updateLectureHallReq struct {
-	StreamProtocol int    `json:"streamProtocol"`
-	CamIp          string `json:"camIp"`
-	CombIp         string `json:"combIp"`
-	PresIP         string `json:"presIp"`
-	CameraIp       string `json:"cameraIp"`
-	PwrCtrlIp      string `json:"pwrCtrlIp"`
+	// Name is a pointer so that a client that does not manage the name at all keeps
+	// the stored one, while a client that sends an empty one gets told off.
+	Name           *string `json:"name"`
+	StreamProtocol int     `json:"streamProtocol"`
+	CamIp          string  `json:"camIp"`
+	CombIp         string  `json:"combIp"`
+	PresIP         string  `json:"presIp"`
+	CameraIp       string  `json:"cameraIp"`
+	PwrCtrlIp      string  `json:"pwrCtrlIp"`
 }
 
 func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
@@ -97,13 +100,24 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 		})
 		return
 	}
+	if req.Name != nil {
+		name := strings.TrimSpace(*req.Name)
+		if name == "" {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "name can not be empty",
+			})
+			return
+		}
+		lectureHall.Name = name
+	}
 	lectureHall.StreamProtocol = model.StreamProtocol(req.StreamProtocol)
 	logger.Debug("New stream protocol", "protocol", lectureHall.StreamProtocol)
-	lectureHall.CamIP = req.CamIp
-	lectureHall.CombIP = req.CombIp
-	lectureHall.PresIP = req.PresIP
-	lectureHall.CameraIP = req.CameraIp
-	lectureHall.PwrCtrlIp = req.PwrCtrlIp
+	lectureHall.CamIP = strings.TrimSpace(req.CamIp)
+	lectureHall.CombIP = strings.TrimSpace(req.CombIp)
+	lectureHall.PresIP = strings.TrimSpace(req.PresIP)
+	lectureHall.CameraIP = strings.TrimSpace(req.CameraIp)
+	lectureHall.PwrCtrlIp = strings.TrimSpace(req.PwrCtrlIp)
 	err = r.LectureHallsDao.SaveLectureHall(lectureHall)
 	if err != nil {
 		logger.Error("error while updating lecture hall", "err", err)
@@ -455,7 +469,15 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 		})
 		return
 	}
-	r.LectureHallsDao.CreateLectureHall(model.LectureHall{
+	req.trimSpace()
+	if req.Name == "" {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "name can not be empty",
+		})
+		return
+	}
+	lectureHall := model.LectureHall{
 		Name:           req.Name,
 		StreamProtocol: model.StreamProtocol(req.StreamProtocol),
 		CombIP:         req.CombIP,
@@ -463,7 +485,17 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 		CamIP:          req.CamIP,
 		CameraIP:       req.CameraIP,
 		PwrCtrlIp:      req.PwrCtrlIP,
-	})
+	}
+	if err := r.LectureHallsDao.CreateLectureHall(&lectureHall); err != nil {
+		logger.Error("can not create lecture hall", "err", err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create lecture hall",
+			Err:           err,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"id": lectureHall.ID})
 }
 
 func (r lectureHallRoutes) fetchLHPresets(lh model.LectureHall) error {
@@ -483,11 +515,22 @@ func (r lectureHallRoutes) fetchLHPresets(lh model.LectureHall) error {
 type createLectureHallRequest struct {
 	Name           string `json:"name"`
 	StreamProtocol int    `json:"streamProtocol"` // 1 = rtmp, 2 = srt
-	CombIP         string `json:"combIP"`
-	PresIP         string `json:"presIP"`
-	CamIP          string `json:"camIP"`
-	CameraIP       string `json:"cameraIP"`
+	CombIP         string `json:"combIp"`
+	PresIP         string `json:"presIp"`
+	CamIP          string `json:"camIp"`
+	CameraIP       string `json:"cameraIp"`
 	PwrCtrlIP      string `json:"pwrCtrlIp"`
+}
+
+// trimSpace normalises the addresses so that a field left blank in the admin form is
+// stored as empty rather than as whitespace, which BeforeSave would reject.
+func (r *createLectureHallRequest) trimSpace() {
+	r.Name = strings.TrimSpace(r.Name)
+	r.CombIP = strings.TrimSpace(r.CombIP)
+	r.PresIP = strings.TrimSpace(r.PresIP)
+	r.CamIP = strings.TrimSpace(r.CamIP)
+	r.CameraIP = strings.TrimSpace(r.CameraIP)
+	r.PwrCtrlIP = strings.TrimSpace(r.PwrCtrlIP)
 }
 
 type setLectureHallRequest struct {
