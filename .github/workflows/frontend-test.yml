@@ -66,10 +66,19 @@ jobs:
       # Run through the mariadb image rather than a client on the runner, so the client
       # version always matches the server and nothing depends on what happens to be
       # preinstalled.
+      #
+      # The dump dates its lectures off the clock, which MariaDB evaluates in the
+      # session's time zone -- and the server reads those columns back as local time
+      # while the browser judges "today" in its own. Pin the session to the runner's
+      # offset so the three agree. The runner and the container are both UTC today, so
+      # this changes nothing here; it keeps the step honest about what it depends on,
+      # and matches what `make e2e_db` does for a developer whose host is not UTC.
       - name: Seed the database
         run: |
-          docker run --rm --network host -v "$PWD:/repo:ro" mariadb:11 \
-            sh -c 'mariadb -h 127.0.0.1 -P 3306 -u root -pexample < /repo/tum-live-starter.sql'
+          offset=$(date +%z | sed 's/..$/:&/')
+          { echo "SET time_zone = '$offset';"; cat tum-live-starter.sql; } | \
+            docker run --rm -i --network host mariadb:11 \
+              mariadb -h 127.0.0.1 -P 3306 -u root -pexample
 
       # web/router.go embeds web/node_modules, so this is needed to compile at all, not
       # just to make the icons show up.

@@ -193,6 +193,12 @@ export const unlistedLecture = "VL 3: Rückblick";
  *
  * Their dates are relative to when the dump was loaded, because "today" cannot be
  * written as a fixed date. Reload with `make e2e_db` before a run.
+ *
+ * Load it that way and not with a bare `mariadb < tum-live-starter.sql`: the dump's
+ * NOW() and CURDATE() are evaluated in the session's time zone, and the database
+ * container is usually UTC while the server that reads the dates back is not. The
+ * make target pins the session to the host's offset, which is what keeps the lecture
+ * below on today rather than on whichever day it is in UTC.
  */
 export const schedule = {
   /** Later today, so the start page has something under "Today". */
