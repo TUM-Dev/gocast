@@ -73,13 +73,28 @@ test:
 #   make e2e_db DB_CONTAINER=mariadb_container
 DB_CONTAINER ?= mariadb-tumlive
 
+# The dump dates its lectures off the clock -- NOW() and CURDATE() -- which MariaDB
+# evaluates in the session's time zone. The server then reads those columns back as
+# local time (loc=Local, cmd/tumlive/main.go) and the browser judges "today" in its
+# own, so all three have to agree on what day it is. They do not by default: the
+# database usually runs UTC inside its container while the host does not, and every
+# fixture date lands off by that offset -- far enough that the evening lecture the
+# "Today" test wants is dated to yesterday, and the waiting-room lecture meant to
+# start in 25 minutes has already ended. Pin the seeding session to this host's
+# offset instead, which puts the whole fixture back in the frame the tests read it in.
+#
+# date(1) prints +0200; MariaDB wants +02:00. Done with sed rather than date's %:z,
+# which GNU date has and BSD date does not.
+HOST_TZ_OFFSET = $(shell date +%z | sed 's/..$$/:&/')
+
 .PHONY: e2e_db
 e2e_db:
 	@docker inspect -f . $(DB_CONTAINER) >/dev/null 2>&1 || { \
 		echo "no container named $(DB_CONTAINER); pass DB_CONTAINER=<name>"; exit 1; }
 	docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample \
 		-e "DROP DATABASE IF EXISTS tumlive;"
-	docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample < tum-live-starter.sql
+	{ echo "SET time_zone = '$(HOST_TZ_OFFSET)';"; cat tum-live-starter.sql; } | \
+		docker exec -i $(DB_CONTAINER) mariadb -uroot -pexample
 
 # Browser tests against a running server. Not part of `test`: these need the server and
 # its database up.
