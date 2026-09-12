@@ -3,12 +3,14 @@ package protocol
 import (
 	"bytes"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -102,11 +104,11 @@ func TestMakeAuthenticatedRequest(t *testing.T) {
 		}
 	})
 
-	// A camera answering 500 or 401 is not reported as an error here; only the status
-	// code carries that information. Callers that drop the status (every driver's
-	// SetPreset does) therefore cannot tell failure from success -- pinned so the day
-	// someone adds status handling, the affected callers are found by a failing test.
-	t.Run("a non-200 response is returned without an error", func(t *testing.T) {
+	// A camera answering 500 or 401 has not done what was asked of it. The status alone
+	// used to carry that, and every driver dropped it, so failures read as successes; it is
+	// now an error as well, naming both the camera and the status so an operator can tell
+	// "wrong credentials" from "camera is broken".
+	t.Run("a non-200 response is an error naming the camera and the status", func(t *testing.T) {
 		for _, code := range []int{http.StatusInternalServerError, http.StatusUnauthorized, http.StatusNotFound} {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(code)
@@ -114,16 +116,40 @@ func TestMakeAuthenticatedRequest(t *testing.T) {
 			}))
 
 			buf, status, err := MakeAuthenticatedRequest(nil, "GET", "", srv.URL)
-			if err != nil {
-				t.Errorf("code %d: unexpected error: %v", code, err)
+			if err == nil {
+				t.Errorf("code %d: expected an error", code)
+			} else {
+				if !errors.Is(err, ErrUnexpectedStatus) {
+					t.Errorf("code %d: error %v does not match ErrUnexpectedStatus", code, err)
+				}
+				if !strings.Contains(err.Error(), strconv.Itoa(code)) {
+					t.Errorf("code %d: error %q does not name the status code", code, err)
+				}
+				if host := strings.TrimPrefix(srv.URL, "http://"); !strings.Contains(err.Error(), host) {
+					t.Errorf("code %d: error %q does not name the camera %q", code, err, host)
+				}
 			}
 			if status != code {
 				t.Errorf("status = %d, want %d", status, code)
 			}
-			if buf == nil || buf.String() != "failure body" {
-				t.Errorf("code %d: body not returned", code)
+			// The error page must not reach a caller that would write it out as a .jpg.
+			if buf != nil {
+				t.Errorf("code %d: buffer = %q, want nil alongside the error", code, buf.String())
 			}
 			srv.Close()
+		}
+	})
+
+	// A 2xx that is not exactly 200 is still treated as a failure: these vendor CGIs answer
+	// 200 on success, and anything else means the request did not do what was asked.
+	t.Run("a 204 is treated as a failure", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		defer srv.Close()
+
+		if _, status, err := MakeAuthenticatedRequest(nil, "GET", "", srv.URL); err == nil {
+			t.Errorf("status %d: expected an error", status)
 		}
 	})
 
@@ -293,6 +319,23 @@ func TestSaveResponseBuffer(t *testing.T) {
 		err := SaveResponseBuffer(filepath.Join(t.TempDir(), "does-not-exist"), "snap.jpg", bytes.NewBufferString("ignored"))
 		if err == nil {
 			t.Error("expected an error writing into a missing directory")
+		}
+	})
+
+	// MakeAuthenticatedRequest hands back a nil buffer alongside every error, so a caller
+	// that forgets to check it must get an error rather than a nil dereference that takes
+	// the whole process down.
+	t.Run("a nil buffer errors instead of panicking and writes nothing", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := SaveResponseBuffer(dir, "snap.jpg", nil); err == nil {
+			t.Error("expected an error for a nil buffer")
+		}
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			t.Fatalf("reading output directory: %v", err)
+		}
+		if len(entries) != 0 {
+			t.Errorf("output directory contains %d files, want none", len(entries))
 		}
 	})
 }
