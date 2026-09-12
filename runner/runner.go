@@ -178,7 +178,11 @@ func (r *Runner) InitApiGrpc() {
 	}
 }
 
-func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog.Logger) string {
+// RunAction runs the actions in a in the background and returns the id of the created job.
+// The actions in a keep running after the job's context was cancelled, which is what lets
+// StreamEnd report the end of a stream that was stopped early. The VoD actions are skipped
+// entirely when the stream was ended with discardVod.
+func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
 	// create new context to avoid cancellation on grpc request termination
 	c, cancel := context.WithCancel(context.Background())
 	job := uuid.New().String()
@@ -195,7 +199,8 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 			r.jobsMu.Unlock()
 			r.JobCount <- -1
 		}()
-		for _, action := range a {
+
+		run := func(action actions.Action) {
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
 				log.Info("running action")
@@ -206,24 +211,33 @@ func (r *Runner) RunAction(a []actions.Action, data map[string]any, logger *slog
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
-						break // escape retry loop on unrecoverable error
+						return // escape retry loop on unrecoverable error
 					}
 				} else {
-					break // escape retry loop on no error
+					return // escape retry loop on no error
 				}
 			}
-			// VoD creation (MkVOD, CheckVoD, MkThumb) is intentionally skipped once the
-			// recording is discarded, right after StreamEnd notifies gocast the stream has ended.
-			r.jobsMu.Lock()
-			shouldDiscard := r.discard[job]
-			r.jobsMu.Unlock()
-			if shouldDiscard && reflect.ValueOf(action).Pointer() == reflect.ValueOf(actions.StreamEnd).Pointer() {
-				logger.With("job", job).Info("discarding recording, skipping VoD creation")
-				break
-			}
+		}
+
+		for _, action := range a {
+			run(action)
+		}
+		if r.discarded(job) {
+			// the recording itself is deliberately left on disk, see livestreamCleanup
+			logger.With("job", job).Info("discarding recording, skipping VoD creation")
+			return
+		}
+		for _, action := range vod {
+			run(action)
 		}
 	}()
 	return job
+}
+
+func (r *Runner) discarded(job string) bool {
+	r.jobsMu.Lock()
+	defer r.jobsMu.Unlock()
+	return r.discard[job]
 }
 
 func (r *Runner) handleNotifications(ctx context.Context) {
