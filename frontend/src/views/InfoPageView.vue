@@ -9,17 +9,26 @@ const content = ref("");
 const failed = ref(false);
 const loaded = ref(false);
 
+// Counts loads so a response that arrives after the route changed again is dropped
+// rather than overwriting the page the visitor is now on.
+let generation = 0;
+
 async function load(name: InfoPageName): Promise<void> {
+  const current = ++generation;
   loaded.value = false;
   failed.value = false;
+  // Cleared up front, or the previous page stays on screen while this one loads.
+  content.value = "";
   try {
-    content.value = await fetchInfoPage(name);
+    const html = await fetchInfoPage(name);
+    if (current !== generation) return;
+    content.value = html;
   } catch {
+    if (current !== generation) return;
     // A 404 and a fault read the same to a visitor, so they are not distinguished.
     failed.value = true;
-    content.value = "";
   } finally {
-    loaded.value = true;
+    if (current === generation) loaded.value = true;
   }
 }
 
@@ -35,9 +44,7 @@ watch(() => props.name, load);
     <!-- v-html is safe only because bluemonday already ran server-side; do not
          sanitise again here, two filters disagreeing is worse than one. -->
     <div v-if="content" class="tum-live-markdown pb-10" v-html="content"></div>
-    <p v-else-if="loaded && failed" class="text-5 pb-10">
-      This page is not available.
-    </p>
-    <p v-else-if="loaded" class="text-5 pb-10">This page has not been written yet.</p>
+    <!-- An unwritten page renders empty, as the template did; only a fault says so. -->
+    <p v-else-if="loaded && failed" class="text-5 pb-10">This page is not available.</p>
   </div>
 </template>
