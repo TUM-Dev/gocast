@@ -9,13 +9,13 @@ A prototype can be found [here](https://tumlive-docs.pages.dev/).
 To start the development server, run:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 To build the project site **for production**, run:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 > The static files are generated in the `build` folder.
@@ -23,7 +23,7 @@ npm run build
 To start the production server, run:
 
 ```bash
-npm run start
+pnpm run start
 ```
 
 ## How to add a new page

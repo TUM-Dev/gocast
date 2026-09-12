@@ -22,7 +22,7 @@ Two things the start page had and this one does not, both waiting on the v1 API:
 go run cmd/tumlive/main.go
 
 # terminal 2 — this app, with hot reloading
-cd frontend && npm install && npm run dev
+cd frontend && pnpm install && pnpm run dev
 ```
 
 Then open **http://localhost:5173**, not the Go server's port. Everything the SPA does
@@ -33,7 +33,7 @@ so the session cookie survives the hop and you stay logged in across both fronte
 To check the production path instead, build and let Go serve it:
 
 ```sh
-npm run build                      # writes web/spa/
+pnpm run build                      # writes web/spa/
 go run cmd/tumlive/main.go         # /settings now serves the built app
 ```
 
@@ -75,8 +75,8 @@ the authenticated path would try to mint a token from a session that does not ex
 ## Tests
 
 ```sh
-npm test            # once
-npm run test:watch  # while working
+pnpm test            # once
+pnpm run test:watch  # while working
 ```
 
 Vitest, with happy-dom. The suite deliberately concentrates on the places where a
@@ -105,10 +105,10 @@ that is inert without `--localstorage-file` and shadows the DOM environment's.
 ```sh
 make e2e_db                      # load tum-live-starter.sql, dropping what was there
 go run cmd/tumlive/main.go       # in another terminal
-cd frontend && npm run test:e2e  # or `make test_e2e` from the repo root
+cd frontend && pnpm run test:e2e  # or `make test_e2e` from the repo root
 ```
 
-Playwright, against a running server — deliberately not part of `npm test`, which must
+Playwright, against a running server — deliberately not part of `pnpm test`, which must
 stay runnable with nothing else up. These cover what the unit tests structurally
 cannot: which frontend answers a given path, the session cookie surviving login and
 redirects, the bearer token minted from that cookie, and what each kind of caller is
@@ -179,7 +179,7 @@ Two things to know before adding to them:
   answer — and hangs until the test times out if the configured host does not exist.
 
 The build is embedded into the binary, so a change here reaches the browser only after
-`npm run build` **and** a server restart. `npm run dev` avoids both.
+`pnpm run build` **and** a server restart. `pnpm run dev` avoids both.
 
 The remaining gap is SAML, which needs an identity provider this suite has no way to
 stand up.
@@ -365,7 +365,7 @@ Message types live in `src/gen`, generated from `apiv2/server/apiv2.proto` by
 `protoc-gen-es`:
 
 ```sh
-npm run proto     # or `make proto_es` from the repo root
+pnpm run proto     # or `make proto_es` from the repo root
 ```
 
 The output is **committed**, so building the app needs neither `buf` nor the Go
