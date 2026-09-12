@@ -355,10 +355,7 @@ func (c *Course) BeforeSave(tx *gorm.DB) (err error) {
 	if !courseSlugRegex.MatchString(c.Slug) {
 		return errors.New("invalid course slug")
 	}
-	if err := validateCourseName(c.Name); err != nil {
-		return err
-	}
-	return nil
+	return validateCourseName(c.Name)
 }
 
 // validateCourseName rejects course names that cannot be meant seriously.
