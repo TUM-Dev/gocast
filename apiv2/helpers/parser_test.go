@@ -170,3 +170,39 @@ func TestParseStreamToProtoIsPubliclyVisible(t *testing.T) {
 		t.Error("a private stream reported as publicly visible")
 	}
 }
+
+// A listing shows a course and the dates of two of its lectures, and never the playback
+// payload of those lectures: signing a playlist costs an RSA signature per URL, and the
+// listing would pay it once per course it returns.
+func TestParseCourseSummaryToProtoOmitsPlaybackPayload(t *testing.T) {
+	now := time.Now()
+	// An lrz.de playlist, which SetSignedPlaylists leaves alone, so that the full parse
+	// this is compared against needs no signing key.
+	const playlist = "https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/bb.mp4/playlist.m3u8"
+
+	recording := model.Stream{
+		Model: gorm.Model{ID: 1}, Start: now.Add(-24 * time.Hour), End: now.Add(-23 * time.Hour),
+		Recording: true, PlaylistUrl: playlist,
+	}
+	course := model.Course{
+		Model: gorm.Model{ID: 1}, Slug: "course", Visibility: "public", UserID: 42,
+		DownloadsEnabled: true, Streams: []model.Stream{recording},
+	}
+
+	full := ParseCourseToProto(course, nil)
+	if full.LastRecording == nil || len(full.LastRecording.Downloads) == 0 {
+		t.Fatal("the full parse answers with no downloads, so there is nothing for the summary to leave out")
+	}
+
+	summary := ParseCourseSummaryToProto(course, nil)
+	if summary.LastRecording == nil {
+		t.Fatal("the summary left out the last recording itself")
+	}
+	if len(summary.LastRecording.Downloads) != 0 {
+		t.Errorf("downloads = %v, want none", summary.LastRecording.Downloads)
+	}
+	// Everything a listing does read has to survive.
+	if summary.LastRecording.Id != full.LastRecording.Id || summary.Name != full.Name {
+		t.Errorf("summary = %v, want the same course and lecture as %v", summary, full)
+	}
+}

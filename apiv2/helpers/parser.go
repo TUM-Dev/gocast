@@ -55,11 +55,12 @@ func ParseBookmarkToProto(b model.Bookmark) *protobuf.Bookmark {
 	}
 }
 
-// ParseCourseSummaryToProto converts a course to the reduced representation used
-// on list pages. It intentionally skips signed playlist URLs and download payloads,
-// because those are only needed on player/detail pages.
+// ParseCourseSummaryToProto converts a course to the reduced representation a listing
+// needs: everything ParseCourseToProto answers with except the playback payload of the
+// two derived lectures, which only a player has any use for. Signing a playlist costs
+// an RSA signature per URL, and a listing signs one per course it returns.
 func ParseCourseSummaryToProto(c model.Course, u *model.User) *protobuf.Course {
-	return parseCourseToProto(c, u, false, false)
+	return parseCourseToProto(c, u, false)
 }
 
 // ParseCourseToProto converts a Course model to its protobuf representation.
@@ -68,10 +69,10 @@ func ParseCourseSummaryToProto(c model.Course, u *model.User) *protobuf.Course {
 // caller does not administer are left out of the last recording and the next lecture,
 // and the pin is the caller's own.
 func ParseCourseToProto(c model.Course, u *model.User) *protobuf.Course {
-	return parseCourseToProto(c, u, true, true)
+	return parseCourseToProto(c, u, true)
 }
 
-func parseCourseToProto(c model.Course, u *model.User, signPlaylists bool, includeDownloads bool) *protobuf.Course {
+func parseCourseToProto(c model.Course, u *model.User, includePlayback bool) *protobuf.Course {
 	course := &protobuf.Course{
 		Id:   uint32(c.ID),
 		Name: c.Name,
@@ -98,10 +99,10 @@ func parseCourseToProto(c model.Course, u *model.User, signPlaylists bool, inclu
 	// absent rather than sent as a stream with id 0, which every caller would then
 	// have to know to test for — as the Alpine start page did.
 	if last := c.GetLastRecording(u); last.ID != 0 {
-		course.LastRecording = parseStreamToProto(*last, c, u, signPlaylists, includeDownloads)
+		course.LastRecording = parseStreamToProto(*last, c, u, includePlayback)
 	}
 	if next := c.GetNextLecture(u); next.ID != 0 {
-		course.NextLecture = parseStreamToProto(*next, c, u, signPlaylists, includeDownloads)
+		course.NextLecture = parseStreamToProto(*next, c, u, includePlayback)
 	}
 
 	return course
@@ -133,17 +134,16 @@ func ParseSemesterToProto(semester model.Semester) *protobuf.Semester {
 
 // ParseStreamToProto converts a Stream model to its protobuf representation.
 func ParseStreamToProto(stream model.Stream, course model.Course, user *model.User) *protobuf.Stream {
-	return parseStreamToProto(stream, course, user, true, true)
+	return parseStreamToProto(stream, course, user, true)
 }
 
-func ParseStreamSummaryToProto(stream model.Stream, course model.Course, user *model.User) *protobuf.Stream {
-	return parseStreamToProto(stream, course, user, false, false)
-}
-
-func parseStreamToProto(stream model.Stream, course model.Course, user *model.User, signPlaylists bool, includeDownloads bool) *protobuf.Stream {
+// parseStreamToProto fills in the playback payload -- the signed playlist URLs and the
+// downloadable files -- only when includePlayback is set. Both are derived work a
+// listing pays for and never reads; see ParseCourseSummaryToProto.
+func parseStreamToProto(stream model.Stream, course model.Course, user *model.User, includePlayback bool) *protobuf.Stream {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
-	if signPlaylists {
+	if includePlayback {
 		_ = tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled)
 	}
 
@@ -190,7 +190,7 @@ func parseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		s.Duration = uint32(duration)
 	}
 
-	if includeDownloads && course.DownloadsEnabled {
+	if includePlayback && course.DownloadsEnabled {
 		for _, download := range stream.GetVodFiles() {
 			s.Downloads = append(s.Downloads, ParseDownloadToProto(download))
 		}

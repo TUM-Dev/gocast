@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/dgraph-io/ristretto/v2"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -291,5 +292,76 @@ func TestGetCourseBySlugSeparatesLoginFromForbidden(t *testing.T) {
 				t.Errorf("GetCourseBySlug returned %v (%v), want %v", got, err, tt.want)
 			}
 		})
+	}
+}
+
+// The anonymous listing holds nothing derived for a caller, so it is parsed once per
+// semester and served from the cache after that -- and the cached answer must not be
+// handed to a signed-in caller, whose listing holds their pins and their admin rights
+// and covers the logged-in-only courses besides.
+func TestGetPublicCoursesCachesTheAnonymousListing(t *testing.T) {
+	cache, err := ristretto.NewCache[string, any](&ristretto.Config[string, any]{
+		NumCounters: 100, MaxCost: 1 << 20, BufferItems: 64,
+	})
+	if err != nil {
+		t.Fatalf("building a cache: %v", err)
+	}
+	previous := dao.Cache
+	dao.Cache = cache
+	t.Cleanup(func() { dao.Cache = previous })
+
+	public := model.Course{
+		Model: gorm.Model{ID: 1}, Name: "Public", Slug: "public",
+		Year: 2026, TeachingTerm: "W", Visibility: "public", UserID: 42,
+	}
+	loggedIn := model.Course{
+		Model: gorm.Model{ID: 2}, Name: "Logged in", Slug: "loggedin",
+		Year: 2026, TeachingTerm: "W", Visibility: "loggedin", UserID: 42,
+	}
+
+	ctrl := gomock.NewController(t)
+	coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+	// Once for both anonymous calls.
+	coursesMock.EXPECT().GetPublicCourses(2026, "W").Return([]model.Course{public}, nil).Times(1)
+	coursesMock.EXPECT().GetPublicAndLoggedInCourses(2026, "W").
+		Return([]model.Course{public, loggedIn}, nil).Times(1)
+
+	api := &API{dao: dao.DaoWrapper{CoursesDao: coursesMock}, log: slog.Default()}
+	req := &protobuf.GetPublicCoursesRequest{Year: 2026, Term: "W"}
+
+	slugs := func(resp *protobuf.GetPublicCoursesResponse) []string {
+		var got []string
+		for _, c := range resp.Courses {
+			got = append(got, c.Slug)
+		}
+		return got
+	}
+
+	first, err := api.GetPublicCourses(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetPublicCourses: %v", err)
+	}
+	if got := slugs(first); len(got) != 1 || got[0] != "public" {
+		t.Errorf("anonymous caller saw %v, want only [public]", got)
+	}
+
+	// Ristretto admits a write asynchronously, so the hit is only guaranteed once the
+	// buffer has drained.
+	cache.Wait()
+
+	second, err := api.GetPublicCourses(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetPublicCourses from the cache: %v", err)
+	}
+	if got := slugs(second); len(got) != 1 || got[0] != "public" {
+		t.Errorf("cached answer is %v, want only [public]", got)
+	}
+
+	signedIn, err := api.GetPublicCourses(asCaller(&model.User{Model: gorm.Model{ID: 7}, Role: model.StudentType}), req)
+	if err != nil {
+		t.Fatalf("GetPublicCourses for a signed-in caller: %v", err)
+	}
+	if got := slugs(signedIn); len(got) != 2 {
+		t.Errorf("signed-in caller saw %v, want the logged-in-only course as well", got)
 	}
 }
