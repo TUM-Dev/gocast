@@ -50,15 +50,28 @@ type CoursesDaoImpl struct {
 	usersDao UsersDao
 }
 
-func publicCourseStreamFilter() func(*gorm.DB) *gorm.DB {
-	latestRecording := DB.Model(&model.Stream{}).
-		Select("MAX(start)").
-		Where("course_id = streams.course_id AND recording = ?", true)
+// publicCourseStreamFilter narrows the lectures preloaded for a course listing to the
+// ones the listing derives anything from: everything that has not ended yet, which the
+// next lecture is picked from, and the latest recording. A semester's worth of lectures
+// per course is what made this query slow, and a listing only ever shows those two.
+//
+// The latest recording is taken per privacy, not per course: a course administrator is
+// shown its private lectures and everyone else is not, so the latest public recording
+// has to survive a private one recorded after it. Which of the two a caller is given is
+// decided in model.Course.GetLastRecording, once the rows are in memory.
+func publicCourseStreamFilter(db *gorm.DB) *gorm.DB {
+	// Grouped rather than correlated: a subquery over `streams` cannot name the
+	// `streams` row being filtered, so a correlated condition here would compare the
+	// inner table against itself and yield the latest recording of any course.
+	latestRecordings := DB.Model(&model.Stream{}).
+		Select("course_id, private, MAX(start)").
+		Where("recording = ?", true).
+		Group("course_id, private")
 
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("(recording = ? AND start = (?)) OR start > NOW()", true, latestRecording).
-			Order("start asc")
-	}
+	// Ascending, which GetLastRecording and GetNextLecture both assume.
+	return db.Where("(recording = ? AND (course_id, private, start) IN (?)) OR end > NOW()",
+		true, latestRecordings).
+		Order("start asc")
 }
 
 func NewCoursesDao() CoursesDaoImpl {
@@ -172,7 +185,7 @@ func (d CoursesDaoImpl) GetPublicCourses(year int, term string) (courses []model
 	}
 	var publicCourses []model.Course
 
-	err = DB.Preload("Streams", publicCourseStreamFilter()).Find(&publicCourses,
+	err = DB.Preload("Streams", publicCourseStreamFilter).Find(&publicCourses,
 		"visibility = 'public' AND teaching_term = ? AND year = ?",
 		term, year).Error
 
@@ -189,7 +202,7 @@ func (d CoursesDaoImpl) GetPublicAndLoggedInCourses(year int, term string) (cour
 	}
 	var publicCourses []model.Course
 
-	err = DB.Preload("Streams", publicCourseStreamFilter()).Find(&publicCourses,
+	err = DB.Preload("Streams", publicCourseStreamFilter).Find(&publicCourses,
 		"(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?", term, year).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term), publicCourses, 1, time.Minute)
