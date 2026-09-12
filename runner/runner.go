@@ -178,8 +178,10 @@ func (r *Runner) InitApiGrpc() {
 	}
 }
 
-// RunAction runs a in the background and returns the id of the created job.
-// The actions in a run even after the job was cancelled, vod is skipped on discardVod.
+// RunAction runs the actions in a in the background and returns the id of the created job.
+// The actions in a keep running after the job's context was cancelled, which is what lets
+// StreamEnd report the end of a stream that was stopped early. The VoD actions are skipped
+// entirely when the stream was ended with discardVod.
 func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
 	// create new context to avoid cancellation on grpc request termination
 	c, cancel := context.WithCancel(context.Background())
