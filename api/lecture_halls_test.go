@@ -88,6 +88,40 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
+			"empty name": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						LectureHallsDao: func() dao.LectureHallsDao {
+							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
+							lectureHallMock.EXPECT().CreateLectureHall(gomock.Any()).Times(0)
+							return lectureHallMock
+						}(),
+					}
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         createLectureHallRequest{Name: "  ", StreamProtocol: 1},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not create": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						LectureHallsDao: func() dao.LectureHallsDao {
+							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
+							lectureHallMock.
+								EXPECT().
+								CreateLectureHall(gomock.Any()).
+								Return(errors.New("")).
+								AnyTimes()
+							return lectureHallMock
+						}(),
+					}
+					configGinLectureHallApiRouter(r, wrapper, newCamServiceMock(ctrl), "")
+				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         body,
+				ExpectedCode: http.StatusInternalServerError,
+			},
 			"success": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
@@ -95,7 +129,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
 							lectureHallMock.
 								EXPECT().
-								CreateLectureHall(gomock.Any()).AnyTimes()
+								CreateLectureHall(gomock.Any()).Return(nil).AnyTimes()
 							return lectureHallMock
 						}(),
 					}

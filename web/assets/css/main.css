@@ -42,6 +42,18 @@
     @apply p-2 cursor-pointer rounded shadow-xs text-center text-gray-900 bg-white border border-gray-300 focus:outline-hidden hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-bold rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700;
 }
 
+/*
+ * The call-to-action button. `.primary` cannot do this job next to `.btn`: it lives in
+ * the components layer, and a layered rule loses to an unlayered one no matter the
+ * specificity, so `btn primary` renders as a plain white button.
+ */
+@utility btn-primary {
+    @apply btn border-transparent bg-blue-500 text-white hover:bg-blue-600 hover:border-transparent
+        dark:bg-indigo-600 dark:text-white dark:border-transparent dark:hover:bg-indigo-800 dark:hover:border-transparent
+        disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 disabled:hover:bg-gray-200
+        dark:disabled:bg-gray-700 dark:disabled:text-gray-400 dark:disabled:hover:bg-gray-700;
+}
+
 @utility text-3 {
     @apply text-gray-800 dark:text-gray-200;
 }

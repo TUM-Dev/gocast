@@ -1,68 +1,121 @@
 {{define "createLectureHalls"}}
-<div x-data="{showSuccess: false}" class="">
-    <div class="alerts fixed w-fit left-0 right-0 mx-auto top-3 z-50">
-        <div x-show="showSuccess"
-            class="flex success bg-green-400 border border-green-600 pl-3 pr-3 pt-2 pb-2 rounded-lg shadow-md">
-            <span class="text-sm font-semibold text-slate-100 my-auto">
-                &#10003; Added lecture hall successfully.
-            </span>
-        </div>
-    </div>
-    <div
-        class="mx-auto w-4/5 my-10 shadow rounded-lg border bg-white dark:shadow-0 dark:border-gray-800 dark:bg-secondary-light">
-        <div class="border-b py-2 px-5 dark:border-gray-800">
-            <h6 class="text-3 font-bold">New Lecture-Hall</h6>
-        </div>
-        <form x-data="{name:'', streamProtocol: 1, combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}" @submit.prevent="
-                    success = await admin.createLectureHall(name, parseInt(streamProtocol), combIP, presIP, camIP, cameraIp, pwrCtrlIp);
-                    setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);" class="grid gap-3 px-5 py-4 ">
-            <div class="text-sm">
-                <label for="name" class="block text-5">Name</label>
-                <input type="text" x-model="name" id="lh-form-name" placeholder="FMI_HS1" autofocus="" required
-                    class="tl-input mt-3" />
-            </div>
-            <div class="text-sm flex flex-row gap-3">
-                <span class="block text-5">Protocol</span>
-                <div class="flex flex-row gap-1">
-                    <input type="radio" x-model="streamProtocol" value=1 id="lh-form-stream-rtsp"
-                        class="tl-radio" />
-                    <label class="text-sm text-5" for="lh-form-stream-rtsp">rtsp</label>
-                    <input type="radio" x-model="streamProtocol" value=2 id="lh-form-stream-srt"
-                           class="tl-radio" />
-                    <label class="text-sm text-5" for="lh-form-stream-srt">srt</label>
+    <form class="form-container"
+          x-data="{
+              name: '',
+              streamProtocol: 1,
+              presIp: '',
+              camIp: '',
+              combIp: '',
+              cameraIp: '',
+              pwrCtrlIp: '',
+              saving: false,
+              error: '',
+              async submit() {
+                  this.error = '';
+                  this.saving = true;
+                  const res = await admin.createLectureHall(this.name, parseInt(this.streamProtocol),
+                      this.combIp, this.presIp, this.camIp, this.cameraIp, this.pwrCtrlIp);
+                  this.saving = false;
+                  if (!res.ok) {
+                      this.error = res.error;
+                      return;
+                  }
+                  window.location = '/admin/lectureHalls';
+              },
+          }"
+          @submit.prevent="submit()">
+        <h2 class="form-container-title">New Lecture Hall</h2>
+
+        <div class="form-container-body">
+            <div x-cloak x-show="error"
+                 class="flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950">
+                <i class="fa fa-circle-exclamation mt-0.5 text-red-600 dark:text-red-400"></i>
+                <div>
+                    <p class="text-sm font-semibold text-red-700 dark:text-red-300">
+                        Could not create the lecture hall
+                    </p>
+                    <p class="text-sm text-red-700 dark:text-red-300" x-text="error"></p>
                 </div>
             </div>
-            <div class="text-sm">
-                <label for="name" class="block text-5">Presentation</label>
-                <input type="text" x-model="presIP" id="lh-form-pres" placeholder="0.0.0.0" autofocus="" required
-                    class="tl-input mt-3" />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="lh-form-name">Name <span class="text-red-600 dark:text-red-400">*</span></label>
+                    <input id="lh-form-name" type="text" x-model="name" placeholder="FMI_HS1" autofocus required
+                           class="tl-input mt-1"/>
+                    <p class="mt-1 text-xs text-5">As the hall is named in SMP, e.g. <code>room_00_13_009A</code>.</p>
+                </div>
+                <div>
+                    <span class="text-sm text-5 font-light">Stream protocol</span>
+                    <div class="mt-1 flex h-12 items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" id="lh-form-stream-rtsp" name="lh-form-stream" value="1"
+                                   x-model="streamProtocol" class="tl-radio"/>
+                            <label for="lh-form-stream-rtsp" class="text-sm text-5">rtsp</label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="radio" id="lh-form-stream-srt" name="lh-form-stream" value="2"
+                                   x-model="streamProtocol" class="tl-radio"/>
+                            <label for="lh-form-stream-srt" class="text-sm text-5">srt</label>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="text-sm">
-                <label for="name" class="block text-5">Camera</label>
-                <input type="text" x-model="camIP" id="lh-form-cam-ip" placeholder="0.0.0.0" autofocus="" required
-                    class="tl-input mt-3" />
+
+            <div class="border-t pt-3 dark:border-gray-800">
+                <h2>Sources</h2>
+                <p class="text-xs text-5">
+                    Stream URLs the worker pulls from. Fill in the ones this hall actually offers - a hall with
+                    only a combined feed leaves presentation and camera empty.
+                </p>
+                <div class="mt-3 grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label for="lh-form-pres">Presentation</label>
+                        <input id="lh-form-pres" type="text" x-model="presIp" placeholder="rtsp://0.0.0.0/pres"
+                               class="tl-input mt-1"/>
+                    </div>
+                    <div>
+                        <label for="lh-form-cam-ip">Camera</label>
+                        <input id="lh-form-cam-ip" type="text" x-model="camIp" placeholder="rtsp://0.0.0.0/cam"
+                               class="tl-input mt-1"/>
+                    </div>
+                    <div>
+                        <label for="lh-form-comb-ip">Combined</label>
+                        <input id="lh-form-comb-ip" type="text" x-model="combIp" placeholder="rtsp://0.0.0.0/comb"
+                               class="tl-input mt-1"/>
+                    </div>
+                </div>
             </div>
-            <div class="text-sm">
-                <label for="name" class="block text-5">Combined</label>
-                <input type="text" x-model="combIP" id="lh-form-comb-ip" placeholder="0.0.0.0" autofocus="" required
-                    class="tl-input mt-3" />
+
+            <div class="border-t pt-3 dark:border-gray-800">
+                <h2>Hardware <span class="font-normal text-5">- optional</span></h2>
+                <p class="text-xs text-5">
+                    Only for halls with the physical devices attached. VMP backed halls have neither.
+                </p>
+                <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="lh-form-camera-ip">Axis camera</label>
+                        <input id="lh-form-camera-ip" type="text" x-model="cameraIp" placeholder="10.0.0.1"
+                               class="tl-input mt-1"/>
+                        <p class="mt-1 text-xs text-5">IP of the camera itself - enables presets. Leave empty if
+                            there is none.</p>
+                    </div>
+                    <div>
+                        <label for="lh-form-pwrctrl-ip">Anel PWR-Ctrl</label>
+                        <input id="lh-form-pwrctrl-ip" type="text" x-model="pwrCtrlIp" placeholder="10.0.0.2"
+                               class="tl-input mt-1"/>
+                        <p class="mt-1 text-xs text-5">Drives the red live light. Leave empty if there is none.</p>
+                    </div>
+                </div>
             </div>
-            <div class="text-sm">
-                <label for="name" class="block text-5">Axis Cam</label>
-                <input type="text" x-model="cameraIp" id="lh-form-camera-ip" placeholder="0.0.0.0" autofocus="" required
-                    class="tl-input mt-3" />
-            </div>
-            <div class="text-sm">
-                <label for="name" class="block text-5">Anel PWR-Ctrl</label>
-                <input type="text" x-model="pwrCtrlIp" id="lh-form-pwrctrl-ip" placeholder="0.0.0.0" autofocus=""
-                    required
-                    class="tl-input mt-3" />
-            </div>
-            <button type="submit"
-                class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
-                <span class="text-white uppercase text-sm font-semibold">Create</span>
+        </div>
+
+        <div class="form-container-footer flex items-center justify-end gap-2">
+            <a href="/admin/lectureHalls" class="btn">Cancel</a>
+            <button type="submit" class="btn-primary" :disabled="saving || !name.trim()">
+                <span x-show="!saving">Create</span>
+                <span x-cloak x-show="saving">Creating&hellip;</span>
             </button>
-        </form>
-    </div>
-</div>
+        </div>
+    </form>
 {{end}}

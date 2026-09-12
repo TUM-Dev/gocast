@@ -92,26 +92,67 @@ export class AdminUserList {
     }
 }
 
+export type LectureHallResult = { ok: boolean; error?: string };
+
 export async function createLectureHall(
     name: string,
     streamProtocol: number,
-    combIP: string,
-    presIP: string,
-    camIP: string,
+    combIp: string,
+    presIp: string,
+    camIp: string,
     cameraIp: string,
     pwrCtrlIp: string,
-) {
-    return postData("/api/createLectureHall", {
+): Promise<LectureHallResult> {
+    const res = await postData("/api/createLectureHall", {
         name,
         streamProtocol,
-        presIP,
-        camIP,
-        combIP,
+        presIp,
+        camIp,
+        combIp,
         cameraIp,
         pwrCtrlIp,
-    }).then((e) => {
-        return e.status === StatusCodes.OK;
     });
+    return toLectureHallResult(res);
+}
+
+export async function updateLectureHall(
+    id: number,
+    name: string,
+    streamProtocol: number,
+    combIp: string,
+    presIp: string,
+    camIp: string,
+    cameraIp: string,
+    pwrCtrlIp: string,
+): Promise<LectureHallResult> {
+    const res = await fetch(`/api/lectureHall/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, streamProtocol, presIp, camIp, combIp, cameraIp, pwrCtrlIp }),
+    });
+    return toLectureHallResult(res);
+}
+
+/**
+ * Turns a lecture hall API response into a result carrying the server's own message,
+ * so the form can say why a save was rejected instead of just that it was.
+ */
+async function toLectureHallResult(res: Response): Promise<LectureHallResult> {
+    if (res.status === StatusCodes.OK) {
+        return { ok: true };
+    }
+    let error = `Request failed with status ${res.status}.`;
+    try {
+        const body = await res.json();
+        if (typeof body === "string") {
+            error = body;
+        } else if (body?.message) {
+            error = body.error ? `${body.message}: ${body.error}` : body.message;
+        }
+    } catch {
+        // No JSON body - keep the status based message.
+    }
+    return { ok: false, error };
 }
 
 export async function deleteLectureHall(lectureHallID: number) {

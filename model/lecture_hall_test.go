@@ -29,6 +29,18 @@ func TestBeforeSaveLectureHall(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			// A hall without an Axis camera - VMP backed ones, for example - is valid.
+			l: LectureHall{
+				CameraIP: "",
+				CombIP:   "rtsp://0.0.0.0/comb",
+			},
+			expected: LectureHall{
+				CameraIP: "",
+				CombIP:   "rtsp://0.0.0.0/comb",
+			},
+			wantErr: false,
+		},
+		{
 			l: LectureHall{
 				CameraIP: "127.0.0.1",
 				CamIP:    "somehost/malicious\" && stuff",

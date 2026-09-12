@@ -1,129 +1,203 @@
 {{define "lectureHalls"}}
     {{- /*gotype: github.com/TUM-Dev/gocast/[]model.LectureHall*/ -}}
-    <a href="/admin/lectureHalls/new" class="mx-auto w-4/5 mt-8 btn primary block">
-        &#43; New Lecture Hall
-    </a>
+    <div x-data="{filter: '', matches(name) { return name.toLowerCase().includes(this.filter.trim().toLowerCase()) }}">
+        <div class="mx-auto w-full md:w-4/5 mt-8 flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl text-1 font-medium mr-auto">
+                Lecture Halls
+                <span class="text-base font-normal text-5">({{len .}})</span>
+            </h1>
+            {{/* .tl-input carries w-full unlayered, so the width has to come from the parent. */}}
+            <div class="w-64 shrink-0">
+                <input type="search" x-model="filter" placeholder="Filter by name"
+                       aria-label="Filter lecture halls by name" class="tl-input"/>
+            </div>
+            <a href="/admin/lectureHalls/new" class="btn-primary">&#43; New Lecture Hall</a>
+        </div>
 
-    {{range $lectureHall := .}}
-        <div id="{{$lectureHall.Model.ID}}" x-data="{
-            changed:false,
-            saved:false,
-            savingFailed:false,
-            name: '{{$lectureHall.Name}}',
-            streamProtocol{{$lectureHall.Model.ID}}: {{$lectureHall.StreamProtocol}},
-            presIp: '{{$lectureHall.PresIP}}',
-            camIp: '{{$lectureHall.CamIP}}',
-            combIp: '{{$lectureHall.CombIP}}',
-            cameraIp: '{{$lectureHall.CameraIP}}',
-            pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
-            id: '{{$lectureHall.ID}}',}"
-             :class="window.location.hash.substr(1)===`${id}`?'dark:border-blue-500 border-blue-500':'dark:border-secondary-light'"
-             class="form-container">
+        {{range $lectureHall := .}}
+            <div x-show="matches('{{$lectureHall.Name}}')">
+                <form id="{{$lectureHall.Model.ID}}"
+                      x-data="{
+                          id: {{$lectureHall.Model.ID}},
+                          name: '{{$lectureHall.Name}}',
+                          streamProtocol: '{{$lectureHall.StreamProtocol}}',
+                          presIp: '{{$lectureHall.PresIP}}',
+                          camIp: '{{$lectureHall.CamIP}}',
+                          combIp: '{{$lectureHall.CombIP}}',
+                          cameraIp: '{{$lectureHall.CameraIP}}',
+                          pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
+                          saving: false,
+                          saved: false,
+                          error: '',
+                          fields: ['name', 'streamProtocol', 'presIp', 'camIp', 'combIp', 'cameraIp', 'pwrCtrlIp'],
+                          stored: {},
+                          init() { this.stored = this.snapshot() },
+                          snapshot() { return Object.fromEntries(this.fields.map(f => [f, this[f]])) },
+                          get changed() { return this.fields.some(f => this[f] !== this.stored[f]) },
+                          reset() { Object.assign(this, this.stored); this.error = '' },
+                          async save() {
+                              this.error = '';
+                              this.saved = false;
+                              this.saving = true;
+                              const pending = this.snapshot();
+                              const res = await admin.updateLectureHall(this.id, this.name,
+                                  parseInt(this.streamProtocol), this.combIp, this.presIp, this.camIp,
+                                  this.cameraIp, this.pwrCtrlIp);
+                              this.saving = false;
+                              if (!res.ok) {
+                                  this.error = res.error;
+                                  return;
+                              }
+                              this.stored = pending;
+                              this.saved = true;
+                              setTimeout(() => { this.saved = false }, 3000);
+                          },
+                      }"
+                      @submit.prevent="save()"
+                      :class="window.location.hash.substr(1) === `${id}` ? 'dark:border-blue-500 border-blue-500' : 'dark:border-secondary-light'"
+                      class="form-container">
 
-            <h2 class="form-container-title">
-                {{$lectureHall.Name}}
-            </h2>
+                    <div class="form-container-title flex flex-wrap items-center gap-2">
+                        <span x-text="stored.name" class="mr-auto">{{$lectureHall.Name}}</span>
+                        <span x-cloak x-show="changed"
+                              class="flex items-center px-2 py-1 text-xs font-light text-3 border border-amber-200 bg-amber-200/50 rounded-full">
+                            <i class="fa fa-triangle-exclamation mr-1"></i> Unsaved changes
+                        </span>
+                        <span x-cloak x-show="saved" x-transition.delay.200ms
+                              class="flex items-center px-2 py-1 text-xs font-light text-green-700 dark:text-green-400 border border-green-300 bg-green-100/50 dark:border-green-900 dark:bg-green-950 rounded-full">
+                            <i class="fa fa-check mr-1"></i> Saved
+                        </span>
+                        <span class="text-xs font-normal text-5">#{{$lectureHall.Model.ID}}</span>
+                    </div>
 
-            <div class="form-container-body grid grid-cols-3 gap-3 p-4">
-                <h2 class="text-sm text-4 col-span-full">Sources</h2>
-                <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-6 col-span-full">
-                    <li>
-                        <span class="text-sm text-5">Protocol</span>
-                        <div class="flex flex-col">
+                    <div class="form-container-body">
+                        <div x-cloak x-show="error"
+                             class="flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950">
+                            <i class="fa fa-circle-exclamation mt-0.5 text-red-600 dark:text-red-400"></i>
                             <div>
-                                <input type="radio" @change="changed=true" x-model="streamProtocol{{$lectureHall.Model.ID}}"
-                                       value=1 id="rtsp{{$lectureHall.Model.ID}}">
-                                <label class="text-sm text-5" for="rtsp{{$lectureHall.Model.ID}}">rtsp</label>
-                            </div>
-                            <div>
-                                <input type="radio" @change="changed=true" x-model="streamProtocol{{$lectureHall.Model.ID}}"
-                                       value=2 id="srt{{$lectureHall.Model.ID}}">
-                                <label class="text-sm text-5" for="srt{{$lectureHall.Model.ID}}">srt</label>
+                                <p class="text-sm font-semibold text-red-700 dark:text-red-300">
+                                    Could not save this lecture hall
+                                </p>
+                                <p class="text-sm text-red-700 dark:text-red-300" x-text="error"></p>
                             </div>
                         </div>
-                    </li>
-                    <li>
-                        <span class="text-sm text-5">Presentation</span>
-                        <input class="tl-input" type="text" @keyup="changed=true " x-model="presIp"
-                               value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
-                    </li>
-                    <li>
-                        <span class="text-sm text-5">Camera</span>
-                        <input class="tl-input" type="text" @keyup="changed=true " x-model="camIp"
-                               value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
-                    </li>
-                    <li>
-                        <span class="text-sm text-5">Combined</span>
-                        <input class="tl-input" type="text" @keyup="changed=true " x-model="combIp"
-                               value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
-                    </li>
-                    <li>
-                        <span class="text-sm text-5">Axis Cam</span>
-                        <input class="tl-input" type="text" @keyup="changed=true" x-model="cameraIp"
-                               value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
-                    </li>
-                    <li>
-                        <span class="text-sm text-5">Anel PWR-Ctrl</span>
-                        <input class="tl-input" type="text" @keyup="changed=true" x-model="pwrCtrlIp"
-                               value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
-                    </li>
-                </ul>
-                {{if $lectureHall.CameraIP}}
-                    <h2 class="col-span-full">Presets</h2>
-                    <div class="flex flex-row col-span-full">
-                        <div class="flex align-middle overflow-x-scroll">
-                            <div class="w-full scrollbarThin">
-                                <div class="flex flex-row gap-x-2">
-                                    {{range $preset := $lectureHall.CameraPresets}}
-                                        <div x-data="{defaultPreset: {{$preset.IsDefault}}, lectureHallID: {{$preset.LectureHallID}}}"
-                                             @resetdefaults.window="e => {if(e.detail === lectureHallID){defaultPreset = false}}"
-                                             style="min-width: 150px" class="text-center text-sm text-5 relative group"
-                                        >
-                                            <img id="presetImage{{$preset.LectureHallID}}-{{$preset.PresetID}}"
-                                                 src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                                 alt="prev" width="150px"
-                                                 class="tl-presetimage">
-                                            <i @click="admin.setDefaultPreset({{$preset.LectureHallID}}, {{$preset.PresetID}}).then((r) => {if(r){$dispatch('resetdefaults', lectureHallID);defaultPreset=true}})"
-                                               title="Set default" :class="!defaultPreset && 'opacity-0'"
-                                               class="group-hover:opacity-100 absolute top-1 left-1 p-1 rounded text-white bg-blue-600 fas fa-check"></i>
-                                            <i onclick="admin.takeSnapshot({{$preset.LectureHallID}}, {{$preset.PresetID}})"
-                                               title="Take new snapshot"
-                                               class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-indigo-500 fas fa-sync"></i>
-                                            <span title="{{$preset.Name}}" class="truncate block my-2"
-                                            >{{$preset.Name}}</span>
-                                        </div>
-                                    {{end}}
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="lh-{{$lectureHall.Model.ID}}-name">Name</label>
+                                <input id="lh-{{$lectureHall.Model.ID}}-name" type="text" x-model="name" required
+                                       class="tl-input mt-1"/>
+                            </div>
+                            <div>
+                                <span class="text-sm text-5 font-light">Stream protocol</span>
+                                <div class="mt-1 flex h-12 items-center gap-4">
+                                    <div class="flex items-center gap-2">
+                                        <input type="radio" name="lh-{{$lectureHall.Model.ID}}-protocol" value="1"
+                                               x-model="streamProtocol" id="rtsp{{$lectureHall.Model.ID}}"/>
+                                        <label class="text-sm text-5" for="rtsp{{$lectureHall.Model.ID}}">rtsp</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="radio" name="lh-{{$lectureHall.Model.ID}}-protocol" value="2"
+                                               x-model="streamProtocol" id="srt{{$lectureHall.Model.ID}}"/>
+                                        <label class="text-sm text-5" for="srt{{$lectureHall.Model.ID}}">srt</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="border-t pt-3 dark:border-gray-800">
+                            <h2>Sources</h2>
+                            <p class="text-xs text-5">Stream URLs the worker pulls from. Leave a source empty if the
+                                hall does not offer it.</p>
+                            <div class="mt-3 grid gap-4 sm:grid-cols-3">
+                                <div>
+                                    <label for="lh-{{$lectureHall.Model.ID}}-pres">Presentation</label>
+                                    <input id="lh-{{$lectureHall.Model.ID}}-pres" type="text" x-model="presIp"
+                                           placeholder="rtsp://0.0.0.0/pres" class="tl-input mt-1"/>
+                                </div>
+                                <div>
+                                    <label for="lh-{{$lectureHall.Model.ID}}-cam">Camera</label>
+                                    <input id="lh-{{$lectureHall.Model.ID}}-cam" type="text" x-model="camIp"
+                                           placeholder="rtsp://0.0.0.0/cam" class="tl-input mt-1"/>
+                                </div>
+                                <div>
+                                    <label for="lh-{{$lectureHall.Model.ID}}-comb">Combined</label>
+                                    <input id="lh-{{$lectureHall.Model.ID}}-comb" type="text" x-model="combIp"
+                                           placeholder="rtsp://0.0.0.0/comb" class="tl-input mt-1"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-3 dark:border-gray-800">
+                            <h2>Hardware <span class="font-normal text-5">- optional</span></h2>
+                            <p class="text-xs text-5">Only for halls with the physical devices attached. VMP backed
+                                halls have neither.</p>
+                            <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="lh-{{$lectureHall.Model.ID}}-camera">Axis camera</label>
+                                    <input id="lh-{{$lectureHall.Model.ID}}-camera" type="text" x-model="cameraIp"
+                                           placeholder="10.0.0.1" class="tl-input mt-1"/>
+                                </div>
+                                <div>
+                                    <label for="lh-{{$lectureHall.Model.ID}}-pwrctrl">Anel PWR-Ctrl</label>
+                                    <input id="lh-{{$lectureHall.Model.ID}}-pwrctrl" type="text" x-model="pwrCtrlIp"
+                                           placeholder="10.0.0.2" class="tl-input mt-1"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{if $lectureHall.CameraIP}}
+                            <div class="border-t pt-3 dark:border-gray-800">
+                                <div class="flex items-center gap-2">
+                                    <h2 class="mr-auto">Camera presets</h2>
+                                    <button type="button" x-data="{loading: false}" title="Refresh list"
+                                            class="btn py-1 text-xs"
+                                            @click="loading = true; fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d => d.status == 200 ? window.location.reload() : alert('there was an error'))">
+                                        <i class="fa fa-sync mr-1" :class="loading && 'fa-spin'"></i> Reload presets
+                                    </button>
+                                </div>
+                                {{if $lectureHall.CameraPresets}}
+                                    <div class="mt-3 overflow-x-auto scrollbarThin">
+                                        <div class="flex flex-row gap-x-2">
+                                            {{range $preset := $lectureHall.CameraPresets}}
+                                                <div x-data="{defaultPreset: {{$preset.IsDefault}}, lectureHallID: {{$preset.LectureHallID}}}"
+                                                     @resetdefaults.window="e => {if(e.detail === lectureHallID){defaultPreset = false}}"
+                                                     style="min-width: 150px" class="text-center text-sm text-5 relative group">
+                                                    <img id="presetImage{{$preset.LectureHallID}}-{{$preset.PresetID}}"
+                                                         src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                                         alt="prev" width="150px" class="tl-presetimage">
+                                                    <i @click="admin.setDefaultPreset({{$preset.LectureHallID}}, {{$preset.PresetID}}).then((r) => {if(r){$dispatch('resetdefaults', lectureHallID);defaultPreset=true}})"
+                                                       title="Set default" :class="!defaultPreset && 'opacity-0'"
+                                                       class="group-hover:opacity-100 absolute top-1 left-1 p-1 rounded text-white bg-blue-600 fas fa-check"></i>
+                                                    <i onclick="admin.takeSnapshot({{$preset.LectureHallID}}, {{$preset.PresetID}})"
+                                                       title="Take new snapshot"
+                                                       class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-indigo-500 fas fa-sync"></i>
+                                                    <span title="{{$preset.Name}}" class="truncate block my-2">{{$preset.Name}}</span>
+                                                </div>
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                {{else}}
+                                    <p class="mt-3 text-sm text-5">No presets fetched from this camera yet.</p>
+                                {{end}}
+                            </div>
+                        {{end}}
                     </div>
-                {{end}}
-                <span x-show="saved" x-transition.delay.200ms class="mr-4 text-green-400 mb-6">
-            Saved Successfully
-        </span>
-                <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400 mb-6">
-            Error updating lecture hall
-        </span>
-                <button class="btn" @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({streamProtocol: parseInt(streamProtocol{{$lectureHall.Model.ID}}), presIp: presIp, camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
-                                    .then(r => {
-                                        saved = r.status === 200
-                                        savingFailed = !saved
-                                    });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
-                        :disabled="!changed" class="btn">
-                    Save
-                </button>
-                {{if $lectureHall.CameraIP}}
-                    <button x-data="{loading:false}" title="Refresh list" class="btn"
-                            @click="loading=true;fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d=>d.status==200?window.location.reload():alert('there was an error'))">
-                        Reload Presets
-                    </button>
-                {{end}}
-                <button class="btn" title="Delete Lecture Hall"
-                        onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})">
-                    Delete
-                </button>
+
+                    <div class="form-container-footer flex flex-wrap items-center gap-2">
+                        <button type="button" class="btn text-red-600 dark:text-red-400 mr-auto"
+                                title="Delete Lecture Hall"
+                                onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})">
+                            Delete
+                        </button>
+                        <button type="button" class="btn" @click="reset()" x-cloak x-show="changed">Reset</button>
+                        <button type="submit" class="btn-primary" :disabled="!changed || saving || !name.trim()">
+                            <span x-show="!saving">Save</span>
+                            <span x-cloak x-show="saving">Saving&hellip;</span>
+                        </button>
+                    </div>
+                </form>
             </div>
-        </div>
-    {{end}}
+        {{end}}
+    </div>
 {{end}}
