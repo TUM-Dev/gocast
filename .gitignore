@@ -116,3 +116,6 @@ tumlive.service
 
 # osx
 .DS_Store
+
+# Scratch output from .claude/skills/local-testing (screenshot diffs)
+.shots/
