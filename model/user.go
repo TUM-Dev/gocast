@@ -395,14 +395,15 @@ func (u *User) ComparePasswordAndHash(password string) (match bool, err error) {
 		return false, nil
 	}
 	// Extract the parameters, salt and derived key from the encoded password
-	// hash.
-	salt, hash, err := decodeHash(u.Password)
+	// hash. The parameters are the ones this hash was created with, which may
+	// differ from the current generation policy in `p`.
+	hashParams, salt, hash, err := decodeHash(u.Password)
 	if err != nil {
 		return false, err
 	}
 
 	// Derive the key from the other password using the same parameters.
-	otherHash := argon2.IDKey([]byte(password), salt, p.iterations, p.memory, p.parallelism, p.keyLength)
+	otherHash := argon2.IDKey([]byte(password), salt, hashParams.iterations, hashParams.memory, hashParams.parallelism, hashParams.keyLength)
 
 	// Check that the contents of the hashed passwords are identical. Note
 	// that we are using the subtle.ConstantTimeCompare() function for this
@@ -413,39 +414,42 @@ func (u *User) ComparePasswordAndHash(password string) (match bool, err error) {
 	return false, nil
 }
 
-func decodeHash(encodedHash string) (salt, hash []byte, err error) {
+// decodeHash extracts the parameters, salt and derived key of an encoded hash. The
+// parameters are returned rather than written to the package level `p`: they belong to
+// the hash being verified, while `p` is the policy for generating new hashes.
+func decodeHash(encodedHash string) (params argonParams, salt, hash []byte, err error) {
 	vals := strings.Split(encodedHash, "$")
 	if len(vals) != 6 {
-		return nil, nil, ErrInvalidHash
+		return argonParams{}, nil, nil, ErrInvalidHash
 	}
 
 	var version int
 	_, err = fmt.Sscanf(vals[2], "v=%d", &version)
 	if err != nil {
-		return nil, nil, err
+		return argonParams{}, nil, nil, err
 	}
 	if version != argon2.Version {
-		return nil, nil, ErrIncompatibleVersion
+		return argonParams{}, nil, nil, ErrIncompatibleVersion
 	}
 
-	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &p.memory, &p.iterations, &p.parallelism)
+	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &params.memory, &params.iterations, &params.parallelism)
 	if err != nil {
-		return nil, nil, err
+		return argonParams{}, nil, nil, err
 	}
 
 	salt, err = base64.RawStdEncoding.DecodeString(vals[4])
 	if err != nil {
-		return nil, nil, err
+		return argonParams{}, nil, nil, err
 	}
-	p.saltLength = uint32(len(salt))
+	params.saltLength = uint32(len(salt))
 
 	hash, err = base64.RawStdEncoding.DecodeString(vals[5])
 	if err != nil {
-		return nil, nil, err
+		return argonParams{}, nil, nil, err
 	}
-	p.keyLength = uint32(len(hash))
+	params.keyLength = uint32(len(hash))
 
-	return salt, hash, nil
+	return params, salt, hash, nil
 }
 
 func GenerateFromPassword(password string) (encodedHash string, err error) {

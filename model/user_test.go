@@ -1,9 +1,13 @@
 package model
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -153,8 +157,6 @@ func TestAccessChecksDoNotPanicOnNilUser(t *testing.T) {
 // A password round trip is the login path; the wrong-password and empty-hash cases are
 // what keep a broken comparison from admitting everyone.
 func TestSetPasswordAndCompare(t *testing.T) {
-	restoreArgonParams(t)
-
 	t.Run("a correct password matches", func(t *testing.T) {
 		u := &User{}
 		if err := u.SetPassword("hunter2hunter2"); err != nil {
@@ -222,8 +224,6 @@ func TestSetPasswordAndCompare(t *testing.T) {
 // If the salt were ever fixed, two users with the same password would share a hash and
 // the whole table would be crackable at once.
 func TestGenerateFromPasswordSaltsEachHash(t *testing.T) {
-	restoreArgonParams(t)
-
 	first, err := GenerateFromPassword("hunter2hunter2")
 	if err != nil {
 		t.Fatalf("GenerateFromPassword: %v", err)
@@ -249,8 +249,6 @@ func TestGenerateFromPasswordSaltsEachHash(t *testing.T) {
 // decodeHash parses attacker-adjacent data (whatever sits in the password column), so
 // every malformed shape must come back as an error instead of a panic or a false match.
 func TestDecodeHashRejectsMalformedInput(t *testing.T) {
-	restoreArgonParams(t)
-
 	valid, err := GenerateFromPassword("hunter2hunter2")
 	if err != nil {
 		t.Fatalf("GenerateFromPassword: %v", err)
@@ -274,7 +272,7 @@ func TestDecodeHashRejectsMalformedInput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			salt, hash, err := decodeHash(tt.encoded)
+			_, salt, hash, err := decodeHash(tt.encoded)
 			if err == nil {
 				t.Fatalf("decodeHash(%q) accepted the input", tt.encoded)
 			}
@@ -288,7 +286,7 @@ func TestDecodeHashRejectsMalformedInput(t *testing.T) {
 	}
 
 	t.Run("a hash generated here round trips", func(t *testing.T) {
-		salt, hash, err := decodeHash(valid)
+		_, salt, hash, err := decodeHash(valid)
 		if err != nil {
 			t.Fatalf("decodeHash: %v", err)
 		}
@@ -298,29 +296,113 @@ func TestDecodeHashRejectsMalformedInput(t *testing.T) {
 	})
 }
 
-// BUG (asserted as-is, not fixed): decodeHash writes the parameters it parsed into the
-// package level `p`, so verifying one user's hash changes the cost parameters used to
-// generate everyone else's from then on — and races when two logins decode at once.
-// This pins the current behaviour so a fix is a deliberate, visible change.
-func TestDecodeHashMutatesGlobalParameters(t *testing.T) {
-	restoreArgonParams(t)
+// decodeHash used to write the parameters it parsed into the package level `p`, which
+// both downgraded the cost of every password hashed afterwards by the process and raced
+// between concurrent logins. The parsed parameters are per-hash state now.
+func TestDecodeHashLeavesGlobalParametersUntouched(t *testing.T) {
+	before := p
 
 	// Same argon2 version, but half the memory of the configured parameters.
 	weak := "$argon2id$v=19$m=32768,t=1,p=1$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNo"
-	if _, _, err := decodeHash(weak); err != nil {
+	params, _, _, err := decodeHash(weak)
+	if err != nil {
 		t.Fatalf("decodeHash: %v", err)
 	}
-	if p.memory != 32768 || p.iterations != 1 || p.parallelism != 1 {
-		t.Errorf("global params = %+v; the mutation this test documents seems to be gone", p)
+	if p != before {
+		t.Errorf("global params = %+v, want %+v; decodeHash mutated the generation policy", p, before)
+	}
+	if params.memory != 32768 || params.iterations != 1 || params.parallelism != 1 {
+		t.Errorf("decoded params = %+v; the hash's own parameters were not returned", params)
 	}
 }
 
-// restoreArgonParams puts the package level argon2 parameters back after a test, since
-// decodeHash overwrites them (see TestDecodeHashMutatesGlobalParameters).
-func restoreArgonParams(t *testing.T) {
+// Stored hashes predate any change to the generation policy, so verification has to use
+// each hash's own parameters. A fix that reached for the global `p` instead would lock
+// out every user whose hash was made with different ones.
+func TestComparePasswordAndHashUsesTheStoredParameters(t *testing.T) {
+	const password = "hunter2hunter2"
+
+	// Deliberately weaker than the current policy, as a legacy hash would be.
+	legacy := argonParams{memory: 32 * 1024, iterations: 1, parallelism: 1, saltLength: 16, keyLength: 32}
+	u := &User{Password: encodeWithParams(t, password, legacy)}
+
+	match, err := u.ComparePasswordAndHash(password)
+	if err != nil {
+		t.Fatalf("ComparePasswordAndHash: %v", err)
+	}
+	if !match {
+		t.Error("a hash stored with older parameters no longer verifies")
+	}
+
+	match, err = u.ComparePasswordAndHash("hunter2hunter3")
+	if err != nil {
+		t.Fatalf("ComparePasswordAndHash: %v", err)
+	}
+	if match {
+		t.Error("a wrong password matched a hash with older parameters")
+	}
+
+	// Hashing a new password afterwards must still use the configured policy.
+	fresh, err := GenerateFromPassword(password)
+	if err != nil {
+		t.Fatalf("GenerateFromPassword: %v", err)
+	}
+	freshParams, _, _, err := decodeHash(fresh)
+	if err != nil {
+		t.Fatalf("decodeHash: %v", err)
+	}
+	if freshParams.memory != p.memory || freshParams.iterations != p.iterations || freshParams.parallelism != p.parallelism {
+		t.Errorf("new hash encoded %+v, want the configured policy %+v", freshParams, p)
+	}
+}
+
+// Concurrent logins all decode at once; under -race this pins the unsynchronised write
+// to the global that decodeHash used to perform.
+func TestComparePasswordAndHashIsConcurrencySafe(t *testing.T) {
+	const password = "hunter2hunter2"
+	before := p
+
+	users := []*User{
+		{Password: encodeWithParams(t, password, argonParams{memory: 32 * 1024, iterations: 1, parallelism: 1, saltLength: 16, keyLength: 32})},
+		{Password: encodeWithParams(t, password, argonParams{memory: 16 * 1024, iterations: 2, parallelism: 4, saltLength: 8, keyLength: 16})},
+		{Password: encodeWithParams(t, password, p)},
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		for _, u := range users {
+			wg.Add(1)
+			go func(u *User) {
+				defer wg.Done()
+				match, err := u.ComparePasswordAndHash(password)
+				if err != nil {
+					t.Errorf("ComparePasswordAndHash: %v", err)
+					return
+				}
+				if !match {
+					t.Error("a concurrent verification of a correct password failed")
+				}
+			}(u)
+		}
+	}
+	wg.Wait()
+
+	if p != before {
+		t.Errorf("global params = %+v, want %+v; concurrent verification mutated them", p, before)
+	}
+}
+
+// encodeWithParams builds a stored hash with explicit parameters, standing in for rows
+// written before the current policy.
+func encodeWithParams(t *testing.T, password string, params argonParams) string {
 	t.Helper()
-	saved := p
-	t.Cleanup(func() { p = saved })
+	salt := make([]byte, params.saltLength)
+	if _, err := rand.Read(salt); err != nil {
+		t.Fatalf("rand.Read: %v", err)
+	}
+	hash := argon2.IDKey([]byte(password), salt, params.iterations, params.memory, params.parallelism, params.keyLength)
+	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", argon2.Version, params.memory, params.iterations, params.parallelism,
+		base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(hash))
 }
 
 // The settings table stores raw strings for some keys and JSON for others; a missing or
