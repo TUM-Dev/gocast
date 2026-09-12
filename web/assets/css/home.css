@@ -1,5 +1,18 @@
-@import 'tailwindcss';
-
+/*
+ * Composed by hand rather than `@import "tailwindcss"`, which puts utilities in
+ * `@layer utilities`. Layered rules lose to unlayered ones no matter the order, and
+ * the vendor stylesheets this app links (video.js, fullcalendar, flatpickr,
+ * nouislider) are unlayered -- so every utility on an element they also style would
+ * silently lose. video.js sizing its player 1920px wide over `w-full` is the visible
+ * case. Leaving utilities unlayered keeps the v3 cascade: utilities and vendor CSS
+ * compete on specificity and order, as they did before.
+ *
+ * theme and preflight stay layered so project CSS still beats them without `!`.
+ */
+@layer theme, base, components;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
 @config "../../tailwind.config.js";
 
 /*

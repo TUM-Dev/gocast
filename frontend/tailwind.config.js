@@ -11,6 +11,28 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
+      // Tailwind v3's default sans stack, pinned. v4 drops `ui-sans-serif` and
+      // `system-ui` from the front, which on Linux resolves to a different face
+      // and shifts every text metric on the page. Delete this to adopt v4's
+      // default -- a deliberate visual change, not a side effect of the upgrade.
+      fontFamily: {
+        sans: [
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Segoe UI"',
+          "Roboto",
+          '"Helvetica Neue"',
+          "Arial",
+          '"Noto Sans"',
+          "sans-serif",
+          '"Apple Color Emoji"',
+          '"Segoe UI Emoji"',
+          '"Segoe UI Symbol"',
+          '"Noto Color Emoji"',
+        ],
+      },
       colors: {
         primary: "#0d1117",
         secondary: "#161b22",
