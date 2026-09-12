@@ -9,8 +9,8 @@ import (
 )
 
 // TruncateHtml is a hand-rolled parser fed lecture and course descriptions, which are
-// user-supplied. Every case here pins current behaviour; the ones marked BUG document
-// output that is wrong but shipped, so a fix is a deliberate, visible change.
+// user-supplied. Every case here pins current behaviour, including the boundaries that
+// decide whether an ellipsis is appended at all.
 func TestTruncateHtml(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -37,25 +37,34 @@ func TestTruncateHtml(t *testing.T) {
 			want:     "",
 		},
 		{
-			// BUG: input that fits should come back unchanged. The ellipsis is appended
-			// unconditionally, so a short description gains a "..." that promises text
-			// which does not exist.
-			name:     "input shorter than maxlen still gains an ellipsis",
+			// Input that fits comes back unchanged: an ellipsis here would promise text
+			// that does not exist.
+			name:     "input shorter than maxlen keeps no ellipsis",
 			in:       "hello",
 			maxlen:   10,
 			ellipsis: "...",
-			want:     "hello...",
+			want:     "hello",
 		},
 		{
-			name:     "input exactly maxlen still gains an ellipsis",
+			// The boundary case: the budget runs out and the input ends on the very same
+			// rune. Nothing was dropped, so nothing is promised.
+			name:     "input exactly maxlen keeps no ellipsis",
 			in:       "hello",
+			maxlen:   5,
+			ellipsis: "...",
+			want:     "hello",
+		},
+		{
+			name:     "input longer than maxlen is cut at the visible-character budget",
+			in:       "hello world",
 			maxlen:   5,
 			ellipsis: "...",
 			want:     "hello...",
 		},
 		{
-			name:     "input longer than maxlen is cut at the visible-character budget",
-			in:       "hello world",
+			// One character past the boundary is the first case that really loses text.
+			name:     "input one character longer than maxlen gains an ellipsis",
+			in:       "hello!",
 			maxlen:   5,
 			ellipsis: "...",
 			want:     "hello...",
@@ -139,13 +148,43 @@ func TestTruncateHtml(t *testing.T) {
 			want:     "a<hr/>bcd...",
 		},
 		{
-			// BUG: the void-element list is matched case-sensitively, so uppercase
-			// markup (common in pasted rich-text) produces the invalid "</BR>".
-			name:     "an uppercase BR is wrongly closed",
+			// Uppercase markup is routine in pasted rich text; it must not produce the
+			// invalid "</BR>".
+			name:     "an uppercase BR is not pushed on the close stack",
 			in:       "<BR>abcdef",
 			maxlen:   3,
 			ellipsis: "...",
-			want:     "<BR>abc...</BR>",
+			want:     "<BR>abc...",
+		},
+		{
+			name:     "an uppercase IMG is not pushed on the close stack",
+			in:       `a<IMG SRC="x.png">bcdefg`,
+			maxlen:   4,
+			ellipsis: "...",
+			want:     `a<IMG SRC="x.png">bcd...`,
+		},
+		{
+			name:     "a mixed-case self-closed Br is not pushed on the close stack",
+			in:       "a<Br/>bcdefg",
+			maxlen:   4,
+			ellipsis: "...",
+			want:     "a<Br/>bcd...",
+		},
+		{
+			// Tag names are case-insensitive in HTML, so a closing tag matches its
+			// opener regardless of case instead of being rejected as unbalanced.
+			name:     "a closing tag matches its opener case-insensitively",
+			in:       "<B>abcdef</b>",
+			maxlen:   3,
+			ellipsis: "...",
+			want:     "<B>abc...</B>",
+		},
+		{
+			name:     "an uppercase closing tag matches a lowercase opener",
+			in:       "<b>ab</B>cdef",
+			maxlen:   4,
+			ellipsis: "...",
+			want:     "<b>ab</B>cd...",
 		},
 		{
 			name:     "tag attributes do not consume the visible budget",
@@ -263,12 +302,44 @@ func TestTruncateHtml(t *testing.T) {
 		},
 		{
 			// A trailing "<" never reaches the tag parser because the scan stops at the
-			// end of the buffer first; contrast with TestTruncateHtmlStrayLessThanPanics.
+			// end of the buffer first; contrast with TestTruncateHtmlStrayLessThan.
 			name:     "a trailing stray less-than is copied through",
 			in:       "<",
 			maxlen:   3,
 			ellipsis: "...",
-			want:     "<...",
+			want:     "<",
+		},
+		{
+			name:     "a lone less-than as the very last byte is copied through",
+			in:       "abc<",
+			maxlen:   10,
+			ellipsis: "...",
+			want:     "abc<",
+		},
+		{
+			// The prose around the "<" must survive: a stray "<" is literal text and
+			// counts against the visible budget like any other character.
+			name:     "a stray less-than mid-text counts as one visible character",
+			in:       "5 < 10 and 3 > 1 blah",
+			maxlen:   5,
+			ellipsis: "...",
+			want:     "5 < 10 a...",
+		},
+		{
+			// TagExpr is unanchored, so the stray "<" must not be resolved against the
+			// real <b> further along the input.
+			name:     "a stray less-than does not steal a later tag",
+			in:       "<b>5 < 10</b> abc",
+			maxlen:   100,
+			ellipsis: "...",
+			want:     "<b>5 < 10</b> abc",
+		},
+		{
+			name:     "an html comment is treated as visible text, not as markup",
+			in:       "<!-- a comment -->abcdef",
+			maxlen:   5,
+			ellipsis: "...",
+			want:     "<!-- a...",
 		},
 	}
 
@@ -294,43 +365,115 @@ func TestTruncateHtml(t *testing.T) {
 	}
 }
 
-// BUG: a "<" that does not start a tag makes TagExpr.FindSubmatch return nil, which is
-// then indexed unguarded. "5 < 10" or an HTML comment in a course description crashes
-// the request. Pinned as a panic so a fix turns this test red rather than passing
-// silently.
-func TestTruncateHtmlStrayLessThanPanics(t *testing.T) {
-	inputs := []string{
-		"a < b and more text",
-		"5 < 10 and 3 > 1 blah",
-		"<!-- a comment -->abcdef",
+// A "<" that does not start a tag used to make TagExpr.FindSubmatch return nil, which
+// was then indexed unguarded: "5 < 10" or an HTML comment in a course description
+// crashed the request. Such a "<" is literal text and is now counted as one visible
+// character and copied through.
+func TestTruncateHtmlStrayLessThan(t *testing.T) {
+	tests := []struct {
+		name     string
+		in       string
+		maxlen   int
+		ellipsis string
+		want     string
+	}{
+		{
+			name:     "a stray less-than between words",
+			in:       "a < b and more text",
+			maxlen:   5,
+			ellipsis: "...",
+			want:     "a < b an...",
+		},
+		{
+			name:     "a stray less-than that fits inside the budget",
+			in:       "a < b",
+			maxlen:   100,
+			ellipsis: "...",
+			want:     "a < b",
+		},
+		{
+			name:     "a comparison with a greater-than later in the text",
+			in:       "5 < 10 and 3 > 1 blah",
+			maxlen:   5,
+			ellipsis: "...",
+			want:     "5 < 10 a...",
+		},
+		{
+			name:     "an html comment is cut like ordinary text",
+			in:       "<!-- a comment -->abcdef",
+			maxlen:   5,
+			ellipsis: "...",
+			want:     "<!-- a...",
+		},
+		{
+			name:     "an html comment that fits is copied through whole",
+			in:       "<!-- a comment -->abcdef",
+			maxlen:   100,
+			ellipsis: "...",
+			want:     "<!-- a comment -->abcdef",
+		},
+		{
+			name:     "a lone less-than as the very last byte",
+			in:       "abc<",
+			maxlen:   100,
+			ellipsis: "...",
+			want:     "abc<",
+		},
 	}
-	for _, in := range inputs {
-		t.Run(in, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("TruncateHtml(%q) no longer panics; the nil-match crash appears fixed, update this test", in)
-				}
-			}()
-			_, _ = TruncateHtml([]byte(in), 5, "...")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := TruncateHtml([]byte(tt.in), tt.maxlen, tt.ellipsis)
+			if err != nil {
+				t.Fatalf("TruncateHtml(%q, %d) returned unexpected error %v", tt.in, tt.maxlen, err)
+			}
+			if string(got) != tt.want {
+				t.Errorf("TruncateHtml(%q, %d) = %q, want %q", tt.in, tt.maxlen, got, tt.want)
+			}
 		})
 	}
 }
 
-// BUG: the end-of-buffer check compares bufPtr against len(buf)-1, which only holds
+// The end-of-buffer check used to compare bufPtr against len(buf)-1, which only holds
 // when the final rune is one byte wide. An input whose last rune is multi-byte and
-// whose budget is not exhausted before it falls through to the tag parser with no tag
-// left to match, and crashes. Only the final rune decides, so "Grüße" is safe and "bä"
-// is not -- which is how this survived unnoticed in a German university's codebase.
-func TestTruncateHtmlPanicsOnTrailingMultiByteRune(t *testing.T) {
-	inputs := []string{"ä", "bä", "ö", "😀", "中", "Vorlesung über Prüfungsordnungä"}
-	for _, in := range inputs {
-		t.Run(in, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("TruncateHtml(%q) no longer panics; the end-of-buffer check appears fixed, update this test", in)
-				}
-			}()
-			_, _ = TruncateHtml([]byte(in), 100, "...")
+// whose budget is not exhausted before it fell through to the tag parser with no tag
+// left to match, and crashed. Only the final rune decided, so "Gruesse" spelled with a
+// sharp s was safe and "ba" with an umlaut was not -- which is how this survived
+// unnoticed in a German university's codebase. The guard now measures the width of the
+// rune at bufPtr, so such input is returned whole.
+func TestTruncateHtmlTrailingMultiByteRune(t *testing.T) {
+	tests := []struct {
+		name   string
+		in     string
+		maxlen int
+		want   string
+	}{
+		{name: "a lone umlaut", in: "ä", maxlen: 100, want: "ä"},
+		{name: "an umlaut after an ascii byte", in: "bä", maxlen: 100, want: "bä"},
+		{name: "a lone o umlaut", in: "ö", maxlen: 100, want: "ö"},
+		{name: "a lone four-byte emoji", in: "😀", maxlen: 100, want: "😀"},
+		{name: "a lone cjk character", in: "中", maxlen: 100, want: "中"},
+		{name: "two cjk characters", in: "中文", maxlen: 100, want: "中文"},
+		{name: "a german title ending in an umlaut", in: "Vorlesung über Prüfungsordnungä", maxlen: 100, want: "Vorlesung über Prüfungsordnungä"},
+		{name: "a title ending in an emoji", in: "Prüfung 😀", maxlen: 100, want: "Prüfung 😀"},
+		{name: "an em dash terminator", in: "Analysis —", maxlen: 100, want: "Analysis —"},
+		{name: "a typographic quote terminator", in: "sogenannte „Klausur“", maxlen: 100, want: "sogenannte „Klausur“"},
+		{name: "an ascii terminator still behaves as before", in: "Grüße", maxlen: 100, want: "Grüße"},
+		{name: "markup is still closed when the input ends in an umlaut", in: "<b>bä", maxlen: 100, want: "<b>bä</b>"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := TruncateHtml([]byte(tt.in), tt.maxlen, "...")
+			if err != nil {
+				t.Fatalf("TruncateHtml(%q, %d) returned unexpected error %v", tt.in, tt.maxlen, err)
+			}
+			if string(got) != tt.want {
+				t.Errorf("TruncateHtml(%q, %d) = %q, want %q", tt.in, tt.maxlen, got, tt.want)
+			}
+			if !utf8.Valid(got) {
+				t.Errorf("TruncateHtml(%q, %d) produced invalid UTF-8: %q", tt.in, tt.maxlen, got)
+			}
 		})
 	}
 }
@@ -355,16 +498,22 @@ func TestTruncate(t *testing.T) {
 			want:   "",
 		},
 		{
-			// Same unconditional-ellipsis bug as TruncateHtml, surfaced through the
+			// Same conditional-ellipsis rule as TruncateHtml, surfaced through the
 			// wrapper that templates actually call.
-			name:   "input shorter than the length still gains an ellipsis",
+			name:   "input shorter than the length keeps no ellipsis",
 			in:     "hello",
 			length: 10,
-			want:   "hello...",
+			want:   "hello",
 		},
 		{
-			name:   "input exactly the length still gains an ellipsis",
+			name:   "input exactly the length keeps no ellipsis",
 			in:     "hello",
+			length: 5,
+			want:   "hello",
+		},
+		{
+			name:   "input one character longer than the length is truncated",
+			in:     "hello!",
 			length: 5,
 			want:   "hello...",
 		},
@@ -389,13 +538,26 @@ func TestTruncate(t *testing.T) {
 			want:   "😀😀...",
 		},
 		{
-			// BUG: the error branch assigns to a blank identifier and falls through, so
-			// unbalanced markup silently discards the whole text instead of degrading to
-			// something readable.
-			name:   "unbalanced markup silently yields an empty string",
+			// Unbalanced markup used to blank the whole description. It now degrades to
+			// the plain text with the markup stripped.
+			name:   "unbalanced markup degrades to plain text",
 			in:     "a</b>",
 			length: 3,
-			want:   "",
+			want:   "a",
+		},
+		{
+			// The stray tag is reached inside the budget, so the whole parse fails; the
+			// fallback still truncates what is left.
+			name:   "unbalanced markup degrading to plain text is still truncated",
+			in:     "hello</b> world and more",
+			length: 8,
+			want:   "hello wor...",
+		},
+		{
+			name:   "a mismatched closing tag degrades instead of vanishing",
+			in:     "<b>ab</i>cd",
+			length: 10,
+			want:   "abcd",
 		},
 	}
 
@@ -409,13 +571,15 @@ func TestTruncate(t *testing.T) {
 }
 
 // Randomised smoke test over markup-shaped input. It does not recompute the visible
-// count (that would just reimplement the function); it pins the three properties that
-// must hold for any input: no crash, valid UTF-8 out, and output that is the input
-// prefix plus the ellipsis and closing tags — never unrelated bytes.
+// count (that would just reimplement the function); it pins the properties that must
+// hold for any input: no crash, valid UTF-8 out, output that is the input prefix plus
+// an optional ellipsis and closing tags — never unrelated bytes — and an ellipsis that
+// appears only when text was actually dropped.
 func TestTruncateHtmlPropertiesOnGeneratedInput(t *testing.T) {
 	tokens := []string{
 		"a", "b", " ", "  ", "ä", "ö", "ß", "😀", "中", "&amp;", "&#8212;", "&",
 		"<b>", "</b>", "<i>", "</i>", "<br>", "<hr/>", `<img src="x">`, "\n", "\t",
+		"<", " < ", "<!-- c -->",
 	}
 	const ellipsis = "…"
 
@@ -425,10 +589,6 @@ func TestTruncateHtmlPropertiesOnGeneratedInput(t *testing.T) {
 		for n := rng.Intn(12); n >= 0; n-- {
 			sb.WriteString(tokens[rng.Intn(len(tokens))])
 		}
-		// Every input is terminated with an ASCII byte: an input ending in a multi-byte
-		// rune crashes (see TestTruncateHtmlPanicsOnTrailingMultiByteRune), which would
-		// otherwise mask every other property this loop checks.
-		sb.WriteString("z")
 		in := sb.String()
 		maxlen := rng.Intn(12)
 
@@ -448,10 +608,26 @@ func TestTruncateHtmlPropertiesOnGeneratedInput(t *testing.T) {
 		}
 		cut := strings.Index(out, ellipsis)
 		if cut < 0 {
-			t.Fatalf("TruncateHtml(%q, %d) = %q, dropped the ellipsis", in, maxlen, out)
+			// No ellipsis means nothing was dropped, so every kept byte of the input
+			// must still be there: the output is the whole input plus closing tags.
+			kept := out
+			for kept != in && strings.HasSuffix(kept, ">") {
+				open := strings.LastIndex(kept, "</")
+				if open < 0 {
+					break
+				}
+				kept = kept[:open]
+			}
+			if kept != in {
+				t.Fatalf("TruncateHtml(%q, %d) = %q, dropped text without an ellipsis", in, maxlen, out)
+			}
+			continue
 		}
 		if !strings.HasPrefix(in, out[:cut]) {
 			t.Fatalf("TruncateHtml(%q, %d) = %q, kept text that is not a prefix of the input", in, maxlen, out)
+		}
+		if out[:cut] == in {
+			t.Fatalf("TruncateHtml(%q, %d) = %q, appended an ellipsis without dropping anything", in, maxlen, out)
 		}
 		for _, rest := range strings.Split(strings.TrimSuffix(strings.TrimPrefix(out[cut:], ellipsis), ">"), ">") {
 			if rest != "" && !strings.HasPrefix(rest, "</") {

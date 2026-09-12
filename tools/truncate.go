@@ -1,9 +1,11 @@
 package tools
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -91,8 +93,11 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 		bufPtr += offset
 
 		// Stop scanning if the end of the buffer was reached or if the max
-		// desired visible characters was reached
-		if visibleCharacterMaxReached || bufPtr >= len(buf)-1 {
+		// desired visible characters was reached. bufPtr is a byte offset pointing
+		// at the *start* of a rune, so the end of the buffer is one whole rune --
+		// not one byte -- past it.
+		_, lastRuneSize := utf8.DecodeRune(buf[bufPtr:])
+		if visibleCharacterMaxReached || bufPtr+lastRuneSize >= len(buf) {
 			break
 		}
 
@@ -105,6 +110,18 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 
 		// Now find the expression sub-matches
 		matches := TagExpr.FindSubmatch(buf[bufPtr:])
+		if matches == nil || !bytes.HasPrefix(buf[bufPtr:], matches[0]) {
+			// TagExpr is unanchored, so a match that does not start at bufPtr belongs
+			// to some later tag. Either way this '<' does not open a tag -- it is
+			// literal text ("5 < 10") or a comment. Count it as a visible character
+			// and keep scanning past it.
+			visible++
+			if visible >= maxlen {
+				break
+			}
+			bufPtr++
+			continue
+		}
 		tagName := string(matches[2])
 
 		// Advance pointer to the end of the tag
@@ -113,7 +130,7 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 		// If this is a void element, do not count it as a start tag
 		isVoidElement := false
 		for _, voidElementTagName := range voidElementTags {
-			if tagName == voidElementTagName {
+			if strings.EqualFold(tagName, voidElementTagName) {
 				isVoidElement = true
 				break
 			}
@@ -130,7 +147,8 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 		} else {
 			// This is an end tag. First, check to make sure the end tag is
 			// matches what's on top of the stack.
-			if len(tagStack) == 0 || tagStack[len(tagStack)-1] != tagName {
+			// HTML tag names are case-insensitive, so <B>...</b> is balanced.
+			if len(tagStack) == 0 || !strings.EqualFold(tagStack[len(tagStack)-1], tagName) {
 				return nil, ErrUnbalancedTags
 			}
 
@@ -148,8 +166,13 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 	// Copy the desired input to the output buffer.
 	output := buf[0:bufPtr]
 
-	// Copy ellipsis
-	output = append(output, []byte(ellipsis)...)
+	// Copy the ellipsis, but only if something was actually cut. The scan stops
+	// either because the visible budget ran out or because the input ended, and at
+	// the boundary both happen at once -- so ask the only question that matters:
+	// is there any input left beyond what we copied?
+	if bufPtr < len(buf) {
+		output = append(output, []byte(ellipsis)...)
+	}
 
 	// Finally, create a closing tag for each tag in the stack.
 	for i := len(tagStack) - 1; i >= 0; i-- {
@@ -163,7 +186,13 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 func Truncate(input string, length int) string {
 	tr, err := TruncateHtml([]byte(input), length, "...")
 	if err != nil {
-		_ = []byte("")
+		// The markup is unbalanced, so no valid truncated HTML can be produced from
+		// it. The text itself is still worth showing: drop the markup and truncate
+		// what is left as plain text rather than blanking the whole description.
+		tr, err = TruncateHtml(TagExpr.ReplaceAll([]byte(input), nil), length, "...")
+		if err != nil {
+			return ""
+		}
 	}
 	return string(tr)
 }
