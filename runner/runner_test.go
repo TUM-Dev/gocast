@@ -285,3 +285,43 @@ func TestRequestStreamEndIsSafeConcurrently(t *testing.T) {
 	close(release)
 	waitForJob(t, r, job)
 }
+
+// drainBackoff counts how many retries b allows, giving up after limit.
+func drainBackoff(b interface{ Next() (time.Duration, bool) }, limit int) int {
+	for i := 0; i < limit; i++ {
+		if _, stop := b.Next(); stop {
+			return i
+		}
+	}
+	return limit
+}
+
+func TestNotificationBackoffIsNotSharedBetweenNotifications(t *testing.T) {
+	n := &protobuf.Notification{Data: &protobuf.Notification_Heartbeat{}}
+
+	for i := 0; i < 3; i++ {
+		if got := drainBackoff(notificationBackoff(n), 100); got != 10 {
+			t.Fatalf("notification %d: got %d retries, want 10", i, got)
+		}
+	}
+}
+
+func TestNotificationBackoffCriticalRetriesIndefinitelyWithCap(t *testing.T) {
+	n := &protobuf.Notification{Data: &protobuf.Notification_StreamEnd{}}
+
+	// Exhaust one backoff; a fresh one for the next notification must start small again.
+	drainBackoff(notificationBackoff(n), 100)
+	b := notificationBackoff(n)
+	if d, _ := b.Next(); d > 2*time.Second {
+		t.Fatalf("first delay of fresh backoff is %v, want <= 2s", d)
+	}
+	for i := 0; i < 100; i++ {
+		d, stop := b.Next()
+		if stop {
+			t.Fatalf("critical notification backoff stopped after %d retries", i)
+		}
+		if d > 30*time.Second {
+			t.Fatalf("delay %v exceeds 30s cap", d)
+		}
+	}
+}
