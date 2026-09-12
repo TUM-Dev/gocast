@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,38 +11,6 @@ import (
 )
 
 var VersionTag string
-
-func (r mainRoutes) InfoPage(id uint, name string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var indexData IndexData
-		var tumLiveContext tools.TUMLiveContext
-		tumLiveContextQueried, found := c.Get("TUMLiveContext")
-		if found {
-			tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
-			indexData.TUMLiveContext = tumLiveContext
-		} else {
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-
-		indexData = NewIndexData()
-
-		text, err := r.InfoPageDao.GetById(id)
-		if err != nil {
-			logger.Error("Could not get text with id", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		if err := templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
-			IndexData
-			Text template.HTML
-			Name string
-		}{indexData, text.Render(), name}); err != nil {
-			logger.Error("Could not execute template: 'info-page.gohtml'", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
-		}
-	}
-}
 
 // IndexData is what every server-rendered page needs: who is asking, and how the
 // installation presents itself. The course and semester listings it used to carry

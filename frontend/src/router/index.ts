@@ -6,9 +6,11 @@ import {
   type RouteRecordRaw,
 } from "vue-router";
 
+import { INFO_PAGE_NAMES } from "@/lib/info-pages";
 import { singleQueryParam } from "@/lib/route-query";
 import CourseView from "@/views/CourseView.vue";
 import HomeView from "@/views/HomeView.vue";
+import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
@@ -81,6 +83,17 @@ const routes: RouteRecordRaw[] = [
     name: "settings",
     component: SettingsView,
   },
+  // One route each rather than "/:name", so an unknown path still falls through to
+  // Go. Anonymous because nothing on these pages is per-user.
+  ...INFO_PAGE_NAMES.map(
+    (name): RouteRecordRaw => ({
+      path: `/${name}`,
+      name,
+      component: InfoPageView,
+      props: { name },
+      meta: { minimalHeader: true, anonymous: true },
+    }),
+  ),
   {
     // The administration pages, migrating one at a time. Each is registered in
     // web/router.go inside the permission group that guards it, so an unauthorized

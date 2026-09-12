@@ -31,6 +31,7 @@ var services = []service{
 			"getFrontendConfig":      public,
 			"getSemesters":           public,
 			"getServerNotifications": public,
+			"getInfoPage":            public,
 			"getNotifications":       authenticated,
 		},
 	},
