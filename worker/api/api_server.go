@@ -20,6 +20,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/worker/cfg"
 	"github.com/TUM-Dev/gocast/worker/pb"
+	"github.com/TUM-Dev/gocast/worker/safepath"
 	"github.com/TUM-Dev/gocast/worker/worker"
 )
 
@@ -98,14 +99,22 @@ func (s server) GenerateLivePreview(ctx context.Context, request *pb.LivePreview
 }
 
 func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
-	folder := fmt.Sprintf("%s/%s/%d.%s/sections",
-		cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm)
-
-	err := os.RemoveAll(folder) // clean up old section images
+	// The course name is free text, so it is sanitized before it becomes a
+	// directory name. Without this, a name containing path elements would make
+	// the RemoveAll below delete a directory outside of the storage directory.
+	folder, err := safepath.JoinInRoot(cfg.StorageDir,
+		request.CourseName,
+		fmt.Sprintf("%d.%s", request.CourseYear, request.CourseTeachingTerm),
+		"sections")
 	if err != nil {
 		return &pb.GenerateSectionImageResponse{}, err
 	}
-	err = os.MkdirAll(folder, os.ModePerm) // make sure folder exists
+
+	err = os.RemoveAll(folder) // clean up old section images
+	if err != nil {
+		return &pb.GenerateSectionImageResponse{}, err
+	}
+	err = os.MkdirAll(folder, 0o755) // make sure folder exists
 	if err != nil {
 		return &pb.GenerateSectionImageResponse{}, err
 	}
