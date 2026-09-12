@@ -493,7 +493,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 					courseTeachingTerm: course.TeachingTerm,
 					courseYear:         uint32(tumLiveContext.Course.Year),
 				}
-				err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+				err := generateVideoSectionImages(r.manager, r.DaoWrapper, &parameters)
 				if err != nil {
 					logger.Error("failed to generate video section images", "err", err)
 				}
@@ -556,7 +556,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 			courseTeachingTerm: context.Course.TeachingTerm,
 			courseYear:         uint32(context.Course.Year),
 		}
-		err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+		err := generateVideoSectionImages(r.manager, r.DaoWrapper, &parameters)
 		if err != nil {
 			logger.Error("failed to generate video section images", "err", err)
 		}

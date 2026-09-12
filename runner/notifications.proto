@@ -12,6 +12,7 @@ message Notification {
     HeartbeatNotification heartbeat = 3;
     VODReadyNotification vod_ready = 4;
     ThumbnailReadyNotification thumbnail_ready = 5;
+    SectionImagesReadyNotification section_images_ready = 6;
   }
 }
 
@@ -46,6 +47,19 @@ message ThumbnailReadyNotification {
   StreamInfo stream = 1;
   StreamVersion stream_version = 2;
   bytes thumbnail = 3;
+}
+
+// SectionImage is a single generated video section thumbnail. The image is
+// carried as bytes so that gocast, which owns the mass storage directory,
+// decides where it is written - the runner never builds a storage path.
+message SectionImage {
+  uint64 section_id = 1;
+  bytes image = 2;
+}
+
+message SectionImagesReadyNotification {
+  StreamInfo stream = 1;
+  repeated SectionImage images = 2;
 }
 
 message NotificationResponse {

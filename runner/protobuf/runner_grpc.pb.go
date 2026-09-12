@@ -8,6 +8,7 @@ package protobuf
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RunnerService_RequestStream_FullMethodName    = "/protobuf.RunnerService/RequestStream"
-	RunnerService_RequestStreamEnd_FullMethodName = "/protobuf.RunnerService/RequestStreamEnd"
+	RunnerService_RequestStream_FullMethodName        = "/protobuf.RunnerService/RequestStream"
+	RunnerService_RequestStreamEnd_FullMethodName     = "/protobuf.RunnerService/RequestStreamEnd"
+	RunnerService_RequestSectionImages_FullMethodName = "/protobuf.RunnerService/RequestSectionImages"
 )
 
 // RunnerServiceClient is the client API for RunnerService service.
@@ -30,6 +32,9 @@ type RunnerServiceClient interface {
 	// Requests a stream from a lecture hall
 	RequestStream(ctx context.Context, in *StreamRequest, opts ...grpc.CallOption) (*StreamResponse, error)
 	RequestStreamEnd(ctx context.Context, in *StreamEndRequest, opts ...grpc.CallOption) (*StreamEndResponse, error)
+	// Requests thumbnails for the given video sections of an already recorded stream.
+	// The images are delivered asynchronously via SectionImagesReadyNotification.
+	RequestSectionImages(ctx context.Context, in *SectionImageRequest, opts ...grpc.CallOption) (*SectionImageResponse, error)
 }
 
 type runnerServiceClient struct {
@@ -60,6 +65,16 @@ func (c *runnerServiceClient) RequestStreamEnd(ctx context.Context, in *StreamEn
 	return out, nil
 }
 
+func (c *runnerServiceClient) RequestSectionImages(ctx context.Context, in *SectionImageRequest, opts ...grpc.CallOption) (*SectionImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SectionImageResponse)
+	err := c.cc.Invoke(ctx, RunnerService_RequestSectionImages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RunnerServiceServer is the server API for RunnerService service.
 // All implementations must embed UnimplementedRunnerServiceServer
 // for forward compatibility.
@@ -67,6 +82,9 @@ type RunnerServiceServer interface {
 	// Requests a stream from a lecture hall
 	RequestStream(context.Context, *StreamRequest) (*StreamResponse, error)
 	RequestStreamEnd(context.Context, *StreamEndRequest) (*StreamEndResponse, error)
+	// Requests thumbnails for the given video sections of an already recorded stream.
+	// The images are delivered asynchronously via SectionImagesReadyNotification.
+	RequestSectionImages(context.Context, *SectionImageRequest) (*SectionImageResponse, error)
 	mustEmbedUnimplementedRunnerServiceServer()
 }
 
@@ -82,6 +100,9 @@ func (UnimplementedRunnerServiceServer) RequestStream(context.Context, *StreamRe
 }
 func (UnimplementedRunnerServiceServer) RequestStreamEnd(context.Context, *StreamEndRequest) (*StreamEndResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestStreamEnd not implemented")
+}
+func (UnimplementedRunnerServiceServer) RequestSectionImages(context.Context, *SectionImageRequest) (*SectionImageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestSectionImages not implemented")
 }
 func (UnimplementedRunnerServiceServer) mustEmbedUnimplementedRunnerServiceServer() {}
 func (UnimplementedRunnerServiceServer) testEmbeddedByValue()                       {}
@@ -140,6 +161,24 @@ func _RunnerService_RequestStreamEnd_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RunnerService_RequestSectionImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SectionImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RunnerServiceServer).RequestSectionImages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RunnerService_RequestSectionImages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RunnerServiceServer).RequestSectionImages(ctx, req.(*SectionImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RunnerService_ServiceDesc is the grpc.ServiceDesc for RunnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -154,6 +193,10 @@ var RunnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestStreamEnd",
 			Handler:    _RunnerService_RequestStreamEnd_Handler,
+		},
+		{
+			MethodName: "RequestSectionImages",
+			Handler:    _RunnerService_RequestSectionImages_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
