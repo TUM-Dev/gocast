@@ -1,0 +1,15 @@
+# The build installs its own dependencies; shipping the host's costs ~750MB of build
+# context and lands a node_modules built against a different store on top of the one
+# pnpm is about to create.
+**/node_modules
+
+# Build output, rebuilt inside the image.
+web/assets/ts-dist
+web/assets/css-dist
+web/spa/assets
+web/spa/index.html
+docs_v2/build
+docs_v2/.docusaurus
+
+.git
+.idea

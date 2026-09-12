@@ -42,12 +42,14 @@ docker run --detach \
 - Install **go >=1.27** by following the steps [here](https://go.dev/doc/install)
 - Preferably use [JetBrains GoLand](https://youtu.be/vetAfxQxyJE) and open this project as it simplifies this entire process
 - Go to File -> Settings -> Go -> Go Modules and enable go modules integration.
-- Run `npm i` in the `./web` directory to install the required node modules
+- Install **pnpm** (`npm install -g pnpm`, or see [pnpm.io/installation](https://pnpm.io/installation)).
+  It is not bundled with node; each `package.json` pins the version under `packageManager`.
+- Run `pnpm install` in the `./web` directory to install the required node modules
 - Run `go get ./...` to install the required go modules
 - If you want to customize the configuration (for example mariadb username and password), copy the `config.yaml` file over to `$HOME/.TUM-Live/config.yaml` and make your changes there to prevent accidentally committing them.
 - Start the app by building and running `./cmd/tumlive/tumlive.go`
 - Head over to `http://localhost:8081` in your browser of choice and confirm that the page has loaded without any problems.
-- To keep automatically rebuilding the frontend code during development, run the command `npm run build-dev` in `./web` (and keep it running).
+- To keep automatically rebuilding the frontend code during development, run the command `pnpm run build-dev` in `./web` (and keep it running).
 - Voilà! Happy coding! :sparkles:
 
 ### Enable pre-commit hooks
@@ -70,8 +72,8 @@ See [this](https://github.blog/2021-09-01-improving-git-protocol-security-github
 
 The following scripts are provided:
 
-- `npm run lint`: Runs `eslint` and `prettier` on the code to find stylistic issues.
-- `npm run lint-fix`: Same as above but also fixes the found issues.
+- `pnpm run lint`: Runs `eslint` and `prettier` on the code to find stylistic issues.
+- `pnpm run lint-fix`: Same as above but also fixes the found issues.
 
 If you use GoLand, you can use follow this [guide](https://www.jetbrains.com/help/idea/prettier.html) to integrate
 prettier. There is also a [guide](https://www.jetbrains.com/help/go/eslint.html) for integrating `eslint`. For both configs are provided that should be automatically detected. If you set everything up correctly,

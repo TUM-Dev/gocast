@@ -13,14 +13,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # The runner has node but not pnpm. corepack is no longer bundled with node as of
+      # 25, so install it rather than rely on the runner image still carrying it;
+      # installing corepack rather than pnpm keeps packageManager in each package.json
+      # the single place the pnpm version is pinned. --force because corepack's yarn
+      # shim collides with the one already on the runner.
+      - name: Set up pnpm
+        run: npm install -g corepack@latest --force && corepack enable pnpm
       - name: Install modules
         working-directory: ./web
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       # web/spa_test.go skips when no SPA build is present, so build it here or the
       # router wiring goes untested.
       - name: Build SPA
         working-directory: ./frontend
-        run: npm ci && npm run build
+        run: pnpm install --frozen-lockfile && pnpm run build
       - name: Install Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:

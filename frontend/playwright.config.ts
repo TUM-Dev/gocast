@@ -13,7 +13,7 @@ import { defineConfig, devices } from "@playwright/test";
  *
  *   make e2e_db
  *   go run cmd/tumlive/main.go
- *   cd frontend && npm run test:e2e
+ *   cd frontend && pnpm run test:e2e
  *
  * E2E_BASE_URL points them elsewhere, but only at a deployment holding the same
  * fixture — the visibility assertions name particular courses.

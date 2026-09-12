@@ -1,20 +1,28 @@
 FROM node:25 AS node
 
+# Node 25 dropped the bundled corepack, and the image has no pnpm. Installing corepack
+# rather than pnpm directly keeps packageManager in each package.json the single place
+# the pnpm version is pinned. The env var stops corepack prompting before it fetches.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN npm install -g corepack@latest --force && corepack enable pnpm
+
 WORKDIR /app
 COPY web web
 COPY frontend frontend
 
-## remove generated files in case the developer build with npm before
+## remove generated files in case the developer built locally before
 RUN rm -rf web/assets/ts-dist &&\
     rm -rf web/assets/css-dist &&\
     rm -rf web/spa/assets web/spa/index.html
 
+# Not --prod: the postinstall that bundles the templates' JS and CSS runs webpack and
+# the tailwind CLI, both devDependencies.
 WORKDIR /app/web
-RUN npm i --no-dev
+RUN pnpm install --frozen-lockfile
 
 ## build the single-page app serving the migrated pages; output lands in web/spa
 WORKDIR /app/frontend
-RUN npm ci && npm run build
+RUN pnpm install --frozen-lockfile && pnpm run build
 
 FROM golang:1.27 AS build-env
 

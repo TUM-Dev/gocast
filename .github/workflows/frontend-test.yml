@@ -11,20 +11,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # The runner has node but not pnpm. corepack is no longer bundled with node as of
+      # 25, so install it rather than rely on the runner image still carrying it;
+      # installing corepack rather than pnpm keeps packageManager in each package.json
+      # the single place the pnpm version is pinned. --force because corepack's yarn
+      # shim collides with the one already on the runner.
+      - name: Set up pnpm
+        run: npm install -g corepack@latest --force && corepack enable pnpm
       - name: Install modules
         working-directory: ./frontend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Typecheck
         working-directory: ./frontend
-        run: npm run typecheck
+        run: pnpm run typecheck
       - name: Test
         working-directory: ./frontend
-        run: npm test
+        run: pnpm test
       # Building here also guards the Go side: web/spa_test.go skips when no build is
       # present, so without this the router wiring would go unverified in CI.
       - name: Build
         working-directory: ./frontend
-        run: npm run build
+        run: pnpm run build
 
   # Browser tests against a real server: a MariaDB seeded from the starter dump, the
   # Go binary serving both frontends, and Playwright driving Chromium against it. This
@@ -55,6 +62,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # The runner has node but not pnpm. corepack is no longer bundled with node as of
+      # 25, so install it rather than rely on the runner image still carrying it;
+      # installing corepack rather than pnpm keeps packageManager in each package.json
+      # the single place the pnpm version is pinned. --force because corepack's yarn
+      # shim collides with the one already on the runner.
+      - name: Set up pnpm
+        run: npm install -g corepack@latest --force && corepack enable pnpm
+
       - name: Install Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
@@ -84,13 +99,13 @@ jobs:
       # just to make the icons show up.
       - name: Install template assets
         working-directory: ./web
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # Without a build, every migrated route falls back to its template and the suite
       # would test the frontend it is replacing.
       - name: Build the SPA
         working-directory: ./frontend
-        run: npm ci && npm run build
+        run: pnpm install --frozen-lockfile && pnpm run build
 
       - name: Start the server
         run: |
@@ -115,11 +130,11 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ./frontend
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run the browser tests
         working-directory: ./frontend
-        run: npm run test:e2e
+        run: pnpm run test:e2e
 
       - name: Collect the server log
         if: failure()

@@ -1,20 +1,21 @@
 {
   "name": "tum-live",
   "version": "1.0.0",
+  "packageManager": "pnpm@10.15.1",
   "description": "Backend of TUMs live streaming service",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TUM-Dev/gocast.git"
   },
   "scripts": {
-    "postinstall": "npm run build && npm run tailwind-compile",
-    "tailwind-compile": "NODE_ENV=production npx @tailwindcss/cli -i assets/css/main.css --minify -o ./assets/css-dist/main.css && npx @tailwindcss/cli -i assets/css/home.css --minify -o ./assets/css-dist/home.css && npx @tailwindcss/cli -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
-    "tailwind-compile-home": "NODE_ENV=production npx @tailwindcss/cli -i assets/css/home.css --minify -o ./assets/css-dist/home.css",
-    "tailwind-compile-watch": "NODE_ENV=production npx @tailwindcss/cli -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
+    "postinstall": "pnpm run build && pnpm run tailwind-compile",
+    "tailwind-compile": "NODE_ENV=production tailwindcss -i assets/css/main.css --minify -o ./assets/css-dist/main.css && tailwindcss -i assets/css/home.css --minify -o ./assets/css-dist/home.css && tailwindcss -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
+    "tailwind-compile-home": "NODE_ENV=production tailwindcss -i assets/css/home.css --minify -o ./assets/css-dist/home.css",
+    "tailwind-compile-watch": "NODE_ENV=production tailwindcss -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
     "lint": "eslint ts",
     "lint-fix": "eslint ts --quiet --fix",
     "build": "webpack --config webpack.prod.js",
-    "build-dev": "webpack --config webpack.dev.js & npx @tailwindcss/cli -i assets/css/main.css -o ./assets/css-dist/main.css --watch & npx @tailwindcss/cli -i assets/css/home.css -o ./assets/css-dist/home.css --watch & npx @tailwindcss/cli -i assets/css/watch.css -o ./assets/css-dist/watch.css --watch"
+    "build-dev": "webpack --config webpack.dev.js & tailwindcss -i assets/css/main.css -o ./assets/css-dist/main.css --watch & tailwindcss -i assets/css/home.css -o ./assets/css-dist/home.css --watch & tailwindcss -i assets/css/watch.css -o ./assets/css-dist/watch.css --watch"
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
@@ -70,5 +71,11 @@
     "webpack": "^5.105.0",
     "webpack-bundle-analyzer": "^5.0.0",
     "webpack-cli": "^7.0.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher",
+      "core-js"
+    ]
   }
 }

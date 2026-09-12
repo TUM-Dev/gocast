@@ -17,7 +17,7 @@ export function repoRoot() {
 // ERR_MODULE_NOT_FOUND even though the browsers are installed.
 export async function chromium() {
   const entry = path.join(repoRoot(), "frontend/node_modules/@playwright/test/index.mjs");
-  if (!fs.existsSync(entry)) throw new Error(`playwright not installed; run: npm --prefix ${repoRoot()}/frontend ci`);
+  if (!fs.existsSync(entry)) throw new Error(`playwright not installed; run: pnpm --dir ${repoRoot()}/frontend install --frozen-lockfile`);
   return (await import(entry)).chromium;
 }
 

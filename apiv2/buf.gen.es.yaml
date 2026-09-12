@@ -2,10 +2,10 @@
 #
 # Deliberately separate from buf.gen.yaml: the Go plugins are installed with
 # `go install`, while protoc-gen-es comes from frontend/node_modules. Keeping the
-# templates apart means regenerating the server does not require an npm install, and
+# templates apart means regenerating the server does not require a pnpm install, and
 # regenerating the client does not require the Go toolchain.
 #
-# Run it with `npm run proto` from frontend/, which puts the local plugin on PATH.
+# Run it with `pnpm run proto` from frontend/, which puts the local plugin on PATH.
 version: v1
 plugins:
   - name: es
