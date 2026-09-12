@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -353,6 +354,34 @@ var courseSlugRegex = regexp.MustCompile(`^[a-zA-Z0-9äöüÄÖÜ\-_]{1,150}$`)
 func (c *Course) BeforeSave(tx *gorm.DB) (err error) {
 	if !courseSlugRegex.MatchString(c.Slug) {
 		return errors.New("invalid course slug")
+	}
+	if err := validateCourseName(c.Name); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateCourseName rejects course names that cannot be meant seriously.
+// Names are free text (they come from TUMOnline as well as from the create
+// course form) and may legitimately contain characters such as "/", so this
+// only rules out what no real course name contains. Everything that builds a
+// filesystem path from the name sanitizes it separately, see
+// tools/safepath.
+func validateCourseName(name string) error {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return errors.New("course name must not be empty")
+	}
+	if len(name) > 255 {
+		return errors.New("course name is too long")
+	}
+	if trimmed == "." || trimmed == ".." {
+		return errors.New("invalid course name")
+	}
+	for _, r := range name {
+		if r == 0 || r < 0x20 || r == 0x7f {
+			return errors.New("course name must not contain control characters")
+		}
 	}
 	return nil
 }

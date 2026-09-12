@@ -24,6 +24,7 @@ import (
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/bot"
+	"github.com/TUM-Dev/gocast/tools/safepath"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
@@ -701,13 +702,25 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 		filename = file.Filename
 		fileUuid := uuid.NewV1()
 
-		filesFolder := fmt.Sprintf("%s/%s.%d/%s.%s/files",
-			tools.Cfg.Paths.Mass,
-			course.Name, course.Year,
-			course.Name, course.TeachingTerm)
-		path = fmt.Sprintf("%s/%s%s", filesFolder, fileUuid, filepath.Ext(file.Filename))
+		// The course name is free text, so it is sanitized before it becomes a
+		// directory name - otherwise a name containing path elements would
+		// place the upload outside of the mass storage directory.
+		filesFolder, err := safepath.JoinInRoot(tools.Cfg.Paths.Mass,
+			fmt.Sprintf("%s.%d", course.Name, course.Year),
+			fmt.Sprintf("%s.%s", course.Name, course.TeachingTerm),
+			"files")
+		if err != nil {
+			logger.Error("could not build attachment folder", "err", err)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "couldn't create folder for attachment",
+				Err:           err,
+			})
+			return
+		}
+		path = filepath.Join(filesFolder, fmt.Sprintf("%s%s", fileUuid, filepath.Ext(file.Filename)))
 
-		err = os.MkdirAll(filesFolder, os.ModePerm)
+		err = os.MkdirAll(filesFolder, 0o755)
 		if err != nil {
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusInternalServerError,
@@ -969,12 +982,23 @@ func (r streamRoutes) putCustomLiveThumbnail(c *gin.Context) {
 		return
 	}
 
-	filesFolder := filepath.Join(
+	// See newAttachment: the course name is free text and must not be able to
+	// steer the thumbnail out of the mass storage directory.
+	filesFolder, err := safepath.JoinInRoot(
 		tools.Cfg.Paths.Mass,
 		fmt.Sprintf("%s.%d.%s", course.Name, course.Year, course.TeachingTerm),
 		"files")
+	if err != nil {
+		logger.Error("could not build thumbnail folder", "err", err)
+		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Failed to create thumbnail folder",
+			Err:           err,
+		})
+		return
+	}
 
-	if err := os.MkdirAll(filesFolder, os.ModePerm); err != nil {
+	if err := os.MkdirAll(filesFolder, 0o755); err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "Failed to create thumbnail folder",
