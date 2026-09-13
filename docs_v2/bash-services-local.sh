@@ -76,8 +76,8 @@ sleep 2
 echo "runner started"
 
 cd web
-npm install
-npm run build-dev &
+pnpm install
+pnpm run build-dev &
 cd ..
 
 mediamtx ./ingest/mediamtx.yml &

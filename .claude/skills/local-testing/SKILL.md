@@ -15,13 +15,13 @@ Run these first; they need no database and catch most things.
 
 ```bash
 go test -race ./...                  # or: make test  (also runs frontend unit tests)
-npm --prefix frontend test           # 166 vitest tests, ~2s
-npm --prefix frontend run typecheck  # vue-tsc
-npm --prefix web run lint            # eslint, flat config
+pnpm --dir frontend test           # 166 vitest tests, ~2s
+pnpm --dir frontend run typecheck  # vue-tsc
+pnpm --dir web run lint            # eslint, flat config
 make lint                            # golangci-lint + the two above
 ```
 
-`npm --prefix web run lint` lints `ts/` only — deliberately. `eslint .` also walks
+`pnpm --dir web run lint` lints `ts/` only — deliberately. `eslint .` also walks
 `spa/assets`, and running prettier over the minified Vite bundle there pegs a core
 indefinitely. Keep the script's path argument; don't "fix" it back to `.`.
 
@@ -52,8 +52,8 @@ without step one of these. Without the SPA build, every migrated route silently 
 back to its old template — you would be testing the frontend being replaced.
 
 ```bash
-npm --prefix web ci && npm --prefix web run build && npm --prefix web run tailwind-compile
-npm --prefix frontend ci && npm --prefix frontend run build
+pnpm --dir web install --frozen-lockfile && pnpm --dir web run build && pnpm --dir web run tailwind-compile
+pnpm --dir frontend install --frozen-lockfile && pnpm --dir frontend run build
 ```
 
 **3. Server.** Config comes from `./config.yaml` at the repo root.
@@ -106,9 +106,9 @@ This is the part CI cannot do, and it is how every bug below was found. Comparin
 change against *itself* proves nothing; compare it against `dev`.
 
 ```bash
-git switch dev && npm --prefix web ci && npm --prefix web run build \
-  && npm --prefix web run tailwind-compile && npm --prefix frontend ci \
-  && npm --prefix frontend run build
+git switch dev && pnpm --dir web install --frozen-lockfile && pnpm --dir web run build \
+  && pnpm --dir web run tailwind-compile && pnpm --dir frontend install --frozen-lockfile \
+  && pnpm --dir frontend run build
 # restart the server, then:
 node .claude/skills/local-testing/scripts/capture.mjs base
 

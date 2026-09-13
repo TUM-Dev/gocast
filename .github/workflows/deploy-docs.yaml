@@ -17,11 +17,18 @@ jobs:
         with:
           node-version: 24
 
+      # setup-node brings node but not pnpm, and corepack is no longer bundled with node
+      # as of 25. Installing corepack rather than pnpm keeps packageManager in
+      # docs_v2/package.json the single place the pnpm version is pinned. --force
+      # because corepack's yarn shim collides with the one already on the runner.
+      - name: Set up pnpm
+        run: npm install -g corepack@latest --force && corepack enable pnpm
+
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
         working-directory: ./docs_v2
       - name: Build website
-        run: npm run build
+        run: pnpm run build
         working-directory: ./docs_v2
       
       - name: Upload Build Artifact

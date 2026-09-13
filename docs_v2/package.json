@@ -1,6 +1,7 @@
 {
   "name": "gocast-docs",
   "version": "3.0.0",
+  "packageManager": "pnpm@10.15.1",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -44,5 +45,13 @@
   },
   "engines": {
     "node": ">=18.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp"
+    ],
+    "ignoredBuiltDependencies": [
+      "core-js"
+    ]
   }
 }
