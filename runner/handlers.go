@@ -23,7 +23,7 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		"input":         req.GetInput(),
 	}
 	r.log.Info("RequestStream data constructed", "data", data)
-	a := []actions.Action{
+	stream := []actions.Action{
 		actions.Stream,
 		actions.StreamEnd,
 	}
@@ -32,7 +32,10 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
-	jID := r.RunAction(a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
+	discard := []actions.Action{
+		actions.DiscardRecording,
+	}
+	jID := r.RunAction(stream, vod, discard, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
 	r.log.Info("job added", "ID", jID)
 
 	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil

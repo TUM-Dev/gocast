@@ -97,7 +97,7 @@ func TestRunActionRunsVoDActionsWhenStreamEndsOnItsOwn(t *testing.T) {
 	job := r.RunAction(
 		[]actions.Action{rec.action("stream"), rec.action("streamEnd")},
 		[]actions.Action{rec.action("mkVod"), rec.action("checkVod"), rec.action("mkThumb")},
-		map[string]any{}, r.log,
+		nil, map[string]any{}, r.log,
 	)
 	waitForJob(t, r, job)
 
@@ -132,7 +132,7 @@ func TestRunActionSkipsVoDActionsWhenDiscarded(t *testing.T) {
 		rec.record("stream")
 		<-release
 		if ctx.Err() == nil {
-			t.Error("job context was not cancelled by RequestStreamEnd")
+			t.Error("stream context was not cancelled by RequestStreamEnd")
 		}
 		return nil
 	}
@@ -140,7 +140,7 @@ func TestRunActionSkipsVoDActionsWhenDiscarded(t *testing.T) {
 	job := r.RunAction(
 		[]actions.Action{stream, rec.action("streamEnd")},
 		[]actions.Action{rec.action("mkVod"), rec.action("checkVod"), rec.action("mkThumb")},
-		map[string]any{}, r.log,
+		nil, map[string]any{}, r.log,
 	)
 	endJob(t, r, job, true)
 	close(release)
@@ -164,7 +164,7 @@ func TestRunActionRunsVoDActionsWhenEndedWithoutDiscard(t *testing.T) {
 	job := r.RunAction(
 		[]actions.Action{stream, rec.action("streamEnd")},
 		[]actions.Action{rec.action("mkVod")},
-		map[string]any{}, r.log,
+		nil, map[string]any{}, r.log,
 	)
 	endJob(t, r, job, false)
 	close(release)
@@ -186,7 +186,7 @@ func TestRunActionAbortingErrorOnlyStopsRetriesOfThatAction(t *testing.T) {
 			rec.action("streamEnd"),
 		},
 		[]actions.Action{rec.action("mkVod")},
-		map[string]any{}, r.log,
+		nil, map[string]any{}, r.log,
 	)
 	waitForJob(t, r, job)
 
@@ -199,7 +199,7 @@ func TestRunActionRetriesRecoverableErrors(t *testing.T) {
 
 	job := r.RunAction(
 		[]actions.Action{rec.action("stream", fmt.Errorf("flaky"), fmt.Errorf("flaky"))},
-		nil, map[string]any{}, r.log,
+		nil, nil, map[string]any{}, r.log,
 	)
 	waitForJob(t, r, job)
 
@@ -216,7 +216,7 @@ func TestRunActionCleansUpJobState(t *testing.T) {
 		return nil
 	}
 
-	job := r.RunAction([]actions.Action{stream}, []actions.Action{rec.action("mkVod")}, map[string]any{}, r.log)
+	job := r.RunAction([]actions.Action{stream}, []actions.Action{rec.action("mkVod")}, nil, map[string]any{}, r.log)
 	endJob(t, r, job, true)
 
 	r.jobsMu.Lock()
@@ -268,7 +268,7 @@ func TestRequestStreamEndIsSafeConcurrently(t *testing.T) {
 		<-release
 		return nil
 	}
-	job := r.RunAction([]actions.Action{stream}, nil, map[string]any{}, r.log)
+	job := r.RunAction([]actions.Action{stream}, nil, nil, map[string]any{}, r.log)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 16; i++ {
@@ -284,4 +284,64 @@ func TestRequestStreamEndIsSafeConcurrently(t *testing.T) {
 	wg.Wait()
 	close(release)
 	waitForJob(t, r, job)
+}
+
+func TestRunActionRunsDiscardActionsWhenDiscarded(t *testing.T) {
+	r := newTestRunner()
+	rec := &recorder{}
+
+	release := make(chan struct{})
+	stream := func(_ context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		rec.record("stream")
+		<-release
+		return nil
+	}
+
+	job := r.RunAction(
+		[]actions.Action{stream},
+		[]actions.Action{rec.action("mkVod")},
+		[]actions.Action{rec.action("discardRecording")},
+		map[string]any{}, r.log,
+	)
+	endJob(t, r, job, true)
+	close(release)
+	waitForJob(t, r, job)
+
+	assertCalls(t, rec.get(), []string{"stream", "discardRecording"})
+}
+
+// Ending a stream early stops the capture, it does not cancel what comes after: the VoD is
+// made from the segments that were captured until then. Handing the VoD actions the
+// cancelled stream context makes every exec.CommandContext in them fail before it starts.
+func TestRunActionDoesNotCancelActionsAfterTheStream(t *testing.T) {
+	r := newTestRunner()
+
+	liveCtx := func(name string) actions.Action {
+		return func(ctx context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+			if err := ctx.Err(); err != nil {
+				t.Errorf("%s ran with a cancelled context: %v", name, err)
+			}
+			return nil
+		}
+	}
+
+	for _, discard := range []bool{false, true} {
+		// the stream action blocks until the test ended the job, so the cancellation
+		// happens while the job is still running, like a real end-stream request.
+		release := make(chan struct{})
+		stream := func(_ context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+			<-release
+			return nil
+		}
+
+		job := r.RunAction(
+			[]actions.Action{stream},
+			[]actions.Action{liveCtx("vod action")},
+			[]actions.Action{liveCtx("discard action")},
+			map[string]any{}, r.log,
+		)
+		endJob(t, r, job, discard)
+		close(release)
+		waitForJob(t, r, job)
+	}
 }
