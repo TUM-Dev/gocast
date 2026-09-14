@@ -2,6 +2,7 @@ edition = "2023";
 
 package protobuf;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "commons.proto";
 import "notifications.proto";
@@ -39,18 +40,16 @@ message StreamEndRequest {
 message StreamEndResponse {
 }
 
-// SectionTimestamp is the offset into a recording at which a section starts.
-message SectionTimestamp {
-  uint64 section_id = 1;
-  uint32 hours = 2;
-  uint32 minutes = 3;
-  uint32 seconds = 4;
-}
-
 message SectionImageRequest {
+  // Section is a video section and the offset into the recording it starts at.
+  message Section {
+    uint64 id = 1;
+    google.protobuf.Duration start = 2;
+  }
+
   uint64 stream_id = 1;
   string playlist_url = 2;
-  repeated SectionTimestamp sections = 3;
+  repeated Section sections = 3;
 }
 
 message SectionImageResponse {

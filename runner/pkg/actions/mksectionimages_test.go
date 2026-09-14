@@ -61,8 +61,8 @@ func TestMkSectionImages(t *testing.T) {
 		"streamID":    uint64(7),
 		"playlistURL": video,
 		"sections": []SectionTimestamp{
-			{SectionID: 1, Seconds: 0},
-			{SectionID: 2, Seconds: 2},
+			{SectionID: 1},
+			{SectionID: 2, Start: 2 * time.Second},
 		},
 	}
 
@@ -106,8 +106,8 @@ func TestMkSectionImagesSkipsUnreadableSections(t *testing.T) {
 		"streamID":    uint64(7),
 		"playlistURL": video,
 		"sections": []SectionTimestamp{
-			{SectionID: 1, Seconds: 0},
-			{SectionID: 2, Hours: 5}, // past the end of the video
+			{SectionID: 1},
+			{SectionID: 2, Start: 5 * time.Hour}, // past the end of the video
 		},
 	}
 

@@ -57,11 +57,12 @@ func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequ
 func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionImageRequest) (*protobuf.SectionImageResponse, error) {
 	sections := make([]actions.SectionTimestamp, 0, len(req.GetSections()))
 	for _, s := range req.GetSections() {
+		if err := s.GetStart().CheckValid(); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "section %d has no valid start: %v", s.GetId(), err)
+		}
 		sections = append(sections, actions.SectionTimestamp{
-			SectionID: s.GetSectionId(),
-			Hours:     s.GetHours(),
-			Minutes:   s.GetMinutes(),
-			Seconds:   s.GetSeconds(),
+			SectionID: s.GetId(),
+			Start:     s.GetStart().AsDuration(),
 		})
 	}
 	if len(sections) == 0 {
