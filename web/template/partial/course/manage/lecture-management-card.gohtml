@@ -50,10 +50,10 @@
                             lecture in case something fails during processing of your stream.
                         </span>
                         <span class="font-semibold">Stream Server:</span>
-                        <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
+                        <span x-text="'{{$ingestBase}}'.replace(/\/+$/, '') + '/{{$course.Slug}}-'+ lectureData.lectureId +'?secret=' + lectureData.streamKey"></span>
                         <span class="relative inline-block">
                             <i class="fas fa-clipboard hover:text-purple-500 cursor-pointer"
-                            @click="copyAndShow('{{$ingestBase}}{{$course.Slug}}-' + lectureData.lectureId + '?secret=' + lectureData.streamKey, 'stream-server')"></i>
+                            @click="copyAndShow('{{$ingestBase}}'.replace(/\/+$/, '') + '/{{$course.Slug}}-' + lectureData.lectureId + '?secret=' + lectureData.streamKey, 'stream-server')"></i>
 
                             <span x-cloak
                                 x-show="copied === 'stream-server'"
