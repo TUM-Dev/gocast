@@ -79,7 +79,8 @@ func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionIm
 		"sections":    sections,
 	}
 
-	jID := r.RunAction([]actions.Action{actions.MkSectionImages}, data,
+	// A section image job has no VoD phase, so there is nothing to skip on discard.
+	jID := r.RunAction([]actions.Action{actions.MkSectionImages}, nil, data,
 		r.log.With("stream_id", req.GetStreamId(), "sections", len(sections)))
 	r.log.Info("section image job added", "ID", jID)
 
