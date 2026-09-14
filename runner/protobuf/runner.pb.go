@@ -7,12 +7,14 @@
 package protobuf
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -246,6 +248,110 @@ func (*StreamEndResponse) Descriptor() ([]byte, []int) {
 	return file_runner_proto_rawDescGZIP(), []int{3}
 }
 
+type SectionImageRequest struct {
+	state         protoimpl.MessageState         `protogen:"open.v1"`
+	StreamId      *uint64                        `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
+	PlaylistUrl   *string                        `protobuf:"bytes,2,opt,name=playlist_url,json=playlistUrl" json:"playlist_url,omitempty"`
+	Sections      []*SectionImageRequest_Section `protobuf:"bytes,3,rep,name=sections" json:"sections,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SectionImageRequest) Reset() {
+	*x = SectionImageRequest{}
+	mi := &file_runner_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SectionImageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SectionImageRequest) ProtoMessage() {}
+
+func (x *SectionImageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SectionImageRequest.ProtoReflect.Descriptor instead.
+func (*SectionImageRequest) Descriptor() ([]byte, []int) {
+	return file_runner_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SectionImageRequest) GetStreamId() uint64 {
+	if x != nil && x.StreamId != nil {
+		return *x.StreamId
+	}
+	return 0
+}
+
+func (x *SectionImageRequest) GetPlaylistUrl() string {
+	if x != nil && x.PlaylistUrl != nil {
+		return *x.PlaylistUrl
+	}
+	return ""
+}
+
+func (x *SectionImageRequest) GetSections() []*SectionImageRequest_Section {
+	if x != nil {
+		return x.Sections
+	}
+	return nil
+}
+
+type SectionImageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	JobId         *string                `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SectionImageResponse) Reset() {
+	*x = SectionImageResponse{}
+	mi := &file_runner_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SectionImageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SectionImageResponse) ProtoMessage() {}
+
+func (x *SectionImageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SectionImageResponse.ProtoReflect.Descriptor instead.
+func (*SectionImageResponse) Descriptor() ([]byte, []int) {
+	return file_runner_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SectionImageResponse) GetJobId() string {
+	if x != nil && x.JobId != nil {
+		return *x.JobId
+	}
+	return ""
+}
+
 type RegisterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Hostname      *string                `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty"`
@@ -257,7 +363,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_runner_proto_msgTypes[4]
+	mi := &file_runner_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -269,7 +375,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[4]
+	mi := &file_runner_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -282,7 +388,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{4}
+	return file_runner_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RegisterRequest) GetHostname() string {
@@ -314,7 +420,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_runner_proto_msgTypes[5]
+	mi := &file_runner_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -326,7 +432,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_runner_proto_msgTypes[5]
+	mi := &file_runner_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -339,14 +445,67 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_runner_proto_rawDescGZIP(), []int{5}
+	return file_runner_proto_rawDescGZIP(), []int{7}
+}
+
+// Section is a video section and the offset into the recording it starts at.
+type SectionImageRequest_Section struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            *uint64                `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Start         *durationpb.Duration   `protobuf:"bytes,2,opt,name=start" json:"start,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SectionImageRequest_Section) Reset() {
+	*x = SectionImageRequest_Section{}
+	mi := &file_runner_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SectionImageRequest_Section) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SectionImageRequest_Section) ProtoMessage() {}
+
+func (x *SectionImageRequest_Section) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SectionImageRequest_Section.ProtoReflect.Descriptor instead.
+func (*SectionImageRequest_Section) Descriptor() ([]byte, []int) {
+	return file_runner_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *SectionImageRequest_Section) GetId() uint64 {
+	if x != nil && x.Id != nil {
+		return *x.Id
+	}
+	return 0
+}
+
+func (x *SectionImageRequest_Section) GetStart() *durationpb.Duration {
+	if x != nil {
+		return x.Start
+	}
+	return nil
 }
 
 var File_runner_proto protoreflect.FileDescriptor
 
 const file_runner_proto_rawDesc = "" +
 	"\n" +
-	"\frunner.proto\x12\bprotobuf\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\rcommons.proto\x1a\x13notifications.proto\"\xbd\x02\n" +
+	"\frunner.proto\x12\bprotobuf\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\rcommons.proto\x1a\x13notifications.proto\"\xbd\x02\n" +
 	"\rStreamRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x121\n" +
 	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\x12,\n" +
@@ -361,15 +520,25 @@ const file_runner_proto_rawDesc = "" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x1f\n" +
 	"\vdiscard_vod\x18\x02 \x01(\bR\n" +
 	"discardVod\"\x13\n" +
-	"\x11StreamEndResponse\"[\n" +
+	"\x11StreamEndResponse\"\xe4\x01\n" +
+	"\x13SectionImageRequest\x12\x1b\n" +
+	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x12!\n" +
+	"\fplaylist_url\x18\x02 \x01(\tR\vplaylistUrl\x12A\n" +
+	"\bsections\x18\x03 \x03(\v2%.protobuf.SectionImageRequest.SectionR\bsections\x1aJ\n" +
+	"\aSection\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12/\n" +
+	"\x05start\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x05start\"-\n" +
+	"\x14SectionImageResponse\x12\x15\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"[\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\"\x12\n" +
-	"\x10RegisterResponse2\xa4\x01\n" +
+	"\x10RegisterResponse2\xfd\x01\n" +
 	"\rRunnerService\x12D\n" +
 	"\rRequestStream\x12\x17.protobuf.StreamRequest\x1a\x18.protobuf.StreamResponse\"\x00\x12M\n" +
-	"\x10RequestStreamEnd\x12\x1a.protobuf.StreamEndRequest\x1a\x1b.protobuf.StreamEndResponse\"\x002\x9f\x01\n" +
+	"\x10RequestStreamEnd\x12\x1a.protobuf.StreamEndRequest\x1a\x1b.protobuf.StreamEndResponse\"\x00\x12W\n" +
+	"\x14RequestSectionImages\x12\x1d.protobuf.SectionImageRequest\x1a\x1e.protobuf.SectionImageResponse\"\x002\x9f\x01\n" +
 	"\x14RunnerManagerService\x12C\n" +
 	"\bRegister\x12\x19.protobuf.RegisterRequest\x1a\x1a.protobuf.RegisterResponse\"\x00\x12B\n" +
 	"\x06Notify\x12\x16.protobuf.Notification\x1a\x1e.protobuf.NotificationResponse\"\x00B\x11Z\x0frunner/protobufb\beditionsp\xe8\a"
@@ -386,35 +555,43 @@ func file_runner_proto_rawDescGZIP() []byte {
 	return file_runner_proto_rawDescData
 }
 
-var file_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_runner_proto_goTypes = []any{
-	(*StreamRequest)(nil),         // 0: protobuf.StreamRequest
-	(*StreamResponse)(nil),        // 1: protobuf.StreamResponse
-	(*StreamEndRequest)(nil),      // 2: protobuf.StreamEndRequest
-	(*StreamEndResponse)(nil),     // 3: protobuf.StreamEndResponse
-	(*RegisterRequest)(nil),       // 4: protobuf.RegisterRequest
-	(*RegisterResponse)(nil),      // 5: protobuf.RegisterResponse
-	(StreamVersion)(0),            // 6: protobuf.StreamVersion
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
-	(*Notification)(nil),          // 8: protobuf.Notification
-	(*NotificationResponse)(nil),  // 9: protobuf.NotificationResponse
+	(*StreamRequest)(nil),               // 0: protobuf.StreamRequest
+	(*StreamResponse)(nil),              // 1: protobuf.StreamResponse
+	(*StreamEndRequest)(nil),            // 2: protobuf.StreamEndRequest
+	(*StreamEndResponse)(nil),           // 3: protobuf.StreamEndResponse
+	(*SectionImageRequest)(nil),         // 4: protobuf.SectionImageRequest
+	(*SectionImageResponse)(nil),        // 5: protobuf.SectionImageResponse
+	(*RegisterRequest)(nil),             // 6: protobuf.RegisterRequest
+	(*RegisterResponse)(nil),            // 7: protobuf.RegisterResponse
+	(*SectionImageRequest_Section)(nil), // 8: protobuf.SectionImageRequest.Section
+	(StreamVersion)(0),                  // 9: protobuf.StreamVersion
+	(*timestamppb.Timestamp)(nil),       // 10: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),         // 11: google.protobuf.Duration
+	(*Notification)(nil),                // 12: protobuf.Notification
+	(*NotificationResponse)(nil),        // 13: protobuf.NotificationResponse
 }
 var file_runner_proto_depIdxs = []int32{
-	6, // 0: protobuf.StreamRequest.version:type_name -> protobuf.StreamVersion
-	7, // 1: protobuf.StreamRequest.end:type_name -> google.protobuf.Timestamp
-	0, // 2: protobuf.RunnerService.RequestStream:input_type -> protobuf.StreamRequest
-	2, // 3: protobuf.RunnerService.RequestStreamEnd:input_type -> protobuf.StreamEndRequest
-	4, // 4: protobuf.RunnerManagerService.Register:input_type -> protobuf.RegisterRequest
-	8, // 5: protobuf.RunnerManagerService.Notify:input_type -> protobuf.Notification
-	1, // 6: protobuf.RunnerService.RequestStream:output_type -> protobuf.StreamResponse
-	3, // 7: protobuf.RunnerService.RequestStreamEnd:output_type -> protobuf.StreamEndResponse
-	5, // 8: protobuf.RunnerManagerService.Register:output_type -> protobuf.RegisterResponse
-	9, // 9: protobuf.RunnerManagerService.Notify:output_type -> protobuf.NotificationResponse
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	9,  // 0: protobuf.StreamRequest.version:type_name -> protobuf.StreamVersion
+	10, // 1: protobuf.StreamRequest.end:type_name -> google.protobuf.Timestamp
+	8,  // 2: protobuf.SectionImageRequest.sections:type_name -> protobuf.SectionImageRequest.Section
+	11, // 3: protobuf.SectionImageRequest.Section.start:type_name -> google.protobuf.Duration
+	0,  // 4: protobuf.RunnerService.RequestStream:input_type -> protobuf.StreamRequest
+	2,  // 5: protobuf.RunnerService.RequestStreamEnd:input_type -> protobuf.StreamEndRequest
+	4,  // 6: protobuf.RunnerService.RequestSectionImages:input_type -> protobuf.SectionImageRequest
+	6,  // 7: protobuf.RunnerManagerService.Register:input_type -> protobuf.RegisterRequest
+	12, // 8: protobuf.RunnerManagerService.Notify:input_type -> protobuf.Notification
+	1,  // 9: protobuf.RunnerService.RequestStream:output_type -> protobuf.StreamResponse
+	3,  // 10: protobuf.RunnerService.RequestStreamEnd:output_type -> protobuf.StreamEndResponse
+	5,  // 11: protobuf.RunnerService.RequestSectionImages:output_type -> protobuf.SectionImageResponse
+	7,  // 12: protobuf.RunnerManagerService.Register:output_type -> protobuf.RegisterResponse
+	13, // 13: protobuf.RunnerManagerService.Notify:output_type -> protobuf.NotificationResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_runner_proto_init() }
@@ -430,7 +607,7 @@ func file_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_proto_rawDesc), len(file_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
