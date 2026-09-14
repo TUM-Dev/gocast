@@ -118,13 +118,21 @@ func (m *Manager) saveSectionImages(ctx context.Context, req *protobuf.SectionIm
 		fname := fmt.Sprintf("%d_%d.jpg", stream.ID, sectionID)
 		path := filepath.Join(dir, fname)
 
+		section, err := m.dao.VideoSectionDao.Get(sectionID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// The section was deleted while its image was generated. Writing the image
+			// anyway would leave a file and a file row that nothing points at.
+			m.logger.Warn("dropping image for a video section that no longer exists", "stream", stream.ID, "section", sectionID)
+			continue
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "can't get video section %d: %v", sectionID, err)
+		}
+
 		// Sections are regenerated whenever the thumbnails are redone. The path only
 		// depends on ids, so the image on disk is replaced in place and just the file
 		// row it used to point at has to go.
-		var previousFileID uint
-		if section, err := m.dao.VideoSectionDao.Get(sectionID); err == nil {
-			previousFileID = section.FileID
-		}
+		previousFileID := section.FileID
 
 		if err := os.WriteFile(path, image.GetImage(), 0o644); err != nil {
 			return status.Errorf(codes.Internal, "can't write section image: %v", err)
