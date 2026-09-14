@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -102,4 +103,33 @@ func TestShouldGenerateSubtitles(t *testing.T) {
 		assert.True(t, course.ShouldGenerateSubtitles(PRES, 1)) // Default to PRES
 		assert.False(t, course.ShouldGenerateSubtitles(CAM, 1))
 	})
+}
+
+func TestValidateCourseName(t *testing.T) {
+	valid := []string{
+		"Funktionale Programmierung und Verifikation (IN0003)",
+		"Analysis I/II",
+		"Einführung in die Informatik",
+		"../../escaped", // path-like, but harmless once sanitized for filesystem use
+	}
+	for _, name := range valid {
+		if err := validateCourseName(name); err != nil {
+			t.Errorf("validateCourseName(%q) = %v, want nil", name, err)
+		}
+	}
+
+	invalid := map[string]string{
+		"empty":      "",
+		"whitespace": "   ",
+		"dot":        ".",
+		"dotdot":     "..",
+		"nul byte":   "course\x00name",
+		"newline":    "course\nname",
+		"too long":   strings.Repeat("a", 256),
+	}
+	for label, name := range invalid {
+		if err := validateCourseName(name); err == nil {
+			t.Errorf("validateCourseName(%s) = nil, want error", label)
+		}
+	}
 }

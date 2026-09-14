@@ -44,13 +44,15 @@ replaced and think it works.
 ```bash
 make test                            # go test -race ./... + frontend unit tests
 make lint                            # golangci-lint + web eslint + frontend typecheck
-npm --prefix frontend test           # vitest
-npm --prefix frontend run typecheck  # vue-tsc
-npm --prefix web run lint            # eslint (flat config; lints web/ts only, on purpose)
+pnpm --dir frontend test              # vitest
+pnpm --dir frontend run typecheck     # vue-tsc
+pnpm --dir web run lint               # eslint (flat config; lints web/ts only, on purpose)
 ```
 
-`npm ci` in `web/` is required to **compile the Go server at all** — `web/router.go`
-has `//go:embed node_modules`. It is not just about icons rendering.
+`pnpm install` in `web/` is required to **compile the Go server at all** — `web/router.go`
+has `//go:embed node_modules`. It is not just about icons rendering. That embed is also
+why `web/.npmrc` pins `node-linker=hoisted`: go:embed does not follow symlinks, so
+pnpm's default isolated layout would embed nothing.
 
 For running the app, browser testing, and visual regression, use the
 **`local-testing` skill** (`.claude/skills/local-testing/`). It has the database
@@ -72,6 +74,17 @@ The proto is one file, `apiv2/server/apiv2.proto`, and both sides generate from 
 Change it and run both generators, or the Go and TypeScript halves drift.
 
 New API work belongs in `apiv2/` (Protobuf/Connect), not `api/`.
+
+## v1 is being deleted — spend the effort on v2
+
+The migration's endpoint is v2 replacing v1, so refactoring v1 is work that gets
+thrown away. Keep edits to the legacy v1 API (`api/`, and the `web/` gohtml handlers)
+to the minimum the task needs: fix bugs, and do what a v2 change forces — no
+opportunistic cleanup. The higher bar applies on the v2 side instead: interceptors,
+declarative authorization, tests.
+
+When a shared package (`model/`, `dao/`, `tools/`) needs to change, prefer adding the
+new thing over rewriting v1's use of the old one.
 
 ## Database
 

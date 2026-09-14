@@ -1,20 +1,23 @@
 .PHONY: all
-all: npm_dependencies spa go_dependencies bundle
+all: node_dependencies spa go_dependencies bundle
 
 VERSION := $(shell git rev-parse --short origin/HEAD)
 
-.PHONY: npm_dependencies
-npm_dependencies:
+# Installs web/node_modules and, through the package's postinstall, bundles the
+# templates' JS and CSS. devDependencies are not optional here: webpack and the
+# tailwind CLI that postinstall runs both live there.
+.PHONY: node_dependencies
+node_dependencies:
 	cd web; \
-	npm i --no-dev
+	pnpm install
 
 # Builds the single-page frontend into web/spa, where it is embedded into the binary.
 # Skipping this target leaves every page served by its template handler.
 .PHONY: spa
 spa:
 	cd frontend; \
-	npm ci; \
-	npm run build
+	pnpm install --frozen-lockfile; \
+	pnpm run build
 
 # Regenerates the TypeScript client in frontend/src/gen from apiv2/server/apiv2.proto.
 # The output is committed, so this only needs running when the proto changes; use it
@@ -22,8 +25,8 @@ spa:
 .PHONY: proto_es
 proto_es:
 	cd frontend; \
-	npm ci; \
-	npm run proto
+	pnpm install --frozen-lockfile; \
+	pnpm run proto
 
 .PHONY: go_dependencies
 go_dependencies:
@@ -50,7 +53,7 @@ mocks:
 .PHONY: run_web
 run_web:
 	cd web; \
-	npm i --include=dev
+	pnpm install
 
 .PHONY: run
 run:
@@ -59,7 +62,7 @@ run:
 .PHONY: test
 test:
 	go test -race ./...
-	cd frontend; npm test
+	cd frontend; pnpm test
 
 # Loads tum-live-starter.sql into the development database, dropping whatever was
 # there. That dump is the fixture the browser tests assert against — its users, courses
@@ -105,14 +108,14 @@ e2e_db:
 .PHONY: test_e2e
 test_e2e:
 	cd frontend; \
-	npx playwright install --with-deps chromium; \
-	npm run test:e2e
+	pnpm exec playwright install --with-deps chromium; \
+	pnpm run test:e2e
 
 .PHONY: lint
 lint:
 	golangci-lint run
-	cd web; npm run lint
-	cd frontend; npm run typecheck
+	cd web; pnpm run lint
+	cd frontend; pnpm run typecheck
 
 .PHONY: protoVoice
 protoVoice:

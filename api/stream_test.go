@@ -20,6 +20,7 @@ import (
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/safepath"
 	"github.com/TUM-Dev/gocast/tools/testutils"
 )
 
@@ -931,6 +932,112 @@ func TestAttachments(t *testing.T) {
 			_ = os.Remove(testFile.Path) // Then cleanup
 		}
 	})
+}
+
+// TestAttachmentCourseNameTraversal makes sure a course name containing path
+// elements cannot place an upload outside of the mass storage directory.
+func TestAttachmentCourseNameTraversal(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mass := t.TempDir()
+	oldMass := tools.Cfg.Paths.Mass
+	tools.Cfg.Paths.Mass = mass
+	defer func() {
+		tools.Cfg.Paths.Mass = oldMass
+	}()
+
+	course := testutils.CourseFPV
+	course.Name = "../../escaped"
+	stream := testutils.StreamFPVLive
+	ctx := tools.TUMLiveContext{User: &testutils.Admin, Course: &course, Stream: &stream}
+
+	body, contentType := multipartFileBody(t, "file", "attachment.txt", "text/plain", []byte("content"))
+
+	var stored string
+	gomino.TestCases{
+		"traversal in course name stays inside mass storage": {
+			Router: func(r *gin.Engine) {
+				fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+				fileMock.
+					EXPECT().
+					NewFile(gomock.Any()).
+					DoAndReturn(func(f *model.File) error {
+						stored = f.Path
+						return nil
+					})
+				configGinStreamRestRouter(r, dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao:    fileMock,
+				}, nil)
+			},
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(ctx)),
+			ExpectedCode: http.StatusOK,
+			Body:         body,
+			ContentType:  contentType,
+		},
+	}.
+		Method(http.MethodPost).
+		Url(fmt.Sprintf("/api/stream/%d/files?type=file", stream.ID)).
+		Run(t, testutils.Equal)
+
+	if !safepath.Contains(mass, stored) {
+		t.Fatalf("attachment stored at %s, which is outside of %s", stored, mass)
+	}
+	if _, err := os.Stat(stored); err != nil {
+		t.Fatalf("attachment was not written: %v", err)
+	}
+}
+
+// TestCustomThumbnailCourseNameTraversal is the same check for custom thumbnails.
+func TestCustomThumbnailCourseNameTraversal(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mass := t.TempDir()
+	oldMass := tools.Cfg.Paths.Mass
+	tools.Cfg.Paths.Mass = mass
+	defer func() {
+		tools.Cfg.Paths.Mass = oldMass
+	}()
+
+	course := testutils.CourseFPV
+	course.Name = "../../escaped"
+	stream := testutils.StreamFPVLive
+	ctx := tools.TUMLiveContext{User: &testutils.Admin, Course: &course, Stream: &stream}
+
+	body, contentType := multipartFileBody(t, "file", "thumb.png", "image/png", []byte("fake image"))
+
+	var stored string
+	gomino.TestCases{
+		"traversal in course name stays inside mass storage": {
+			Router: func(r *gin.Engine) {
+				fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+				fileMock.
+					EXPECT().
+					SetThumbnail(stream.ID, gomock.Any()).
+					DoAndReturn(func(_ uint, f model.File) error {
+						stored = f.Path
+						return nil
+					})
+				configGinStreamRestRouter(r, dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao:    fileMock,
+				}, nil)
+			},
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(ctx)),
+			ExpectedCode: http.StatusOK,
+			Body:         body,
+			ContentType:  contentType,
+		},
+	}.
+		Method(http.MethodPost).
+		Url(fmt.Sprintf("/api/stream/%d/", stream.ID)).
+		Run(t, testutils.Equal)
+
+	if !safepath.Contains(mass, stored) {
+		t.Fatalf("thumbnail stored at %s, which is outside of %s", stored, mass)
+	}
 }
 
 func TestPutCustomLiveThumbnail(t *testing.T) {

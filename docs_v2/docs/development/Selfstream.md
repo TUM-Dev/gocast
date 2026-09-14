@@ -79,8 +79,8 @@ You have to change the `authHTTPAddress` in the `ingest/mediamtx.yml` file by un
   ```bash
   # in the web/ directory
   
-  npm install
-  npm run build-dev
+  pnpm install
+  pnpm run build-dev
   ```
 
 - Start the runner. Configure the path accordingly: You can set the `STORAGE_PATH` and `SEGMENT_PATH` environment variables to point to the correct locations if you don't want to use default ones:

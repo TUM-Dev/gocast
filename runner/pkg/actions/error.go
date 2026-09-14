@@ -16,7 +16,8 @@ type isAbortingError interface {
 
 func (e *abortingError) IsAbortingError() {}
 
-// AbortingError marks an error as aborting, thus skipping all following actions.
+// AbortingError marks an error as unrecoverable, so the action is not retried.
+// The actions after it still run, see the doc comment on Action.
 func AbortingError(err error) error {
 	if err == nil {
 		return nil
