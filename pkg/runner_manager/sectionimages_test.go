@@ -244,3 +244,52 @@ func TestSaveSectionImagesDeletedStream(t *testing.T) {
 		t.Errorf("mass storage is not empty: %v", entries)
 	}
 }
+
+// TestSaveSectionImagesDeletedSection checks that the image of a section deleted in the
+// meantime is dropped, while the images of the remaining sections are still saved.
+func TestSaveSectionImagesDeletedSection(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mass := t.TempDir()
+
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "1").Return(model.Stream{
+		Model:    gorm.Model{ID: 1},
+		CourseID: 2,
+		Start:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	fileDao := mock_dao.NewMockFileDao(ctrl)
+	fileDao.EXPECT().NewFile(gomock.Any()).Times(1).Return(nil)
+
+	sectionDao := mock_dao.NewMockVideoSectionDao(ctrl)
+	sectionDao.EXPECT().Get(uint(8)).Return(model.VideoSection{}, gorm.ErrRecordNotFound)
+	sectionDao.EXPECT().Get(uint(9)).Return(model.VideoSection{StreamID: 1}, nil)
+	sectionDao.EXPECT().Update(gomock.Any()).Times(1).DoAndReturn(func(s *model.VideoSection) error {
+		if s.ID != 9 {
+			t.Errorf("updated section %d, want only the remaining section 9", s.ID)
+		}
+		return nil
+	})
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao, FileDao: fileDao, VideoSectionDao: sectionDao},
+		WithMassStorage(mass))
+
+	err := m.saveSectionImages(context.Background(), &protobuf.SectionImagesReadyNotification{
+		Stream: &protobuf.StreamInfo{Id: ptr.Take(uint64(1))},
+		Images: []*protobuf.SectionImage{
+			{SectionId: ptr.Take(uint64(8)), Image: []byte("deleted")},
+			{SectionId: ptr.Take(uint64(9)), Image: []byte("kept")},
+		},
+	})
+	if err != nil {
+		t.Fatalf("saveSectionImages: %v", err)
+	}
+
+	dir := filepath.Join(mass, "sections", "2025/01", "2")
+	if _, err := os.Stat(filepath.Join(dir, "1_8.jpg")); !os.IsNotExist(err) {
+		t.Errorf("image of the deleted section was written (stat err: %v)", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "1_9.jpg")); err != nil {
+		t.Errorf("image of the remaining section is missing: %v", err)
+	}
+}
