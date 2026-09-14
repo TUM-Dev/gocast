@@ -128,6 +128,12 @@ func (m *Manager) saveSectionImages(ctx context.Context, req *protobuf.SectionIm
 		if err != nil {
 			return status.Errorf(codes.Internal, "can't get video section %d: %v", sectionID, err)
 		}
+		if section.StreamID != stream.ID {
+			// The section id comes from the runner. Never let it repoint a section of
+			// another stream at this image.
+			m.logger.Warn("dropping image for a video section of another stream", "stream", stream.ID, "section", sectionID, "sectionStream", section.StreamID)
+			continue
+		}
 
 		// Sections are regenerated whenever the thumbnails are redone. The path only
 		// depends on ids, so the image on disk is replaced in place and just the file
