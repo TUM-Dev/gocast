@@ -44,7 +44,7 @@ func TestSaveSectionImages(t *testing.T) {
 
 	var updated []model.VideoSection
 	sectionDao := mock_dao.NewMockVideoSectionDao(ctrl)
-	sectionDao.EXPECT().Get(gomock.Any()).Times(2).Return(model.VideoSection{}, nil)
+	sectionDao.EXPECT().Get(gomock.Any()).Times(2).Return(model.VideoSection{StreamID: 1024}, nil)
 	sectionDao.EXPECT().Update(gomock.Any()).Times(2).DoAndReturn(func(s *model.VideoSection) error {
 		updated = append(updated, *s)
 		return nil
@@ -120,7 +120,7 @@ func TestSaveSectionImagesStaysInMassStorage(t *testing.T) {
 	})
 
 	sectionDao := mock_dao.NewMockVideoSectionDao(ctrl)
-	sectionDao.EXPECT().Get(gomock.Any()).Return(model.VideoSection{}, nil)
+	sectionDao.EXPECT().Get(gomock.Any()).Return(model.VideoSection{StreamID: 1}, nil)
 	sectionDao.EXPECT().Update(gomock.Any()).Return(nil)
 
 	m := New(dao.DaoWrapper{StreamsDao: streamsDao, FileDao: fileDao, VideoSectionDao: sectionDao},
@@ -162,7 +162,7 @@ func TestSaveSectionImagesReplacesPreviousFile(t *testing.T) {
 	fileDao.EXPECT().DeleteFile(uint(31)).Return(nil)
 
 	sectionDao := mock_dao.NewMockVideoSectionDao(ctrl)
-	sectionDao.EXPECT().Get(uint(9)).Return(model.VideoSection{FileID: 31}, nil)
+	sectionDao.EXPECT().Get(uint(9)).Return(model.VideoSection{StreamID: 1, FileID: 31}, nil)
 	sectionDao.EXPECT().Update(gomock.Any()).DoAndReturn(func(s *model.VideoSection) error {
 		if s.FileID != 99 {
 			t.Errorf("section points at file %d, want the new file 99", s.FileID)
@@ -291,5 +291,40 @@ func TestSaveSectionImagesDeletedSection(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "1_9.jpg")); err != nil {
 		t.Errorf("image of the remaining section is missing: %v", err)
+	}
+}
+
+// TestSaveSectionImagesSectionOfAnotherStream checks that a section id belonging to a
+// different stream is not repointed at the image.
+func TestSaveSectionImagesSectionOfAnotherStream(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mass := t.TempDir()
+
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "1").Return(model.Stream{
+		Model:    gorm.Model{ID: 1},
+		CourseID: 2,
+		Start:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+	}, nil)
+
+	sectionDao := mock_dao.NewMockVideoSectionDao(ctrl)
+	sectionDao.EXPECT().Get(uint(9)).Return(model.VideoSection{Model: gorm.Model{ID: 9}, StreamID: 77}, nil)
+
+	// no NewFile or Update expectations: the foreign section must be left alone
+	m := New(dao.DaoWrapper{
+		StreamsDao:      streamsDao,
+		FileDao:         mock_dao.NewMockFileDao(ctrl),
+		VideoSectionDao: sectionDao,
+	}, WithMassStorage(mass))
+
+	err := m.saveSectionImages(context.Background(), &protobuf.SectionImagesReadyNotification{
+		Stream: &protobuf.StreamInfo{Id: ptr.Take(uint64(1))},
+		Images: []*protobuf.SectionImage{{SectionId: ptr.Take(uint64(9)), Image: []byte("x")}},
+	})
+	if err != nil {
+		t.Fatalf("saveSectionImages: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(mass, "sections", "2025/01", "2", "1_9.jpg")); !os.IsNotExist(err) {
+		t.Errorf("image for a section of another stream was written (stat err: %v)", err)
 	}
 }
