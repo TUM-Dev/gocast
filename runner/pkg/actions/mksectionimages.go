@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os/exec"
+	"time"
 
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
@@ -24,9 +25,7 @@ const (
 // SectionTimestamp identifies one video section and the offset into the recording it starts at.
 type SectionTimestamp struct {
 	SectionID uint64
-	Hours     uint32
-	Minutes   uint32
-	Seconds   uint32
+	Start     time.Duration
 }
 
 // MkSectionImages generates a thumbnail for every video section of a recording and
@@ -84,7 +83,7 @@ func MkSectionImages(ctx context.Context, logger *slog.Logger, notify chan *prot
 
 // createSectionImage extracts a single frame at the sections timestamp and returns it as jpeg.
 func createSectionImage(ctx context.Context, playlistURL string, section SectionTimestamp) ([]byte, error) {
-	timestamp := fmt.Sprintf("%02d:%02d:%02d", section.Hours, section.Minutes, section.Seconds)
+	timestamp := fmt.Sprintf("%.3f", section.Start.Seconds())
 
 	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "ffmpeg",

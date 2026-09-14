@@ -6,9 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"gorm.io/gorm"
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
@@ -22,6 +24,25 @@ type SectionImageRequest struct {
 	StreamID    uint
 	PlaylistURL string
 	Sections    []model.VideoSection
+}
+
+// GenerateSectionImages generates the thumbnails for the given video sections.
+//
+// Section image generation is being moved from the workers to the runners. Until every
+// deployment runs runners, fallback - the legacy worker path - is used whenever no
+// runner takes the job. m may be nil when no runner manager is configured.
+func GenerateSectionImages(m *Manager, req SectionImageRequest, fallback func() error) error {
+	if len(req.Sections) == 0 {
+		return nil
+	}
+	if m != nil {
+		err := m.RequestSectionImages(context.Background(), req)
+		if err == nil {
+			return nil
+		}
+		m.logger.Warn("no runner took the section images job, falling back to a worker", "stream", req.StreamID, "err", err)
+	}
+	return fallback()
 }
 
 // RequestSectionImages asks a runner to generate thumbnails for the given video sections.
@@ -40,13 +61,14 @@ func (m *Manager) RequestSectionImages(ctx context.Context, req SectionImageRequ
 		_ = conn.Close()
 	}()
 
-	sections := make([]*protobuf.SectionTimestamp, 0, len(req.Sections))
+	sections := make([]*protobuf.SectionImageRequest_Section, 0, len(req.Sections))
 	for _, s := range req.Sections {
-		sections = append(sections, &protobuf.SectionTimestamp{
-			SectionId: ptr.Take(uint64(s.ID)),
-			Hours:     ptr.Take(uint32(s.StartHours)),
-			Minutes:   ptr.Take(uint32(s.StartMinutes)),
-			Seconds:   ptr.Take(uint32(s.StartSeconds)),
+		start := time.Duration(s.StartHours)*time.Hour +
+			time.Duration(s.StartMinutes)*time.Minute +
+			time.Duration(s.StartSeconds)*time.Second
+		sections = append(sections, &protobuf.SectionImageRequest_Section{
+			Id:    ptr.Take(uint64(s.ID)),
+			Start: durationpb.New(start),
 		})
 	}
 
