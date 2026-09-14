@@ -1,13 +1,17 @@
 package axis
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/TUM-Dev/gocast/pkg/camera/protocol"
 )
 
 // recorder captures what the camera would have received, so the vendor CGI string can be
@@ -42,6 +46,24 @@ func offlineCam(t *testing.T) *AxisCam {
 	return NewAxisCam(strings.TrimPrefix(srv.URL, "http://"), "user:password")
 }
 
+// assertEmptyDir fails if anything was written into dir. A snapshot that failed must
+// leave nothing behind: whatever consumes lecture-hall snapshots cannot tell a stored
+// error page from a real JPEG.
+func assertEmptyDir(t *testing.T, dir string) {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("reading output directory: %v", err)
+	}
+	if len(entries) != 0 {
+		names := make([]string, 0, len(entries))
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+		t.Errorf("output directory contains %v, want no file at all", names)
+	}
+}
+
 func TestSetPreset(t *testing.T) {
 	// Negative and out-of-range ids are included deliberately: the driver does no
 	// validation, it formats whatever it is given straight into the CGI query.
@@ -74,13 +96,22 @@ func TestSetPreset(t *testing.T) {
 		})
 	}
 
-	// BUG: the status code is discarded, so a camera answering 401 or 500 looks like a
-	// successful preset change to every caller.
-	t.Run("a failing camera is reported as success", func(t *testing.T) {
+	// A camera that answers 401 or 500 has not moved. Reporting that as a successful preset
+	// change left an operator watching a stream that never changed angle, with nothing in
+	// the logs; the status is now an error naming the code.
+	t.Run("a failing camera returns an error", func(t *testing.T) {
 		for _, code := range []int{http.StatusInternalServerError, http.StatusUnauthorized} {
 			cam, _ := newCam(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(code) })
-			if err := cam.SetPreset(1); err != nil {
-				t.Errorf("code %d: got error %v; if status handling was added, update this test", code, err)
+			err := cam.SetPreset(1)
+			if err == nil {
+				t.Errorf("code %d: expected an error, the camera did not move", code)
+				continue
+			}
+			if !errors.Is(err, protocol.ErrUnexpectedStatus) {
+				t.Errorf("code %d: error %v does not match protocol.ErrUnexpectedStatus", code, err)
+			}
+			if !strings.Contains(err.Error(), strconv.Itoa(code)) {
+				t.Errorf("code %d: error %q does not name the status code", code, err)
 			}
 		}
 	})
@@ -135,6 +166,61 @@ func TestTakeSnapshot(t *testing.T) {
 		}
 	})
 
+	// The regression worth locking down: an error response used to be written to disk as a
+	// .jpg and handed back as a valid snapshot filename.
+	t.Run("an error response leaves no file on disk", func(t *testing.T) {
+		cases := []struct {
+			name string
+			code int
+			body string
+		}{
+			{name: "500 with an html error page", code: http.StatusInternalServerError, body: "<html><body>Internal Server Error</body></html>"},
+			{name: "401 with an html error page", code: http.StatusUnauthorized, body: "<html><head><title>401 Unauthorized</title></head></html>"},
+			{name: "401 with an empty body", code: http.StatusUnauthorized, body: ""},
+		}
+		for _, tt := range cases {
+			t.Run(tt.name, func(t *testing.T) {
+				dir := t.TempDir()
+				cam, _ := newCam(t, func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(tt.code)
+					_, _ = w.Write([]byte(tt.body))
+				})
+				filename, err := cam.TakeSnapshot(dir)
+				if err == nil {
+					t.Fatalf("expected an error, got filename %q", filename)
+				}
+				if !errors.Is(err, protocol.ErrUnexpectedStatus) {
+					t.Errorf("error %v does not match protocol.ErrUnexpectedStatus", err)
+				}
+				if filename != "" {
+					t.Errorf("filename = %q, want empty on error", filename)
+				}
+				assertEmptyDir(t, dir)
+			})
+		}
+	})
+
+	// A 200 carrying something that is not a JPEG is still stored: the driver does not
+	// inspect the bytes, and that success path is deliberately unchanged.
+	t.Run("a 200 with a non-image body is still stored", func(t *testing.T) {
+		const body = "<html>not an image</html>"
+		dir := t.TempDir()
+		cam, _ := newCam(t, func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(body))
+		})
+		filename, err := cam.TakeSnapshot(dir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		content, err := os.ReadFile(filepath.Join(dir, filename))
+		if err != nil {
+			t.Fatalf("reading snapshot: %v", err)
+		}
+		if string(content) != body {
+			t.Errorf("stored content = %q, want %q", content, body)
+		}
+	})
+
 	t.Run("an unwritable output directory returns an error and no filename", func(t *testing.T) {
 		cam, _ := newCam(t, func(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte("jpegbytes"))
@@ -148,10 +234,16 @@ func TestTakeSnapshot(t *testing.T) {
 		}
 	})
 
-	t.Run("an offline camera returns an error", func(t *testing.T) {
-		if _, err := offlineCam(t).TakeSnapshot(t.TempDir()); err == nil {
+	t.Run("an offline camera returns an error and leaves no file", func(t *testing.T) {
+		dir := t.TempDir()
+		filename, err := offlineCam(t).TakeSnapshot(dir)
+		if err == nil {
 			t.Error("expected an error from an unreachable camera")
 		}
+		if filename != "" {
+			t.Errorf("filename = %q, want empty on error", filename)
+		}
+		assertEmptyDir(t, dir)
 	})
 }
 
