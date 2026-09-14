@@ -2,6 +2,7 @@ package runner_manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -95,8 +96,15 @@ func (m *Manager) RequestSectionImages(ctx context.Context, req SectionImageRequ
 // built from ids only and never from free text such as the course name.
 func (m *Manager) saveSectionImages(ctx context.Context, req *protobuf.SectionImagesReadyNotification) error {
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(req.GetStream().GetId(), 10))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// The stream was deleted while its images were generated. The runner retries
+		// every error it gets back, and retrying cannot bring the stream back, so the
+		// notification is acknowledged instead of being retried forever.
+		m.logger.Warn("dropping section images for a stream that no longer exists", "stream", req.GetStream().GetId())
+		return nil
+	}
 	if err != nil {
-		return status.Errorf(codes.NotFound, "can't find stream for id %d: %v", req.GetStream().GetId(), err)
+		return status.Errorf(codes.Internal, "can't get stream %d: %v", req.GetStream().GetId(), err)
 	}
 
 	dir := filepath.Join(m.massStorage, "sections", stream.Start.Format("2006/01"), strconv.FormatUint(uint64(stream.CourseID), 10))

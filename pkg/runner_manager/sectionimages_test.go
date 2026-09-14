@@ -215,3 +215,32 @@ func TestGenerateSectionImagesFallback(t *testing.T) {
 		}
 	})
 }
+
+// TestSaveSectionImagesDeletedStream checks that images for a stream deleted in the
+// meantime are dropped rather than failing: the runner retries every error it gets
+// back, so an error here would be retried forever.
+func TestSaveSectionImagesDeletedStream(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mass := t.TempDir()
+
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "1").Return(model.Stream{}, gorm.ErrRecordNotFound)
+
+	// no FileDao or VideoSectionDao expectations: nothing may be written
+	m := New(dao.DaoWrapper{
+		StreamsDao:      streamsDao,
+		FileDao:         mock_dao.NewMockFileDao(ctrl),
+		VideoSectionDao: mock_dao.NewMockVideoSectionDao(ctrl),
+	}, WithMassStorage(mass))
+
+	err := m.saveSectionImages(context.Background(), &protobuf.SectionImagesReadyNotification{
+		Stream: &protobuf.StreamInfo{Id: ptr.Take(uint64(1))},
+		Images: []*protobuf.SectionImage{{SectionId: ptr.Take(uint64(9)), Image: []byte("x")}},
+	})
+	if err != nil {
+		t.Fatalf("saveSectionImages for a deleted stream = %v, want nil", err)
+	}
+	if entries, _ := os.ReadDir(mass); len(entries) != 0 {
+		t.Errorf("mass storage is not empty: %v", entries)
+	}
+}
