@@ -101,7 +101,7 @@
         <p class="border-t border-gray-100 dark:border-gray-500 my-4" x-show="scope === 'lecturer'"></span>
         <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg" x-show="scope === 'lecturer'">
                 <div class="mb-4">
-                    <div x-data="{ tab: 'OBS' }">
+                    <div x-data="{ tab: 'OBS', server: '{{ .Tokens.RtmpProxyURL }}'.replace(/\/+$/, '').replace(/\/live$/, '') + '/live' }">
                         <div class="flex">
                             <button type="button" @click="tab = 'OBS'" :class="tab === 'OBS' ? 'primary text-bold' : 'bg-gray-200 dark:bg-secondary'" class="px-4 py-2 rounded-t-lg">OBS</button>
                             <button type="button" @click="tab = 'Zoom'" :class="tab === 'Zoom' ? 'primary text-bold' : 'bg-gray-200 dark:bg-secondary'" class="px-4 py-2 rounded-t-lg">Zoom</button>
@@ -118,9 +118,8 @@
                             <p class="mb-2">
                                 <strong>Server:</strong>
                                 <span class="relative inline-block">
-                                    <code @click="copyAndShow(`{{ .Tokens.RtmpProxyURL }}`, 'obs-server')"
+                                    <code @click="copyAndShow(server, 'obs-server')" x-text="server"
                                         class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
-                                        {{ .Tokens.RtmpProxyURL }}
                                     </code>
 
                                     <span x-cloak
@@ -163,9 +162,8 @@
                             <p class="mb-2">
                                 <strong>Stream URL:</strong> 
                                 <span class="relative inline-block">
-                                    <code @click="copyAndShow(`{{ .Tokens.RtmpProxyURL }}`, 'zoom-server')"
+                                    <code @click="copyAndShow(server, 'zoom-server')" x-text="server"
                                         class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
-                                        {{ .Tokens.RtmpProxyURL }}
                                     </code>
 
                                     <span x-cloak
@@ -208,9 +206,8 @@
                             <p class="mb-2">
                                 <strong>Stream URL:</strong> 
                                 <span class="relative inline-block">
-                                    <code @click="copyAndShow(`{{ .Tokens.RtmpProxyURL }}`, 'teams-server')"
+                                    <code @click="copyAndShow(server, 'teams-server')" x-text="server"
                                         class="p-1 pt-2 rounded-md font-mono text-sm overflow-x-auto bg-gray-200 dark:bg-secondary cursor-pointer">
-                                        {{ .Tokens.RtmpProxyURL }}
                                     </code>
 
                                     <span x-cloak
