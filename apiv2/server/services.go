@@ -127,6 +127,11 @@ var services = []service{
 			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
 			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
 			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
+
+			// Server-wide statistics, same permission the old /admin/server-stats
+			// route required.
+			"getServerStats":    requires(model.PermAdministerServer),
+			"exportServerStats": requires(model.PermAdministerServer),
 		},
 	},
 }
