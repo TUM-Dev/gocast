@@ -60,6 +60,7 @@ var spaRoutes = map[string]bool{
 	"/admin/runners":            true,
 	"/admin/users":              true,
 	"/admin/info-pages":         true,
+	"/admin/server-notifications": true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
