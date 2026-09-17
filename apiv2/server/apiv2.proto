@@ -479,14 +479,11 @@ service AdminService {
     };
   }
 
-  // The four methods below manage the lecture halls known to the scheduler and the
+  // The methods below manage the lecture halls known to the scheduler and the
   // recording pipeline. Named "*Admin" and "LectureHallAdmin" rather than plain
   // "LectureHall" because that name, and CameraPreset, are already taken by the
   // viewer-facing messages further down (see LECTURE_HALL_MESSAGE) with a different
-  // shape. Camera preset management (viewing fetched presets, refreshing them from
-  // the camera, marking a default, taking a snapshot) is deliberately not part of
-  // this surface yet -- it needs the CamService and the preset image directory wired
-  // into this API, which the v1 handler in api/lecture_halls.go still owns.
+  // shape; the admin preset type is CameraPresetAdmin for the same reason.
   rpc listLectureHallsAdmin(google.protobuf.Empty) returns (ListLectureHallsAdminResponse) {
     option (google.api.http) = {get: "/admin/lecture-halls"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -526,6 +523,42 @@ service AdminService {
       tags: "Lecture Halls"
       summary: "Delete a lecture hall."
       description: "Deletes a lecture hall; its streams keep playing but lose the hall association. Requires the server.administer permission."
+    };
+  }
+
+  // The three methods below manage a hall's camera presets. All three reach the
+  // physical camera, so they answer Unknown/InvalidArgument/Unavailable the way
+  // (*API).cameraFor documents, on top of the usual permission failures.
+  rpc refreshLectureHallPresetsAdmin(RefreshLectureHallPresetsAdminRequest) returns (LectureHallAdmin) {
+    option (google.api.http) = {post: "/admin/lecture-halls/{id}/presets/refresh"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Refresh a lecture hall's camera presets."
+      description: "Fetches the presets configured on the hall's camera and replaces the stored list with them. Requires the server.administer permission."
+    };
+  }
+
+  rpc setDefaultCameraPresetAdmin(SetDefaultCameraPresetAdminRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/admin/lecture-halls/{lecture_hall_id}/presets/{preset_id}/default"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Mark a camera preset the hall's default."
+      description: "Marks one preset default for the hall and unsets the others. The default is what a stream's recording starts pointed at. Requires the server.administer permission."
+    };
+  }
+
+  rpc takeCameraPresetSnapshotAdmin(TakeCameraPresetSnapshotAdminRequest) returns (CameraPresetAdmin) {
+    option (google.api.http) = {
+      post: "/admin/lecture-halls/{lecture_hall_id}/presets/{preset_id}/snapshot"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Take a new preview snapshot of a camera preset."
+      description: "Moves the camera to the preset, waits for it to arrive, and photographs it. Requires the server.administer permission."
     };
   }
 }
@@ -1234,6 +1267,24 @@ message LectureHallAdmin {
   string camera_ip = 7;
   // Drives the red live light through an Anel PWR-Ctrl. Empty when there is none.
   string pwr_ctrl_ip = 8;
+  // Empty until refreshLectureHallPresetsAdmin has fetched them at least once. Only
+  // ever populated for a hall with camera_ip set.
+  repeated CameraPresetAdmin camera_presets = 9;
+}
+
+// CameraPresetAdmin is a camera preset as an administrator manages it: named
+// "*Admin" for the same reason as LectureHallAdmin -- CameraPreset above is the
+// trimmed, viewer-facing shape.
+message CameraPresetAdmin {
+  uint32 lecture_hall_id = 1;
+  // The camera's own numbering, not a database id -- this is what SetPreset on the
+  // camera takes.
+  uint32 preset_id = 2;
+  string name = 3;
+  // Filename under the static directory, empty until a snapshot has been taken.
+  // Rendered as /public/{image}.
+  string image = 4;
+  bool is_default = 5;
 }
 
 message ListLectureHallsAdminResponse {
@@ -1263,4 +1314,18 @@ message UpdateLectureHallAdminRequest {
 
 message DeleteLectureHallAdminRequest {
   uint32 id = 1;
+}
+
+message RefreshLectureHallPresetsAdminRequest {
+  uint32 id = 1;
+}
+
+message SetDefaultCameraPresetAdminRequest {
+  uint32 lecture_hall_id = 1;
+  uint32 preset_id = 2;
+}
+
+message TakeCameraPresetSnapshotAdminRequest {
+  uint32 lecture_hall_id = 1;
+  uint32 preset_id = 2;
 }

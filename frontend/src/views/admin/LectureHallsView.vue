@@ -7,17 +7,20 @@ import {
   StreamProtocol,
   deleteLectureHall,
   fetchLectureHalls,
+  refreshLectureHallPresets,
+  setDefaultCameraPreset,
+  takeCameraPresetSnapshot,
   updateLectureHall,
+  type CameraPreset,
   type LectureHall,
   type LectureHallInput,
 } from "@/lib/lecture-halls";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
- * Lecture hall administration: list, inline edit and delete. Creating a new hall is
- * its own route/page (LectureHallCreateView), same as the page this replaces.
- *
- * Camera preset management is not part of this page yet -- see lib/lecture-halls.ts.
+ * Lecture hall administration: list, inline edit, delete and camera preset
+ * management. Creating a new hall is its own route/page (LectureHallCreateView),
+ * same as the page this replaces.
  */
 const auth = useAuthStore();
 
@@ -26,13 +29,21 @@ const loading = ref(true);
 const error = ref("");
 const filter = ref("");
 
-/** Editable copy of a hall's fields, plus the row's own save state. */
+/**
+ * Editable copy of a hall's fields, plus the row's own save state and the state of
+ * its camera preset actions. Presets read straight off row.hall -- they are not part
+ * of the edit form, so there is nothing to diff or reset.
+ */
 interface Row {
   hall: LectureHall;
   form: LectureHallInput;
   saving: boolean;
   saved: boolean;
   error: string;
+  refreshingPresets: boolean;
+  presetsError: string;
+  /** presetId of the snapshot currently in flight, so only that tile shows busy. */
+  snapshotting: number | null;
 }
 
 function toForm(hall: LectureHall): LectureHallInput {
@@ -48,7 +59,16 @@ function toForm(hall: LectureHall): LectureHallInput {
 }
 
 function toRow(hall: LectureHall): Row {
-  return reactive({ hall, form: toForm(hall), saving: false, saved: false, error: "" });
+  return reactive({
+    hall,
+    form: toForm(hall),
+    saving: false,
+    saved: false,
+    error: "",
+    refreshingPresets: false,
+    presetsError: "",
+    snapshotting: null,
+  });
 }
 
 const rows = ref<Row[]>([]);
@@ -144,6 +164,52 @@ async function remove(row: Row): Promise<void> {
     halls.value = halls.value.filter((h) => h.id !== row.hall.id);
   } catch (err) {
     row.error = message(err);
+  }
+}
+
+/** /public/<image>, falling back to the placeholder for a preset never snapshotted. */
+function presetImageUrl(preset: CameraPreset): string {
+  return `/public/${preset.image || "noPreset.jpg"}`;
+}
+
+async function reloadPresets(row: Row): Promise<void> {
+  row.presetsError = "";
+  row.refreshingPresets = true;
+  try {
+    const updated = await refreshLectureHallPresets(row.hall.id);
+    row.hall = updated;
+  } catch (err) {
+    row.presetsError = message(err);
+  } finally {
+    row.refreshingPresets = false;
+  }
+}
+
+async function makeDefault(row: Row, preset: CameraPreset): Promise<void> {
+  row.presetsError = "";
+  try {
+    await setDefaultCameraPreset(preset.lectureHallId, preset.presetId);
+    row.hall.cameraPresets = row.hall.cameraPresets.map((p) => ({
+      ...p,
+      isDefault: p.presetId === preset.presetId,
+    }));
+  } catch (err) {
+    row.presetsError = message(err);
+  }
+}
+
+async function snapshotPreset(row: Row, preset: CameraPreset): Promise<void> {
+  row.presetsError = "";
+  row.snapshotting = preset.presetId;
+  try {
+    const updated = await takeCameraPresetSnapshot(preset.lectureHallId, preset.presetId);
+    row.hall.cameraPresets = row.hall.cameraPresets.map((p) =>
+      p.presetId === preset.presetId ? updated : p,
+    );
+  } catch (err) {
+    row.presetsError = message(err);
+  } finally {
+    row.snapshotting = null;
   }
 }
 </script>
@@ -298,6 +364,71 @@ async function remove(row: Row): Promise<void> {
                 placeholder="10.0.0.2"
                 class="tum-live-input"
               />
+            </div>
+          </div>
+        </div>
+
+        <div v-if="row.hall.cameraIp" class="border-t pt-3 dark:border-gray-800">
+          <div class="flex items-center gap-2">
+            <h2 class="text-1 mr-auto font-semibold">Camera presets</h2>
+            <button
+              type="button"
+              title="Reload presets"
+              class="tum-live-button-secondary tum-live-button px-3 py-1 text-xs"
+              :disabled="row.refreshingPresets"
+              @click="reloadPresets(row)"
+            >
+              <i class="fa fa-sync mr-1" :class="row.refreshingPresets && 'fa-spin'"></i> Reload presets
+            </button>
+          </div>
+
+          <p
+            v-if="row.presetsError"
+            class="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+            role="alert"
+          >
+            {{ row.presetsError }}
+          </p>
+
+          <p v-if="!row.hall.cameraPresets.length" class="text-5 mt-3 text-sm">
+            No presets fetched from this camera yet.
+          </p>
+          <div v-else class="scrollbarThin mt-3 overflow-x-auto">
+            <div class="flex flex-row gap-x-2">
+              <div
+                v-for="preset in row.hall.cameraPresets"
+                :key="preset.presetId"
+                style="min-width: 150px"
+                class="group text-5 relative text-center text-sm"
+              >
+                <img
+                  :src="presetImageUrl(preset)"
+                  alt="preset preview"
+                  width="150"
+                  class="rounded-lg border border-slate-500 dark:border-slate-400"
+                />
+                <button
+                  type="button"
+                  title="Set default"
+                  :aria-label="`Set ${preset.name} as default`"
+                  class="absolute left-1 top-1 rounded bg-blue-600 p-1 text-white group-hover:opacity-100"
+                  :class="!preset.isDefault && 'opacity-0'"
+                  @click="makeDefault(row, preset)"
+                >
+                  <i class="fas fa-check"></i>
+                </button>
+                <button
+                  type="button"
+                  title="Take new snapshot"
+                  :aria-label="`Take a new snapshot for ${preset.name}`"
+                  class="absolute right-1 top-1 rounded bg-indigo-500 p-1 text-white opacity-0 group-hover:opacity-100"
+                  :disabled="row.snapshotting === preset.presetId"
+                  @click="snapshotPreset(row, preset)"
+                >
+                  <i class="fas fa-sync" :class="row.snapshotting === preset.presetId && 'fa-spin'"></i>
+                </button>
+                <span :title="preset.name" class="my-2 block truncate">{{ preset.name }}</span>
+              </div>
             </div>
           </div>
         </div>

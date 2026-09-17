@@ -6,6 +6,9 @@ import {
   createLectureHall,
   deleteLectureHall,
   fetchLectureHalls,
+  refreshLectureHallPresets,
+  setDefaultCameraPreset,
+  takeCameraPresetSnapshot,
   updateLectureHall,
   type LectureHallInput,
 } from "./lecture-halls";
@@ -121,5 +124,52 @@ describe("deleteLectureHall", () => {
     const [url, init] = call as [string, RequestInit];
     expect(url).toBe("/api/v2/admin/lecture-halls/3");
     expect(init.method).toBe("DELETE");
+  });
+});
+
+describe("refreshLectureHallPresets", () => {
+  it("posts to the refresh route and returns the hall with its presets", async () => {
+    respondWith({
+      id: 1,
+      name: "FMI_HS1",
+      cameraPresets: [{ lectureHallId: 1, presetId: 1, name: "Front", isDefault: true }],
+    });
+
+    const hall = await refreshLectureHallPresets(1);
+
+    expect(hall.cameraPresets).toEqual([
+      { lectureHallId: 1, presetId: 1, name: "Front", image: "", isDefault: true },
+    ]);
+    const call = fetchMock.mock.calls.find(([url]) => !String(url).endsWith("/auth/token"));
+    const [url, init] = call as [string, RequestInit];
+    expect(url).toBe("/api/v2/admin/lecture-halls/1/presets/refresh");
+    expect(init.method).toBe("POST");
+  });
+});
+
+describe("setDefaultCameraPreset", () => {
+  it("posts to the hall's preset default route", async () => {
+    respondWith({});
+
+    await setDefaultCameraPreset(1, 2);
+
+    const call = fetchMock.mock.calls.find(([url]) => !String(url).endsWith("/auth/token"));
+    const [url, init] = call as [string, RequestInit];
+    expect(url).toBe("/api/v2/admin/lecture-halls/1/presets/2/default");
+    expect(init.method).toBe("POST");
+  });
+});
+
+describe("takeCameraPresetSnapshot", () => {
+  it("posts to the snapshot route and returns the updated preset", async () => {
+    respondWith({ lectureHallId: 1, presetId: 2, name: "Front", image: "abc.jpg" });
+
+    const preset = await takeCameraPresetSnapshot(1, 2);
+
+    expect(preset.image).toBe("abc.jpg");
+    const call = fetchMock.mock.calls.find(([url]) => !String(url).endsWith("/auth/token"));
+    const [url, init] = call as [string, RequestInit];
+    expect(url).toBe("/api/v2/admin/lecture-halls/1/presets/2/snapshot");
+    expect(init.method).toBe("POST");
   });
 });

@@ -306,6 +306,136 @@
         ]
       }
     },
+    "/admin/lecture-halls/{id}/presets/refresh": {
+      "post": {
+        "summary": "Refresh a lecture hall's camera presets.",
+        "description": "Fetches the presets configured on the hall's camera and replaces the stored list with them. Requires the server.administer permission.",
+        "operationId": "AdminService_refreshLectureHallPresetsAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLectureHallAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Lecture Halls"
+        ]
+      }
+    },
+    "/admin/lecture-halls/{lectureHallId}/presets/{presetId}/default": {
+      "post": {
+        "summary": "Mark a camera preset the hall's default.",
+        "description": "Marks one preset default for the hall and unsets the others. The default is what a stream's recording starts pointed at. Requires the server.administer permission.",
+        "operationId": "AdminService_setDefaultCameraPresetAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lectureHallId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AdminServicesetDefaultCameraPresetAdminBody"
+            }
+          }
+        ],
+        "tags": [
+          "Lecture Halls"
+        ]
+      }
+    },
+    "/admin/lecture-halls/{lectureHallId}/presets/{presetId}/snapshot": {
+      "post": {
+        "summary": "Take a new preview snapshot of a camera preset.",
+        "description": "Moves the camera to the preset, waits for it to arrive, and photographs it. Requires the server.administer permission.",
+        "operationId": "AdminService_takeCameraPresetSnapshotAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCameraPresetAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lectureHallId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AdminServicetakeCameraPresetSnapshotAdminBody"
+            }
+          }
+        ],
+        "tags": [
+          "Lecture Halls"
+        ]
+      }
+    },
     "/admin/runners": {
       "get": {
         "summary": "List the transcoding runners.",
@@ -1570,6 +1700,12 @@
     }
   },
   "definitions": {
+    "AdminServicesetDefaultCameraPresetAdminBody": {
+      "type": "object"
+    },
+    "AdminServicetakeCameraPresetSnapshotAdminBody": {
+      "type": "object"
+    },
     "AdminServiceupdateInfoPageBody": {
       "type": "object",
       "properties": {
@@ -1740,6 +1876,31 @@
           "type": "string"
         }
       }
+    },
+    "protobufCameraPresetAdmin": {
+      "type": "object",
+      "properties": {
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "presetId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The camera's own numbering, not a database id -- this is what SetPreset on the\ncamera takes."
+        },
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string",
+          "description": "Filename under the static directory, empty until a snapshot has been taken.\nRendered as /public/{image}."
+        },
+        "isDefault": {
+          "type": "boolean"
+        }
+      },
+      "description": "CameraPresetAdmin is a camera preset as an administrator manages it: named\n\"*Admin\" for the same reason as LectureHallAdmin -- CameraPreset above is the\ntrimmed, viewer-facing shape."
     },
     "protobufChat": {
       "type": "object",
@@ -2263,6 +2424,14 @@
         "pwrCtrlIp": {
           "type": "string",
           "description": "Drives the red live light through an Anel PWR-Ctrl. Empty when there is none."
+        },
+        "cameraPresets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCameraPresetAdmin"
+          },
+          "description": "Empty until refreshLectureHallPresetsAdmin has fetched them at least once. Only\never populated for a hall with camera_ip set."
         }
       },
       "description": "LectureHallAdmin is a lecture hall as an administrator configures it: the stream\nsources the worker/runner pulls from plus the optional hardware addresses. Distinct\nfrom LectureHall (LECTURE_HALL_MESSAGE above), which is the trimmed shape shown to\nviewers."

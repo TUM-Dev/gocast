@@ -81,7 +81,9 @@ async function submit(): Promise<void> {
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="flex flex-col gap-1 text-sm">
-            <label for="lh-form-name" class="text-2">Name <span class="text-red-600 dark:text-red-400">*</span></label>
+            <label for="lh-form-name" class="text-2"
+              >Name <span class="text-red-600 dark:text-red-400" aria-hidden="true">*</span></label
+            >
             <input
               id="lh-form-name"
               v-model="form.name"

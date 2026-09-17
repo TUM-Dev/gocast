@@ -1,18 +1,20 @@
 /**
- * Lecture halls, for the administration page.
- *
- * Camera preset management -- the grid of images fetched from a hall's camera,
- * refreshing it, marking a default and taking a new snapshot -- is not part of this
- * client. It still lives behind the v1 endpoints in api/lecture_halls.go; folding it
- * into v2 needs the CamService and the preset image directory wired into that API,
- * which is a bigger change than this page's migration.
+ * Lecture halls, for the administration page. Includes camera preset management --
+ * the grid of images fetched from a hall's camera, refreshing it, marking a default
+ * and taking a new snapshot.
  */
 
-import type { LectureHallAdmin } from "@/gen/server/apiv2_pb";
+import { EmptySchema } from "@bufbuild/protobuf/wkt";
+
+import type { CameraPresetAdmin, LectureHallAdmin } from "@/gen/server/apiv2_pb";
 import {
+  CameraPresetAdminSchema,
   CreateLectureHallAdminRequestSchema,
   LectureHallAdminSchema,
   ListLectureHallsAdminResponseSchema,
+  RefreshLectureHallPresetsAdminRequestSchema,
+  SetDefaultCameraPresetAdminRequestSchema,
+  TakeCameraPresetSnapshotAdminRequestSchema,
   UpdateLectureHallAdminRequestSchema,
 } from "@/gen/server/apiv2_pb";
 import { apiDelete, apiGetMessage, apiPatchMessage, apiPostMessage } from "./api";
@@ -32,6 +34,27 @@ export interface LectureHall {
   camIp: string;
   cameraIp: string;
   pwrCtrlIp: string;
+  cameraPresets: CameraPreset[];
+}
+
+/** A camera preset. presetId is the camera's own numbering, not a database id. */
+export interface CameraPreset {
+  lectureHallId: number;
+  presetId: number;
+  name: string;
+  /** Filename under the static directory; empty until a snapshot has been taken. */
+  image: string;
+  isDefault: boolean;
+}
+
+function toCameraPreset(preset: CameraPresetAdmin): CameraPreset {
+  return {
+    lectureHallId: preset.lectureHallId,
+    presetId: preset.presetId,
+    name: preset.name,
+    image: preset.image,
+    isDefault: preset.isDefault,
+  };
 }
 
 /** The fields a create or update request carries; the id is only in the latter. */
@@ -55,6 +78,7 @@ function toLectureHall(lh: LectureHallAdmin): LectureHall {
     camIp: lh.camIp,
     cameraIp: lh.cameraIp,
     pwrCtrlIp: lh.pwrCtrlIp,
+    cameraPresets: lh.cameraPresets.map(toCameraPreset),
   };
 }
 
@@ -86,4 +110,45 @@ export async function updateLectureHall(id: number, input: LectureHallInput): Pr
 
 export async function deleteLectureHall(id: number): Promise<void> {
   await apiDelete(`/admin/lecture-halls/${id}`);
+}
+
+/**
+ * Fetches the presets configured on a hall's camera and replaces the stored list
+ * with them, returning the hall with its refreshed presets.
+ */
+export async function refreshLectureHallPresets(id: number): Promise<LectureHall> {
+  const updated = await apiPostMessage(
+    RefreshLectureHallPresetsAdminRequestSchema,
+    LectureHallAdminSchema,
+    `/admin/lecture-halls/${id}/presets/refresh`,
+    { $typeName: "protobuf.RefreshLectureHallPresetsAdminRequest", id },
+  );
+  return toLectureHall(updated);
+}
+
+/** Marks one preset default for a hall; the server unsets the others. */
+export async function setDefaultCameraPreset(lectureHallId: number, presetId: number): Promise<void> {
+  await apiPostMessage(
+    SetDefaultCameraPresetAdminRequestSchema,
+    EmptySchema,
+    `/admin/lecture-halls/${lectureHallId}/presets/${presetId}/default`,
+    { $typeName: "protobuf.SetDefaultCameraPresetAdminRequest", lectureHallId, presetId },
+  );
+}
+
+/**
+ * Moves the camera to the preset, waits for it to arrive, and photographs it. Takes
+ * several seconds -- the camera switch delay -- before it resolves.
+ */
+export async function takeCameraPresetSnapshot(
+  lectureHallId: number,
+  presetId: number,
+): Promise<CameraPreset> {
+  const updated = await apiPostMessage(
+    TakeCameraPresetSnapshotAdminRequestSchema,
+    CameraPresetAdminSchema,
+    `/admin/lecture-halls/${lectureHallId}/presets/${presetId}/snapshot`,
+    { $typeName: "protobuf.TakeCameraPresetSnapshotAdminRequest", lectureHallId, presetId },
+  );
+  return toCameraPreset(updated);
 }
