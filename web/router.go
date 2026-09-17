@@ -64,6 +64,7 @@ var spaRoutes = map[string]bool{
 	"/admin/workers":            true,
 	"/admin/maintenance":        true,
 	"/admin/course-import":      true,
+	"/admin/token":              true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
@@ -316,7 +317,7 @@ func configMainRoute(router *gin.Engine) {
 	userAdminGroup := router.Group("/")
 	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
 	registerPage(userAdminGroup, http.MethodGet, "/admin/users", nil)
-	userAdminGroup.GET("/admin/token", routes.AdminPage)
+	registerPage(userAdminGroup, http.MethodGet, "/admin/token", nil)
 
 	// Outside the permission groups: a redirect reveals nothing, and the destination
 	// does the checking.
