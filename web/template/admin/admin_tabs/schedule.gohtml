@@ -1,5 +1,4 @@
 {{define "schedule"}}
-    <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet"/>
     <div x-init="admin.addScheduleListener([0, {{range .}}{{.Model.ID}}, {{end}}])" class="flex flex-col lg:flex-row w-full pt-4 relative">
         <div id="calendar" class="w-full"></div>
         <div id="popoverContent"

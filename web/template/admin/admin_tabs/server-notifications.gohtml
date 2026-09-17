@@ -1,6 +1,6 @@
 {{define "server-notifications-admin-list"}}
-<link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<link rel="stylesheet" href="/static/assets/vendor/flatpickr/flatpickr.min.css">
+<script src="/static/assets/vendor/flatpickr/flatpickr.min.js"></script>
 <h2 class="text-2xl text-1 my-4">Notifications</h2>
 {{range $notification := .}}
 {{template "server-notification-edit" $notification}}

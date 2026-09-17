@@ -23,7 +23,6 @@ var templateExecutor tools.TemplateExecutor
 var templateFS embed.FS
 
 //go:embed assets/*
-//go:embed node_modules
 var staticFS embed.FS
 
 // spaFS holds the built single-page app (`npm run build` writes it to web/spa). Only

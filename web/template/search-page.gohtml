@@ -12,18 +12,18 @@
     <title>{{.Branding.Title}}</title>
 
     {{if and .VersionTag (eq .VersionTag "development")}}
-    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    <script defer src="/static/assets/vendor/alpinejs/cdn.js"></script>
     {{else}}
-    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    <script defer src="/static/assets/vendor/alpinejs/cdn.min.js"></script>
     {{end}}
-    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
-    <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+    <script defer src="/static/assets/vendor/alpinejs-persist/cdn.min.js"></script>
+    <script defer src="/static/assets/vendor/alpinejs-focus/cdn.min.js"></script>
 
     <script src="static/assets/init.js"></script>
     <script src="/static/assets/ts-dist/home.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
 
     <link rel="manifest" href="/static/assets/manifest.json">
-    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">
     <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"
