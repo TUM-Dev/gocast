@@ -33,8 +33,6 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	admins.DELETE("/lectureHall/:id", routes.deleteLectureHall)
 	admins.POST("/createLectureHall", routes.createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot)
-	admins.GET("/course-schedule", routes.getSchedule)
-	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
 	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets)
 	admins.POST("/setLectureHall", routes.setLectureHall)
 

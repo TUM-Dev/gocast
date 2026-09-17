@@ -1462,6 +1462,8 @@ const (
 	AdminService_DeleteMaintenanceTranscodingFailure_FullMethodName = "/protobuf.AdminService/deleteMaintenanceTranscodingFailure"
 	AdminService_ListMaintenanceEmailFailures_FullMethodName        = "/protobuf.AdminService/listMaintenanceEmailFailures"
 	AdminService_DeleteMaintenanceEmailFailure_FullMethodName       = "/protobuf.AdminService/deleteMaintenanceEmailFailure"
+	AdminService_SearchCourseImportSchedule_FullMethodName          = "/protobuf.AdminService/searchCourseImportSchedule"
+	AdminService_ImportCourseImportCourses_FullMethodName           = "/protobuf.AdminService/importCourseImportCourses"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1507,6 +1509,10 @@ type AdminServiceClient interface {
 	DeleteMaintenanceTranscodingFailure(ctx context.Context, in *DeleteMaintenanceTranscodingFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceEmailFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceEmailFailuresResponse, error)
 	DeleteMaintenanceEmailFailure(ctx context.Context, in *DeleteMaintenanceEmailFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
+	// course yet, so it is server-wide like runners and info pages.
+	SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error)
+	ImportCourseImportCourses(ctx context.Context, in *CourseImportRequest, opts ...grpc.CallOption) (*CourseImportResponse, error)
 }
 
 type adminServiceClient struct {
@@ -1767,6 +1773,26 @@ func (c *adminServiceClient) DeleteMaintenanceEmailFailure(ctx context.Context, 
 	return out, nil
 }
 
+func (c *adminServiceClient) SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseImportSearchResponse)
+	err := c.cc.Invoke(ctx, AdminService_SearchCourseImportSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ImportCourseImportCourses(ctx context.Context, in *CourseImportRequest, opts ...grpc.CallOption) (*CourseImportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseImportResponse)
+	err := c.cc.Invoke(ctx, AdminService_ImportCourseImportCourses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1810,6 +1836,10 @@ type AdminServiceServer interface {
 	DeleteMaintenanceTranscodingFailure(context.Context, *DeleteMaintenanceTranscodingFailureRequest) (*emptypb.Empty, error)
 	ListMaintenanceEmailFailures(context.Context, *emptypb.Empty) (*ListMaintenanceEmailFailuresResponse, error)
 	DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error)
+	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
+	// course yet, so it is server-wide like runners and info pages.
+	SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error)
+	ImportCourseImportCourses(context.Context, *CourseImportRequest) (*CourseImportResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1894,6 +1924,12 @@ func (UnimplementedAdminServiceServer) ListMaintenanceEmailFailures(context.Cont
 }
 func (UnimplementedAdminServiceServer) DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteMaintenanceEmailFailure not implemented")
+}
+func (UnimplementedAdminServiceServer) SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchCourseImportSchedule not implemented")
+}
+func (UnimplementedAdminServiceServer) ImportCourseImportCourses(context.Context, *CourseImportRequest) (*CourseImportResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportCourseImportCourses not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -2366,6 +2402,42 @@ func _AdminService_DeleteMaintenanceEmailFailure_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_SearchCourseImportSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseImportSearchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).SearchCourseImportSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_SearchCourseImportSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).SearchCourseImportSchedule(ctx, req.(*CourseImportSearchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ImportCourseImportCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseImportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ImportCourseImportCourses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ImportCourseImportCourses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ImportCourseImportCourses(ctx, req.(*CourseImportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2472,6 +2544,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteMaintenanceEmailFailure",
 			Handler:    _AdminService_DeleteMaintenanceEmailFailure_Handler,
+		},
+		{
+			MethodName: "searchCourseImportSchedule",
+			Handler:    _AdminService_SearchCourseImportSchedule_Handler,
+		},
+		{
+			MethodName: "importCourseImportCourses",
+			Handler:    _AdminService_ImportCourseImportCourses_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

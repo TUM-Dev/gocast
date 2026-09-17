@@ -132,6 +132,11 @@ var services = []service{
 			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
 			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
 			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
+
+			// Course import reaches TUMonline directly and creates courses outright;
+			// server-wide, same as runners and info pages.
+			"searchCourseImportSchedule": requires(model.PermAdministerServer),
+			"importCourseImportCourses":  requires(model.PermAdministerServer),
 		},
 	},
 }
