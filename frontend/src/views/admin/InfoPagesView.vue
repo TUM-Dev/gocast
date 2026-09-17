@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { marked } from "marked";
+import { computed, onMounted, ref } from "vue";
 
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { ApiError } from "@/lib/api";
@@ -11,6 +12,13 @@ import {
   type AdminInfoPage,
 } from "@/lib/info-pages";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
+
+// Client-side only, so it approximates but does not exactly match the server's
+// blackfriday+bluemonday rendering (see model/info-page.go); good enough to preview
+// structure and formatting while editing.
+function renderPreview(markdown: string): string {
+  return markdown.trim() ? (marked.parse(markdown, { async: false }) as string) : "";
+}
 
 /**
  * Info page management. Privacy, imprint and about are ordinary rows here, not a
@@ -36,6 +44,9 @@ const newName = ref("");
 const newContent = ref("");
 const creating = ref(false);
 const showCreateForm = ref(false);
+
+const editPreview = computed(() => renderPreview(editContent.value));
+const newPreview = computed(() => renderPreview(newContent.value));
 
 function message(err: unknown): string {
   if (err instanceof ApiError) {
@@ -184,12 +195,17 @@ async function create(): Promise<void> {
         </div>
         <div class="flex flex-col gap-1 text-sm">
           <label class="text-2" for="new-info-page-content">Content (Markdown)</label>
-          <textarea
-            id="new-info-page-content"
-            v-model="newContent"
-            rows="8"
-            class="tum-live-input font-mono text-xs"
-          ></textarea>
+          <div class="flex flex-col gap-3 md:flex-row">
+            <textarea
+              id="new-info-page-content"
+              v-model="newContent"
+              class="tum-live-input h-96 min-w-0 flex-1 resize-none font-mono text-xs"
+            ></textarea>
+            <div
+              class="tum-live-markdown tum-live-input h-96 min-w-0 flex-1 overflow-y-auto text-sm"
+              v-html="newPreview"
+            ></div>
+          </div>
         </div>
         <button
           type="submit"
@@ -257,12 +273,17 @@ async function create(): Promise<void> {
               </div>
               <div class="flex flex-col gap-1 text-sm">
                 <label class="text-2" :for="`edit-content-${page.id}`">Content (Markdown)</label>
-                <textarea
-                  :id="`edit-content-${page.id}`"
-                  v-model="editContent"
-                  rows="8"
-                  class="tum-live-input font-mono text-xs"
-                ></textarea>
+                <div class="flex flex-col gap-3 md:flex-row">
+                  <textarea
+                    :id="`edit-content-${page.id}`"
+                    v-model="editContent"
+                    class="tum-live-input h-96 min-w-0 flex-1 resize-none font-mono text-xs"
+                  ></textarea>
+                  <div
+                    class="tum-live-markdown tum-live-input h-96 min-w-0 flex-1 overflow-y-auto text-sm"
+                    v-html="editPreview"
+                  ></div>
+                </div>
               </div>
               <div class="flex gap-3">
                 <button
