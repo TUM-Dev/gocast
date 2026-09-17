@@ -51,20 +51,21 @@ const spaShellPath = "spa/index.html"
 // spa-routes.test.ts enforces that. Removing one moves the page back, but only while
 // its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
-	"/settings":                 true,
-	"/login":                    true,
-	"/":                         true,
-	"/courses/mine":             true,
-	"/courses/public":           true,
-	"/course/:year/:term/:slug": true,
-	"/admin/runners":            true,
-	"/admin/users":              true,
-	"/admin/info-pages":         true,
-	"/admin/workers":            true,
-	"/admin/maintenance":        true,
-	"/privacy":                  true,
-	"/imprint":                  true,
-	"/about":                    true,
+	"/settings":                   true,
+	"/login":                      true,
+	"/":                           true,
+	"/courses/mine":               true,
+	"/courses/public":             true,
+	"/course/:year/:term/:slug":   true,
+	"/admin/runners":              true,
+	"/admin/users":                true,
+	"/admin/info-pages":           true,
+	"/admin/workers":              true,
+	"/admin/server-notifications": true,
+	"/admin/maintenance":          true,
+	"/privacy":                    true,
+	"/imprint":                    true,
+	"/about":                      true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
