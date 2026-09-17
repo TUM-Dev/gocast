@@ -1437,17 +1437,25 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AdminService_ListRunners_FullMethodName        = "/protobuf.AdminService/listRunners"
-	AdminService_DeleteRunner_FullMethodName       = "/protobuf.AdminService/deleteRunner"
-	AdminService_ListStaff_FullMethodName          = "/protobuf.AdminService/listStaff"
-	AdminService_SearchUsers_FullMethodName        = "/protobuf.AdminService/searchUsers"
-	AdminService_CreateUser_FullMethodName         = "/protobuf.AdminService/createUser"
-	AdminService_UpdateUserRole_FullMethodName     = "/protobuf.AdminService/updateUserRole"
-	AdminService_DeleteUser_FullMethodName         = "/protobuf.AdminService/deleteUser"
-	AdminService_ListInfoPagesAdmin_FullMethodName = "/protobuf.AdminService/listInfoPagesAdmin"
-	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
-	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
-	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListRunners_FullMethodName                         = "/protobuf.AdminService/listRunners"
+	AdminService_DeleteRunner_FullMethodName                        = "/protobuf.AdminService/deleteRunner"
+	AdminService_ListStaff_FullMethodName                           = "/protobuf.AdminService/listStaff"
+	AdminService_SearchUsers_FullMethodName                         = "/protobuf.AdminService/searchUsers"
+	AdminService_CreateUser_FullMethodName                          = "/protobuf.AdminService/createUser"
+	AdminService_UpdateUserRole_FullMethodName                      = "/protobuf.AdminService/updateUserRole"
+	AdminService_DeleteUser_FullMethodName                          = "/protobuf.AdminService/deleteUser"
+	AdminService_ListInfoPagesAdmin_FullMethodName                  = "/protobuf.AdminService/listInfoPagesAdmin"
+	AdminService_CreateInfoPage_FullMethodName                      = "/protobuf.AdminService/createInfoPage"
+	AdminService_UpdateInfoPage_FullMethodName                      = "/protobuf.AdminService/updateInfoPage"
+	AdminService_DeleteInfoPage_FullMethodName                      = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_GetMaintenanceThumbnailStatus_FullMethodName       = "/protobuf.AdminService/getMaintenanceThumbnailStatus"
+	AdminService_GenerateMaintenanceThumbnails_FullMethodName       = "/protobuf.AdminService/generateMaintenanceThumbnails"
+	AdminService_ListMaintenanceCronJobs_FullMethodName             = "/protobuf.AdminService/listMaintenanceCronJobs"
+	AdminService_RunMaintenanceCronJob_FullMethodName               = "/protobuf.AdminService/runMaintenanceCronJob"
+	AdminService_ListMaintenanceTranscodingFailures_FullMethodName  = "/protobuf.AdminService/listMaintenanceTranscodingFailures"
+	AdminService_DeleteMaintenanceTranscodingFailure_FullMethodName = "/protobuf.AdminService/deleteMaintenanceTranscodingFailure"
+	AdminService_ListMaintenanceEmailFailures_FullMethodName        = "/protobuf.AdminService/listMaintenanceEmailFailures"
+	AdminService_DeleteMaintenanceEmailFailure_FullMethodName       = "/protobuf.AdminService/deleteMaintenanceEmailFailure"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1476,6 +1484,17 @@ type AdminServiceClient interface {
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Thumbnail regeneration runs in a goroutine and outlives the request that started
+	// it, so the page polls getMaintenanceThumbnailStatus the way the old page polled
+	// its own status endpoint every five seconds.
+	GetMaintenanceThumbnailStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error)
+	GenerateMaintenanceThumbnails(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error)
+	ListMaintenanceCronJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceCronJobsResponse, error)
+	RunMaintenanceCronJob(ctx context.Context, in *RunMaintenanceCronJobRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListMaintenanceTranscodingFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceTranscodingFailuresResponse, error)
+	DeleteMaintenanceTranscodingFailure(ctx context.Context, in *DeleteMaintenanceTranscodingFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListMaintenanceEmailFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceEmailFailuresResponse, error)
+	DeleteMaintenanceEmailFailure(ctx context.Context, in *DeleteMaintenanceEmailFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminServiceClient struct {
@@ -1596,6 +1615,86 @@ func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoP
 	return out, nil
 }
 
+func (c *adminServiceClient) GetMaintenanceThumbnailStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MaintenanceThumbnailStatus)
+	err := c.cc.Invoke(ctx, AdminService_GetMaintenanceThumbnailStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) GenerateMaintenanceThumbnails(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MaintenanceThumbnailStatus)
+	err := c.cc.Invoke(ctx, AdminService_GenerateMaintenanceThumbnails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListMaintenanceCronJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceCronJobsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMaintenanceCronJobsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListMaintenanceCronJobs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RunMaintenanceCronJob(ctx context.Context, in *RunMaintenanceCronJobRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_RunMaintenanceCronJob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListMaintenanceTranscodingFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceTranscodingFailuresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMaintenanceTranscodingFailuresResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListMaintenanceTranscodingFailures_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteMaintenanceTranscodingFailure(ctx context.Context, in *DeleteMaintenanceTranscodingFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteMaintenanceTranscodingFailure_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListMaintenanceEmailFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceEmailFailuresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMaintenanceEmailFailuresResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListMaintenanceEmailFailures_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteMaintenanceEmailFailure(ctx context.Context, in *DeleteMaintenanceEmailFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteMaintenanceEmailFailure_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1622,6 +1721,17 @@ type AdminServiceServer interface {
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
 	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
+	// Thumbnail regeneration runs in a goroutine and outlives the request that started
+	// it, so the page polls getMaintenanceThumbnailStatus the way the old page polled
+	// its own status endpoint every five seconds.
+	GetMaintenanceThumbnailStatus(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error)
+	GenerateMaintenanceThumbnails(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error)
+	ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error)
+	RunMaintenanceCronJob(context.Context, *RunMaintenanceCronJobRequest) (*emptypb.Empty, error)
+	ListMaintenanceTranscodingFailures(context.Context, *emptypb.Empty) (*ListMaintenanceTranscodingFailuresResponse, error)
+	DeleteMaintenanceTranscodingFailure(context.Context, *DeleteMaintenanceTranscodingFailureRequest) (*emptypb.Empty, error)
+	ListMaintenanceEmailFailures(context.Context, *emptypb.Empty) (*ListMaintenanceEmailFailuresResponse, error)
+	DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1664,6 +1774,30 @@ func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateIn
 }
 func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) GetMaintenanceThumbnailStatus(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMaintenanceThumbnailStatus not implemented")
+}
+func (UnimplementedAdminServiceServer) GenerateMaintenanceThumbnails(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error) {
+	return nil, status.Error(codes.Unimplemented, "method GenerateMaintenanceThumbnails not implemented")
+}
+func (UnimplementedAdminServiceServer) ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMaintenanceCronJobs not implemented")
+}
+func (UnimplementedAdminServiceServer) RunMaintenanceCronJob(context.Context, *RunMaintenanceCronJobRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RunMaintenanceCronJob not implemented")
+}
+func (UnimplementedAdminServiceServer) ListMaintenanceTranscodingFailures(context.Context, *emptypb.Empty) (*ListMaintenanceTranscodingFailuresResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMaintenanceTranscodingFailures not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteMaintenanceTranscodingFailure(context.Context, *DeleteMaintenanceTranscodingFailureRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteMaintenanceTranscodingFailure not implemented")
+}
+func (UnimplementedAdminServiceServer) ListMaintenanceEmailFailures(context.Context, *emptypb.Empty) (*ListMaintenanceEmailFailuresResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMaintenanceEmailFailures not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteMaintenanceEmailFailure not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -1884,6 +2018,150 @@ func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_GetMaintenanceThumbnailStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetMaintenanceThumbnailStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetMaintenanceThumbnailStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetMaintenanceThumbnailStatus(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_GenerateMaintenanceThumbnails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GenerateMaintenanceThumbnails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GenerateMaintenanceThumbnails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GenerateMaintenanceThumbnails(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListMaintenanceCronJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListMaintenanceCronJobs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListMaintenanceCronJobs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListMaintenanceCronJobs(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RunMaintenanceCronJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunMaintenanceCronJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RunMaintenanceCronJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RunMaintenanceCronJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RunMaintenanceCronJob(ctx, req.(*RunMaintenanceCronJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListMaintenanceTranscodingFailures_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListMaintenanceTranscodingFailures(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListMaintenanceTranscodingFailures_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListMaintenanceTranscodingFailures(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteMaintenanceTranscodingFailure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMaintenanceTranscodingFailureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteMaintenanceTranscodingFailure(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteMaintenanceTranscodingFailure_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteMaintenanceTranscodingFailure(ctx, req.(*DeleteMaintenanceTranscodingFailureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListMaintenanceEmailFailures_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListMaintenanceEmailFailures(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListMaintenanceEmailFailures_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListMaintenanceEmailFailures(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteMaintenanceEmailFailure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMaintenanceEmailFailureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteMaintenanceEmailFailure(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteMaintenanceEmailFailure_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteMaintenanceEmailFailure(ctx, req.(*DeleteMaintenanceEmailFailureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +2212,38 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteInfoPage",
 			Handler:    _AdminService_DeleteInfoPage_Handler,
+		},
+		{
+			MethodName: "getMaintenanceThumbnailStatus",
+			Handler:    _AdminService_GetMaintenanceThumbnailStatus_Handler,
+		},
+		{
+			MethodName: "generateMaintenanceThumbnails",
+			Handler:    _AdminService_GenerateMaintenanceThumbnails_Handler,
+		},
+		{
+			MethodName: "listMaintenanceCronJobs",
+			Handler:    _AdminService_ListMaintenanceCronJobs_Handler,
+		},
+		{
+			MethodName: "runMaintenanceCronJob",
+			Handler:    _AdminService_RunMaintenanceCronJob_Handler,
+		},
+		{
+			MethodName: "listMaintenanceTranscodingFailures",
+			Handler:    _AdminService_ListMaintenanceTranscodingFailures_Handler,
+		},
+		{
+			MethodName: "deleteMaintenanceTranscodingFailure",
+			Handler:    _AdminService_DeleteMaintenanceTranscodingFailure_Handler,
+		},
+		{
+			MethodName: "listMaintenanceEmailFailures",
+			Handler:    _AdminService_ListMaintenanceEmailFailures_Handler,
+		},
+		{
+			MethodName: "deleteMaintenanceEmailFailure",
+			Handler:    _AdminService_DeleteMaintenanceEmailFailure_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

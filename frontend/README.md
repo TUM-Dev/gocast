@@ -8,8 +8,8 @@ easily.
 Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
 `/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — the info pages —
 `/privacy`, `/imprint`, `/about` and any further page an administrator adds, at
-`/:slug` — and three administration pages, **`/admin/runners`**, **`/admin/users`**
-and **`/admin/info-pages`**.
+`/:slug` — and four administration pages, **`/admin/runners`**, **`/admin/users`**,
+**`/admin/info-pages`** and **`/admin/maintenance`**.
 
 Two things the start page had and this one does not, both waiting on the v1 API:
 
