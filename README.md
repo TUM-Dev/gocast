@@ -61,6 +61,10 @@ docker compose build && docker compose up
 ```
 Be advised that the compose file is not indented for production use as it runs everything on one machine.
 
+While developing, use `docker compose watch` (or `docker compose up --watch`) instead:
+it rebuilds and restarts the `tum-live` container automatically when Go, `web/` or
+`frontend/` source changes.
+
 If you want to get TUM-Live running natively follow these steps:
 
 ### Setup Database
