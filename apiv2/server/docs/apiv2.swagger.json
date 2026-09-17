@@ -2099,13 +2099,15 @@
     "protobufNotificationTarget": {
       "type": "string",
       "enum": [
+        "TARGET_UNSPECIFIED",
         "TARGET_ALL",
         "TARGET_USER",
         "TARGET_STUDENT",
         "TARGET_LECTURER",
         "TARGET_ADMIN"
       ],
-      "default": "TARGET_ALL"
+      "default": "TARGET_UNSPECIFIED",
+      "description": "The user group a notification is shown to. The numbers deliberately match\nmodel.NotificationTarget, which starts at 1, so the two cannot drift; proto3 needs\na zero value, and an unset target is not \"everyone\" but a bug, so it gets its own."
     },
     "protobufPinCourseResponse": {
       "type": "object",

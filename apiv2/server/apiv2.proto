@@ -1035,12 +1035,16 @@ message ServerNotification {
   google.protobuf.Timestamp expires = 4;
 }
 
+// The user group a notification is shown to. The numbers deliberately match
+// model.NotificationTarget, which starts at 1, so the two cannot drift; proto3 needs
+// a zero value, and an unset target is not "everyone" but a bug, so it gets its own.
 enum NotificationTarget {
-  TARGET_ALL = 0;
-  TARGET_USER = 1;
-  TARGET_STUDENT = 2;
-  TARGET_LECTURER = 3;
-  TARGET_ADMIN = 4;
+  TARGET_UNSPECIFIED = 0;
+  TARGET_ALL = 1;
+  TARGET_USER = 2;
+  TARGET_STUDENT = 3;
+  TARGET_LECTURER = 4;
+  TARGET_ADMIN = 5;
 }
 
 ///////////////////////////////
