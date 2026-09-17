@@ -150,31 +150,37 @@ func (VideoType) EnumDescriptor() ([]byte, []int) {
 	return file_server_apiv2_proto_rawDescGZIP(), []int{1}
 }
 
+// The user group a notification is shown to. The numbers deliberately match
+// model.NotificationTarget, which starts at 1, so the two cannot drift; proto3 needs
+// a zero value, and an unset target is not "everyone" but a bug, so it gets its own.
 type NotificationTarget int32
 
 const (
-	NotificationTarget_TARGET_ALL      NotificationTarget = 0
-	NotificationTarget_TARGET_USER     NotificationTarget = 1
-	NotificationTarget_TARGET_STUDENT  NotificationTarget = 2
-	NotificationTarget_TARGET_LECTURER NotificationTarget = 3
-	NotificationTarget_TARGET_ADMIN    NotificationTarget = 4
+	NotificationTarget_TARGET_UNSPECIFIED NotificationTarget = 0
+	NotificationTarget_TARGET_ALL         NotificationTarget = 1
+	NotificationTarget_TARGET_USER        NotificationTarget = 2
+	NotificationTarget_TARGET_STUDENT     NotificationTarget = 3
+	NotificationTarget_TARGET_LECTURER    NotificationTarget = 4
+	NotificationTarget_TARGET_ADMIN       NotificationTarget = 5
 )
 
 // Enum value maps for NotificationTarget.
 var (
 	NotificationTarget_name = map[int32]string{
-		0: "TARGET_ALL",
-		1: "TARGET_USER",
-		2: "TARGET_STUDENT",
-		3: "TARGET_LECTURER",
-		4: "TARGET_ADMIN",
+		0: "TARGET_UNSPECIFIED",
+		1: "TARGET_ALL",
+		2: "TARGET_USER",
+		3: "TARGET_STUDENT",
+		4: "TARGET_LECTURER",
+		5: "TARGET_ADMIN",
 	}
 	NotificationTarget_value = map[string]int32{
-		"TARGET_ALL":      0,
-		"TARGET_USER":     1,
-		"TARGET_STUDENT":  2,
-		"TARGET_LECTURER": 3,
-		"TARGET_ADMIN":    4,
+		"TARGET_UNSPECIFIED": 0,
+		"TARGET_ALL":         1,
+		"TARGET_USER":        2,
+		"TARGET_STUDENT":     3,
+		"TARGET_LECTURER":    4,
+		"TARGET_ADMIN":       5,
 	}
 )
 
@@ -4185,7 +4191,7 @@ func (x *UserGroupNotification) GetTarget() NotificationTarget {
 	if x != nil {
 		return x.Target
 	}
-	return NotificationTarget_TARGET_ALL
+	return NotificationTarget_TARGET_UNSPECIFIED
 }
 
 func (x *UserGroupNotification) GetCreatedAt() *timestamppb.Timestamp {
@@ -5364,14 +5370,15 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\tVideoType\x12\b\n" +
 	"\x04COMB\x10\x00\x12\b\n" +
 	"\x04PRES\x10\x01\x12\a\n" +
-	"\x03CAM\x10\x02*p\n" +
-	"\x12NotificationTarget\x12\x0e\n" +
+	"\x03CAM\x10\x02*\x88\x01\n" +
+	"\x12NotificationTarget\x12\x16\n" +
+	"\x12TARGET_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
-	"TARGET_ALL\x10\x00\x12\x0f\n" +
-	"\vTARGET_USER\x10\x01\x12\x12\n" +
-	"\x0eTARGET_STUDENT\x10\x02\x12\x13\n" +
-	"\x0fTARGET_LECTURER\x10\x03\x12\x10\n" +
-	"\fTARGET_ADMIN\x10\x042\xd3\r\n" +
+	"TARGET_ALL\x10\x01\x12\x0f\n" +
+	"\vTARGET_USER\x10\x02\x12\x12\n" +
+	"\x0eTARGET_STUDENT\x10\x03\x12\x13\n" +
+	"\x0fTARGET_LECTURER\x10\x04\x12\x10\n" +
+	"\fTARGET_ADMIN\x10\x052\xd3\r\n" +
 	"\vMetaService\x12\xce\x01\n" +
 	"\vhealthCheck\x12\x16.google.protobuf.Empty\x1a\x1d.protobuf.HealthCheckResponse\"\x87\x01\x92Au\n" +
 	"\n" +
