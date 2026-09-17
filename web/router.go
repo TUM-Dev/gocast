@@ -36,12 +36,21 @@ var spaFS embed.FS
 // client router decides what to render.
 const spaShellPath = "spa/index.html"
 
-// spaRoutes lists the paths served by the SPA instead of a template. Adding a path
-// moves one page across; it must also exist in frontend/src/router/index.ts or the
-// shell loads and renders nothing.
+// The URL grammar for /admin. gin panics when two parameters with different names
+// share a position, so these shapes are effectively permanent once a sibling exists.
 //
-// Removing a path moves the page back, but only while its template handler is still
-// registered — see registerPage.
+//  1. Kebab-case: /admin/lecture-halls. The old spellings redirect.
+//  2. Plural collections: /admin/courses/:courseID.
+//  3. Lectures nest: /admin/courses/:courseID/lectures/:streamID/{units,cut,stats,live}.
+//  4. In-page tabs are child routes, not component state.
+//
+// Rules 2 and 3 do not hold for the server-rendered pages yet; each is normalized as
+// it migrates, gaining a redirect beside the two below.
+
+// spaRoutes lists the paths served by the SPA instead of a template. A path here must
+// also exist in frontend/src/router/index.ts or the browser reloads forever;
+// spa-routes.test.ts enforces that. Removing one moves the page back, but only while
+// its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
 	"/settings":                 true,
 	"/login":                    true,
@@ -49,6 +58,8 @@ var spaRoutes = map[string]bool{
 	"/courses/mine":             true,
 	"/courses/public":           true,
 	"/course/:year/:term/:slug": true,
+	"/admin/runners":            true,
+	"/admin/users":              true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -242,6 +253,13 @@ func newStartPage(router *gin.Engine, routes *mainRoutes) {
 	router.GET("/semester/:year/:term", routes.semesterRedirect)
 }
 
+// redirectTo permanently redirects a renamed path, for bookmarks and shared links.
+func redirectTo(path string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, path)
+	}
+}
+
 func configMainRoute(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
@@ -273,14 +291,14 @@ func configMainRoute(router *gin.Engine) {
 	// the distinction is what makes an operator role a change to the role table.
 	serverAdminGroup := router.Group("/")
 	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
-	serverAdminGroup.GET("/admin/lectureHalls", routes.AdminPage)
-	serverAdminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
+	serverAdminGroup.GET("/admin/lecture-halls", routes.AdminPage)
+	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
 	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
-	serverAdminGroup.GET("/admin/runners", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
 	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
-	serverAdminGroup.GET("/admin/infopages", routes.AdminPage)
+	serverAdminGroup.GET("/admin/info-pages", routes.AdminPage)
 	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
 	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
@@ -289,8 +307,18 @@ func configMainRoute(router *gin.Engine) {
 	// same permission.
 	userAdminGroup := router.Group("/")
 	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
-	userAdminGroup.GET("/admin/users", routes.AdminPage)
+	registerPage(userAdminGroup, http.MethodGet, "/admin/users", nil)
 	userAdminGroup.GET("/admin/token", routes.AdminPage)
+
+	// Outside the permission groups: a redirect reveals nothing, and the destination
+	// does the checking.
+	for from, to := range map[string]string{
+		"/admin/lectureHalls":     "/admin/lecture-halls",
+		"/admin/lectureHalls/new": "/admin/lecture-halls/new",
+		"/admin/infopages":        "/admin/info-pages",
+	} {
+		router.GET(from, redirectTo(to))
+	}
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
