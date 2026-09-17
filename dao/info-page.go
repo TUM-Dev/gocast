@@ -12,7 +12,11 @@ type InfoPageDao interface {
 	New(*model.InfoPage) error
 	GetAll() ([]model.InfoPage, error)
 	GetById(uint) (model.InfoPage, error)
+	// GetBySlug uses First, so a missing slug comes back as gorm.ErrRecordNotFound
+	// rather than a zero-valued page: callers need to tell "no such page" from "found".
+	GetBySlug(string) (model.InfoPage, error)
 	Update(uint, *model.InfoPage) error
+	Delete(uint) error
 }
 
 type infoPageDao struct {
@@ -37,6 +41,15 @@ func (d infoPageDao) GetById(id uint) (page model.InfoPage, err error) {
 	return page, err
 }
 
+func (d infoPageDao) GetBySlug(slug string) (page model.InfoPage, err error) {
+	err = DB.First(&page, "slug = ?", slug).Error
+	return page, err
+}
+
 func (d infoPageDao) Update(id uint, page *model.InfoPage) error {
 	return DB.Model(&model.InfoPage{}).Where("id = ?", id).Updates(page).Error
+}
+
+func (d infoPageDao) Delete(id uint) error {
+	return DB.Delete(&model.InfoPage{}, id).Error
 }

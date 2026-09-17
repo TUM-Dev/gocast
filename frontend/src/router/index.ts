@@ -9,7 +9,10 @@ import {
 import { singleQueryParam } from "@/lib/route-query";
 import CourseView from "@/views/CourseView.vue";
 import HomeView from "@/views/HomeView.vue";
+import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
+import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
+import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import MyCoursesView from "@/views/MyCoursesView.vue";
@@ -81,6 +84,27 @@ const routes: RouteRecordRaw[] = [
     name: "settings",
     component: SettingsView,
   },
+  // The three built-in pages keep their own routes rather than falling under
+  // "/:slug" below, so their URLs are unaffected by whatever an administrator does
+  // to the dynamic ones. Anonymous because nothing on these pages is per-user.
+  ...(["privacy", "imprint", "about"] as const).map(
+    (name): RouteRecordRaw => ({
+      path: `/${name}`,
+      name,
+      component: InfoPageView,
+      props: { name },
+      meta: { minimalHeader: true, anonymous: true },
+    }),
+  ),
+  {
+    // Any further info page an administrator has added. Static routes above and in
+    // this array outrank a dynamic segment, so this only ever catches a path nothing
+    // more specific claims; see InfoPageDynamicView for what happens next.
+    path: "/:slug",
+    name: "info-page",
+    component: InfoPageDynamicView,
+    meta: { minimalHeader: true, anonymous: true },
+  },
   {
     // The administration pages, migrating one at a time. Each is registered in
     // web/router.go inside the permission group that guards it, so an unauthorized
@@ -93,6 +117,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/users",
     name: "admin-users",
     component: UsersView,
+  },
+  {
+    path: "/admin/info-pages",
+    name: "admin-info-pages",
+    component: InfoPagesView,
   },
   {
     path: "/login",

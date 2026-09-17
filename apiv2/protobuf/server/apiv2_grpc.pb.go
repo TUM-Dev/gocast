@@ -26,6 +26,8 @@ const (
 	MetaService_GetSemesters_FullMethodName           = "/protobuf.MetaService/getSemesters"
 	MetaService_GetNotifications_FullMethodName       = "/protobuf.MetaService/getNotifications"
 	MetaService_GetServerNotifications_FullMethodName = "/protobuf.MetaService/getServerNotifications"
+	MetaService_GetInfoPage_FullMethodName            = "/protobuf.MetaService/getInfoPage"
+	MetaService_ListInfoPages_FullMethodName          = "/protobuf.MetaService/listInfoPages"
 )
 
 // MetaServiceClient is the client API for MetaService service.
@@ -39,6 +41,8 @@ type MetaServiceClient interface {
 	GetSemesters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSemestersResponse, error)
 	GetNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNotificationsResponse, error)
 	GetServerNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServerNotificationsResponse, error)
+	GetInfoPage(ctx context.Context, in *GetInfoPageRequest, opts ...grpc.CallOption) (*GetInfoPageResponse, error)
+	ListInfoPages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListInfoPagesResponse, error)
 }
 
 type metaServiceClient struct {
@@ -99,6 +103,26 @@ func (c *metaServiceClient) GetServerNotifications(ctx context.Context, in *empt
 	return out, nil
 }
 
+func (c *metaServiceClient) GetInfoPage(ctx context.Context, in *GetInfoPageRequest, opts ...grpc.CallOption) (*GetInfoPageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetInfoPageResponse)
+	err := c.cc.Invoke(ctx, MetaService_GetInfoPage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metaServiceClient) ListInfoPages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListInfoPagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListInfoPagesResponse)
+	err := c.cc.Invoke(ctx, MetaService_ListInfoPages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetaServiceServer is the server API for MetaService service.
 // All implementations must embed UnimplementedMetaServiceServer
 // for forward compatibility.
@@ -110,6 +134,8 @@ type MetaServiceServer interface {
 	GetSemesters(context.Context, *emptypb.Empty) (*GetSemestersResponse, error)
 	GetNotifications(context.Context, *emptypb.Empty) (*GetNotificationsResponse, error)
 	GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error)
+	GetInfoPage(context.Context, *GetInfoPageRequest) (*GetInfoPageResponse, error)
+	ListInfoPages(context.Context, *emptypb.Empty) (*ListInfoPagesResponse, error)
 	mustEmbedUnimplementedMetaServiceServer()
 }
 
@@ -134,6 +160,12 @@ func (UnimplementedMetaServiceServer) GetNotifications(context.Context, *emptypb
 }
 func (UnimplementedMetaServiceServer) GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetServerNotifications not implemented")
+}
+func (UnimplementedMetaServiceServer) GetInfoPage(context.Context, *GetInfoPageRequest) (*GetInfoPageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInfoPage not implemented")
+}
+func (UnimplementedMetaServiceServer) ListInfoPages(context.Context, *emptypb.Empty) (*ListInfoPagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInfoPages not implemented")
 }
 func (UnimplementedMetaServiceServer) mustEmbedUnimplementedMetaServiceServer() {}
 func (UnimplementedMetaServiceServer) testEmbeddedByValue()                     {}
@@ -246,6 +278,42 @@ func _MetaService_GetServerNotifications_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetaService_GetInfoPage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInfoPageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).GetInfoPage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetaService_GetInfoPage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).GetInfoPage(ctx, req.(*GetInfoPageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetaService_ListInfoPages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).ListInfoPages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetaService_ListInfoPages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).ListInfoPages(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetaService_ServiceDesc is the grpc.ServiceDesc for MetaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -272,6 +340,14 @@ var MetaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getServerNotifications",
 			Handler:    _MetaService_GetServerNotifications_Handler,
+		},
+		{
+			MethodName: "getInfoPage",
+			Handler:    _MetaService_GetInfoPage_Handler,
+		},
+		{
+			MethodName: "listInfoPages",
+			Handler:    _MetaService_ListInfoPages_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1361,13 +1437,17 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AdminService_ListRunners_FullMethodName    = "/protobuf.AdminService/listRunners"
-	AdminService_DeleteRunner_FullMethodName   = "/protobuf.AdminService/deleteRunner"
-	AdminService_ListStaff_FullMethodName      = "/protobuf.AdminService/listStaff"
-	AdminService_SearchUsers_FullMethodName    = "/protobuf.AdminService/searchUsers"
-	AdminService_CreateUser_FullMethodName     = "/protobuf.AdminService/createUser"
-	AdminService_UpdateUserRole_FullMethodName = "/protobuf.AdminService/updateUserRole"
-	AdminService_DeleteUser_FullMethodName     = "/protobuf.AdminService/deleteUser"
+	AdminService_ListRunners_FullMethodName        = "/protobuf.AdminService/listRunners"
+	AdminService_DeleteRunner_FullMethodName       = "/protobuf.AdminService/deleteRunner"
+	AdminService_ListStaff_FullMethodName          = "/protobuf.AdminService/listStaff"
+	AdminService_SearchUsers_FullMethodName        = "/protobuf.AdminService/searchUsers"
+	AdminService_CreateUser_FullMethodName         = "/protobuf.AdminService/createUser"
+	AdminService_UpdateUserRole_FullMethodName     = "/protobuf.AdminService/updateUserRole"
+	AdminService_DeleteUser_FullMethodName         = "/protobuf.AdminService/deleteUser"
+	AdminService_ListInfoPagesAdmin_FullMethodName = "/protobuf.AdminService/listInfoPagesAdmin"
+	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
+	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
+	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1392,6 +1472,10 @@ type AdminServiceClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*UserSummary, error)
 	UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UserSummary, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListInfoPagesAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListInfoPagesAdminResponse, error)
+	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
+	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
+	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminServiceClient struct {
@@ -1472,6 +1556,46 @@ func (c *adminServiceClient) DeleteUser(ctx context.Context, in *DeleteUserReque
 	return out, nil
 }
 
+func (c *adminServiceClient) ListInfoPagesAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListInfoPagesAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListInfoPagesAdminResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListInfoPagesAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InfoPage)
+	err := c.cc.Invoke(ctx, AdminService_CreateInfoPage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InfoPage)
+	err := c.cc.Invoke(ctx, AdminService_UpdateInfoPage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteInfoPage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1494,6 +1618,10 @@ type AdminServiceServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*UserSummary, error)
 	UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*UserSummary, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
+	ListInfoPagesAdmin(context.Context, *emptypb.Empty) (*ListInfoPagesAdminResponse, error)
+	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
+	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
+	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1524,6 +1652,18 @@ func (UnimplementedAdminServiceServer) UpdateUserRole(context.Context, *UpdateUs
 }
 func (UnimplementedAdminServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (UnimplementedAdminServiceServer) ListInfoPagesAdmin(context.Context, *emptypb.Empty) (*ListInfoPagesAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInfoPagesAdmin not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -1672,6 +1812,78 @@ func _AdminService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListInfoPagesAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListInfoPagesAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListInfoPagesAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListInfoPagesAdmin(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_CreateInfoPage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateInfoPageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateInfoPage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateInfoPage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateInfoPage(ctx, req.(*CreateInfoPageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_UpdateInfoPage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateInfoPageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).UpdateInfoPage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_UpdateInfoPage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).UpdateInfoPage(ctx, req.(*UpdateInfoPageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteInfoPageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteInfoPage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteInfoPage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteInfoPage(ctx, req.(*DeleteInfoPageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1706,6 +1918,22 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteUser",
 			Handler:    _AdminService_DeleteUser_Handler,
+		},
+		{
+			MethodName: "listInfoPagesAdmin",
+			Handler:    _AdminService_ListInfoPagesAdmin_Handler,
+		},
+		{
+			MethodName: "createInfoPage",
+			Handler:    _AdminService_CreateInfoPage_Handler,
+		},
+		{
+			MethodName: "updateInfoPage",
+			Handler:    _AdminService_UpdateInfoPage_Handler,
+		},
+		{
+			MethodName: "deleteInfoPage",
+			Handler:    _AdminService_DeleteInfoPage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

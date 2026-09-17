@@ -1117,3 +1117,40 @@ VALUES
    DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY)),
   (2,NOW(),NOW(),'Livestreams können heute unterbrochen sein.',1,
    DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY));
+
+--
+-- info_pages is not in the 2022 schema -- auto-migration creates it on boot -- so the
+-- fixture has to create it before it can fill it.
+--
+CREATE TABLE IF NOT EXISTS `info_pages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `deleted_at` datetime(3) DEFAULT NULL,
+  `slug` longtext NOT NULL,
+  `name` longtext NOT NULL,
+  `raw_content` longtext NOT NULL,
+  `type` bigint(20) unsigned NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_info_pages_slug` (`slug`(255)),
+  KEY `idx_info_pages_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- The three built-in info pages, plus a fourth to prove a page an administrator adds
+-- works the same way. Ids are fixed; `name` is the editable title, deliberately
+-- independent of `slug`, which getInfoPage keys on.
+--
+-- Type 1 is Markdown. Privacy carries a script tag and an inline handler, so the
+-- server's sanitiser has something to strip.
+--
+INSERT INTO `info_pages` (`id`,`created_at`,`updated_at`,`slug`,`name`,`raw_content`,`type`)
+VALUES
+  (1,NOW(),NOW(),'privacy','Privacy Policy',
+   '# Privacy\n\nWe keep what we must and no more.\n\n<script>alert(1)</script>\n<img src=x onerror="alert(2)">\n\n- Lecture recordings\n- Watch progress\n',1),
+  (2,NOW(),NOW(),'imprint','Imprint',
+   '# Imprint\n\nTechnische Universität München\n\nResponsible for content: RBG.\n',1),
+  (3,NOW(),NOW(),'about','About',
+   '# About\n\nGoCast is the lecture streaming platform of the TUM.\n\n[Source](https://github.com/TUM-Dev/gocast)\n',1),
+  (4,NOW(),NOW(),'accessibility','Accessibility',
+   '# Accessibility\n\nThis page was added by an administrator after the deployment went live, to show that a new info page needs no code change.\n',1);

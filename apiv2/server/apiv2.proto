@@ -97,6 +97,31 @@ service MetaService {
       description: "Retrieves current server notifications."
     };
   }
+
+  rpc getInfoPage(GetInfoPageRequest) returns (GetInfoPageResponse) {
+    option (google.api.http) = {get: "/info-pages/{name}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Info Pages"
+      summary: "Get an info page."
+      description:
+        "Returns an info page - the privacy policy, imprint, about page, "
+        "or any further page an administrator has added - as sanitised "
+        "HTML. Public: these are pages a visitor reads before deciding to "
+        "sign in."
+    };
+  }
+
+  rpc listInfoPages(google.protobuf.Empty) returns (ListInfoPagesResponse) {
+    option (google.api.http) = {get: "/info-pages"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Info Pages"
+      summary: "List the available info pages."
+      description:
+        "Retrieves every info page's slug and title, without its content. "
+        "Public, so a client can find pages an administrator has added "
+        "without a redeploy."
+    };
+  }
 }
 
 // The signed-in user's own account, and the endpoints the login page needs
@@ -411,6 +436,48 @@ service AdminService {
       description: "Deletes an account. Administrators cannot be deleted. Requires the users.manage permission."
     };
   }
+
+  rpc listInfoPagesAdmin(google.protobuf.Empty) returns (ListInfoPagesAdminResponse) {
+    option (google.api.http) = {get: "/admin/info-pages"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Info Pages"
+      summary: "List every info page for administration."
+      description: "Retrieves every info page with its raw content, for editing. Requires the server.administer permission."
+    };
+  }
+
+  rpc createInfoPage(CreateInfoPageRequest) returns (InfoPage) {
+    option (google.api.http) = {
+      post: "/admin/info-pages"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Info Pages"
+      summary: "Create an info page."
+      description: "Creates a page reachable at /{slug} once created, without a redeploy. The slug must be unique. Requires the server.administer permission."
+    };
+  }
+
+  rpc updateInfoPage(UpdateInfoPageRequest) returns (InfoPage) {
+    option (google.api.http) = {
+      patch: "/admin/info-pages/{id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Info Pages"
+      summary: "Update an info page."
+      description: "Replaces an info page's slug, title and content. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteInfoPage(DeleteInfoPageRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/info-pages/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Info Pages"
+      summary: "Delete an info page."
+      description: "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -437,6 +504,66 @@ message GetFrontendConfigResponse {
   // isFreshInstallation reports that the database holds no users yet, so the
   // frontend can offer to create the first account instead of a login form.
   bool is_fresh_installation = 5;
+}
+
+// The name is the page's route -- its slug, e.g. "privacy" -- not the editable title
+// stored beside its content.
+message GetInfoPageRequest {
+  string name = 1;
+}
+
+message GetInfoPageResponse {
+  // name echoes the requested route name.
+  string name = 1;
+  // Rendered from Markdown and sanitised server-side; the client must not do it again.
+  string content = 2;
+}
+
+message ListInfoPagesResponse {
+  repeated InfoPageSummary pages = 1;
+}
+
+// InfoPageSummary is what a visitor is told exists, before asking for one by slug.
+message InfoPageSummary {
+  string slug = 1;
+  string name = 2;
+}
+
+///////////////////////////////
+///// INFO_PAGE_ADMIN_MESSAGE //
+///////////////////////////////
+
+// InfoPage is a page as an administrator edits it, with its raw, unrendered content.
+message InfoPage {
+  uint32 id = 1;
+  // The page's route and API key. Unique; a client should treat changing it as
+  // renaming the page's URL, not merely relabeling it.
+  string slug = 2;
+  // The editable display title, shown to administrators managing the page. Not
+  // rendered on the page itself, which opens with its own Markdown heading.
+  string name = 3;
+  string raw_content = 4;
+}
+
+message ListInfoPagesAdminResponse {
+  repeated InfoPage pages = 1;
+}
+
+message CreateInfoPageRequest {
+  string slug = 1;
+  string name = 2;
+  string raw_content = 3;
+}
+
+message UpdateInfoPageRequest {
+  uint32 id = 1;
+  string slug = 2;
+  string name = 3;
+  string raw_content = 4;
+}
+
+message DeleteInfoPageRequest {
+  uint32 id = 1;
 }
 
 ///////////////////////////////

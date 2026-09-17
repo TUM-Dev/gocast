@@ -277,3 +277,21 @@ export const runners = {
   alpha: { hostname: "runner-alpha", version: "1.4.2", jobCount: 2, draining: false },
   beta: { hostname: "runner-beta", version: "1.3.0", jobCount: 0, draining: true },
 } as const;
+
+/**
+ * The three info pages. `title` is the editable `name` column, deliberately unlike the
+ * route; `heading` is the Markdown's own h1. Privacy's source carries XSS to be stripped.
+ */
+export const infoPages = {
+  privacy: { title: "Privacy Policy", heading: "Privacy" },
+  imprint: { title: "Imprint", heading: "Imprint" },
+  about: { title: "About", heading: "About" },
+} as const;
+
+export type InfoPageKey = keyof typeof infoPages;
+
+/**
+ * A fourth page, seeded to prove one an administrator adds after the built-in three
+ * works the same way: reachable at its slug with no route of its own in the frontend.
+ */
+export const dynamicInfoPage = { slug: "accessibility", title: "Accessibility", heading: "Accessibility" } as const;
