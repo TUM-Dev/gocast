@@ -14,11 +14,8 @@ type migrator struct {
 
 // RunBefore executes migrations before the auto-migration
 func (m migrator) RunBefore(db *gorm.DB) error {
-	// comment in when needed
-	/*log.Println("Running migrations before auto-migration")
 	mig := gormigrate.New(db, gormigrate.DefaultOptions, m.migrationsBeforeAutoMigrate)
-	return mig.Migrate()*/
-	return nil
+	return mig.Migrate()
 }
 
 // RunAfter executes migrations after the auto-migration
@@ -29,7 +26,9 @@ func (m migrator) RunAfter(db *gorm.DB) error {
 
 func newMigrator() *migrator {
 	return &migrator{
-		migrationsBeforeAutoMigrate: []*gormigrate.Migration{},
+		migrationsBeforeAutoMigrate: []*gormigrate.Migration{
+			migrations.Migrate202609170(),
+		},
 		migrationsAfterAutoMigrate: []*gormigrate.Migration{
 			migrations.Migrate202210080(),
 			migrations.Migrate202201280(),
