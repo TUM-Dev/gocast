@@ -19,9 +19,12 @@ test.describe("info pages", () => {
         page.getByRole("heading", { name: infoPages[name].heading, level: 1 }),
       ).toBeVisible();
 
-      // The logo-only header the server-rendered page had: no search, no user menu.
+      // The full header nav, not the logo-only chrome these pages had before, which
+      // made it hard to navigate away. Empty rather than a Login link: these routes
+      // are anonymous, so App.vue never calls auth.load() on them.
       await expect(page.locator("#logo")).toBeVisible();
-      await expect(page.locator("#user-context")).toHaveCount(0);
+      await expect(page.locator("#user-context")).toHaveCount(1);
+      await expect(page.locator("#user-context")).toBeEmpty();
     });
   }
 
