@@ -60,6 +60,8 @@ var spaRoutes = map[string]bool{
 	"/admin/runners":            true,
 	"/admin/users":              true,
 	"/admin/info-pages":         true,
+	"/admin/lecture-halls":      true,
+	"/admin/lecture-halls/new":  true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
@@ -294,8 +296,8 @@ func configMainRoute(router *gin.Engine) {
 	// the distinction is what makes an operator role a change to the role table.
 	serverAdminGroup := router.Group("/")
 	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
-	serverAdminGroup.GET("/admin/lecture-halls", routes.AdminPage)
-	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls/new", nil)
 	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)

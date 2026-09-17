@@ -24,7 +24,12 @@ interface AdminLink {
 
 const administration: AdminLink[] = [
   { label: "Users", path: "/admin/users", permission: "users.manage", migrated: true },
-  { label: "Lecture Halls", path: "/admin/lecture-halls", permission: "server.administer" },
+  {
+    label: "Lecture Halls",
+    path: "/admin/lecture-halls",
+    permission: "server.administer",
+    migrated: true,
+  },
   { label: "Workers", path: "/admin/workers", permission: "server.administer" },
   { label: "Runners", path: "/admin/runners", permission: "server.administer", migrated: true },
   {
