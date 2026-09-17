@@ -35,6 +35,7 @@ const newSlug = ref("");
 const newName = ref("");
 const newContent = ref("");
 const creating = ref(false);
+const showCreateForm = ref(false);
 
 function message(err: unknown): string {
   if (err instanceof ApiError) {
@@ -128,6 +129,7 @@ async function create(): Promise<void> {
     newSlug.value = "";
     newName.value = "";
     newContent.value = "";
+    showCreateForm.value = false;
   } catch (err) {
     error.value = message(err);
   } finally {
@@ -138,92 +140,23 @@ async function create(): Promise<void> {
 
 <template>
   <AdminLayout>
-    <section class="mx-auto flex max-w-3xl flex-col gap-4">
-      <h1 class="text-1 text-2xl font-bold">Info Pages</h1>
-
-      <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
-        {{ error }}
-      </p>
-      <p v-else-if="status" class="text-5 text-sm" role="status">{{ status }}</p>
-
-      <p v-if="loading" class="text-5 text-sm">Loading info pages…</p>
-      <p v-else-if="!pages.length" class="text-5 text-sm">No info pages yet.</p>
-
-      <ul v-else class="flex flex-col gap-3">
-        <li
-          v-for="page in pages"
-          :key="page.id"
-          class="rounded-lg border p-4 dark:border-gray-800"
+    <section class="flex w-full flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <h1 class="text-1 text-2xl font-bold">Info Pages</h1>
+        <button
+          type="button"
+          class="tum-live-button-primary px-4 py-2 text-sm"
+          @click="showCreateForm = !showCreateForm"
         >
-          <div v-if="editingId !== page.id" class="flex items-center justify-between gap-4">
-            <div>
-              <p class="text-1 font-semibold">{{ page.name }}</p>
-              <p class="text-5 text-sm">/{{ page.slug }}</p>
-            </div>
-            <div class="flex items-center gap-4">
-              <button
-                type="button"
-                class="text-5 hover:text-1"
-                :title="`Edit ${page.name}`"
-                :aria-label="`Edit ${page.name}`"
-                @click="edit(page)"
-              >
-                <i class="fas fa-pen"></i>
-              </button>
-              <button
-                type="button"
-                class="text-5 hover:text-1"
-                :title="`Delete ${page.name}`"
-                :aria-label="`Delete ${page.name}`"
-                @click="remove(page)"
-              >
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
+          {{ showCreateForm ? "Cancel" : "Add page" }}
+        </button>
+      </div>
 
-          <form v-else class="flex flex-col gap-3" @submit.prevent="saveEdit(page)">
-            <div class="flex flex-wrap gap-3">
-              <div class="flex flex-1 flex-col gap-1 text-sm">
-                <label class="text-2" :for="`edit-name-${page.id}`">Title</label>
-                <input :id="`edit-name-${page.id}`" v-model="editName" class="tum-live-input" />
-              </div>
-              <div class="flex flex-1 flex-col gap-1 text-sm">
-                <label class="text-2" :for="`edit-slug-${page.id}`">Slug</label>
-                <input :id="`edit-slug-${page.id}`" v-model="editSlug" class="tum-live-input" />
-              </div>
-            </div>
-            <div class="flex flex-col gap-1 text-sm">
-              <label class="text-2" :for="`edit-content-${page.id}`">Content (Markdown)</label>
-              <textarea
-                :id="`edit-content-${page.id}`"
-                v-model="editContent"
-                rows="8"
-                class="tum-live-input font-mono text-xs"
-              ></textarea>
-            </div>
-            <div class="flex gap-3">
-              <button
-                type="submit"
-                class="tum-live-input-submit tum-live-button-primary px-4 py-2 text-sm"
-                :disabled="saving || !editName.trim() || !editSlug.trim()"
-              >
-                {{ saving ? "Saving…" : "Save" }}
-              </button>
-              <button
-                type="button"
-                class="text-5 px-4 py-2 text-sm"
-                :disabled="saving"
-                @click="cancelEdit"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </li>
-      </ul>
-
-      <form class="flex flex-col gap-3 rounded-lg border p-4 dark:border-gray-800" @submit.prevent="create">
+      <form
+        v-if="showCreateForm"
+        class="flex flex-col gap-3 rounded-lg border p-4 dark:border-gray-800"
+        @submit.prevent="create"
+      >
         <h2 class="text-1 font-semibold">New info page</h2>
         <p class="text-5 text-sm">
           Reachable at /{slug} as soon as it is created — no deploy needed.
@@ -266,6 +199,103 @@ async function create(): Promise<void> {
           {{ creating ? "Creating…" : "Create" }}
         </button>
       </form>
+
+      <Transition name="fade" mode="out-in">
+        <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
+          {{ error }}
+        </p>
+        <p v-else-if="status" class="text-5 text-sm" role="status">{{ status }}</p>
+      </Transition>
+
+      <div class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800">
+        <p v-if="loading" class="text-5 text-sm">Loading info pages…</p>
+        <p v-else-if="!pages.length" class="text-5 text-sm">No info pages yet.</p>
+
+        <ul v-else class="flex flex-col gap-3">
+          <li
+            v-for="page in pages"
+            :key="page.id"
+            class="rounded-lg border p-4 dark:border-gray-800"
+          >
+            <div v-if="editingId !== page.id" class="flex items-center justify-between gap-4">
+              <div>
+                <p class="text-1 font-semibold">{{ page.name }}</p>
+                <p class="text-5 text-sm">/{{ page.slug }}</p>
+              </div>
+              <div class="flex items-center gap-4">
+                <button
+                  type="button"
+                  class="text-5 hover:text-1"
+                  :title="`Edit ${page.name}`"
+                  :aria-label="`Edit ${page.name}`"
+                  @click="edit(page)"
+                >
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button
+                  type="button"
+                  class="text-5 hover:text-1"
+                  :title="`Delete ${page.name}`"
+                  :aria-label="`Delete ${page.name}`"
+                  @click="remove(page)"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <form v-else class="flex flex-col gap-3" @submit.prevent="saveEdit(page)">
+              <div class="flex flex-wrap gap-3">
+                <div class="flex flex-1 flex-col gap-1 text-sm">
+                  <label class="text-2" :for="`edit-name-${page.id}`">Title</label>
+                  <input :id="`edit-name-${page.id}`" v-model="editName" class="tum-live-input" />
+                </div>
+                <div class="flex flex-1 flex-col gap-1 text-sm">
+                  <label class="text-2" :for="`edit-slug-${page.id}`">Slug</label>
+                  <input :id="`edit-slug-${page.id}`" v-model="editSlug" class="tum-live-input" />
+                </div>
+              </div>
+              <div class="flex flex-col gap-1 text-sm">
+                <label class="text-2" :for="`edit-content-${page.id}`">Content (Markdown)</label>
+                <textarea
+                  :id="`edit-content-${page.id}`"
+                  v-model="editContent"
+                  rows="8"
+                  class="tum-live-input font-mono text-xs"
+                ></textarea>
+              </div>
+              <div class="flex gap-3">
+                <button
+                  type="submit"
+                  class="tum-live-input-submit tum-live-button-primary px-4 py-2 text-sm"
+                  :disabled="saving || !editName.trim() || !editSlug.trim()"
+                >
+                  {{ saving ? "Saving…" : "Save" }}
+                </button>
+                <button
+                  type="button"
+                  class="text-5 px-4 py-2 text-sm"
+                  :disabled="saving"
+                  @click="cancelEdit"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </li>
+        </ul>
+      </div>
     </section>
   </AdminLayout>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
