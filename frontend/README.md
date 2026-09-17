@@ -6,8 +6,10 @@ which one answers, so pages move over one at a time and can be moved back just a
 easily.
 
 Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
-`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — and two
-administration pages, **`/admin/runners`** and **`/admin/users`**.
+`/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — the info pages —
+`/privacy`, `/imprint`, `/about` and any further page an administrator adds, at
+`/:slug` — and three administration pages, **`/admin/runners`**, **`/admin/users`**
+and **`/admin/info-pages`**.
 
 Two things the start page had and this one does not, both waiting on the v1 API:
 

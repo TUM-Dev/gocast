@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { infoPages, type InfoPageKey } from "./seed";
+import { dynamicInfoPage, infoPages, type InfoPageKey } from "./seed";
 
 /**
  * Covers what a stubbed component test cannot: that the server really renders and
@@ -53,5 +53,38 @@ test.describe("info pages", () => {
   test("needs no token", async ({ request }) => {
     const response = await request.get("/api/v2/info-pages/about");
     expect(response.status()).toBe(200);
+  });
+
+  test("the list endpoint names every page, including one added after the built-in three", async ({
+    request,
+  }) => {
+    const response = await request.get("/api/v2/info-pages");
+    expect(response.status()).toBe(200);
+
+    const body = (await response.json()) as { pages: { slug: string; name: string }[] };
+    const slugs = body.pages.map((page) => page.slug);
+    expect(slugs).toEqual(expect.arrayContaining([...names, dynamicInfoPage.slug]));
+    // Public, so it must not leak unrendered content ahead of getInfoPage.
+    expect(body.pages[0]).not.toHaveProperty("rawContent");
+  });
+
+  test("a page added after the built-in three is reachable at its slug with no route of its own", async ({
+    page,
+  }) => {
+    await page.goto(`/${dynamicInfoPage.slug}`);
+
+    await expect(
+      page.getByRole("heading", { name: dynamicInfoPage.heading, level: 1 }),
+    ).toBeVisible();
+  });
+
+  test("a path that is not a real info page still falls through to Go's own 404", async ({
+    page,
+  }) => {
+    // web/course.go's shortLinkOrInfoPage checks the same table before falling back to
+    // a course short link, so an unknown single-segment path is not swallowed by the SPA.
+    await page.goto("/this-page-does-not-exist");
+
+    await expect(page.getByText("This page does not exist.")).toBeVisible();
   });
 });

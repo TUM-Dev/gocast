@@ -382,8 +382,8 @@ func (x *GetFrontendConfigResponse) GetIsFreshInstallation() bool {
 	return false
 }
 
-// The name is the page's route -- "privacy", "imprint" or "about" -- not the editable
-// title stored beside its content.
+// The name is the page's route -- its slug, e.g. "privacy" -- not the editable title
+// stored beside its content.
 type GetInfoPageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -482,6 +482,392 @@ func (x *GetInfoPageResponse) GetContent() string {
 	return ""
 }
 
+type ListInfoPagesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pages         []*InfoPageSummary     `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListInfoPagesResponse) Reset() {
+	*x = ListInfoPagesResponse{}
+	mi := &file_server_apiv2_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInfoPagesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInfoPagesResponse) ProtoMessage() {}
+
+func (x *ListInfoPagesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInfoPagesResponse.ProtoReflect.Descriptor instead.
+func (*ListInfoPagesResponse) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListInfoPagesResponse) GetPages() []*InfoPageSummary {
+	if x != nil {
+		return x.Pages
+	}
+	return nil
+}
+
+// InfoPageSummary is what a visitor is told exists, before asking for one by slug.
+type InfoPageSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Slug          string                 `protobuf:"bytes,1,opt,name=slug,proto3" json:"slug,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InfoPageSummary) Reset() {
+	*x = InfoPageSummary{}
+	mi := &file_server_apiv2_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InfoPageSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InfoPageSummary) ProtoMessage() {}
+
+func (x *InfoPageSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InfoPageSummary.ProtoReflect.Descriptor instead.
+func (*InfoPageSummary) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *InfoPageSummary) GetSlug() string {
+	if x != nil {
+		return x.Slug
+	}
+	return ""
+}
+
+func (x *InfoPageSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// InfoPage is a page as an administrator edits it, with its raw, unrendered content.
+type InfoPage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The page's route and API key. Unique; a client should treat changing it as
+	// renaming the page's URL, not merely relabeling it.
+	Slug string `protobuf:"bytes,2,opt,name=slug,proto3" json:"slug,omitempty"`
+	// The editable display title, shown to administrators managing the page. Not
+	// rendered on the page itself, which opens with its own Markdown heading.
+	Name          string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	RawContent    string `protobuf:"bytes,4,opt,name=raw_content,json=rawContent,proto3" json:"raw_content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InfoPage) Reset() {
+	*x = InfoPage{}
+	mi := &file_server_apiv2_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InfoPage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InfoPage) ProtoMessage() {}
+
+func (x *InfoPage) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InfoPage.ProtoReflect.Descriptor instead.
+func (*InfoPage) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *InfoPage) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *InfoPage) GetSlug() string {
+	if x != nil {
+		return x.Slug
+	}
+	return ""
+}
+
+func (x *InfoPage) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *InfoPage) GetRawContent() string {
+	if x != nil {
+		return x.RawContent
+	}
+	return ""
+}
+
+type ListInfoPagesAdminResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pages         []*InfoPage            `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListInfoPagesAdminResponse) Reset() {
+	*x = ListInfoPagesAdminResponse{}
+	mi := &file_server_apiv2_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInfoPagesAdminResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInfoPagesAdminResponse) ProtoMessage() {}
+
+func (x *ListInfoPagesAdminResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInfoPagesAdminResponse.ProtoReflect.Descriptor instead.
+func (*ListInfoPagesAdminResponse) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListInfoPagesAdminResponse) GetPages() []*InfoPage {
+	if x != nil {
+		return x.Pages
+	}
+	return nil
+}
+
+type CreateInfoPageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Slug          string                 `protobuf:"bytes,1,opt,name=slug,proto3" json:"slug,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	RawContent    string                 `protobuf:"bytes,3,opt,name=raw_content,json=rawContent,proto3" json:"raw_content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateInfoPageRequest) Reset() {
+	*x = CreateInfoPageRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateInfoPageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateInfoPageRequest) ProtoMessage() {}
+
+func (x *CreateInfoPageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateInfoPageRequest.ProtoReflect.Descriptor instead.
+func (*CreateInfoPageRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CreateInfoPageRequest) GetSlug() string {
+	if x != nil {
+		return x.Slug
+	}
+	return ""
+}
+
+func (x *CreateInfoPageRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateInfoPageRequest) GetRawContent() string {
+	if x != nil {
+		return x.RawContent
+	}
+	return ""
+}
+
+type UpdateInfoPageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Slug          string                 `protobuf:"bytes,2,opt,name=slug,proto3" json:"slug,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	RawContent    string                 `protobuf:"bytes,4,opt,name=raw_content,json=rawContent,proto3" json:"raw_content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateInfoPageRequest) Reset() {
+	*x = UpdateInfoPageRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateInfoPageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateInfoPageRequest) ProtoMessage() {}
+
+func (x *UpdateInfoPageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateInfoPageRequest.ProtoReflect.Descriptor instead.
+func (*UpdateInfoPageRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *UpdateInfoPageRequest) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UpdateInfoPageRequest) GetSlug() string {
+	if x != nil {
+		return x.Slug
+	}
+	return ""
+}
+
+func (x *UpdateInfoPageRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateInfoPageRequest) GetRawContent() string {
+	if x != nil {
+		return x.RawContent
+	}
+	return ""
+}
+
+type DeleteInfoPageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteInfoPageRequest) Reset() {
+	*x = DeleteInfoPageRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteInfoPageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteInfoPageRequest) ProtoMessage() {}
+
+func (x *DeleteInfoPageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteInfoPageRequest.ProtoReflect.Descriptor instead.
+func (*DeleteInfoPageRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *DeleteInfoPageRequest) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 type User struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Id                  uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -506,7 +892,7 @@ type User struct {
 
 func (x *User) Reset() {
 	*x = User{}
-	mi := &file_server_apiv2_proto_msgTypes[5]
+	mi := &file_server_apiv2_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +904,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[5]
+	mi := &file_server_apiv2_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,7 +917,7 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use User.ProtoReflect.Descriptor instead.
 func (*User) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{5}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *User) GetId() uint32 {
@@ -642,7 +1028,7 @@ type UserSetting struct {
 
 func (x *UserSetting) Reset() {
 	*x = UserSetting{}
-	mi := &file_server_apiv2_proto_msgTypes[6]
+	mi := &file_server_apiv2_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -654,7 +1040,7 @@ func (x *UserSetting) String() string {
 func (*UserSetting) ProtoMessage() {}
 
 func (x *UserSetting) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[6]
+	mi := &file_server_apiv2_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -667,7 +1053,7 @@ func (x *UserSetting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserSetting.ProtoReflect.Descriptor instead.
 func (*UserSetting) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{6}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UserSetting) GetType() UserSettingType {
@@ -693,7 +1079,7 @@ type UpdateUserSettingsRequest struct {
 
 func (x *UpdateUserSettingsRequest) Reset() {
 	*x = UpdateUserSettingsRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[7]
+	mi := &file_server_apiv2_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -705,7 +1091,7 @@ func (x *UpdateUserSettingsRequest) String() string {
 func (*UpdateUserSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateUserSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[7]
+	mi := &file_server_apiv2_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -718,7 +1104,7 @@ func (x *UpdateUserSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserSettingsRequest.ProtoReflect.Descriptor instead.
 func (*UpdateUserSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{7}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *UpdateUserSettingsRequest) GetUserSettings() []*UserSetting {
@@ -737,7 +1123,7 @@ type ResetPasswordRequest struct {
 
 func (x *ResetPasswordRequest) Reset() {
 	*x = ResetPasswordRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[8]
+	mi := &file_server_apiv2_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -749,7 +1135,7 @@ func (x *ResetPasswordRequest) String() string {
 func (*ResetPasswordRequest) ProtoMessage() {}
 
 func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[8]
+	mi := &file_server_apiv2_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -762,7 +1148,7 @@ func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetPasswordRequest.ProtoReflect.Descriptor instead.
 func (*ResetPasswordRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{8}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ResetPasswordRequest) GetEmail() string {
@@ -781,7 +1167,7 @@ type GetUserResponse struct {
 
 func (x *GetUserResponse) Reset() {
 	*x = GetUserResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[9]
+	mi := &file_server_apiv2_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -793,7 +1179,7 @@ func (x *GetUserResponse) String() string {
 func (*GetUserResponse) ProtoMessage() {}
 
 func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[9]
+	mi := &file_server_apiv2_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,7 +1192,7 @@ func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserResponse.ProtoReflect.Descriptor instead.
 func (*GetUserResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{9}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetUserResponse) GetUser() *User {
@@ -825,7 +1211,7 @@ type UpdateUserSettingsResponse struct {
 
 func (x *UpdateUserSettingsResponse) Reset() {
 	*x = UpdateUserSettingsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[10]
+	mi := &file_server_apiv2_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -837,7 +1223,7 @@ func (x *UpdateUserSettingsResponse) String() string {
 func (*UpdateUserSettingsResponse) ProtoMessage() {}
 
 func (x *UpdateUserSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[10]
+	mi := &file_server_apiv2_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -850,7 +1236,7 @@ func (x *UpdateUserSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserSettingsResponse.ProtoReflect.Descriptor instead.
 func (*UpdateUserSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{10}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *UpdateUserSettingsResponse) GetUserSettings() []*UserSetting {
@@ -869,7 +1255,7 @@ type ResetPasswordResponse struct {
 
 func (x *ResetPasswordResponse) Reset() {
 	*x = ResetPasswordResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[11]
+	mi := &file_server_apiv2_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -881,7 +1267,7 @@ func (x *ResetPasswordResponse) String() string {
 func (*ResetPasswordResponse) ProtoMessage() {}
 
 func (x *ResetPasswordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[11]
+	mi := &file_server_apiv2_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -894,7 +1280,7 @@ func (x *ResetPasswordResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetPasswordResponse.ProtoReflect.Descriptor instead.
 func (*ResetPasswordResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{11}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ResetPasswordResponse) GetMessage() string {
@@ -919,7 +1305,7 @@ type GetLoginOptionsResponse struct {
 
 func (x *GetLoginOptionsResponse) Reset() {
 	*x = GetLoginOptionsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[12]
+	mi := &file_server_apiv2_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -931,7 +1317,7 @@ func (x *GetLoginOptionsResponse) String() string {
 func (*GetLoginOptionsResponse) ProtoMessage() {}
 
 func (x *GetLoginOptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[12]
+	mi := &file_server_apiv2_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -944,7 +1330,7 @@ func (x *GetLoginOptionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLoginOptionsResponse.ProtoReflect.Descriptor instead.
 func (*GetLoginOptionsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{12}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetLoginOptionsResponse) GetUseSaml() bool {
@@ -980,7 +1366,7 @@ type ExportPersonalDataResponse struct {
 
 func (x *ExportPersonalDataResponse) Reset() {
 	*x = ExportPersonalDataResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[13]
+	mi := &file_server_apiv2_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -992,7 +1378,7 @@ func (x *ExportPersonalDataResponse) String() string {
 func (*ExportPersonalDataResponse) ProtoMessage() {}
 
 func (x *ExportPersonalDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[13]
+	mi := &file_server_apiv2_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1005,7 +1391,7 @@ func (x *ExportPersonalDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportPersonalDataResponse.ProtoReflect.Descriptor instead.
 func (*ExportPersonalDataResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{13}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ExportPersonalDataResponse) GetUserData() *User {
@@ -1047,7 +1433,7 @@ type Enrollment struct {
 
 func (x *Enrollment) Reset() {
 	*x = Enrollment{}
-	mi := &file_server_apiv2_proto_msgTypes[14]
+	mi := &file_server_apiv2_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1059,7 +1445,7 @@ func (x *Enrollment) String() string {
 func (*Enrollment) ProtoMessage() {}
 
 func (x *Enrollment) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[14]
+	mi := &file_server_apiv2_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1072,7 +1458,7 @@ func (x *Enrollment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Enrollment.ProtoReflect.Descriptor instead.
 func (*Enrollment) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{14}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Enrollment) GetYear() int32 {
@@ -1107,7 +1493,7 @@ type VideoView struct {
 
 func (x *VideoView) Reset() {
 	*x = VideoView{}
-	mi := &file_server_apiv2_proto_msgTypes[15]
+	mi := &file_server_apiv2_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1119,7 +1505,7 @@ func (x *VideoView) String() string {
 func (*VideoView) ProtoMessage() {}
 
 func (x *VideoView) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[15]
+	mi := &file_server_apiv2_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1132,7 +1518,7 @@ func (x *VideoView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VideoView.ProtoReflect.Descriptor instead.
 func (*VideoView) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{15}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *VideoView) GetStreamId() uint32 {
@@ -1167,7 +1553,7 @@ type Chat struct {
 
 func (x *Chat) Reset() {
 	*x = Chat{}
-	mi := &file_server_apiv2_proto_msgTypes[16]
+	mi := &file_server_apiv2_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1179,7 +1565,7 @@ func (x *Chat) String() string {
 func (*Chat) ProtoMessage() {}
 
 func (x *Chat) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[16]
+	mi := &file_server_apiv2_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1192,7 +1578,7 @@ func (x *Chat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Chat.ProtoReflect.Descriptor instead.
 func (*Chat) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{16}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *Chat) GetStreamId() uint32 {
@@ -1231,7 +1617,7 @@ type Bookmark struct {
 
 func (x *Bookmark) Reset() {
 	*x = Bookmark{}
-	mi := &file_server_apiv2_proto_msgTypes[17]
+	mi := &file_server_apiv2_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1243,7 +1629,7 @@ func (x *Bookmark) String() string {
 func (*Bookmark) ProtoMessage() {}
 
 func (x *Bookmark) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[17]
+	mi := &file_server_apiv2_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1256,7 +1642,7 @@ func (x *Bookmark) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bookmark.ProtoReflect.Descriptor instead.
 func (*Bookmark) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{17}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Bookmark) GetBookmarkId() uint32 {
@@ -1317,7 +1703,7 @@ type GetBookmarksRequest struct {
 
 func (x *GetBookmarksRequest) Reset() {
 	*x = GetBookmarksRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[18]
+	mi := &file_server_apiv2_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1329,7 +1715,7 @@ func (x *GetBookmarksRequest) String() string {
 func (*GetBookmarksRequest) ProtoMessage() {}
 
 func (x *GetBookmarksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[18]
+	mi := &file_server_apiv2_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1342,7 +1728,7 @@ func (x *GetBookmarksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBookmarksRequest.ProtoReflect.Descriptor instead.
 func (*GetBookmarksRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{18}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetBookmarksRequest) GetStreamId() uint32 {
@@ -1365,7 +1751,7 @@ type AddBookmarkRequest struct {
 
 func (x *AddBookmarkRequest) Reset() {
 	*x = AddBookmarkRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[19]
+	mi := &file_server_apiv2_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1377,7 +1763,7 @@ func (x *AddBookmarkRequest) String() string {
 func (*AddBookmarkRequest) ProtoMessage() {}
 
 func (x *AddBookmarkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[19]
+	mi := &file_server_apiv2_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1390,7 +1776,7 @@ func (x *AddBookmarkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddBookmarkRequest.ProtoReflect.Descriptor instead.
 func (*AddBookmarkRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{19}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *AddBookmarkRequest) GetStreamId() uint32 {
@@ -1441,7 +1827,7 @@ type UpdateBookmarkRequest struct {
 
 func (x *UpdateBookmarkRequest) Reset() {
 	*x = UpdateBookmarkRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[20]
+	mi := &file_server_apiv2_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1453,7 +1839,7 @@ func (x *UpdateBookmarkRequest) String() string {
 func (*UpdateBookmarkRequest) ProtoMessage() {}
 
 func (x *UpdateBookmarkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[20]
+	mi := &file_server_apiv2_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1466,7 +1852,7 @@ func (x *UpdateBookmarkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBookmarkRequest.ProtoReflect.Descriptor instead.
 func (*UpdateBookmarkRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{20}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *UpdateBookmarkRequest) GetBookmarkId() uint32 {
@@ -1513,7 +1899,7 @@ type DeleteBookmarkRequest struct {
 
 func (x *DeleteBookmarkRequest) Reset() {
 	*x = DeleteBookmarkRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[21]
+	mi := &file_server_apiv2_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1525,7 +1911,7 @@ func (x *DeleteBookmarkRequest) String() string {
 func (*DeleteBookmarkRequest) ProtoMessage() {}
 
 func (x *DeleteBookmarkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[21]
+	mi := &file_server_apiv2_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1538,7 +1924,7 @@ func (x *DeleteBookmarkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteBookmarkRequest.ProtoReflect.Descriptor instead.
 func (*DeleteBookmarkRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{21}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *DeleteBookmarkRequest) GetBookmarkId() uint32 {
@@ -1557,7 +1943,7 @@ type GetBookmarksResponse struct {
 
 func (x *GetBookmarksResponse) Reset() {
 	*x = GetBookmarksResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[22]
+	mi := &file_server_apiv2_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1569,7 +1955,7 @@ func (x *GetBookmarksResponse) String() string {
 func (*GetBookmarksResponse) ProtoMessage() {}
 
 func (x *GetBookmarksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[22]
+	mi := &file_server_apiv2_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1582,7 +1968,7 @@ func (x *GetBookmarksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBookmarksResponse.ProtoReflect.Descriptor instead.
 func (*GetBookmarksResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{22}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetBookmarksResponse) GetBookmarks() []*Bookmark {
@@ -1601,7 +1987,7 @@ type AddBookmarkResponse struct {
 
 func (x *AddBookmarkResponse) Reset() {
 	*x = AddBookmarkResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[23]
+	mi := &file_server_apiv2_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1613,7 +1999,7 @@ func (x *AddBookmarkResponse) String() string {
 func (*AddBookmarkResponse) ProtoMessage() {}
 
 func (x *AddBookmarkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[23]
+	mi := &file_server_apiv2_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1626,7 +2012,7 @@ func (x *AddBookmarkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddBookmarkResponse.ProtoReflect.Descriptor instead.
 func (*AddBookmarkResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{23}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *AddBookmarkResponse) GetBookmark() *Bookmark {
@@ -1645,7 +2031,7 @@ type UpdateBookmarkResponse struct {
 
 func (x *UpdateBookmarkResponse) Reset() {
 	*x = UpdateBookmarkResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[24]
+	mi := &file_server_apiv2_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1657,7 +2043,7 @@ func (x *UpdateBookmarkResponse) String() string {
 func (*UpdateBookmarkResponse) ProtoMessage() {}
 
 func (x *UpdateBookmarkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[24]
+	mi := &file_server_apiv2_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1670,7 +2056,7 @@ func (x *UpdateBookmarkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBookmarkResponse.ProtoReflect.Descriptor instead.
 func (*UpdateBookmarkResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{24}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *UpdateBookmarkResponse) GetBookmark() *Bookmark {
@@ -1715,7 +2101,7 @@ type Course struct {
 
 func (x *Course) Reset() {
 	*x = Course{}
-	mi := &file_server_apiv2_proto_msgTypes[25]
+	mi := &file_server_apiv2_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1727,7 +2113,7 @@ func (x *Course) String() string {
 func (*Course) ProtoMessage() {}
 
 func (x *Course) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[25]
+	mi := &file_server_apiv2_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1740,7 +2126,7 @@ func (x *Course) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Course.ProtoReflect.Descriptor instead.
 func (*Course) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{25}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *Course) GetId() uint32 {
@@ -1886,7 +2272,7 @@ type GetPublicCoursesRequest struct {
 
 func (x *GetPublicCoursesRequest) Reset() {
 	*x = GetPublicCoursesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[26]
+	mi := &file_server_apiv2_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1898,7 +2284,7 @@ func (x *GetPublicCoursesRequest) String() string {
 func (*GetPublicCoursesRequest) ProtoMessage() {}
 
 func (x *GetPublicCoursesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[26]
+	mi := &file_server_apiv2_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1911,7 +2297,7 @@ func (x *GetPublicCoursesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPublicCoursesRequest.ProtoReflect.Descriptor instead.
 func (*GetPublicCoursesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{26}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetPublicCoursesRequest) GetYear() uint32 {
@@ -1939,7 +2325,7 @@ type GetCourseBySlugRequest struct {
 
 func (x *GetCourseBySlugRequest) Reset() {
 	*x = GetCourseBySlugRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[27]
+	mi := &file_server_apiv2_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1951,7 +2337,7 @@ func (x *GetCourseBySlugRequest) String() string {
 func (*GetCourseBySlugRequest) ProtoMessage() {}
 
 func (x *GetCourseBySlugRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[27]
+	mi := &file_server_apiv2_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1964,7 +2350,7 @@ func (x *GetCourseBySlugRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseBySlugRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseBySlugRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{27}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GetCourseBySlugRequest) GetSlug() string {
@@ -1998,7 +2384,7 @@ type GetUserCoursesRequest struct {
 
 func (x *GetUserCoursesRequest) Reset() {
 	*x = GetUserCoursesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[28]
+	mi := &file_server_apiv2_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2010,7 +2396,7 @@ func (x *GetUserCoursesRequest) String() string {
 func (*GetUserCoursesRequest) ProtoMessage() {}
 
 func (x *GetUserCoursesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[28]
+	mi := &file_server_apiv2_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2023,7 +2409,7 @@ func (x *GetUserCoursesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserCoursesRequest.ProtoReflect.Descriptor instead.
 func (*GetUserCoursesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{28}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetUserCoursesRequest) GetYear() uint32 {
@@ -2049,7 +2435,7 @@ type GetPinForCourseRequest struct {
 
 func (x *GetPinForCourseRequest) Reset() {
 	*x = GetPinForCourseRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[29]
+	mi := &file_server_apiv2_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2061,7 +2447,7 @@ func (x *GetPinForCourseRequest) String() string {
 func (*GetPinForCourseRequest) ProtoMessage() {}
 
 func (x *GetPinForCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[29]
+	mi := &file_server_apiv2_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2074,7 +2460,7 @@ func (x *GetPinForCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPinForCourseRequest.ProtoReflect.Descriptor instead.
 func (*GetPinForCourseRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{29}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetPinForCourseRequest) GetCourseId() uint32 {
@@ -2094,7 +2480,7 @@ type PinCourseRequest struct {
 
 func (x *PinCourseRequest) Reset() {
 	*x = PinCourseRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[30]
+	mi := &file_server_apiv2_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2106,7 +2492,7 @@ func (x *PinCourseRequest) String() string {
 func (*PinCourseRequest) ProtoMessage() {}
 
 func (x *PinCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[30]
+	mi := &file_server_apiv2_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2119,7 +2505,7 @@ func (x *PinCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PinCourseRequest.ProtoReflect.Descriptor instead.
 func (*PinCourseRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{30}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *PinCourseRequest) GetCourseId() uint32 {
@@ -2148,7 +2534,7 @@ type GetLiveCoursesResponse struct {
 
 func (x *GetLiveCoursesResponse) Reset() {
 	*x = GetLiveCoursesResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[31]
+	mi := &file_server_apiv2_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2160,7 +2546,7 @@ func (x *GetLiveCoursesResponse) String() string {
 func (*GetLiveCoursesResponse) ProtoMessage() {}
 
 func (x *GetLiveCoursesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[31]
+	mi := &file_server_apiv2_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2173,7 +2559,7 @@ func (x *GetLiveCoursesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveCoursesResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveCoursesResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{31}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *GetLiveCoursesResponse) GetLiveCourses() []*CourseStream {
@@ -2192,7 +2578,7 @@ type GetPublicCoursesResponse struct {
 
 func (x *GetPublicCoursesResponse) Reset() {
 	*x = GetPublicCoursesResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[32]
+	mi := &file_server_apiv2_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2204,7 +2590,7 @@ func (x *GetPublicCoursesResponse) String() string {
 func (*GetPublicCoursesResponse) ProtoMessage() {}
 
 func (x *GetPublicCoursesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[32]
+	mi := &file_server_apiv2_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2217,7 +2603,7 @@ func (x *GetPublicCoursesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPublicCoursesResponse.ProtoReflect.Descriptor instead.
 func (*GetPublicCoursesResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{32}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *GetPublicCoursesResponse) GetCourses() []*Course {
@@ -2236,7 +2622,7 @@ type GetCourseBySlugResponse struct {
 
 func (x *GetCourseBySlugResponse) Reset() {
 	*x = GetCourseBySlugResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[33]
+	mi := &file_server_apiv2_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2248,7 +2634,7 @@ func (x *GetCourseBySlugResponse) String() string {
 func (*GetCourseBySlugResponse) ProtoMessage() {}
 
 func (x *GetCourseBySlugResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[33]
+	mi := &file_server_apiv2_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2261,7 +2647,7 @@ func (x *GetCourseBySlugResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseBySlugResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseBySlugResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{33}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *GetCourseBySlugResponse) GetCourse() *Course {
@@ -2280,7 +2666,7 @@ type GetUserCoursesResponse struct {
 
 func (x *GetUserCoursesResponse) Reset() {
 	*x = GetUserCoursesResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[34]
+	mi := &file_server_apiv2_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2292,7 +2678,7 @@ func (x *GetUserCoursesResponse) String() string {
 func (*GetUserCoursesResponse) ProtoMessage() {}
 
 func (x *GetUserCoursesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[34]
+	mi := &file_server_apiv2_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2305,7 +2691,7 @@ func (x *GetUserCoursesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserCoursesResponse.ProtoReflect.Descriptor instead.
 func (*GetUserCoursesResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{34}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetUserCoursesResponse) GetCourses() []*Course {
@@ -2324,7 +2710,7 @@ type GetPinnedCoursesResponse struct {
 
 func (x *GetPinnedCoursesResponse) Reset() {
 	*x = GetPinnedCoursesResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[35]
+	mi := &file_server_apiv2_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2336,7 +2722,7 @@ func (x *GetPinnedCoursesResponse) String() string {
 func (*GetPinnedCoursesResponse) ProtoMessage() {}
 
 func (x *GetPinnedCoursesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[35]
+	mi := &file_server_apiv2_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2349,7 +2735,7 @@ func (x *GetPinnedCoursesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPinnedCoursesResponse.ProtoReflect.Descriptor instead.
 func (*GetPinnedCoursesResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{35}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetPinnedCoursesResponse) GetCourses() []*Course {
@@ -2368,7 +2754,7 @@ type PinCourseResponse struct {
 
 func (x *PinCourseResponse) Reset() {
 	*x = PinCourseResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[36]
+	mi := &file_server_apiv2_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2380,7 +2766,7 @@ func (x *PinCourseResponse) String() string {
 func (*PinCourseResponse) ProtoMessage() {}
 
 func (x *PinCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[36]
+	mi := &file_server_apiv2_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2393,7 +2779,7 @@ func (x *PinCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PinCourseResponse.ProtoReflect.Descriptor instead.
 func (*PinCourseResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{36}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *PinCourseResponse) GetMessage() string {
@@ -2412,7 +2798,7 @@ type GetPinForCourseResponse struct {
 
 func (x *GetPinForCourseResponse) Reset() {
 	*x = GetPinForCourseResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[37]
+	mi := &file_server_apiv2_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2424,7 +2810,7 @@ func (x *GetPinForCourseResponse) String() string {
 func (*GetPinForCourseResponse) ProtoMessage() {}
 
 func (x *GetPinForCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[37]
+	mi := &file_server_apiv2_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2437,7 +2823,7 @@ func (x *GetPinForCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPinForCourseResponse.ProtoReflect.Descriptor instead.
 func (*GetPinForCourseResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{37}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *GetPinForCourseResponse) GetHas() bool {
@@ -2459,7 +2845,7 @@ type CourseStream struct {
 
 func (x *CourseStream) Reset() {
 	*x = CourseStream{}
-	mi := &file_server_apiv2_proto_msgTypes[38]
+	mi := &file_server_apiv2_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2471,7 +2857,7 @@ func (x *CourseStream) String() string {
 func (*CourseStream) ProtoMessage() {}
 
 func (x *CourseStream) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[38]
+	mi := &file_server_apiv2_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2484,7 +2870,7 @@ func (x *CourseStream) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseStream.ProtoReflect.Descriptor instead.
 func (*CourseStream) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{38}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *CourseStream) GetCourse() *Course {
@@ -2525,7 +2911,7 @@ type Semester struct {
 
 func (x *Semester) Reset() {
 	*x = Semester{}
-	mi := &file_server_apiv2_proto_msgTypes[39]
+	mi := &file_server_apiv2_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2537,7 +2923,7 @@ func (x *Semester) String() string {
 func (*Semester) ProtoMessage() {}
 
 func (x *Semester) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[39]
+	mi := &file_server_apiv2_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2550,7 +2936,7 @@ func (x *Semester) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Semester.ProtoReflect.Descriptor instead.
 func (*Semester) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{39}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *Semester) GetTeachingTerm() string {
@@ -2577,7 +2963,7 @@ type GetSemestersResponse struct {
 
 func (x *GetSemestersResponse) Reset() {
 	*x = GetSemestersResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[40]
+	mi := &file_server_apiv2_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2589,7 +2975,7 @@ func (x *GetSemestersResponse) String() string {
 func (*GetSemestersResponse) ProtoMessage() {}
 
 func (x *GetSemestersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[40]
+	mi := &file_server_apiv2_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2602,7 +2988,7 @@ func (x *GetSemestersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSemestersResponse.ProtoReflect.Descriptor instead.
 func (*GetSemestersResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{40}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *GetSemestersResponse) GetCurrent() *Semester {
@@ -2658,7 +3044,7 @@ type Stream struct {
 
 func (x *Stream) Reset() {
 	*x = Stream{}
-	mi := &file_server_apiv2_proto_msgTypes[41]
+	mi := &file_server_apiv2_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2670,7 +3056,7 @@ func (x *Stream) String() string {
 func (*Stream) ProtoMessage() {}
 
 func (x *Stream) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[41]
+	mi := &file_server_apiv2_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2683,7 +3069,7 @@ func (x *Stream) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Stream.ProtoReflect.Descriptor instead.
 func (*Stream) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{41}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *Stream) GetId() uint32 {
@@ -2905,7 +3291,7 @@ type StreamPlaylistEntry struct {
 
 func (x *StreamPlaylistEntry) Reset() {
 	*x = StreamPlaylistEntry{}
-	mi := &file_server_apiv2_proto_msgTypes[42]
+	mi := &file_server_apiv2_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2917,7 +3303,7 @@ func (x *StreamPlaylistEntry) String() string {
 func (*StreamPlaylistEntry) ProtoMessage() {}
 
 func (x *StreamPlaylistEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[42]
+	mi := &file_server_apiv2_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2930,7 +3316,7 @@ func (x *StreamPlaylistEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamPlaylistEntry.ProtoReflect.Descriptor instead.
 func (*StreamPlaylistEntry) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{42}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *StreamPlaylistEntry) GetStreamId() uint32 {
@@ -3000,7 +3386,7 @@ type StreamProgress struct {
 
 func (x *StreamProgress) Reset() {
 	*x = StreamProgress{}
-	mi := &file_server_apiv2_proto_msgTypes[43]
+	mi := &file_server_apiv2_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3012,7 +3398,7 @@ func (x *StreamProgress) String() string {
 func (*StreamProgress) ProtoMessage() {}
 
 func (x *StreamProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[43]
+	mi := &file_server_apiv2_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3025,7 +3411,7 @@ func (x *StreamProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamProgress.ProtoReflect.Descriptor instead.
 func (*StreamProgress) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{43}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *StreamProgress) GetStreamId() uint32 {
@@ -3063,7 +3449,7 @@ type VideoSection struct {
 
 func (x *VideoSection) Reset() {
 	*x = VideoSection{}
-	mi := &file_server_apiv2_proto_msgTypes[44]
+	mi := &file_server_apiv2_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3075,7 +3461,7 @@ func (x *VideoSection) String() string {
 func (*VideoSection) ProtoMessage() {}
 
 func (x *VideoSection) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[44]
+	mi := &file_server_apiv2_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3088,7 +3474,7 @@ func (x *VideoSection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VideoSection.ProtoReflect.Descriptor instead.
 func (*VideoSection) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{44}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *VideoSection) GetDescription() string {
@@ -3143,7 +3529,7 @@ type GetStreamRequest struct {
 
 func (x *GetStreamRequest) Reset() {
 	*x = GetStreamRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[45]
+	mi := &file_server_apiv2_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3155,7 +3541,7 @@ func (x *GetStreamRequest) String() string {
 func (*GetStreamRequest) ProtoMessage() {}
 
 func (x *GetStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[45]
+	mi := &file_server_apiv2_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3168,7 +3554,7 @@ func (x *GetStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStreamRequest.ProtoReflect.Descriptor instead.
 func (*GetStreamRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{45}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *GetStreamRequest) GetStreamId() uint32 {
@@ -3195,7 +3581,7 @@ type GetVideoSectionsRequest struct {
 
 func (x *GetVideoSectionsRequest) Reset() {
 	*x = GetVideoSectionsRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[46]
+	mi := &file_server_apiv2_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3207,7 +3593,7 @@ func (x *GetVideoSectionsRequest) String() string {
 func (*GetVideoSectionsRequest) ProtoMessage() {}
 
 func (x *GetVideoSectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[46]
+	mi := &file_server_apiv2_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3220,7 +3606,7 @@ func (x *GetVideoSectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVideoSectionsRequest.ProtoReflect.Descriptor instead.
 func (*GetVideoSectionsRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{46}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *GetVideoSectionsRequest) GetStreamId() uint32 {
@@ -3248,7 +3634,7 @@ type GetSubtitlesRequest struct {
 
 func (x *GetSubtitlesRequest) Reset() {
 	*x = GetSubtitlesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[47]
+	mi := &file_server_apiv2_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3260,7 +3646,7 @@ func (x *GetSubtitlesRequest) String() string {
 func (*GetSubtitlesRequest) ProtoMessage() {}
 
 func (x *GetSubtitlesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[47]
+	mi := &file_server_apiv2_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3273,7 +3659,7 @@ func (x *GetSubtitlesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSubtitlesRequest.ProtoReflect.Descriptor instead.
 func (*GetSubtitlesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{47}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *GetSubtitlesRequest) GetStreamId() uint32 {
@@ -3307,7 +3693,7 @@ type GetStreamPlaylistRequest struct {
 
 func (x *GetStreamPlaylistRequest) Reset() {
 	*x = GetStreamPlaylistRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[48]
+	mi := &file_server_apiv2_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3319,7 +3705,7 @@ func (x *GetStreamPlaylistRequest) String() string {
 func (*GetStreamPlaylistRequest) ProtoMessage() {}
 
 func (x *GetStreamPlaylistRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[48]
+	mi := &file_server_apiv2_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3332,7 +3718,7 @@ func (x *GetStreamPlaylistRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStreamPlaylistRequest.ProtoReflect.Descriptor instead.
 func (*GetStreamPlaylistRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{48}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *GetStreamPlaylistRequest) GetStreamId() uint32 {
@@ -3360,7 +3746,7 @@ type GetThumbsRequest struct {
 
 func (x *GetThumbsRequest) Reset() {
 	*x = GetThumbsRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[49]
+	mi := &file_server_apiv2_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3372,7 +3758,7 @@ func (x *GetThumbsRequest) String() string {
 func (*GetThumbsRequest) ProtoMessage() {}
 
 func (x *GetThumbsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[49]
+	mi := &file_server_apiv2_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3385,7 +3771,7 @@ func (x *GetThumbsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetThumbsRequest.ProtoReflect.Descriptor instead.
 func (*GetThumbsRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{49}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *GetThumbsRequest) GetStreamId() uint32 {
@@ -3418,7 +3804,7 @@ type GetVideoSectionsResponse struct {
 
 func (x *GetVideoSectionsResponse) Reset() {
 	*x = GetVideoSectionsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[50]
+	mi := &file_server_apiv2_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3430,7 +3816,7 @@ func (x *GetVideoSectionsResponse) String() string {
 func (*GetVideoSectionsResponse) ProtoMessage() {}
 
 func (x *GetVideoSectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[50]
+	mi := &file_server_apiv2_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3443,7 +3829,7 @@ func (x *GetVideoSectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVideoSectionsResponse.ProtoReflect.Descriptor instead.
 func (*GetVideoSectionsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{50}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *GetVideoSectionsResponse) GetSections() []*VideoSection {
@@ -3462,7 +3848,7 @@ type GetSubtitlesResponse struct {
 
 func (x *GetSubtitlesResponse) Reset() {
 	*x = GetSubtitlesResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[51]
+	mi := &file_server_apiv2_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3474,7 +3860,7 @@ func (x *GetSubtitlesResponse) String() string {
 func (*GetSubtitlesResponse) ProtoMessage() {}
 
 func (x *GetSubtitlesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[51]
+	mi := &file_server_apiv2_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3487,7 +3873,7 @@ func (x *GetSubtitlesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSubtitlesResponse.ProtoReflect.Descriptor instead.
 func (*GetSubtitlesResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{51}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *GetSubtitlesResponse) GetContent() string {
@@ -3506,7 +3892,7 @@ type GetStreamPlaylistResponse struct {
 
 func (x *GetStreamPlaylistResponse) Reset() {
 	*x = GetStreamPlaylistResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[52]
+	mi := &file_server_apiv2_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3518,7 +3904,7 @@ func (x *GetStreamPlaylistResponse) String() string {
 func (*GetStreamPlaylistResponse) ProtoMessage() {}
 
 func (x *GetStreamPlaylistResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[52]
+	mi := &file_server_apiv2_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3531,7 +3917,7 @@ func (x *GetStreamPlaylistResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStreamPlaylistResponse.ProtoReflect.Descriptor instead.
 func (*GetStreamPlaylistResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{52}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *GetStreamPlaylistResponse) GetEntries() []*StreamPlaylistEntry {
@@ -3550,7 +3936,7 @@ type GetProgressBatchRequest struct {
 
 func (x *GetProgressBatchRequest) Reset() {
 	*x = GetProgressBatchRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[53]
+	mi := &file_server_apiv2_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3562,7 +3948,7 @@ func (x *GetProgressBatchRequest) String() string {
 func (*GetProgressBatchRequest) ProtoMessage() {}
 
 func (x *GetProgressBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[53]
+	mi := &file_server_apiv2_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3575,7 +3961,7 @@ func (x *GetProgressBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProgressBatchRequest.ProtoReflect.Descriptor instead.
 func (*GetProgressBatchRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{53}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *GetProgressBatchRequest) GetStreamIds() []uint32 {
@@ -3596,7 +3982,7 @@ type UpdateProgressRequest struct {
 
 func (x *UpdateProgressRequest) Reset() {
 	*x = UpdateProgressRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[54]
+	mi := &file_server_apiv2_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3608,7 +3994,7 @@ func (x *UpdateProgressRequest) String() string {
 func (*UpdateProgressRequest) ProtoMessage() {}
 
 func (x *UpdateProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[54]
+	mi := &file_server_apiv2_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3621,7 +4007,7 @@ func (x *UpdateProgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProgressRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProgressRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{54}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *UpdateProgressRequest) GetStreamId() uint32 {
@@ -3654,7 +4040,7 @@ type GetProgressBatchResponse struct {
 
 func (x *GetProgressBatchResponse) Reset() {
 	*x = GetProgressBatchResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[55]
+	mi := &file_server_apiv2_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3666,7 +4052,7 @@ func (x *GetProgressBatchResponse) String() string {
 func (*GetProgressBatchResponse) ProtoMessage() {}
 
 func (x *GetProgressBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[55]
+	mi := &file_server_apiv2_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3679,7 +4065,7 @@ func (x *GetProgressBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProgressBatchResponse.ProtoReflect.Descriptor instead.
 func (*GetProgressBatchResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{55}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *GetProgressBatchResponse) GetProgressBatch() []*StreamProgress {
@@ -3699,7 +4085,7 @@ type Download struct {
 
 func (x *Download) Reset() {
 	*x = Download{}
-	mi := &file_server_apiv2_proto_msgTypes[56]
+	mi := &file_server_apiv2_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3711,7 +4097,7 @@ func (x *Download) String() string {
 func (*Download) ProtoMessage() {}
 
 func (x *Download) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[56]
+	mi := &file_server_apiv2_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3724,7 +4110,7 @@ func (x *Download) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Download.ProtoReflect.Descriptor instead.
 func (*Download) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{56}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *Download) GetFriendlyName() string {
@@ -3753,7 +4139,7 @@ type UserGroupNotification struct {
 
 func (x *UserGroupNotification) Reset() {
 	*x = UserGroupNotification{}
-	mi := &file_server_apiv2_proto_msgTypes[57]
+	mi := &file_server_apiv2_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3765,7 +4151,7 @@ func (x *UserGroupNotification) String() string {
 func (*UserGroupNotification) ProtoMessage() {}
 
 func (x *UserGroupNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[57]
+	mi := &file_server_apiv2_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3778,7 +4164,7 @@ func (x *UserGroupNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserGroupNotification.ProtoReflect.Descriptor instead.
 func (*UserGroupNotification) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{57}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *UserGroupNotification) GetTitle() string {
@@ -3821,7 +4207,7 @@ type ServerNotification struct {
 
 func (x *ServerNotification) Reset() {
 	*x = ServerNotification{}
-	mi := &file_server_apiv2_proto_msgTypes[58]
+	mi := &file_server_apiv2_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3833,7 +4219,7 @@ func (x *ServerNotification) String() string {
 func (*ServerNotification) ProtoMessage() {}
 
 func (x *ServerNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[58]
+	mi := &file_server_apiv2_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3846,7 +4232,7 @@ func (x *ServerNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerNotification.ProtoReflect.Descriptor instead.
 func (*ServerNotification) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{58}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ServerNotification) GetText() string {
@@ -3886,7 +4272,7 @@ type GetNotificationsResponse struct {
 
 func (x *GetNotificationsResponse) Reset() {
 	*x = GetNotificationsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[59]
+	mi := &file_server_apiv2_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3898,7 +4284,7 @@ func (x *GetNotificationsResponse) String() string {
 func (*GetNotificationsResponse) ProtoMessage() {}
 
 func (x *GetNotificationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[59]
+	mi := &file_server_apiv2_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3911,7 +4297,7 @@ func (x *GetNotificationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNotificationsResponse.ProtoReflect.Descriptor instead.
 func (*GetNotificationsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{59}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *GetNotificationsResponse) GetNotifications() []*UserGroupNotification {
@@ -3930,7 +4316,7 @@ type GetServerNotificationsResponse struct {
 
 func (x *GetServerNotificationsResponse) Reset() {
 	*x = GetServerNotificationsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[60]
+	mi := &file_server_apiv2_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3942,7 +4328,7 @@ func (x *GetServerNotificationsResponse) String() string {
 func (*GetServerNotificationsResponse) ProtoMessage() {}
 
 func (x *GetServerNotificationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[60]
+	mi := &file_server_apiv2_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3955,7 +4341,7 @@ func (x *GetServerNotificationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServerNotificationsResponse.ProtoReflect.Descriptor instead.
 func (*GetServerNotificationsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{60}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *GetServerNotificationsResponse) GetServerNotifications() []*ServerNotification {
@@ -3979,7 +4365,7 @@ type LectureHall struct {
 
 func (x *LectureHall) Reset() {
 	*x = LectureHall{}
-	mi := &file_server_apiv2_proto_msgTypes[61]
+	mi := &file_server_apiv2_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3991,7 +4377,7 @@ func (x *LectureHall) String() string {
 func (*LectureHall) ProtoMessage() {}
 
 func (x *LectureHall) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[61]
+	mi := &file_server_apiv2_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4004,7 +4390,7 @@ func (x *LectureHall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LectureHall.ProtoReflect.Descriptor instead.
 func (*LectureHall) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{61}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *LectureHall) GetId() uint32 {
@@ -4046,7 +4432,7 @@ type CameraPreset struct {
 
 func (x *CameraPreset) Reset() {
 	*x = CameraPreset{}
-	mi := &file_server_apiv2_proto_msgTypes[62]
+	mi := &file_server_apiv2_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4058,7 +4444,7 @@ func (x *CameraPreset) String() string {
 func (*CameraPreset) ProtoMessage() {}
 
 func (x *CameraPreset) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[62]
+	mi := &file_server_apiv2_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4071,7 +4457,7 @@ func (x *CameraPreset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CameraPreset.ProtoReflect.Descriptor instead.
 func (*CameraPreset) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{62}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *CameraPreset) GetId() uint32 {
@@ -4116,7 +4502,7 @@ type Runner struct {
 
 func (x *Runner) Reset() {
 	*x = Runner{}
-	mi := &file_server_apiv2_proto_msgTypes[63]
+	mi := &file_server_apiv2_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4128,7 +4514,7 @@ func (x *Runner) String() string {
 func (*Runner) ProtoMessage() {}
 
 func (x *Runner) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[63]
+	mi := &file_server_apiv2_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4141,7 +4527,7 @@ func (x *Runner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Runner.ProtoReflect.Descriptor instead.
 func (*Runner) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{63}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *Runner) GetHostname() string {
@@ -4209,7 +4595,7 @@ type DeleteRunnerRequest struct {
 
 func (x *DeleteRunnerRequest) Reset() {
 	*x = DeleteRunnerRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[64]
+	mi := &file_server_apiv2_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4221,7 +4607,7 @@ func (x *DeleteRunnerRequest) String() string {
 func (*DeleteRunnerRequest) ProtoMessage() {}
 
 func (x *DeleteRunnerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[64]
+	mi := &file_server_apiv2_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4234,7 +4620,7 @@ func (x *DeleteRunnerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRunnerRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRunnerRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{64}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *DeleteRunnerRequest) GetHostname() string {
@@ -4253,7 +4639,7 @@ type ListRunnersResponse struct {
 
 func (x *ListRunnersResponse) Reset() {
 	*x = ListRunnersResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[65]
+	mi := &file_server_apiv2_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4265,7 +4651,7 @@ func (x *ListRunnersResponse) String() string {
 func (*ListRunnersResponse) ProtoMessage() {}
 
 func (x *ListRunnersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[65]
+	mi := &file_server_apiv2_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4278,7 +4664,7 @@ func (x *ListRunnersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRunnersResponse.ProtoReflect.Descriptor instead.
 func (*ListRunnersResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{65}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *ListRunnersResponse) GetRunners() []*Runner {
@@ -4304,7 +4690,7 @@ type UserSummary struct {
 
 func (x *UserSummary) Reset() {
 	*x = UserSummary{}
-	mi := &file_server_apiv2_proto_msgTypes[66]
+	mi := &file_server_apiv2_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4316,7 +4702,7 @@ func (x *UserSummary) String() string {
 func (*UserSummary) ProtoMessage() {}
 
 func (x *UserSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[66]
+	mi := &file_server_apiv2_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4329,7 +4715,7 @@ func (x *UserSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserSummary.ProtoReflect.Descriptor instead.
 func (*UserSummary) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{66}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *UserSummary) GetId() uint32 {
@@ -4379,7 +4765,7 @@ type SearchUsersRequest struct {
 
 func (x *SearchUsersRequest) Reset() {
 	*x = SearchUsersRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[67]
+	mi := &file_server_apiv2_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4391,7 +4777,7 @@ func (x *SearchUsersRequest) String() string {
 func (*SearchUsersRequest) ProtoMessage() {}
 
 func (x *SearchUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[67]
+	mi := &file_server_apiv2_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4404,7 +4790,7 @@ func (x *SearchUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchUsersRequest.ProtoReflect.Descriptor instead.
 func (*SearchUsersRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{67}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *SearchUsersRequest) GetQuery() string {
@@ -4431,7 +4817,7 @@ type CreateUserRequest struct {
 
 func (x *CreateUserRequest) Reset() {
 	*x = CreateUserRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[68]
+	mi := &file_server_apiv2_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4443,7 +4829,7 @@ func (x *CreateUserRequest) String() string {
 func (*CreateUserRequest) ProtoMessage() {}
 
 func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[68]
+	mi := &file_server_apiv2_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4456,7 +4842,7 @@ func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUserRequest.ProtoReflect.Descriptor instead.
 func (*CreateUserRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{68}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *CreateUserRequest) GetName() string {
@@ -4483,7 +4869,7 @@ type UpdateUserRoleRequest struct {
 
 func (x *UpdateUserRoleRequest) Reset() {
 	*x = UpdateUserRoleRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[69]
+	mi := &file_server_apiv2_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4495,7 +4881,7 @@ func (x *UpdateUserRoleRequest) String() string {
 func (*UpdateUserRoleRequest) ProtoMessage() {}
 
 func (x *UpdateUserRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[69]
+	mi := &file_server_apiv2_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4508,7 +4894,7 @@ func (x *UpdateUserRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserRoleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateUserRoleRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{69}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *UpdateUserRoleRequest) GetUserId() uint32 {
@@ -4534,7 +4920,7 @@ type DeleteUserRequest struct {
 
 func (x *DeleteUserRequest) Reset() {
 	*x = DeleteUserRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[70]
+	mi := &file_server_apiv2_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4546,7 +4932,7 @@ func (x *DeleteUserRequest) String() string {
 func (*DeleteUserRequest) ProtoMessage() {}
 
 func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[70]
+	mi := &file_server_apiv2_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4559,7 +4945,7 @@ func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteUserRequest.ProtoReflect.Descriptor instead.
 func (*DeleteUserRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{70}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *DeleteUserRequest) GetUserId() uint32 {
@@ -4578,7 +4964,7 @@ type ListUsersResponse struct {
 
 func (x *ListUsersResponse) Reset() {
 	*x = ListUsersResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[71]
+	mi := &file_server_apiv2_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4590,7 +4976,7 @@ func (x *ListUsersResponse) String() string {
 func (*ListUsersResponse) ProtoMessage() {}
 
 func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[71]
+	mi := &file_server_apiv2_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4603,7 +4989,7 @@ func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
 func (*ListUsersResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{71}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *ListUsersResponse) GetUsers() []*UserSummary {
@@ -4634,7 +5020,33 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"C\n" +
 	"\x13GetInfoPageResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"\xa7\x04\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\"H\n" +
+	"\x15ListInfoPagesResponse\x12/\n" +
+	"\x05pages\x18\x01 \x03(\v2\x19.protobuf.InfoPageSummaryR\x05pages\"9\n" +
+	"\x0fInfoPageSummary\x12\x12\n" +
+	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"c\n" +
+	"\bInfoPage\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
+	"\x04slug\x18\x02 \x01(\tR\x04slug\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1f\n" +
+	"\vraw_content\x18\x04 \x01(\tR\n" +
+	"rawContent\"F\n" +
+	"\x1aListInfoPagesAdminResponse\x12(\n" +
+	"\x05pages\x18\x01 \x03(\v2\x12.protobuf.InfoPageR\x05pages\"`\n" +
+	"\x15CreateInfoPageRequest\x12\x12\n" +
+	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
+	"\vraw_content\x18\x03 \x01(\tR\n" +
+	"rawContent\"p\n" +
+	"\x15UpdateInfoPageRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
+	"\x04slug\x18\x02 \x01(\tR\x04slug\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1f\n" +
+	"\vraw_content\x18\x04 \x01(\tR\n" +
+	"rawContent\"'\n" +
+	"\x15DeleteInfoPageRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\"\xa7\x04\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -4959,8 +5371,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\vTARGET_USER\x10\x01\x12\x12\n" +
 	"\x0eTARGET_STUDENT\x10\x02\x12\x13\n" +
 	"\x0fTARGET_LECTURER\x10\x03\x12\x10\n" +
-	"\fTARGET_ADMIN\x10\x042\xff\n" +
-	"\n" +
+	"\fTARGET_ADMIN\x10\x042\xd3\r\n" +
 	"\vMetaService\x12\xce\x01\n" +
 	"\vhealthCheck\x12\x16.google.protobuf.Empty\x1a\x1d.protobuf.HealthCheckResponse\"\x87\x01\x92Au\n" +
 	"\n" +
@@ -4974,10 +5385,13 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10getNotifications\x12\x16.google.protobuf.Empty\x1a\".protobuf.GetNotificationsResponse\"k\x92AR\n" +
 	"\rNotifications\x12\x12Get notifications.\x1a-Retrieves notifications for the current user.\x82\xd3\xe4\x93\x02\x10\x12\x0e/notifications\x12\xcf\x01\n" +
 	"\x16getServerNotifications\x12\x16.google.protobuf.Empty\x1a(.protobuf.GetServerNotificationsResponse\"s\x92AS\n" +
-	"\rNotifications\x12\x19Get server notifications.\x1a'Retrieves current server notifications.\x82\xd3\xe4\x93\x02\x17\x12\x15/server-notifications\x12\xa6\x02\n" +
-	"\vgetInfoPage\x12\x1c.protobuf.GetInfoPageRequest\x1a\x1d.protobuf.GetInfoPageResponse\"\xd9\x01\x92A\xbb\x01\n" +
+	"\rNotifications\x12\x19Get server notifications.\x1a'Retrieves current server notifications.\x82\xd3\xe4\x93\x02\x17\x12\x15/server-notifications\x12\xd4\x02\n" +
+	"\vgetInfoPage\x12\x1c.protobuf.GetInfoPageRequest\x1a\x1d.protobuf.GetInfoPageResponse\"\x87\x02\x92A\xe9\x01\n" +
 	"\n" +
-	"Info Pages\x12\x11Get an info page.\x1a\x99\x01Returns the deployment's privacy policy, imprint or about page as sanitised HTML. Public: these are the pages a visitor reads before deciding to sign in.\x82\xd3\xe4\x93\x02\x14\x12\x12/info-pages/{name}2\xcc\a\n" +
+	"Info Pages\x12\x11Get an info page.\x1a\xc7\x01Returns an info page - the privacy policy, imprint, about page, or any further page an administrator has added - as sanitised HTML. Public: these are pages a visitor reads before deciding to sign in.\x82\xd3\xe4\x93\x02\x14\x12\x12/info-pages/{name}\x12\xa3\x02\n" +
+	"\rlistInfoPages\x12\x16.google.protobuf.Empty\x1a\x1f.protobuf.ListInfoPagesResponse\"\xd8\x01\x92A\xc1\x01\n" +
+	"\n" +
+	"Info Pages\x12\x1eList the available info pages.\x1a\x92\x01Retrieves every info page's slug and title, without its content. Public, so a client can find pages an administrator has added without a redeploy.\x82\xd3\xe4\x93\x02\r\x12\v/info-pages2\xcc\a\n" +
 	"\vUserService\x12\x80\x01\n" +
 	"\agetUser\x12\x16.google.protobuf.Empty\x1a\x19.protobuf.GetUserResponse\"B\x92A.\n" +
 	"\x04User\x12\tGet user.\x1a\x1bRetrieves the current user.\x82\xd3\xe4\x93\x02\v\x12\t/users/me\x12\xd2\x01\n" +
@@ -5030,7 +5444,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0eupdateBookmark\x12\x1f.protobuf.UpdateBookmarkRequest\x1a .protobuf.UpdateBookmarkResponse\"a\x92A>\n" +
 	"\tBookmarks\x12\x12Update a bookmark.\x1a\x1dUpdates an existing bookmark.\x82\xd3\xe4\x93\x02\x1a\x1a\x18/bookmarks/{bookmark_id}\x12\xa2\x01\n" +
 	"\x0edeleteBookmark\x12\x1f.protobuf.DeleteBookmarkRequest\x1a\x16.google.protobuf.Empty\"W\x92A4\n" +
-	"\tBookmarks\x12\x12Delete a bookmark.\x1a\x13Deletes a bookmark.\x82\xd3\xe4\x93\x02\x1a*\x18/bookmarks/{bookmark_id}2\xad\x0e\n" +
+	"\tBookmarks\x12\x12Delete a bookmark.\x1a\x13Deletes a bookmark.\x82\xd3\xe4\x93\x02\x1a*\x18/bookmarks/{bookmark_id}2\xc4\x16\n" +
 	"\fAdminService\x12\xff\x01\n" +
 	"\vlistRunners\x12\x16.google.protobuf.Empty\x1a\x1d.protobuf.ListRunnersResponse\"\xb8\x01\x92A\x9e\x01\n" +
 	"\aRunners\x12\x1dList the transcoding runners.\x1atRetrieves every registered runner with its current liveness and workload. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x10\x12\x0e/admin/runners\x12\x97\x02\n" +
@@ -5047,7 +5461,19 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x05Users\x12\x19Change an account's role.\x1aBSets the role of an account. Requires the users.manage permission.\x82\xd3\xe4\x93\x02 :\x01*2\x1b/admin/users/{user_id}/role\x12\xdd\x01\n" +
 	"\n" +
 	"deleteUser\x12\x1b.protobuf.DeleteUserRequest\x1a\x16.google.protobuf.Empty\"\x99\x01\x92Ax\n" +
-	"\x05Users\x12\x12Delete an account.\x1a[Deletes an account. Administrators cannot be deleted. Requires the users.manage permission.\x82\xd3\xe4\x93\x02\x18*\x16/admin/users/{user_id}B\x8c\x04\x92A\xf6\x03\x12\xb8\x03\n" +
+	"\x05Users\x12\x12Delete an account.\x1a[Deletes an account. Administrators cannot be deleted. Requires the users.manage permission.\x82\xd3\xe4\x93\x02\x18*\x16/admin/users/{user_id}\x12\x91\x02\n" +
+	"\x12listInfoPagesAdmin\x12\x16.google.protobuf.Empty\x1a$.protobuf.ListInfoPagesAdminResponse\"\xbc\x01\x92A\x9f\x01\n" +
+	"\n" +
+	"Info Pages\x12(List every info page for administration.\x1agRetrieves every info page with its raw content, for editing. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x13\x12\x11/admin/info-pages\x12\x96\x02\n" +
+	"\x0ecreateInfoPage\x12\x1f.protobuf.CreateInfoPageRequest\x1a\x12.protobuf.InfoPage\"\xce\x01\x92A\xae\x01\n" +
+	"\n" +
+	"Info Pages\x12\x14Create an info page.\x1a\x89\x01Creates a page reachable at /{slug} once created, without a redeploy. The slug must be unique. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/admin/info-pages\x12\xeb\x01\n" +
+	"\x0eupdateInfoPage\x12\x1f.protobuf.UpdateInfoPageRequest\x1a\x12.protobuf.InfoPage\"\xa3\x01\x92A\x7f\n" +
+	"\n" +
+	"Info Pages\x12\x14Update an info page.\x1a[Replaces an info page's slug, title and content. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x1b:\x01*2\x16/admin/info-pages/{id}\x12\xf9\x01\n" +
+	"\x0edeleteInfoPage\x12\x1f.protobuf.DeleteInfoPageRequest\x1a\x16.google.protobuf.Empty\"\xad\x01\x92A\x8b\x01\n" +
+	"\n" +
+	"Info Pages\x12\x14Delete an info page.\x1agDeletes an info page; its route stops resolving immediately. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x18*\x16/admin/info-pages/{id}B\x8c\x04\x92A\xf6\x03\x12\xb8\x03\n" +
 	"\n" +
 	"gocast API\x12\xaa\x02The shiny new gocast API!\n" +
 	"This API is designed to be a user-friendly and easy-to-use interface for third party services.\n" +
@@ -5069,7 +5495,7 @@ func file_server_apiv2_proto_rawDescGZIP() []byte {
 }
 
 var file_server_apiv2_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_server_apiv2_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
+var file_server_apiv2_proto_msgTypes = make([]protoimpl.MessageInfo, 79)
 var file_server_apiv2_proto_goTypes = []any{
 	(UserSettingType)(0),                   // 0: protobuf.UserSettingType
 	(VideoType)(0),                         // 1: protobuf.VideoType
@@ -5079,210 +5505,229 @@ var file_server_apiv2_proto_goTypes = []any{
 	(*GetFrontendConfigResponse)(nil),      // 5: protobuf.GetFrontendConfigResponse
 	(*GetInfoPageRequest)(nil),             // 6: protobuf.GetInfoPageRequest
 	(*GetInfoPageResponse)(nil),            // 7: protobuf.GetInfoPageResponse
-	(*User)(nil),                           // 8: protobuf.User
-	(*UserSetting)(nil),                    // 9: protobuf.UserSetting
-	(*UpdateUserSettingsRequest)(nil),      // 10: protobuf.UpdateUserSettingsRequest
-	(*ResetPasswordRequest)(nil),           // 11: protobuf.ResetPasswordRequest
-	(*GetUserResponse)(nil),                // 12: protobuf.GetUserResponse
-	(*UpdateUserSettingsResponse)(nil),     // 13: protobuf.UpdateUserSettingsResponse
-	(*ResetPasswordResponse)(nil),          // 14: protobuf.ResetPasswordResponse
-	(*GetLoginOptionsResponse)(nil),        // 15: protobuf.GetLoginOptionsResponse
-	(*ExportPersonalDataResponse)(nil),     // 16: protobuf.ExportPersonalDataResponse
-	(*Enrollment)(nil),                     // 17: protobuf.Enrollment
-	(*VideoView)(nil),                      // 18: protobuf.VideoView
-	(*Chat)(nil),                           // 19: protobuf.Chat
-	(*Bookmark)(nil),                       // 20: protobuf.Bookmark
-	(*GetBookmarksRequest)(nil),            // 21: protobuf.GetBookmarksRequest
-	(*AddBookmarkRequest)(nil),             // 22: protobuf.AddBookmarkRequest
-	(*UpdateBookmarkRequest)(nil),          // 23: protobuf.UpdateBookmarkRequest
-	(*DeleteBookmarkRequest)(nil),          // 24: protobuf.DeleteBookmarkRequest
-	(*GetBookmarksResponse)(nil),           // 25: protobuf.GetBookmarksResponse
-	(*AddBookmarkResponse)(nil),            // 26: protobuf.AddBookmarkResponse
-	(*UpdateBookmarkResponse)(nil),         // 27: protobuf.UpdateBookmarkResponse
-	(*Course)(nil),                         // 28: protobuf.Course
-	(*GetPublicCoursesRequest)(nil),        // 29: protobuf.GetPublicCoursesRequest
-	(*GetCourseBySlugRequest)(nil),         // 30: protobuf.GetCourseBySlugRequest
-	(*GetUserCoursesRequest)(nil),          // 31: protobuf.GetUserCoursesRequest
-	(*GetPinForCourseRequest)(nil),         // 32: protobuf.GetPinForCourseRequest
-	(*PinCourseRequest)(nil),               // 33: protobuf.PinCourseRequest
-	(*GetLiveCoursesResponse)(nil),         // 34: protobuf.GetLiveCoursesResponse
-	(*GetPublicCoursesResponse)(nil),       // 35: protobuf.GetPublicCoursesResponse
-	(*GetCourseBySlugResponse)(nil),        // 36: protobuf.GetCourseBySlugResponse
-	(*GetUserCoursesResponse)(nil),         // 37: protobuf.GetUserCoursesResponse
-	(*GetPinnedCoursesResponse)(nil),       // 38: protobuf.GetPinnedCoursesResponse
-	(*PinCourseResponse)(nil),              // 39: protobuf.PinCourseResponse
-	(*GetPinForCourseResponse)(nil),        // 40: protobuf.GetPinForCourseResponse
-	(*CourseStream)(nil),                   // 41: protobuf.CourseStream
-	(*Semester)(nil),                       // 42: protobuf.Semester
-	(*GetSemestersResponse)(nil),           // 43: protobuf.GetSemestersResponse
-	(*Stream)(nil),                         // 44: protobuf.Stream
-	(*StreamPlaylistEntry)(nil),            // 45: protobuf.StreamPlaylistEntry
-	(*StreamProgress)(nil),                 // 46: protobuf.StreamProgress
-	(*VideoSection)(nil),                   // 47: protobuf.VideoSection
-	(*GetStreamRequest)(nil),               // 48: protobuf.GetStreamRequest
-	(*GetVideoSectionsRequest)(nil),        // 49: protobuf.GetVideoSectionsRequest
-	(*GetSubtitlesRequest)(nil),            // 50: protobuf.GetSubtitlesRequest
-	(*GetStreamPlaylistRequest)(nil),       // 51: protobuf.GetStreamPlaylistRequest
-	(*GetThumbsRequest)(nil),               // 52: protobuf.GetThumbsRequest
-	(*GetVideoSectionsResponse)(nil),       // 53: protobuf.GetVideoSectionsResponse
-	(*GetSubtitlesResponse)(nil),           // 54: protobuf.GetSubtitlesResponse
-	(*GetStreamPlaylistResponse)(nil),      // 55: protobuf.GetStreamPlaylistResponse
-	(*GetProgressBatchRequest)(nil),        // 56: protobuf.GetProgressBatchRequest
-	(*UpdateProgressRequest)(nil),          // 57: protobuf.UpdateProgressRequest
-	(*GetProgressBatchResponse)(nil),       // 58: protobuf.GetProgressBatchResponse
-	(*Download)(nil),                       // 59: protobuf.Download
-	(*UserGroupNotification)(nil),          // 60: protobuf.UserGroupNotification
-	(*ServerNotification)(nil),             // 61: protobuf.ServerNotification
-	(*GetNotificationsResponse)(nil),       // 62: protobuf.GetNotificationsResponse
-	(*GetServerNotificationsResponse)(nil), // 63: protobuf.GetServerNotificationsResponse
-	(*LectureHall)(nil),                    // 64: protobuf.LectureHall
-	(*CameraPreset)(nil),                   // 65: protobuf.CameraPreset
-	(*Runner)(nil),                         // 66: protobuf.Runner
-	(*DeleteRunnerRequest)(nil),            // 67: protobuf.DeleteRunnerRequest
-	(*ListRunnersResponse)(nil),            // 68: protobuf.ListRunnersResponse
-	(*UserSummary)(nil),                    // 69: protobuf.UserSummary
-	(*SearchUsersRequest)(nil),             // 70: protobuf.SearchUsersRequest
-	(*CreateUserRequest)(nil),              // 71: protobuf.CreateUserRequest
-	(*UpdateUserRoleRequest)(nil),          // 72: protobuf.UpdateUserRoleRequest
-	(*DeleteUserRequest)(nil),              // 73: protobuf.DeleteUserRequest
-	(*ListUsersResponse)(nil),              // 74: protobuf.ListUsersResponse
-	(*timestamppb.Timestamp)(nil),          // 75: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                  // 76: google.protobuf.Empty
-	(*httpbody.HttpBody)(nil),              // 77: google.api.HttpBody
+	(*ListInfoPagesResponse)(nil),          // 8: protobuf.ListInfoPagesResponse
+	(*InfoPageSummary)(nil),                // 9: protobuf.InfoPageSummary
+	(*InfoPage)(nil),                       // 10: protobuf.InfoPage
+	(*ListInfoPagesAdminResponse)(nil),     // 11: protobuf.ListInfoPagesAdminResponse
+	(*CreateInfoPageRequest)(nil),          // 12: protobuf.CreateInfoPageRequest
+	(*UpdateInfoPageRequest)(nil),          // 13: protobuf.UpdateInfoPageRequest
+	(*DeleteInfoPageRequest)(nil),          // 14: protobuf.DeleteInfoPageRequest
+	(*User)(nil),                           // 15: protobuf.User
+	(*UserSetting)(nil),                    // 16: protobuf.UserSetting
+	(*UpdateUserSettingsRequest)(nil),      // 17: protobuf.UpdateUserSettingsRequest
+	(*ResetPasswordRequest)(nil),           // 18: protobuf.ResetPasswordRequest
+	(*GetUserResponse)(nil),                // 19: protobuf.GetUserResponse
+	(*UpdateUserSettingsResponse)(nil),     // 20: protobuf.UpdateUserSettingsResponse
+	(*ResetPasswordResponse)(nil),          // 21: protobuf.ResetPasswordResponse
+	(*GetLoginOptionsResponse)(nil),        // 22: protobuf.GetLoginOptionsResponse
+	(*ExportPersonalDataResponse)(nil),     // 23: protobuf.ExportPersonalDataResponse
+	(*Enrollment)(nil),                     // 24: protobuf.Enrollment
+	(*VideoView)(nil),                      // 25: protobuf.VideoView
+	(*Chat)(nil),                           // 26: protobuf.Chat
+	(*Bookmark)(nil),                       // 27: protobuf.Bookmark
+	(*GetBookmarksRequest)(nil),            // 28: protobuf.GetBookmarksRequest
+	(*AddBookmarkRequest)(nil),             // 29: protobuf.AddBookmarkRequest
+	(*UpdateBookmarkRequest)(nil),          // 30: protobuf.UpdateBookmarkRequest
+	(*DeleteBookmarkRequest)(nil),          // 31: protobuf.DeleteBookmarkRequest
+	(*GetBookmarksResponse)(nil),           // 32: protobuf.GetBookmarksResponse
+	(*AddBookmarkResponse)(nil),            // 33: protobuf.AddBookmarkResponse
+	(*UpdateBookmarkResponse)(nil),         // 34: protobuf.UpdateBookmarkResponse
+	(*Course)(nil),                         // 35: protobuf.Course
+	(*GetPublicCoursesRequest)(nil),        // 36: protobuf.GetPublicCoursesRequest
+	(*GetCourseBySlugRequest)(nil),         // 37: protobuf.GetCourseBySlugRequest
+	(*GetUserCoursesRequest)(nil),          // 38: protobuf.GetUserCoursesRequest
+	(*GetPinForCourseRequest)(nil),         // 39: protobuf.GetPinForCourseRequest
+	(*PinCourseRequest)(nil),               // 40: protobuf.PinCourseRequest
+	(*GetLiveCoursesResponse)(nil),         // 41: protobuf.GetLiveCoursesResponse
+	(*GetPublicCoursesResponse)(nil),       // 42: protobuf.GetPublicCoursesResponse
+	(*GetCourseBySlugResponse)(nil),        // 43: protobuf.GetCourseBySlugResponse
+	(*GetUserCoursesResponse)(nil),         // 44: protobuf.GetUserCoursesResponse
+	(*GetPinnedCoursesResponse)(nil),       // 45: protobuf.GetPinnedCoursesResponse
+	(*PinCourseResponse)(nil),              // 46: protobuf.PinCourseResponse
+	(*GetPinForCourseResponse)(nil),        // 47: protobuf.GetPinForCourseResponse
+	(*CourseStream)(nil),                   // 48: protobuf.CourseStream
+	(*Semester)(nil),                       // 49: protobuf.Semester
+	(*GetSemestersResponse)(nil),           // 50: protobuf.GetSemestersResponse
+	(*Stream)(nil),                         // 51: protobuf.Stream
+	(*StreamPlaylistEntry)(nil),            // 52: protobuf.StreamPlaylistEntry
+	(*StreamProgress)(nil),                 // 53: protobuf.StreamProgress
+	(*VideoSection)(nil),                   // 54: protobuf.VideoSection
+	(*GetStreamRequest)(nil),               // 55: protobuf.GetStreamRequest
+	(*GetVideoSectionsRequest)(nil),        // 56: protobuf.GetVideoSectionsRequest
+	(*GetSubtitlesRequest)(nil),            // 57: protobuf.GetSubtitlesRequest
+	(*GetStreamPlaylistRequest)(nil),       // 58: protobuf.GetStreamPlaylistRequest
+	(*GetThumbsRequest)(nil),               // 59: protobuf.GetThumbsRequest
+	(*GetVideoSectionsResponse)(nil),       // 60: protobuf.GetVideoSectionsResponse
+	(*GetSubtitlesResponse)(nil),           // 61: protobuf.GetSubtitlesResponse
+	(*GetStreamPlaylistResponse)(nil),      // 62: protobuf.GetStreamPlaylistResponse
+	(*GetProgressBatchRequest)(nil),        // 63: protobuf.GetProgressBatchRequest
+	(*UpdateProgressRequest)(nil),          // 64: protobuf.UpdateProgressRequest
+	(*GetProgressBatchResponse)(nil),       // 65: protobuf.GetProgressBatchResponse
+	(*Download)(nil),                       // 66: protobuf.Download
+	(*UserGroupNotification)(nil),          // 67: protobuf.UserGroupNotification
+	(*ServerNotification)(nil),             // 68: protobuf.ServerNotification
+	(*GetNotificationsResponse)(nil),       // 69: protobuf.GetNotificationsResponse
+	(*GetServerNotificationsResponse)(nil), // 70: protobuf.GetServerNotificationsResponse
+	(*LectureHall)(nil),                    // 71: protobuf.LectureHall
+	(*CameraPreset)(nil),                   // 72: protobuf.CameraPreset
+	(*Runner)(nil),                         // 73: protobuf.Runner
+	(*DeleteRunnerRequest)(nil),            // 74: protobuf.DeleteRunnerRequest
+	(*ListRunnersResponse)(nil),            // 75: protobuf.ListRunnersResponse
+	(*UserSummary)(nil),                    // 76: protobuf.UserSummary
+	(*SearchUsersRequest)(nil),             // 77: protobuf.SearchUsersRequest
+	(*CreateUserRequest)(nil),              // 78: protobuf.CreateUserRequest
+	(*UpdateUserRoleRequest)(nil),          // 79: protobuf.UpdateUserRoleRequest
+	(*DeleteUserRequest)(nil),              // 80: protobuf.DeleteUserRequest
+	(*ListUsersResponse)(nil),              // 81: protobuf.ListUsersResponse
+	(*timestamppb.Timestamp)(nil),          // 82: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                  // 83: google.protobuf.Empty
+	(*httpbody.HttpBody)(nil),              // 84: google.api.HttpBody
 }
 var file_server_apiv2_proto_depIdxs = []int32{
 	4,  // 0: protobuf.GetFrontendConfigResponse.branding:type_name -> protobuf.Branding
-	28, // 1: protobuf.User.courses:type_name -> protobuf.Course
-	28, // 2: protobuf.User.administered_courses:type_name -> protobuf.Course
-	28, // 3: protobuf.User.pinned_courses:type_name -> protobuf.Course
-	9,  // 4: protobuf.User.settings:type_name -> protobuf.UserSetting
-	20, // 5: protobuf.User.bookmarks:type_name -> protobuf.Bookmark
-	75, // 6: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 7: protobuf.UserSetting.type:type_name -> protobuf.UserSettingType
-	9,  // 8: protobuf.UpdateUserSettingsRequest.user_settings:type_name -> protobuf.UserSetting
-	8,  // 9: protobuf.GetUserResponse.user:type_name -> protobuf.User
-	9,  // 10: protobuf.UpdateUserSettingsResponse.user_settings:type_name -> protobuf.UserSetting
-	8,  // 11: protobuf.ExportPersonalDataResponse.user_data:type_name -> protobuf.User
-	17, // 12: protobuf.ExportPersonalDataResponse.enrollments:type_name -> protobuf.Enrollment
-	18, // 13: protobuf.ExportPersonalDataResponse.video_views:type_name -> protobuf.VideoView
-	19, // 14: protobuf.ExportPersonalDataResponse.chats:type_name -> protobuf.Chat
-	75, // 15: protobuf.Chat.created_at:type_name -> google.protobuf.Timestamp
-	20, // 16: protobuf.GetBookmarksResponse.bookmarks:type_name -> protobuf.Bookmark
-	20, // 17: protobuf.AddBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
-	20, // 18: protobuf.UpdateBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
-	42, // 19: protobuf.Course.semester:type_name -> protobuf.Semester
-	44, // 20: protobuf.Course.streams:type_name -> protobuf.Stream
-	44, // 21: protobuf.Course.last_recording:type_name -> protobuf.Stream
-	44, // 22: protobuf.Course.next_lecture:type_name -> protobuf.Stream
-	41, // 23: protobuf.GetLiveCoursesResponse.live_courses:type_name -> protobuf.CourseStream
-	28, // 24: protobuf.GetPublicCoursesResponse.courses:type_name -> protobuf.Course
-	28, // 25: protobuf.GetCourseBySlugResponse.course:type_name -> protobuf.Course
-	28, // 26: protobuf.GetUserCoursesResponse.courses:type_name -> protobuf.Course
-	28, // 27: protobuf.GetPinnedCoursesResponse.courses:type_name -> protobuf.Course
-	28, // 28: protobuf.CourseStream.course:type_name -> protobuf.Course
-	44, // 29: protobuf.CourseStream.stream:type_name -> protobuf.Stream
-	64, // 30: protobuf.CourseStream.lecture_hall:type_name -> protobuf.LectureHall
-	42, // 31: protobuf.GetSemestersResponse.current:type_name -> protobuf.Semester
-	42, // 32: protobuf.GetSemestersResponse.semesters:type_name -> protobuf.Semester
-	75, // 33: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
-	75, // 34: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
-	75, // 35: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
-	59, // 36: protobuf.Stream.downloads:type_name -> protobuf.Download
-	75, // 37: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
-	46, // 38: protobuf.StreamPlaylistEntry.stream_progress:type_name -> protobuf.StreamProgress
-	75, // 39: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
-	1,  // 40: protobuf.GetThumbsRequest.thumb_type:type_name -> protobuf.VideoType
-	47, // 41: protobuf.GetVideoSectionsResponse.sections:type_name -> protobuf.VideoSection
-	45, // 42: protobuf.GetStreamPlaylistResponse.entries:type_name -> protobuf.StreamPlaylistEntry
-	46, // 43: protobuf.GetProgressBatchResponse.progress_batch:type_name -> protobuf.StreamProgress
-	2,  // 44: protobuf.UserGroupNotification.target:type_name -> protobuf.NotificationTarget
-	75, // 45: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
-	75, // 46: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
-	75, // 47: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
-	60, // 48: protobuf.GetNotificationsResponse.notifications:type_name -> protobuf.UserGroupNotification
-	61, // 49: protobuf.GetServerNotificationsResponse.server_notifications:type_name -> protobuf.ServerNotification
-	65, // 50: protobuf.LectureHall.camera_presets:type_name -> protobuf.CameraPreset
-	75, // 51: protobuf.Runner.last_seen:type_name -> google.protobuf.Timestamp
-	75, // 52: protobuf.Runner.time_of_register:type_name -> google.protobuf.Timestamp
-	66, // 53: protobuf.ListRunnersResponse.runners:type_name -> protobuf.Runner
-	69, // 54: protobuf.ListUsersResponse.users:type_name -> protobuf.UserSummary
-	76, // 55: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
-	76, // 56: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
-	76, // 57: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
-	76, // 58: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
-	76, // 59: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
-	6,  // 60: protobuf.MetaService.getInfoPage:input_type -> protobuf.GetInfoPageRequest
-	76, // 61: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
-	10, // 62: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
-	76, // 63: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
-	11, // 64: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
-	76, // 65: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
-	29, // 66: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
-	30, // 67: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
-	31, // 68: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
-	76, // 69: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
-	76, // 70: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
-	32, // 71: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
-	33, // 72: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
-	48, // 73: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
-	49, // 74: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
-	51, // 75: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
-	50, // 76: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
-	52, // 77: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
-	56, // 78: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
-	57, // 79: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
-	22, // 80: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
-	21, // 81: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
-	23, // 82: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
-	24, // 83: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
-	76, // 84: protobuf.AdminService.listRunners:input_type -> google.protobuf.Empty
-	67, // 85: protobuf.AdminService.deleteRunner:input_type -> protobuf.DeleteRunnerRequest
-	76, // 86: protobuf.AdminService.listStaff:input_type -> google.protobuf.Empty
-	70, // 87: protobuf.AdminService.searchUsers:input_type -> protobuf.SearchUsersRequest
-	71, // 88: protobuf.AdminService.createUser:input_type -> protobuf.CreateUserRequest
-	72, // 89: protobuf.AdminService.updateUserRole:input_type -> protobuf.UpdateUserRoleRequest
-	73, // 90: protobuf.AdminService.deleteUser:input_type -> protobuf.DeleteUserRequest
-	3,  // 91: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
-	5,  // 92: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
-	43, // 93: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
-	62, // 94: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
-	63, // 95: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
-	7,  // 96: protobuf.MetaService.getInfoPage:output_type -> protobuf.GetInfoPageResponse
-	12, // 97: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
-	13, // 98: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
-	16, // 99: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
-	14, // 100: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
-	15, // 101: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
-	35, // 102: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
-	36, // 103: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
-	37, // 104: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
-	38, // 105: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
-	34, // 106: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
-	40, // 107: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
-	39, // 108: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
-	41, // 109: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
-	53, // 110: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
-	55, // 111: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
-	77, // 112: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
-	77, // 113: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
-	58, // 114: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
-	46, // 115: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
-	26, // 116: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
-	25, // 117: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
-	27, // 118: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
-	76, // 119: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
-	68, // 120: protobuf.AdminService.listRunners:output_type -> protobuf.ListRunnersResponse
-	76, // 121: protobuf.AdminService.deleteRunner:output_type -> google.protobuf.Empty
-	74, // 122: protobuf.AdminService.listStaff:output_type -> protobuf.ListUsersResponse
-	74, // 123: protobuf.AdminService.searchUsers:output_type -> protobuf.ListUsersResponse
-	69, // 124: protobuf.AdminService.createUser:output_type -> protobuf.UserSummary
-	69, // 125: protobuf.AdminService.updateUserRole:output_type -> protobuf.UserSummary
-	76, // 126: protobuf.AdminService.deleteUser:output_type -> google.protobuf.Empty
-	91, // [91:127] is the sub-list for method output_type
-	55, // [55:91] is the sub-list for method input_type
-	55, // [55:55] is the sub-list for extension type_name
-	55, // [55:55] is the sub-list for extension extendee
-	0,  // [0:55] is the sub-list for field type_name
+	9,  // 1: protobuf.ListInfoPagesResponse.pages:type_name -> protobuf.InfoPageSummary
+	10, // 2: protobuf.ListInfoPagesAdminResponse.pages:type_name -> protobuf.InfoPage
+	35, // 3: protobuf.User.courses:type_name -> protobuf.Course
+	35, // 4: protobuf.User.administered_courses:type_name -> protobuf.Course
+	35, // 5: protobuf.User.pinned_courses:type_name -> protobuf.Course
+	16, // 6: protobuf.User.settings:type_name -> protobuf.UserSetting
+	27, // 7: protobuf.User.bookmarks:type_name -> protobuf.Bookmark
+	82, // 8: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 9: protobuf.UserSetting.type:type_name -> protobuf.UserSettingType
+	16, // 10: protobuf.UpdateUserSettingsRequest.user_settings:type_name -> protobuf.UserSetting
+	15, // 11: protobuf.GetUserResponse.user:type_name -> protobuf.User
+	16, // 12: protobuf.UpdateUserSettingsResponse.user_settings:type_name -> protobuf.UserSetting
+	15, // 13: protobuf.ExportPersonalDataResponse.user_data:type_name -> protobuf.User
+	24, // 14: protobuf.ExportPersonalDataResponse.enrollments:type_name -> protobuf.Enrollment
+	25, // 15: protobuf.ExportPersonalDataResponse.video_views:type_name -> protobuf.VideoView
+	26, // 16: protobuf.ExportPersonalDataResponse.chats:type_name -> protobuf.Chat
+	82, // 17: protobuf.Chat.created_at:type_name -> google.protobuf.Timestamp
+	27, // 18: protobuf.GetBookmarksResponse.bookmarks:type_name -> protobuf.Bookmark
+	27, // 19: protobuf.AddBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
+	27, // 20: protobuf.UpdateBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
+	49, // 21: protobuf.Course.semester:type_name -> protobuf.Semester
+	51, // 22: protobuf.Course.streams:type_name -> protobuf.Stream
+	51, // 23: protobuf.Course.last_recording:type_name -> protobuf.Stream
+	51, // 24: protobuf.Course.next_lecture:type_name -> protobuf.Stream
+	48, // 25: protobuf.GetLiveCoursesResponse.live_courses:type_name -> protobuf.CourseStream
+	35, // 26: protobuf.GetPublicCoursesResponse.courses:type_name -> protobuf.Course
+	35, // 27: protobuf.GetCourseBySlugResponse.course:type_name -> protobuf.Course
+	35, // 28: protobuf.GetUserCoursesResponse.courses:type_name -> protobuf.Course
+	35, // 29: protobuf.GetPinnedCoursesResponse.courses:type_name -> protobuf.Course
+	35, // 30: protobuf.CourseStream.course:type_name -> protobuf.Course
+	51, // 31: protobuf.CourseStream.stream:type_name -> protobuf.Stream
+	71, // 32: protobuf.CourseStream.lecture_hall:type_name -> protobuf.LectureHall
+	49, // 33: protobuf.GetSemestersResponse.current:type_name -> protobuf.Semester
+	49, // 34: protobuf.GetSemestersResponse.semesters:type_name -> protobuf.Semester
+	82, // 35: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
+	82, // 36: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
+	82, // 37: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
+	66, // 38: protobuf.Stream.downloads:type_name -> protobuf.Download
+	82, // 39: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
+	53, // 40: protobuf.StreamPlaylistEntry.stream_progress:type_name -> protobuf.StreamProgress
+	82, // 41: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
+	1,  // 42: protobuf.GetThumbsRequest.thumb_type:type_name -> protobuf.VideoType
+	54, // 43: protobuf.GetVideoSectionsResponse.sections:type_name -> protobuf.VideoSection
+	52, // 44: protobuf.GetStreamPlaylistResponse.entries:type_name -> protobuf.StreamPlaylistEntry
+	53, // 45: protobuf.GetProgressBatchResponse.progress_batch:type_name -> protobuf.StreamProgress
+	2,  // 46: protobuf.UserGroupNotification.target:type_name -> protobuf.NotificationTarget
+	82, // 47: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
+	82, // 48: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
+	82, // 49: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
+	67, // 50: protobuf.GetNotificationsResponse.notifications:type_name -> protobuf.UserGroupNotification
+	68, // 51: protobuf.GetServerNotificationsResponse.server_notifications:type_name -> protobuf.ServerNotification
+	72, // 52: protobuf.LectureHall.camera_presets:type_name -> protobuf.CameraPreset
+	82, // 53: protobuf.Runner.last_seen:type_name -> google.protobuf.Timestamp
+	82, // 54: protobuf.Runner.time_of_register:type_name -> google.protobuf.Timestamp
+	73, // 55: protobuf.ListRunnersResponse.runners:type_name -> protobuf.Runner
+	76, // 56: protobuf.ListUsersResponse.users:type_name -> protobuf.UserSummary
+	83, // 57: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
+	83, // 58: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
+	83, // 59: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
+	83, // 60: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
+	83, // 61: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
+	6,  // 62: protobuf.MetaService.getInfoPage:input_type -> protobuf.GetInfoPageRequest
+	83, // 63: protobuf.MetaService.listInfoPages:input_type -> google.protobuf.Empty
+	83, // 64: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
+	17, // 65: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
+	83, // 66: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
+	18, // 67: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
+	83, // 68: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
+	36, // 69: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
+	37, // 70: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
+	38, // 71: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
+	83, // 72: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
+	83, // 73: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
+	39, // 74: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
+	40, // 75: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
+	55, // 76: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
+	56, // 77: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
+	58, // 78: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
+	57, // 79: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
+	59, // 80: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
+	63, // 81: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
+	64, // 82: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
+	29, // 83: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
+	28, // 84: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
+	30, // 85: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
+	31, // 86: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
+	83, // 87: protobuf.AdminService.listRunners:input_type -> google.protobuf.Empty
+	74, // 88: protobuf.AdminService.deleteRunner:input_type -> protobuf.DeleteRunnerRequest
+	83, // 89: protobuf.AdminService.listStaff:input_type -> google.protobuf.Empty
+	77, // 90: protobuf.AdminService.searchUsers:input_type -> protobuf.SearchUsersRequest
+	78, // 91: protobuf.AdminService.createUser:input_type -> protobuf.CreateUserRequest
+	79, // 92: protobuf.AdminService.updateUserRole:input_type -> protobuf.UpdateUserRoleRequest
+	80, // 93: protobuf.AdminService.deleteUser:input_type -> protobuf.DeleteUserRequest
+	83, // 94: protobuf.AdminService.listInfoPagesAdmin:input_type -> google.protobuf.Empty
+	12, // 95: protobuf.AdminService.createInfoPage:input_type -> protobuf.CreateInfoPageRequest
+	13, // 96: protobuf.AdminService.updateInfoPage:input_type -> protobuf.UpdateInfoPageRequest
+	14, // 97: protobuf.AdminService.deleteInfoPage:input_type -> protobuf.DeleteInfoPageRequest
+	3,  // 98: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
+	5,  // 99: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
+	50, // 100: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
+	69, // 101: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
+	70, // 102: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
+	7,  // 103: protobuf.MetaService.getInfoPage:output_type -> protobuf.GetInfoPageResponse
+	8,  // 104: protobuf.MetaService.listInfoPages:output_type -> protobuf.ListInfoPagesResponse
+	19, // 105: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
+	20, // 106: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
+	23, // 107: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
+	21, // 108: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
+	22, // 109: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
+	42, // 110: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
+	43, // 111: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
+	44, // 112: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
+	45, // 113: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
+	41, // 114: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
+	47, // 115: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
+	46, // 116: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
+	48, // 117: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
+	60, // 118: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
+	62, // 119: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
+	84, // 120: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
+	84, // 121: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
+	65, // 122: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
+	53, // 123: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
+	33, // 124: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
+	32, // 125: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
+	34, // 126: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
+	83, // 127: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
+	75, // 128: protobuf.AdminService.listRunners:output_type -> protobuf.ListRunnersResponse
+	83, // 129: protobuf.AdminService.deleteRunner:output_type -> google.protobuf.Empty
+	81, // 130: protobuf.AdminService.listStaff:output_type -> protobuf.ListUsersResponse
+	81, // 131: protobuf.AdminService.searchUsers:output_type -> protobuf.ListUsersResponse
+	76, // 132: protobuf.AdminService.createUser:output_type -> protobuf.UserSummary
+	76, // 133: protobuf.AdminService.updateUserRole:output_type -> protobuf.UserSummary
+	83, // 134: protobuf.AdminService.deleteUser:output_type -> google.protobuf.Empty
+	11, // 135: protobuf.AdminService.listInfoPagesAdmin:output_type -> protobuf.ListInfoPagesAdminResponse
+	10, // 136: protobuf.AdminService.createInfoPage:output_type -> protobuf.InfoPage
+	10, // 137: protobuf.AdminService.updateInfoPage:output_type -> protobuf.InfoPage
+	83, // 138: protobuf.AdminService.deleteInfoPage:output_type -> google.protobuf.Empty
+	98, // [98:139] is the sub-list for method output_type
+	57, // [57:98] is the sub-list for method input_type
+	57, // [57:57] is the sub-list for extension type_name
+	57, // [57:57] is the sub-list for extension extendee
+	0,  // [0:57] is the sub-list for field type_name
 }
 
 func init() { file_server_apiv2_proto_init() }
@@ -5290,16 +5735,16 @@ func file_server_apiv2_proto_init() {
 	if File_server_apiv2_proto != nil {
 		return
 	}
-	file_server_apiv2_proto_msgTypes[25].OneofWrappers = []any{}
-	file_server_apiv2_proto_msgTypes[49].OneofWrappers = []any{}
-	file_server_apiv2_proto_msgTypes[67].OneofWrappers = []any{}
+	file_server_apiv2_proto_msgTypes[32].OneofWrappers = []any{}
+	file_server_apiv2_proto_msgTypes[56].OneofWrappers = []any{}
+	file_server_apiv2_proto_msgTypes[74].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_server_apiv2_proto_rawDesc), len(file_server_apiv2_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   72,
+			NumMessages:   79,
 			NumExtensions: 0,
 			NumServices:   5,
 		},

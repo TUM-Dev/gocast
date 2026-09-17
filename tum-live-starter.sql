@@ -1127,25 +1127,30 @@ CREATE TABLE IF NOT EXISTS `info_pages` (
   `created_at` datetime(3) DEFAULT NULL,
   `updated_at` datetime(3) DEFAULT NULL,
   `deleted_at` datetime(3) DEFAULT NULL,
+  `slug` longtext NOT NULL,
   `name` longtext NOT NULL,
   `raw_content` longtext NOT NULL,
   `type` bigint(20) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_info_pages_slug` (`slug`(255)),
   KEY `idx_info_pages_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- The three info pages. Ids are fixed; `name` is the editable title, so it
--- deliberately does not match the route getInfoPage keys on.
+-- The three built-in info pages, plus a fourth to prove a page an administrator adds
+-- works the same way. Ids are fixed; `name` is the editable title, deliberately
+-- independent of `slug`, which getInfoPage keys on.
 --
 -- Type 1 is Markdown. Privacy carries a script tag and an inline handler, so the
 -- server's sanitiser has something to strip.
 --
-INSERT INTO `info_pages` (`id`,`created_at`,`updated_at`,`name`,`raw_content`,`type`)
+INSERT INTO `info_pages` (`id`,`created_at`,`updated_at`,`slug`,`name`,`raw_content`,`type`)
 VALUES
-  (1,NOW(),NOW(),'Privacy Policy',
+  (1,NOW(),NOW(),'privacy','Privacy Policy',
    '# Privacy\n\nWe keep what we must and no more.\n\n<script>alert(1)</script>\n<img src=x onerror="alert(2)">\n\n- Lecture recordings\n- Watch progress\n',1),
-  (2,NOW(),NOW(),'Imprint',
+  (2,NOW(),NOW(),'imprint','Imprint',
    '# Imprint\n\nTechnische Universität München\n\nResponsible for content: RBG.\n',1),
-  (3,NOW(),NOW(),'About',
-   '# About\n\nGoCast is the lecture streaming platform of the TUM.\n\n[Source](https://github.com/TUM-Dev/gocast)\n',1);
+  (3,NOW(),NOW(),'about','About',
+   '# About\n\nGoCast is the lecture streaming platform of the TUM.\n\n[Source](https://github.com/TUM-Dev/gocast)\n',1),
+  (4,NOW(),NOW(),'accessibility','Accessibility',
+   '# Accessibility\n\nThis page was added by an administrator after the deployment went live, to show that a new info page needs no code change.\n',1);

@@ -289,3 +289,9 @@ export const infoPages = {
 } as const;
 
 export type InfoPageKey = keyof typeof infoPages;
+
+/**
+ * A fourth page, seeded to prove one an administrator adds after the built-in three
+ * works the same way: reachable at its slug with no route of its own in the frontend.
+ */
+export const dynamicInfoPage = { slug: "accessibility", title: "Accessibility", heading: "Accessibility" } as const;

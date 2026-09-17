@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 
-import { fetchInfoPage, type InfoPageName } from "@/lib/info-pages";
+import { fetchInfoPage } from "@/lib/info-pages";
 
-const props = defineProps<{ name: InfoPageName }>();
+const props = defineProps<{ name: string }>();
 
 const content = ref("");
 const failed = ref(false);
@@ -13,7 +13,7 @@ const loaded = ref(false);
 // rather than overwriting the page the visitor is now on.
 let generation = 0;
 
-async function load(name: InfoPageName): Promise<void> {
+async function load(name: string): Promise<void> {
   const current = ++generation;
   loaded.value = false;
   failed.value = false;

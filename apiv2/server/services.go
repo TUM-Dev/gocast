@@ -32,6 +32,7 @@ var services = []service{
 			"getSemesters":           public,
 			"getServerNotifications": public,
 			"getInfoPage":            public,
+			"listInfoPages":          public,
 			"getNotifications":       authenticated,
 		},
 	},
@@ -106,6 +107,12 @@ var services = []service{
 			"createUser":     requires(model.PermManageUsers),
 			"updateUserRole": requires(model.PermManageUsers),
 			"deleteUser":     requires(model.PermManageUsers),
+
+			// Info pages belong to no course, same as runners.
+			"listInfoPagesAdmin": requires(model.PermAdministerServer),
+			"createInfoPage":     requires(model.PermAdministerServer),
+			"updateInfoPage":     requires(model.PermAdministerServer),
+			"deleteInfoPage":     requires(model.PermAdministerServer),
 		},
 	},
 }

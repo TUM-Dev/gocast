@@ -45,7 +45,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	page := GetPageString(c.Request.URL.Path)
 	var notifications []model.Notification
 	var tokens []dao.AllTokensDto
-	var infopages []model.InfoPage
 	var serverNotifications []model.ServerNotification
 	switch page {
 	case "notifications":
@@ -59,12 +58,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		tokens, err = r.TokenDao.GetAllTokens(tumLiveContext.User)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("couldn't query tokens", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
-		}
-	case "info-pages":
-		infopages, err = r.InfoPageDao.GetAll()
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			logger.Error("couldn't query texts", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	case "serverStats":
@@ -99,7 +92,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			CurY:                y,
 			CurT:                t,
 			Tokens:              TokensData{Tokens: tokens, RtmpProxyURL: tools.Cfg.RtmpProxyURL, User: tumLiveContext.User},
-			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
 			HasTestCourse:       hasTestCourse,
@@ -379,7 +371,6 @@ type AdminPageData struct {
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
 	Tokens              TokensData
-	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 	HasTestCourse       bool
 }

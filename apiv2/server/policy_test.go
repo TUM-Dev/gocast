@@ -90,6 +90,7 @@ func TestOnlyExpectedMethodsArePublic(t *testing.T) {
 		"getThumbs":              true,
 		"getServerNotifications": true,
 		"getInfoPage":            true,
+		"listInfoPages":          true,
 	}
 
 	for _, svc := range services {

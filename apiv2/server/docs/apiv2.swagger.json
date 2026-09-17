@@ -48,6 +48,135 @@
     "application/json"
   ],
   "paths": {
+    "/admin/info-pages": {
+      "get": {
+        "summary": "List every info page for administration.",
+        "description": "Retrieves every info page with its raw content, for editing. Requires the server.administer permission.",
+        "operationId": "AdminService_listInfoPagesAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListInfoPagesAdminResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Info Pages"
+        ]
+      },
+      "post": {
+        "summary": "Create an info page.",
+        "description": "Creates a page reachable at /{slug} once created, without a redeploy. The slug must be unique. Requires the server.administer permission.",
+        "operationId": "AdminService_createInfoPage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufInfoPage"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateInfoPageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Info Pages"
+        ]
+      }
+    },
+    "/admin/info-pages/{id}": {
+      "delete": {
+        "summary": "Delete an info page.",
+        "description": "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteInfoPage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Info Pages"
+        ]
+      },
+      "patch": {
+        "summary": "Update an info page.",
+        "description": "Replaces an info page's slug, title and content. Requires the server.administer permission.",
+        "operationId": "AdminService_updateInfoPage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufInfoPage"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AdminServiceupdateInfoPageBody"
+            }
+          }
+        ],
+        "tags": [
+          "Info Pages"
+        ]
+      }
+    },
     "/admin/runners": {
       "get": {
         "summary": "List the transcoding runners.",
@@ -727,10 +856,34 @@
         ]
       }
     },
+    "/info-pages": {
+      "get": {
+        "summary": "List the available info pages.",
+        "description": "Retrieves every info page's slug and title, without its content. Public, so a client can find pages an administrator has added without a redeploy.",
+        "operationId": "MetaService_listInfoPages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListInfoPagesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Info Pages"
+        ]
+      }
+    },
     "/info-pages/{name}": {
       "get": {
         "summary": "Get an info page.",
-        "description": "Returns the deployment's privacy policy, imprint or about page as sanitised HTML. Public: these are the pages a visitor reads before deciding to sign in.",
+        "description": "Returns an info page - the privacy policy, imprint, about page, or any further page an administrator has added - as sanitised HTML. Public: these are pages a visitor reads before deciding to sign in.",
         "operationId": "MetaService_getInfoPage",
         "responses": {
           "200": {
@@ -1288,6 +1441,20 @@
     }
   },
   "definitions": {
+    "AdminServiceupdateInfoPageBody": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "rawContent": {
+          "type": "string"
+        }
+      }
+    },
     "AdminServiceupdateUserRoleBody": {
       "type": "object",
       "properties": {
@@ -1521,6 +1688,20 @@
         "viewers": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "protobufCreateInfoPageRequest": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "rawContent": {
+          "type": "string"
         }
       }
     },
@@ -1811,6 +1992,39 @@
         }
       }
     },
+    "protobufInfoPage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slug": {
+          "type": "string",
+          "description": "The page's route and API key. Unique; a client should treat changing it as\nrenaming the page's URL, not merely relabeling it."
+        },
+        "name": {
+          "type": "string",
+          "description": "The editable display title, shown to administrators managing the page. Not\nrendered on the page itself, which opens with its own Markdown heading."
+        },
+        "rawContent": {
+          "type": "string"
+        }
+      },
+      "description": "InfoPage is a page as an administrator edits it, with its raw, unrendered content."
+    },
+    "protobufInfoPageSummary": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "description": "InfoPageSummary is what a visitor is told exists, before asking for one by slug."
+    },
     "protobufLectureHall": {
       "type": "object",
       "properties": {
@@ -1831,6 +2045,30 @@
         "externalUrl": {
           "type": "string",
           "description": "Where the room is, on whatever campus map the deployment points at. The live\nlecture badge links to it."
+        }
+      }
+    },
+    "protobufListInfoPagesAdminResponse": {
+      "type": "object",
+      "properties": {
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufInfoPage"
+          }
+        }
+      }
+    },
+    "protobufListInfoPagesResponse": {
+      "type": "object",
+      "properties": {
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufInfoPageSummary"
+          }
         }
       }
     },

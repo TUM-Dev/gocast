@@ -60,6 +60,7 @@ var spaRoutes = map[string]bool{
 	"/course/:year/:term/:slug": true,
 	"/admin/runners":            true,
 	"/admin/users":              true,
+	"/admin/info-pages":         true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
@@ -301,7 +302,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
 	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
-	serverAdminGroup.GET("/admin/info-pages", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
 	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
 	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
@@ -357,7 +358,7 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/healthcheck", routes.HealthCheck)
 	router.GET("/jwtPubKey", routes.JWTPubKey)
 
-	router.GET("/:shortLink", routes.HighlightPage)
+	router.GET("/:shortLink", routes.shortLinkOrInfoPage)
 	router.GET("/edit-course", routes.editCourseByTokenPage)
 	router.GET("/edit-course/opt-out", routes.optOutPage)
 

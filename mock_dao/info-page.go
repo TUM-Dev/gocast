@@ -40,6 +40,20 @@ func (m *MockInfoPageDao) EXPECT() *MockInfoPageDaoMockRecorder {
 	return m.recorder
 }
 
+// Delete mocks base method.
+func (m *MockInfoPageDao) Delete(arg0 uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockInfoPageDaoMockRecorder) Delete(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockInfoPageDao)(nil).Delete), arg0)
+}
+
 // GetAll mocks base method.
 func (m *MockInfoPageDao) GetAll() ([]model.InfoPage, error) {
 	m.ctrl.T.Helper()
@@ -68,6 +82,21 @@ func (m *MockInfoPageDao) GetById(arg0 uint) (model.InfoPage, error) {
 func (mr *MockInfoPageDaoMockRecorder) GetById(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockInfoPageDao)(nil).GetById), arg0)
+}
+
+// GetBySlug mocks base method.
+func (m *MockInfoPageDao) GetBySlug(arg0 string) (model.InfoPage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBySlug", arg0)
+	ret0, _ := ret[0].(model.InfoPage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBySlug indicates an expected call of GetBySlug.
+func (mr *MockInfoPageDaoMockRecorder) GetBySlug(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBySlug", reflect.TypeOf((*MockInfoPageDao)(nil).GetBySlug), arg0)
 }
 
 // New mocks base method.
