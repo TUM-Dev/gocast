@@ -8,8 +8,8 @@ easily.
 Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
 `/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — the info pages —
 `/privacy`, `/imprint`, `/about` and any further page an administrator adds, at
-`/:slug` — and three administration pages, **`/admin/runners`**, **`/admin/users`**
-and **`/admin/info-pages`**.
+`/:slug` — and four administration pages, **`/admin/runners`**, **`/admin/users`**,
+**`/admin/info-pages`** and **`/admin/server-stats`**.
 
 Two things the start page had and this one does not, both waiting on the v1 API:
 
@@ -48,6 +48,14 @@ session cookies — the same reason login posts to Go. And the two listings mask
 details differently: the staff list does not, search results do. That is inherited from
 the page it replaces, and preserved rather than tidied, because changing what an
 administrator can see is a decision about a privacy control rather than part of a port.
+
+**`/admin/server-stats` shares its v1 data layer with two pages that have not moved.**
+`api/statistics.go`'s `getStats`/`exportStats` and `dao/statistics.go` treat courseID 0
+as "every course", which is how the old server-wide page reused the per-course
+template and DAO queries. `getServerStats`/`exportServerStats` call the same DAO
+methods with that same convention; the v1 handlers, `web/template/admin/admin_tabs/stats.gohtml`
+and `web/ts/stats.ts` stay exactly as they are, because they still serve the
+per-course (`/admin/course/:courseID/stats`) and per-lecture statistics pages.
 
 One thing worth knowing before adding the next page: `apiv2.proto` and `runner/*.proto`
 both declare `package protobuf` and are linked into the same binary, so their type

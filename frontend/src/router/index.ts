@@ -14,6 +14,7 @@ import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
+import ServerStatsView from "@/views/admin/ServerStatsView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import MyCoursesView from "@/views/MyCoursesView.vue";
 import PublicCoursesView from "@/views/PublicCoursesView.vue";
@@ -122,6 +123,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/info-pages",
     name: "admin-info-pages",
     component: InfoPagesView,
+  },
+  {
+    path: "/admin/server-stats",
+    name: "admin-server-stats",
+    component: ServerStatsView,
   },
   {
     path: "/login",

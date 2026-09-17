@@ -113,6 +113,11 @@ var services = []service{
 			"createInfoPage":     requires(model.PermAdministerServer),
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
+
+			// Server-wide statistics, same permission the old /admin/server-stats
+			// route required.
+			"getServerStats":    requires(model.PermAdministerServer),
+			"exportServerStats": requires(model.PermAdministerServer),
 		},
 	},
 }

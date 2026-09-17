@@ -234,6 +234,63 @@
         ]
       }
     },
+    "/admin/server-stats": {
+      "get": {
+        "summary": "Get server-wide usage statistics.",
+        "description": "Retrieves the quick counters and the charted activity for the whole deployment, i.e. the same data api/statistics.go serves a course for, with courseID 0. Requires the server.administer permission.",
+        "operationId": "AdminService_getServerStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufServerStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Server Statistics"
+        ]
+      }
+    },
+    "/admin/server-stats/export": {
+      "get": {
+        "summary": "Export server-wide usage statistics.",
+        "description": "Bundles the same data getServerStats renders as a single downloadable file, as JSON or CSV. Requires the server.administer permission.",
+        "operationId": "AdminService_exportServerStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiHttpBody"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "format",
+            "description": "\"json\" or \"csv\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Server Statistics"
+        ]
+      }
+    },
     "/admin/users": {
       "get": {
         "summary": "List the administrators and lecturers.",
@@ -2198,6 +2255,77 @@
           "format": "date-time"
         }
       }
+    },
+    "protobufServerStatsDataPoint": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "string"
+        },
+        "y": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ServerStatsDataPoint is a single point of a chart, matching dao.Stat: a label and\nits value, ready to plot without further lookup."
+    },
+    "protobufServerStatsResponse": {
+      "type": "object",
+      "properties": {
+        "numStudents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "vodViews": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "liveViews": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numLectures": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Streams that are recorded or currently live, across every course. Matches\nmodel.Course.NumStreams(), which the old page called with courseID 0."
+        },
+        "activityLive": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "Weekly peak concurrent live viewers, summed across courses."
+        },
+        "activityVod": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "Weekly VoD views, summed across courses."
+        },
+        "hourly": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "VoD views by hour of day."
+        },
+        "weekdays": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "VoD views by day of week."
+        },
+        "allDays": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "VoD views by calendar day."
+        }
+      }
+    },
+    "protobufServerStatsSeries": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufServerStatsDataPoint"
+          }
+        }
+      },
+      "description": "ServerStatsSeries is one of the page's charts: a label for the dataset plus its\npoints, in the order they should be plotted."
     },
     "protobufStream": {
       "type": "object",
