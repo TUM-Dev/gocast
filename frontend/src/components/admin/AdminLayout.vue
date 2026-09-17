@@ -35,7 +35,7 @@ const administration: AdminLink[] = [
   { label: "User Notifications", path: "/admin/notifications", permission: "server.administer" },
   { label: "Server Statistics", path: "/admin/server-stats", permission: "server.administer" },
   { label: "Course Import", path: "/admin/course-import", permission: "server.administer" },
-  { label: "Token Management", path: "/admin/token", permission: "users.manage" },
+  { label: "Token Management", path: "/admin/token", permission: "users.manage", migrated: true },
   { label: "Audits", path: "/admin/audits", permission: "server.administer" },
   {
     label: "Info Pages",

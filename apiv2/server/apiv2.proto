@@ -496,6 +496,38 @@ service AdminService {
       description: "Removes a worker registration. A worker that is still running re-registers on its next heartbeat. Requires the server.administer permission."
     };
   }
+
+  // Tokens are gated on users.manage, same as the account pages, rather than
+  // server.administer: this is the only place they can be issued or revoked at all.
+  rpc listTokens(google.protobuf.Empty) returns (ListTokensResponse) {
+    option (google.api.http) = {get: "/admin/tokens"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Tokens"
+      summary: "List API tokens."
+      description: "Retrieves every issued token's owner, scope and usage -- never the secret itself, which is shown only once, at creation. Requires the users.manage permission."
+    };
+  }
+
+  rpc createToken(CreateTokenRequest) returns (TokenSecret) {
+    option (google.api.http) = {
+      post: "/admin/tokens"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Tokens"
+      summary: "Create an API token."
+      description: "Creates a token for self-streaming or admin API access and returns its secret. The secret is returned only in this response and cannot be retrieved again. Requires the users.manage permission."
+    };
+  }
+
+  rpc deleteToken(DeleteTokenRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/tokens/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Tokens"
+      summary: "Revoke an API token."
+      description: "Deletes a token; it stops authenticating immediately. Requires the users.manage permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1223,4 +1255,61 @@ message DeleteUserRequest {
 
 message ListUsersResponse {
   repeated UserSummary users = 1;
+}
+
+///////////////////////////////
+///////// TOKEN_MESSAGE ///////
+///////////////////////////////
+
+// Token is an issued API token as the administration page lists it: who holds it,
+// what it can do and when it was last used -- never the secret itself. The secret
+// exists only in the response to createToken, once, and nowhere else.
+message Token {
+  uint32 id = 1;
+  // The account it authenticates as. Mirrors how the account is shown elsewhere:
+  // the email when there is one, name and LRZ id otherwise.
+  string user_name = 2;
+  string user_email = 3;
+  string user_lrz_id = 4;
+  // "admin" or "lecturer" -- see model.TokenScope*.
+  string scope = 5;
+  // Unset means no expiration.
+  google.protobuf.Timestamp expires = 6;
+  // Unset means never used.
+  google.protobuf.Timestamp last_use = 7;
+}
+
+///////////////////////////////
+///////// TOKEN_REQUEST ///////
+///////////////////////////////
+
+message CreateTokenRequest {
+  // "admin" or "lecturer". An admin-scoped token additionally requires the caller
+  // to hold users.manage, which every caller of this RPC already does.
+  string scope = 1;
+  // Unset means no expiration.
+  google.protobuf.Timestamp expires = 2;
+}
+
+message DeleteTokenRequest {
+  uint32 id = 1;
+}
+
+///////////////////////////////
+//////// TOKEN_RESPONSE ///////
+///////////////////////////////
+
+message ListTokensResponse {
+  repeated Token tokens = 1;
+  // Where a lecturer-scoped token points a streaming client, e.g. OBS's "Server"
+  // field. Bundled here rather than in GetFrontendConfigResponse: nothing but this
+  // page needs it, and it is meaningless without a token to go with it.
+  string rtmp_proxy_url = 2;
+}
+
+// TokenSecret carries a freshly created token's value. It is deliberately its own
+// message, distinct from Token, so no future field added to Token can leak a secret
+// into the listing by accident.
+message TokenSecret {
+  string token = 1;
 }
