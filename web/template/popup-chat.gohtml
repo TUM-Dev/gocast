@@ -9,10 +9,10 @@
     {{template "headImports" .IndexData.VersionTag}}
     <script src="/static/assets/ts-dist/interaction.bundle.js?v={{.IndexData.VersionTag}}"></script>
     {{if $stream.ChatEnabled}}
-        <link rel="stylesheet" href="/static/node_modules/katex/dist/katex.min.css">
-        <script defer src="/static/node_modules/katex/dist/katex.js"></script>
-        <script defer src="/static/node_modules/katex/dist/contrib/auto-render.min.js"></script>
-        <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
+        <link rel="stylesheet" href="/static/assets/vendor/katex/katex.min.css">
+        <script defer src="/static/assets/vendor/katex/katex.js"></script>
+        <script defer src="/static/assets/vendor/katex/contrib/auto-render.min.js"></script>
+        <script defer src="/static/assets/vendor/katex/contrib/copy-tex.min.js"></script>
     {{end}}
     <link href="/static/assets/css-dist/home.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}"
           rel="stylesheet">

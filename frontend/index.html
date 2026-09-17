@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" />
     <!--
-      Font Awesome, loaded the same way every server-rendered page loads it: straight
-      out of the node_modules the Go binary embeds (web/router.go). Sharing the file
-      keeps the icons identical across both frontends and costs no bundle weight.
-      When the node_modules embed is removed, this moves into the SPA's own assets.
+      Font Awesome, loaded the same way every server-rendered page loads it: from the
+      vendor copy webpack.common.js copies out of web/node_modules (see vendorPatterns
+      in web/webpack.common.js). Sharing the file keeps the icons identical across both
+      frontends and costs no bundle weight.
     -->
-    <link rel="stylesheet" href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" />
+    <link rel="stylesheet" href="/static/assets/vendor/fontawesome/css/all.min.css" />
     <title>TUM-Live</title>
     <script>
       // Applies the theme before first paint to avoid a flash of the wrong theme.
