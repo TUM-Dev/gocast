@@ -1471,6 +1471,9 @@ const (
 	AdminService_ListTokens_FullMethodName                          = "/protobuf.AdminService/listTokens"
 	AdminService_CreateToken_FullMethodName                         = "/protobuf.AdminService/createToken"
 	AdminService_DeleteToken_FullMethodName                         = "/protobuf.AdminService/deleteToken"
+	AdminService_ListNotificationsAdmin_FullMethodName              = "/protobuf.AdminService/listNotificationsAdmin"
+	AdminService_CreateNotification_FullMethodName                  = "/protobuf.AdminService/createNotification"
+	AdminService_DeleteNotification_FullMethodName                  = "/protobuf.AdminService/deleteNotification"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1529,6 +1532,9 @@ type AdminServiceClient interface {
 	ListTokens(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListTokensResponse, error)
 	CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*TokenSecret, error)
 	DeleteToken(ctx context.Context, in *DeleteTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListNotificationsAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListNotificationsAdminResponse, error)
+	CreateNotification(ctx context.Context, in *CreateNotificationRequest, opts ...grpc.CallOption) (*AdminNotification, error)
+	DeleteNotification(ctx context.Context, in *DeleteNotificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminServiceClient struct {
@@ -1879,6 +1885,36 @@ func (c *adminServiceClient) DeleteToken(ctx context.Context, in *DeleteTokenReq
 	return out, nil
 }
 
+func (c *adminServiceClient) ListNotificationsAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListNotificationsAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNotificationsAdminResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListNotificationsAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) CreateNotification(ctx context.Context, in *CreateNotificationRequest, opts ...grpc.CallOption) (*AdminNotification, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminNotification)
+	err := c.cc.Invoke(ctx, AdminService_CreateNotification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteNotification(ctx context.Context, in *DeleteNotificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteNotification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1935,6 +1971,9 @@ type AdminServiceServer interface {
 	ListTokens(context.Context, *emptypb.Empty) (*ListTokensResponse, error)
 	CreateToken(context.Context, *CreateTokenRequest) (*TokenSecret, error)
 	DeleteToken(context.Context, *DeleteTokenRequest) (*emptypb.Empty, error)
+	ListNotificationsAdmin(context.Context, *emptypb.Empty) (*ListNotificationsAdminResponse, error)
+	CreateNotification(context.Context, *CreateNotificationRequest) (*AdminNotification, error)
+	DeleteNotification(context.Context, *DeleteNotificationRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -2046,6 +2085,15 @@ func (UnimplementedAdminServiceServer) CreateToken(context.Context, *CreateToken
 }
 func (UnimplementedAdminServiceServer) DeleteToken(context.Context, *DeleteTokenRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteToken not implemented")
+}
+func (UnimplementedAdminServiceServer) ListNotificationsAdmin(context.Context, *emptypb.Empty) (*ListNotificationsAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNotificationsAdmin not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateNotification(context.Context, *CreateNotificationRequest) (*AdminNotification, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateNotification not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteNotification(context.Context, *DeleteNotificationRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteNotification not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -2680,6 +2728,60 @@ func _AdminService_DeleteToken_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListNotificationsAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListNotificationsAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListNotificationsAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListNotificationsAdmin(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_CreateNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateNotificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateNotification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateNotification(ctx, req.(*CreateNotificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteNotificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteNotification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteNotification(ctx, req.(*DeleteNotificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2822,6 +2924,18 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteToken",
 			Handler:    _AdminService_DeleteToken_Handler,
+		},
+		{
+			MethodName: "listNotificationsAdmin",
+			Handler:    _AdminService_ListNotificationsAdmin_Handler,
+		},
+		{
+			MethodName: "createNotification",
+			Handler:    _AdminService_CreateNotification_Handler,
+		},
+		{
+			MethodName: "deleteNotification",
+			Handler:    _AdminService_DeleteNotification_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

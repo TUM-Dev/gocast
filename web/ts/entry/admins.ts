@@ -7,6 +7,5 @@ export * from "../onboarding";
 export * from "../lecture-hall-management";
 export * from "../admin";
 export * from "../courseAdminManagement";
-export * from "../notification-management";
 export * from "../audits";
 export * from "../change-set";
