@@ -1437,17 +1437,21 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AdminService_ListRunners_FullMethodName        = "/protobuf.AdminService/listRunners"
-	AdminService_DeleteRunner_FullMethodName       = "/protobuf.AdminService/deleteRunner"
-	AdminService_ListStaff_FullMethodName          = "/protobuf.AdminService/listStaff"
-	AdminService_SearchUsers_FullMethodName        = "/protobuf.AdminService/searchUsers"
-	AdminService_CreateUser_FullMethodName         = "/protobuf.AdminService/createUser"
-	AdminService_UpdateUserRole_FullMethodName     = "/protobuf.AdminService/updateUserRole"
-	AdminService_DeleteUser_FullMethodName         = "/protobuf.AdminService/deleteUser"
-	AdminService_ListInfoPagesAdmin_FullMethodName = "/protobuf.AdminService/listInfoPagesAdmin"
-	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
-	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
-	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListRunners_FullMethodName                  = "/protobuf.AdminService/listRunners"
+	AdminService_DeleteRunner_FullMethodName                 = "/protobuf.AdminService/deleteRunner"
+	AdminService_ListStaff_FullMethodName                    = "/protobuf.AdminService/listStaff"
+	AdminService_SearchUsers_FullMethodName                  = "/protobuf.AdminService/searchUsers"
+	AdminService_CreateUser_FullMethodName                   = "/protobuf.AdminService/createUser"
+	AdminService_UpdateUserRole_FullMethodName               = "/protobuf.AdminService/updateUserRole"
+	AdminService_DeleteUser_FullMethodName                   = "/protobuf.AdminService/deleteUser"
+	AdminService_ListServerNotificationsAdmin_FullMethodName = "/protobuf.AdminService/listServerNotificationsAdmin"
+	AdminService_CreateServerNotification_FullMethodName     = "/protobuf.AdminService/createServerNotification"
+	AdminService_UpdateServerNotification_FullMethodName     = "/protobuf.AdminService/updateServerNotification"
+	AdminService_DeleteServerNotification_FullMethodName     = "/protobuf.AdminService/deleteServerNotification"
+	AdminService_ListInfoPagesAdmin_FullMethodName           = "/protobuf.AdminService/listInfoPagesAdmin"
+	AdminService_CreateInfoPage_FullMethodName               = "/protobuf.AdminService/createInfoPage"
+	AdminService_UpdateInfoPage_FullMethodName               = "/protobuf.AdminService/updateInfoPage"
+	AdminService_DeleteInfoPage_FullMethodName               = "/protobuf.AdminService/deleteInfoPage"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1472,6 +1476,10 @@ type AdminServiceClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*UserSummary, error)
 	UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UserSummary, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListServerNotificationsAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListServerNotificationsAdminResponse, error)
+	CreateServerNotification(ctx context.Context, in *CreateServerNotificationRequest, opts ...grpc.CallOption) (*ServerNotificationAdmin, error)
+	UpdateServerNotification(ctx context.Context, in *UpdateServerNotificationRequest, opts ...grpc.CallOption) (*ServerNotificationAdmin, error)
+	DeleteServerNotification(ctx context.Context, in *DeleteServerNotificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListInfoPagesAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListInfoPagesAdminResponse, error)
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
@@ -1556,6 +1564,46 @@ func (c *adminServiceClient) DeleteUser(ctx context.Context, in *DeleteUserReque
 	return out, nil
 }
 
+func (c *adminServiceClient) ListServerNotificationsAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListServerNotificationsAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListServerNotificationsAdminResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListServerNotificationsAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) CreateServerNotification(ctx context.Context, in *CreateServerNotificationRequest, opts ...grpc.CallOption) (*ServerNotificationAdmin, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ServerNotificationAdmin)
+	err := c.cc.Invoke(ctx, AdminService_CreateServerNotification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) UpdateServerNotification(ctx context.Context, in *UpdateServerNotificationRequest, opts ...grpc.CallOption) (*ServerNotificationAdmin, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ServerNotificationAdmin)
+	err := c.cc.Invoke(ctx, AdminService_UpdateServerNotification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteServerNotification(ctx context.Context, in *DeleteServerNotificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteServerNotification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) ListInfoPagesAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListInfoPagesAdminResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListInfoPagesAdminResponse)
@@ -1618,6 +1666,10 @@ type AdminServiceServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*UserSummary, error)
 	UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*UserSummary, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
+	ListServerNotificationsAdmin(context.Context, *emptypb.Empty) (*ListServerNotificationsAdminResponse, error)
+	CreateServerNotification(context.Context, *CreateServerNotificationRequest) (*ServerNotificationAdmin, error)
+	UpdateServerNotification(context.Context, *UpdateServerNotificationRequest) (*ServerNotificationAdmin, error)
+	DeleteServerNotification(context.Context, *DeleteServerNotificationRequest) (*emptypb.Empty, error)
 	ListInfoPagesAdmin(context.Context, *emptypb.Empty) (*ListInfoPagesAdminResponse, error)
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
@@ -1652,6 +1704,18 @@ func (UnimplementedAdminServiceServer) UpdateUserRole(context.Context, *UpdateUs
 }
 func (UnimplementedAdminServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (UnimplementedAdminServiceServer) ListServerNotificationsAdmin(context.Context, *emptypb.Empty) (*ListServerNotificationsAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListServerNotificationsAdmin not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateServerNotification(context.Context, *CreateServerNotificationRequest) (*ServerNotificationAdmin, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateServerNotification not implemented")
+}
+func (UnimplementedAdminServiceServer) UpdateServerNotification(context.Context, *UpdateServerNotificationRequest) (*ServerNotificationAdmin, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateServerNotification not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteServerNotification(context.Context, *DeleteServerNotificationRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteServerNotification not implemented")
 }
 func (UnimplementedAdminServiceServer) ListInfoPagesAdmin(context.Context, *emptypb.Empty) (*ListInfoPagesAdminResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListInfoPagesAdmin not implemented")
@@ -1812,6 +1876,78 @@ func _AdminService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListServerNotificationsAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListServerNotificationsAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListServerNotificationsAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListServerNotificationsAdmin(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_CreateServerNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateServerNotificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateServerNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateServerNotification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateServerNotification(ctx, req.(*CreateServerNotificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_UpdateServerNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateServerNotificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).UpdateServerNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_UpdateServerNotification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).UpdateServerNotification(ctx, req.(*UpdateServerNotificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteServerNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteServerNotificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteServerNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteServerNotification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteServerNotification(ctx, req.(*DeleteServerNotificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_ListInfoPagesAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -1918,6 +2054,22 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteUser",
 			Handler:    _AdminService_DeleteUser_Handler,
+		},
+		{
+			MethodName: "listServerNotificationsAdmin",
+			Handler:    _AdminService_ListServerNotificationsAdmin_Handler,
+		},
+		{
+			MethodName: "createServerNotification",
+			Handler:    _AdminService_CreateServerNotification_Handler,
+		},
+		{
+			MethodName: "updateServerNotification",
+			Handler:    _AdminService_UpdateServerNotification_Handler,
+		},
+		{
+			MethodName: "deleteServerNotification",
+			Handler:    _AdminService_DeleteServerNotification_Handler,
 		},
 		{
 			MethodName: "listInfoPagesAdmin",

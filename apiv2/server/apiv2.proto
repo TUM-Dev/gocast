@@ -437,6 +437,48 @@ service AdminService {
     };
   }
 
+  rpc listServerNotificationsAdmin(google.protobuf.Empty) returns (ListServerNotificationsAdminResponse) {
+    option (google.api.http) = {get: "/admin/server-notifications"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "List every server notification for administration."
+      description: "Retrieves every server notification, past, active and future, with its id. Requires the server.administer permission."
+    };
+  }
+
+  rpc createServerNotification(CreateServerNotificationRequest) returns (ServerNotificationAdmin) {
+    option (google.api.http) = {
+      post: "/admin/server-notifications"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Create a server notification."
+      description: "Creates a banner shown site-wide between start and expires. Requires the server.administer permission."
+    };
+  }
+
+  rpc updateServerNotification(UpdateServerNotificationRequest) returns (ServerNotificationAdmin) {
+    option (google.api.http) = {
+      patch: "/admin/server-notifications/{id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Update a server notification."
+      description: "Replaces a server notification's text, severity and active window. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteServerNotification(DeleteServerNotificationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/server-notifications/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Delete a server notification."
+      description: "Deletes a server notification; it stops showing immediately. Requires the server.administer permission."
+    };
+  }
+
   rpc listInfoPagesAdmin(google.protobuf.Empty) returns (ListInfoPagesAdminResponse) {
     option (google.api.http) = {get: "/admin/info-pages"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -1053,6 +1095,43 @@ message GetNotificationsResponse {
 
 message GetServerNotificationsResponse {
   repeated ServerNotification server_notifications = 1;
+}
+
+///////////////////////////////////
+//// SERVER_NOTIFICATION_ADMIN /////
+///////////////////////////////////
+
+// ServerNotificationAdmin is a server notification as an administrator manages it,
+// carrying the id ServerNotification (the public read model above) omits.
+message ServerNotificationAdmin {
+  uint32 id = 1;
+  string text = 2;
+  bool warn = 3;
+  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp expires = 5;
+}
+
+message ListServerNotificationsAdminResponse {
+  repeated ServerNotificationAdmin notifications = 1;
+}
+
+message CreateServerNotificationRequest {
+  string text = 1;
+  bool warn = 2;
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp expires = 4;
+}
+
+message UpdateServerNotificationRequest {
+  uint32 id = 1;
+  string text = 2;
+  bool warn = 3;
+  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp expires = 5;
+}
+
+message DeleteServerNotificationRequest {
+  uint32 id = 1;
 }
 
 ///////////////////////////////

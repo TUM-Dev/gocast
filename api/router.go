@@ -44,7 +44,6 @@ func ConfigGinRouter(
 	configGinLectureHallApiRouter(router, daoWrapper, camService, tools.Cfg.Paths.Static)
 	configProgressRouter(router, daoWrapper)
 	configSeekStatsRouter(router, daoWrapper)
-	configServerNotificationsRoutes(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configWorkerRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
