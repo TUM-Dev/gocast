@@ -234,6 +234,96 @@
         ]
       }
     },
+    "/admin/tokens": {
+      "get": {
+        "summary": "List API tokens.",
+        "description": "Retrieves every issued token's owner, scope and usage -- never the secret itself, which is shown only once, at creation. Requires the users.manage permission.",
+        "operationId": "AdminService_listTokens",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListTokensResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Tokens"
+        ]
+      },
+      "post": {
+        "summary": "Create an API token.",
+        "description": "Creates a token for self-streaming or admin API access and returns its secret. The secret is returned only in this response and cannot be retrieved again. Requires the users.manage permission.",
+        "operationId": "AdminService_createToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufTokenSecret"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Tokens"
+        ]
+      }
+    },
+    "/admin/tokens/{id}": {
+      "delete": {
+        "summary": "Revoke an API token.",
+        "description": "Deletes a token; it stops authenticating immediately. Requires the users.manage permission.",
+        "operationId": "AdminService_deleteToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Tokens"
+        ]
+      }
+    },
     "/admin/users": {
       "get": {
         "summary": "List the administrators and lecturers.",
@@ -1705,6 +1795,20 @@
         }
       }
     },
+    "protobufCreateTokenRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "description": "\"admin\" or \"lecturer\". An admin-scoped token additionally requires the caller\nto hold users.manage, which every caller of this RPC already does."
+        },
+        "expires": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Unset means no expiration."
+        }
+      }
+    },
     "protobufCreateUserRequest": {
       "type": "object",
       "properties": {
@@ -2084,6 +2188,22 @@
         }
       }
     },
+    "protobufListTokensResponse": {
+      "type": "object",
+      "properties": {
+        "tokens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufToken"
+          }
+        },
+        "rtmpProxyUrl": {
+          "type": "string",
+          "description": "Where a lecturer-scoped token points a streaming client, e.g. OBS's \"Server\"\nfield. Bundled here rather than in GetFrontendConfigResponse: nothing but this\npage needs it, and it is meaningless without a token to go with it."
+        }
+      }
+    },
     "protobufListUsersResponse": {
       "type": "object",
       "properties": {
@@ -2353,6 +2473,49 @@
           "type": "boolean"
         }
       }
+    },
+    "protobufToken": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userName": {
+          "type": "string",
+          "description": "The account it authenticates as. Mirrors how the account is shown elsewhere:\nthe email when there is one, name and LRZ id otherwise."
+        },
+        "userEmail": {
+          "type": "string"
+        },
+        "userLrzId": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string",
+          "description": "\"admin\" or \"lecturer\" -- see model.TokenScope*."
+        },
+        "expires": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Unset means no expiration."
+        },
+        "lastUse": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Unset means never used."
+        }
+      },
+      "description": "Token is an issued API token as the administration page lists it: who holds it,\nwhat it can do and when it was last used -- never the secret itself. The secret\nexists only in the response to createToken, once, and nowhere else."
+    },
+    "protobufTokenSecret": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      },
+      "description": "TokenSecret carries a freshly created token's value. It is deliberately its own\nmessage, distinct from Token, so no future field added to Token can leak a secret\ninto the listing by accident."
     },
     "protobufUpdateBookmarkResponse": {
       "type": "object",

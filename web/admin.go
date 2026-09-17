@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -11,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
@@ -44,7 +42,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	indexData.TUMLiveContext = tumLiveContext
 	page := GetPageString(c.Request.URL.Path)
 	var notifications []model.Notification
-	var tokens []dao.AllTokensDto
 	var serverNotifications []model.ServerNotification
 	switch page {
 	case "notifications":
@@ -53,12 +50,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			logger.Error("couldn't query notifications", "err", err)
 		} else {
 			notifications = found
-		}
-	case "token":
-		tokens, err = r.TokenDao.GetAllTokens(tumLiveContext.User)
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			logger.Error("couldn't query tokens", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	case "serverStats":
 		streams, err := r.StreamsDao.GetAllStreams()
@@ -91,7 +82,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
-			Tokens:              TokensData{Tokens: tokens, RtmpProxyURL: tools.Cfg.RtmpProxyURL, User: tumLiveContext.User},
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
 			HasTestCourse:       hasTestCourse,
@@ -137,12 +127,6 @@ func GetPageString(s string) string {
 type WorkersData struct {
 	Workers []model.Worker
 	Token   string
-}
-
-type TokensData struct {
-	Tokens       []dao.AllTokensDto
-	RtmpProxyURL string
-	User         *model.User
 }
 
 func (r mainRoutes) LectureCutPage(c *gin.Context) {
@@ -370,7 +354,6 @@ type AdminPageData struct {
 	CurT                string
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
-	Tokens              TokensData
 	Notifications       []model.Notification
 	HasTestCourse       bool
 }

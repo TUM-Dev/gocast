@@ -1448,6 +1448,9 @@ const (
 	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
 	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
 	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListTokens_FullMethodName         = "/protobuf.AdminService/listTokens"
+	AdminService_CreateToken_FullMethodName        = "/protobuf.AdminService/createToken"
+	AdminService_DeleteToken_FullMethodName        = "/protobuf.AdminService/deleteToken"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1476,6 +1479,11 @@ type AdminServiceClient interface {
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Tokens are gated on users.manage, same as the account pages, rather than
+	// server.administer: this is the only place they can be issued or revoked at all.
+	ListTokens(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListTokensResponse, error)
+	CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*TokenSecret, error)
+	DeleteToken(ctx context.Context, in *DeleteTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminServiceClient struct {
@@ -1596,6 +1604,36 @@ func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoP
 	return out, nil
 }
 
+func (c *adminServiceClient) ListTokens(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListTokensResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTokensResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListTokens_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*TokenSecret, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenSecret)
+	err := c.cc.Invoke(ctx, AdminService_CreateToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteToken(ctx context.Context, in *DeleteTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1622,6 +1660,11 @@ type AdminServiceServer interface {
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
 	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
+	// Tokens are gated on users.manage, same as the account pages, rather than
+	// server.administer: this is the only place they can be issued or revoked at all.
+	ListTokens(context.Context, *emptypb.Empty) (*ListTokensResponse, error)
+	CreateToken(context.Context, *CreateTokenRequest) (*TokenSecret, error)
+	DeleteToken(context.Context, *DeleteTokenRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1664,6 +1707,15 @@ func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateIn
 }
 func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) ListTokens(context.Context, *emptypb.Empty) (*ListTokensResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTokens not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateToken(context.Context, *CreateTokenRequest) (*TokenSecret, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateToken not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteToken(context.Context, *DeleteTokenRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteToken not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -1884,6 +1936,60 @@ func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListTokens_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListTokens(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_CreateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateToken(ctx, req.(*CreateTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteToken(ctx, req.(*DeleteTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +2040,18 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteInfoPage",
 			Handler:    _AdminService_DeleteInfoPage_Handler,
+		},
+		{
+			MethodName: "listTokens",
+			Handler:    _AdminService_ListTokens_Handler,
+		},
+		{
+			MethodName: "createToken",
+			Handler:    _AdminService_CreateToken_Handler,
+		},
+		{
+			MethodName: "deleteToken",
+			Handler:    _AdminService_DeleteToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
