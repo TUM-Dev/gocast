@@ -1,0 +1,52 @@
+name: Publish Release Notes
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to (re)generate notes for, e.g. v1.7.13'
+        required: true
+      previous_tag:
+        description: 'Compare against this tag instead of the previous one'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create or update the GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The notes are built from the log between two tags, so the full
+          # history and every tag have to be present.
+          fetch-depth: 0
+
+      - name: Generate notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+          PREVIOUS_TAG: ${{ inputs.previous_tag }}
+        run: |
+          .github/scripts/release-notes.sh "$TAG" "$PREVIOUS_TAG" > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          # Re-runs and manually drafted releases both end up here, so update an
+          # existing release rather than failing on it.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
+          fi
