@@ -60,16 +60,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			logger.Error("couldn't query tokens", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
-	case "serverStats":
-		streams, err := r.StreamsDao.GetAllStreams()
-		if err != nil {
-			logger.Error("Can't get all streams", "err", err)
-			streams = []model.Stream{}
-		}
-		indexData.TUMLiveContext.Course = &model.Course{
-			Model:   gorm.Model{ID: 0},
-			Streams: streams,
-		}
 	case "serverNotifications":
 		if res, err := r.ServerNotificationDao.GetAllServerNotifications(); err == nil {
 			serverNotifications = res

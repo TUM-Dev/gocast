@@ -478,6 +478,24 @@ service AdminService {
       description: "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission."
     };
   }
+
+  rpc getServerStats(google.protobuf.Empty) returns (ServerStatsResponse) {
+    option (google.api.http) = {get: "/admin/server-stats"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Server Statistics"
+      summary: "Get server-wide usage statistics."
+      description: "Retrieves the quick counters and the charted activity for the whole deployment, i.e. the same data api/statistics.go serves a course for, with courseID 0. Requires the server.administer permission."
+    };
+  }
+
+  rpc exportServerStats(ExportServerStatsRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/admin/server-stats/export"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Server Statistics"
+      summary: "Export server-wide usage statistics."
+      description: "Bundles the same data getServerStats renders as a single downloadable file, as JSON or CSV. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1156,4 +1174,50 @@ message DeleteUserRequest {
 
 message ListUsersResponse {
   repeated UserSummary users = 1;
+}
+
+///////////////////////////////
+///// SERVER_STATS_MESSAGE ////
+///////////////////////////////
+
+// ServerStatsDataPoint is a single point of a chart, matching dao.Stat: a label and
+// its value, ready to plot without further lookup.
+message ServerStatsDataPoint {
+  string x = 1;
+  int32 y = 2;
+}
+
+// ServerStatsSeries is one of the page's charts: a label for the dataset plus its
+// points, in the order they should be plotted.
+message ServerStatsSeries {
+  string label = 1;
+  repeated ServerStatsDataPoint points = 2;
+}
+
+message ServerStatsResponse {
+  int64 num_students = 1;
+  int32 vod_views = 2;
+  int32 live_views = 3;
+  // Streams that are recorded or currently live, across every course. Matches
+  // model.Course.NumStreams(), which the old page called with courseID 0.
+  int32 num_lectures = 9;
+  // Weekly peak concurrent live viewers, summed across courses.
+  ServerStatsSeries activity_live = 4;
+  // Weekly VoD views, summed across courses.
+  ServerStatsSeries activity_vod = 5;
+  // VoD views by hour of day.
+  ServerStatsSeries hourly = 6;
+  // VoD views by day of week.
+  ServerStatsSeries weekdays = 7;
+  // VoD views by calendar day.
+  ServerStatsSeries all_days = 8;
+}
+
+///////////////////////////////
+///// SERVER_STATS_REQUEST ////
+///////////////////////////////
+
+message ExportServerStatsRequest {
+  // "json" or "csv".
+  string format = 1;
 }
