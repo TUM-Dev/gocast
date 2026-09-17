@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { computed, onMounted, ref } from "vue";
 
@@ -17,7 +18,8 @@ import { redirectToLogin, useAuthStore } from "@/stores/auth";
 // blackfriday+bluemonday rendering (see model/info-page.go); good enough to preview
 // structure and formatting while editing.
 function renderPreview(markdown: string): string {
-  return markdown.trim() ? (marked.parse(markdown, { async: false }) as string) : "";
+  if (!markdown.trim()) return "";
+  return DOMPurify.sanitize(marked.parse(markdown, { async: false }) as string);
 }
 
 /**
