@@ -283,6 +283,8 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return m.handleVODReady(ctx, notification.GetVodReady())
 	case *protobuf.Notification_ThumbnailReady:
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
+	case *protobuf.Notification_SectionImagesReady:
+		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}

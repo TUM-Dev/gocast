@@ -1,0 +1,173 @@
+package runner_manager
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"gorm.io/gorm"
+
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
+
+	"github.com/TUM-Dev/gocast/model"
+)
+
+// SectionImageRequest describes the video sections of a stream that need a thumbnail.
+type SectionImageRequest struct {
+	StreamID    uint
+	PlaylistURL string
+	Sections    []model.VideoSection
+}
+
+// GenerateSectionImages generates the thumbnails for the given video sections.
+//
+// Section image generation is being moved from the workers to the runners. Until every
+// deployment runs runners, fallback - the legacy worker path - is used whenever no
+// runner takes the job. m may be nil when no runner manager is configured.
+func GenerateSectionImages(m *Manager, req SectionImageRequest, fallback func() error) error {
+	if len(req.Sections) == 0 {
+		return nil
+	}
+	if m != nil {
+		err := m.RequestSectionImages(context.Background(), req)
+		if err == nil {
+			return nil
+		}
+		m.logger.Warn("no runner took the section images job, falling back to a worker", "stream", req.StreamID, "err", err)
+	}
+	return fallback()
+}
+
+// RequestSectionImages asks a runner to generate thumbnails for the given video sections.
+// The runner answers asynchronously with a SectionImagesReadyNotification, which
+// saveSectionImages then stores, so this returns as soon as the job is accepted.
+func (m *Manager) RequestSectionImages(ctx context.Context, req SectionImageRequest) error {
+	if len(req.Sections) == 0 {
+		return nil
+	}
+
+	runner, client, conn, err := m.getClient(ctx)
+	if err != nil {
+		return fmt.Errorf("getClient: %w", err)
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	sections := make([]*protobuf.SectionImageRequest_Section, 0, len(req.Sections))
+	for _, s := range req.Sections {
+		start := time.Duration(s.StartHours)*time.Hour +
+			time.Duration(s.StartMinutes)*time.Minute +
+			time.Duration(s.StartSeconds)*time.Second
+		sections = append(sections, &protobuf.SectionImageRequest_Section{
+			Id:    ptr.Take(uint64(s.ID)),
+			Start: durationpb.New(start),
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, runnerDispatchTimeout)
+	defer cancel()
+
+	resp, err := client.RequestSectionImages(ctx, &protobuf.SectionImageRequest{
+		StreamId:    ptr.Take(uint64(req.StreamID)),
+		PlaylistUrl: ptr.Take(req.PlaylistURL),
+		Sections:    sections,
+	})
+	if err != nil {
+		return fmt.Errorf("RequestSectionImages: %w", err)
+	}
+	m.logger.With("stream", req.StreamID, "job", resp.GetJobId(), "runner", runner.Hostname).
+		Info("requested section images")
+	return nil
+}
+
+// saveSectionImages writes the thumbnails a runner generated to mass storage and points
+// the video sections at them.
+//
+// The runner sends the images as bytes and gocast picks the location, so the path is
+// built from ids only and never from free text such as the course name.
+func (m *Manager) saveSectionImages(ctx context.Context, req *protobuf.SectionImagesReadyNotification) error {
+	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(req.GetStream().GetId(), 10))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// The stream was deleted while its images were generated. The runner retries
+		// every error it gets back, and retrying cannot bring the stream back, so the
+		// notification is acknowledged instead of being retried forever.
+		m.logger.Warn("dropping section images for a stream that no longer exists", "stream", req.GetStream().GetId())
+		return nil
+	}
+	if err != nil {
+		return status.Errorf(codes.Internal, "can't get stream %d: %v", req.GetStream().GetId(), err)
+	}
+
+	dir := filepath.Join(m.massStorage, "sections", stream.Start.Format("2006/01"), strconv.FormatUint(uint64(stream.CourseID), 10))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return status.Errorf(codes.Internal, "can't make directory: %v", err)
+	}
+
+	for _, image := range req.GetImages() {
+		sectionID := uint(image.GetSectionId())
+		// /mass/sections/2025/10/500/1024_42.jpg
+		fname := fmt.Sprintf("%d_%d.jpg", stream.ID, sectionID)
+		path := filepath.Join(dir, fname)
+
+		section, err := m.dao.VideoSectionDao.Get(sectionID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// The section was deleted while its image was generated. Writing the image
+			// anyway would leave a file and a file row that nothing points at.
+			m.logger.Warn("dropping image for a video section that no longer exists", "stream", stream.ID, "section", sectionID)
+			continue
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "can't get video section %d: %v", sectionID, err)
+		}
+		if section.StreamID != stream.ID {
+			// The section id comes from the runner. Never let it repoint a section of
+			// another stream at this image.
+			m.logger.Warn("dropping image for a video section of another stream", "stream", stream.ID, "section", sectionID, "sectionStream", section.StreamID)
+			continue
+		}
+
+		// Sections are regenerated whenever the thumbnails are redone. The path only
+		// depends on ids, so the image on disk is replaced in place and just the file
+		// row it used to point at has to go.
+		previousFileID := section.FileID
+
+		if err := os.WriteFile(path, image.GetImage(), 0o644); err != nil {
+			return status.Errorf(codes.Internal, "can't write section image: %v", err)
+		}
+
+		file := model.File{
+			StreamID: stream.ID,
+			Path:     path,
+			Filename: fname,
+			Type:     model.FILETYPE_IMAGE_JPG,
+		}
+		if err := m.dao.FileDao.NewFile(&file); err != nil {
+			return status.Errorf(codes.Internal, "can't save section image to db: %v", err)
+		}
+
+		update := model.VideoSection{Model: gorm.Model{ID: sectionID}, FileID: file.ID}
+		if err := m.dao.VideoSectionDao.Update(&update); err != nil {
+			return status.Errorf(codes.Internal, "can't update video section %d: %v", sectionID, err)
+		}
+
+		// Only now that nothing points at it any more. Losing this is not worth failing
+		// the notification over, the image itself is already in place.
+		if previousFileID != 0 && previousFileID != file.ID {
+			if err := m.dao.FileDao.DeleteFile(previousFileID); err != nil {
+				m.logger.Warn("can't delete replaced section image file", "file", previousFileID, "err", err)
+			}
+		}
+	}
+
+	m.logger.With("stream", stream.ID, "images", len(req.GetImages())).Info("saved section images")
+	return nil
+}

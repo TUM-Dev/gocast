@@ -2,6 +2,7 @@ edition = "2023";
 
 package protobuf;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "commons.proto";
 import "notifications.proto";
@@ -12,6 +13,9 @@ service RunnerService {
   // Requests a stream from a lecture hall
   rpc RequestStream (StreamRequest) returns (StreamResponse) {}
   rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+  // Requests thumbnails for the given video sections of an already recorded stream.
+  // The images are delivered asynchronously via SectionImagesReadyNotification.
+  rpc RequestSectionImages (SectionImageRequest) returns (SectionImageResponse) {}
 }
 
 message StreamRequest {
@@ -34,6 +38,22 @@ message StreamEndRequest {
 }
 
 message StreamEndResponse {
+}
+
+message SectionImageRequest {
+  // Section is a video section and the offset into the recording it starts at.
+  message Section {
+    uint64 id = 1;
+    google.protobuf.Duration start = 2;
+  }
+
+  uint64 stream_id = 1;
+  string playlist_url = 2;
+  repeated Section sections = 3;
+}
+
+message SectionImageResponse {
+  string job_id = 1;
 }
 
 // RunnerManagerService service defines communication from runners to gocast
