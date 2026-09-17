@@ -106,6 +106,7 @@ test.describe("managing an info page end to end", () => {
 
     // Create. Scoped to the form itself: its labels ("Title", "Slug") are not unique
     // on the page once a row is also being edited.
+    await page.getByRole("button", { name: "Add page" }).click();
     const createForm = page.locator("form").filter({ has: page.getByRole("button", { name: "Create" }) });
     await createForm.getByLabel("Title", { exact: true }).fill("Terms of Use");
     await createForm.getByLabel("Slug", { exact: true }).fill("terms-of-use");
@@ -138,6 +139,27 @@ test.describe("managing an info page end to end", () => {
     // The route stops resolving immediately, same as the admin list.
     const response = await page.request.get("/api/v2/info-pages/terms-of-use");
     expect(response.status()).toBe(404);
+  });
+});
+
+test.describe("the Markdown preview in the create form", () => {
+  test("renders live and is sanitized of a script payload", async ({ page }) => {
+    await login(page, users.admin, "/admin/info-pages");
+
+    await page.getByRole("button", { name: "Add page" }).click();
+    const createForm = page.locator("form").filter({ has: page.getByRole("button", { name: "Create" }) });
+    const preview = createForm.locator(".tum-live-markdown");
+
+    await createForm
+      .getByLabel("Content (Markdown)")
+      .fill("# Heading\n\n**bold** <script>window.xssed = true;</script>");
+
+    await expect(preview.getByRole("heading", { name: "Heading", level: 1 })).toBeVisible();
+    await expect(preview.locator("strong")).toHaveText("bold");
+
+    // DOMPurify strips the tag before it ever reaches v-html, so the payload never runs.
+    await expect(preview.locator("script")).toHaveCount(0);
+    expect(await page.evaluate(() => (window as unknown as { xssed?: boolean }).xssed)).toBeUndefined();
   });
 });
 
