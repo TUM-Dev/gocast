@@ -93,7 +93,7 @@ const routes: RouteRecordRaw[] = [
       name,
       component: InfoPageView,
       props: { name },
-      meta: { minimalHeader: true, anonymous: true },
+      meta: { anonymous: true, footer: true },
     }),
   ),
   {
@@ -103,7 +103,7 @@ const routes: RouteRecordRaw[] = [
     path: "/:slug",
     name: "info-page",
     component: InfoPageDynamicView,
-    meta: { minimalHeader: true, anonymous: true },
+    meta: { anonymous: true, footer: true },
   },
   {
     // The administration pages, migrating one at a time. Each is registered in
