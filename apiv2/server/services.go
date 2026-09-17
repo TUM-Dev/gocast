@@ -113,6 +113,11 @@ var services = []service{
 			"createInfoPage":     requires(model.PermAdministerServer),
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
+
+			// Notifications belong to no course, same as runners and info pages.
+			"listNotificationsAdmin": requires(model.PermAdministerServer),
+			"createNotification":     requires(model.PermAdministerServer),
+			"deleteNotification":     requires(model.PermAdministerServer),
 		},
 	},
 }

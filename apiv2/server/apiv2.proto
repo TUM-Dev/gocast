@@ -478,6 +478,36 @@ service AdminService {
       description: "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission."
     };
   }
+
+  rpc listNotificationsAdmin(google.protobuf.Empty) returns (ListNotificationsAdminResponse) {
+    option (google.api.http) = {get: "/admin/notifications"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "List every user notification for administration."
+      description: "Retrieves every notification ever broadcast to users, newest first. Requires the server.administer permission."
+    };
+  }
+
+  rpc createNotification(CreateNotificationRequest) returns (AdminNotification) {
+    option (google.api.http) = {
+      post: "/admin/notifications"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Broadcast a notification."
+      description: "Creates a notification shown to users matching its target group. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteNotification(DeleteNotificationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/notifications/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Delete a notification."
+      description: "Deletes a notification; it stops showing to users immediately. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1053,6 +1083,45 @@ message GetNotificationsResponse {
 
 message GetServerNotificationsResponse {
   repeated ServerNotification server_notifications = 1;
+}
+
+///////////////////////////////
+//// NOTIFICATION_ADMIN_MESSAGE
+///////////////////////////////
+
+// AdminNotification is a broadcast notification as an administrator manages it.
+// Distinct from UserGroupNotification above, which is what a recipient is shown:
+// this carries an id, so a specific entry can be deleted. Named with the Admin
+// prefix because a bare "Notification" already exists in runner/notifications.proto,
+// registered under the same "protobuf" package -- reusing the name panics the
+// process at startup with a proto registry name conflict.
+message AdminNotification {
+  uint32 id = 1;
+  // Empty when the notification has no title.
+  string title = 2;
+  string body = 3;
+  // Reuses NotificationTarget's values, but model.NotificationTarget numbers its
+  // targets from 1, not 0, so this is a plain uint32 rather than the enum -- casting
+  // model.NotificationTarget straight into NotificationTarget would shift every value
+  // down by one (see apiv2/helpers/parser.go's ParseNotificationToProto, which already
+  // does this for the read side; nothing there reads the shifted field back out, so it
+  // has gone unnoticed).
+  uint32 target = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message ListNotificationsAdminResponse {
+  repeated AdminNotification notifications = 1;
+}
+
+message CreateNotificationRequest {
+  string title = 1;
+  string body = 2;
+  uint32 target = 3;
+}
+
+message DeleteNotificationRequest {
+  uint32 id = 1;
 }
 
 ///////////////////////////////

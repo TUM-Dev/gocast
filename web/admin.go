@@ -43,17 +43,9 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	page := GetPageString(c.Request.URL.Path)
-	var notifications []model.Notification
 	var tokens []dao.AllTokensDto
 	var serverNotifications []model.ServerNotification
 	switch page {
-	case "notifications":
-		found, err := r.NotificationsDao.GetAllNotifications()
-		if err != nil {
-			logger.Error("couldn't query notifications", "err", err)
-		} else {
-			notifications = found
-		}
 	case "token":
 		tokens, err = r.TokenDao.GetAllTokens(tumLiveContext.User)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -93,7 +85,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			CurT:                t,
 			Tokens:              TokensData{Tokens: tokens, RtmpProxyURL: tools.Cfg.RtmpProxyURL, User: tumLiveContext.User},
 			ServerNotifications: serverNotifications,
-			Notifications:       notifications,
 			HasTestCourse:       hasTestCourse,
 		})
 	if err != nil {
@@ -371,7 +362,6 @@ type AdminPageData struct {
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
 	Tokens              TokensData
-	Notifications       []model.Notification
 	HasTestCourse       bool
 }
 
