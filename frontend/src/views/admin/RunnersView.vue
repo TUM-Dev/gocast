@@ -80,77 +80,94 @@ async function remove(runner: Runner): Promise<void> {
 
 <template>
   <AdminLayout>
-    <section class="mx-auto flex max-w-5xl flex-col gap-4">
-      <h1 class="text-1 text-2xl font-bold">Runners</h1>
+    <section class="mx-auto flex max-w-5xl flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <h1 class="text-1 text-2xl font-bold">Runners</h1>
+      </div>
 
-      <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
-        {{ error }}
-      </p>
+      <Transition name="fade" mode="out-in">
+        <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
+          {{ error }}
+        </p>
+      </Transition>
 
-      <p v-if="loading" class="text-5 text-sm">Loading runners…</p>
+      <div class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800">
+        <p v-if="loading" class="text-5 text-sm">Loading runners…</p>
 
-      <!--
-        An empty list is an ordinary state, not a failure: a deployment can simply
-        have no runners registered.
-      -->
-      <p v-else-if="!runners.length" class="text-5 text-sm">
-        No runners are registered. They appear here once one registers itself.
-      </p>
+        <!--
+          An empty list is an ordinary state, not a failure: a deployment can simply
+          have no runners registered.
+        -->
+        <p v-else-if="!runners.length" class="text-5 text-sm">
+          No runners are registered. They appear here once one registers itself.
+        </p>
 
-      <!-- Wide content scrolls inside its own container rather than the page. -->
-      <div v-else class="overflow-x-auto">
-        <table class="w-full table-auto text-left text-sm">
-          <thead class="text-2 text-xs uppercase tracking-wide">
-            <tr>
-              <th scope="col" class="py-3 pr-6">Name</th>
-              <th scope="col" class="px-6 py-3">Status</th>
-              <th scope="col" class="px-6 py-3">Workload</th>
-              <th scope="col" class="px-6 py-3">Registered</th>
-              <th scope="col" class="px-6 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="text-3">
-            <tr
-              v-for="runner in runners"
-              :key="runner.hostname"
-              class="border-t dark:border-gray-800"
-            >
-              <td class="py-3 pr-6">
-                <span class="text-1 font-semibold">{{ runner.hostname }}</span>
-                <span class="text-4 font-normal"> @ {{ runner.version }}</span>
-              </td>
-              <td class="px-6 py-3">
-                <span
-                  class="rounded-full px-2 py-1 text-xs font-bold text-gray-100"
-                  :class="runner.alive ? 'bg-green-500' : 'bg-red-500'"
-                  >{{ runner.alive ? "Alive" : "Dead" }}</span
-                >
-                <!--
-                  Draining is why a live runner stops picking up work, so it belongs
-                  beside the status rather than hidden in the row detail the old page
-                  never filled in.
-                -->
-                <span v-if="runner.draining" class="text-4 ml-2 text-xs">draining</span>
-              </td>
-              <td class="px-6 py-3 whitespace-nowrap">{{ runner.jobCount }} Jobs</td>
-              <td class="px-6 py-3 whitespace-nowrap">
-                {{ timeAgo(runner.registeredAt, now) }} ago
-              </td>
-              <td class="px-6 py-3">
-                <button
-                  type="button"
-                  class="text-5 hover:text-1"
-                  :title="`Remove ${runner.hostname}`"
-                  :aria-label="`Remove ${runner.hostname}`"
-                  @click="remove(runner)"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- Wide content scrolls inside its own container rather than the page. -->
+        <div v-else class="overflow-x-auto">
+          <table class="w-full table-auto text-left text-sm">
+            <thead class="text-2 text-xs uppercase tracking-wide">
+              <tr>
+                <th scope="col" class="py-3 pr-6">Name</th>
+                <th scope="col" class="px-6 py-3">Status</th>
+                <th scope="col" class="px-6 py-3">Workload</th>
+                <th scope="col" class="px-6 py-3">Registered</th>
+                <th scope="col" class="px-6 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="text-3">
+              <tr
+                v-for="runner in runners"
+                :key="runner.hostname"
+                class="border-t dark:border-gray-800"
+              >
+                <td class="py-3 pr-6">
+                  <span class="text-1 font-semibold">{{ runner.hostname }}</span>
+                  <span class="text-4 font-normal"> @ {{ runner.version }}</span>
+                </td>
+                <td class="px-6 py-3">
+                  <span
+                    class="rounded-full px-2 py-1 text-xs font-bold text-gray-100"
+                    :class="runner.alive ? 'bg-green-500' : 'bg-red-500'"
+                    >{{ runner.alive ? "Alive" : "Dead" }}</span
+                  >
+                  <!--
+                    Draining is why a live runner stops picking up work, so it belongs
+                    beside the status rather than hidden in the row detail the old page
+                    never filled in.
+                  -->
+                  <span v-if="runner.draining" class="text-4 ml-2 text-xs">draining</span>
+                </td>
+                <td class="px-6 py-3 whitespace-nowrap">{{ runner.jobCount }} Jobs</td>
+                <td class="px-6 py-3 whitespace-nowrap">
+                  {{ timeAgo(runner.registeredAt, now) }} ago
+                </td>
+                <td class="px-6 py-3">
+                  <button
+                    type="button"
+                    class="text-5 hover:text-1"
+                    :title="`Remove ${runner.hostname}`"
+                    :aria-label="`Remove ${runner.hostname}`"
+                    @click="remove(runner)"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   </AdminLayout>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

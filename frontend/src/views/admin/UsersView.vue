@@ -36,7 +36,7 @@ const results = ref<AdminUser[] | null>(null);
 const page = ref(0);
 
 const query = ref("");
-const roleFilter = ref<RoleValue | undefined>(undefined);
+const roleFilter = ref<RoleValue>(ASSIGNABLE_ROLES[0].value);
 const searching = ref(false);
 
 const loading = ref(true);
@@ -46,6 +46,19 @@ const status = ref("");
 const newName = ref("");
 const newEmail = ref("");
 const creating = ref(false);
+const showCreateForm = ref(false);
+
+/** Ids with a role change, delete, or impersonate request in flight, so a row can disable itself. */
+const pendingIds = ref<Set<number>>(new Set());
+function isPending(id: number): boolean {
+  return pendingIds.value.has(id);
+}
+function setPending(id: number, pending: boolean): void {
+  const next = new Set(pendingIds.value);
+  if (pending) next.add(id);
+  else next.delete(id);
+  pendingIds.value = next;
+}
 
 /** Which list is on screen. Null results mean nobody has searched. */
 const isSearch = computed(() => results.value !== null);
@@ -138,6 +151,7 @@ function removeRow(id: number): void {
 async function changeRole(user: AdminUser, role: RoleValue): Promise<void> {
   error.value = "";
   status.value = "";
+  setPending(user.id, true);
   try {
     replaceRow(await updateUserRole(user.id, role));
     status.value = `${user.name} is now ${roleLabel(role).toLowerCase()}.`;
@@ -145,6 +159,8 @@ async function changeRole(user: AdminUser, role: RoleValue): Promise<void> {
     await loadStaff();
   } catch (err) {
     error.value = message(err);
+  } finally {
+    setPending(user.id, false);
   }
 }
 
@@ -153,12 +169,15 @@ async function remove(user: AdminUser): Promise<void> {
 
   error.value = "";
   status.value = "";
+  setPending(user.id, true);
   try {
     await deleteUser(user.id);
     removeRow(user.id);
     status.value = `Deleted the account of ${user.name}.`;
+    setPending(user.id, false);
   } catch (err) {
     error.value = message(err);
+    setPending(user.id, false);
   }
 }
 
@@ -172,12 +191,14 @@ async function signInAs(user: AdminUser): Promise<void> {
     return;
   }
 
+  setPending(user.id, true);
   try {
     await impersonate(user.id);
     // The cookie is someone else's now, so leave rather than route.
     window.location.assign("/");
   } catch (err) {
     error.value = message(err);
+    setPending(user.id, false);
   }
 }
 
@@ -189,6 +210,7 @@ async function create(): Promise<void> {
     const created = await createUser(newName.value.trim(), newEmail.value.trim());
     newName.value = "";
     newEmail.value = "";
+    showCreateForm.value = false;
     status.value = `Created ${created.name} and emailed an invitation to set a password.`;
     await loadStaff();
   } catch (err) {
@@ -201,146 +223,23 @@ async function create(): Promise<void> {
 
 <template>
   <AdminLayout>
-    <section class="mx-auto flex max-w-5xl flex-col gap-4">
-      <h1 class="text-1 text-2xl font-bold">User Management</h1>
-
-      <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
-        {{ error }}
-      </p>
-      <p v-else-if="status" class="text-5 text-sm" role="status">{{ status }}</p>
-
-      <div class="flex flex-wrap items-end gap-4">
-        <div class="flex flex-col gap-1 text-sm">
-          <label class="text-2" for="user-search">Search</label>
-          <input
-            id="user-search"
-            v-model="query"
-            class="tum-live-input"
-            type="search"
-            placeholder="Name, email or login"
-          />
-        </div>
-        <div class="flex flex-col gap-1 text-sm">
-          <label class="text-2" for="user-role-filter">Role</label>
-          <select id="user-role-filter" v-model="roleFilter" class="tum-live-input">
-            <option :value="undefined">All</option>
-            <option v-for="role in ASSIGNABLE_ROLES" :key="role.value" :value="role.value">
-              {{ role.label }}
-            </option>
-          </select>
-        </div>
-        <p v-if="searching" class="text-5 pb-2 text-sm" role="status">Searching…</p>
-      </div>
-
-      <!--
-        Which list is on screen changes what the rows are, so it says so. The masking
-        in particular would otherwise look like a bug rather than the point.
-      -->
-      <p class="text-5 text-sm">
-        <span v-if="isSearch">
-          Matches across every account. Emails and logins are masked here.
-        </span>
-        <span v-else>
-          Administrators and lecturers. Search to reach every account, including
-          students — {{ SEARCH_MIN_LENGTH }} characters, or pick a role.
-        </span>
-      </p>
-
-      <p v-if="loading" class="text-5 text-sm">Loading accounts…</p>
-      <p v-else-if="!visible.length" class="text-5 text-sm">
-        {{ isSearch ? "No accounts match that search." : "No administrators or lecturers yet." }}
-      </p>
-
-      <div v-else class="overflow-x-auto">
-        <table class="w-full table-auto text-left text-sm">
-          <thead class="text-2 text-xs uppercase tracking-wide">
-            <tr>
-              <th scope="col" class="py-3 pr-6">Name</th>
-              <th scope="col" class="px-6 py-3">Email</th>
-              <th scope="col" class="px-6 py-3">Role</th>
-              <th scope="col" class="px-6 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="text-3">
-            <tr v-for="user in visible" :key="user.id" class="border-t dark:border-gray-800">
-              <td class="text-1 py-3 pr-6 font-semibold">{{ user.name }}</td>
-              <td class="px-6 py-3">{{ user.email || user.lrzId || "—" }}</td>
-              <td class="px-6 py-3">
-                <select
-                  class="tum-live-input text-xs"
-                  :value="user.role"
-                  :aria-label="`Role of ${user.name}`"
-                  @change="changeRole(user, selectedRole($event))"
-                >
-                  <!--
-                    A role outside the three the selector offers — `generic`, or one
-                    this client does not know — still has to be selectable as the
-                    current value, or the row would show the wrong role.
-                  -->
-                  <option
-                    v-if="!ASSIGNABLE_ROLES.some((r) => r.value === user.role)"
-                    :value="user.role"
-                  >
-                    {{ roleLabel(user.role) }}
-                  </option>
-                  <option v-for="role in ASSIGNABLE_ROLES" :key="role.value" :value="role.value">
-                    {{ role.label }}
-                  </option>
-                </select>
-              </td>
-              <td class="px-6 py-3">
-                <div class="flex items-center gap-4">
-                  <!-- Administrators cannot be deleted; the server refuses it too. -->
-                  <button
-                    v-if="user.role !== Role.admin"
-                    type="button"
-                    class="text-5 hover:text-1"
-                    :title="`Delete ${user.name}`"
-                    :aria-label="`Delete ${user.name}`"
-                    @click="remove(user)"
-                  >
-                    <i class="fas fa-trash"></i>
-                  </button>
-                  <button
-                    type="button"
-                    class="text-5 hover:text-1"
-                    :title="`Continue as ${user.name}`"
-                    :aria-label="`Continue as ${user.name}`"
-                    @click="signInAs(user)"
-                  >
-                    <i class="fas fa-user"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Search results are shown whole, so paging only applies to the staff list. -->
-      <div v-if="!isSearch && pageCount > 1" class="text-3 flex items-center justify-center gap-2">
+    <section class="mx-auto flex max-w-5xl flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <h1 class="text-1 text-2xl font-bold">User Management</h1>
         <button
           type="button"
-          class="h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-          aria-label="Previous page"
-          :disabled="page === 0"
-          @click="page -= 1"
+          class="tum-live-button-primary px-4 py-2 text-sm"
+          @click="showCreateForm = !showCreateForm"
         >
-          <i class="fa fa-chevron-left text-sm"></i>
-        </button>
-        <span class="text-sm font-semibold">{{ page + 1 }} / {{ pageCount }}</span>
-        <button
-          type="button"
-          class="h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-          aria-label="Next page"
-          :disabled="page + 1 >= pageCount"
-          @click="page += 1"
-        >
-          <i class="fa fa-chevron-right text-sm"></i>
+          {{ showCreateForm ? "Cancel" : "Add user" }}
         </button>
       </div>
 
-      <form class="flex max-w-md flex-col gap-3" @submit.prevent="create">
+      <form
+        v-if="showCreateForm"
+        class="flex max-w-md flex-col gap-3 rounded-lg border p-4 dark:border-gray-800"
+        @submit.prevent="create"
+      >
         <h2 class="text-1 font-semibold">New user</h2>
         <p class="text-5 text-sm">
           Creates a lecturer account and emails an invitation to set a password.
@@ -372,6 +271,200 @@ async function create(): Promise<void> {
           {{ creating ? "Creating…" : "Create" }}
         </button>
       </form>
+
+      <Transition name="fade" mode="out-in">
+        <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
+          {{ error }}
+        </p>
+        <p v-else-if="status" class="text-5 text-sm" role="status">{{ status }}</p>
+      </Transition>
+
+      <div class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800">
+        <div
+          class="flex flex-wrap items-center justify-end gap-4 border-b pb-4 dark:border-gray-800"
+        >
+          <p v-if="searching" class="text-5 text-sm" role="status">
+            <i class="fas fa-spinner fa-spin"></i> Searching…
+          </p>
+          <div class="flex items-center gap-2 text-sm">
+            <label class="text-2" for="user-search">Search</label>
+            <input
+              id="user-search"
+              v-model="query"
+              class="tum-live-input"
+              type="search"
+              placeholder="Name, email or login"
+            />
+          </div>
+          <div class="flex items-center gap-2 text-sm">
+            <label class="text-2" for="user-role-filter">Role</label>
+            <select id="user-role-filter" v-model="roleFilter" class="tum-live-input">
+              <option v-for="role in ASSIGNABLE_ROLES" :key="role.value" :value="role.value">
+                {{ role.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!--
+          Which list is on screen changes what the rows are, so it says so. The masking
+          in particular would otherwise look like a bug rather than the point.
+        -->
+        <p class="text-5 text-sm">
+          <span v-if="isSearch">
+            Matches across every account. Emails and logins are masked here.
+          </span>
+          <span v-else>
+            Administrators and lecturers. Search to reach every account, including
+            students — {{ SEARCH_MIN_LENGTH }} characters, or pick a role.
+          </span>
+        </p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full table-auto text-left text-sm">
+            <thead class="text-2 text-xs uppercase tracking-wide">
+              <tr>
+                <th scope="col" class="py-3 pr-6">Name</th>
+                <th scope="col" class="px-6 py-3">Email</th>
+                <th scope="col" class="px-6 py-3">Role</th>
+                <th scope="col" class="px-6 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="text-3">
+              <template v-if="loading">
+                <tr v-for="i in 5" :key="`skeleton-${i}`" class="border-t dark:border-gray-800">
+                  <td class="py-3 pr-6">
+                    <div class="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </td>
+                  <td class="px-6 py-3">
+                    <div class="h-4 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </td>
+                  <td class="px-6 py-3">
+                    <div class="h-6 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </td>
+                  <td class="px-6 py-3">
+                    <div class="h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </td>
+                </tr>
+              </template>
+              <tr v-else-if="!visible.length">
+                <td colspan="4" class="text-5 py-6 text-center text-sm">
+                  {{
+                    isSearch ? "No accounts match that search." : "No administrators or lecturers yet."
+                  }}
+                </td>
+              </tr>
+              <template v-else>
+                <tr
+                  v-for="user in visible"
+                  :key="user.id"
+                  class="border-t transition-colors dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                >
+                  <td class="text-1 py-3 pr-6 font-semibold">{{ user.name }}</td>
+                  <td class="px-6 py-3">{{ user.email || user.lrzId || "—" }}</td>
+                  <td class="px-6 py-3">
+                    <div class="flex items-center gap-2">
+                      <select
+                        class="tum-live-input text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                        :value="user.role"
+                        :disabled="isPending(user.id)"
+                        :aria-label="`Role of ${user.name}`"
+                        @change="changeRole(user, selectedRole($event))"
+                      >
+                        <!--
+                          A role outside the three the selector offers — `generic`, or one
+                          this client does not know — still has to be selectable as the
+                          current value, or the row would show the wrong role.
+                        -->
+                        <option
+                          v-if="!ASSIGNABLE_ROLES.some((r) => r.value === user.role)"
+                          :value="user.role"
+                        >
+                          {{ roleLabel(user.role) }}
+                        </option>
+                        <option
+                          v-for="role in ASSIGNABLE_ROLES"
+                          :key="role.value"
+                          :value="role.value"
+                        >
+                          {{ role.label }}
+                        </option>
+                      </select>
+                      <i
+                        v-if="isPending(user.id)"
+                        class="fas fa-spinner fa-spin text-5 text-xs"
+                      ></i>
+                    </div>
+                  </td>
+                  <td class="px-6 py-3">
+                    <div class="flex items-center gap-4">
+                      <!-- Administrators cannot be deleted; the server refuses it too. -->
+                      <button
+                        v-if="user.role !== Role.admin"
+                        type="button"
+                        class="text-5 hover:text-1 disabled:cursor-not-allowed disabled:opacity-40"
+                        :disabled="isPending(user.id)"
+                        :title="`Delete ${user.name}`"
+                        :aria-label="`Delete ${user.name}`"
+                        @click="remove(user)"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="text-5 hover:text-1 disabled:cursor-not-allowed disabled:opacity-40"
+                        :disabled="isPending(user.id)"
+                        :title="`Continue as ${user.name}`"
+                        :aria-label="`Continue as ${user.name}`"
+                        @click="signInAs(user)"
+                      >
+                        <i class="fas fa-user"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Search results are shown whole, so paging only applies to the staff list. -->
+        <div
+          v-if="!isSearch && !loading && pageCount > 1"
+          class="text-3 flex items-center justify-center gap-2"
+        >
+          <button
+            type="button"
+            class="h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+            aria-label="Previous page"
+            :disabled="page === 0"
+            @click="page -= 1"
+          >
+            <i class="fa fa-chevron-left text-sm"></i>
+          </button>
+          <span class="text-sm font-semibold">{{ page + 1 }} / {{ pageCount }}</span>
+          <button
+            type="button"
+            class="h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+            aria-label="Next page"
+            :disabled="page + 1 >= pageCount"
+            @click="page += 1"
+          >
+            <i class="fa fa-chevron-right text-sm"></i>
+          </button>
+        </div>
+      </div>
     </section>
   </AdminLayout>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
