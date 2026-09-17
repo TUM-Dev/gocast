@@ -117,6 +117,16 @@ var services = []service{
 			"createInfoPage":     requires(model.PermAdministerServer),
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
+
+			// Maintenance operations belong to no course, same as runners.
+			"getMaintenanceThumbnailStatus":       requires(model.PermAdministerServer),
+			"generateMaintenanceThumbnails":       requires(model.PermAdministerServer),
+			"listMaintenanceCronJobs":             requires(model.PermAdministerServer),
+			"runMaintenanceCronJob":               requires(model.PermAdministerServer),
+			"listMaintenanceTranscodingFailures":  requires(model.PermAdministerServer),
+			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
+			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
+			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
 		},
 	},
 }

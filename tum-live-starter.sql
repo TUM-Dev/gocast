@@ -558,6 +558,94 @@ VALUES
 UNLOCK TABLES;
 
 --
+-- Table structure for table `transcoding_failures`
+--
+-- Not in the original dump: added for the maintenance page's fixtures. Columns
+-- follow model.TranscodingFailure; AutoMigrate reconciles the table, including its
+-- foreign key to `streams`, on boot.
+--
+
+DROP TABLE IF EXISTS `transcoding_failures`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `transcoding_failures` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `deleted_at` datetime(3) DEFAULT NULL,
+  `stream_id` bigint(20) unsigned NOT NULL,
+  `version` longtext NOT NULL,
+  `logs` longtext NOT NULL,
+  `exit_code` bigint(20) DEFAULT NULL,
+  `file_path` longtext NOT NULL,
+  `hostname` longtext NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_transcoding_failures_deleted_at` (`deleted_at`),
+  KEY `fk_transcoding_failures_stream` (`stream_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `transcoding_failures`
+--
+-- References stream 1 (VL 1: Was ist Bier?), which the course fixtures already seed.
+-- `consumed` is deleted by the maintenance e2e spec's delete test.
+--
+
+LOCK TABLES `transcoding_failures` WRITE;
+/*!40000 ALTER TABLE `transcoding_failures` DISABLE KEYS */;
+INSERT INTO `transcoding_failures` (`id`,`created_at`,`updated_at`,`stream_id`,`version`,`logs`,`exit_code`,`file_path`,`hostname`)
+VALUES
+  (1,DATE_SUB(NOW(), INTERVAL 2 DAY),DATE_SUB(NOW(), INTERVAL 2 DAY),1,'COMB','ffmpeg: could not open input file',1,'/recordings/2026/lecture1.mp4','worker-1.tum.live'),
+  (2,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_SUB(NOW(), INTERVAL 1 DAY),1,'PRES','ffmpeg: unsupported codec',1,'/recordings/2026/lecture2.mp4','worker-2.tum.live');
+/*!40000 ALTER TABLE `transcoding_failures` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `emails`
+--
+-- Not in the original dump: added for the maintenance page's fixtures. Columns
+-- follow model.Email; AutoMigrate reconciles the table on boot.
+--
+
+DROP TABLE IF EXISTS `emails`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `emails` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `deleted_at` datetime(3) DEFAULT NULL,
+  `from` longtext NOT NULL,
+  `to` longtext NOT NULL,
+  `subject` longtext NOT NULL,
+  `body` longtext NOT NULL,
+  `success` tinyint(1) NOT NULL DEFAULT 0,
+  `retries` bigint(20) NOT NULL DEFAULT 0,
+  `last_try` datetime(3) DEFAULT NULL,
+  `errors` longtext,
+  PRIMARY KEY (`id`),
+  KEY `idx_emails_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `emails`
+--
+-- Both unsuccessful, which is what GetFailed selects on. `consumed` is deleted by the
+-- maintenance e2e spec's delete test.
+--
+
+LOCK TABLES `emails` WRITE;
+/*!40000 ALTER TABLE `emails` DISABLE KEYS */;
+INSERT INTO `emails` (`id`,`created_at`,`updated_at`,`from`,`to`,`subject`,`body`,`success`,`retries`,`last_try`,`errors`)
+VALUES
+  (1,DATE_SUB(NOW(), INTERVAL 2 DAY),DATE_SUB(NOW(), INTERVAL 1 HOUR),'noreply@tum.live','broken@example.com','Welcome to TUM-Live','Hello and welcome!',0,3,DATE_SUB(NOW(), INTERVAL 1 HOUR),'550 5.1.1 unknown recipient'),
+  (2,DATE_SUB(NOW(), INTERVAL 5 DAY),DATE_SUB(NOW(), INTERVAL 5 DAY),'noreply@tum.live','also-broken@example.com','Your stream is live','It started.',0,1,NULL,'connection refused');
+/*!40000 ALTER TABLE `emails` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `server_notifications`
 --
 

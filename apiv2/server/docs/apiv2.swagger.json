@@ -177,6 +177,229 @@
         ]
       }
     },
+    "/admin/maintenance/cron": {
+      "get": {
+        "summary": "List the jobs the scheduler knows by name.",
+        "description": "Retrieves the names of every registered cron job, for triggering one manually. Requires the server.administer permission.",
+        "operationId": "AdminService_listMaintenanceCronJobs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListMaintenanceCronJobsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/admin/maintenance/cron/run": {
+      "post": {
+        "summary": "Run a cron job now.",
+        "description": "Executes a registered job immediately, without waiting for its schedule. Requires the server.administer permission.",
+        "operationId": "AdminService_runMaintenanceCronJob",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufRunMaintenanceCronJobRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/admin/maintenance/email-failures": {
+      "get": {
+        "summary": "List failed emails.",
+        "description": "Retrieves every email that has exhausted its retries or is still failing, with its body and error history. Requires the server.administer permission.",
+        "operationId": "AdminService_listMaintenanceEmailFailures",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListMaintenanceEmailFailuresResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/admin/maintenance/email-failures/{id}": {
+      "delete": {
+        "summary": "Dismiss a failed email.",
+        "description": "Deletes a failed email; it is not retried afterwards. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteMaintenanceEmailFailure",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/admin/maintenance/thumbnails/generate": {
+      "post": {
+        "summary": "Regenerate every VoD thumbnail.",
+        "description": "Starts a background job that requests a fresh thumbnail for every VoD file. A run already in progress is left alone rather than started twice. Requires the server.administer permission.",
+        "operationId": "AdminService_generateMaintenanceThumbnails",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufMaintenanceThumbnailStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/admin/maintenance/thumbnails/status": {
+      "get": {
+        "summary": "Get the thumbnail regeneration progress.",
+        "description": "Reports whether a thumbnail regeneration run is in progress and how far it has gotten. Requires the server.administer permission.",
+        "operationId": "AdminService_getMaintenanceThumbnailStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufMaintenanceThumbnailStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/admin/maintenance/transcoding-failures": {
+      "get": {
+        "summary": "List transcoding failures.",
+        "description": "Retrieves every recorded transcoding failure, worker and log included. Requires the server.administer permission.",
+        "operationId": "AdminService_listMaintenanceTranscodingFailures",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListMaintenanceTranscodingFailuresResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/admin/maintenance/transcoding-failures/{id}": {
+      "delete": {
+        "summary": "Dismiss a transcoding failure.",
+        "description": "Deletes a recorded transcoding failure. It does not retry the transcode. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteMaintenanceTranscodingFailure",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
     "/admin/runners": {
       "get": {
         "summary": "List the transcoding runners.",
@@ -2129,6 +2352,41 @@
         }
       }
     },
+    "protobufListMaintenanceCronJobsResponse": {
+      "type": "object",
+      "properties": {
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "protobufListMaintenanceEmailFailuresResponse": {
+      "type": "object",
+      "properties": {
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufMaintenanceEmailFailure"
+          }
+        }
+      }
+    },
+    "protobufListMaintenanceTranscodingFailuresResponse": {
+      "type": "object",
+      "properties": {
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufMaintenanceTranscodingFailure"
+          }
+        }
+      }
+    },
     "protobufListRunnersResponse": {
       "type": "object",
       "properties": {
@@ -2169,6 +2427,82 @@
         }
       }
     },
+    "protobufMaintenanceEmailFailure": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "to": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "lastTry": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC 3339, or empty when no attempt has been made yet."
+        },
+        "retries": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "errors": {
+          "type": "string",
+          "description": "One line per failed attempt."
+        }
+      },
+      "description": "MaintenanceEmailFailure restates model.Email for a message that never sent."
+    },
+    "protobufMaintenanceThumbnailStatus": {
+      "type": "object",
+      "properties": {
+        "running": {
+          "type": "boolean"
+        },
+        "progress": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "description": "MaintenanceThumbnailStatus reports the state of the background regeneration job.\nprogress is meaningless once running is false; a finished run resets it to zero\nrather than leaving it at 1, so a stale tab does not read a fresh run as complete."
+    },
+    "protobufMaintenanceTranscodingFailure": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string",
+          "description": "model.StreamVersion, e.g. \"COMB\", \"CAM\", \"PRES\"."
+        },
+        "friendlyTime": {
+          "type": "string",
+          "description": "Formatted server-side (02.01.2006 15:04) so the page needs no locale logic."
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "filePath": {
+          "type": "string"
+        },
+        "logs": {
+          "type": "string"
+        }
+      },
+      "description": "MaintenanceTranscodingFailure restates model.TranscodingFailure for the admin page."
+    },
     "protobufNotificationTarget": {
       "type": "string",
       "enum": [
@@ -2202,6 +2536,14 @@
       "type": "object",
       "properties": {
         "message": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufRunMaintenanceCronJobRequest": {
+      "type": "object",
+      "properties": {
+        "job": {
           "type": "string"
         }
       }
