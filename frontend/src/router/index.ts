@@ -15,6 +15,7 @@ import LoginView from "@/views/LoginView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
+import WorkersView from "@/views/admin/WorkersView.vue";
 import MyCoursesView from "@/views/MyCoursesView.vue";
 import PublicCoursesView from "@/views/PublicCoursesView.vue";
 import SettingsView from "@/views/SettingsView.vue";
@@ -122,6 +123,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/info-pages",
     name: "admin-info-pages",
     component: InfoPagesView,
+  },
+  {
+    path: "/admin/workers",
+    name: "admin-workers",
+    component: WorkersView,
   },
   {
     path: "/login",

@@ -35,10 +35,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		logger.Error("couldn't query courses for user.", "err", err)
 		courses = []model.Course{}
 	}
-	workers, err := r.WorkerDao.GetAllWorkers()
-	if err != nil {
-		logger.Error("could not get workers", "err", err)
-	}
 	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
@@ -87,7 +83,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
 			Page:                page,
-			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
@@ -109,8 +104,6 @@ func GetPageString(s string) string {
 		return "lectureHalls"
 	case "/admin/lecture-halls/new":
 		return "createLectureHalls"
-	case "/admin/workers":
-		return "workers"
 	case "/admin/create-course":
 		return "createCourse"
 	case "/admin/course-import":
@@ -132,11 +125,6 @@ func GetPageString(s string) string {
 	default:
 		return "schedule"
 	}
-}
-
-type WorkersData struct {
-	Workers []model.Worker
-	Token   string
 }
 
 type TokensData struct {
@@ -364,7 +352,6 @@ type AdminPageData struct {
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
-	Workers             WorkersData
 	Semesters           []model.Semester
 	CurY                int
 	CurT                string

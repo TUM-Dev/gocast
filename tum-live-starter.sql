@@ -952,6 +952,13 @@ CREATE TABLE `workers` (
 
 LOCK TABLES `workers` WRITE;
 /*!40000 ALTER TABLE `workers` DISABLE KEYS */;
+-- Not in the original dump: workers only register themselves over gRPC. Liveness is
+-- a heartbeat within six minutes, so no fixture can seed a live one. `beta` is
+-- consumed by the delete test in workers.spec.ts.
+INSERT INTO `workers` (`worker_id`,`host`,`status`,`workload`,`last_seen`,`cpu`,`memory`,`disk`,`uptime`,`version`)
+VALUES
+  ('worker-alpha','vm-alpha','converting',2,DATE_SUB(NOW(), INTERVAL 1 HOUR),'12%','1.2GB/4GB','20%/100GB','3d','1.4.2'),
+  ('worker-beta','vm-beta','',0,DATE_SUB(NOW(), INTERVAL 9 DAY),'0%','0.1GB/4GB','5%/100GB','30d','1.3.0');
 /*!40000 ALTER TABLE `workers` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
