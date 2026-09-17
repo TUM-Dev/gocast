@@ -213,6 +213,7 @@ test.describe("changing what an account may do", () => {
    * run, not per file, and visibility.spec.ts asserts against the seeded ones.
    */
   async function createAccount(page: Page, name: string, email: string): Promise<void> {
+    await page.getByRole("button", { name: "Add user" }).click();
     await page.getByLabel("Name", { exact: true }).fill(name);
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByRole("button", { name: "Create" }).click();
@@ -249,6 +250,7 @@ test.describe("changing what an account may do", () => {
 
     await createAccount(page, "First Claim", "taken@example.org");
 
+    await page.getByRole("button", { name: "Add user" }).click();
     await page.getByLabel("Name", { exact: true }).fill("Second Claim");
     await page.getByLabel("Email", { exact: true }).fill("taken@example.org");
     await page.getByRole("button", { name: "Create" }).click();

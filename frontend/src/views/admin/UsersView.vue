@@ -36,7 +36,7 @@ const results = ref<AdminUser[] | null>(null);
 const page = ref(0);
 
 const query = ref("");
-const roleFilter = ref<RoleValue>(ASSIGNABLE_ROLES[0].value);
+const roleFilter = ref<RoleValue | undefined>(undefined);
 const searching = ref(false);
 
 const loading = ref(true);
@@ -299,6 +299,7 @@ async function create(): Promise<void> {
           <div class="flex items-center gap-2 text-sm">
             <label class="text-2" for="user-role-filter">Role</label>
             <select id="user-role-filter" v-model="roleFilter" class="tum-live-input">
+              <option :value="undefined">All</option>
               <option v-for="role in ASSIGNABLE_ROLES" :key="role.value" :value="role.value">
                 {{ role.label }}
               </option>
