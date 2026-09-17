@@ -76,6 +76,10 @@ docker run --detach \
   --volume "$(pwd)"/tum-live-starter.sql:/init.sql \
   mariadb:latest --init-file /init.sql
 ```
+- `--init-file` only runs once, when the container's data volume is first created — pulling a
+  branch that changes `tum-live-starter.sql` (a new table, new seed rows) does nothing for a
+  container that already existed. Reseed it with `make e2e_db DB_CONTAINER=mariadb-tumlive`, or
+  remove the container and its volume and recreate it, to pick up fixture changes.
 - Alternatively, install mariadb on its own.
   - Create the database `tumlive` using [this](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip) script.
   - Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
