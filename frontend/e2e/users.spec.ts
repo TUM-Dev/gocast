@@ -60,6 +60,9 @@ test.describe("the two listings", () => {
   test("searching reaches students, whose details arrive masked", async ({ page }) => {
     await login(page, users.admin, "/admin/users");
 
+    // The role filter defaults to Admin, so a search for a student needs an explicit
+    // role to reach them — there is no "All" to fall back on.
+    await page.getByLabel("Role", { exact: true }).selectOption({ label: "Student" });
     await page.getByLabel("Search", { exact: true }).fill("Stephanie");
 
     const row = page.getByRole("row", { name: new RegExp(users.studi1.name) });
@@ -238,6 +241,8 @@ test.describe("changing what an account may do", () => {
 
     await createAccount(page, "Nina Neu", "nina.neu@example.org");
 
+    // Created accounts are lecturers, and the role filter defaults to Admin.
+    await page.getByLabel("Role", { exact: true }).selectOption({ label: "Lecturer" });
     await page.getByLabel("Search", { exact: true }).fill("Nina");
     const row = page.getByRole("row", { name: /Nina Neu/ });
     await expect(row).toContainText("n*******@example.org");
@@ -270,14 +275,18 @@ test.describe("changing what an account may do", () => {
     // Students are not staff, so the row leaves the list it is standing in.
     await expect(page.getByRole("row", { name: /Rolle Wechsel/ })).toHaveCount(0);
 
-    // And comes back on the way up, which is what the page is for.
+    // And comes back on the way up, which is what the page is for. The account is
+    // now a student, so the role filter has to follow it to be found again.
+    await page.getByLabel("Role", { exact: true }).selectOption({ label: "Student" });
     await page.getByLabel("Search", { exact: true }).fill("Rolle");
     await page.getByRole("row", { name: /Rolle Wechsel/ }).getByRole("combobox")
       .selectOption({ label: "Lecturer" });
     await expect(page.getByRole("status")).toContainText("is now lecturer");
 
+    // Promoted back to lecturer, so the filter has to follow it again to see it —
+    // the role filter has no "All" to fall back on to find it either way.
+    await page.getByLabel("Role", { exact: true }).selectOption({ label: "Lecturer" });
     await page.getByLabel("Search", { exact: true }).fill("");
-    await expect(page.getByText("Administrators and lecturers")).toBeVisible();
     await expect(page.getByRole("row", { name: /Rolle Wechsel/ })).toBeVisible();
   });
 
@@ -297,6 +306,7 @@ test.describe("changing what an account may do", () => {
     // Still the v1 endpoint: it creates a session, which the SPA does not manage.
     await login(page, users.admin, "/admin/users");
 
+    await page.getByLabel("Role", { exact: true }).selectOption({ label: "Student" });
     await page.getByLabel("Search", { exact: true }).fill("Stephanie");
     const row = page.getByRole("row", { name: new RegExp(users.studi1.name) });
 
