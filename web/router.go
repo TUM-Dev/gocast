@@ -60,6 +60,7 @@ var spaRoutes = map[string]bool{
 	"/admin/runners":            true,
 	"/admin/users":              true,
 	"/admin/info-pages":         true,
+	"/admin/audits":             true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
@@ -303,7 +304,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
 	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
-	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/audits", nil)
 	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
 
 	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the

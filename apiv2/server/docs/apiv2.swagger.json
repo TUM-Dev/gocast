@@ -48,6 +48,47 @@
     "application/json"
   ],
   "paths": {
+    "/admin/audits": {
+      "get": {
+        "summary": "List server audit log entries.",
+        "description": "Retrieves one page of the server-wide audit log -- course and stream changes, camera moves, and warnings or errors the backend surfaced itself -- newest first. Requires the server.administer permission.",
+        "operationId": "AdminService_listAudits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListAuditsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "description": "Defaults to 10 server-side when omitted or zero, matching the page size the old\nadmin page used.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Audits"
+        ]
+      }
+    },
     "/admin/info-pages": {
       "get": {
         "summary": "List every info page for administration.",
@@ -1526,6 +1567,36 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nIn its binary encoding, an `Any` is an ordinary message; but in other wire\nforms like JSON, it has a special encoding. The format of the type URL is\ndescribed on the `type_url` field.\n\nProtobuf APIs provide utilities to interact with `Any` values:\n\n- A 'pack' operation accepts a message and constructs a generic `Any` wrapper\n  around it.\n- An 'unpack' operation reads the content of an `Any` message, either into an\n  existing message or a new one. Unpack operations must check the type of the\n  value they unpack against the declared `type_url`.\n- An 'is' operation decides whether an `Any` contains a message of the given\n  type, i.e. whether it can 'unpack' that type.\n\nThe JSON format representation of an `Any` follows one of these cases:\n\n- For types without special-cased JSON encodings, the JSON format\n  representation of the `Any` is the same as that of the message, with an\n  additional `@type` field which contains the type URL.\n- For types with special-cased JSON encodings (typically called 'well-known'\n  types, listed in https://protobuf.dev/programming-guides/json/#any), the\n  JSON format representation has a key `@type` which contains the type URL\n  and a key `value` which contains the JSON-serialized value.\n\nThe text format representation of an `Any` is like a message with one field\nwhose name is the type URL in brackets. For example, an `Any` containing a\n`foo.Bar` message may be written `[type.googleapis.com/foo.Bar] { a: 2 }`."
     },
+    "protobufAuditEntry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "description": "The audit kind, already rendered to text by model.AuditType.String() -- \"Course\nCreated\", \"Camera Moved\", etc. -- so the client needs no copy of that mapping."
+        },
+        "message": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 when the audit was made by the system rather than a signed-in user."
+        },
+        "userName": {
+          "type": "string",
+          "description": "\"- System -\" when there is no user, matching model.User.GetLoginString()."
+        }
+      },
+      "description": "AuditEntry is one row of the server-wide audit log."
+    },
     "protobufBookmark": {
       "type": "object",
       "properties": {
@@ -2045,6 +2116,18 @@
         "externalUrl": {
           "type": "string",
           "description": "Where the room is, on whatever campus map the deployment points at. The live\nlecture badge links to it."
+        }
+      }
+    },
+    "protobufListAuditsResponse": {
+      "type": "object",
+      "properties": {
+        "audits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAuditEntry"
+          }
         }
       }
     },

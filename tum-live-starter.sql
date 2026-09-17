@@ -558,6 +558,58 @@ VALUES
 UNLOCK TABLES;
 
 --
+-- Table structure for table `audits`
+--
+-- Not in the original dump: model.Audit is only ever written by the application
+-- itself. Columns follow the model; AutoMigrate reconciles the table on boot.
+--
+
+DROP TABLE IF EXISTS `audits`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `audits` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `deleted_at` datetime(3) DEFAULT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `message` longtext,
+  `type` bigint(20) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_audits_deleted_at` (`deleted_at`),
+  KEY `fk_audits_user` (`user_id`),
+  CONSTRAINT `fk_audits_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `audits`
+--
+-- Twelve rows so the admin page's ten-per-page pagination has a second page to page
+-- into; `created_at` is staggered by the minute so `ORDER BY created_at DESC` (see
+-- dao/audit.go) gives every row a fixed, predictable position across both pages.
+--
+
+LOCK TABLES `audits` WRITE;
+/*!40000 ALTER TABLE `audits` DISABLE KEYS */;
+INSERT INTO `audits` (`id`,`created_at`,`updated_at`,`user_id`,`message`,`type`)
+VALUES
+  (1,DATE_SUB(NOW(), INTERVAL 12 MINUTE),DATE_SUB(NOW(), INTERVAL 12 MINUTE),1,'Initial audit log entry',1),
+  (2,DATE_SUB(NOW(), INTERVAL 11 MINUTE),DATE_SUB(NOW(), INTERVAL 11 MINUTE),1,'Course created: Einführung Brauereiwesen',4),
+  (3,DATE_SUB(NOW(), INTERVAL 10 MINUTE),DATE_SUB(NOW(), INTERVAL 10 MINUTE),2,'Stream created for Praktikum: Golang',7),
+  (4,DATE_SUB(NOW(), INTERVAL 9 MINUTE),DATE_SUB(NOW(), INTERVAL 9 MINUTE),NULL,'Transcoding queue backed up',2),
+  (5,DATE_SUB(NOW(), INTERVAL 8 MINUTE),DATE_SUB(NOW(), INTERVAL 8 MINUTE),1,'Stream visibility changed',8),
+  (6,DATE_SUB(NOW(), INTERVAL 7 MINUTE),DATE_SUB(NOW(), INTERVAL 7 MINUTE),1,'Course description updated',5),
+  (7,DATE_SUB(NOW(), INTERVAL 6 MINUTE),DATE_SUB(NOW(), INTERVAL 6 MINUTE),NULL,'Camera moved to preset 3 in room 1',10),
+  (8,DATE_SUB(NOW(), INTERVAL 5 MINUTE),DATE_SUB(NOW(), INTERVAL 5 MINUTE),NULL,'Failed to reach transcoding runner',3),
+  (9,DATE_SUB(NOW(), INTERVAL 4 MINUTE),DATE_SUB(NOW(), INTERVAL 4 MINUTE),1,'Stream deleted: old recording',9),
+  (10,DATE_SUB(NOW(), INTERVAL 3 MINUTE),DATE_SUB(NOW(), INTERVAL 3 MINUTE),1,'Course archived: Testkurs 2019',6),
+  (11,DATE_SUB(NOW(), INTERVAL 2 MINUTE),DATE_SUB(NOW(), INTERVAL 2 MINUTE),NULL,'Nightly cleanup job finished',1),
+  (12,DATE_SUB(NOW(), INTERVAL 1 MINUTE),DATE_SUB(NOW(), INTERVAL 1 MINUTE),1,'Camera moved to preset 1 in room 2',10);
+/*!40000 ALTER TABLE `audits` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `server_notifications`
 --
 

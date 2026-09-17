@@ -291,6 +291,19 @@ export const infoPages = {
 export type InfoPageKey = keyof typeof infoPages;
 
 /**
+ * Two of the twelve seeded audits (tum-live-starter.sql), enough to assert
+ * pagination without hard-coding all twelve here. `newest` is the top row of page
+ * one; `oldest` is the bottom row of page two, since the endpoint orders by
+ * `created_at desc` and the fixture stages one row per minute.
+ */
+export const audits = {
+  newest: { message: "Camera moved to preset 1 in room 2", type: "Camera Moved" },
+  oldest: { message: "Initial audit log entry", type: "Info" },
+  // No user_id, so the page must fall back to "- System -" rather than blanking it.
+  system: { message: "Nightly cleanup job finished", type: "Info" },
+} as const;
+
+/**
  * A fourth page, seeded to prove one an administrator adds after the built-in three
  * works the same way: reachable at its slug with no route of its own in the frontend.
  */
