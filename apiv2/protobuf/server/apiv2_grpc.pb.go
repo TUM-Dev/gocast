@@ -1437,17 +1437,21 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AdminService_ListRunners_FullMethodName        = "/protobuf.AdminService/listRunners"
-	AdminService_DeleteRunner_FullMethodName       = "/protobuf.AdminService/deleteRunner"
-	AdminService_ListStaff_FullMethodName          = "/protobuf.AdminService/listStaff"
-	AdminService_SearchUsers_FullMethodName        = "/protobuf.AdminService/searchUsers"
-	AdminService_CreateUser_FullMethodName         = "/protobuf.AdminService/createUser"
-	AdminService_UpdateUserRole_FullMethodName     = "/protobuf.AdminService/updateUserRole"
-	AdminService_DeleteUser_FullMethodName         = "/protobuf.AdminService/deleteUser"
-	AdminService_ListInfoPagesAdmin_FullMethodName = "/protobuf.AdminService/listInfoPagesAdmin"
-	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
-	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
-	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListRunners_FullMethodName            = "/protobuf.AdminService/listRunners"
+	AdminService_DeleteRunner_FullMethodName           = "/protobuf.AdminService/deleteRunner"
+	AdminService_ListStaff_FullMethodName              = "/protobuf.AdminService/listStaff"
+	AdminService_SearchUsers_FullMethodName            = "/protobuf.AdminService/searchUsers"
+	AdminService_CreateUser_FullMethodName             = "/protobuf.AdminService/createUser"
+	AdminService_UpdateUserRole_FullMethodName         = "/protobuf.AdminService/updateUserRole"
+	AdminService_DeleteUser_FullMethodName             = "/protobuf.AdminService/deleteUser"
+	AdminService_ListInfoPagesAdmin_FullMethodName     = "/protobuf.AdminService/listInfoPagesAdmin"
+	AdminService_CreateInfoPage_FullMethodName         = "/protobuf.AdminService/createInfoPage"
+	AdminService_UpdateInfoPage_FullMethodName         = "/protobuf.AdminService/updateInfoPage"
+	AdminService_DeleteInfoPage_FullMethodName         = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListLectureHallsAdmin_FullMethodName  = "/protobuf.AdminService/listLectureHallsAdmin"
+	AdminService_CreateLectureHallAdmin_FullMethodName = "/protobuf.AdminService/createLectureHallAdmin"
+	AdminService_UpdateLectureHallAdmin_FullMethodName = "/protobuf.AdminService/updateLectureHallAdmin"
+	AdminService_DeleteLectureHallAdmin_FullMethodName = "/protobuf.AdminService/deleteLectureHallAdmin"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1476,6 +1480,18 @@ type AdminServiceClient interface {
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// The four methods below manage the lecture halls known to the scheduler and the
+	// recording pipeline. Named "*Admin" and "LectureHallAdmin" rather than plain
+	// "LectureHall" because that name, and CameraPreset, are already taken by the
+	// viewer-facing messages further down (see LECTURE_HALL_MESSAGE) with a different
+	// shape. Camera preset management (viewing fetched presets, refreshing them from
+	// the camera, marking a default, taking a snapshot) is deliberately not part of
+	// this surface yet -- it needs the CamService and the preset image directory wired
+	// into this API, which the v1 handler in api/lecture_halls.go still owns.
+	ListLectureHallsAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListLectureHallsAdminResponse, error)
+	CreateLectureHallAdmin(ctx context.Context, in *CreateLectureHallAdminRequest, opts ...grpc.CallOption) (*LectureHallAdmin, error)
+	UpdateLectureHallAdmin(ctx context.Context, in *UpdateLectureHallAdminRequest, opts ...grpc.CallOption) (*LectureHallAdmin, error)
+	DeleteLectureHallAdmin(ctx context.Context, in *DeleteLectureHallAdminRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminServiceClient struct {
@@ -1596,6 +1612,46 @@ func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoP
 	return out, nil
 }
 
+func (c *adminServiceClient) ListLectureHallsAdmin(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListLectureHallsAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListLectureHallsAdminResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListLectureHallsAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) CreateLectureHallAdmin(ctx context.Context, in *CreateLectureHallAdminRequest, opts ...grpc.CallOption) (*LectureHallAdmin, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LectureHallAdmin)
+	err := c.cc.Invoke(ctx, AdminService_CreateLectureHallAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) UpdateLectureHallAdmin(ctx context.Context, in *UpdateLectureHallAdminRequest, opts ...grpc.CallOption) (*LectureHallAdmin, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LectureHallAdmin)
+	err := c.cc.Invoke(ctx, AdminService_UpdateLectureHallAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteLectureHallAdmin(ctx context.Context, in *DeleteLectureHallAdminRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_DeleteLectureHallAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1622,6 +1678,18 @@ type AdminServiceServer interface {
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
 	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
+	// The four methods below manage the lecture halls known to the scheduler and the
+	// recording pipeline. Named "*Admin" and "LectureHallAdmin" rather than plain
+	// "LectureHall" because that name, and CameraPreset, are already taken by the
+	// viewer-facing messages further down (see LECTURE_HALL_MESSAGE) with a different
+	// shape. Camera preset management (viewing fetched presets, refreshing them from
+	// the camera, marking a default, taking a snapshot) is deliberately not part of
+	// this surface yet -- it needs the CamService and the preset image directory wired
+	// into this API, which the v1 handler in api/lecture_halls.go still owns.
+	ListLectureHallsAdmin(context.Context, *emptypb.Empty) (*ListLectureHallsAdminResponse, error)
+	CreateLectureHallAdmin(context.Context, *CreateLectureHallAdminRequest) (*LectureHallAdmin, error)
+	UpdateLectureHallAdmin(context.Context, *UpdateLectureHallAdminRequest) (*LectureHallAdmin, error)
+	DeleteLectureHallAdmin(context.Context, *DeleteLectureHallAdminRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1664,6 +1732,18 @@ func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateIn
 }
 func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) ListLectureHallsAdmin(context.Context, *emptypb.Empty) (*ListLectureHallsAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListLectureHallsAdmin not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateLectureHallAdmin(context.Context, *CreateLectureHallAdminRequest) (*LectureHallAdmin, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateLectureHallAdmin not implemented")
+}
+func (UnimplementedAdminServiceServer) UpdateLectureHallAdmin(context.Context, *UpdateLectureHallAdminRequest) (*LectureHallAdmin, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateLectureHallAdmin not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteLectureHallAdmin(context.Context, *DeleteLectureHallAdminRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteLectureHallAdmin not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -1884,6 +1964,78 @@ func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListLectureHallsAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListLectureHallsAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListLectureHallsAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListLectureHallsAdmin(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_CreateLectureHallAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLectureHallAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateLectureHallAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateLectureHallAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateLectureHallAdmin(ctx, req.(*CreateLectureHallAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_UpdateLectureHallAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLectureHallAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).UpdateLectureHallAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_UpdateLectureHallAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).UpdateLectureHallAdmin(ctx, req.(*UpdateLectureHallAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteLectureHallAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteLectureHallAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteLectureHallAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteLectureHallAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteLectureHallAdmin(ctx, req.(*DeleteLectureHallAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +2086,22 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteInfoPage",
 			Handler:    _AdminService_DeleteInfoPage_Handler,
+		},
+		{
+			MethodName: "listLectureHallsAdmin",
+			Handler:    _AdminService_ListLectureHallsAdmin_Handler,
+		},
+		{
+			MethodName: "createLectureHallAdmin",
+			Handler:    _AdminService_CreateLectureHallAdmin_Handler,
+		},
+		{
+			MethodName: "updateLectureHallAdmin",
+			Handler:    _AdminService_UpdateLectureHallAdmin_Handler,
+		},
+		{
+			MethodName: "deleteLectureHallAdmin",
+			Handler:    _AdminService_DeleteLectureHallAdmin_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -177,6 +177,135 @@
         ]
       }
     },
+    "/admin/lecture-halls": {
+      "get": {
+        "summary": "List every lecture hall for administration.",
+        "description": "Retrieves every lecture hall with its stream sources. Requires the server.administer permission.",
+        "operationId": "AdminService_listLectureHallsAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListLectureHallsAdminResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Lecture Halls"
+        ]
+      },
+      "post": {
+        "summary": "Create a lecture hall.",
+        "description": "Creates a lecture hall the scheduler can assign lectures to. Requires the server.administer permission.",
+        "operationId": "AdminService_createLectureHallAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLectureHallAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateLectureHallAdminRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Lecture Halls"
+        ]
+      }
+    },
+    "/admin/lecture-halls/{id}": {
+      "delete": {
+        "summary": "Delete a lecture hall.",
+        "description": "Deletes a lecture hall; its streams keep playing but lose the hall association. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteLectureHallAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Lecture Halls"
+        ]
+      },
+      "patch": {
+        "summary": "Update a lecture hall.",
+        "description": "Replaces a lecture hall's name, stream protocol and stream sources. Requires the server.administer permission.",
+        "operationId": "AdminService_updateLectureHallAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLectureHallAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AdminServiceupdateLectureHallAdminBody"
+            }
+          }
+        ],
+        "tags": [
+          "Lecture Halls"
+        ]
+      }
+    },
     "/admin/runners": {
       "get": {
         "summary": "List the transcoding runners.",
@@ -1455,6 +1584,33 @@
         }
       }
     },
+    "AdminServiceupdateLectureHallAdminBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "streamProtocol": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "combIp": {
+          "type": "string"
+        },
+        "presIp": {
+          "type": "string"
+        },
+        "camIp": {
+          "type": "string"
+        },
+        "cameraIp": {
+          "type": "string"
+        },
+        "pwrCtrlIp": {
+          "type": "string"
+        }
+      }
+    },
     "AdminServiceupdateUserRoleBody": {
       "type": "object",
       "properties": {
@@ -1701,6 +1857,33 @@
           "type": "string"
         },
         "rawContent": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufCreateLectureHallAdminRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "streamProtocol": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "combIp": {
+          "type": "string"
+        },
+        "presIp": {
+          "type": "string"
+        },
+        "camIp": {
+          "type": "string"
+        },
+        "cameraIp": {
+          "type": "string"
+        },
+        "pwrCtrlIp": {
           "type": "string"
         }
       }
@@ -2048,6 +2231,42 @@
         }
       }
     },
+    "protobufLectureHallAdmin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string",
+          "description": "As the hall is named in SMP, e.g. room_00_13_009A -- not a free-form label."
+        },
+        "streamProtocol": {
+          "type": "integer",
+          "format": "int64",
+          "description": "1 = rtsp, 2 = srt; mirrors model.StreamProtocol."
+        },
+        "combIp": {
+          "type": "string"
+        },
+        "presIp": {
+          "type": "string"
+        },
+        "camIp": {
+          "type": "string"
+        },
+        "cameraIp": {
+          "type": "string",
+          "description": "IP of the physical Axis camera itself (not the SMP address above). Empty for\nhalls with no camera, e.g. VMP backed ones."
+        },
+        "pwrCtrlIp": {
+          "type": "string",
+          "description": "Drives the red live light through an Anel PWR-Ctrl. Empty when there is none."
+        }
+      },
+      "description": "LectureHallAdmin is a lecture hall as an administrator configures it: the stream\nsources the worker/runner pulls from plus the optional hardware addresses. Distinct\nfrom LectureHall (LECTURE_HALL_MESSAGE above), which is the trimmed shape shown to\nviewers."
+    },
     "protobufListInfoPagesAdminResponse": {
       "type": "object",
       "properties": {
@@ -2068,6 +2287,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufInfoPageSummary"
+          }
+        }
+      }
+    },
+    "protobufListLectureHallsAdminResponse": {
+      "type": "object",
+      "properties": {
+        "lectureHalls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureHallAdmin"
           }
         }
       }

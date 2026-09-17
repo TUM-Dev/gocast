@@ -13,6 +13,8 @@ import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
+import LectureHallCreateView from "@/views/admin/LectureHallCreateView.vue";
+import LectureHallsView from "@/views/admin/LectureHallsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import MyCoursesView from "@/views/MyCoursesView.vue";
@@ -122,6 +124,16 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/info-pages",
     name: "admin-info-pages",
     component: InfoPagesView,
+  },
+  {
+    path: "/admin/lecture-halls",
+    name: "admin-lecture-halls",
+    component: LectureHallsView,
+  },
+  {
+    path: "/admin/lecture-halls/new",
+    name: "admin-lecture-halls-new",
+    component: LectureHallCreateView,
   },
   {
     path: "/login",

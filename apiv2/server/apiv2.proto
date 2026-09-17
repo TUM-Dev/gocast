@@ -478,6 +478,56 @@ service AdminService {
       description: "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission."
     };
   }
+
+  // The four methods below manage the lecture halls known to the scheduler and the
+  // recording pipeline. Named "*Admin" and "LectureHallAdmin" rather than plain
+  // "LectureHall" because that name, and CameraPreset, are already taken by the
+  // viewer-facing messages further down (see LECTURE_HALL_MESSAGE) with a different
+  // shape. Camera preset management (viewing fetched presets, refreshing them from
+  // the camera, marking a default, taking a snapshot) is deliberately not part of
+  // this surface yet -- it needs the CamService and the preset image directory wired
+  // into this API, which the v1 handler in api/lecture_halls.go still owns.
+  rpc listLectureHallsAdmin(google.protobuf.Empty) returns (ListLectureHallsAdminResponse) {
+    option (google.api.http) = {get: "/admin/lecture-halls"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "List every lecture hall for administration."
+      description: "Retrieves every lecture hall with its stream sources. Requires the server.administer permission."
+    };
+  }
+
+  rpc createLectureHallAdmin(CreateLectureHallAdminRequest) returns (LectureHallAdmin) {
+    option (google.api.http) = {
+      post: "/admin/lecture-halls"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Create a lecture hall."
+      description: "Creates a lecture hall the scheduler can assign lectures to. Requires the server.administer permission."
+    };
+  }
+
+  rpc updateLectureHallAdmin(UpdateLectureHallAdminRequest) returns (LectureHallAdmin) {
+    option (google.api.http) = {
+      patch: "/admin/lecture-halls/{id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Update a lecture hall."
+      description: "Replaces a lecture hall's name, stream protocol and stream sources. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteLectureHallAdmin(DeleteLectureHallAdminRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/lecture-halls/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Delete a lecture hall."
+      description: "Deletes a lecture hall; its streams keep playing but lose the hall association. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1160,4 +1210,57 @@ message DeleteUserRequest {
 
 message ListUsersResponse {
   repeated UserSummary users = 1;
+}
+
+///////////////////////////////
+///// LECTURE_HALL_ADMIN //////
+///////////////////////////////
+
+// LectureHallAdmin is a lecture hall as an administrator configures it: the stream
+// sources the worker/runner pulls from plus the optional hardware addresses. Distinct
+// from LectureHall (LECTURE_HALL_MESSAGE above), which is the trimmed shape shown to
+// viewers.
+message LectureHallAdmin {
+  uint32 id = 1;
+  // As the hall is named in SMP, e.g. room_00_13_009A -- not a free-form label.
+  string name = 2;
+  // 1 = rtsp, 2 = srt; mirrors model.StreamProtocol.
+  uint32 stream_protocol = 3;
+  string comb_ip = 4;
+  string pres_ip = 5;
+  string cam_ip = 6;
+  // IP of the physical Axis camera itself (not the SMP address above). Empty for
+  // halls with no camera, e.g. VMP backed ones.
+  string camera_ip = 7;
+  // Drives the red live light through an Anel PWR-Ctrl. Empty when there is none.
+  string pwr_ctrl_ip = 8;
+}
+
+message ListLectureHallsAdminResponse {
+  repeated LectureHallAdmin lecture_halls = 1;
+}
+
+message CreateLectureHallAdminRequest {
+  string name = 1;
+  uint32 stream_protocol = 2;
+  string comb_ip = 3;
+  string pres_ip = 4;
+  string cam_ip = 5;
+  string camera_ip = 6;
+  string pwr_ctrl_ip = 7;
+}
+
+message UpdateLectureHallAdminRequest {
+  uint32 id = 1;
+  string name = 2;
+  uint32 stream_protocol = 3;
+  string comb_ip = 4;
+  string pres_ip = 5;
+  string cam_ip = 6;
+  string camera_ip = 7;
+  string pwr_ctrl_ip = 8;
+}
+
+message DeleteLectureHallAdminRequest {
+  uint32 id = 1;
 }

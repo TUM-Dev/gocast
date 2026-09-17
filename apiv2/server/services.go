@@ -113,6 +113,12 @@ var services = []service{
 			"createInfoPage":     requires(model.PermAdministerServer),
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
+
+			// Lecture halls belong to no course, same as runners and info pages.
+			"listLectureHallsAdmin":  requires(model.PermAdministerServer),
+			"createLectureHallAdmin": requires(model.PermAdministerServer),
+			"updateLectureHallAdmin": requires(model.PermAdministerServer),
+			"deleteLectureHallAdmin": requires(model.PermAdministerServer),
 		},
 	},
 }

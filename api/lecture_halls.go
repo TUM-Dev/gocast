@@ -28,10 +28,10 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 
 	admins := router.Group("/api")
 	admins.Use(tools.RequirePermission(model.PermAdministerServer))
-	admins.PUT("/lectureHall/:id", routes.updateLectureHall)
+	// CRUD on lecture halls themselves (create/update/delete) moved to v2 -- see
+	// apiv2/server/lecture_hall_admin.go. What is left here is camera preset
+	// management, which still needs the CamService and presetImageDir below.
 	admins.POST("/lectureHall/:id/defaultPreset", routes.updateLectureHallsDefaultPreset)
-	admins.DELETE("/lectureHall/:id", routes.deleteLectureHall)
-	admins.POST("/createLectureHall", routes.createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot)
 	admins.GET("/course-schedule", routes.getSchedule)
 	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
@@ -56,78 +56,6 @@ type lectureHallRoutes struct {
 
 	presetImageDir string
 	cameraService  CamService
-}
-
-type updateLectureHallReq struct {
-	// Name is a pointer so that a client that does not manage the name at all keeps
-	// the stored one, while a client that sends an empty one gets told off.
-	Name           *string `json:"name"`
-	StreamProtocol int     `json:"streamProtocol"`
-	CamIp          string  `json:"camIp"`
-	CombIp         string  `json:"combIp"`
-	PresIP         string  `json:"presIp"`
-	CameraIp       string  `json:"cameraIp"`
-	PwrCtrlIp      string  `json:"pwrCtrlIp"`
-}
-
-func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
-	var req updateLectureHallReq
-	err := c.BindJSON(&req)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	id := c.Param("id")
-	idUint, err := strconv.ParseUint(id, 10, 32)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid param 'id'",
-			Err:           err,
-		})
-		return
-	}
-	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(uint(idUint))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find lecture hall",
-			Err:           err,
-		})
-		return
-	}
-	if req.Name != nil {
-		name := strings.TrimSpace(*req.Name)
-		if name == "" {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
-				CustomMessage: "name can not be empty",
-			})
-			return
-		}
-		lectureHall.Name = name
-	}
-	lectureHall.StreamProtocol = model.StreamProtocol(req.StreamProtocol)
-	logger.Debug("New stream protocol", "protocol", lectureHall.StreamProtocol)
-	lectureHall.CamIP = strings.TrimSpace(req.CamIp)
-	lectureHall.CombIP = strings.TrimSpace(req.CombIp)
-	lectureHall.PresIP = strings.TrimSpace(req.PresIP)
-	lectureHall.CameraIP = strings.TrimSpace(req.CameraIp)
-	lectureHall.PwrCtrlIp = strings.TrimSpace(req.PwrCtrlIp)
-	err = r.LectureHallsDao.SaveLectureHall(lectureHall)
-	if err != nil {
-		logger.Error("error while updating lecture hall", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "error while updating lecture hall",
-			Err:           err,
-		})
-		return
-	}
 }
 
 func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
@@ -169,29 +97,6 @@ func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "error saving preset as default",
-			Err:           err,
-		})
-		return
-	}
-}
-
-func (r lectureHallRoutes) deleteLectureHall(c *gin.Context) {
-	lhIDStr := c.Param("id")
-	lhID, err := strconv.Atoi(lhIDStr)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid param 'id'",
-			Err:           err,
-		})
-		return
-	}
-
-	err = r.LectureHallsDao.DeleteLectureHall(uint(lhID))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not delete lecture hall",
 			Err:           err,
 		})
 		return
@@ -457,47 +362,6 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 	}
 }
 
-func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
-	var req createLectureHallRequest
-	err := c.BindJSON(&req)
-	if err != nil {
-		logger.Error("can not bind body", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	req.trimSpace()
-	if req.Name == "" {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "name can not be empty",
-		})
-		return
-	}
-	lectureHall := model.LectureHall{
-		Name:           req.Name,
-		StreamProtocol: model.StreamProtocol(req.StreamProtocol),
-		CombIP:         req.CombIP,
-		PresIP:         req.PresIP,
-		CamIP:          req.CamIP,
-		CameraIP:       req.CameraIP,
-		PwrCtrlIp:      req.PwrCtrlIP,
-	}
-	if err := r.LectureHallsDao.CreateLectureHall(&lectureHall); err != nil {
-		logger.Error("can not create lecture hall", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not create lecture hall",
-			Err:           err,
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"id": lectureHall.ID})
-}
-
 func (r lectureHallRoutes) fetchLHPresets(lh model.LectureHall) error {
 	cam, err := r.cameraService.For(lh.CameraIP, lh.CameraType)
 	if err != nil {
@@ -510,27 +374,6 @@ func (r lectureHallRoutes) fetchLHPresets(lh model.LectureHall) error {
 	lh.CameraPresets = presets
 	r.LectureHallsDao.SaveLectureHallFullAssoc(lh)
 	return nil
-}
-
-type createLectureHallRequest struct {
-	Name           string `json:"name"`
-	StreamProtocol int    `json:"streamProtocol"` // 1 = rtmp, 2 = srt
-	CombIP         string `json:"combIp"`
-	PresIP         string `json:"presIp"`
-	CamIP          string `json:"camIp"`
-	CameraIP       string `json:"cameraIp"`
-	PwrCtrlIP      string `json:"pwrCtrlIp"`
-}
-
-// trimSpace normalises the addresses so that a field left blank in the admin form is
-// stored as empty rather than as whitespace, which BeforeSave would reject.
-func (r *createLectureHallRequest) trimSpace() {
-	r.Name = strings.TrimSpace(r.Name)
-	r.CombIP = strings.TrimSpace(r.CombIP)
-	r.PresIP = strings.TrimSpace(r.PresIP)
-	r.CamIP = strings.TrimSpace(r.CamIP)
-	r.CameraIP = strings.TrimSpace(r.CameraIP)
-	r.PwrCtrlIP = strings.TrimSpace(r.PwrCtrlIP)
 }
 
 type setLectureHallRequest struct {
