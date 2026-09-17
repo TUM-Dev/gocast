@@ -33,6 +33,11 @@ type API struct {
 	dao dao.DaoWrapper
 	log *slog.Logger
 
+	// Reaching the lecture hall cameras, for the administration endpoints that move
+	// one to a preset or photograph it. Optional: see WithCamService.
+	cams           CamService
+	presetImageDir string
+
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedUserServiceServer
 	protobuf.UnimplementedCourseServiceServer
@@ -40,14 +45,25 @@ type API struct {
 	protobuf.UnimplementedAdminServiceServer
 }
 
+// Option configures an API beyond what it needs to exist. What is optional here is
+// what the API can serve without: an API with no camera service still answers every
+// endpoint that does not touch a camera.
+type Option func(*API)
+
 // New creates a new API and assigns the given db and a logger
-func New(db *gorm.DB) *API {
+func New(db *gorm.DB, opts ...Option) *API {
 	log := slog.With("apiVersion", "2")
-	return &API{
+	a := &API{
 		db:  db,
 		dao: dao.NewDaoWrapper(),
 		log: log,
 	}
+
+	for _, opt := range opts {
+		opt(a)
+	}
+
+	return a
 }
 
 // Run starts the grpc server on port 12544 and the grpc gateway on ::8081/api/v2
