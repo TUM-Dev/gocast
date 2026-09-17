@@ -1437,17 +1437,19 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AdminService_ListRunners_FullMethodName        = "/protobuf.AdminService/listRunners"
-	AdminService_DeleteRunner_FullMethodName       = "/protobuf.AdminService/deleteRunner"
-	AdminService_ListStaff_FullMethodName          = "/protobuf.AdminService/listStaff"
-	AdminService_SearchUsers_FullMethodName        = "/protobuf.AdminService/searchUsers"
-	AdminService_CreateUser_FullMethodName         = "/protobuf.AdminService/createUser"
-	AdminService_UpdateUserRole_FullMethodName     = "/protobuf.AdminService/updateUserRole"
-	AdminService_DeleteUser_FullMethodName         = "/protobuf.AdminService/deleteUser"
-	AdminService_ListInfoPagesAdmin_FullMethodName = "/protobuf.AdminService/listInfoPagesAdmin"
-	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
-	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
-	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListRunners_FullMethodName                = "/protobuf.AdminService/listRunners"
+	AdminService_DeleteRunner_FullMethodName               = "/protobuf.AdminService/deleteRunner"
+	AdminService_ListStaff_FullMethodName                  = "/protobuf.AdminService/listStaff"
+	AdminService_SearchUsers_FullMethodName                = "/protobuf.AdminService/searchUsers"
+	AdminService_CreateUser_FullMethodName                 = "/protobuf.AdminService/createUser"
+	AdminService_UpdateUserRole_FullMethodName             = "/protobuf.AdminService/updateUserRole"
+	AdminService_DeleteUser_FullMethodName                 = "/protobuf.AdminService/deleteUser"
+	AdminService_ListInfoPagesAdmin_FullMethodName         = "/protobuf.AdminService/listInfoPagesAdmin"
+	AdminService_CreateInfoPage_FullMethodName             = "/protobuf.AdminService/createInfoPage"
+	AdminService_UpdateInfoPage_FullMethodName             = "/protobuf.AdminService/updateInfoPage"
+	AdminService_DeleteInfoPage_FullMethodName             = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_SearchCourseImportSchedule_FullMethodName = "/protobuf.AdminService/searchCourseImportSchedule"
+	AdminService_ImportCourseImportCourses_FullMethodName  = "/protobuf.AdminService/importCourseImportCourses"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1476,6 +1478,10 @@ type AdminServiceClient interface {
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
+	// course yet, so it is server-wide like runners and info pages.
+	SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error)
+	ImportCourseImportCourses(ctx context.Context, in *CourseImportRequest, opts ...grpc.CallOption) (*CourseImportResponse, error)
 }
 
 type adminServiceClient struct {
@@ -1596,6 +1602,26 @@ func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoP
 	return out, nil
 }
 
+func (c *adminServiceClient) SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseImportSearchResponse)
+	err := c.cc.Invoke(ctx, AdminService_SearchCourseImportSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ImportCourseImportCourses(ctx context.Context, in *CourseImportRequest, opts ...grpc.CallOption) (*CourseImportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseImportResponse)
+	err := c.cc.Invoke(ctx, AdminService_ImportCourseImportCourses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1622,6 +1648,10 @@ type AdminServiceServer interface {
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
 	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
+	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
+	// course yet, so it is server-wide like runners and info pages.
+	SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error)
+	ImportCourseImportCourses(context.Context, *CourseImportRequest) (*CourseImportResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1664,6 +1694,12 @@ func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateIn
 }
 func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchCourseImportSchedule not implemented")
+}
+func (UnimplementedAdminServiceServer) ImportCourseImportCourses(context.Context, *CourseImportRequest) (*CourseImportResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportCourseImportCourses not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -1884,6 +1920,42 @@ func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_SearchCourseImportSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseImportSearchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).SearchCourseImportSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_SearchCourseImportSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).SearchCourseImportSchedule(ctx, req.(*CourseImportSearchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ImportCourseImportCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseImportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ImportCourseImportCourses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ImportCourseImportCourses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ImportCourseImportCourses(ctx, req.(*CourseImportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +2006,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteInfoPage",
 			Handler:    _AdminService_DeleteInfoPage_Handler,
+		},
+		{
+			MethodName: "searchCourseImportSchedule",
+			Handler:    _AdminService_SearchCourseImportSchedule_Handler,
+		},
+		{
+			MethodName: "importCourseImportCourses",
+			Handler:    _AdminService_ImportCourseImportCourses_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

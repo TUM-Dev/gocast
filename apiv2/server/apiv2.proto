@@ -478,6 +478,32 @@ service AdminService {
       description: "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission."
     };
   }
+
+  // Course import reaches TUMonline directly (rather than a dao) and belongs to no
+  // course yet, so it is server-wide like runners and info pages.
+  rpc searchCourseImportSchedule(CourseImportSearchRequest) returns (CourseImportSearchResponse) {
+    option (google.api.http) = {
+      post: "/admin/course-import/search"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Import"
+      summary: "Search the TUMonline room schedule for courses."
+      description: "Fetches the department's room schedule from TUMonline for the given date range, groups it by course and enriches each with its contacts and language. Requires the server.administer permission."
+    };
+  }
+
+  rpc importCourseImportCourses(CourseImportRequest) returns (CourseImportResponse) {
+    option (google.api.http) = {
+      post: "/admin/course-import"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Import"
+      summary: "Import the selected courses."
+      description: "Creates a course and its streams for each selected course, then emails its main contact an activation (or opt-out) link. A failure importing one course does not stop the others; the response reports each outcome. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1156,4 +1182,93 @@ message DeleteUserRequest {
 
 message ListUsersResponse {
   repeated UserSummary users = 1;
+}
+
+///////////////////////////////
+//// COURSE_IMPORT_MESSAGE ////
+///////////////////////////////
+
+// CourseImportEvent is one room booking TUMonline reports for a course, on its way to
+// becoming a model.Stream.
+message CourseImportEvent {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+  string room_name = 3;
+  // Set by TUMonline for a room change or similar; shown so an administrator can spot
+  // an event that needs a closer look before importing it.
+  string comment = 4;
+  // TUMonline's event id, kept so the created stream can be traced back to it.
+  string event_id = 5;
+  // Whether this event is included; an administrator may deselect single lectures
+  // (e.g. one already covered by a room the department switched away from).
+  bool import = 6;
+}
+
+// CourseImportContact is one person TUMonline lists against the course, with the main
+// contact flagged: importCourseImportCourses only emails whoever has main_contact set.
+message CourseImportContact {
+  string first_name = 1;
+  string last_name = 2;
+  string email = 3;
+  string role = 4;
+  bool main_contact = 5;
+}
+
+// CourseImportCourse is one course as found in the TUMonline schedule, round-tripped
+// through the administrator's review before being created. slug and import are
+// editable client-side between the search and the import call.
+message CourseImportCourse {
+  string title = 1;
+  string slug = 2;
+  int32 course_id = 3;
+  // "de" or "en", or empty when TUMonline reported neither.
+  string language = 4;
+  bool import = 5;
+  repeated CourseImportEvent events = 6;
+  repeated CourseImportContact contacts = 7;
+}
+
+///////////////////////////////
+//// COURSE_IMPORT_REQUEST ////
+///////////////////////////////
+
+message CourseImportSearchRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // The TUMonline organisation unit id. The client offers presets for the usual
+  // departments (Computer Science, Computer Engineering, Mathematics, Physics) and a
+  // free-form field for any other; the server treats every id alike.
+  int32 department_id = 3;
+}
+
+message CourseImportRequest {
+  int32 year = 1;
+  // "W" (winter) or "S" (summer), matching model.Course.TeachingTerm.
+  string term = 2;
+  // Opt in: a lecturer must activate streaming. Opt out: it starts on unless they
+  // decline. Governs which link the invitation email sends.
+  bool opt_in = 3;
+  repeated CourseImportCourse courses = 4;
+}
+
+///////////////////////////////
+//// COURSE_IMPORT_RESPONSE ///
+///////////////////////////////
+
+message CourseImportSearchResponse {
+  repeated CourseImportCourse courses = 1;
+}
+
+// CourseImportResult reports one course's outcome, so a failure importing one course
+// (a duplicate slug, an LDAP lookup miss) is visible without hiding the successes
+// that happened alongside it.
+message CourseImportResult {
+  string title = 1;
+  bool success = 2;
+  // Empty when success is true.
+  string error = 3;
+}
+
+message CourseImportResponse {
+  repeated CourseImportResult results = 1;
 }

@@ -48,6 +48,74 @@
     "application/json"
   ],
   "paths": {
+    "/admin/course-import": {
+      "post": {
+        "summary": "Import the selected courses.",
+        "description": "Creates a course and its streams for each selected course, then emails its main contact an activation (or opt-out) link. A failure importing one course does not stop the others; the response reports each outcome. Requires the server.administer permission.",
+        "operationId": "AdminService_importCourseImportCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseImportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCourseImportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Course Import"
+        ]
+      }
+    },
+    "/admin/course-import/search": {
+      "post": {
+        "summary": "Search the TUMonline room schedule for courses.",
+        "description": "Fetches the department's room schedule from TUMonline for the given date range, groups it by course and enriches each with its contacts and language. Requires the server.administer permission.",
+        "operationId": "AdminService_searchCourseImportSchedule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseImportSearchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCourseImportSearchRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Course Import"
+        ]
+      }
+    },
     "/admin/info-pages": {
       "get": {
         "summary": "List every info page for administration.",
@@ -1670,6 +1738,175 @@
         "isAdmin": {
           "type": "boolean",
           "description": "Whether the calling user administers this course, as opposed to being a global\nadmin. Drives the per-course admin link."
+        }
+      }
+    },
+    "protobufCourseImportContact": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "mainContact": {
+          "type": "boolean"
+        }
+      },
+      "description": "CourseImportContact is one person TUMonline lists against the course, with the main\ncontact flagged: importCourseImportCourses only emails whoever has main_contact set."
+    },
+    "protobufCourseImportCourse": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "courseId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "language": {
+          "type": "string",
+          "description": "\"de\" or \"en\", or empty when TUMonline reported neither."
+        },
+        "import": {
+          "type": "boolean"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseImportEvent"
+          }
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseImportContact"
+          }
+        }
+      },
+      "description": "CourseImportCourse is one course as found in the TUMonline schedule, round-tripped\nthrough the administrator's review before being created. slug and import are\neditable client-side between the search and the import call."
+    },
+    "protobufCourseImportEvent": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "roomName": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string",
+          "description": "Set by TUMonline for a room change or similar; shown so an administrator can spot\nan event that needs a closer look before importing it."
+        },
+        "eventId": {
+          "type": "string",
+          "description": "TUMonline's event id, kept so the created stream can be traced back to it."
+        },
+        "import": {
+          "type": "boolean",
+          "description": "Whether this event is included; an administrator may deselect single lectures\n(e.g. one already covered by a room the department switched away from)."
+        }
+      },
+      "description": "CourseImportEvent is one room booking TUMonline reports for a course, on its way to\nbecoming a model.Stream."
+    },
+    "protobufCourseImportRequest": {
+      "type": "object",
+      "properties": {
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "term": {
+          "type": "string",
+          "description": "\"W\" (winter) or \"S\" (summer), matching model.Course.TeachingTerm."
+        },
+        "optIn": {
+          "type": "boolean",
+          "description": "Opt in: a lecturer must activate streaming. Opt out: it starts on unless they\ndecline. Governs which link the invitation email sends."
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseImportCourse"
+          }
+        }
+      }
+    },
+    "protobufCourseImportResponse": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseImportResult"
+          }
+        }
+      }
+    },
+    "protobufCourseImportResult": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string",
+          "description": "Empty when success is true."
+        }
+      },
+      "description": "CourseImportResult reports one course's outcome, so a failure importing one course\n(a duplicate slug, an LDAP lookup miss) is visible without hiding the successes\nthat happened alongside it."
+    },
+    "protobufCourseImportSearchRequest": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "departmentId": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The TUMonline organisation unit id. The client offers presets for the usual\ndepartments (Computer Science, Computer Engineering, Mathematics, Physics) and a\nfree-form field for any other; the server treats every id alike."
+        }
+      }
+    },
+    "protobufCourseImportSearchResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseImportCourse"
+          }
         }
       }
     },
