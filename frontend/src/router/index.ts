@@ -20,6 +20,7 @@ import MaintenanceView from "@/views/admin/MaintenanceView.vue";
 import NotificationsView from "@/views/admin/NotificationsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import ServerNotificationsView from "@/views/admin/ServerNotificationsView.vue";
+import ServerStatsView from "@/views/admin/ServerStatsView.vue";
 import TokensView from "@/views/admin/TokensView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import WorkersView from "@/views/admin/WorkersView.vue";
@@ -170,6 +171,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/audits",
     name: "admin-audits",
     component: AuditsView,
+  },
+  {
+    path: "/admin/server-stats",
+    name: "admin-server-stats",
+    component: ServerStatsView,
   },
   {
     path: "/login",

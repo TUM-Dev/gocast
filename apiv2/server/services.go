@@ -154,6 +154,10 @@ var services = []service{
 			// The audit log spans every course and the server itself, so it takes the
 			// same permission as runners and info pages rather than a course-scoped one.
 			"listAudits": requires(model.PermAdministerServer),
+			// Server-wide statistics, same permission the old /admin/server-stats
+			// route required.
+			"getServerStats":    requires(model.PermAdministerServer),
+			"exportServerStats": requires(model.PermAdministerServer),
 		},
 	},
 }

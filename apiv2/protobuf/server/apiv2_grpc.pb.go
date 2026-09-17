@@ -1475,6 +1475,8 @@ const (
 	AdminService_CreateNotification_FullMethodName                  = "/protobuf.AdminService/createNotification"
 	AdminService_DeleteNotification_FullMethodName                  = "/protobuf.AdminService/deleteNotification"
 	AdminService_ListAudits_FullMethodName                          = "/protobuf.AdminService/listAudits"
+	AdminService_GetServerStats_FullMethodName                      = "/protobuf.AdminService/getServerStats"
+	AdminService_ExportServerStats_FullMethodName                   = "/protobuf.AdminService/exportServerStats"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1537,6 +1539,8 @@ type AdminServiceClient interface {
 	CreateNotification(ctx context.Context, in *CreateNotificationRequest, opts ...grpc.CallOption) (*AdminNotification, error)
 	DeleteNotification(ctx context.Context, in *DeleteNotificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListAudits(ctx context.Context, in *ListAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error)
+	GetServerStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerStatsResponse, error)
+	ExportServerStats(ctx context.Context, in *ExportServerStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 }
 
 type adminServiceClient struct {
@@ -1927,6 +1931,26 @@ func (c *adminServiceClient) ListAudits(ctx context.Context, in *ListAuditsReque
 	return out, nil
 }
 
+func (c *adminServiceClient) GetServerStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ServerStatsResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetServerStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ExportServerStats(ctx context.Context, in *ExportServerStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(httpbody.HttpBody)
+	err := c.cc.Invoke(ctx, AdminService_ExportServerStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1987,6 +2011,8 @@ type AdminServiceServer interface {
 	CreateNotification(context.Context, *CreateNotificationRequest) (*AdminNotification, error)
 	DeleteNotification(context.Context, *DeleteNotificationRequest) (*emptypb.Empty, error)
 	ListAudits(context.Context, *ListAuditsRequest) (*ListAuditsResponse, error)
+	GetServerStats(context.Context, *emptypb.Empty) (*ServerStatsResponse, error)
+	ExportServerStats(context.Context, *ExportServerStatsRequest) (*httpbody.HttpBody, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -2110,6 +2136,12 @@ func (UnimplementedAdminServiceServer) DeleteNotification(context.Context, *Dele
 }
 func (UnimplementedAdminServiceServer) ListAudits(context.Context, *ListAuditsRequest) (*ListAuditsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListAudits not implemented")
+}
+func (UnimplementedAdminServiceServer) GetServerStats(context.Context, *emptypb.Empty) (*ServerStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetServerStats not implemented")
+}
+func (UnimplementedAdminServiceServer) ExportServerStats(context.Context, *ExportServerStatsRequest) (*httpbody.HttpBody, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportServerStats not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -2816,6 +2848,42 @@ func _AdminService_ListAudits_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_GetServerStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetServerStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetServerStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetServerStats(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ExportServerStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportServerStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ExportServerStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ExportServerStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ExportServerStats(ctx, req.(*ExportServerStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2974,6 +3042,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "listAudits",
 			Handler:    _AdminService_ListAudits_Handler,
+		},
+		{
+			MethodName: "getServerStats",
+			Handler:    _AdminService_GetServerStats_Handler,
+		},
+		{
+			MethodName: "exportServerStats",
+			Handler:    _AdminService_ExportServerStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
