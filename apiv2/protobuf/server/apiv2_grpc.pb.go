@@ -1448,6 +1448,7 @@ const (
 	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
 	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
 	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListAudits_FullMethodName         = "/protobuf.AdminService/listAudits"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1476,6 +1477,7 @@ type AdminServiceClient interface {
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListAudits(ctx context.Context, in *ListAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error)
 }
 
 type adminServiceClient struct {
@@ -1596,6 +1598,16 @@ func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoP
 	return out, nil
 }
 
+func (c *adminServiceClient) ListAudits(ctx context.Context, in *ListAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuditsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListAudits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1622,6 +1634,7 @@ type AdminServiceServer interface {
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
 	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
+	ListAudits(context.Context, *ListAuditsRequest) (*ListAuditsResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1664,6 +1677,9 @@ func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateIn
 }
 func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) ListAudits(context.Context, *ListAuditsRequest) (*ListAuditsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAudits not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -1884,6 +1900,24 @@ func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListAudits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuditsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListAudits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListAudits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListAudits(ctx, req.(*ListAuditsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +1968,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteInfoPage",
 			Handler:    _AdminService_DeleteInfoPage_Handler,
+		},
+		{
+			MethodName: "listAudits",
+			Handler:    _AdminService_ListAudits_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -478,6 +478,15 @@ service AdminService {
       description: "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission."
     };
   }
+
+  rpc listAudits(ListAuditsRequest) returns (ListAuditsResponse) {
+    option (google.api.http) = {get: "/admin/audits"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Audits"
+      summary: "List server audit log entries."
+      description: "Retrieves one page of the server-wide audit log -- course and stream changes, camera moves, and warnings or errors the backend surfaced itself -- newest first. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1156,4 +1165,41 @@ message DeleteUserRequest {
 
 message ListUsersResponse {
   repeated UserSummary users = 1;
+}
+
+///////////////////////////////
+///// AUDIT_MESSAGE ///////////
+///////////////////////////////
+
+// AuditEntry is one row of the server-wide audit log.
+message AuditEntry {
+  uint32 id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  // The audit kind, already rendered to text by model.AuditType.String() -- "Course
+  // Created", "Camera Moved", etc. -- so the client needs no copy of that mapping.
+  string type = 3;
+  string message = 4;
+  // 0 when the audit was made by the system rather than a signed-in user.
+  uint32 user_id = 5;
+  // "- System -" when there is no user, matching model.User.GetLoginString().
+  string user_name = 6;
+}
+
+///////////////////////////////
+///// AUDIT_REQUEST ///////////
+///////////////////////////////
+
+message ListAuditsRequest {
+  // Defaults to 10 server-side when omitted or zero, matching the page size the old
+  // admin page used.
+  uint32 limit = 1;
+  uint32 offset = 2;
+}
+
+///////////////////////////////
+///// AUDIT_RESPONSE //////////
+///////////////////////////////
+
+message ListAuditsResponse {
+  repeated AuditEntry audits = 1;
 }

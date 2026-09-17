@@ -113,6 +113,10 @@ var services = []service{
 			"createInfoPage":     requires(model.PermAdministerServer),
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
+
+			// The audit log spans every course and the server itself, so it takes the
+			// same permission as runners and info pages rather than a course-scoped one.
+			"listAudits": requires(model.PermAdministerServer),
 		},
 	},
 }

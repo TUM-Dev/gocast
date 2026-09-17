@@ -115,8 +115,6 @@ func GetPageString(s string) string {
 		return "createCourse"
 	case "/admin/course-import":
 		return "courseImport"
-	case "/admin/audits":
-		return "audits"
 	case "/admin/maintenance":
 		return "maintenance"
 	case "/admin/notifications":

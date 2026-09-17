@@ -368,8 +368,6 @@
                     {{template "notification_management" .Notifications}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "maintenance")}}
                     {{template "maintenance"}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "audits")}}
-                    {{template "audits"}}
                 {{end}}
             </div>
         </div>
