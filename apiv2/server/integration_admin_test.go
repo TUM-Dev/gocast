@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
@@ -19,6 +20,28 @@ import (
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
 )
+
+func TestListIntegrations(t *testing.T) {
+	integrations := mock_dao.NewMockIntegrationDao(gomock.NewController(t))
+	api := &API{dao: dao.DaoWrapper{IntegrationDao: integrations}}
+	integrations.EXPECT().GetIntegrations().Return([]model.Integration{
+		{ID: 7, Name: "Portal", ReturnURL: "https://portal.example/callback", APIKeyHash: []byte("hash")},
+		{ID: 8, Name: "Revoked"},
+	}, nil)
+	response, err := api.ListIntegrations(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(response.Integrations) != 2 || response.Integrations[0].Id != 7 ||
+		response.Integrations[0].Name != "Portal" || response.Integrations[0].ReturnUrl != "https://portal.example/callback" ||
+		!response.Integrations[0].HasKey || response.Integrations[1].HasKey {
+		t.Fatalf("unexpected integration summaries: %v", response)
+	}
+	integrations.EXPECT().GetIntegrations().Return(nil, errors.New("database unavailable"))
+	if _, err := api.ListIntegrations(context.Background(), &emptypb.Empty{}); status.Code(err) != codes.Unknown {
+		t.Errorf("failed list: %v", err)
+	}
+}
 
 func TestCreateIntegration(t *testing.T) {
 	var saved model.Integration
@@ -133,7 +156,7 @@ func TestIntegrationAdminErrors(t *testing.T) {
 
 func TestIntegrationAdminPolicies(t *testing.T) {
 	api := &API{}
-	for _, name := range []string{"createIntegration", "rotateIntegrationKey", "revokeIntegrationKey"} {
+	for _, name := range []string{"listIntegrations", "createIntegration", "rotateIntegrationKey", "revokeIntegrationKey"} {
 		for _, tc := range []struct {
 			user *model.User
 			code codes.Code

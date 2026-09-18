@@ -178,6 +178,28 @@
       }
     },
     "/admin/integrations": {
+      "get": {
+        "summary": "List registered integrations.",
+        "description": "Returns application details and key status, never API keys. Requires the server.administer permission.",
+        "operationId": "AdminService_listIntegrations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListIntegrationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Integrations"
+        ]
+      },
       "post": {
         "summary": "Register an integration.",
         "description": "Registers an application with its return URL and returns a new API key. Requires the server.administer permission.",
@@ -2154,6 +2176,24 @@
       },
       "description": "InfoPageSummary is what a visitor is told exists, before asking for one by slug."
     },
+    "protobufIntegrationSummary": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "returnUrl": {
+          "type": "string"
+        },
+        "hasKey": {
+          "type": "boolean"
+        }
+      }
+    },
     "protobufLectureHall": {
       "type": "object",
       "properties": {
@@ -2197,6 +2237,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufInfoPageSummary"
+          }
+        }
+      }
+    },
+    "protobufListIntegrationsResponse": {
+      "type": "object",
+      "properties": {
+        "integrations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufIntegrationSummary"
           }
         }
       }

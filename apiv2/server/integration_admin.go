@@ -20,6 +20,21 @@ import (
 
 // Every RPC here requires PermAdministerServer through its policy in services.go.
 
+func (a *API) ListIntegrations(ctx context.Context, req *emptypb.Empty) (*protobuf.ListIntegrationsResponse, error) {
+	integrations, err := a.dao.IntegrationDao.GetIntegrations()
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	out := make([]*protobuf.IntegrationSummary, 0, len(integrations))
+	for _, integration := range integrations {
+		out = append(out, &protobuf.IntegrationSummary{
+			Id: uint32(integration.ID), Name: integration.Name, ReturnUrl: integration.ReturnURL,
+			HasKey: len(integration.APIKeyHash) != 0,
+		})
+	}
+	return &protobuf.ListIntegrationsResponse{Integrations: out}, nil
+}
+
 func (a *API) CreateIntegration(ctx context.Context, req *protobuf.CreateIntegrationRequest) (*protobuf.CreateIntegrationResponse, error) {
 	name := strings.TrimSpace(req.GetName())
 	returnURL := strings.TrimSpace(req.GetReturnUrl())

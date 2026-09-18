@@ -36,7 +36,7 @@ const administration: AdminLink[] = [
   { label: "Server Statistics", path: "/admin/server-stats", permission: "server.administer" },
   { label: "Course Import", path: "/admin/course-import", permission: "server.administer" },
   { label: "Token Management", path: "/admin/token", permission: "users.manage" },
-  { label: "Integrations", path: "/admin/integrations", permission: "server.administer" },
+  { label: "Integrations", path: "/admin/integrations", permission: "server.administer", migrated: true },
   { label: "Audits", path: "/admin/audits", permission: "server.administer" },
   {
     label: "Info Pages",
@@ -96,7 +96,7 @@ const courseLinks = allowed(courses);
       </section>
     </nav>
 
-    <article class="text-3 grow p-4">
+    <article class="text-3 min-w-0 grow p-4">
       <slot />
     </article>
   </div>
