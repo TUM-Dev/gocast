@@ -113,6 +113,11 @@ var services = []service{
 			"createInfoPage":     requires(model.PermAdministerServer),
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
+
+			"listIntegrations":     requires(model.PermAdministerServer),
+			"createIntegration":    requires(model.PermAdministerServer),
+			"rotateIntegrationKey": requires(model.PermAdministerServer),
+			"revokeIntegrationKey": requires(model.PermAdministerServer),
 		},
 	},
 }

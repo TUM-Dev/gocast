@@ -478,6 +478,45 @@ service AdminService {
       description: "Deletes an info page; its route stops resolving immediately. Requires the server.administer permission."
     };
   }
+
+  rpc listIntegrations(google.protobuf.Empty) returns (ListIntegrationsResponse) {
+    option (google.api.http) = {get: "/admin/integrations"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "List registered integrations."
+      description: "Returns application details and key status, never API keys. Requires the server.administer permission."
+    };
+  }
+
+  rpc createIntegration(CreateIntegrationRequest) returns (CreateIntegrationResponse) {
+    option (google.api.http) = {
+      post: "/admin/integrations"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Register an integration."
+      description: "Registers an application with its return URL and returns a new API key. Requires the server.administer permission."
+    };
+  }
+
+  rpc rotateIntegrationKey(RotateIntegrationKeyRequest) returns (RotateIntegrationKeyResponse) {
+    option (google.api.http) = {post: "/admin/integrations/{id}/key"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Replace an integration API key."
+      description: "Returns a new key and invalidates the old one. Requires the server.administer permission."
+    };
+  }
+
+  rpc revokeIntegrationKey(RevokeIntegrationKeyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/integrations/{id}/key"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Revoke an integration API key."
+      description: "Invalidates the key without deleting the application. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1160,4 +1199,41 @@ message DeleteUserRequest {
 
 message ListUsersResponse {
   repeated UserSummary users = 1;
+}
+
+message IntegrationSummary {
+  uint32 id = 1;
+  string name = 2;
+  string return_url = 3;
+  bool has_key = 4;
+}
+
+message ListIntegrationsResponse {
+  repeated IntegrationSummary integrations = 1;
+}
+
+message CreateIntegrationRequest {
+  string name = 1;
+  string return_url = 2;
+}
+
+message CreateIntegrationResponse {
+  uint32 id = 1;
+  string name = 2;
+  string return_url = 3;
+  // Only returned on creation; the stored hash cannot recover the key.
+  string api_key = 4;
+}
+
+message RotateIntegrationKeyRequest {
+  uint32 id = 1;
+}
+
+message RotateIntegrationKeyResponse {
+  // Only returned by this rotation; replaces the previous key immediately.
+  string api_key = 1;
+}
+
+message RevokeIntegrationKeyRequest {
+  uint32 id = 1;
 }
