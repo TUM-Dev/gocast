@@ -7,7 +7,7 @@ services:
     container_name: tum-live
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
       meili-internal:
         condition: service_healthy
     build:
@@ -19,6 +19,7 @@ services:
     restart: always
     environment:
       - DBHOST=db
+      - MEILIHOST=http://meili-internal:7700
       - TZ=Europe/Berlin
     ports:
       - "8081:8081"
@@ -99,8 +100,6 @@ services:
     ports:
       - "52735:52735"
       - "9947:9947"
-    # extra_hosts:      # Only needed if you use wsl
-    #   - "ingest.tum.live:host-gateway"
   ingest:
     container_name: tum-live-ingest
     build:
@@ -109,6 +108,10 @@ services:
     platform: linux/amd64
     ports:
       - "1935:1935"
+    networks:
+      default:
+        # The stock config's ingestbase, so the runner pulls self-streams from this container.
+        aliases: [ ingest.tum.live ]
   edge:
     container_name: tum-live-edge
     depends_on:
@@ -128,14 +131,20 @@ services:
     container_name: mariadb_container
     image: mariadb
     environment:
-      MYSQL_ROOT_USER: root
-      MYSQL_ROOT_PASSWORD: example
+      MARIADB_ROOT_PASSWORD: example
       TZ: Europe/Berlin
-    command: --init-file /data/application/init.sql
     volumes:
-      - ./tum-live-starter.sql:/data/application/init.sql
+      # Loaded once into an empty volume; --init-file reran the dump, which drops its
+      # tables, on every restart. Reset the data with `docker compose down -v`.
+      - ./tum-live-starter.sql:/docker-entrypoint-initdb.d/tum-live-starter.sql:ro
       - mariadb-data:/var/lib/mysql
     restart: always
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
   vod-service:
     container_name: tum-live-vod-service
     depends_on:
