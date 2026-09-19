@@ -57,6 +57,16 @@ func TestPublicCourseStreamFilter(t *testing.T) {
 	if !strings.Contains(sql, "end > NOW()") {
 		t.Errorf("a lecture that has started but not ended is left out:\n%s", sql)
 	}
+	// And only the earliest of them, per privacy for the same reason the recording is:
+	// a bare `end > NOW()` keeps the whole rest of the term, while a single MIN over
+	// the course would let a private lecture take the row and leave everyone but a
+	// course administrator with no next lecture at all.
+	if !strings.Contains(sql, "MIN(upcoming.start)") {
+		t.Errorf("every lecture still to come is kept, not just the earliest:\n%s", sql)
+	}
+	if !strings.Contains(sql, "upcoming.private = streams.private") {
+		t.Errorf("the next lecture is not matched per privacy:\n%s", sql)
+	}
 	// GetLastRecording and GetNextLecture both walk the lectures in order.
 	if !strings.Contains(sql, "ORDER BY start asc") {
 		t.Errorf("the lectures are not ordered by start:\n%s", sql)

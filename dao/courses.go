@@ -75,8 +75,23 @@ func publicCourseStreamFilter(db *gorm.DB) *gorm.DB {
 		Where("latest.course_id = streams.course_id AND latest.private = streams.private").
 		Where("latest.recording = ? AND latest.deleted_at IS NULL", true)
 
+	// The same per privacy, for the other end: the earliest lecture still to finish.
+	// Not a plain `end > NOW()`, which keeps the whole rest of the term -- the cost
+	// this filter exists to remove -- and not a single MIN over the course either,
+	// because a private lecture would then win the row and GetNextLecture, which skips
+	// the private ones it is not asked for, would answer with nothing at all for
+	// everyone but a course administrator.
+	//
+	// By start, among those that have not ended: a lecture running right now started
+	// earliest of the ones still to finish, and is the next lecture there is.
+	nextLecture := DB.Table("streams AS upcoming").
+		Select("MIN(upcoming.start)").
+		Where("upcoming.course_id = streams.course_id AND upcoming.private = streams.private").
+		Where("upcoming.end > NOW() AND upcoming.deleted_at IS NULL")
+
 	// Ascending, which GetLastRecording and GetNextLecture both assume.
-	return db.Where("(recording = ? AND start = (?)) OR end > NOW()", true, latestRecording).
+	return db.Where("(recording = ? AND start = (?)) OR (end > NOW() AND start = (?))",
+		true, latestRecording, nextLecture).
 		Order("start asc")
 }
 
