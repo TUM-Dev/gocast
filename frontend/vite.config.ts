@@ -6,10 +6,10 @@ import { defineConfig } from "vite";
 // The Go server serves the built app: index.html is written to web/spa/ and embedded
 // into the binary, while hashed assets are mounted at /spa-assets/ so that the legacy
 // /static mount is left completely untouched.
-const GO_SERVER = "http://localhost:8081";
+const GO_SERVER = process.env.GOCAST_BACKEND ?? "http://localhost:8081";
 
-export default defineConfig({
-  base: "/spa-assets/",
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "/spa-assets/" : "/",
   plugins: [vue()],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
@@ -24,6 +24,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Listen on every interface so the dev server is reachable from outside the
+    // container; harmless when run on the host.
+    host: true,
     // Point the browser at this dev server and let everything the SPA does not own
     // fall through to Go. changeOrigin stays false so the host-scoped session cookie
     // survives the proxy hop and the dev SPA shares a login with the legacy pages.
@@ -35,6 +38,7 @@ export default defineConfig({
       "/logout": { target: GO_SERVER, changeOrigin: false },
       "/saml": { target: GO_SERVER, changeOrigin: false },
       "/logo.svg": { target: GO_SERVER, changeOrigin: false },
+      "/favicon.ico": { target: GO_SERVER, changeOrigin: false },
     },
   },
-});
+}));

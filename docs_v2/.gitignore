@@ -1,5 +1,7 @@
 w# Dependencies
 /node_modules
+# pnpm's package store, written here by the docs service in docker-compose.yml
+/.pnpm-store
 
 # Production
 /build
