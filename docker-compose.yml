@@ -108,10 +108,6 @@ services:
     platform: linux/amd64
     ports:
       - "1935:1935"
-    networks:
-      default:
-        # The stock config's ingestbase, so the runner pulls self-streams from this container.
-        aliases: [ ingest.tum.live ]
   edge:
     container_name: tum-live-edge
     depends_on:
