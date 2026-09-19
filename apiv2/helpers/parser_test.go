@@ -231,6 +231,9 @@ func TestParseCourseSummaryToProtoOmitsPlaybackPayload(t *testing.T) {
 	if full.LastRecording == nil || len(full.LastRecording.Downloads) == 0 {
 		t.Fatal("the full parse answers with no downloads, so there is nothing for the summary to leave out")
 	}
+	if full.LastRecording.PlaylistUrl == "" || full.LastRecording.HlsUrl == "" {
+		t.Fatal("the full parse answers with no playlist, so there is nothing for the summary to leave out")
+	}
 
 	summary := ParseCourseSummaryToProto(course, nil)
 	if summary.LastRecording == nil {
@@ -238,6 +241,18 @@ func TestParseCourseSummaryToProtoOmitsPlaybackPayload(t *testing.T) {
 	}
 	if len(summary.LastRecording.Downloads) != 0 {
 		t.Errorf("downloads = %v, want none", summary.LastRecording.Downloads)
+	}
+	// Unsigned playlist URLs are not a smaller payload, they are an unplayable one that
+	// still names where the recording lives. The summary answers with neither.
+	for _, url := range []struct{ name, got string }{
+		{"playlist_url", summary.LastRecording.PlaylistUrl},
+		{"playlist_url_pres", summary.LastRecording.PlaylistUrlPres},
+		{"playlist_url_cam", summary.LastRecording.PlaylistUrlCam},
+		{"hls_url", summary.LastRecording.HlsUrl},
+	} {
+		if url.got != "" {
+			t.Errorf("%s = %q, want empty", url.name, url.got)
+		}
 	}
 	// Everything a listing does read has to survive.
 	if summary.LastRecording.Id != full.LastRecording.Id || summary.Name != full.Name {

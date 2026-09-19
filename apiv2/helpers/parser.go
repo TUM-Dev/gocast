@@ -155,8 +155,18 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 func parseStreamToProto(stream model.Stream, course model.Course, user *model.User, includePlayback bool) *protobuf.Stream {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
+	// The URLs and the signing go together. SetSignedPlaylists is what appends the jwt
+	// that makes a playlist playable, so answering with the raw column while skipping
+	// the signature would hand out an unsigned playlist rather than no playlist -- the
+	// opposite of what leaving the payload out is for. HlsUrl is derived from
+	// PlaylistUrl and goes with them.
+	var playlistURL, playlistURLPres, playlistURLCam, hlsURL string
 	if includePlayback {
 		_ = tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled)
+		playlistURL = stream.PlaylistUrl
+		playlistURLPres = stream.PlaylistUrlPRES
+		playlistURLCam = stream.PlaylistUrlCAM
+		hlsURL = stream.HLSUrl()
 	}
 
 	s := &protobuf.Stream{
@@ -172,9 +182,9 @@ func parseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		EventTypeName:    stream.EventTypeName,
 		TumOnlineEventId: uint32(stream.TUMOnlineEventID),
 		SeriesIdentifier: stream.SeriesIdentifier,
-		PlaylistUrl:      stream.PlaylistUrl,
-		PlaylistUrlPres:  stream.PlaylistUrlPRES,
-		PlaylistUrlCam:   stream.PlaylistUrlCAM,
+		PlaylistUrl:      playlistURL,
+		PlaylistUrlPres:  playlistURLPres,
+		PlaylistUrlCam:   playlistURLCam,
 		LiveNow:          liveNow,
 		LiveNowTimestamp: timestamppb.New(stream.LiveNowTimestamp),
 		Recording:        stream.Recording,
@@ -185,7 +195,7 @@ func parseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		EndOffset:        uint32(stream.EndOffset),
 		IsPlanned:        stream.IsPlanned(),
 		IsComingUp:       stream.IsComingUp(),
-		HlsUrl:           stream.HLSUrl(),
+		HlsUrl:           hlsURL,
 		// A private stream reaches nobody but a course administrator, so this marks
 		// the ones the page should show as withheld from everyone else.
 		IsPubliclyVisible: !stream.Private,
