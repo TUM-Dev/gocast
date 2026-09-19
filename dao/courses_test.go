@@ -30,18 +30,27 @@ func TestPublicCourseStreamFilter(t *testing.T) {
 	var streams []model.Stream
 	sql := publicCourseStreamFilter(db.Session(&gorm.Session{})).Find(&streams).Statement.SQL.String()
 
-	// The latest recording is grouped by course, not by the whole table: a subquery
-	// over `streams` cannot name the `streams` row being filtered, so a correlated
-	// condition compares the inner table against itself and leaves every course but
-	// the one holding the newest recording of all with no recording at all.
-	if !strings.Contains(sql, "GROUP BY course_id, private") {
-		t.Errorf("the latest recording is not grouped per course and privacy:\n%s", sql)
+	// Correlated against the course being filtered rather than grouped over the whole
+	// table. Grouped, the aggregate reads every recording ever made on each listing,
+	// because the course_id the listing asks for is applied to the outer query only --
+	// which is the cost this filter exists to avoid.
+	if strings.Contains(sql, "GROUP BY") {
+		t.Errorf("the latest recording is grouped over the table instead of looked up per course:\n%s", sql)
+	}
+	if !strings.Contains(sql, "latest.course_id = streams.course_id") {
+		t.Errorf("the latest recording is not correlated to the course being filtered:\n%s", sql)
+	}
+	// Aliased, because an unaliased `streams` inside the subquery names the subquery's
+	// own table rather than the outer row, and the condition would then yield the
+	// latest recording of any course instead of this one's.
+	if !strings.Contains(sql, "streams AS latest") {
+		t.Errorf("the inner table is not aliased, so it names itself rather than the outer row:\n%s", sql)
 	}
 	// Per privacy, because a course administrator is shown its private lectures and
 	// everyone else is not: the latest public recording has to outlive a private one
 	// recorded after it.
-	if !strings.Contains(sql, "(course_id, private, start) IN") {
-		t.Errorf("the latest recording is not matched per course and privacy:\n%s", sql)
+	if !strings.Contains(sql, "latest.private = streams.private") {
+		t.Errorf("the latest recording is not matched per privacy:\n%s", sql)
 	}
 	// By end, not by start: a lecture that is running right now is the next one there
 	// is, and GetNextLecture picks it by its end.

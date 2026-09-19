@@ -60,17 +60,23 @@ type CoursesDaoImpl struct {
 // has to survive a private one recorded after it. Which of the two a caller is given is
 // decided in model.Course.GetLastRecording, once the rows are in memory.
 func publicCourseStreamFilter(db *gorm.DB) *gorm.DB {
-	// Grouped rather than correlated: a subquery over `streams` cannot name the
-	// `streams` row being filtered, so a correlated condition here would compare the
-	// inner table against itself and yield the latest recording of any course.
-	latestRecordings := DB.Model(&model.Stream{}).
-		Select("course_id, private, MAX(start)").
-		Where("recording = ?", true).
-		Group("course_id, private")
+	// Correlated against the row being filtered, and the inner table has to be aliased
+	// for that: unaliased, `streams` inside the subquery names the subquery's own table
+	// rather than the outer row, and the condition then yields the latest recording of
+	// any course instead of this one's.
+	//
+	// Grouping instead -- MAX(start) per (course_id, private) over the whole table --
+	// reads every recording ever made on each listing, because the course_id the
+	// listing asks for is applied to the outer query only. Correlated, each row costs
+	// one lookup on the course_id index, so the work follows the listing rather than
+	// the archive.
+	latestRecording := DB.Table("streams AS latest").
+		Select("MAX(latest.start)").
+		Where("latest.course_id = streams.course_id AND latest.private = streams.private").
+		Where("latest.recording = ? AND latest.deleted_at IS NULL", true)
 
 	// Ascending, which GetLastRecording and GetNextLecture both assume.
-	return db.Where("(recording = ? AND (course_id, private, start) IN (?)) OR end > NOW()",
-		true, latestRecordings).
+	return db.Where("(recording = ? AND start = (?)) OR end > NOW()", true, latestRecording).
 		Order("start asc")
 }
 
