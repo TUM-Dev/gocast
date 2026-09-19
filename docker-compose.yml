@@ -190,6 +190,36 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+  # Vite dev server with hot module replacement for the SPA.
+  #   docker compose --profile dev up -d frontend-dev
+  frontend-dev:
+    container_name: gocast-frontend-dev
+    image: node:25
+    profiles: [ dev ]
+    depends_on:
+      tum-live:
+        condition: service_healthy
+    working_dir: /app/frontend
+    environment:
+      - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+      # localhost in here is this container, so the proxy needs the service name.
+      - GOCAST_BACKEND=http://tum-live:8081
+      # WSL2 and bind mounts do not always deliver inotify events; flip this to true
+      # if edits are not picked up.
+      - CHOKIDAR_USEPOLLING=false
+    volumes:
+      - ./frontend:/app/frontend
+      # Keep the host's node_modules and the container's apart: they are installed for
+      # different platforms and the native esbuild/rollup binaries are not compatible.
+      - frontend_dev_node_modules:/app/frontend/node_modules
+      - frontend_dev_pnpm_store:/pnpm-store
+    ports:
+      - "5173:5173"
+    command: >
+      sh -c "npm install -g corepack@latest --force && corepack enable pnpm &&
+             pnpm config set store-dir /pnpm-store &&
+             pnpm install --frozen-lockfile &&
+             pnpm run dev"
   docs:
     container_name: gocast-docs
     image: node:24
@@ -212,6 +242,8 @@ services:
 #      - mass:/mass
 
 volumes:
+  frontend_dev_node_modules:
+  frontend_dev_pnpm_store:
   vod:
   mariadb-data:
   runner_data:
