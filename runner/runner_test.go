@@ -25,7 +25,7 @@ func newTestRunner() *Runner {
 	return &Runner{
 		log:           slog.New(slog.NewTextHandler(io.Discard, nil)),
 		JobCount:      make(chan int, 64),
-		jobs:          make(map[string]context.CancelFunc),
+		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		notifications: make(chan *protobuf.Notification, 64),
 	}
@@ -384,4 +384,101 @@ func TestRunActionDoesNotCancelActionsAfterTheStream(t *testing.T) {
 		close(release)
 		waitForJob(t, r, job)
 	}
+}
+
+// Regression: a discard that arrives once the stream has ended and the VoD is already
+// being made used to be read too late to matter -- the flag was sampled once, between
+// the two phases -- so the conversion ran to completion and announced a VoD that had
+// been asked not to exist.
+func TestRunActionDiscardDuringVoDStopsItAndCleansUp(t *testing.T) {
+	r := newTestRunner()
+	rec := &recorder{}
+
+	started := make(chan struct{})
+	cancelled := make(chan struct{})
+	// Stands in for MkVOD: long, context-aware, and it announces the VoD only if it
+	// gets to the end.
+	mkVod := func(ctx context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		rec.record("mkVod")
+		close(started)
+		select {
+		case <-ctx.Done():
+			close(cancelled)
+			return actions.AbortingError(ctx.Err())
+		case <-time.After(5 * time.Second):
+			rec.record("vodReady")
+			return nil
+		}
+	}
+
+	job := r.RunAction(
+		[]actions.Action{rec.action("stream")},
+		[]actions.Action{mkVod, rec.action("checkVod")},
+		[]actions.Action{rec.action("discardRecording")},
+		map[string]any{}, r.log,
+	)
+
+	<-started // the VoD is under way, so the discard is late
+	endJob(t, r, job, true)
+	select {
+	case <-cancelled:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the VoD conversion was not stopped by a discard that arrived while it ran")
+	}
+	waitForJob(t, r, job)
+
+	got := rec.get()
+	for _, name := range got {
+		if name == "vodReady" {
+			t.Errorf("the VoD was announced despite the discard: %v", got)
+		}
+		if name == "checkVod" {
+			t.Errorf("the VoD actions carried on after the discard: %v", got)
+		}
+	}
+	if got[len(got)-1] != "discardRecording" {
+		t.Errorf("the recording was not cleaned up after the discard: %v", got)
+	}
+}
+
+// Regression: Cleanup only ever held the cancel for the stream phase, so a forced
+// shutdown left whatever ran after the stream -- the conversion, the cleanup -- running.
+func TestCleanupStopsThePhaseAfterTheStream(t *testing.T) {
+	r := newTestRunner()
+	rec := &recorder{}
+
+	started := make(chan struct{})
+	cancelled := make(chan struct{})
+	mkVod := func(ctx context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		rec.record("mkVod")
+		close(started)
+		select {
+		case <-ctx.Done():
+			close(cancelled)
+			return actions.AbortingError(ctx.Err())
+		case <-time.After(5 * time.Second):
+			return nil
+		}
+	}
+
+	job := r.RunAction(
+		[]actions.Action{rec.action("stream")},
+		[]actions.Action{mkVod},
+		nil, map[string]any{}, r.log,
+	)
+
+	<-started
+	r.jobsMu.Lock()
+	for _, j := range r.jobs {
+		j.endStream()
+		j.endAfter()
+	}
+	r.jobsMu.Unlock()
+
+	select {
+	case <-cancelled:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a forced shutdown did not stop the phase after the stream")
+	}
+	waitForJob(t, r, job)
 }

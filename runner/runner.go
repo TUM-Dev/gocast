@@ -40,13 +40,22 @@ type envConfig struct {
 	Version      string `env:"VERSION" envDefault:"dev"`
 }
 
+// jobCancels ends the two phases of a job separately. Ending the stream is what stops
+// a capture early and still lets the VoD be made from what was captured, so the two
+// cannot share a context -- but a forced shutdown has to reach both, and a discard has
+// to reach whatever is being made after the stream.
+type jobCancels struct {
+	endStream context.CancelFunc
+	endAfter  context.CancelFunc
+}
+
 type Runner struct {
 	log *slog.Logger
 
 	draining bool
 	JobCount chan int
 	jobsMu   sync.Mutex
-	jobs     map[string]context.CancelFunc
+	jobs     map[string]jobCancels
 	discard  map[string]bool
 
 	hlsServer *HLSServer
@@ -76,7 +85,7 @@ func NewRunner(v string) *Runner {
 	return &Runner{
 		log:           log,
 		JobCount:      make(chan int),
-		jobs:          make(map[string]context.CancelFunc),
+		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		draining:      false,
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
@@ -196,7 +205,7 @@ func (r *Runner) RunAction(stream, vod, discard []actions.Action, data map[strin
 	job := uuid.New().String()
 	r.JobCount <- 1
 	r.jobsMu.Lock()
-	r.jobs[job] = endStream
+	r.jobs[job] = jobCancels{endStream: endStream, endAfter: endAfter}
 	r.jobsMu.Unlock()
 	go func() {
 		defer func() {
@@ -231,16 +240,53 @@ func (r *Runner) RunAction(stream, vod, discard []actions.Action, data map[strin
 		for _, action := range stream {
 			run(streamCtx, action)
 		}
-		after := vod
+
+		log := logger.With("job", job)
 		if r.discarded(job) {
-			logger.With("job", job).Info("discarding recording, skipping VoD creation")
-			after = discard
+			log.Info("discarding recording, skipping VoD creation")
+			r.runDiscard(job, discard, run)
+			return
 		}
-		for _, action := range after {
+
+		for _, action := range vod {
+			// Cancelled by a discard that arrived while the VoD was being made, and by
+			// a forced shutdown. Neither is a reason to attempt the actions that were
+			// still to come.
+			if afterCtx.Err() != nil {
+				break
+			}
 			run(afterCtx, action)
+		}
+		// The flag is read again because it can be set while the VoD is being made.
+		// RequestStreamEnd cancelled afterCtx in that case, so the actions above
+		// stopped where they were rather than finishing and announcing a VoD; what is
+		// left of the recording still has to be cleaned up.
+		if r.discarded(job) {
+			log.Info("discard arrived while the VoD was being made, discarding the recording")
+			r.runDiscard(job, discard, run)
 		}
 	}()
 	return job
+}
+
+// runDiscard runs the discard actions under a context of their own. Whenever a discard
+// is what got us here the after context is already cancelled -- that cancellation is
+// what keeps a VoD from being made -- so the cleanup cannot inherit it. The new cancel
+// takes its place on the job, so a forced shutdown still reaches the cleanup too.
+func (r *Runner) runDiscard(job string, discard []actions.Action, run func(context.Context, actions.Action)) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	r.jobsMu.Lock()
+	if j, ok := r.jobs[job]; ok {
+		j.endAfter = cancel
+		r.jobs[job] = j
+	}
+	r.jobsMu.Unlock()
+
+	for _, action := range discard {
+		run(ctx, action)
+	}
 }
 
 func (r *Runner) discarded(job string) bool {
@@ -327,8 +373,9 @@ func getFunctionName(i interface{}) string {
 // it cancels all running actions
 func (r *Runner) Cleanup() {
 	r.jobsMu.Lock()
-	for _, cancelFunc := range r.jobs {
-		cancelFunc()
+	for _, j := range r.jobs {
+		j.endStream()
+		j.endAfter()
 	}
 	r.jobsMu.Unlock()
 	// sleep 1 second longer than our commands default waitDelay
