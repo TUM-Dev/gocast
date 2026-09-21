@@ -51,19 +51,19 @@ const spaShellPath = "spa/index.html"
 // spa-routes.test.ts enforces that. Removing one moves the page back, but only while
 // its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
-	"/settings":                 true,
-	"/login":                    true,
-	"/":                         true,
-	"/courses/mine":             true,
-	"/courses/public":           true,
-	"/course/:year/:term/:slug": true,
-	"/admin/runners":            true,
-	"/admin/users":              true,
-	"/admin/info-pages":         true,
+	"/settings":                   true,
+	"/login":                      true,
+	"/":                           true,
+	"/courses/mine":               true,
+	"/courses/public":             true,
+	"/course/:year/:term/:slug":   true,
+	"/admin/runners":              true,
+	"/admin/users":                true,
+	"/admin/info-pages":           true,
 	"/admin/server-notifications": true,
-	"/privacy":                  true,
-	"/imprint":                  true,
-	"/about":                    true,
+	"/privacy":                    true,
+	"/imprint":                    true,
+	"/about":                      true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -299,7 +299,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
 	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
-	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-notifications", nil)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
 	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
