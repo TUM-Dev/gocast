@@ -130,12 +130,20 @@ test.describe("creating and revoking a token", () => {
     await page.getByRole("button", { name: "Create" }).click();
 
     // The one and only place the secret is ever shown.
-    const secretBox = page.getByText("Your Generated Token").locator("..");
+    // The heading, not the text: the paragraph below it repeats the phrase, and
+    // getByText matches a substring, so the plain locator resolves to both.
+    const secretBox = page.getByRole("heading", { name: "Your Generated Token" }).locator("..");
     await expect(secretBox).toBeVisible();
     const secret = (await secretBox.locator("code").first().textContent())?.trim();
     expect(secret).toBeTruthy();
 
-    const row = page.getByRole("row", { name: new RegExp(users.admin.username) }).last();
+    // By the name the table shows, not the username: "admin" never appears in "Anja
+    // Admin", and matching it lowercase picks the seeded row by its scope cell instead.
+    // Narrowed to the scope as well, because the seeded token belongs to the same user:
+    // last() would keep matching that one after this row is deleted.
+    const row = page
+      .getByRole("row", { name: new RegExp(users.admin.name) })
+      .filter({ hasText: "lecturer" });
     await expect(row).toContainText("lecturer");
     // The row never carries the secret text, only the metadata about the token. The
     // guard is only here to narrow string | null for toContainText; that a secret was
