@@ -295,3 +295,21 @@ func ParseRunnerToProto(r model.Runner) *protobuf.Runner {
 		TimeOfRegister: timestamppb.New(r.TimeOfRegister),
 	}
 }
+
+// ParseWorkerToProto converts a Worker model to its protobuf representation.
+// `alive` is derived here so a client cannot disagree with the scheduler about it.
+func ParseWorkerToProto(w model.Worker) *protobuf.Worker {
+	return &protobuf.Worker{
+		WorkerId: w.WorkerID,
+		Host:     w.Host,
+		Version:  w.Version,
+		Alive:    w.IsAlive(),
+		Workload: uint32(w.Workload),
+		Status:   w.Status,
+		Cpu:      w.CPU,
+		Memory:   w.Memory,
+		Disk:     w.Disk,
+		Uptime:   w.Uptime,
+		LastSeen: timestamppb.New(w.LastSeen),
+	}
+}
