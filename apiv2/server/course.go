@@ -4,7 +4,9 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/RBG-TUM/commons"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -14,6 +16,7 @@ import (
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/apiv2/visibility"
+	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools/tum"
 )
@@ -106,6 +109,19 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 		term = req.Term
 	}
 
+	// Nothing in the anonymous listing is derived for a caller, so one semester's
+	// answer serves all of them. Held only as long as the course rows underneath it
+	// are (dao.CoursesDaoImpl.GetPublicCourses), so that a lecture that has just been
+	// recorded is not kept out of the listing for any longer than it already is.
+	cacheKey := fmt.Sprintf("publicCoursesSummary-%d-%s", year, term)
+	if user == nil {
+		if cached, ok := dao.Cache.Get(cacheKey); ok {
+			if courses, ok := cached.([]*protobuf.Course); ok {
+				return &protobuf.GetPublicCoursesResponse{Courses: courses}, nil
+			}
+		}
+	}
+
 	var courses []model.Course
 
 	if user != nil {
@@ -117,9 +133,15 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	// A listing shows a course and the dates of two of its lectures; the playback
+	// payload of those lectures is for the player to ask for.
 	resp := make([]*protobuf.Course, len(courses))
 	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course, user)
+		resp[i] = h.ParseCourseSummaryToProto(course, user)
+	}
+
+	if user == nil {
+		dao.Cache.SetWithTTL(cacheKey, resp, 1, time.Minute)
 	}
 
 	return &protobuf.GetPublicCoursesResponse{Courses: resp}, nil

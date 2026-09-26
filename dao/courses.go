@@ -50,6 +50,51 @@ type CoursesDaoImpl struct {
 	usersDao UsersDao
 }
 
+// publicCourseStreamFilter narrows the lectures preloaded for a course listing to the
+// ones the listing derives anything from: everything that has not ended yet, which the
+// next lecture is picked from, and the latest recording. A semester's worth of lectures
+// per course is what made this query slow, and a listing only ever shows those two.
+//
+// The latest recording is taken per privacy, not per course: a course administrator is
+// shown its private lectures and everyone else is not, so the latest public recording
+// has to survive a private one recorded after it. Which of the two a caller is given is
+// decided in model.Course.GetLastRecording, once the rows are in memory.
+func publicCourseStreamFilter(db *gorm.DB) *gorm.DB {
+	// Correlated against the row being filtered, and the inner table has to be aliased
+	// for that: unaliased, `streams` inside the subquery names the subquery's own table
+	// rather than the outer row, and the condition then yields the latest recording of
+	// any course instead of this one's.
+	//
+	// Grouping instead -- MAX(start) per (course_id, private) over the whole table --
+	// reads every recording ever made on each listing, because the course_id the
+	// listing asks for is applied to the outer query only. Correlated, each row costs
+	// one lookup on the course_id index, so the work follows the listing rather than
+	// the archive.
+	latestRecording := DB.Table("streams AS latest").
+		Select("MAX(latest.start)").
+		Where("latest.course_id = streams.course_id AND latest.private = streams.private").
+		Where("latest.recording = ? AND latest.deleted_at IS NULL", true)
+
+	// The same per privacy, for the other end: the earliest lecture still to finish.
+	// Not a plain `end > NOW()`, which keeps the whole rest of the term -- the cost
+	// this filter exists to remove -- and not a single MIN over the course either,
+	// because a private lecture would then win the row and GetNextLecture, which skips
+	// the private ones it is not asked for, would answer with nothing at all for
+	// everyone but a course administrator.
+	//
+	// By start, among those that have not ended: a lecture running right now started
+	// earliest of the ones still to finish, and is the next lecture there is.
+	nextLecture := DB.Table("streams AS upcoming").
+		Select("MIN(upcoming.start)").
+		Where("upcoming.course_id = streams.course_id AND upcoming.private = streams.private").
+		Where("upcoming.end > NOW() AND upcoming.deleted_at IS NULL")
+
+	// Ascending, which GetLastRecording and GetNextLecture both assume.
+	return db.Where("(recording = ? AND start = (?)) OR (end > NOW() AND start = (?))",
+		true, latestRecording, nextLecture).
+		Order("start asc")
+}
+
 func NewCoursesDao() CoursesDaoImpl {
 	return CoursesDaoImpl{db: DB, usersDao: NewUsersDao()}
 }
@@ -161,9 +206,8 @@ func (d CoursesDaoImpl) GetPublicCourses(year int, term string) (courses []model
 	}
 	var publicCourses []model.Course
 
-	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?",
+	err = DB.Preload("Streams", publicCourseStreamFilter).Find(&publicCourses,
+		"visibility = 'public' AND teaching_term = ? AND year = ?",
 		term, year).Error
 
 	if err == nil {
@@ -179,9 +223,7 @@ func (d CoursesDaoImpl) GetPublicAndLoggedInCourses(year int, term string) (cour
 	}
 	var publicCourses []model.Course
 
-	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
-	}).Find(&publicCourses,
+	err = DB.Preload("Streams", publicCourseStreamFilter).Find(&publicCourses,
 		"(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?", term, year).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term), publicCourses, 1, time.Minute)
