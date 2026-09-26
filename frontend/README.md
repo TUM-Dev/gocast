@@ -326,9 +326,10 @@ The inline script in `index.html` applies the theme before first paint, sharing 
 `themeMode` localStorage key with `web/assets/init.js` so a choice made on a legacy
 page is honoured here and vice versa.
 
-Font Awesome is loaded from `/static/node_modules`, exactly as the templates load it —
-same file, same icons, no bundle weight. It moves into the SPA's own assets when the
-`node_modules` embed in `web/router.go` goes away.
+Font Awesome is loaded from `/static/assets/vendor/fontawesome`, exactly as the
+templates load it — same file, same icons, no bundle weight. That vendor copy is
+produced by `copy-webpack-plugin` in `web/webpack.common.js`, not by this project's own
+build.
 
 ## The header
 

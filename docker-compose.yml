@@ -30,6 +30,54 @@ services:
       timeout: 3s
       retries: 15
       start_period: 60s
+    develop:
+      # The Go source, templates and frontend all end up compiled or embedded into
+      # one binary (see web/router.go's //go:embed directives), so there's no
+      # process to hot-reload into - `rebuild` re-runs the (now BuildKit-cached)
+      # Docker build and recreates the container. `docker compose watch` (or
+      # `up --watch`) picks this up.
+      watch:
+        - action: rebuild
+          path: ./go.mod
+        - action: rebuild
+          path: ./go.sum
+        - action: rebuild
+          path: ./cmd
+        - action: rebuild
+          path: ./api
+        - action: rebuild
+          path: ./apiv2
+        - action: rebuild
+          path: ./dao
+        - action: rebuild
+          path: ./mock_dao
+        - action: rebuild
+          path: ./mock_tools
+        - action: rebuild
+          path: ./model
+        - action: rebuild
+          path: ./pkg
+        - action: rebuild
+          path: ./tools
+        - action: rebuild
+          path: ./web
+          ignore:
+            - web/node_modules
+            - web/assets/ts-dist
+            - web/assets/css-dist
+            - web/assets/vendor
+            - web/spa/assets
+            - web/spa/index.html
+        - action: rebuild
+          path: ./frontend
+          ignore:
+            - frontend/node_modules
+        - action: sync+restart
+          path: ./config.yaml
+          target: /etc/TUM-Live/config.yaml
+        - action: sync+restart
+          path: ./branding/branding.yaml
+          target: /etc/TUM-Live/branding.yaml
   runner:
     container_name: tum-live-runner
     depends_on:
@@ -66,7 +114,7 @@ services:
     depends_on:
       tum-live:
         condition: service_healthy
-    build: worker/edge
+    build: edge-service
     environment:
       - VOD_DIR=/vod
       - MAIN_INSTANCE=http://tum-live:8081

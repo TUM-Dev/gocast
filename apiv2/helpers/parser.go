@@ -220,8 +220,34 @@ func ParseNotificationToProto(notification model.Notification) *protobuf.UserGro
 	return &protobuf.UserGroupNotification{
 		Title:     title,
 		Body:      notification.Body,
-		Target:    protobuf.NotificationTarget(notification.Target),
+		Target:    parseNotificationTarget(notification.Target),
 		CreatedAt: timestamppb.New(notification.CreatedAt),
+	}
+}
+
+// parseNotificationTarget maps a target onto its proto counterpart. Spelled out
+// rather than converted, even though the numbers line up today: a cast made the two
+// enumerations one edit away from disagreeing silently, and they did — the proto
+// enum used to start at zero, so every notification was reported to one group
+// narrower than it was actually shown to, and TargetAdmin left the enum's range
+// entirely.
+func parseNotificationTarget(target model.NotificationTarget) protobuf.NotificationTarget {
+	switch target {
+	case model.TargetAll:
+		return protobuf.NotificationTarget_TARGET_ALL
+	case model.TargetUser:
+		return protobuf.NotificationTarget_TARGET_USER
+	case model.TargetStudent:
+		return protobuf.NotificationTarget_TARGET_STUDENT
+	case model.TargetLecturer:
+		return protobuf.NotificationTarget_TARGET_LECTURER
+	case model.TargetAdmin:
+		return protobuf.NotificationTarget_TARGET_ADMIN
+	default:
+		// A target the model has grown and this has not. Unspecified rather than a
+		// guess: the field is informational, and the dao has already decided who the
+		// notification reaches.
+		return protobuf.NotificationTarget_TARGET_UNSPECIFIED
 	}
 }
 
@@ -267,5 +293,23 @@ func ParseRunnerToProto(r model.Runner) *protobuf.Runner {
 		Draining:       r.Draining,
 		LastSeen:       timestamppb.New(r.LastSeen),
 		TimeOfRegister: timestamppb.New(r.TimeOfRegister),
+	}
+}
+
+// ParseWorkerToProto converts a Worker model to its protobuf representation.
+// `alive` is derived here so a client cannot disagree with the scheduler about it.
+func ParseWorkerToProto(w model.Worker) *protobuf.Worker {
+	return &protobuf.Worker{
+		WorkerId: w.WorkerID,
+		Host:     w.Host,
+		Version:  w.Version,
+		Alive:    w.IsAlive(),
+		Workload: uint32(w.Workload),
+		Status:   w.Status,
+		Cpu:      w.CPU,
+		Memory:   w.Memory,
+		Disk:     w.Disk,
+		Uptime:   w.Uptime,
+		LastSeen: timestamppb.New(w.LastSeen),
 	}
 }

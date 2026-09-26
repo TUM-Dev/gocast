@@ -47,9 +47,11 @@ lectures off `NOW()`, the server reads them back as local time, and the browser 
 "today" in its own — all three have to agree or the "today" fixtures land on the wrong
 day. Don't seed by piping the dump in directly.
 
-**2. Assets.** `web/router.go` embeds `web/node_modules`, so the Go build *fails*
-without step one of these. Without the SPA build, every migrated route silently falls
-back to its old template — you would be testing the frontend being replaced.
+**2. Assets.** The Go build *compiles* without these, but serves 404s for every
+bundled script, stylesheet and vendored library (video.js, katex, flatpickr, ...) —
+`web/router.go`'s `//go:embed assets/*` doesn't require the generated subfolders to
+exist. Without the SPA build, every migrated route also silently falls back to its old
+template — you would be testing the frontend being replaced.
 
 ```bash
 pnpm --dir web install --frozen-lockfile && pnpm --dir web run build && pnpm --dir web run tailwind-compile

@@ -279,6 +279,16 @@ export const runners = {
 } as const;
 
 /**
+ * The two workers, the older pre-runner equivalent. Both are dead: liveness is a
+ * heartbeat within six minutes, so no fixture can seed a live one. `beta` is consumed
+ * by the delete test in workers.spec.ts.
+ */
+export const workers = {
+  alpha: { workerId: "worker-alpha", host: "vm-alpha", version: "1.4.2", workload: 2 },
+  beta: { workerId: "worker-beta", host: "vm-beta", version: "1.3.0", workload: 0 },
+} as const;
+
+/**
  * The two transcoding failures added for the maintenance page. Both reference stream
  * 1 (VL 1: Was ist Bier?). `consumed` is deleted by the maintenance e2e spec's delete
  * test, so nothing else may depend on it surviving a run.

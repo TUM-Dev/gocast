@@ -99,6 +99,10 @@ var services = []service{
 			"listRunners":  requires(model.PermAdministerServer),
 			"deleteRunner": requires(model.PermAdministerServer),
 
+			// Workers are the older, pre-runner equivalent; same permission.
+			"listWorkers":  requires(model.PermAdministerServer),
+			"deleteWorker": requires(model.PermAdministerServer),
+
 			// Accounts are a different permission from the rest of the service. Both
 			// belong to admins today; the split is what makes an operator role a
 			// change to the role table rather than to every call site.

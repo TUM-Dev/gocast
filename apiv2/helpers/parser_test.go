@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 )
 
@@ -168,5 +169,42 @@ func TestParseStreamToProtoIsPubliclyVisible(t *testing.T) {
 	}
 	if got := ParseStreamToProto(model.Stream{Model: gorm.Model{ID: 2}, Private: true}, course, nil); got.IsPubliclyVisible {
 		t.Error("a private stream reported as publicly visible")
+	}
+}
+
+// The proto enum and model.NotificationTarget are two hand-maintained lists of the
+// same five groups, so this pins them together: every target the model defines has to
+// come out as the group of the same name, not the one next to it.
+func TestParseNotificationTargetMatchesTheModel(t *testing.T) {
+	tests := []struct {
+		name   string
+		target model.NotificationTarget
+		want   protobuf.NotificationTarget
+	}{
+		{"all", model.TargetAll, protobuf.NotificationTarget_TARGET_ALL},
+		{"user", model.TargetUser, protobuf.NotificationTarget_TARGET_USER},
+		{"student", model.TargetStudent, protobuf.NotificationTarget_TARGET_STUDENT},
+		{"lecturer", model.TargetLecturer, protobuf.NotificationTarget_TARGET_LECTURER},
+		{"admin", model.TargetAdmin, protobuf.NotificationTarget_TARGET_ADMIN},
+		// Not a group the model has; the cast this replaced would have passed it
+		// through as whatever number it happened to be.
+		{"unknown", model.NotificationTarget(99), protobuf.NotificationTarget_TARGET_UNSPECIFIED},
+		// The zero value is not TargetAll: the column defaults to 1.
+		{"zero", model.NotificationTarget(0), protobuf.NotificationTarget_TARGET_UNSPECIFIED},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			title := "Title"
+			got := ParseNotificationToProto(model.Notification{
+				Title:  &title,
+				Body:   "Body",
+				Target: tt.target,
+			})
+
+			if got.GetTarget() != tt.want {
+				t.Errorf("target %d parsed to %v, want %v", tt.target, got.GetTarget(), tt.want)
+			}
+		})
 	}
 }

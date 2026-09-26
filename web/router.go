@@ -23,7 +23,6 @@ var templateExecutor tools.TemplateExecutor
 var templateFS embed.FS
 
 //go:embed assets/*
-//go:embed node_modules
 var staticFS embed.FS
 
 // spaFS holds the built single-page app (`npm run build` writes it to web/spa). Only
@@ -62,6 +61,7 @@ var spaRoutes = map[string]bool{
 	"/admin/users":              true,
 	"/admin/info-pages":         true,
 	"/admin/maintenance":        true,
+	"/admin/workers":            true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
@@ -298,7 +298,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
 	serverAdminGroup.GET("/admin/lecture-halls", routes.AdminPage)
 	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
-	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/workers", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)

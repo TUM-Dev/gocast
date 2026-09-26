@@ -11,7 +11,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     strategy:
-      matrix: { dir: ['./...', './worker', './worker/edge', './runner'] }
+      matrix: { dir: ['./...', './worker', './edge-service', './runner'] }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # go-version-file needs the checkout, so this has to stay after it.

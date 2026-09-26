@@ -556,6 +556,24 @@ service AdminService {
       description: "Deletes a failed email; it is not retried afterwards. Requires the server.administer permission."
     };
   }
+
+  rpc listWorkers(google.protobuf.Empty) returns (ListWorkersResponse) {
+    option (google.api.http) = {get: "/admin/workers"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Workers"
+      summary: "List the encoding workers."
+      description: "Retrieves every registered worker with its current liveness, workload and VM stats, plus the token new workers authenticate with. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteWorker(DeleteWorkerRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/workers/{worker_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Workers"
+      summary: "Delete a worker."
+      description: "Removes a worker registration. A worker that is still running re-registers on its next heartbeat. Requires the server.administer permission."
+    };
+  }
 }
 
 ///////////////////////////////
@@ -1113,12 +1131,16 @@ message ServerNotification {
   google.protobuf.Timestamp expires = 4;
 }
 
+// The user group a notification is shown to. The numbers deliberately match
+// model.NotificationTarget, which starts at 1, so the two cannot drift; proto3 needs
+// a zero value, and an unset target is not "everyone" but a bug, so it gets its own.
 enum NotificationTarget {
-  TARGET_ALL = 0;
-  TARGET_USER = 1;
-  TARGET_STUDENT = 2;
-  TARGET_LECTURER = 3;
-  TARGET_ADMIN = 4;
+  TARGET_UNSPECIFIED = 0;
+  TARGET_ALL = 1;
+  TARGET_USER = 2;
+  TARGET_STUDENT = 3;
+  TARGET_LECTURER = 4;
+  TARGET_ADMIN = 5;
 }
 
 ///////////////////////////////
@@ -1186,6 +1208,51 @@ message DeleteRunnerRequest {
 
 message ListRunnersResponse {
   repeated Runner runners = 1;
+}
+
+///////////////////////////////
+//////// WORKER_MESSAGE ///////
+///////////////////////////////
+
+// Worker is the older, pre-runner equivalent: it also transcodes, but is keyed by a
+// self-generated UUID rather than hostname and carries VM stats the runner does not.
+message Worker {
+  string worker_id = 1;
+  string host = 2;
+  string version = 3;
+  // Derived from last_seen: dead after six minutes without a heartbeat. Sent
+  // computed so a client cannot disagree with the scheduler.
+  bool alive = 4;
+  // How much the worker has to do: +1 per silence detection job, +2 per converting
+  // job, +3 per streaming job.
+  uint32 workload = 5;
+  // The jobs currently running, as a comma-separated summary the worker sends itself.
+  string status = 6;
+  // VM stats, self-reported by the worker; empty until it has sent a heartbeat.
+  string cpu = 7;
+  string memory = 8;
+  string disk = 9;
+  string uptime = 10;
+  google.protobuf.Timestamp last_seen = 11;
+}
+
+///////////////////////////////
+//////// WORKER_REQUEST ///////
+///////////////////////////////
+
+message DeleteWorkerRequest {
+  string worker_id = 1;
+}
+
+///////////////////////////////
+/////// WORKER_RESPONSE ///////
+///////////////////////////////
+
+message ListWorkersResponse {
+  repeated Worker workers = 1;
+  // The token a new worker authenticates its gRPC registration with. Configuration,
+  // not a per-caller secret -- server.administer already gates the whole page.
+  string worker_token = 2;
 }
 
 ///////////////////////////////

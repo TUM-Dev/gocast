@@ -629,6 +629,63 @@
         ]
       }
     },
+    "/admin/workers": {
+      "get": {
+        "summary": "List the encoding workers.",
+        "description": "Retrieves every registered worker with its current liveness, workload and VM stats, plus the token new workers authenticate with. Requires the server.administer permission.",
+        "operationId": "AdminService_listWorkers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListWorkersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Workers"
+        ]
+      }
+    },
+    "/admin/workers/{workerId}": {
+      "delete": {
+        "summary": "Delete a worker.",
+        "description": "Removes a worker registration. A worker that is still running re-registers on its next heartbeat. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteWorker",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Workers"
+        ]
+      }
+    },
     "/bookmarks": {
       "get": {
         "summary": "Get bookmarks by stream ID.",
@@ -2354,6 +2411,22 @@
         }
       }
     },
+    "protobufListWorkersResponse": {
+      "type": "object",
+      "properties": {
+        "workers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufWorker"
+          }
+        },
+        "workerToken": {
+          "type": "string",
+          "description": "The token a new worker authenticates its gRPC registration with. Configuration,\nnot a per-caller secret -- server.administer already gates the whole page."
+        }
+      }
+    },
     "protobufMaintenanceEmailFailure": {
       "type": "object",
       "properties": {
@@ -2433,13 +2506,15 @@
     "protobufNotificationTarget": {
       "type": "string",
       "enum": [
+        "TARGET_UNSPECIFIED",
         "TARGET_ALL",
         "TARGET_USER",
         "TARGET_STUDENT",
         "TARGET_LECTURER",
         "TARGET_ADMIN"
       ],
-      "default": "TARGET_ALL"
+      "default": "TARGET_UNSPECIFIED",
+      "description": "The user group a notification is shown to. The numbers deliberately match\nmodel.NotificationTarget, which starts at 1, so the two cannot drift; proto3 needs\na zero value, and an unset target is not \"everyone\" but a bug, so it gets its own."
     },
     "protobufPinCourseResponse": {
       "type": "object",
@@ -2922,6 +2997,51 @@
           "type": "boolean"
         }
       }
+    },
+    "protobufWorker": {
+      "type": "object",
+      "properties": {
+        "workerId": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "alive": {
+          "type": "boolean",
+          "description": "Derived from last_seen: dead after six minutes without a heartbeat. Sent\ncomputed so a client cannot disagree with the scheduler."
+        },
+        "workload": {
+          "type": "integer",
+          "format": "int64",
+          "description": "How much the worker has to do: +1 per silence detection job, +2 per converting\njob, +3 per streaming job."
+        },
+        "status": {
+          "type": "string",
+          "description": "The jobs currently running, as a comma-separated summary the worker sends itself."
+        },
+        "cpu": {
+          "type": "string",
+          "description": "VM stats, self-reported by the worker; empty until it has sent a heartbeat."
+        },
+        "memory": {
+          "type": "string"
+        },
+        "disk": {
+          "type": "string"
+        },
+        "uptime": {
+          "type": "string"
+        },
+        "lastSeen": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Worker is the older, pre-runner equivalent: it also transcodes, but is keyed by a\nself-generated UUID rather than hostname and carries VM stats the runner does not."
     },
     "rpcStatus": {
       "type": "object",
