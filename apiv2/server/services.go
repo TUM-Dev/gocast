@@ -158,6 +158,14 @@ var services = []service{
 			// route required.
 			"getServerStats":    requires(model.PermAdministerServer),
 			"exportServerStats": requires(model.PermAdministerServer),
+			// Lecture halls belong to no course, same as runners and info pages.
+			"listLectureHallsAdmin":          requires(model.PermAdministerServer),
+			"createLectureHallAdmin":         requires(model.PermAdministerServer),
+			"updateLectureHallAdmin":         requires(model.PermAdministerServer),
+			"deleteLectureHallAdmin":         requires(model.PermAdministerServer),
+			"refreshLectureHallPresetsAdmin": requires(model.PermAdministerServer),
+			"setDefaultCameraPresetAdmin":    requires(model.PermAdministerServer),
+			"takeCameraPresetSnapshotAdmin":  requires(model.PermAdministerServer),
 		},
 	},
 }

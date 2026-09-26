@@ -72,6 +72,8 @@ var spaRoutes = map[string]bool{
 	"/admin/notifications":        true,
 	"/admin/audits":               true,
 	"/admin/server-stats":         true,
+	"/admin/lecture-halls":        true,
+	"/admin/lecture-halls/new":    true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -303,8 +305,8 @@ func configMainRoute(router *gin.Engine) {
 	// the distinction is what makes an operator role a change to the role table.
 	serverAdminGroup := router.Group("/")
 	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
-	serverAdminGroup.GET("/admin/lecture-halls", routes.AdminPage)
-	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls/new", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/workers", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-notifications", nil)
