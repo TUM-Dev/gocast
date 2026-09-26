@@ -305,3 +305,11 @@ export type InfoPageKey = keyof typeof infoPages;
  * works the same way: reachable at its slug with no route of its own in the frontend.
  */
 export const dynamicInfoPage = { slug: "accessibility", title: "Accessibility", heading: "Accessibility" } as const;
+
+/**
+ * The one seeded API token, owned by `admin`. Its secret is not listed here on
+ * purpose: the listing endpoint never returns it, so no test should expect to see it.
+ */
+export const tokens = {
+  seeded: { id: 1, owner: users.admin.username, scope: "admin" },
+} as const;

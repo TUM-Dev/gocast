@@ -117,6 +117,12 @@ var services = []service{
 			"createInfoPage":     requires(model.PermAdministerServer),
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
+
+			// Tokens are the only way to reach the API as another account, so they
+			// stay behind the same permission as the accounts they authenticate as.
+			"listTokens":  requires(model.PermManageUsers),
+			"createToken": requires(model.PermManageUsers),
+			"deleteToken": requires(model.PermManageUsers),
 		},
 	},
 }
