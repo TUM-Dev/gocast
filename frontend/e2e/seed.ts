@@ -303,8 +303,8 @@ export const transcodingFailures = {
  * is deleted by the maintenance e2e spec's delete test.
  */
 export const emailFailures = {
-  kept: { to: "broken@example.com", subject: "Welcome to TUM-Live", retries: 3 },
-  consumed: { to: "also-broken@example.com", subject: "Your stream is live", retries: 1 },
+  kept: { to: "broken@example.com", subject: "Welcome to TUM-Live", retries: 4 },
+  consumed: { to: "also-broken@example.com", subject: "Your stream is live", retries: 2 },
 } as const;
 
 /**
