@@ -161,40 +161,36 @@ const dockerCommand = computed(
 
       <div class="flex flex-col gap-3">
         <h3 class="text-3 text-lg font-semibold">How to add a worker</h3>
-        <div
-          class="dark:border-secondary dark:bg-secondary-lighter overflow-x-auto rounded-md bg-gray-100 shadow-md"
-        >
-          <div
-            class="dark:bg-secondary w-full rounded-t-md bg-gray-200 py-3 text-sm font-semibold uppercase leading-normal"
-          >
+        <div class="overflow-x-auto rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex w-full bg-gray-200 text-sm font-semibold uppercase leading-normal dark:bg-gray-700">
             <button
               type="button"
-              class="hover:text-1 cursor-pointer px-6"
-              :class="tab === 'plain' ? 'text-1 font-bold' : 'text-4'"
+              class="hover:text-1 cursor-pointer flex-1 px-6 py-3"
+              :class="tab === 'plain' ? 'bg-white text-1 font-bold dark:bg-gray-900' : 'bg-gray-200 text-4 dark:bg-gray-700 dark:text-gray-300'"
               @click="tab = 'plain'"
             >
               Plain
             </button>
             <button
               type="button"
-              class="hover:text-1 cursor-pointer border-x-2 border-gray-500 px-6"
-              :class="tab === 'docker' ? 'text-1 font-bold' : 'text-4'"
+              class="hover:text-1 cursor-pointer flex-1 border-x border-gray-300 px-6 py-3 dark:border-gray-600"
+              :class="tab === 'docker' ? 'bg-white text-1 font-bold dark:bg-gray-900' : 'bg-gray-200 text-4 dark:bg-gray-700 dark:text-gray-300'"
               @click="tab = 'docker'"
             >
               Docker
             </button>
             <button
               type="button"
-              class="hover:text-1 cursor-pointer px-6"
-              :class="tab === 'swarm' ? 'text-1 font-bold' : 'text-4'"
+              class="hover:text-1 cursor-pointer flex-1 px-6 py-3"
+              :class="tab === 'swarm' ? 'bg-white text-1 font-bold dark:bg-gray-900' : 'bg-gray-200 text-4 dark:bg-gray-700 dark:text-gray-300'"
               @click="tab = 'swarm'"
             >
               Docker Swarm
             </button>
           </div>
 
-          <p v-if="tab === 'plain'" class="p-3">
-            <span class="text-gray-500"
+          <p v-if="tab === 'plain'" class="bg-white p-3 text-sm text-gray-700 dark:bg-gray-900 dark:text-gray-100">
+            <span class="text-gray-500 dark:text-gray-400"
               ># Run the TUM-Live-Worker executable with these environment variables:</span
             ><br />
             <span class="block">export Token=<span class="text-cyan-500">{{ token }}</span></span>
@@ -203,9 +199,9 @@ const dockerCommand = computed(
 
           <p
             v-else-if="tab === 'docker'"
-            class="dark:bg-secondary-lighter dark:text-1 rounded bg-secondary p-3 text-white"
+            class="bg-white p-3 text-sm text-gray-700 dark:bg-gray-900 dark:text-gray-100"
           >
-            <span class="text-gray-500"
+            <span class="text-gray-500 dark:text-gray-400"
               ># Run the TUM-Live-Worker docker container with the token, make sure to include
               its hostname:</span
             ><br />
@@ -214,9 +210,9 @@ const dockerCommand = computed(
 
           <p
             v-else
-            class="dark:bg-secondary-lighter dark:text-1 rounded bg-gray-400 p-3 text-white"
+            class="bg-white p-3 text-sm text-gray-700 dark:bg-gray-900 dark:text-gray-100"
           >
-            <span class="text-gray-500"
+            <span class="text-gray-500 dark:text-gray-400"
               ># Refer to your manager node on which token to use here:</span
             ><br />
             <span class="block">docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377</span>
