@@ -34,6 +34,7 @@ func TestEndStream_NoJobs(t *testing.T) {
 	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
 	streamsDao.EXPECT().GetRunnerJobsForStream(uint(1)).Return([]model.StreamRunnerJob{}, nil)
 	streamsDao.EXPECT().SetStreamNotLiveById(uint(1)).Return(nil)
+	streamsDao.EXPECT().SaveEndedState(uint(1), true).Return(nil)
 	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "1").Return(model.Stream{}, nil)
 	streamsDao.EXPECT().GetLiveStreamsInLectureHall(uint(0)).Return(nil, nil)
 
@@ -94,6 +95,7 @@ func TestEndStream_CallsRequestStreamEndOnCorrectRunner(t *testing.T) {
 	}, nil)
 	streamsDao.EXPECT().ClearRunnerJobForStream(uint(42), model.COMB).Return(nil)
 	streamsDao.EXPECT().SetStreamNotLiveById(uint(42)).Return(nil)
+	streamsDao.EXPECT().SaveEndedState(uint(42), true).Return(nil)
 	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "42").Return(model.Stream{}, nil)
 	streamsDao.EXPECT().GetLiveStreamsInLectureHall(uint(0)).Return(nil, nil)
 
@@ -200,4 +202,36 @@ func settledGoroutines() int {
 		time.Sleep(20 * time.Millisecond)
 	}
 	return runtime.NumGoroutine()
+}
+
+// TestEndStream_MarksStreamEnded guards against the stream restarting itself right after an
+// admin stopped it. GetDueStreamsForRunners returns every stream that is not live and not
+// ended within 10 minutes of its start, and TriggerDueStreams only skips the ones that still
+// have a runner job — which EndStream just cleared. Without the ended flag the next cron tick
+// starts the stream again a minute later, on top of the recording it just stopped.
+func TestEndStream_MarksStreamEnded(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().GetRunnerJobsForStream(uint(7)).Return([]model.StreamRunnerJob{}, nil)
+	streamsDao.EXPECT().SetStreamNotLiveById(uint(7)).Return(nil)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "7").Return(model.Stream{}, nil)
+	streamsDao.EXPECT().GetLiveStreamsInLectureHall(uint(0)).Return(nil, nil)
+
+	ended := false
+	streamsDao.EXPECT().SaveEndedState(uint(7), true).DoAndReturn(func(uint, bool) error {
+		ended = true
+		return nil
+	})
+
+	lectureHallsDao := mock_dao.NewMockLectureHallsDao(ctrl)
+	lectureHallsDao.EXPECT().GetLectureHallByID(uint(0)).Return(model.LectureHall{}, nil)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao, LectureHallsDao: lectureHallsDao})
+
+	if err := m.EndStream(context.Background(), 7, false); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !ended {
+		t.Error("stream was not marked ended, TriggerDueStreams will start it again")
+	}
 }
