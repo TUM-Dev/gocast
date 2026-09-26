@@ -43,7 +43,12 @@ const administration: AdminLink[] = [
     permission: "server.administer",
     migrated: true,
   },
-  { label: "Maintenance", path: "/admin/maintenance", permission: "server.administer" },
+  {
+    label: "Maintenance",
+    path: "/admin/maintenance",
+    permission: "server.administer",
+    migrated: true,
+  },
 ];
 
 const courses: AdminLink[] = [

@@ -13,6 +13,7 @@ import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
+import MaintenanceView from "@/views/admin/MaintenanceView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import WorkersView from "@/views/admin/WorkersView.vue";
@@ -123,6 +124,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/info-pages",
     name: "admin-info-pages",
     component: InfoPagesView,
+  },
+  {
+    path: "/admin/maintenance",
+    name: "admin-maintenance",
+    component: MaintenanceView,
   },
   {
     path: "/admin/workers",

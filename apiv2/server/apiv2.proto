@@ -479,6 +479,84 @@ service AdminService {
     };
   }
 
+  // Thumbnail regeneration runs in a goroutine and outlives the request that started
+  // it, so the page polls getMaintenanceThumbnailStatus the way the old page polled
+  // its own status endpoint every five seconds.
+  rpc getMaintenanceThumbnailStatus(google.protobuf.Empty) returns (MaintenanceThumbnailStatus) {
+    option (google.api.http) = {get: "/admin/maintenance/thumbnails/status"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "Get the thumbnail regeneration progress."
+      description: "Reports whether a thumbnail regeneration run is in progress and how far it has gotten. Requires the server.administer permission."
+    };
+  }
+
+  rpc generateMaintenanceThumbnails(google.protobuf.Empty) returns (MaintenanceThumbnailStatus) {
+    option (google.api.http) = {post: "/admin/maintenance/thumbnails/generate"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "Regenerate every VoD thumbnail."
+      description: "Starts a background job that requests a fresh thumbnail for every VoD file. A run already in progress is left alone rather than started twice. Requires the server.administer permission."
+    };
+  }
+
+  rpc listMaintenanceCronJobs(google.protobuf.Empty) returns (ListMaintenanceCronJobsResponse) {
+    option (google.api.http) = {get: "/admin/maintenance/cron"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "List the jobs the scheduler knows by name."
+      description: "Retrieves the names of every registered cron job, for triggering one manually. Requires the server.administer permission."
+    };
+  }
+
+  rpc runMaintenanceCronJob(RunMaintenanceCronJobRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/admin/maintenance/cron/run"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "Run a cron job now."
+      description: "Executes a registered job immediately, without waiting for its schedule. Requires the server.administer permission."
+    };
+  }
+
+  rpc listMaintenanceTranscodingFailures(google.protobuf.Empty) returns (ListMaintenanceTranscodingFailuresResponse) {
+    option (google.api.http) = {get: "/admin/maintenance/transcoding-failures"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "List transcoding failures."
+      description: "Retrieves every recorded transcoding failure, worker and log included. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteMaintenanceTranscodingFailure(DeleteMaintenanceTranscodingFailureRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/maintenance/transcoding-failures/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "Dismiss a transcoding failure."
+      description: "Deletes a recorded transcoding failure. It does not retry the transcode. Requires the server.administer permission."
+    };
+  }
+
+  rpc listMaintenanceEmailFailures(google.protobuf.Empty) returns (ListMaintenanceEmailFailuresResponse) {
+    option (google.api.http) = {get: "/admin/maintenance/email-failures"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "List failed emails."
+      description: "Retrieves every email that has exhausted its retries or is still failing, with its body and error history. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteMaintenanceEmailFailure(DeleteMaintenanceEmailFailureRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/maintenance/email-failures/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "Dismiss a failed email."
+      description: "Deletes a failed email; it is not retried afterwards. Requires the server.administer permission."
+    };
+  }
+
   rpc listWorkers(google.protobuf.Empty) returns (ListWorkersResponse) {
     option (google.api.http) = {get: "/admin/workers"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -1223,4 +1301,66 @@ message DeleteUserRequest {
 
 message ListUsersResponse {
   repeated UserSummary users = 1;
+}
+
+///////////////////////////////
+///// MAINTENANCE_MESSAGE /////
+///////////////////////////////
+
+// MaintenanceThumbnailStatus reports the state of the background regeneration job.
+// progress is meaningless once running is false; a finished run resets it to zero
+// rather than leaving it at 1, so a stale tab does not read a fresh run as complete.
+message MaintenanceThumbnailStatus {
+  bool running = 1;
+  float progress = 2;
+}
+
+message RunMaintenanceCronJobRequest {
+  string job = 1;
+}
+
+message ListMaintenanceCronJobsResponse {
+  repeated string jobs = 1;
+}
+
+// MaintenanceTranscodingFailure restates model.TranscodingFailure for the admin page.
+message MaintenanceTranscodingFailure {
+  uint32 id = 1;
+  uint32 stream_id = 2;
+  // model.StreamVersion, e.g. "COMB", "CAM", "PRES".
+  string version = 3;
+  // Formatted server-side (02.01.2006 15:04) so the page needs no locale logic.
+  string friendly_time = 4;
+  string hostname = 5;
+  string file_path = 6;
+  string logs = 7;
+}
+
+message ListMaintenanceTranscodingFailuresResponse {
+  repeated MaintenanceTranscodingFailure failures = 1;
+}
+
+message DeleteMaintenanceTranscodingFailureRequest {
+  uint32 id = 1;
+}
+
+// MaintenanceEmailFailure restates model.Email for a message that never sent.
+message MaintenanceEmailFailure {
+  uint32 id = 1;
+  string to = 2;
+  string subject = 3;
+  string body = 4;
+  // RFC 3339, or empty when no attempt has been made yet.
+  google.protobuf.Timestamp last_try = 5;
+  int32 retries = 6;
+  // One line per failed attempt.
+  string errors = 7;
+}
+
+message ListMaintenanceEmailFailuresResponse {
+  repeated MaintenanceEmailFailure failures = 1;
+}
+
+message DeleteMaintenanceEmailFailureRequest {
+  uint32 id = 1;
 }
