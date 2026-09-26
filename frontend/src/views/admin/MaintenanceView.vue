@@ -265,9 +265,7 @@ onUnmounted(() => {
       <div class="flex flex-col gap-3 rounded-lg border p-4 dark:border-gray-800">
         <h2 class="text-1 font-semibold">Failed Transcodings</h2>
         <p v-if="loadingTranscodingFailures" class="text-5 text-sm">Loading…</p>
-        <p v-else-if="!transcodingFailures.length" class="text-5 text-sm">
-          No failed transcodings
-        </p>
+        <p v-else-if="!transcodingFailures.length" class="text-5 text-sm">No failed transcodings.</p>
         <ul v-else class="flex flex-col gap-2">
           <li
             v-for="failure in transcodingFailures"
