@@ -34,7 +34,15 @@ export default defineConfig(({ command }) => ({
       "/api": { target: GO_SERVER, changeOrigin: false },
       "/public": { target: GO_SERVER, changeOrigin: false },
       "/static": { target: GO_SERVER, changeOrigin: false },
-      "/login": { target: GO_SERVER, changeOrigin: false },
+      "/login": {
+        target: GO_SERVER,
+        changeOrigin: false,
+        // GET /login is an SPA page, so Vite serves it: proxied, Go answers with the
+        // built shell, whose /spa-assets/ scripts do not exist here and the page stays
+        // blank. Only the form's POST goes to Go. This skips the server's redirect-cookie
+        // hook, so in dev a login lands on / rather than the page that asked for it.
+        bypass: (req) => (req.method === "GET" ? "/index.html" : undefined),
+      },
       "/logout": { target: GO_SERVER, changeOrigin: false },
       "/saml": { target: GO_SERVER, changeOrigin: false },
       "/logo.svg": { target: GO_SERVER, changeOrigin: false },
