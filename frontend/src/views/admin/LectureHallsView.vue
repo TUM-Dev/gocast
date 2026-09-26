@@ -411,8 +411,12 @@ async function snapshotPreset(row: Row, preset: CameraPreset): Promise<void> {
                   type="button"
                   title="Set default"
                   :aria-label="`Set ${preset.name} as default`"
-                  class="absolute left-1 top-1 rounded bg-blue-600 p-1 text-white group-hover:opacity-100"
-                  :class="!preset.isDefault && 'opacity-0'"
+                  class="absolute left-1 top-1 rounded bg-blue-600 p-1 text-white transition-opacity focus-visible:opacity-100"
+                  :class="
+                    preset.isDefault
+                      ? 'opacity-100'
+                      : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 group-focus-within:opacity-100'
+                  "
                   @click="makeDefault(row, preset)"
                 >
                   <i class="fas fa-check"></i>
@@ -421,7 +425,7 @@ async function snapshotPreset(row: Row, preset: CameraPreset): Promise<void> {
                   type="button"
                   title="Take new snapshot"
                   :aria-label="`Take a new snapshot for ${preset.name}`"
-                  class="absolute right-1 top-1 rounded bg-indigo-500 p-1 text-white opacity-0 group-hover:opacity-100"
+                  class="absolute right-1 top-1 rounded bg-indigo-500 p-1 text-white transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
                   :disabled="row.snapshotting === preset.presetId"
                   @click="snapshotPreset(row, preset)"
                 >
