@@ -1,6 +1,6 @@
-# TUM-Live/worker/edge
+# TUM-Live/edge-service
 
-The edge module is designed as a simple edge proxy and cache node for TUM-Live/worker.
+The edge-service module is designed as a simple edge proxy and cache node for TUM-Live/worker.
 It can be used when network traffic to worker nodes exceeds the available bandwidth, the architecture might look like this:
 ```
                                                 ┌───────┐ proxy /stream1.m3u8

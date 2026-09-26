@@ -96,7 +96,7 @@ You have to change the `authHTTPAddress` in the `ingest/mediamtx.yml` file by un
   ```bash
   # in the root
      
-  go run ./worker/edge
+  go run ./edge-service
   ```
 - Start the `mediamtx` server:
 

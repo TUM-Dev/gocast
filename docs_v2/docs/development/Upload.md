@@ -32,7 +32,7 @@ docker compose -f docker-compose-selfstream.yml up --build
 	```
 3. Start edge: 
 	```shell
-	go run ./worker/edge
+	go run ./edge-service
 	```
 4. Start vod-service:
 	```bash
