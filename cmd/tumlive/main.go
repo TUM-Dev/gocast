@@ -237,7 +237,13 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
 	httpl := m.Match(cmux.Any())
 
-	api2Client := apiv2.New(dao.DB)
+	// The same camera service and image directory v1 is given below, so a preset
+	// photographed through either API lands in the same place and is served from it.
+	api2Client := apiv2.New(
+		dao.DB,
+		apiv2.WithCamService(camService),
+		apiv2.WithPresetImageDir(tools.Cfg.Paths.Static),
+	)
 
 	g, _ := errgroup.WithContext(ctx)
 
