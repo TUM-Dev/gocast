@@ -1437,17 +1437,21 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AdminService_ListRunners_FullMethodName        = "/protobuf.AdminService/listRunners"
-	AdminService_DeleteRunner_FullMethodName       = "/protobuf.AdminService/deleteRunner"
-	AdminService_ListStaff_FullMethodName          = "/protobuf.AdminService/listStaff"
-	AdminService_SearchUsers_FullMethodName        = "/protobuf.AdminService/searchUsers"
-	AdminService_CreateUser_FullMethodName         = "/protobuf.AdminService/createUser"
-	AdminService_UpdateUserRole_FullMethodName     = "/protobuf.AdminService/updateUserRole"
-	AdminService_DeleteUser_FullMethodName         = "/protobuf.AdminService/deleteUser"
-	AdminService_ListInfoPagesAdmin_FullMethodName = "/protobuf.AdminService/listInfoPagesAdmin"
-	AdminService_CreateInfoPage_FullMethodName     = "/protobuf.AdminService/createInfoPage"
-	AdminService_UpdateInfoPage_FullMethodName     = "/protobuf.AdminService/updateInfoPage"
-	AdminService_DeleteInfoPage_FullMethodName     = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListRunners_FullMethodName          = "/protobuf.AdminService/listRunners"
+	AdminService_DeleteRunner_FullMethodName         = "/protobuf.AdminService/deleteRunner"
+	AdminService_ListStaff_FullMethodName            = "/protobuf.AdminService/listStaff"
+	AdminService_SearchUsers_FullMethodName          = "/protobuf.AdminService/searchUsers"
+	AdminService_CreateUser_FullMethodName           = "/protobuf.AdminService/createUser"
+	AdminService_UpdateUserRole_FullMethodName       = "/protobuf.AdminService/updateUserRole"
+	AdminService_DeleteUser_FullMethodName           = "/protobuf.AdminService/deleteUser"
+	AdminService_ListInfoPagesAdmin_FullMethodName   = "/protobuf.AdminService/listInfoPagesAdmin"
+	AdminService_CreateInfoPage_FullMethodName       = "/protobuf.AdminService/createInfoPage"
+	AdminService_UpdateInfoPage_FullMethodName       = "/protobuf.AdminService/updateInfoPage"
+	AdminService_DeleteInfoPage_FullMethodName       = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListIntegrations_FullMethodName     = "/protobuf.AdminService/listIntegrations"
+	AdminService_CreateIntegration_FullMethodName    = "/protobuf.AdminService/createIntegration"
+	AdminService_RotateIntegrationKey_FullMethodName = "/protobuf.AdminService/rotateIntegrationKey"
+	AdminService_RevokeIntegrationKey_FullMethodName = "/protobuf.AdminService/revokeIntegrationKey"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -1476,6 +1480,10 @@ type AdminServiceClient interface {
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListIntegrations(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListIntegrationsResponse, error)
+	CreateIntegration(ctx context.Context, in *CreateIntegrationRequest, opts ...grpc.CallOption) (*CreateIntegrationResponse, error)
+	RotateIntegrationKey(ctx context.Context, in *RotateIntegrationKeyRequest, opts ...grpc.CallOption) (*RotateIntegrationKeyResponse, error)
+	RevokeIntegrationKey(ctx context.Context, in *RevokeIntegrationKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminServiceClient struct {
@@ -1596,6 +1604,46 @@ func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoP
 	return out, nil
 }
 
+func (c *adminServiceClient) ListIntegrations(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListIntegrationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListIntegrationsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListIntegrations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) CreateIntegration(ctx context.Context, in *CreateIntegrationRequest, opts ...grpc.CallOption) (*CreateIntegrationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateIntegrationResponse)
+	err := c.cc.Invoke(ctx, AdminService_CreateIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RotateIntegrationKey(ctx context.Context, in *RotateIntegrationKeyRequest, opts ...grpc.CallOption) (*RotateIntegrationKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RotateIntegrationKeyResponse)
+	err := c.cc.Invoke(ctx, AdminService_RotateIntegrationKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RevokeIntegrationKey(ctx context.Context, in *RevokeIntegrationKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_RevokeIntegrationKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -1622,6 +1670,10 @@ type AdminServiceServer interface {
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
 	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
+	ListIntegrations(context.Context, *emptypb.Empty) (*ListIntegrationsResponse, error)
+	CreateIntegration(context.Context, *CreateIntegrationRequest) (*CreateIntegrationResponse, error)
+	RotateIntegrationKey(context.Context, *RotateIntegrationKeyRequest) (*RotateIntegrationKeyResponse, error)
+	RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -1664,6 +1716,18 @@ func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateIn
 }
 func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) ListIntegrations(context.Context, *emptypb.Empty) (*ListIntegrationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListIntegrations not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateIntegration(context.Context, *CreateIntegrationRequest) (*CreateIntegrationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateIntegration not implemented")
+}
+func (UnimplementedAdminServiceServer) RotateIntegrationKey(context.Context, *RotateIntegrationKeyRequest) (*RotateIntegrationKeyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RotateIntegrationKey not implemented")
+}
+func (UnimplementedAdminServiceServer) RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeIntegrationKey not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -1884,6 +1948,78 @@ func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListIntegrations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListIntegrations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListIntegrations(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_CreateIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateIntegrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateIntegration(ctx, req.(*CreateIntegrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RotateIntegrationKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RotateIntegrationKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RotateIntegrationKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RotateIntegrationKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RotateIntegrationKey(ctx, req.(*RotateIntegrationKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RevokeIntegrationKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeIntegrationKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RevokeIntegrationKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RevokeIntegrationKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RevokeIntegrationKey(ctx, req.(*RevokeIntegrationKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +2070,22 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteInfoPage",
 			Handler:    _AdminService_DeleteInfoPage_Handler,
+		},
+		{
+			MethodName: "listIntegrations",
+			Handler:    _AdminService_ListIntegrations_Handler,
+		},
+		{
+			MethodName: "createIntegration",
+			Handler:    _AdminService_CreateIntegration_Handler,
+		},
+		{
+			MethodName: "rotateIntegrationKey",
+			Handler:    _AdminService_RotateIntegrationKey_Handler,
+		},
+		{
+			MethodName: "revokeIntegrationKey",
+			Handler:    _AdminService_RevokeIntegrationKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

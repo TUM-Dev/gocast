@@ -13,6 +13,7 @@ import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
+import IntegrationsView from "@/views/admin/IntegrationsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import MyCoursesView from "@/views/MyCoursesView.vue";
@@ -109,6 +110,11 @@ const routes: RouteRecordRaw[] = [
     // The administration pages, migrating one at a time. Each is registered in
     // web/router.go inside the permission group that guards it, so an unauthorized
     // caller is refused the shell rather than reaching an empty page.
+    path: "/admin/integrations",
+    name: "admin-integrations",
+    component: IntegrationsView,
+  },
+  {
     path: "/admin/runners",
     name: "admin-runners",
     component: RunnersView,
