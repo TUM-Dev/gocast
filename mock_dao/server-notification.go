@@ -41,7 +41,7 @@ func (m *MockServerNotificationDao) EXPECT() *MockServerNotificationDaoMockRecor
 }
 
 // CreateServerNotification mocks base method.
-func (m *MockServerNotificationDao) CreateServerNotification(notification model.ServerNotification) error {
+func (m *MockServerNotificationDao) CreateServerNotification(notification *model.ServerNotification) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateServerNotification", notification)
 	ret0, _ := ret[0].(error)

@@ -45,7 +45,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	page := GetPageString(c.Request.URL.Path)
 	var notifications []model.Notification
 	var tokens []dao.AllTokensDto
-	var serverNotifications []model.ServerNotification
 	switch page {
 	case "notifications":
 		found, err := r.NotificationsDao.GetAllNotifications()
@@ -70,12 +69,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Model:   gorm.Model{ID: 0},
 			Streams: streams,
 		}
-	case "serverNotifications":
-		if res, err := r.ServerNotificationDao.GetAllServerNotifications(); err == nil {
-			serverNotifications = res
-		} else {
-			logger.Warn("could not get all server notifications", "err", err)
-		}
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	y, t := tum.GetCurrentSemester()
@@ -83,18 +76,17 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{
-			Courses:             courses,
-			IndexData:           indexData,
-			LectureHalls:        lectureHalls,
-			Page:                page,
-			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
-			Semesters:           semesters,
-			CurY:                y,
-			CurT:                t,
-			Tokens:              TokensData{Tokens: tokens, RtmpProxyURL: tools.Cfg.RtmpProxyURL, User: tumLiveContext.User},
-			ServerNotifications: serverNotifications,
-			Notifications:       notifications,
-			HasTestCourse:       hasTestCourse,
+			Courses:       courses,
+			IndexData:     indexData,
+			LectureHalls:  lectureHalls,
+			Page:          page,
+			Workers:       WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
+			Semesters:     semesters,
+			CurY:          y,
+			CurT:          t,
+			Tokens:        TokensData{Tokens: tokens, RtmpProxyURL: tools.Cfg.RtmpProxyURL, User: tumLiveContext.User},
+			Notifications: notifications,
+			HasTestCourse: hasTestCourse,
 		})
 	if err != nil {
 		logger.Error("Error executing template admin.gohtml", "err", err)
@@ -360,19 +352,18 @@ func (r mainRoutes) UpdateCourse(c *gin.Context) {
 }
 
 type AdminPageData struct {
-	IndexData           IndexData
-	Courses             []model.Course
-	LectureHalls        []model.LectureHall
-	Page                string
-	Workers             WorkersData
-	Semesters           []model.Semester
-	CurY                int
-	CurT                string
-	EditCourseData      EditCourseData
-	ServerNotifications []model.ServerNotification
-	Tokens              TokensData
-	Notifications       []model.Notification
-	HasTestCourse       bool
+	IndexData      IndexData
+	Courses        []model.Course
+	LectureHalls   []model.LectureHall
+	Page           string
+	Workers        WorkersData
+	Semesters      []model.Semester
+	CurY           int
+	CurT           string
+	EditCourseData EditCourseData
+	Tokens         TokensData
+	Notifications  []model.Notification
+	HasTestCourse  bool
 }
 
 type EditCourseData struct {

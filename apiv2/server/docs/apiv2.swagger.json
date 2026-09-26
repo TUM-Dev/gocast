@@ -234,6 +234,135 @@
         ]
       }
     },
+    "/admin/server-notifications": {
+      "get": {
+        "summary": "List every server notification for administration.",
+        "description": "Retrieves every server notification, past, active and future, with its id. Requires the server.administer permission.",
+        "operationId": "AdminService_listServerNotificationsAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListServerNotificationsAdminResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      },
+      "post": {
+        "summary": "Create a server notification.",
+        "description": "Creates a banner shown site-wide between start and expires. Requires the server.administer permission.",
+        "operationId": "AdminService_createServerNotification",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufServerNotificationAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateServerNotificationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/admin/server-notifications/{id}": {
+      "delete": {
+        "summary": "Delete a server notification.",
+        "description": "Deletes a server notification; it stops showing immediately. Requires the server.administer permission.",
+        "operationId": "AdminService_deleteServerNotification",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      },
+      "patch": {
+        "summary": "Update a server notification.",
+        "description": "Replaces a server notification's text, severity and active window. Requires the server.administer permission.",
+        "operationId": "AdminService_updateServerNotification",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufServerNotificationAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AdminServiceupdateServerNotificationBody"
+            }
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
     "/admin/users": {
       "get": {
         "summary": "List the administrators and lecturers.",
@@ -1455,6 +1584,25 @@
         }
       }
     },
+    "AdminServiceupdateServerNotificationBody": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "warn": {
+          "type": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "AdminServiceupdateUserRoleBody": {
       "type": "object",
       "properties": {
@@ -1702,6 +1850,25 @@
         },
         "rawContent": {
           "type": "string"
+        }
+      }
+    },
+    "protobufCreateServerNotificationRequest": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "warn": {
+          "type": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -2084,6 +2251,18 @@
         }
       }
     },
+    "protobufListServerNotificationsAdminResponse": {
+      "type": "object",
+      "properties": {
+        "notifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufServerNotificationAdmin"
+          }
+        }
+      }
+    },
     "protobufListUsersResponse": {
       "type": "object",
       "properties": {
@@ -2200,6 +2379,30 @@
           "format": "date-time"
         }
       }
+    },
+    "protobufServerNotificationAdmin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "text": {
+          "type": "string"
+        },
+        "warn": {
+          "type": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "ServerNotificationAdmin is a server notification as an administrator manages it,\ncarrying the id ServerNotification (the public read model above) omits."
     },
     "protobufStream": {
       "type": "object",

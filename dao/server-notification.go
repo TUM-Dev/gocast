@@ -11,7 +11,10 @@ import (
 //go:generate go tool mockgen -source=server-notification.go -destination ../mock_dao/server-notification.go
 
 type ServerNotificationDao interface {
-	CreateServerNotification(notification model.ServerNotification) error
+	// CreateServerNotification creates notification and sets its ID field to the row
+	// the database assigned, the way InfoPageDao.New does -- the admin API hands the
+	// created row straight back to the caller and would otherwise have to re-query.
+	CreateServerNotification(notification *model.ServerNotification) error
 
 	GetCurrentServerNotifications() ([]model.ServerNotification, error)
 	GetAllServerNotifications() ([]model.ServerNotification, error)
@@ -30,8 +33,8 @@ func NewServerNotificationDao() ServerNotificationDao {
 }
 
 // CreateServerNotification creates a new ServerNotification
-func (d serverNotificationDao) CreateServerNotification(notification model.ServerNotification) error {
-	err := DB.Create(&notification).Error
+func (d serverNotificationDao) CreateServerNotification(notification *model.ServerNotification) error {
+	err := DB.Create(notification).Error
 	return err
 }
 
@@ -50,9 +53,18 @@ func (d serverNotificationDao) GetAllServerNotifications() ([]model.ServerNotifi
 	return res, err
 }
 
-// UpdateServerNotification updates a notification by its id
+// UpdateServerNotification updates a notification by its id.
+//
+// Deliberately a column map, not Updates(notification): GORM's struct form skips
+// zero-valued fields, so toggling Warn from true back to false would silently not
+// persist.
 func (d serverNotificationDao) UpdateServerNotification(notification model.ServerNotification, id string) error {
-	err := DB.Model(&model.ServerNotification{}).Where("id = ?", id).Updates(notification).Error
+	err := DB.Model(&model.ServerNotification{}).Where("id = ?", id).Updates(map[string]any{
+		"text":    notification.Text,
+		"warn":    notification.Warn,
+		"start":   notification.Start,
+		"expires": notification.Expires,
+	}).Error
 	return err
 }
 
