@@ -11,7 +11,7 @@ Five Go modules, joined by `go.work`:
 |---|---|
 | `.` | The main server — `cmd/tumlive` is the entrypoint |
 | `worker/` | Captures and transcodes streams |
-| `worker/edge/` | Edge delivery node |
+| `edge` | Edge delivery node |
 | `runner/` | Newer replacement for the worker |
 | `vod-service/` | Video-on-demand serving |
 
@@ -49,10 +49,15 @@ pnpm --dir frontend run typecheck     # vue-tsc
 pnpm --dir web run lint               # eslint (flat config; lints web/ts only, on purpose)
 ```
 
-`pnpm install` in `web/` is required to **compile the Go server at all** — `web/router.go`
-has `//go:embed node_modules`. It is not just about icons rendering. That embed is also
-why `web/.npmrc` pins `node-linker=hoisted`: go:embed does not follow symlinks, so
-pnpm's default isolated layout would embed nothing.
+The Go server compiles without ever running `pnpm install`, but don't ship a binary
+built that way: `web/router.go`'s `//go:embed assets/*` only requires the `assets`
+directory to exist, not its generated `ts-dist`/`css-dist`/`vendor` subfolders, so a
+binary built without them boots fine and serves 404s for every bundled script,
+stylesheet and vendored library (video.js, katex, flatpickr, ...). Run `pnpm install`
+(and the webpack/vite builds it triggers) in `web/` first. `web/.npmrc` pins
+`node-linker=hoisted` because `webpack.common.js`'s `copy-webpack-plugin` step, which
+copies those vendored files into `assets/vendor`, doesn't follow symlinks — pnpm's
+default isolated layout would make the copy silently resolve to nothing.
 
 For running the app, browser testing, and visual regression, use the
 **`local-testing` skill** (`.claude/skills/local-testing/`). It has the database
