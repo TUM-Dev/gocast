@@ -324,6 +324,7 @@ func (d CoursesDaoImpl) UpdateCourseMetadata(ctx context.Context, course model.C
 }
 
 func (d CoursesDaoImpl) UnDeleteCourse(ctx context.Context, course model.Course) error {
+	defer Cache.Clear()
 	return DB.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
 }
 
@@ -333,6 +334,7 @@ func (d CoursesDaoImpl) RemoveAdminFromCourse(userID uint, courseID uint) error 
 }
 
 func (d CoursesDaoImpl) DeleteCourse(course model.Course) {
+	defer Cache.Clear()
 	for _, stream := range course.Streams {
 		err := DB.Delete(&stream).Error
 		if err != nil {
