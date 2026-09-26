@@ -41,7 +41,7 @@ func ConfigGinRouter(
 	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
-	configGinLectureHallApiRouter(router, daoWrapper, camService, tools.Cfg.Paths.Static)
+	configGinLectureHallApiRouter(router, daoWrapper, camService)
 	configProgressRouter(router, daoWrapper)
 	configSeekStatsRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)
