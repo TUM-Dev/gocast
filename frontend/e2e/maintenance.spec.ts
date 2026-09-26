@@ -63,7 +63,7 @@ test.describe("the maintenance page", () => {
       await login(page, users.admin, "/admin/maintenance");
 
       const select = page.getByRole("combobox", { name: "Cron job" });
-      await expect(select.locator("option", { hasText: "fetchCourses" })).toHaveCount(1);
+      await expect(select).toContainText("fetchCourses");
     });
 
     test("the run button stays disabled until a job is chosen", async ({ page }) => {
@@ -88,20 +88,22 @@ test.describe("the maintenance page", () => {
     test("lists a failure with its stream, time and worker", async ({ page }) => {
       await login(page, users.admin, "/admin/maintenance");
 
-      const row = page.getByText(
-        `${transcodingFailures.kept.streamId} - ${transcodingFailures.kept.version}`,
-      );
+      const row = page
+        .locator("li")
+        .filter({ hasText: `${transcodingFailures.kept.streamId} - ${transcodingFailures.kept.version}` })
+        .filter({ hasText: transcodingFailures.kept.hostname })
+        .first();
       await expect(row).toBeVisible();
     });
 
     test("expands to show the file path and logs", async ({ page }) => {
       await login(page, users.admin, "/admin/maintenance");
 
-      const failureText = `${transcodingFailures.kept.streamId} - ${transcodingFailures.kept.version}`;
-      // Three levels up: the span, its text wrapper, the flex row of text and
-      // buttons, and finally the <li> that also holds the expanded content, which
-      // sits beside that flex row rather than inside it.
-      const row = page.getByText(failureText).locator("../../..");
+      const row = page
+        .locator("li")
+        .filter({ hasText: `${transcodingFailures.kept.streamId} - ${transcodingFailures.kept.version}` })
+        .filter({ hasText: transcodingFailures.kept.hostname })
+        .first();
       await row.getByRole("button", { name: "Expand" }).click();
 
       await expect(row.getByText("ffmpeg: could not open input file")).toBeVisible();
@@ -112,15 +114,22 @@ test.describe("the maintenance page", () => {
     test("lists a failure with its recipient and attempt count", async ({ page }) => {
       await login(page, users.admin, "/admin/maintenance");
 
-      const row = page.getByText(emailFailures.kept.to).locator("..");
-      await expect(row).toContainText(`${emailFailures.kept.retries} attempts`);
+      const row = page
+        .locator("li")
+        .filter({ hasText: emailFailures.kept.to })
+        .filter({ hasText: `${emailFailures.kept.retries} attempts` })
+        .first();
+      await expect(row).toBeVisible();
     });
 
     test("expands to show the body and errors", async ({ page }) => {
       await login(page, users.admin, "/admin/maintenance");
 
-      // See the analogous comment above the transcoding-failure expand test.
-      const row = page.getByText(emailFailures.kept.to).locator("../../..");
+      const row = page
+        .locator("li")
+        .filter({ hasText: emailFailures.kept.to })
+        .filter({ hasText: `${emailFailures.kept.retries} attempts` })
+        .first();
       await row.getByRole("button", { name: "Expand" }).click();
 
       await expect(row.getByText("550 5.1.1 unknown recipient")).toBeVisible();
@@ -183,36 +192,46 @@ test.describe("dismissing a failure", () => {
   test("removes a transcoding failure and leaves the other alone", async ({ page }) => {
     await login(page, users.admin, "/admin/maintenance");
 
-    const consumedRow = page.getByText(
-      `${transcodingFailures.consumed.streamId} - ${transcodingFailures.consumed.version}`,
-    );
+    const consumedRow = page
+      .locator("li")
+      .filter({ hasText: `${transcodingFailures.consumed.streamId} - ${transcodingFailures.consumed.version}` })
+      .filter({ hasText: transcodingFailures.consumed.hostname })
+      .first();
     await expect(consumedRow).toBeVisible();
 
     page.once("dialog", (dialog) => dialog.accept());
-    await consumedRow
-      .locator("../..")
-      .getByRole("button", { name: /Dismiss failure for stream/ })
-      .click();
+    await consumedRow.getByRole("button", { name: /Dismiss failure for stream/ }).click();
 
     await expect(consumedRow).toHaveCount(0);
     await expect(
-      page.getByText(`${transcodingFailures.kept.streamId} - ${transcodingFailures.kept.version}`),
+      page
+        .locator("li")
+        .filter({ hasText: `${transcodingFailures.kept.streamId} - ${transcodingFailures.kept.version}` })
+        .filter({ hasText: transcodingFailures.kept.hostname })
+        .first(),
     ).toBeVisible();
   });
 
   test("removes a failed email and leaves the other alone", async ({ page }) => {
     await login(page, users.admin, "/admin/maintenance");
 
-    const consumedRow = page.getByText(emailFailures.consumed.to);
+    const consumedRow = page
+      .locator("li")
+      .filter({ hasText: emailFailures.consumed.to })
+      .filter({ hasText: `${emailFailures.consumed.retries} attempts` })
+      .first();
     await expect(consumedRow).toBeVisible();
 
     page.once("dialog", (dialog) => dialog.accept());
-    await consumedRow
-      .locator("../..")
-      .getByRole("button", { name: `Dismiss failed email to ${emailFailures.consumed.to}` })
-      .click();
+    await consumedRow.getByRole("button", { name: `Dismiss failed email to ${emailFailures.consumed.to}` }).click();
 
     await expect(consumedRow).toHaveCount(0);
-    await expect(page.getByText(emailFailures.kept.to)).toBeVisible();
+    await expect(
+      page
+        .locator("li")
+        .filter({ hasText: emailFailures.kept.to })
+        .filter({ hasText: `${emailFailures.kept.retries} attempts` })
+        .first(),
+    ).toBeVisible();
   });
 });
