@@ -127,6 +127,12 @@ var services = []service{
 			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
 			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
 			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
+
+			// Server notifications belong to no course, same as runners.
+			"listServerNotificationsAdmin": requires(model.PermAdministerServer),
+			"createServerNotification":     requires(model.PermAdministerServer),
+			"updateServerNotification":     requires(model.PermAdministerServer),
+			"deleteServerNotification":     requires(model.PermAdministerServer),
 		},
 	},
 }
