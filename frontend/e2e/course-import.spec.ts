@@ -47,8 +47,8 @@ const searchResponse = {
 };
 
 async function fillSearchForm(page: Page): Promise<void> {
-  await page.getByLabel("From").fill("2025-10-01");
-  await page.getByLabel("To").fill("2025-10-31");
+  await page.getByLabel("From", { exact: true }).fill("2025-10-01");
+  await page.getByLabel("To", { exact: true }).fill("2025-10-31");
 }
 
 test.describe("the course import page", () => {
