@@ -62,6 +62,7 @@ var spaRoutes = map[string]bool{
 	"/admin/info-pages":         true,
 	"/admin/workers":            true,
 	"/admin/maintenance":        true,
+	"/admin/course-import":      true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
@@ -302,7 +303,7 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
-	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
 	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
