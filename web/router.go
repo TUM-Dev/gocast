@@ -311,11 +311,9 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/notifications", nil)
-	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/integrations", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/maintenance", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/audits", nil)
-	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
 
 	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
 	// same permission.
