@@ -14,6 +14,7 @@ import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
+import NotificationsView from "@/views/admin/NotificationsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import WorkersView from "@/views/admin/WorkersView.vue";
@@ -134,6 +135,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/maintenance",
     name: "admin-maintenance",
     component: MaintenanceView,
+  },
+  {
+    path: "/admin/notifications",
+    name: "admin-notifications",
+    component: NotificationsView,
   },
   {
     path: "/login",

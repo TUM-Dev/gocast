@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -11,6 +10,12 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
+// Creating and deleting notifications moved to AdminService in apiv2 (see
+// apiv2/server/notification_admin.go) with the rest of the /admin/notifications page.
+// getNotifications stays here: it backs the legacy header's notification bell, which
+// every not-yet-migrated page still renders. getServerNotifications stays for the same
+// reason, serving the /admin/server-notifications page, which is not this page's to
+// migrate.
 func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := notificationRoutes{daoWrapper}
 
@@ -18,8 +23,6 @@ func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	{
 		notifications.GET("/", routes.getNotifications)
 		notifications.GET("/server", routes.getServerNotifications)
-		notifications.POST("/", tools.RequirePermission(model.PermAdministerServer), routes.createNotification)
-		notifications.DELETE("/:id", tools.RequirePermission(model.PermAdministerServer), routes.deleteNotification)
 	}
 }
 
@@ -65,53 +68,4 @@ func (r notificationRoutes) getServerNotifications(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, notifications)
-}
-
-func (r notificationRoutes) createNotification(c *gin.Context) {
-	var notification model.Notification
-	if err := c.BindJSON(&notification); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	if *notification.Title == "" {
-		notification.Title = nil
-	}
-	notification.Body = notification.SanitizedBody // reverse json binding
-	if err := r.NotificationsDao.AddNotification(&notification); err != nil {
-		logger.Error("Error adding notification", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not add notification",
-			Err:           err,
-		})
-		return
-	}
-	c.JSON(http.StatusOK, notification)
-}
-
-func (r notificationRoutes) deleteNotification(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid param 'id'",
-			Err:           err,
-		})
-		return
-	}
-	err = r.NotificationsDao.DeleteNotification(uint(id))
-	if err != nil {
-		logger.Error("error deleting notification", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "error deleting notification",
-			Err:           err,
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
 }
