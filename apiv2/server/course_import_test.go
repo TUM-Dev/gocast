@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 
-	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
