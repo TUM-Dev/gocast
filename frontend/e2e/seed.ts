@@ -240,10 +240,22 @@ export const pinned = {
   hiddenFromThem: "bierkunde",
 } as const;
 
-/** Both are active from before the dump was loaded until long after. */
+/**
+ * Both are active from before the dump was loaded until long after. `source` is what
+ * is stored and what the admin page shows for editing; `text` is what the start page's
+ * banner renders from it.
+ */
 export const serverNotifications = [
-  { warn: false, text: "Am Wochenende finden Wartungsarbeiten statt." },
-  { warn: true, text: "Livestreams können heute unterbrochen sein." },
+  {
+    warn: false,
+    source: "Am Wochenende finden <b>Wartungsarbeiten</b> statt.",
+    text: "Am Wochenende finden Wartungsarbeiten statt.",
+  },
+  {
+    warn: true,
+    source: "Livestreams können heute unterbrochen sein.",
+    text: "Livestreams können heute unterbrochen sein.",
+  },
 ] as const;
 
 export const courseUrl = (slug: CourseKey): string => {
