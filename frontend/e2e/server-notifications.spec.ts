@@ -20,10 +20,10 @@ test.describe("the server notifications admin page", () => {
   test("lists the seeded notifications by text and type", async ({ page }) => {
     await login(page, users.admin, "/admin/server-notifications");
 
-    const info = page.locator("li").filter({ hasText: serverNotifications[0].text });
+    const info = page.locator("li").filter({ hasText: serverNotifications[0].source });
     await expect(info).toContainText("Info");
 
-    const warning = page.locator("li").filter({ hasText: serverNotifications[1].text });
+    const warning = page.locator("li").filter({ hasText: serverNotifications[1].source });
     await expect(warning).toContainText("Warning");
   });
 
