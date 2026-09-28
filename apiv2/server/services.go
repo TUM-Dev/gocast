@@ -118,6 +118,11 @@ var services = []service{
 			"updateInfoPage":     requires(model.PermAdministerServer),
 			"deleteInfoPage":     requires(model.PermAdministerServer),
 
+			"listIntegrations":     requires(model.PermAdministerServer),
+			"createIntegration":    requires(model.PermAdministerServer),
+			"rotateIntegrationKey": requires(model.PermAdministerServer),
+			"revokeIntegrationKey": requires(model.PermAdministerServer),
+
 			// Maintenance operations belong to no course, same as runners.
 			"getMaintenanceThumbnailStatus":       requires(model.PermAdministerServer),
 			"generateMaintenanceThumbnails":       requires(model.PermAdministerServer),

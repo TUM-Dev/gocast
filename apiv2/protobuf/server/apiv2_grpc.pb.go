@@ -1448,6 +1448,10 @@ const (
 	AdminService_CreateInfoPage_FullMethodName                      = "/protobuf.AdminService/createInfoPage"
 	AdminService_UpdateInfoPage_FullMethodName                      = "/protobuf.AdminService/updateInfoPage"
 	AdminService_DeleteInfoPage_FullMethodName                      = "/protobuf.AdminService/deleteInfoPage"
+	AdminService_ListIntegrations_FullMethodName                    = "/protobuf.AdminService/listIntegrations"
+	AdminService_CreateIntegration_FullMethodName                   = "/protobuf.AdminService/createIntegration"
+	AdminService_RotateIntegrationKey_FullMethodName                = "/protobuf.AdminService/rotateIntegrationKey"
+	AdminService_RevokeIntegrationKey_FullMethodName                = "/protobuf.AdminService/revokeIntegrationKey"
 	AdminService_ListWorkers_FullMethodName                         = "/protobuf.AdminService/listWorkers"
 	AdminService_DeleteWorker_FullMethodName                        = "/protobuf.AdminService/deleteWorker"
 	AdminService_GetMaintenanceThumbnailStatus_FullMethodName       = "/protobuf.AdminService/getMaintenanceThumbnailStatus"
@@ -1486,6 +1490,10 @@ type AdminServiceClient interface {
 	CreateInfoPage(ctx context.Context, in *CreateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	UpdateInfoPage(ctx context.Context, in *UpdateInfoPageRequest, opts ...grpc.CallOption) (*InfoPage, error)
 	DeleteInfoPage(ctx context.Context, in *DeleteInfoPageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListIntegrations(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListIntegrationsResponse, error)
+	CreateIntegration(ctx context.Context, in *CreateIntegrationRequest, opts ...grpc.CallOption) (*CreateIntegrationResponse, error)
+	RotateIntegrationKey(ctx context.Context, in *RotateIntegrationKeyRequest, opts ...grpc.CallOption) (*RotateIntegrationKeyResponse, error)
+	RevokeIntegrationKey(ctx context.Context, in *RevokeIntegrationKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListWorkers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListWorkersResponse, error)
 	DeleteWorker(ctx context.Context, in *DeleteWorkerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Thumbnail regeneration runs in a goroutine and outlives the request that started
@@ -1619,6 +1627,46 @@ func (c *adminServiceClient) DeleteInfoPage(ctx context.Context, in *DeleteInfoP
 	return out, nil
 }
 
+func (c *adminServiceClient) ListIntegrations(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListIntegrationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListIntegrationsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListIntegrations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) CreateIntegration(ctx context.Context, in *CreateIntegrationRequest, opts ...grpc.CallOption) (*CreateIntegrationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateIntegrationResponse)
+	err := c.cc.Invoke(ctx, AdminService_CreateIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RotateIntegrationKey(ctx context.Context, in *RotateIntegrationKeyRequest, opts ...grpc.CallOption) (*RotateIntegrationKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RotateIntegrationKeyResponse)
+	err := c.cc.Invoke(ctx, AdminService_RotateIntegrationKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RevokeIntegrationKey(ctx context.Context, in *RevokeIntegrationKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminService_RevokeIntegrationKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) ListWorkers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListWorkersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListWorkersResponse)
@@ -1745,6 +1793,10 @@ type AdminServiceServer interface {
 	CreateInfoPage(context.Context, *CreateInfoPageRequest) (*InfoPage, error)
 	UpdateInfoPage(context.Context, *UpdateInfoPageRequest) (*InfoPage, error)
 	DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error)
+	ListIntegrations(context.Context, *emptypb.Empty) (*ListIntegrationsResponse, error)
+	CreateIntegration(context.Context, *CreateIntegrationRequest) (*CreateIntegrationResponse, error)
+	RotateIntegrationKey(context.Context, *RotateIntegrationKeyRequest) (*RotateIntegrationKeyResponse, error)
+	RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error)
 	ListWorkers(context.Context, *emptypb.Empty) (*ListWorkersResponse, error)
 	DeleteWorker(context.Context, *DeleteWorkerRequest) (*emptypb.Empty, error)
 	// Thumbnail regeneration runs in a goroutine and outlives the request that started
@@ -1800,6 +1852,18 @@ func (UnimplementedAdminServiceServer) UpdateInfoPage(context.Context, *UpdateIn
 }
 func (UnimplementedAdminServiceServer) DeleteInfoPage(context.Context, *DeleteInfoPageRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInfoPage not implemented")
+}
+func (UnimplementedAdminServiceServer) ListIntegrations(context.Context, *emptypb.Empty) (*ListIntegrationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListIntegrations not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateIntegration(context.Context, *CreateIntegrationRequest) (*CreateIntegrationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateIntegration not implemented")
+}
+func (UnimplementedAdminServiceServer) RotateIntegrationKey(context.Context, *RotateIntegrationKeyRequest) (*RotateIntegrationKeyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RotateIntegrationKey not implemented")
+}
+func (UnimplementedAdminServiceServer) RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeIntegrationKey not implemented")
 }
 func (UnimplementedAdminServiceServer) ListWorkers(context.Context, *emptypb.Empty) (*ListWorkersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListWorkers not implemented")
@@ -2050,6 +2114,78 @@ func _AdminService_DeleteInfoPage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListIntegrations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListIntegrations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListIntegrations(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_CreateIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateIntegrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateIntegration(ctx, req.(*CreateIntegrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RotateIntegrationKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RotateIntegrationKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RotateIntegrationKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RotateIntegrationKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RotateIntegrationKey(ctx, req.(*RotateIntegrationKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RevokeIntegrationKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeIntegrationKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RevokeIntegrationKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RevokeIntegrationKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RevokeIntegrationKey(ctx, req.(*RevokeIntegrationKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_ListWorkers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -2280,6 +2416,22 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteInfoPage",
 			Handler:    _AdminService_DeleteInfoPage_Handler,
+		},
+		{
+			MethodName: "listIntegrations",
+			Handler:    _AdminService_ListIntegrations_Handler,
+		},
+		{
+			MethodName: "createIntegration",
+			Handler:    _AdminService_CreateIntegration_Handler,
+		},
+		{
+			MethodName: "rotateIntegrationKey",
+			Handler:    _AdminService_RotateIntegrationKey_Handler,
+		},
+		{
+			MethodName: "revokeIntegrationKey",
+			Handler:    _AdminService_RevokeIntegrationKey_Handler,
 		},
 		{
 			MethodName: "listWorkers",

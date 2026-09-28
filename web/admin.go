@@ -116,6 +116,8 @@ func GetPageString(s string) string {
 		return "notifications"
 	case "/admin/token":
 		return "token"
+	case "/admin/integrations":
+		return "integrations"
 	case "/admin/info-pages":
 		return "info-pages"
 	case "/admin/server-stats":
