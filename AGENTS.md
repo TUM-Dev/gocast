@@ -11,7 +11,7 @@ Five Go modules, joined by `go.work`:
 |---|---|
 | `.` | The main server — `cmd/tumlive` is the entrypoint |
 | `worker/` | Captures and transcodes streams |
-| `worker/edge/` | Edge delivery node |
+| `edge` | Edge delivery node |
 | `runner/` | Newer replacement for the worker |
 | `vod-service/` | Video-on-demand serving |
 

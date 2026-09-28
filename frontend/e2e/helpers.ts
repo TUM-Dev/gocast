@@ -27,8 +27,12 @@ export async function login(page: Page, user: SeedUser = users.studi1, to = "/")
 
   // Navigate explicitly rather than relying on the post-login redirect: that redirect
   // is itself under test in login.spec.ts, and a helper every other test depends on
-  // should not fail for the same reason.
-  if (new URL(page.url()).pathname !== to) {
+  // should not fail for the same reason. Compare the full URL, not just the path, so
+  // a redirect to the same page but a different semester still lands on the intended
+  // query string.
+  const here = new URL(page.url());
+  const target = new URL(to, baseURL);
+  if (here.pathname !== target.pathname || here.search !== target.search) {
     await page.goto(to);
   }
 }

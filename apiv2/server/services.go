@@ -99,6 +99,10 @@ var services = []service{
 			"listRunners":  requires(model.PermAdministerServer),
 			"deleteRunner": requires(model.PermAdministerServer),
 
+			// Workers are the older, pre-runner equivalent; same permission.
+			"listWorkers":  requires(model.PermAdministerServer),
+			"deleteWorker": requires(model.PermAdministerServer),
+
 			// Accounts are a different permission from the rest of the service. Both
 			// belong to admins today; the split is what makes an operator role a
 			// change to the role table rather than to every call site.
@@ -118,6 +122,16 @@ var services = []service{
 			"createIntegration":    requires(model.PermAdministerServer),
 			"rotateIntegrationKey": requires(model.PermAdministerServer),
 			"revokeIntegrationKey": requires(model.PermAdministerServer),
+
+			// Maintenance operations belong to no course, same as runners.
+			"getMaintenanceThumbnailStatus":       requires(model.PermAdministerServer),
+			"generateMaintenanceThumbnails":       requires(model.PermAdministerServer),
+			"listMaintenanceCronJobs":             requires(model.PermAdministerServer),
+			"runMaintenanceCronJob":               requires(model.PermAdministerServer),
+			"listMaintenanceTranscodingFailures":  requires(model.PermAdministerServer),
+			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
+			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
+			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
 		},
 	},
 }

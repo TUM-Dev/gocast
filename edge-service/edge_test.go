@@ -148,7 +148,7 @@ func TestValidateTokenAdminToken(t *testing.T) {
 	}
 }
 
-// prepareJWT creates a signed JWT token and sets the edge servers public key as the key to validate the token.
+// prepareJWT creates a signed JWT token and sets the edge-service servers public key as the key to validate the token.
 func prepareJWT(exp time.Duration, playlist string) (string, error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {

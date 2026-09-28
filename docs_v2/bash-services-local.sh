@@ -8,7 +8,7 @@ cleanup() {
     pkill -f "cmd/tumlive" || true
     pkill -f "runner/cmd/runner/main.go" || true
     pkill -f "worker/cmd/worker" || true
-    pkill -f "worker/edge" || true
+    pkill -f "edge-service" || true
     pkill -f "vod-service/cmd/vod-service" || true
     pkill -f "mediamtx" || true
     kill -9 $(pgrep -o main)
@@ -19,7 +19,7 @@ cleanup() {
     # restore dev changes
     sed -i 's/ListenAndServe(":8080"/ListenAndServe(":8089"/' vod-service/internal/vodService.go
 
-    sed -i "s|var vodPath = .*|var vodPath = \"/vod\"|" worker/edge/edge.go
+    sed -i "s|var vodPath = .*|var vodPath = \"/vod\"|" edge-service/edge.go
 
     sed -i 's/^token: abc//' config.yaml
 
@@ -39,7 +39,7 @@ MASS="$HOME/dev/storage/mass"
 LIVE="$HOME/dev/storage/live"
 
 sed -i 's/ListenAndServe(":8089"/ListenAndServe(":8080"/' vod-service/internal/vodService.go
-sed -i "s|var vodPath = .*|var vodPath = \"$MASS\"|" worker/edge/edge.go
+sed -i "s|var vodPath = .*|var vodPath = \"$MASS\"|" edge-service/edge.go
 
 grep -q '^token:' config.yaml && sed -i 's/^token:.*/token: abc/' config.yaml || echo 'token: abc' >> config.yaml
 
@@ -98,7 +98,7 @@ sleep 2
 echo "worker started"
 
 
-go run ./worker/edge &
+go run ./edge-service &
 until nc -z localhost 8089; do sleep 1; done
 echo "edge started"
 

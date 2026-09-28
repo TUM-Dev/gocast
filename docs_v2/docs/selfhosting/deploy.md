@@ -97,7 +97,7 @@ services:
       - LrzUploadUrl=http://vodservice:8089
       - LogLevel=debug
       - PersistDir=/persist
-      - VodURLTemplate=https://edge.live.rbg.tum.de/vod/%s.mp4/playlist.m3u8 # todo change this depending on your edge server url
+      - VodURLTemplate=https://edge.live.rbg.tum.de/vod/%s.mp4/playlist.m3u8 # todo change this depending on your edge-service server url
     ports:
       - target: 1935
         published: 1935

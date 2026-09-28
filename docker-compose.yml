@@ -114,7 +114,7 @@ services:
     depends_on:
       tum-live:
         condition: service_healthy
-    build: worker/edge
+    build: edge-service
     environment:
       - VOD_DIR=/vod
       - MAIN_INSTANCE=http://tum-live:8081

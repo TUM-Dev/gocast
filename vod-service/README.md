@@ -2,7 +2,7 @@
 
 The VoD service exposes a simple http interface that accepts file uploads
 and packages them to a HLS stream in a configured location.
-This stream may then be distributed by the TUM-Live/worker/edge module.
+This stream may then be distributed by the TUM-Live/edge-service module.
 
 Keep in mind: The input file is not re- encoded,
 if its codec or format is infeasible for browsers, so will the HLS stream be.

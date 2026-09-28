@@ -61,6 +61,8 @@ var spaRoutes = map[string]bool{
 	"/admin/integrations":       true,
 	"/admin/users":              true,
 	"/admin/info-pages":         true,
+	"/admin/workers":            true,
+	"/admin/maintenance":        true,
 	"/privacy":                  true,
 	"/imprint":                  true,
 	"/about":                    true,
@@ -297,7 +299,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
 	serverAdminGroup.GET("/admin/lecture-halls", routes.AdminPage)
 	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
-	serverAdminGroup.GET("/admin/workers", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/workers", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
@@ -305,8 +307,8 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
 	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
 	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
-	serverAdminGroup.GET("/admin/maintenance", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/integrations", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/maintenance", nil)
 
 	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
 	// same permission.

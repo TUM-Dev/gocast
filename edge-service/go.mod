@@ -1,4 +1,4 @@
-module github.com/TUM-Dev/gocast/worker/edge
+module github.com/TUM-Dev/gocast/edge-service
 
 go 1.27.0
 

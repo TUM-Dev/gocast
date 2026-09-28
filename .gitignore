@@ -107,7 +107,7 @@ web/node_modules
 web/assets/ts-dist
 web/assets/css-dist
 web/assets/vendor
-worker/edge/edge
+edge-service/edge
 
 # secrets
 variables-backend.env

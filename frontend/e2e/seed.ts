@@ -279,6 +279,35 @@ export const runners = {
 } as const;
 
 /**
+ * The two workers, the older pre-runner equivalent. Both are dead: liveness is a
+ * heartbeat within six minutes, so no fixture can seed a live one. `beta` is consumed
+ * by the delete test in workers.spec.ts.
+ */
+export const workers = {
+  alpha: { workerId: "worker-alpha", host: "vm-alpha", version: "1.4.2", workload: 2 },
+  beta: { workerId: "worker-beta", host: "vm-beta", version: "1.3.0", workload: 0 },
+} as const;
+
+/**
+ * The two transcoding failures added for the maintenance page. Both reference stream
+ * 1 (VL 1: Was ist Bier?). `consumed` is deleted by the maintenance e2e spec's delete
+ * test, so nothing else may depend on it surviving a run.
+ */
+export const transcodingFailures = {
+  kept: { streamId: 1, version: "COMB", hostname: "worker-1.tum.live" },
+  consumed: { streamId: 1, version: "PRES", hostname: "worker-2.tum.live" },
+} as const;
+
+/**
+ * The two failed emails added for the maintenance page, both unsuccessful. `consumed`
+ * is deleted by the maintenance e2e spec's delete test.
+ */
+export const emailFailures = {
+  kept: { to: "broken@example.com", subject: "Welcome to TUM-Live", retries: 4 },
+  consumed: { to: "also-broken@example.com", subject: "Your stream is live", retries: 2 },
+} as const;
+
+/**
  * The three info pages. `title` is the editable `name` column, deliberately unlike the
  * route; `heading` is the Markdown's own h1. Privacy's source carries XSS to be stripped.
  */

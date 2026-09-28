@@ -46,12 +46,10 @@ func ConfigGinRouter(
 	configSeekStatsRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
-	configWorkerRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
 	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)
-	configMaintenanceRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)
 }
