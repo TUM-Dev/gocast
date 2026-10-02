@@ -39,7 +39,12 @@ export function addNotifyEventListeners() {
             (res) => {
                 res.text().then((text) => {
                     console.log(text);
-                    window.dispatchEvent(new CustomEvent("loading-end", { detail: { courses: JSON.parse(text) } }));
+                    const courses = JSON.parse(text).map((course) => ({
+                        ...course,
+                        slug: `${course.course_id}`,
+                        import: true,
+                    }));
+                    window.dispatchEvent(new CustomEvent("loading-end", { detail: { courses: courses } }));
                 });
             },
         );
