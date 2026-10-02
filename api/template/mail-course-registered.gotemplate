@@ -2,34 +2,46 @@ English version below
 
 Hallo {{.Name}},
 
-Sie erhalten diese Nachricht, weil Sie als Verantwortliche/r in TUMOnline für den Kurs "{{.Course.Name}}" eingetragen sind, der in einem von uns mit Livestreaming-hardware ausgestatteten Raum statt findet. Sollten sie hierfür nicht verantwortlich sein können Sie diese Nachricht ignorieren.
+Sie erhalten diese Nachricht, weil Sie für die Lehrveranstaltung „{{.Course.Name}}" verantwortlich sind.
 
-Wir haben Ihren Kurs automatisch in unser System TUM-Live (live.rbg.tum.de) eingetragen. {{if .OptIn}}Wenn Sie Livestreams oder Aufzeichnungen Ihrer Veranstaltung wünschen, nutzen Sie bitte diesen Link zur Aktivierung:
-  https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{else}}Sollten Sie keine Übertragung und Aufzeichnung wünschen nutzen Sie bitte diesen Link um die Veranstaltung zu entfernen: https://live.rbg.tum.de/edit-course/opt-out?token={{.Course.Token}}{{end}}
+TUM-Live ist das automatisierte Vorlesungsaufzeichnungs- und Livestream-System der TUM für Lehrveranstaltungen in Räumen, die mit entsprechender Livestreaming-Hardware ausgestattet sind.
 
-Abgesehen davon, dass ein Funkmikrofon verwendet werden muss, das Sie an der Pforte erhalten ändert sich hierdurch am Ablauf der Veranstaltung nichts, sie wird zur gebuchten Zeit automatisch im Internet übertragen.
-{{if not .OptIn}}Sie können die unten genannten Einstellungen ändern indem Sie sich bei https://live.rbg.tum.de/ mit Ihrer TUM-Kennung anmelden und über den Admin Bereich zu Ihrem Kurs navigieren.{{end}}
+{{if .OptIn}}Wenn Sie Livestreams oder Aufzeichnungen für Ihre Veranstaltung nutzen möchten, müssen Sie diese hier aktivieren:
 
-Bei weiteren Fragen sind wir jederzeit unter live@rbg.tum.de (am besten als Antwort auf diese Mail) erreichbar.
+https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{else}}Ihre Veranstaltung wurde automatisch in TUM-Live eingetragen und wird zur gebuchten Zeit live übertragen und aufgezeichnet. Falls Sie das nicht wünschen, können Sie Ihre Veranstaltung hier entfernen:
 
-Mit freundlichen Grüßen,
+https://live.rbg.tum.de/edit-course/opt-out?token={{.Course.Token}}{{end}}
+
+Wichtiger Hinweis zum Datenschutz:
+Bei aktivierten Aufzeichnungen müssen die Teilnehmenden vor Beginn der Veranstaltung über die Aufzeichnung informiert werden. Bitte stellen Sie sicher, dass die Nutzung von TUM-Live im Einklang mit den geltenden Datenschutzvorgaben und den entsprechenden Regelungen der TUM erfolgt.
+
+Bei Fragen helfen wir Ihnen gerne weiter: live@rbg.tum.de (am besten als Antwort auf diese Mail).
+
+Viele Grüße
+
 IT Operations, Multimedia
 
 =======================
 
 Dear {{.Name}},
 
-This message was sent to you because you are listed as responsible for the course "{{.Course.Name}}" in TUMOnline which will take place in a room equipped with our livestreaming hardware. If you are not responsible for this course feel free to ignore this message.
+You are receiving this message because you are responsible for the course "{{.Course.Name}}".
 
-We registered your lectures in TUM-Live (live.rbg.tum.de) automatically. {{if .OptIn}}If you want them to be streamed or recorded, please activate it using this link:
-  https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{else}}If you don't want your lectures to be streamed and recorded please use this link to opt out: https://live.rbg.tum.de/edit-course/opt-out?token={{.Course.Token}}{{end}}
+TUM-Live is TUM's automated lecture recording and livestreaming system for courses held in rooms equipped with the required livestreaming hardware.
 
-Besides having to use a microphone which you can get at the reception, this doesn't affect your lecture. It will be streamed during the booked timeslot automatically.
-{{if not .OptIn}}You can change the settings below by logging into https://live.rbg.tum.de/ using your TUM-Id and navigating to your course in the admin tab.{{end}}
+{{if .OptIn}}If you would like to use livestreaming or recording for your course, you must activate it here:
 
-For any further questions or help please reach out to us at live@rbg.tum.de (preferably by answering to this email).
+https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{else}}Your course was registered in TUM-Live automatically and will be streamed and recorded live at the booked time. If you do not want this, you can remove your course here:
 
-Best,
+https://live.rbg.tum.de/edit-course/opt-out?token={{.Course.Token}}{{end}}
+
+Important data protection notice:
+If recordings are enabled, participants must be informed before the lecture begins that recording is taking place. Please ensure that the use of TUM-Live complies with applicable data protection requirements and relevant TUM regulations.
+
+If you have any questions, we are happy to help at: live@rbg.tum.de (preferably by replying to this email).
+
+Best regards,
+
 IT Operations, Multimedia
 
 Settings:
