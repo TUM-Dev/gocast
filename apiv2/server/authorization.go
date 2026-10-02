@@ -3,6 +3,8 @@ package apiv2
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -30,6 +32,37 @@ func (a *API) getCurrent(ctx context.Context) (*model.User, error) {
 	}
 
 	return a.resolveCurrent(ctx)
+}
+
+func (a *API) getCurrentIntegration(ctx context.Context) (*model.Integration, error) {
+	if c, ok := ctx.Value(callerKey{}).(*caller); ok {
+		return c.integration, c.err
+	}
+	return a.resolveIntegration(ctx)
+}
+
+// resolveIntegration accepts only a bearer API key. Browser cookies and human
+// JWTs never become integration identities.
+func (a *API) resolveIntegration(ctx context.Context) (*model.Integration, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	key, ok := extractBearerToken(md)
+	if !ok {
+		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("invalid integration credentials"))
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(key)
+	if err != nil || len(raw) != 32 {
+		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("invalid integration credentials"))
+	}
+	hash := sha256.Sum256(raw)
+	integration, err := a.dao.IntegrationDao.GetIntegrationByAPIKeyHash(ctx, hash[:])
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		a.log.Error("integration credential lookup failed", "err", err)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not authenticate integration"))
+	}
+	if err != nil || integration.ID == 0 {
+		return nil, e.WithStatus(http.StatusUnauthorized, errors.New("invalid integration credentials"))
+	}
+	return &integration, nil
 }
 
 // ErrNoCredentials means nothing was presented to authenticate with, as opposed to

@@ -10,6 +10,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	model "github.com/TUM-Dev/gocast/model"
@@ -52,6 +53,21 @@ func (m *MockIntegrationDao) CreateIntegration(arg0 *model.Integration) error {
 func (mr *MockIntegrationDaoMockRecorder) CreateIntegration(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIntegration", reflect.TypeOf((*MockIntegrationDao)(nil).CreateIntegration), arg0)
+}
+
+// GetIntegrationByAPIKeyHash mocks base method.
+func (m *MockIntegrationDao) GetIntegrationByAPIKeyHash(arg0 context.Context, arg1 []byte) (model.Integration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIntegrationByAPIKeyHash", arg0, arg1)
+	ret0, _ := ret[0].(model.Integration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIntegrationByAPIKeyHash indicates an expected call of GetIntegrationByAPIKeyHash.
+func (mr *MockIntegrationDaoMockRecorder) GetIntegrationByAPIKeyHash(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegrationByAPIKeyHash", reflect.TypeOf((*MockIntegrationDao)(nil).GetIntegrationByAPIKeyHash), arg0, arg1)
 }
 
 // GetIntegrations mocks base method.
