@@ -12,6 +12,8 @@ github.com/Masterminds/sprig/v3 v3.3.0 h1:mQh0Yrg1XPo6vjYXgtf5OtijNAKJRNcTdOOGZe
 github.com/Masterminds/sprig/v3 v3.3.0/go.mod h1:Zy1iXRYNqNLUolqCpL4uhk6SHUMAOSCzdgBfDb35Lz0=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002102603-e29517f689c2 h1:mOgRe78Ni7RMcfMzKfWckt6I+SIHGpO0Z/pByaB8gDc=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002102603-e29517f689c2/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
+github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002124047-731968eb4470 h1:A8+WD24ts8fv4H1lfW0BfvWE3A35zHPEenZ2ZWnyLmg=
+github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002124047-731968eb4470/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
 github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b h1:87IltMZV7hN5jGCHbqDIEf0p8+X0f4Ep40PRmz1Mexg=
 github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b/go.mod h1:Nw30dUekEb8ZrJwoGck0lILeVDCIX9dqJsEAPSOxBs0=
 github.com/RBG-TUM/go-anel-pwrctrl v1.0.0 h1:8V7MV6oyg+sQzSRWhEfgg9FcOaQMGBreOh3TIu9HS+w=
