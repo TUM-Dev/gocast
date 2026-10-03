@@ -23,7 +23,7 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		"input":         req.GetInput(),
 	}
 	r.log.Info("RequestStream data constructed", "data", data)
-	a := []actions.Action{
+	stream := []actions.Action{
 		actions.Stream,
 		actions.StreamEnd,
 	}
@@ -32,7 +32,10 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
-	jID := r.RunAction(a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
+	discard := []actions.Action{
+		actions.DiscardRecording,
+	}
+	jID := r.RunAction(stream, vod, discard, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
 	r.log.Info("job added", "ID", jID)
 
 	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
@@ -40,16 +43,23 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 
 func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
 	r.jobsMu.Lock()
-	cancel, ok := r.jobs[req.GetJobId()]
+	j, ok := r.jobs[req.GetJobId()]
 	if ok {
 		r.discard[req.GetJobId()] = req.GetDiscardVod()
 	}
 	r.jobsMu.Unlock()
-	if ok {
-		cancel()
-		return &protobuf.StreamEndResponse{}, nil
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "job %s not found", req.GetJobId())
 	}
-	return nil, status.Errorf(codes.NotFound, "job %s not found", req.GetJobId())
+	j.endStream()
+	// A discard can arrive once the stream has already ended and the VoD is being made
+	// -- the recording is long and the request is a person clicking. Ending the after
+	// phase too stops the conversion where it is, before it announces a VoD that was
+	// asked not to exist; RunAction then runs the discard actions instead.
+	if req.GetDiscardVod() {
+		j.endAfter()
+	}
+	return &protobuf.StreamEndResponse{}, nil
 }
 
 // RequestSectionImages generates a thumbnail for each of the given video sections of an
@@ -79,8 +89,8 @@ func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionIm
 		"sections":    sections,
 	}
 
-	// A section image job has no VoD phase, so there is nothing to skip on discard.
-	jID := r.RunAction([]actions.Action{actions.MkSectionImages}, nil, data,
+	// A section image job has no VoD phase, so there is nothing to skip or discard.
+	jID := r.RunAction([]actions.Action{actions.MkSectionImages}, nil, nil, data,
 		r.log.With("stream_id", req.GetStreamId(), "sections", len(sections)))
 	r.log.Info("section image job added", "ID", jID)
 
