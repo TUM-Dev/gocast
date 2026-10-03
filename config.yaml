@@ -30,7 +30,8 @@ db:
   database: tumlive
   password: example
   user: root
-ingestbase: rtmp://ingest.tum.live/
+# The compose service that runs mediamtx; the runner pulls self-streams from it.
+ingestbase: rtmp://ingest/
 # Port for the prometheus /metrics endpoint. Keep it off the public internet.
 # Leave empty or omit to disable. Deliberately distinct from the edge worker's
 # 2112 and the runner's 9947, so all three can run side by side in development.
