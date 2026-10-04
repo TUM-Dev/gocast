@@ -1946,6 +1946,79 @@
         ]
       }
     },
+    "/courses/{courseId}/stats": {
+      "get": {
+        "summary": "Get a course's usage statistics.",
+        "description": "Returns the quick counters and charted viewer activity of one course. Requires administering the course.",
+        "operationId": "CourseService_getCourseStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/stats/export": {
+      "get": {
+        "summary": "Export a course's usage statistics.",
+        "description": "Bundles the same data getCourseStats returns as a single downloadable file, as JSON or CSV. Requires administering the course.",
+        "operationId": "CourseService_exportCourseStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiHttpBody"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "format",
+            "description": "\"json\" or \"csv\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}/presets/{presetId}/switch": {
       "post": {
         "summary": "Switch a live stream's camera to a preset.",
@@ -3157,6 +3230,51 @@
           }
         }
       }
+    },
+    "protobufCourseStatsResponse": {
+      "type": "object",
+      "properties": {
+        "courseName": {
+          "type": "string"
+        },
+        "numStudents": {
+          "type": "string",
+          "format": "int64"
+        },
+        "vodViews": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "liveViews": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numLectures": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Streams of the course that are recorded or currently live (model.Course.NumStreams)."
+        },
+        "activityLive": {
+          "$ref": "#/definitions/protobufServerStatsSeries"
+        },
+        "activityVod": {
+          "$ref": "#/definitions/protobufServerStatsSeries"
+        },
+        "hourly": {
+          "$ref": "#/definitions/protobufServerStatsSeries"
+        },
+        "weekdays": {
+          "$ref": "#/definitions/protobufServerStatsSeries"
+        },
+        "allDays": {
+          "$ref": "#/definitions/protobufServerStatsSeries"
+        },
+        "partialHistory": {
+          "type": "boolean",
+          "description": "Set for courses from 2022 or earlier, which ran partly before viewing data was\ncollected (from 28 June 2021), so their numbers undercount."
+        }
+      },
+      "description": "The course page's counterpart of ServerStatsResponse; the series are the same, each\ncounted over this course alone."
     },
     "protobufCourseStream": {
       "type": "object",

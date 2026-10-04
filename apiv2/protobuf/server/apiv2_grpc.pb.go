@@ -615,13 +615,15 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	CourseService_GetPublicCourses_FullMethodName = "/protobuf.CourseService/getPublicCourses"
-	CourseService_GetCourseBySlug_FullMethodName  = "/protobuf.CourseService/getCourseBySlug"
-	CourseService_GetUserCourses_FullMethodName   = "/protobuf.CourseService/getUserCourses"
-	CourseService_GetPinnedCourses_FullMethodName = "/protobuf.CourseService/getPinnedCourses"
-	CourseService_GetLiveCourses_FullMethodName   = "/protobuf.CourseService/getLiveCourses"
-	CourseService_GetPinForCourse_FullMethodName  = "/protobuf.CourseService/getPinForCourse"
-	CourseService_PinCourse_FullMethodName        = "/protobuf.CourseService/pinCourse"
+	CourseService_GetPublicCourses_FullMethodName  = "/protobuf.CourseService/getPublicCourses"
+	CourseService_GetCourseBySlug_FullMethodName   = "/protobuf.CourseService/getCourseBySlug"
+	CourseService_GetUserCourses_FullMethodName    = "/protobuf.CourseService/getUserCourses"
+	CourseService_GetPinnedCourses_FullMethodName  = "/protobuf.CourseService/getPinnedCourses"
+	CourseService_GetLiveCourses_FullMethodName    = "/protobuf.CourseService/getLiveCourses"
+	CourseService_GetPinForCourse_FullMethodName   = "/protobuf.CourseService/getPinForCourse"
+	CourseService_PinCourse_FullMethodName         = "/protobuf.CourseService/pinCourse"
+	CourseService_GetCourseStats_FullMethodName    = "/protobuf.CourseService/getCourseStats"
+	CourseService_ExportCourseStats_FullMethodName = "/protobuf.CourseService/exportCourseStats"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -637,6 +639,10 @@ type CourseServiceClient interface {
 	GetLiveCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveCoursesResponse, error)
 	GetPinForCourse(ctx context.Context, in *GetPinForCourseRequest, opts ...grpc.CallOption) (*GetPinForCourseResponse, error)
 	PinCourse(ctx context.Context, in *PinCourseRequest, opts ...grpc.CallOption) (*PinCourseResponse, error)
+	// The course's own counterparts of getServerStats/exportServerStats, for its
+	// lecturers. The charts and the export carry the same series, scoped to the course.
+	GetCourseStats(ctx context.Context, in *GetCourseStatsRequest, opts ...grpc.CallOption) (*CourseStatsResponse, error)
+	ExportCourseStats(ctx context.Context, in *ExportCourseStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 }
 
 type courseServiceClient struct {
@@ -717,6 +723,26 @@ func (c *courseServiceClient) PinCourse(ctx context.Context, in *PinCourseReques
 	return out, nil
 }
 
+func (c *courseServiceClient) GetCourseStats(ctx context.Context, in *GetCourseStatsRequest, opts ...grpc.CallOption) (*CourseStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseStatsResponse)
+	err := c.cc.Invoke(ctx, CourseService_GetCourseStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) ExportCourseStats(ctx context.Context, in *ExportCourseStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(httpbody.HttpBody)
+	err := c.cc.Invoke(ctx, CourseService_ExportCourseStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -730,6 +756,10 @@ type CourseServiceServer interface {
 	GetLiveCourses(context.Context, *emptypb.Empty) (*GetLiveCoursesResponse, error)
 	GetPinForCourse(context.Context, *GetPinForCourseRequest) (*GetPinForCourseResponse, error)
 	PinCourse(context.Context, *PinCourseRequest) (*PinCourseResponse, error)
+	// The course's own counterparts of getServerStats/exportServerStats, for its
+	// lecturers. The charts and the export carry the same series, scoped to the course.
+	GetCourseStats(context.Context, *GetCourseStatsRequest) (*CourseStatsResponse, error)
+	ExportCourseStats(context.Context, *ExportCourseStatsRequest) (*httpbody.HttpBody, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -760,6 +790,12 @@ func (UnimplementedCourseServiceServer) GetPinForCourse(context.Context, *GetPin
 }
 func (UnimplementedCourseServiceServer) PinCourse(context.Context, *PinCourseRequest) (*PinCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PinCourse not implemented")
+}
+func (UnimplementedCourseServiceServer) GetCourseStats(context.Context, *GetCourseStatsRequest) (*CourseStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCourseStats not implemented")
+}
+func (UnimplementedCourseServiceServer) ExportCourseStats(context.Context, *ExportCourseStatsRequest) (*httpbody.HttpBody, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportCourseStats not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -908,6 +944,42 @@ func _CourseService_PinCourse_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_GetCourseStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCourseStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetCourseStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetCourseStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetCourseStats(ctx, req.(*GetCourseStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_ExportCourseStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportCourseStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ExportCourseStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ExportCourseStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ExportCourseStats(ctx, req.(*ExportCourseStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CourseService_ServiceDesc is the grpc.ServiceDesc for CourseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -942,6 +1014,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "pinCourse",
 			Handler:    _CourseService_PinCourse_Handler,
+		},
+		{
+			MethodName: "getCourseStats",
+			Handler:    _CourseService_GetCourseStats_Handler,
+		},
+		{
+			MethodName: "exportCourseStats",
+			Handler:    _CourseService_ExportCourseStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

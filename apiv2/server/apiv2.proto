@@ -249,6 +249,26 @@ service CourseService {
       description: "Pins or unpins a course for the user."
     };
   }
+
+  // The course's own counterparts of getServerStats/exportServerStats, for its
+  // lecturers. The charts and the export carry the same series, scoped to the course.
+  rpc getCourseStats(GetCourseStatsRequest) returns (CourseStatsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/stats"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get a course's usage statistics."
+      description: "Returns the quick counters and charted viewer activity of one course. Requires administering the course."
+    };
+  }
+
+  rpc exportCourseStats(ExportCourseStatsRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/courses/{course_id}/stats/export"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Export a course's usage statistics."
+      description: "Bundles the same data getCourseStats returns as a single downloadable file, as JSON or CSV. Requires administering the course."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -1996,6 +2016,35 @@ message ServerStatsResponse {
 message ExportServerStatsRequest {
   // "json" or "csv".
   string format = 1;
+}
+
+message GetCourseStatsRequest {
+  uint32 course_id = 1;
+}
+
+// The course page's counterpart of ServerStatsResponse; the series are the same, each
+// counted over this course alone.
+message CourseStatsResponse {
+  string course_name = 1;
+  int64 num_students = 2;
+  int32 vod_views = 3;
+  int32 live_views = 4;
+  // Streams of the course that are recorded or currently live (model.Course.NumStreams).
+  int32 num_lectures = 5;
+  ServerStatsSeries activity_live = 6;
+  ServerStatsSeries activity_vod = 7;
+  ServerStatsSeries hourly = 8;
+  ServerStatsSeries weekdays = 9;
+  ServerStatsSeries all_days = 10;
+  // Set for courses from 2022 or earlier, which ran partly before viewing data was
+  // collected (from 28 June 2021), so their numbers undercount.
+  bool partial_history = 11;
+}
+
+message ExportCourseStatsRequest {
+  uint32 course_id = 1;
+  // "json" or "csv".
+  string format = 2;
 }
 
 ///////////////////////////////

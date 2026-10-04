@@ -17,46 +17,62 @@ import (
 )
 
 // serverStatsCourseID is 0, which dao/statistics.go treats as "every course" rather
-// than one in particular. api/statistics.go's getStats/exportStats handlers use the
-// same trick for the courseID == 0 case of the per-course statistics page; that page
-// is unrelated to this endpoint beyond sharing the convention, and its handlers stay
-// in api/ untouched.
+// than one in particular. The course statistics RPCs (course_stats.go) run the same
+// queries with a real ID; requiresCourseAdmin refuses course 0, so they cannot be
+// used to reach the server-wide numbers.
 const serverStatsCourseID = 0
+
+// usageStats is what both statistics pages show, for one course or (with
+// serverStatsCourseID) for all of them.
+type usageStats struct {
+	numStudents  int64
+	vodViews     int
+	liveViews    int
+	activityLive []dao.Stat
+	activityVod  []dao.Stat
+	hourly       []dao.Stat
+	weekdays     []dao.Stat
+	allDays      []dao.Stat
+}
+
+func (a *API) collectUsageStats(courseID uint) (usageStats, error) {
+	var (
+		s   usageStats
+		err error
+	)
+	if s.numStudents, err = a.dao.StatisticsDao.GetCourseNumStudents(courseID); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if s.vodViews, err = a.dao.StatisticsDao.GetCourseNumVodViews(courseID); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if s.liveViews, err = a.dao.StatisticsDao.GetCourseNumLiveViews(courseID); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if s.activityLive, err = a.dao.StatisticsDao.GetStudentActivityCourseStats(courseID, true); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if s.activityVod, err = a.dao.StatisticsDao.GetStudentActivityCourseStats(courseID, false); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if s.hourly, err = a.dao.StatisticsDao.GetCourseStatsHourly(courseID); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if s.weekdays, err = a.dao.StatisticsDao.GetCourseStatsWeekdays(courseID); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if s.allDays, err = a.dao.StatisticsDao.GetCourseNumVodViewsPerDay(courseID); err != nil {
+		return s, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	return s, nil
+}
 
 // GetServerStats returns the quick counters and charted activity for the server-wide
 // statistics page. Gated on server.administer by its policy in services.go.
 func (a *API) GetServerStats(ctx context.Context, _ *emptypb.Empty) (*protobuf.ServerStatsResponse, error) {
-	numStudents, err := a.dao.StatisticsDao.GetCourseNumStudents(serverStatsCourseID)
+	stats, err := a.collectUsageStats(serverStatsCourseID)
 	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	vodViews, err := a.dao.StatisticsDao.GetCourseNumVodViews(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	liveViews, err := a.dao.StatisticsDao.GetCourseNumLiveViews(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	activityLive, err := a.dao.StatisticsDao.GetStudentActivityCourseStats(serverStatsCourseID, true)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	activityVod, err := a.dao.StatisticsDao.GetStudentActivityCourseStats(serverStatsCourseID, false)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	hourly, err := a.dao.StatisticsDao.GetCourseStatsHourly(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	weekdays, err := a.dao.StatisticsDao.GetCourseStatsWeekdays(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	allDays, err := a.dao.StatisticsDao.GetCourseNumVodViewsPerDay(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, err
 	}
 	streams, err := a.dao.StreamsDao.GetAllStreams()
 	if err != nil {
@@ -64,15 +80,15 @@ func (a *API) GetServerStats(ctx context.Context, _ *emptypb.Empty) (*protobuf.S
 	}
 
 	return &protobuf.ServerStatsResponse{
-		NumStudents:  numStudents,
-		VodViews:     int32(vodViews),
-		LiveViews:    int32(liveViews),
+		NumStudents:  stats.numStudents,
+		VodViews:     int32(stats.vodViews),
+		LiveViews:    int32(stats.liveViews),
 		NumLectures:  int32(numLectures(streams)),
-		ActivityLive: serverStatsSeries("Live", activityLive),
-		ActivityVod:  serverStatsSeries("VoD", activityVod),
-		Hourly:       serverStatsSeries("Sum(viewers)", hourly),
-		Weekdays:     serverStatsSeries("Sum(viewers)", weekdays),
-		AllDays:      serverStatsSeries("views", allDays),
+		ActivityLive: serverStatsSeries("Live", stats.activityLive),
+		ActivityVod:  serverStatsSeries("VoD", stats.activityVod),
+		Hourly:       serverStatsSeries("Sum(viewers)", stats.hourly),
+		Weekdays:     serverStatsSeries("Sum(viewers)", stats.weekdays),
+		AllDays:      serverStatsSeries("views", stats.allDays),
 	}, nil
 }
 
@@ -98,61 +114,37 @@ func serverStatsSeries(label string, stats []dao.Stat) *protobuf.ServerStatsSeri
 
 // ExportServerStats bundles the same data GetServerStats renders into charts as a
 // single downloadable file, mirroring api/statistics.go's exportStats for its
-// courseID == 0 case (that handler is left in place; it still serves the per-course
-// page's export).
+// courseID == 0 case.
 func (a *API) ExportServerStats(ctx context.Context, req *protobuf.ExportServerStatsRequest) (*httpbody.HttpBody, error) {
-	format := req.GetFormat()
+	return a.exportUsageStats(serverStatsCourseID, req.GetFormat())
+}
+
+// exportUsageStats renders usageStats as the file v1's exportStats produced, with the
+// same entry names, so a spreadsheet built on the old export keeps working.
+func (a *API) exportUsageStats(courseID uint, format string) (*httpbody.HttpBody, error) {
 	if format != "json" && format != "csv" {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("format must be 'json' or 'csv'"))
 	}
 
-	weekdays, err := a.dao.StatisticsDao.GetCourseStatsWeekdays(serverStatsCourseID)
+	stats, err := a.collectUsageStats(courseID)
 	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	hourly, err := a.dao.StatisticsDao.GetCourseStatsHourly(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	activityLive, err := a.dao.StatisticsDao.GetStudentActivityCourseStats(serverStatsCourseID, true)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	activityVod, err := a.dao.StatisticsDao.GetStudentActivityCourseStats(serverStatsCourseID, false)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	allDays, err := a.dao.StatisticsDao.GetCourseNumVodViewsPerDay(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	numStudents, err := a.dao.StatisticsDao.GetCourseNumStudents(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	vodViews, err := a.dao.StatisticsDao.GetCourseNumVodViews(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	liveViews, err := a.dao.StatisticsDao.GetCourseNumLiveViews(serverStatsCourseID)
-	if err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
+		return nil, err
 	}
 
 	result := tools.ExportStatsContainer{}
-	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "day", XName: "Weekday", YName: "Sum(viewers)", Data: weekdays})
-	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "hour", XName: "Hour", YName: "Sum(viewers)", Data: hourly})
-	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "activity-live", XName: "Week", YName: "Live", Data: activityLive})
-	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "activity-vod", XName: "Week", YName: "VoD", Data: activityVod})
-	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "allDays", XName: "Week", YName: "VoD", Data: allDays})
+	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "day", XName: "Weekday", YName: "Sum(viewers)", Data: stats.weekdays})
+	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "hour", XName: "Hour", YName: "Sum(viewers)", Data: stats.hourly})
+	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "activity-live", XName: "Week", YName: "Live", Data: stats.activityLive})
+	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "activity-vod", XName: "Week", YName: "VoD", Data: stats.activityVod})
+	result = result.AddDataEntry(&tools.ExportDataEntry{Name: "allDays", XName: "Week", YName: "VoD", Data: stats.allDays})
 	result = result.AddDataEntry(&tools.ExportDataEntry{
 		Name:  "quickStats",
 		XName: "Property",
 		YName: "Value",
 		Data: []dao.Stat{
-			{X: "Enrolled Students", Y: int(numStudents)},
-			{X: "Vod Views", Y: vodViews},
-			{X: "Live Views", Y: liveViews},
+			{X: "Enrolled Students", Y: int(stats.numStudents)},
+			{X: "Vod Views", Y: stats.vodViews},
+			{X: "Live Views", Y: stats.liveViews},
 		},
 	})
 

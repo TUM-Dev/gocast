@@ -66,6 +66,10 @@ var services = []service{
 			"getPinnedCourses": authenticated,
 			"getPinForCourse":  authenticated,
 			"pinCourse":        authenticated,
+
+			// The course's own statistics, for its lecturers.
+			"getCourseStats":    requiresCourseAdmin(),
+			"exportCourseStats": requiresCourseAdmin(),
 		},
 	},
 	{
