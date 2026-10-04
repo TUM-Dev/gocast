@@ -1,7 +1,6 @@
 {{define "edit-course"}}
 <link rel="stylesheet" href="/static/assets/vendor/flatpickr/flatpickr.min.css">
 <script src="/static/assets/vendor/flatpickr/flatpickr.min.js"></script>
-<script src="/static/assets/vendor/chart.js/chart.umd.min.js"></script>
 {{- /*gotype: github.com/TUM-Dev/gocast/web.AdminPageData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 {{$lecture := .IndexData.TUMLiveContext.Stream}}
@@ -82,13 +81,10 @@
                         >Settings</button>
                     </li>
                     <li class="mr-2">
-                        <button
-                                @click="selectedTab = $el.dataset.tab"
-                                data-tab="statistics"
-                                :class="selectedTab == $el.dataset.tab ?
-                            'inline-block p-4 border-b-2 rounded-t-lg'
-                            : 'inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
-                        >Statistics</button>
+                        {{- /* Statistics moved to the SPA; this is a plain link, not an Alpine tab. */ -}}
+                        <a href="/admin/courses/{{$course.Model.ID}}/stats"
+                           class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                        >Statistics</a>
                     </li>
                     <li class="mr-2">
                         <button
@@ -133,10 +129,6 @@
                         <h2 class="form-container-title">Actions</h2>
                         {{template "dangerzone" $course}}
                     </div>
-                </div>
-
-                <div data-tab="statistics" x-show="selectedTab === $el.dataset.tab">
-                    {{template "stats" .IndexData}}
                 </div>
 
                 <div data-tab="external-participants" x-show="selectedTab === $el.dataset.tab">

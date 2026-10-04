@@ -185,7 +185,6 @@ func (r mainRoutes) UpdateCourse(c *gin.Context) {
 type AdminPageData struct {
 	IndexData      IndexData
 	Courses        []model.Course
-	LectureHalls   []model.LectureHall
 	Page           string
 	Semesters      []model.Semester
 	CurY           int
