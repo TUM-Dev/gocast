@@ -8,8 +8,9 @@ import { users } from "./seed";
  *
  * Stream 7 ("VL 1: Livestream") is course 2's (Spieleentwicklung für Dummies), which
  * prof2 administers and prof1 does not; it is the only lecture the dump records
- * viewer samples for -- nine, taken while it was live. Course 1 is prof1's. The page
- * reads the fixture only, so the file needs no reload.
+ * viewer samples for -- nine, taken while it was live. Course 1 is prof1's; its
+ * lecture 1 ("VL 1: Was ist Bier?") has no samples at all, which is most lectures. The
+ * page reads the fixture only, so the file needs no reload.
  */
 
 const page7 = "/admin/courses/2/lectures/7/stats";
@@ -69,6 +70,27 @@ test.describe("the lecture statistics page", () => {
 
     await expect(page.getByRole("alert")).toContainText("does not exist or you do not administer it");
     await expect(page.locator("canvas")).toHaveCount(0);
+  });
+});
+
+test.describe("a lecture nobody has watched", () => {
+  // MAX over no samples is NULL, which once failed the whole RPC.
+  test("shows zeros rather than an error", async ({ page }) => {
+    await login(page, users.prof1, "/admin/courses/1/lectures/1/stats");
+
+    await expect(page.getByRole("row", { name: /Max Live Views/ })).toContainText("0");
+    await expect(page.getByRole("row", { name: /Vod Views/ })).toContainText("0");
+    await expect(page.locator("canvas")).toHaveCount(3);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
+
+  test("is answered by the API", async ({ playwright }) => {
+    const context = await apiAs(playwright, users.prof1);
+
+    const response = await context.get("/api/v2/courses/1/streams/1/stats");
+    expect(response.status()).toBe(200);
+    // protojson leaves out zeros.
+    expect((await response.json()).maxLiveViews ?? 0).toBe(0);
   });
 });
 
