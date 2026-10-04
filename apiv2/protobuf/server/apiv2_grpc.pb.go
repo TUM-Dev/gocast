@@ -615,16 +615,18 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	CourseService_GetPublicCourses_FullMethodName  = "/protobuf.CourseService/getPublicCourses"
-	CourseService_GetCourseBySlug_FullMethodName   = "/protobuf.CourseService/getCourseBySlug"
-	CourseService_GetUserCourses_FullMethodName    = "/protobuf.CourseService/getUserCourses"
-	CourseService_GetPinnedCourses_FullMethodName  = "/protobuf.CourseService/getPinnedCourses"
-	CourseService_GetLiveCourses_FullMethodName    = "/protobuf.CourseService/getLiveCourses"
-	CourseService_GetPinForCourse_FullMethodName   = "/protobuf.CourseService/getPinForCourse"
-	CourseService_PinCourse_FullMethodName         = "/protobuf.CourseService/pinCourse"
-	CourseService_GetCourseStats_FullMethodName    = "/protobuf.CourseService/getCourseStats"
-	CourseService_ExportCourseStats_FullMethodName = "/protobuf.CourseService/exportCourseStats"
-	CourseService_GetLectureStats_FullMethodName   = "/protobuf.CourseService/getLectureStats"
+	CourseService_GetPublicCourses_FullMethodName       = "/protobuf.CourseService/getPublicCourses"
+	CourseService_GetCourseBySlug_FullMethodName        = "/protobuf.CourseService/getCourseBySlug"
+	CourseService_GetUserCourses_FullMethodName         = "/protobuf.CourseService/getUserCourses"
+	CourseService_GetPinnedCourses_FullMethodName       = "/protobuf.CourseService/getPinnedCourses"
+	CourseService_GetLiveCourses_FullMethodName         = "/protobuf.CourseService/getLiveCourses"
+	CourseService_GetPinForCourse_FullMethodName        = "/protobuf.CourseService/getPinForCourse"
+	CourseService_PinCourse_FullMethodName              = "/protobuf.CourseService/pinCourse"
+	CourseService_GetCourseStats_FullMethodName         = "/protobuf.CourseService/getCourseStats"
+	CourseService_ExportCourseStats_FullMethodName      = "/protobuf.CourseService/exportCourseStats"
+	CourseService_GetLectureStats_FullMethodName        = "/protobuf.CourseService/getLectureStats"
+	CourseService_CreateCourse_FullMethodName           = "/protobuf.CourseService/createCourse"
+	CourseService_SearchTumOnlineCourses_FullMethodName = "/protobuf.CourseService/searchTumOnlineCourses"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -645,6 +647,10 @@ type CourseServiceClient interface {
 	GetCourseStats(ctx context.Context, in *GetCourseStatsRequest, opts ...grpc.CallOption) (*CourseStatsResponse, error)
 	ExportCourseStats(ctx context.Context, in *ExportCourseStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 	GetLectureStats(ctx context.Context, in *GetLectureStatsRequest, opts ...grpc.CallOption) (*LectureStatsResponse, error)
+	// Creating a course is open to every lecturer, not only to administrators of an
+	// existing one; the creator becomes its administrator.
+	CreateCourse(ctx context.Context, in *CreateCourseRequest, opts ...grpc.CallOption) (*CreateCourseResponse, error)
+	SearchTumOnlineCourses(ctx context.Context, in *SearchTumOnlineCoursesRequest, opts ...grpc.CallOption) (*SearchTumOnlineCoursesResponse, error)
 }
 
 type courseServiceClient struct {
@@ -755,6 +761,26 @@ func (c *courseServiceClient) GetLectureStats(ctx context.Context, in *GetLectur
 	return out, nil
 }
 
+func (c *courseServiceClient) CreateCourse(ctx context.Context, in *CreateCourseRequest, opts ...grpc.CallOption) (*CreateCourseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateCourseResponse)
+	err := c.cc.Invoke(ctx, CourseService_CreateCourse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) SearchTumOnlineCourses(ctx context.Context, in *SearchTumOnlineCoursesRequest, opts ...grpc.CallOption) (*SearchTumOnlineCoursesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchTumOnlineCoursesResponse)
+	err := c.cc.Invoke(ctx, CourseService_SearchTumOnlineCourses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -773,6 +799,10 @@ type CourseServiceServer interface {
 	GetCourseStats(context.Context, *GetCourseStatsRequest) (*CourseStatsResponse, error)
 	ExportCourseStats(context.Context, *ExportCourseStatsRequest) (*httpbody.HttpBody, error)
 	GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error)
+	// Creating a course is open to every lecturer, not only to administrators of an
+	// existing one; the creator becomes its administrator.
+	CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error)
+	SearchTumOnlineCourses(context.Context, *SearchTumOnlineCoursesRequest) (*SearchTumOnlineCoursesResponse, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -812,6 +842,12 @@ func (UnimplementedCourseServiceServer) ExportCourseStats(context.Context, *Expo
 }
 func (UnimplementedCourseServiceServer) GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLectureStats not implemented")
+}
+func (UnimplementedCourseServiceServer) CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCourse not implemented")
+}
+func (UnimplementedCourseServiceServer) SearchTumOnlineCourses(context.Context, *SearchTumOnlineCoursesRequest) (*SearchTumOnlineCoursesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchTumOnlineCourses not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -1014,6 +1050,42 @@ func _CourseService_GetLectureStats_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_CreateCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCourseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).CreateCourse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_CreateCourse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).CreateCourse(ctx, req.(*CreateCourseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_SearchTumOnlineCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchTumOnlineCoursesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).SearchTumOnlineCourses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_SearchTumOnlineCourses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).SearchTumOnlineCourses(ctx, req.(*SearchTumOnlineCoursesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CourseService_ServiceDesc is the grpc.ServiceDesc for CourseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1060,6 +1132,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getLectureStats",
 			Handler:    _CourseService_GetLectureStats_Handler,
+		},
+		{
+			MethodName: "createCourse",
+			Handler:    _CourseService_CreateCourse_Handler,
+		},
+		{
+			MethodName: "searchTumOnlineCourses",
+			Handler:    _CourseService_SearchTumOnlineCourses_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -244,6 +244,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		dao.DB,
 		apiv2.WithCamService(camService),
 		apiv2.WithPresetImageDir(tools.Cfg.Paths.Static),
+		apiv2.WithTUMOnline(tum.Catalog{Dao: dao.NewDaoWrapper()}),
 	)
 
 	g, _ := errgroup.WithContext(ctx)

@@ -278,6 +278,29 @@ service CourseService {
       description: "Returns the viewer counters and charted activity of one of the course's lectures. Requires administering the course."
     };
   }
+
+  // Creating a course is open to every lecturer, not only to administrators of an
+  // existing one; the creator becomes its administrator.
+  rpc createCourse(CreateCourseRequest) returns (CreateCourseResponse) {
+    option (google.api.http) = {
+      post: "/courses"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Create a course."
+      description: "Creates a course visible to signed-in users, with VoDs on and downloads and chat off, and makes the caller its administrator. Requires the lecture permission. Answers 409 if the semester already has a course with the slug."
+    };
+  }
+
+  rpc searchTumOnlineCourses(SearchTumOnlineCoursesRequest) returns (SearchTumOnlineCoursesResponse) {
+    option (google.api.http) = {get: "/tumonline-courses"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Search TUMOnline's courses."
+      description: "Searches the courses prefetched from TUMOnline, to fill in a new course. Requires the lecture permission. Answers 503 when the search backend is unavailable."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -2054,6 +2077,39 @@ message ExportCourseStatsRequest {
   uint32 course_id = 1;
   // "json" or "csv".
   string format = 2;
+}
+
+message CreateCourseRequest {
+  string name = 1;
+  // Unique within the semester; letters, digits, '-' and '_'.
+  string slug = 2;
+  int32 year = 3;
+  // "W" or "S". A winter semester starts in `year`.
+  string term = 4;
+  // TUMOnline's ID for the course, when it was picked from searchTumOnlineCourses.
+  string tum_online_id = 5;
+  // "de", "en", or empty for unspecified.
+  string language = 6;
+}
+
+message CreateCourseResponse {
+  uint32 course_id = 1;
+}
+
+message SearchTumOnlineCoursesRequest {
+  string q = 1;
+}
+
+message TumOnlineCourse {
+  string tum_online_id = 1;
+  string name = 2;
+  int32 year = 3;
+  // "W" or "S".
+  string term = 4;
+}
+
+message SearchTumOnlineCoursesResponse {
+  repeated TumOnlineCourse courses = 1;
 }
 
 message GetLectureStatsRequest {

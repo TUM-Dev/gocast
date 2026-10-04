@@ -38,6 +38,9 @@ type API struct {
 	cams           CamService
 	presetImageDir string
 
+	// TUMOnline, for creating courses. Optional: see WithTUMOnline.
+	tumOnline TUMOnline
+
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedUserServiceServer
 	protobuf.UnimplementedCourseServiceServer

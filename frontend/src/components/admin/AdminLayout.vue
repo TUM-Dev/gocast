@@ -75,7 +75,7 @@ const administration: AdminLink[] = [
 
 const courses: AdminLink[] = [
   { label: "Schedule", path: "/admin", permission: "lecture" },
-  { label: "Create Course", path: "/admin/create-course", permission: "lecture" },
+  { label: "Create Course", path: "/admin/create-course", permission: "lecture", migrated: true },
 ];
 
 const auth = useAuthStore();
@@ -112,13 +112,22 @@ const courseLinks = allowed(courses);
 
       <section v-if="courseLinks.length" class="tum-live-side-navigation-group">
         <header class="text-2 text-xs uppercase tracking-wide">Courses</header>
-        <a
-          v-for="link in courseLinks"
-          :key="link.path"
-          :href="link.path"
-          class="tum-live-side-navigation-group-item hover text-5 block"
-          >{{ link.label }}</a
-        >
+        <template v-for="link in courseLinks" :key="link.path">
+          <RouterLink
+            v-if="link.migrated"
+            v-slot="{ isActive }"
+            :to="link.path"
+            class="tum-live-side-navigation-group-item hover block"
+          >
+            <span :class="isActive ? 'text-1 font-semibold' : 'text-5'">{{ link.label }}</span>
+          </RouterLink>
+          <a
+            v-else
+            :href="link.path"
+            class="tum-live-side-navigation-group-item hover text-5 block"
+            >{{ link.label }}</a
+          >
+        </template>
       </section>
     </nav>
 

@@ -1785,6 +1785,38 @@
         "tags": [
           "Courses"
         ]
+      },
+      "post": {
+        "summary": "Create a course.",
+        "description": "Creates a course visible to signed-in users, with VoDs on and downloads and chat off, and makes the caller its administrator. Requires the lecture permission. Answers 409 if the semester already has a course with the slug.",
+        "operationId": "CourseService_createCourse",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCreateCourseResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateCourseRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
       }
     },
     "/courses/enrolled": {
@@ -2620,6 +2652,38 @@
         ]
       }
     },
+    "/tumonline-courses": {
+      "get": {
+        "summary": "Search TUMOnline's courses.",
+        "description": "Searches the courses prefetched from TUMOnline, to fill in a new course. Requires the lecture permission. Answers 503 when the search backend is unavailable.",
+        "operationId": "CourseService_searchTumOnlineCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufSearchTumOnlineCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/users/export": {
       "get": {
         "summary": "Export user data.",
@@ -3330,6 +3394,43 @@
           "$ref": "#/definitions/protobufLectureHall"
         },
         "viewers": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufCreateCourseRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string",
+          "description": "Unique within the semester; letters, digits, '-' and '_'."
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "term": {
+          "type": "string",
+          "description": "\"W\" or \"S\". A winter semester starts in `year`."
+        },
+        "tumOnlineId": {
+          "type": "string",
+          "description": "TUMOnline's ID for the course, when it was picked from searchTumOnlineCourses."
+        },
+        "language": {
+          "type": "string",
+          "description": "\"de\", \"en\", or empty for unspecified."
+        }
+      }
+    },
+    "protobufCreateCourseResponse": {
+      "type": "object",
+      "properties": {
+        "courseId": {
           "type": "integer",
           "format": "int64"
         }
@@ -4250,6 +4351,18 @@
         }
       }
     },
+    "protobufSearchTumOnlineCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufTumOnlineCourse"
+          }
+        }
+      }
+    },
     "protobufSemester": {
       "type": "object",
       "properties": {
@@ -4573,6 +4686,25 @@
         }
       },
       "description": "TokenSecret carries a freshly created token's value. It is deliberately its own\nmessage, distinct from Token, so no future field added to Token can leak a secret\ninto the listing by accident."
+    },
+    "protobufTumOnlineCourse": {
+      "type": "object",
+      "properties": {
+        "tumOnlineId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "term": {
+          "type": "string",
+          "description": "\"W\" or \"S\"."
+        }
+      }
     },
     "protobufUpdateBookmarkResponse": {
       "type": "object",
