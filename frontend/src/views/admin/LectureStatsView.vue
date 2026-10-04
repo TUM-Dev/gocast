@@ -5,49 +5,49 @@ import { useRoute } from "vue-router";
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import StatsPanel from "@/components/admin/StatsPanel.vue";
 import { ApiError } from "@/lib/api";
-import { courseStatsExportLink, fetchCourseStats, type CourseStats } from "@/lib/course-stats";
-import { usageCharts, usageCounters } from "@/lib/usage-stats";
+import {
+  fetchLectureStats,
+  lectureCharts,
+  lectureCounters,
+  type LectureStats,
+} from "@/lib/lecture-stats";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
- * One course's usage statistics, for its lecturers. The server has already refused
- * anyone who does not administer the course before serving this page; getCourseStats
- * refuses them again, so the page cannot be the only guard.
+ * One lecture's usage statistics. As on the course page, the server refuses anyone
+ * who does not administer the course before serving this page, and getLectureStats
+ * refuses them again -- and also refuses a lecture that is not the course's.
  */
 const auth = useAuthStore();
 const route = useRoute();
 
 const courseId = computed(() => Number(route.params.courseID));
+const streamId = computed(() => Number(route.params.streamID));
 
-const stats = ref<CourseStats | null>(null);
+const stats = ref<LectureStats | null>(null);
 const loading = ref(true);
+const error = ref("");
 
 // Computed rather than called in the template: a fresh array on every render would
 // make StatsPanel redraw its charts each time.
-const counters = computed(() => (stats.value ? usageCounters(stats.value) : []));
-const charts = computed(() => (stats.value ? usageCharts(stats.value) : []));
-const error = ref("");
-
-const exportLinks = computed(() => ({
-  json: courseStatsExportLink(courseId.value, "json"),
-  csv: courseStatsExportLink(courseId.value, "csv"),
-}));
+const counters = computed(() => (stats.value ? lectureCounters(stats.value) : []));
+const charts = computed(() => (stats.value ? lectureCharts(stats.value) : []));
 
 function message(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.isUnauthenticated) return "Your session expired. Please sign in again.";
-    // A course the caller does not administer answers the same as a missing one.
-    if (err.status === 404) return "This course does not exist or you do not administer it.";
+    // A lecture outside the course answers the same as a missing one.
+    if (err.status === 404) return "This lecture does not exist or you do not administer it.";
     return err.message;
   }
   return "Something went wrong. Please try again.";
 }
 
-async function load(id: number): Promise<void> {
+async function load(course: number, stream: number): Promise<void> {
   loading.value = true;
   stats.value = null;
   try {
-    stats.value = await fetchCourseStats(id);
+    stats.value = await fetchLectureStats(course, stream);
     error.value = "";
   } catch (err) {
     error.value = message(err);
@@ -57,14 +57,14 @@ async function load(id: number): Promise<void> {
 }
 
 watch(
-  courseId,
-  async (id) => {
+  [courseId, streamId],
+  async ([course, stream]) => {
     const user = await auth.load().catch(() => null);
     if (!user) {
       redirectToLogin();
       return;
     }
-    await load(id);
+    await load(course, stream);
   },
   { immediate: true },
 );
@@ -74,10 +74,12 @@ watch(
   <AdminLayout>
     <section class="mx-auto flex max-w-5xl flex-col gap-6">
       <header>
-        <h1 class="text-1 text-2xl font-bold">Statistics</h1>
+        <h1 class="text-1 text-2xl font-bold">Lecture Statistics</h1>
         <p v-if="stats" class="text-3">
-          <!-- The course's settings are still a server-rendered page. -->
-          <a :href="`/admin/course/${courseId}`" class="hover:underline">{{ stats.courseName }}</a>
+          <RouterLink :to="`/admin/courses/${courseId}/stats`" class="hover:underline">{{
+            stats.courseName
+          }}</RouterLink>
+          <template v-if="stats.lectureName"> · {{ stats.lectureName }}</template>
         </p>
       </header>
 
@@ -91,8 +93,6 @@ watch(
         v-else-if="stats"
         :counters="counters"
         :charts="charts"
-        :export-links="exportLinks"
-        :export-name="`course-${courseId}-stats`"
         :partial-history="stats.partialHistory"
       />
     </section>

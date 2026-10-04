@@ -624,6 +624,7 @@ const (
 	CourseService_PinCourse_FullMethodName         = "/protobuf.CourseService/pinCourse"
 	CourseService_GetCourseStats_FullMethodName    = "/protobuf.CourseService/getCourseStats"
 	CourseService_ExportCourseStats_FullMethodName = "/protobuf.CourseService/exportCourseStats"
+	CourseService_GetLectureStats_FullMethodName   = "/protobuf.CourseService/getLectureStats"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -643,6 +644,7 @@ type CourseServiceClient interface {
 	// lecturers. The charts and the export carry the same series, scoped to the course.
 	GetCourseStats(ctx context.Context, in *GetCourseStatsRequest, opts ...grpc.CallOption) (*CourseStatsResponse, error)
 	ExportCourseStats(ctx context.Context, in *ExportCourseStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
+	GetLectureStats(ctx context.Context, in *GetLectureStatsRequest, opts ...grpc.CallOption) (*LectureStatsResponse, error)
 }
 
 type courseServiceClient struct {
@@ -743,6 +745,16 @@ func (c *courseServiceClient) ExportCourseStats(ctx context.Context, in *ExportC
 	return out, nil
 }
 
+func (c *courseServiceClient) GetLectureStats(ctx context.Context, in *GetLectureStatsRequest, opts ...grpc.CallOption) (*LectureStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LectureStatsResponse)
+	err := c.cc.Invoke(ctx, CourseService_GetLectureStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -760,6 +772,7 @@ type CourseServiceServer interface {
 	// lecturers. The charts and the export carry the same series, scoped to the course.
 	GetCourseStats(context.Context, *GetCourseStatsRequest) (*CourseStatsResponse, error)
 	ExportCourseStats(context.Context, *ExportCourseStatsRequest) (*httpbody.HttpBody, error)
+	GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -796,6 +809,9 @@ func (UnimplementedCourseServiceServer) GetCourseStats(context.Context, *GetCour
 }
 func (UnimplementedCourseServiceServer) ExportCourseStats(context.Context, *ExportCourseStatsRequest) (*httpbody.HttpBody, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExportCourseStats not implemented")
+}
+func (UnimplementedCourseServiceServer) GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLectureStats not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -980,6 +996,24 @@ func _CourseService_ExportCourseStats_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_GetLectureStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLectureStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetLectureStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetLectureStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetLectureStats(ctx, req.(*GetLectureStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CourseService_ServiceDesc is the grpc.ServiceDesc for CourseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1022,6 +1056,10 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "exportCourseStats",
 			Handler:    _CourseService_ExportCourseStats_Handler,
+		},
+		{
+			MethodName: "getLectureStats",
+			Handler:    _CourseService_GetLectureStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

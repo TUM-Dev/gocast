@@ -76,6 +76,7 @@ var spaRoutes = map[string]bool{
 	"/admin/lecture-halls":           true,
 	"/admin/lecture-halls/new":       true,
 	"/admin/courses/:courseID/stats": true,
+	"/admin/courses/:courseID/lectures/:streamID/stats": true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -350,12 +351,17 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/admin/course/:courseID/stats", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/stats")
 	})
+	router.GET("/admin/stats/:courseID/:streamID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
+			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/stats")
+	})
 
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
-	withStream.GET("/admin/stats/:courseID/:streamID", routes.LectureStatsPage)
+	// Rule 3's nested path; the old one redirects below.
+	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats", nil)
 	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
 
 	// login/logout/password-mgmt

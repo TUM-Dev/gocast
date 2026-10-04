@@ -2067,6 +2067,47 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}/stats": {
+      "get": {
+        "summary": "Get one lecture's usage statistics.",
+        "description": "Returns the viewer counters and charted activity of one of the course's lectures. Requires administering the course.",
+        "operationId": "CourseService_getLectureStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLectureStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "description": "Must be one of the course's lectures; anything else answers as missing.",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{slug}": {
       "get": {
         "summary": "Get course by slug.",
@@ -3817,6 +3858,55 @@
         }
       },
       "description": "LectureHallAdmin is a lecture hall as an administrator configures it: the stream\nsources the worker/runner pulls from plus the optional hardware addresses. Distinct\nfrom LectureHall (LECTURE_HALL_MESSAGE above), which is the trimmed shape shown to\nviewers."
+    },
+    "protobufLectureStatsResponse": {
+      "type": "object",
+      "properties": {
+        "courseName": {
+          "type": "string"
+        },
+        "lectureName": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "numStudents": {
+          "type": "string",
+          "format": "int64",
+          "description": "Enrolled in the course; a lecture has no enrolment of its own."
+        },
+        "vodViews": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "maxLiveViews": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The most viewers the lecture had at once while it was live."
+        },
+        "liveViewers": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "Concurrent viewers through the live lecture, by time of day."
+        },
+        "weekdays": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "VoD views by day of week."
+        },
+        "allDays": {
+          "$ref": "#/definitions/protobufServerStatsSeries",
+          "description": "VoD views by calendar day."
+        },
+        "partialHistory": {
+          "type": "boolean",
+          "description": "Set for lectures from 2021 or earlier, which can predate the viewing data\n(collected from 28 June 2021), so their numbers undercount."
+        }
+      }
     },
     "protobufListAuditsResponse": {
       "type": "object",

@@ -70,6 +70,8 @@ var services = []service{
 			// The course's own statistics, for its lecturers.
 			"getCourseStats":    requiresCourseAdmin(),
 			"exportCourseStats": requiresCourseAdmin(),
+			// The handler also checks the lecture is the course's.
+			"getLectureStats": requiresCourseAdmin(),
 		},
 	},
 	{
