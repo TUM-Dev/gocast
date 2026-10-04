@@ -8,10 +8,10 @@ import { users } from "./seed";
  * endpoints behind it refuse everyone without server.administer — a hidden control
  * being no substitute for that.
  *
- * api/statistics.go's getStats/exportStats handlers still serve the per-course and
- * per-lecture statistics pages (courseID != 0) and are unrelated to this page beyond
- * sharing the "courseID 0 means every course" convention; those handlers, their
- * template and web/ts/stats.ts are left untouched by this migration.
+ * api/statistics.go's getStats/exportStats handlers still serve the per-lecture
+ * statistics page and the edit-course page's statistics tab, and are unrelated to
+ * this page beyond sharing the "courseID 0 means every course" convention. The
+ * course's own statistics page is course-stats.spec.ts.
  */
 
 test.describe("the server statistics page", () => {

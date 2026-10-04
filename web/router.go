@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 
@@ -51,29 +52,30 @@ const spaShellPath = "spa/index.html"
 // spa-routes.test.ts enforces that. Removing one moves the page back, but only while
 // its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
-	"/settings":                   true,
-	"/login":                      true,
-	"/":                           true,
-	"/courses/mine":               true,
-	"/courses/public":             true,
-	"/course/:year/:term/:slug":   true,
-	"/admin/runners":              true,
-	"/admin/integrations":         true,
-	"/admin/users":                true,
-	"/admin/info-pages":           true,
-	"/admin/workers":              true,
-	"/admin/maintenance":          true,
-	"/admin/course-import":        true,
-	"/admin/token":                true,
-	"/privacy":                    true,
-	"/imprint":                    true,
-	"/about":                      true,
-	"/admin/server-notifications": true,
-	"/admin/notifications":        true,
-	"/admin/audits":               true,
-	"/admin/server-stats":         true,
-	"/admin/lecture-halls":        true,
-	"/admin/lecture-halls/new":    true,
+	"/settings":                      true,
+	"/login":                         true,
+	"/":                              true,
+	"/courses/mine":                  true,
+	"/courses/public":                true,
+	"/course/:year/:term/:slug":      true,
+	"/admin/runners":                 true,
+	"/admin/integrations":            true,
+	"/admin/users":                   true,
+	"/admin/info-pages":              true,
+	"/admin/workers":                 true,
+	"/admin/maintenance":             true,
+	"/admin/course-import":           true,
+	"/admin/token":                   true,
+	"/privacy":                       true,
+	"/imprint":                       true,
+	"/about":                         true,
+	"/admin/server-notifications":    true,
+	"/admin/notifications":           true,
+	"/admin/audits":                  true,
+	"/admin/server-stats":            true,
+	"/admin/lecture-halls":           true,
+	"/admin/lecture-halls/new":       true,
+	"/admin/courses/:courseID/stats": true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -339,8 +341,15 @@ func configMainRoute(router *gin.Engine) {
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
 	courseAdminGroup.Use(tools.AdminOfCourse)
 	courseAdminGroup.GET("/admin/course/:courseID", routes.EditCoursePage)
-	courseAdminGroup.GET("/admin/course/:courseID/stats", routes.CourseStatsPage)
+	// The first page on rule 2's plural path. The edit-course page's statistics tab
+	// shows the same thing; that tab becomes this route when the page migrates.
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/stats", nil)
 	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
+
+	// Outside the course group, like the redirects above: the destination checks.
+	router.GET("/admin/course/:courseID/stats", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/stats")
+	})
 
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))

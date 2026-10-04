@@ -176,35 +176,6 @@ func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
 	}
 }
 
-func (r mainRoutes) CourseStatsPage(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	indexData := NewIndexData()
-	indexData.TUMLiveContext = tumLiveContext
-	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
-	if err != nil {
-		logger.Error("couldn't query courses for user.", "err", err)
-		courses = []model.Course{}
-	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
-	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
-		IndexData: indexData,
-		Courses:   courses,
-		Page:      "stats",
-		Semesters: semesters,
-		CurY:      tumLiveContext.Course.Year,
-		CurT:      tumLiveContext.Course.TeachingTerm,
-	})
-	if err != nil {
-		logger.Error("Error getting available semesters", "err", err)
-	}
-}
-
 func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
