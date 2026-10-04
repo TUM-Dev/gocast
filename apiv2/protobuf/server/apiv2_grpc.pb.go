@@ -949,17 +949,18 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	StreamService_GetStream_FullMethodName         = "/protobuf.StreamService/getStream"
-	StreamService_GetVideoSections_FullMethodName  = "/protobuf.StreamService/getVideoSections"
-	StreamService_GetStreamPlaylist_FullMethodName = "/protobuf.StreamService/getStreamPlaylist"
-	StreamService_GetSubtitles_FullMethodName      = "/protobuf.StreamService/getSubtitles"
-	StreamService_GetThumbs_FullMethodName         = "/protobuf.StreamService/getThumbs"
-	StreamService_GetProgressBatch_FullMethodName  = "/protobuf.StreamService/getProgressBatch"
-	StreamService_UpdateProgress_FullMethodName    = "/protobuf.StreamService/updateProgress"
-	StreamService_AddBookmark_FullMethodName       = "/protobuf.StreamService/addBookmark"
-	StreamService_GetBookmarks_FullMethodName      = "/protobuf.StreamService/getBookmarks"
-	StreamService_UpdateBookmark_FullMethodName    = "/protobuf.StreamService/updateBookmark"
-	StreamService_DeleteBookmark_FullMethodName    = "/protobuf.StreamService/deleteBookmark"
+	StreamService_GetStream_FullMethodName          = "/protobuf.StreamService/getStream"
+	StreamService_GetVideoSections_FullMethodName   = "/protobuf.StreamService/getVideoSections"
+	StreamService_GetStreamPlaylist_FullMethodName  = "/protobuf.StreamService/getStreamPlaylist"
+	StreamService_GetSubtitles_FullMethodName       = "/protobuf.StreamService/getSubtitles"
+	StreamService_GetThumbs_FullMethodName          = "/protobuf.StreamService/getThumbs"
+	StreamService_GetProgressBatch_FullMethodName   = "/protobuf.StreamService/getProgressBatch"
+	StreamService_UpdateProgress_FullMethodName     = "/protobuf.StreamService/updateProgress"
+	StreamService_AddBookmark_FullMethodName        = "/protobuf.StreamService/addBookmark"
+	StreamService_GetBookmarks_FullMethodName       = "/protobuf.StreamService/getBookmarks"
+	StreamService_UpdateBookmark_FullMethodName     = "/protobuf.StreamService/updateBookmark"
+	StreamService_DeleteBookmark_FullMethodName     = "/protobuf.StreamService/deleteBookmark"
+	StreamService_SwitchCameraPreset_FullMethodName = "/protobuf.StreamService/switchCameraPreset"
 )
 
 // StreamServiceClient is the client API for StreamService service.
@@ -980,6 +981,10 @@ type StreamServiceClient interface {
 	GetBookmarks(ctx context.Context, in *GetBookmarksRequest, opts ...grpc.CallOption) (*GetBookmarksResponse, error)
 	UpdateBookmark(ctx context.Context, in *UpdateBookmarkRequest, opts ...grpc.CallOption) (*UpdateBookmarkResponse, error)
 	DeleteBookmark(ctx context.Context, in *DeleteBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Points the camera of a live stream's lecture hall at one of its presets. Reaches
+	// the physical camera, so it answers the way (*API).cameraFor documents on top of
+	// the usual permission failures.
+	SwitchCameraPreset(ctx context.Context, in *SwitchCameraPresetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type streamServiceClient struct {
@@ -1100,6 +1105,16 @@ func (c *streamServiceClient) DeleteBookmark(ctx context.Context, in *DeleteBook
 	return out, nil
 }
 
+func (c *streamServiceClient) SwitchCameraPreset(ctx context.Context, in *SwitchCameraPresetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StreamService_SwitchCameraPreset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StreamServiceServer is the server API for StreamService service.
 // All implementations must embed UnimplementedStreamServiceServer
 // for forward compatibility.
@@ -1118,6 +1133,10 @@ type StreamServiceServer interface {
 	GetBookmarks(context.Context, *GetBookmarksRequest) (*GetBookmarksResponse, error)
 	UpdateBookmark(context.Context, *UpdateBookmarkRequest) (*UpdateBookmarkResponse, error)
 	DeleteBookmark(context.Context, *DeleteBookmarkRequest) (*emptypb.Empty, error)
+	// Points the camera of a live stream's lecture hall at one of its presets. Reaches
+	// the physical camera, so it answers the way (*API).cameraFor documents on top of
+	// the usual permission failures.
+	SwitchCameraPreset(context.Context, *SwitchCameraPresetRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedStreamServiceServer()
 }
 
@@ -1160,6 +1179,9 @@ func (UnimplementedStreamServiceServer) UpdateBookmark(context.Context, *UpdateB
 }
 func (UnimplementedStreamServiceServer) DeleteBookmark(context.Context, *DeleteBookmarkRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteBookmark not implemented")
+}
+func (UnimplementedStreamServiceServer) SwitchCameraPreset(context.Context, *SwitchCameraPresetRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SwitchCameraPreset not implemented")
 }
 func (UnimplementedStreamServiceServer) mustEmbedUnimplementedStreamServiceServer() {}
 func (UnimplementedStreamServiceServer) testEmbeddedByValue()                       {}
@@ -1380,6 +1402,24 @@ func _StreamService_DeleteBookmark_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StreamService_SwitchCameraPreset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SwitchCameraPresetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).SwitchCameraPreset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_SwitchCameraPreset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).SwitchCameraPreset(ctx, req.(*SwitchCameraPresetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StreamService_ServiceDesc is the grpc.ServiceDesc for StreamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1430,6 +1470,10 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteBookmark",
 			Handler:    _StreamService_DeleteBookmark_Handler,
+		},
+		{
+			MethodName: "switchCameraPreset",
+			Handler:    _StreamService_SwitchCameraPreset_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

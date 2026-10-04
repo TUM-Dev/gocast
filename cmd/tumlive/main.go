@@ -261,7 +261,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Any("/api/v2/*any", api2Client.Proxy())
-	api.ConfigGinRouter(router, manager, camService)
+	api.ConfigGinRouter(router, manager)
 	web.ConfigGinRouter(router)
 	g.Go(func() error {
 		return router.RunListener(httpl)

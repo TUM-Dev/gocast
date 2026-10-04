@@ -6,50 +6,30 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/pkg/camera"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-var camSwitchDelay = time.Second * 5
-
-func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, camService CamService) {
-	routes := lectureHallRoutes{
-		DaoWrapper:    daoWrapper,
-		cameraService: camService,
-	}
+func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := lectureHallRoutes{DaoWrapper: daoWrapper}
 
 	admins := router.Group("/api")
 	admins.Use(tools.RequirePermission(model.PermAdministerServer))
 	// CRUD on lecture halls (create/update/delete) and camera preset management
-	// (refresh/default/snapshot) moved to v2 -- see apiv2/server/lecture_hall_admin.go.
-	// switchPreset below still points a camera at a preset, so the CamService stays
-	// wired into this router. The preset image directory left with takeSnapshot,
-	// which was the only thing here that wrote an image.
+	// (refresh/default/snapshot) moved to v2 -- see apiv2/server/lecture_hall_admin.go
+	// -- and switching a live stream's preset followed, to apiv2/server/stream_camera.go,
+	// taking the camera service with it.
 	admins.POST("/setLectureHall", routes.setLectureHall)
-
-	adminsOfCourse := router.Group("/api/course/:courseID/")
-	adminsOfCourse.Use(tools.InitCourse(daoWrapper))
-	adminsOfCourse.Use(tools.InitStream(daoWrapper))
-	adminsOfCourse.Use(tools.AdminOfCourse)
-	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset)
 
 	router.GET("/api/schedule.ics", routes.lectureHallIcal)
 }
 
-type CamService interface {
-	For(address string, cameraType model.CameraType) (camera.Cam, error)
-}
-
 type lectureHallRoutes struct {
 	dao.DaoWrapper
-
-	cameraService CamService
 }
 
 //go:embed template
@@ -105,58 +85,6 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", icalData)
 	if err != nil {
 		logger.Error("Error executing template ical.gotemplate", "err", err)
-	}
-}
-
-func (r lectureHallRoutes) switchPreset(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	if tumLiveContext.Stream == nil || !tumLiveContext.Stream.LiveNow {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid stream or stream not live",
-		})
-		return
-	}
-	preset, err := r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find preset",
-			Err:           err,
-		})
-		return
-	}
-	lh, err := r.LectureHallsDao.GetLectureHallByID(preset.LectureHallID)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find lecture hall",
-		})
-		return
-	}
-
-	ctrl, err := r.cameraService.For(lh.CameraIP, lh.CameraType)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not provide camera",
-			Err:           err,
-		})
-		return
-	}
-	err = ctrl.SetPreset(preset.PresetID)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not set preset on camera",
-			Err:           err,
-		})
-		return
-	}
-	select {
-	case <-time.After(camSwitchDelay):
-	case <-c.Request.Context().Done():
 	}
 }
 

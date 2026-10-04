@@ -42,7 +42,7 @@ func requires(p model.Permission) accessPolicy {
 
 // requiresCourseAdmin gates an RPC on administering the course its request names.
 // A policy rather than a handler-side check, so forgetting one cannot open an endpoint.
-func requiresCourseAdmin() accessPolicy { //nolint:unused // for the admin RPCs
+func requiresCourseAdmin() accessPolicy {
 	return accessPolicy{courseScoped: true}
 }
 

@@ -355,6 +355,18 @@ service StreamService {
       description: "Deletes a bookmark."
     };
   }
+
+  // Points the camera of a live stream's lecture hall at one of its presets. Reaches
+  // the physical camera, so it answers the way (*API).cameraFor documents on top of
+  // the usual permission failures.
+  rpc switchCameraPreset(SwitchCameraPresetRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {post: "/courses/{course_id}/streams/{stream_id}/presets/{preset_id}/switch"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Switch a live stream's camera to a preset."
+      description: "Moves the camera of the stream's lecture hall to the preset and returns once it has had time to arrive. The stream must be live and the preset must belong to its lecture hall. Requires administering the course."
+    };
+  }
 }
 
 // Server administration: everything belonging to no particular course.
@@ -2069,4 +2081,12 @@ message SetDefaultCameraPresetAdminRequest {
 message TakeCameraPresetSnapshotAdminRequest {
   uint32 lecture_hall_id = 1;
   uint32 preset_id = 2;
+}
+
+// The hall is not part of the request: it is the stream's, so a course's
+// administrators cannot reach the camera of a room their stream is not in.
+message SwitchCameraPresetRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 preset_id = 3;
 }
