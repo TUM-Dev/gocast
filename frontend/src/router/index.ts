@@ -17,6 +17,7 @@ import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import IntegrationsView from "@/views/admin/IntegrationsView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
+import TokensView from "@/views/admin/TokensView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import WorkersView from "@/views/admin/WorkersView.vue";
 import MyCoursesView from "@/views/MyCoursesView.vue";
@@ -146,6 +147,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/course-import",
     name: "admin-course-import",
     component: CourseImportView,
+  },
+  {
+    path: "/admin/token",
+    name: "admin-token",
+    component: TokensView,
   },
   {
     path: "/login",
