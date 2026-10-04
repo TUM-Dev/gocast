@@ -51,23 +51,24 @@ const spaShellPath = "spa/index.html"
 // spa-routes.test.ts enforces that. Removing one moves the page back, but only while
 // its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
-	"/settings":                 true,
-	"/login":                    true,
-	"/":                         true,
-	"/courses/mine":             true,
-	"/courses/public":           true,
-	"/course/:year/:term/:slug": true,
-	"/admin/runners":            true,
-	"/admin/integrations":       true,
-	"/admin/users":              true,
-	"/admin/info-pages":         true,
-	"/admin/workers":            true,
-	"/admin/maintenance":        true,
-	"/admin/course-import":      true,
-	"/admin/token":              true,
-	"/privacy":                  true,
-	"/imprint":                  true,
-	"/about":                    true,
+	"/settings":                   true,
+	"/login":                      true,
+	"/":                           true,
+	"/courses/mine":               true,
+	"/courses/public":             true,
+	"/course/:year/:term/:slug":   true,
+	"/admin/runners":              true,
+	"/admin/integrations":         true,
+	"/admin/users":                true,
+	"/admin/info-pages":           true,
+	"/admin/workers":              true,
+	"/admin/maintenance":          true,
+	"/admin/course-import":        true,
+	"/admin/token":                true,
+	"/privacy":                    true,
+	"/imprint":                    true,
+	"/about":                      true,
+	"/admin/server-notifications": true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -303,7 +304,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/workers", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
-	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-notifications", nil)
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)

@@ -142,6 +142,11 @@ var services = []service{
 			"listTokens":  requires(model.PermManageUsers),
 			"createToken": requires(model.PermManageUsers),
 			"deleteToken": requires(model.PermManageUsers),
+			// Server notifications belong to no course, same as runners.
+			"listServerNotificationsAdmin": requires(model.PermAdministerServer),
+			"createServerNotification":     requires(model.PermAdministerServer),
+			"updateServerNotification":     requires(model.PermAdministerServer),
+			"deleteServerNotification":     requires(model.PermAdministerServer),
 		},
 	},
 }
