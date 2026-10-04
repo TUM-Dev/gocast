@@ -126,12 +126,14 @@ async function load(): Promise<void> {
     const data = await fetchServerStats();
     stats.value = data;
     error.value = "";
-    // The canvases only exist once the v-else branch below renders.
+    // The canvases only exist once the v-else-if branch below renders, which needs
+    // loading cleared first -- clearing it in a finally runs after renderCharts and
+    // leaves every canvas blank.
+    loading.value = false;
     await nextTick();
     renderCharts(data);
   } catch (err) {
     error.value = message(err);
-  } finally {
     loading.value = false;
   }
 }
