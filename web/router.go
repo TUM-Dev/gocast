@@ -71,6 +71,7 @@ var spaRoutes = map[string]bool{
 	"/admin/server-notifications": true,
 	"/admin/notifications":        true,
 	"/admin/audits":               true,
+	"/admin/server-stats":         true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -307,8 +308,8 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/workers", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-notifications", nil)
-	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-stats", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/notifications", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/integrations", nil)

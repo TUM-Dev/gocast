@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -37,18 +36,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	page := GetPageString(c.Request.URL.Path)
-	switch page {
-	case "serverStats":
-		streams, err := r.StreamsDao.GetAllStreams()
-		if err != nil {
-			logger.Error("Can't get all streams", "err", err)
-			streams = []model.Stream{}
-		}
-		indexData.TUMLiveContext.Course = &model.Course{
-			Model:   gorm.Model{ID: 0},
-			Streams: streams,
-		}
-	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c, true)
 	y, t := tum.GetCurrentSemester()
 	hasTestCourse := tumLiveContext.User.HasTestCourse()
