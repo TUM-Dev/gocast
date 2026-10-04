@@ -87,6 +87,10 @@ var services = []service{
 			"getBookmarks":     authenticated,
 			"updateBookmark":   authenticated,
 			"deleteBookmark":   authenticated,
+
+			// Moves a lecture hall's camera; the handler checks the stream is the
+			// course's and takes the hall from it.
+			"switchCameraPreset": requiresCourseAdmin(),
 		},
 	},
 	{

@@ -12,8 +12,7 @@ import (
 // CamService hands out a controller for one camera. Declared here rather than taken
 // from pkg/camera so the tests can stand in a fake; *camera.Service satisfies it.
 //
-// The same interface exists in api/ and pkg/runner_manager for the same reason. They
-// are not worth unifying while v1 is being deleted.
+// The same interface exists in pkg/runner_manager for the same reason.
 type CamService interface {
 	For(address string, cameraType model.CameraType) (camera.Cam, error)
 }
