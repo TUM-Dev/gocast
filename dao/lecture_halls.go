@@ -22,6 +22,10 @@ type LectureHallsDao interface {
 	GetLectureHallByPartialName(name string) (model.LectureHall, error)
 	GetLectureHallByID(id uint) (model.LectureHall, error)
 	GetStreamsForLectureHallIcal(userId uint, lectureHalls []uint, all bool) ([]CalendarResult, error)
+	// GetSchedule returns the lectures overlapping [from, to) of the courses userID
+	// owns or administers -- every course for userID 0 -- in the given lecture halls,
+	// where hall 0 stands for lectures with none, or in every hall when all is set.
+	GetSchedule(userID uint, from, to time.Time, lectureHalls []uint, all bool) ([]ScheduleEntry, error)
 
 	UnsetDefaults(lectureHallID string) error
 
@@ -126,6 +130,68 @@ func (d lectureHallsDao) DeleteLectureHall(id uint) error {
 	DB.Delete(model.CameraPreset{}, "lecture_hall_id = ?", id)
 	DB.Exec("UPDATE streams SET lecture_hall_id = NULL WHERE lecture_hall_id = ?", id)
 	return nil
+}
+
+// ScheduleEntry is one lecture on the administration schedule.
+type ScheduleEntry struct {
+	StreamID        uint
+	CourseID        uint
+	CourseName      string
+	Name            string
+	Description     string
+	Start           time.Time
+	End             time.Time
+	LectureHallID   uint
+	LectureHallName string
+}
+
+// GetSchedule is GetStreamsForLectureHallIcal for a window the caller chooses rather
+// than a fixed one around today, with what the schedule page shows of each lecture.
+// The administrator check is a subquery rather than v1's join, which repeated a
+// lecture once per course admin and needed a GROUP BY to undo it.
+func (d lectureHallsDao) GetSchedule(userID uint, from, to time.Time, lectureHalls []uint, all bool) ([]ScheduleEntry, error) {
+	query := DB.Model(&model.Stream{}).
+		Joins("LEFT JOIN lecture_halls ON lecture_halls.id = streams.lecture_hall_id").
+		Joins("JOIN courses ON courses.id = streams.course_id").
+		Select("streams.id AS stream_id, courses.id AS course_id, courses.name AS course_name, "+
+			"streams.name, streams.description, streams.start, streams.end, "+
+			"IFNULL(streams.lecture_hall_id, 0) AS lecture_hall_id, "+
+			"IFNULL(lecture_halls.name, '') AS lecture_hall_name").
+		Where("streams.start < ? AND streams.end > ?", to, from).
+		Where("courses.deleted_at IS NULL").
+		Where("(? = 0 OR courses.user_id = ? OR EXISTS "+
+			"(SELECT 1 FROM course_admins WHERE course_admins.course_id = courses.id AND course_admins.user_id = ?))",
+			userID, userID, userID).
+		Order("streams.start")
+
+	if !all {
+		var halls []uint
+		withoutHall := false
+		for _, id := range lectureHalls {
+			if id == 0 {
+				withoutHall = true
+			} else {
+				halls = append(halls, id)
+			}
+		}
+
+		// A lecture with no hall has lecture_hall_id NULL or 0, depending on how it
+		// was saved.
+		switch {
+		case len(halls) > 0 && withoutHall:
+			query = query.Where("(streams.lecture_hall_id IN ? OR streams.lecture_hall_id IS NULL OR streams.lecture_hall_id = 0)", halls)
+		case len(halls) > 0:
+			query = query.Where("streams.lecture_hall_id IN ?", halls)
+		case withoutHall:
+			query = query.Where("(streams.lecture_hall_id IS NULL OR streams.lecture_hall_id = 0)")
+		default:
+			return []ScheduleEntry{}, nil
+		}
+	}
+
+	var res []ScheduleEntry
+	err := query.Scan(&res).Error
+	return res, err
 }
 
 type CalendarResult struct {

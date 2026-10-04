@@ -78,6 +78,7 @@ var spaRoutes = map[string]bool{
 	"/admin/courses/:courseID/stats": true,
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
 	"/admin/create-course":                              true,
+	"/admin":                                            true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -289,7 +290,7 @@ func configMainRoute(router *gin.Engine) {
 	// lecturers
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.RequirePermission(model.PermLecture))
-	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
+	registerPage(atLeastLecturerGroup, http.MethodGet, "/admin", nil)
 	registerPage(atLeastLecturerGroup, http.MethodGet, "/admin/create-course", nil)
 
 	// info-pages. Public, so no middleware; the rows are getInfoPage's business now.
@@ -302,8 +303,9 @@ func configMainRoute(router *gin.Engine) {
 
 	// admins
 	//
-	// AdminPage checks only that someone is signed in, so without these any student
-	// could render every tab. The template hid the links, which is not a guard.
+	// The SPA shell checks nothing itself, so without these any student could load
+	// every page. (The template these replaced only checked that someone was signed
+	// in, and hid the links, which is not a guard.)
 	//
 	// Split by what each page administers. Both permissions belong to admins today;
 	// the distinction is what makes an operator role a change to the role table.

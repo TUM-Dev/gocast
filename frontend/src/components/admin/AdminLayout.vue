@@ -74,7 +74,7 @@ const administration: AdminLink[] = [
 ];
 
 const courses: AdminLink[] = [
-  { label: "Schedule", path: "/admin", permission: "lecture" },
+  { label: "Schedule", path: "/admin", permission: "lecture", migrated: true },
   { label: "Create Course", path: "/admin/create-course", permission: "lecture", migrated: true },
 ];
 

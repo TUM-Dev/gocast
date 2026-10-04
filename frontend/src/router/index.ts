@@ -24,6 +24,7 @@ import LectureStatsView from "@/views/admin/LectureStatsView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
 import NotificationsView from "@/views/admin/NotificationsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
+import ScheduleView from "@/views/admin/ScheduleView.vue";
 import ServerNotificationsView from "@/views/admin/ServerNotificationsView.vue";
 import ServerStatsView from "@/views/admin/ServerStatsView.vue";
 import TokensView from "@/views/admin/TokensView.vue";
@@ -206,6 +207,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/create-course",
     name: "admin-create-course",
     component: CreateCourseView,
+  },
+  {
+    path: "/admin",
+    name: "admin-schedule",
+    component: ScheduleView,
   },
   {
     path: "/login",

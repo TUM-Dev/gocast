@@ -776,6 +776,123 @@ func local_request_CourseService_SearchTumOnlineCourses_0(ctx context.Context, m
 	return msg, metadata, err
 }
 
+var filter_CourseService_GetSchedule_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+
+func request_CourseService_GetSchedule_0(ctx context.Context, marshaler runtime.Marshaler, client CourseServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetScheduleRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_CourseService_GetSchedule_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetSchedule(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CourseService_GetSchedule_0(ctx context.Context, marshaler runtime.Marshaler, server CourseServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetScheduleRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_CourseService_GetSchedule_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.GetSchedule(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_CourseService_ListScheduleLectureHalls_0(ctx context.Context, marshaler runtime.Marshaler, client CourseServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.ListScheduleLectureHalls(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CourseService_ListScheduleLectureHalls_0(ctx context.Context, marshaler runtime.Marshaler, server CourseServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	msg, err := server.ListScheduleLectureHalls(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_CourseService_UpdateLecture_0(ctx context.Context, marshaler runtime.Marshaler, client CourseServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq UpdateLectureRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["course_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "course_id")
+	}
+	protoReq.CourseId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "course_id", err)
+	}
+	val, ok = pathParams["stream_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
+	}
+	protoReq.StreamId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stream_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.UpdateLecture(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CourseService_UpdateLecture_0(ctx context.Context, marshaler runtime.Marshaler, server CourseServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq UpdateLectureRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["course_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "course_id")
+	}
+	protoReq.CourseId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "course_id", err)
+	}
+	val, ok = pathParams["stream_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
+	}
+	protoReq.StreamId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stream_id", err)
+	}
+	msg, err := server.UpdateLecture(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_StreamService_GetStream_0(ctx context.Context, marshaler runtime.Marshaler, client StreamServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetStreamRequest
@@ -3399,6 +3516,66 @@ func RegisterCourseServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CourseService_SearchTumOnlineCourses_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_CourseService_GetSchedule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.CourseService/GetSchedule", runtime.WithHTTPPathPattern("/schedule"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CourseService_GetSchedule_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_GetSchedule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_CourseService_ListScheduleLectureHalls_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.CourseService/ListScheduleLectureHalls", runtime.WithHTTPPathPattern("/schedule/lecture-halls"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CourseService_ListScheduleLectureHalls_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_ListScheduleLectureHalls_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPatch, pattern_CourseService_UpdateLecture_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.CourseService/UpdateLecture", runtime.WithHTTPPathPattern("/courses/{course_id}/streams/{stream_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CourseService_UpdateLecture_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_UpdateLecture_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 
 	return nil
 }
@@ -5161,37 +5338,94 @@ func RegisterCourseServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CourseService_SearchTumOnlineCourses_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_CourseService_GetSchedule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.CourseService/GetSchedule", runtime.WithHTTPPathPattern("/schedule"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CourseService_GetSchedule_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_GetSchedule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_CourseService_ListScheduleLectureHalls_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.CourseService/ListScheduleLectureHalls", runtime.WithHTTPPathPattern("/schedule/lecture-halls"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CourseService_ListScheduleLectureHalls_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_ListScheduleLectureHalls_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPatch, pattern_CourseService_UpdateLecture_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.CourseService/UpdateLecture", runtime.WithHTTPPathPattern("/courses/{course_id}/streams/{stream_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CourseService_UpdateLecture_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_UpdateLecture_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
 var (
-	pattern_CourseService_GetPublicCourses_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"courses"}, ""))
-	pattern_CourseService_GetCourseBySlug_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"courses", "slug"}, ""))
-	pattern_CourseService_GetUserCourses_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "enrolled"}, ""))
-	pattern_CourseService_GetPinnedCourses_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "pinned"}, ""))
-	pattern_CourseService_GetLiveCourses_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "live"}, ""))
-	pattern_CourseService_GetPinForCourse_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "pin"}, ""))
-	pattern_CourseService_PinCourse_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "pin"}, ""))
-	pattern_CourseService_GetCourseStats_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "stats"}, ""))
-	pattern_CourseService_ExportCourseStats_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"courses", "course_id", "stats", "export"}, ""))
-	pattern_CourseService_GetLectureStats_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"courses", "course_id", "streams", "stream_id", "stats"}, ""))
-	pattern_CourseService_CreateCourse_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"courses"}, ""))
-	pattern_CourseService_SearchTumOnlineCourses_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"tumonline-courses"}, ""))
+	pattern_CourseService_GetPublicCourses_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"courses"}, ""))
+	pattern_CourseService_GetCourseBySlug_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"courses", "slug"}, ""))
+	pattern_CourseService_GetUserCourses_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "enrolled"}, ""))
+	pattern_CourseService_GetPinnedCourses_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "pinned"}, ""))
+	pattern_CourseService_GetLiveCourses_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "live"}, ""))
+	pattern_CourseService_GetPinForCourse_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "pin"}, ""))
+	pattern_CourseService_PinCourse_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "pin"}, ""))
+	pattern_CourseService_GetCourseStats_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "stats"}, ""))
+	pattern_CourseService_ExportCourseStats_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"courses", "course_id", "stats", "export"}, ""))
+	pattern_CourseService_GetLectureStats_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"courses", "course_id", "streams", "stream_id", "stats"}, ""))
+	pattern_CourseService_CreateCourse_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"courses"}, ""))
+	pattern_CourseService_SearchTumOnlineCourses_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"tumonline-courses"}, ""))
+	pattern_CourseService_GetSchedule_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"schedule"}, ""))
+	pattern_CourseService_ListScheduleLectureHalls_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"schedule", "lecture-halls"}, ""))
+	pattern_CourseService_UpdateLecture_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"courses", "course_id", "streams", "stream_id"}, ""))
 )
 
 var (
-	forward_CourseService_GetPublicCourses_0       = runtime.ForwardResponseMessage
-	forward_CourseService_GetCourseBySlug_0        = runtime.ForwardResponseMessage
-	forward_CourseService_GetUserCourses_0         = runtime.ForwardResponseMessage
-	forward_CourseService_GetPinnedCourses_0       = runtime.ForwardResponseMessage
-	forward_CourseService_GetLiveCourses_0         = runtime.ForwardResponseMessage
-	forward_CourseService_GetPinForCourse_0        = runtime.ForwardResponseMessage
-	forward_CourseService_PinCourse_0              = runtime.ForwardResponseMessage
-	forward_CourseService_GetCourseStats_0         = runtime.ForwardResponseMessage
-	forward_CourseService_ExportCourseStats_0      = runtime.ForwardResponseMessage
-	forward_CourseService_GetLectureStats_0        = runtime.ForwardResponseMessage
-	forward_CourseService_CreateCourse_0           = runtime.ForwardResponseMessage
-	forward_CourseService_SearchTumOnlineCourses_0 = runtime.ForwardResponseMessage
+	forward_CourseService_GetPublicCourses_0         = runtime.ForwardResponseMessage
+	forward_CourseService_GetCourseBySlug_0          = runtime.ForwardResponseMessage
+	forward_CourseService_GetUserCourses_0           = runtime.ForwardResponseMessage
+	forward_CourseService_GetPinnedCourses_0         = runtime.ForwardResponseMessage
+	forward_CourseService_GetLiveCourses_0           = runtime.ForwardResponseMessage
+	forward_CourseService_GetPinForCourse_0          = runtime.ForwardResponseMessage
+	forward_CourseService_PinCourse_0                = runtime.ForwardResponseMessage
+	forward_CourseService_GetCourseStats_0           = runtime.ForwardResponseMessage
+	forward_CourseService_ExportCourseStats_0        = runtime.ForwardResponseMessage
+	forward_CourseService_GetLectureStats_0          = runtime.ForwardResponseMessage
+	forward_CourseService_CreateCourse_0             = runtime.ForwardResponseMessage
+	forward_CourseService_SearchTumOnlineCourses_0   = runtime.ForwardResponseMessage
+	forward_CourseService_GetSchedule_0              = runtime.ForwardResponseMessage
+	forward_CourseService_ListScheduleLectureHalls_0 = runtime.ForwardResponseMessage
+	forward_CourseService_UpdateLecture_0            = runtime.ForwardResponseMessage
 )
 
 // RegisterStreamServiceHandlerFromEndpoint is same as RegisterStreamServiceHandler but

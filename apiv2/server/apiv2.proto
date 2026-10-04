@@ -301,6 +301,38 @@ service CourseService {
       description: "Searches the courses prefetched from TUMOnline, to fill in a new course. Requires the lecture permission. Answers 503 when the search backend is unavailable."
     };
   }
+
+  // The administration schedule: the lectures of the courses the caller administers
+  // (every course, for someone who may view them all), in a window of their choosing.
+  rpc getSchedule(GetScheduleRequest) returns (GetScheduleResponse) {
+    option (google.api.http) = {get: "/schedule"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get the lecture schedule."
+      description: "Returns the lectures overlapping [from, to) -- at most 100 days -- of the courses the caller administers, optionally only in some lecture halls. Requires the lecture permission."
+    };
+  }
+
+  rpc listScheduleLectureHalls(google.protobuf.Empty) returns (ListScheduleLectureHallsResponse) {
+    option (google.api.http) = {get: "/schedule/lecture-halls"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "List the lecture halls the schedule can be filtered by."
+      description: "Names and IDs only; listLectureHallsAdmin has the rest. Requires the lecture permission."
+    };
+  }
+
+  rpc updateLecture(UpdateLectureRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      patch: "/courses/{course_id}/streams/{stream_id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Rename a lecture or change its description."
+      description: "Sets the fields that are present and leaves the rest. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -2110,6 +2142,49 @@ message TumOnlineCourse {
 
 message SearchTumOnlineCoursesResponse {
   repeated TumOnlineCourse courses = 1;
+}
+
+message GetScheduleRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // Only lectures in these halls; 0 stands for lectures in none. Ignored when
+  // all_lecture_halls is set.
+  repeated uint32 lecture_hall_ids = 3;
+  bool all_lecture_halls = 4;
+}
+
+message ScheduledLecture {
+  uint32 stream_id = 1;
+  uint32 course_id = 2;
+  string course_name = 3;
+  string name = 4;
+  string description = 5;
+  google.protobuf.Timestamp start = 6;
+  google.protobuf.Timestamp end = 7;
+  // 0 and empty for a lecture in no hall (self-streamed).
+  uint32 lecture_hall_id = 8;
+  string lecture_hall_name = 9;
+}
+
+message GetScheduleResponse {
+  repeated ScheduledLecture lectures = 1;
+}
+
+message ScheduleLectureHall {
+  uint32 id = 1;
+  string name = 2;
+}
+
+message ListScheduleLectureHallsResponse {
+  repeated ScheduleLectureHall lecture_halls = 1;
+}
+
+message UpdateLectureRequest {
+  uint32 course_id = 1;
+  // Must be one of the course's lectures; anything else answers as missing.
+  uint32 stream_id = 2;
+  optional string name = 3;
+  optional string description = 4;
 }
 
 message GetLectureStatsRequest {

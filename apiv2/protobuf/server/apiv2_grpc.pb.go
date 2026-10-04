@@ -615,18 +615,21 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	CourseService_GetPublicCourses_FullMethodName       = "/protobuf.CourseService/getPublicCourses"
-	CourseService_GetCourseBySlug_FullMethodName        = "/protobuf.CourseService/getCourseBySlug"
-	CourseService_GetUserCourses_FullMethodName         = "/protobuf.CourseService/getUserCourses"
-	CourseService_GetPinnedCourses_FullMethodName       = "/protobuf.CourseService/getPinnedCourses"
-	CourseService_GetLiveCourses_FullMethodName         = "/protobuf.CourseService/getLiveCourses"
-	CourseService_GetPinForCourse_FullMethodName        = "/protobuf.CourseService/getPinForCourse"
-	CourseService_PinCourse_FullMethodName              = "/protobuf.CourseService/pinCourse"
-	CourseService_GetCourseStats_FullMethodName         = "/protobuf.CourseService/getCourseStats"
-	CourseService_ExportCourseStats_FullMethodName      = "/protobuf.CourseService/exportCourseStats"
-	CourseService_GetLectureStats_FullMethodName        = "/protobuf.CourseService/getLectureStats"
-	CourseService_CreateCourse_FullMethodName           = "/protobuf.CourseService/createCourse"
-	CourseService_SearchTumOnlineCourses_FullMethodName = "/protobuf.CourseService/searchTumOnlineCourses"
+	CourseService_GetPublicCourses_FullMethodName         = "/protobuf.CourseService/getPublicCourses"
+	CourseService_GetCourseBySlug_FullMethodName          = "/protobuf.CourseService/getCourseBySlug"
+	CourseService_GetUserCourses_FullMethodName           = "/protobuf.CourseService/getUserCourses"
+	CourseService_GetPinnedCourses_FullMethodName         = "/protobuf.CourseService/getPinnedCourses"
+	CourseService_GetLiveCourses_FullMethodName           = "/protobuf.CourseService/getLiveCourses"
+	CourseService_GetPinForCourse_FullMethodName          = "/protobuf.CourseService/getPinForCourse"
+	CourseService_PinCourse_FullMethodName                = "/protobuf.CourseService/pinCourse"
+	CourseService_GetCourseStats_FullMethodName           = "/protobuf.CourseService/getCourseStats"
+	CourseService_ExportCourseStats_FullMethodName        = "/protobuf.CourseService/exportCourseStats"
+	CourseService_GetLectureStats_FullMethodName          = "/protobuf.CourseService/getLectureStats"
+	CourseService_CreateCourse_FullMethodName             = "/protobuf.CourseService/createCourse"
+	CourseService_SearchTumOnlineCourses_FullMethodName   = "/protobuf.CourseService/searchTumOnlineCourses"
+	CourseService_GetSchedule_FullMethodName              = "/protobuf.CourseService/getSchedule"
+	CourseService_ListScheduleLectureHalls_FullMethodName = "/protobuf.CourseService/listScheduleLectureHalls"
+	CourseService_UpdateLecture_FullMethodName            = "/protobuf.CourseService/updateLecture"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -651,6 +654,11 @@ type CourseServiceClient interface {
 	// existing one; the creator becomes its administrator.
 	CreateCourse(ctx context.Context, in *CreateCourseRequest, opts ...grpc.CallOption) (*CreateCourseResponse, error)
 	SearchTumOnlineCourses(ctx context.Context, in *SearchTumOnlineCoursesRequest, opts ...grpc.CallOption) (*SearchTumOnlineCoursesResponse, error)
+	// The administration schedule: the lectures of the courses the caller administers
+	// (every course, for someone who may view them all), in a window of their choosing.
+	GetSchedule(ctx context.Context, in *GetScheduleRequest, opts ...grpc.CallOption) (*GetScheduleResponse, error)
+	ListScheduleLectureHalls(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListScheduleLectureHallsResponse, error)
+	UpdateLecture(ctx context.Context, in *UpdateLectureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type courseServiceClient struct {
@@ -781,6 +789,36 @@ func (c *courseServiceClient) SearchTumOnlineCourses(ctx context.Context, in *Se
 	return out, nil
 }
 
+func (c *courseServiceClient) GetSchedule(ctx context.Context, in *GetScheduleRequest, opts ...grpc.CallOption) (*GetScheduleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetScheduleResponse)
+	err := c.cc.Invoke(ctx, CourseService_GetSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) ListScheduleLectureHalls(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListScheduleLectureHallsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListScheduleLectureHallsResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListScheduleLectureHalls_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) UpdateLecture(ctx context.Context, in *UpdateLectureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_UpdateLecture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -803,6 +841,11 @@ type CourseServiceServer interface {
 	// existing one; the creator becomes its administrator.
 	CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error)
 	SearchTumOnlineCourses(context.Context, *SearchTumOnlineCoursesRequest) (*SearchTumOnlineCoursesResponse, error)
+	// The administration schedule: the lectures of the courses the caller administers
+	// (every course, for someone who may view them all), in a window of their choosing.
+	GetSchedule(context.Context, *GetScheduleRequest) (*GetScheduleResponse, error)
+	ListScheduleLectureHalls(context.Context, *emptypb.Empty) (*ListScheduleLectureHallsResponse, error)
+	UpdateLecture(context.Context, *UpdateLectureRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -848,6 +891,15 @@ func (UnimplementedCourseServiceServer) CreateCourse(context.Context, *CreateCou
 }
 func (UnimplementedCourseServiceServer) SearchTumOnlineCourses(context.Context, *SearchTumOnlineCoursesRequest) (*SearchTumOnlineCoursesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchTumOnlineCourses not implemented")
+}
+func (UnimplementedCourseServiceServer) GetSchedule(context.Context, *GetScheduleRequest) (*GetScheduleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSchedule not implemented")
+}
+func (UnimplementedCourseServiceServer) ListScheduleLectureHalls(context.Context, *emptypb.Empty) (*ListScheduleLectureHallsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListScheduleLectureHalls not implemented")
+}
+func (UnimplementedCourseServiceServer) UpdateLecture(context.Context, *UpdateLectureRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateLecture not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -1086,6 +1138,60 @@ func _CourseService_SearchTumOnlineCourses_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_GetSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetSchedule(ctx, req.(*GetScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_ListScheduleLectureHalls_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListScheduleLectureHalls(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListScheduleLectureHalls_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListScheduleLectureHalls(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_UpdateLecture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLectureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).UpdateLecture(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_UpdateLecture_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).UpdateLecture(ctx, req.(*UpdateLectureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CourseService_ServiceDesc is the grpc.ServiceDesc for CourseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1140,6 +1246,18 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "searchTumOnlineCourses",
 			Handler:    _CourseService_SearchTumOnlineCourses_Handler,
+		},
+		{
+			MethodName: "getSchedule",
+			Handler:    _CourseService_GetSchedule_Handler,
+		},
+		{
+			MethodName: "listScheduleLectureHalls",
+			Handler:    _CourseService_ListScheduleLectureHalls_Handler,
+		},
+		{
+			MethodName: "updateLecture",
+			Handler:    _CourseService_UpdateLecture_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
