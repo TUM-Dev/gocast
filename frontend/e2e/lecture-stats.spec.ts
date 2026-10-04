@@ -64,11 +64,15 @@ test.describe("the lecture statistics page", () => {
   });
 
   test("shows nothing of a lecture reached through the wrong course", async ({ page }) => {
-    // prof1 administers course 1, so the server serves the page; stream 7 is course
-    // 2's, so the API refuses it.
-    await login(page, users.prof1, "/admin/courses/1/lectures/7/stats");
+    // prof1 administers course 1, but stream 7 is course 2's, so the server's
+    // InitStream refuses it before the SPA shell is served -- the same answer as for a
+    // stream that does not exist.
+    await login(page, users.prof1);
 
-    await expect(page.getByRole("alert")).toContainText("does not exist or you do not administer it");
+    const response = await page.goto("/admin/courses/1/lectures/7/stats");
+    expect(response?.status()).toBe(404);
+    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    await expect(page.getByText("We couldn't find the stream you were looking for.")).toBeVisible();
     await expect(page.locator("canvas")).toHaveCount(0);
   });
 });
