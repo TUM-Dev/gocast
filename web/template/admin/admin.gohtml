@@ -366,8 +366,6 @@
                     {{template "schedule" .LectureHalls}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse")}}
                     {{template "create-course" .IndexData.VersionTag}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
-                    {{template "notification_management" .Notifications}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "audits")}}
                     {{template "audits"}}
                 {{end}}

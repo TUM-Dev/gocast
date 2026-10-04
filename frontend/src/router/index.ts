@@ -16,6 +16,7 @@ import CourseImportView from "@/views/admin/CourseImportView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import IntegrationsView from "@/views/admin/IntegrationsView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
+import NotificationsView from "@/views/admin/NotificationsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
 import ServerNotificationsView from "@/views/admin/ServerNotificationsView.vue";
 import TokensView from "@/views/admin/TokensView.vue";
@@ -158,6 +159,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/server-notifications",
     name: "admin-server-notifications",
     component: ServerNotificationsView,
+  },
+  {
+    path: "/admin/notifications",
+    name: "admin-notifications",
+    component: NotificationsView,
   },
   {
     path: "/login",

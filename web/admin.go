@@ -37,15 +37,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	page := GetPageString(c.Request.URL.Path)
-	var notifications []model.Notification
 	switch page {
-	case "notifications":
-		found, err := r.NotificationsDao.GetAllNotifications()
-		if err != nil {
-			logger.Error("couldn't query notifications", "err", err)
-		} else {
-			notifications = found
-		}
 	case "serverStats":
 		streams, err := r.StreamsDao.GetAllStreams()
 		if err != nil {
@@ -70,7 +62,6 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			Semesters:     semesters,
 			CurY:          y,
 			CurT:          t,
-			Notifications: notifications,
 			HasTestCourse: hasTestCourse,
 		})
 	if err != nil {
@@ -334,7 +325,6 @@ type AdminPageData struct {
 	CurY           int
 	CurT           string
 	EditCourseData EditCourseData
-	Notifications  []model.Notification
 	HasTestCourse  bool
 }
 

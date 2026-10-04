@@ -69,6 +69,7 @@ var spaRoutes = map[string]bool{
 	"/imprint":                    true,
 	"/about":                      true,
 	"/admin/server-notifications": true,
+	"/admin/notifications":        true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -308,7 +309,7 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
-	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/notifications", nil)
 	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/integrations", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/maintenance", nil)
