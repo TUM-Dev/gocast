@@ -3,10 +3,8 @@ package apiv2
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"sort"
-	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -87,33 +85,4 @@ func (a *API) ListScheduleLectureHalls(ctx context.Context, _ *emptypb.Empty) (*
 		res = append(res, &protobuf.ScheduleLectureHall{Id: uint32(hall.ID), Name: hall.Name})
 	}
 	return &protobuf.ListScheduleLectureHallsResponse{LectureHalls: res}, nil
-}
-
-// UpdateLecture replaces v1's renameLecture and updateDescription. The course-admin
-// policy has checked the course; this checks the lecture is that course's, which v1
-// did not, so any course's administrators could rename any lecture.
-//
-// v1 also pushed the change to everyone watching over its websocket. That realtime
-// layer lives in api/ and has no v2 counterpart yet, so viewers see the change when
-// they next load the page.
-func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequest) (*emptypb.Empty, error) {
-	stream, err := a.dao.GetStreamByID(ctx, fmt.Sprintf("%d", req.GetStreamId()))
-	if err != nil {
-		return nil, e.FromGorm(err, "can't find stream")
-	}
-	if stream.CourseID != uint(req.GetCourseId()) {
-		return nil, e.WithStatus(http.StatusNotFound, errors.New("no such stream"))
-	}
-
-	if req.Name != nil {
-		stream.Name = strings.TrimSpace(req.GetName())
-	}
-	if req.Description != nil {
-		stream.Description = req.GetDescription()
-	}
-
-	if err := a.dao.StreamsDao.UpdateStream(stream); err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	return &emptypb.Empty{}, nil
 }

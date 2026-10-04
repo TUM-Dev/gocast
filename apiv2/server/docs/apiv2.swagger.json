@@ -1906,6 +1906,39 @@
         ]
       }
     },
+    "/courses/{courseId}/lectures/admin": {
+      "get": {
+        "summary": "List a course's lectures for its administrators.",
+        "description": "Every lecture of the course, newest first, with what managing it needs: times, hall, series, stream key, state, files, sections and transcoding progress. Requires administering the course.",
+        "operationId": "CourseService_listCourseLecturesAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListCourseLecturesAdminResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/pin": {
       "get": {
         "summary": "Get pin for course.",
@@ -2051,10 +2084,52 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/delete": {
+      "post": {
+        "summary": "Delete some of a course's lectures.",
+        "description": "Deletes nothing unless every lecture named is one of the course's. Requires administering the course.",
+        "operationId": "CourseService_deleteLectures",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicedeleteLecturesBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}": {
       "patch": {
-        "summary": "Rename a lecture or change its description.",
-        "description": "Sets the fields that are present and leaves the rest. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload.",
+        "summary": "Change one of a course's lectures.",
+        "description": "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload.",
         "operationId": "CourseService_updateLecture",
         "responses": {
           "200": {
@@ -2093,6 +2168,54 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/CourseServiceupdateLectureBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/copy": {
+      "post": {
+        "summary": "Copy or move a lecture to another course.",
+        "description": "Creates a copy of the lecture in the target course and, with move, then deletes the original. Requires administering both courses; a target the caller does not administer answers 404, as a missing one does.",
+        "operationId": "CourseService_copyLecture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCopyLectureResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicecopyLectureBody"
             }
           }
         ],
@@ -2146,6 +2269,144 @@
         ],
         "tags": [
           "Streams"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/series": {
+      "delete": {
+        "summary": "Delete a lecture and the rest of its series.",
+        "description": "Deletes every lecture of the course sharing the lecture's series. Answers 400 for a lecture in no series. Requires administering the course.",
+        "operationId": "CourseService_deleteLectureSeries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "patch": {
+        "summary": "Change every lecture of a lecture's series.",
+        "description": "Sets the fields that are present on every lecture of the course sharing the lecture's series, the lecture included. Answers 400 for a lecture in no series. Requires administering the course.",
+        "operationId": "CourseService_updateLectureSeries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "description": "Any lecture of the series; must be one of the course's.",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceupdateLectureSeriesBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/series/time": {
+      "put": {
+        "summary": "Move a lecture and its whole series to a new time of day.",
+        "description": "Sets the lecture's start and end, then gives every other lecture of the course in its series the same time of day and duration, each on its own date. Answers 400 for a lecture in no series. Requires administering the course.",
+        "operationId": "CourseService_updateLectureSeriesTime",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceupdateLectureSeriesTimeBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
         ]
       }
     },
@@ -3009,6 +3270,32 @@
         }
       }
     },
+    "CourseServicecopyLectureBody": {
+      "type": "object",
+      "properties": {
+        "targetCourseId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Must also be administered by the caller."
+        },
+        "move": {
+          "type": "boolean",
+          "description": "Deletes the original once the copy exists."
+        }
+      }
+    },
+    "CourseServicedeleteLecturesBody": {
+      "type": "object",
+      "properties": {
+        "streamIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    },
     "CourseServicepinCourseBody": {
       "type": "object",
       "properties": {
@@ -3025,6 +3312,60 @@
         },
         "description": {
           "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Both or neither; end must be after start."
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 moves the lecture out of any hall (self-streamed)."
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "private": {
+          "type": "boolean",
+          "description": "Withholds the lecture from everyone but the course's administrators."
+        }
+      }
+    },
+    "CourseServiceupdateLectureSeriesBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 moves the series out of any hall."
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CourseServiceupdateLectureSeriesTimeBody": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The lecture's own new times; the rest of the series takes their time of day\nand duration. End must be after start."
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -3235,6 +3576,16 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "protobufCopyLectureResponse": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The copy's ID, a new one even on a move."
         }
       }
     },
@@ -3478,6 +3829,110 @@
           }
         }
       }
+    },
+    "protobufCourseLectureAdmin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "courseId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 and empty for a lecture in no hall (self-streamed)."
+        },
+        "lectureHallName": {
+          "type": "string"
+        },
+        "seriesIdentifier": {
+          "type": "string",
+          "description": "Shared by the lectures created together as a series; empty for a lone lecture."
+        },
+        "streamKey": {
+          "type": "string",
+          "description": "The secret a self-streaming lecturer puts in the ingest URL."
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "private": {
+          "type": "boolean"
+        },
+        "customThumbnailEnabled": {
+          "type": "boolean"
+        },
+        "liveNow": {
+          "type": "boolean"
+        },
+        "recording": {
+          "type": "boolean",
+          "description": "Has a recording (a VoD)."
+        },
+        "past": {
+          "type": "boolean",
+          "description": "Ended and not yet recorded."
+        },
+        "converting": {
+          "type": "boolean",
+          "description": "A version is still transcoding."
+        },
+        "premiere": {
+          "type": "boolean"
+        },
+        "vodVersions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The recorded versions there are: any of COMB, PRES and CAM."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The recording's length in seconds, 0 when not known."
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureFileAdmin"
+          }
+        },
+        "transcodingProgresses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureTranscodingProgress"
+          }
+        },
+        "videoSections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureVideoSectionAdmin"
+          }
+        }
+      },
+      "description": "CourseLectureAdmin is a lecture as its course's administrators manage it. Unlike\nStream, it carries the stream key and no signed playlist URLs."
     },
     "protobufCourseStatsResponse": {
       "type": "object",
@@ -4048,6 +4503,23 @@
         }
       }
     },
+    "protobufLectureFileAdmin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "type": {
+          "type": "integer",
+          "format": "int64",
+          "description": "model.FileType: 2 = attachment, the thumbnail kinds above that."
+        },
+        "friendlyName": {
+          "type": "string"
+        }
+      }
+    },
     "protobufLectureHall": {
       "type": "object",
       "properties": {
@@ -4164,6 +4636,48 @@
         }
       }
     },
+    "protobufLectureTranscodingProgress": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "COMB, PRES or CAM."
+        },
+        "progress": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Percent."
+        }
+      }
+    },
+    "protobufLectureVideoSectionAdmin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": {
+          "type": "string"
+        },
+        "startHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startMinutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startSeconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fileId": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "protobufListAuditsResponse": {
       "type": "object",
       "properties": {
@@ -4173,6 +4687,19 @@
             "type": "object",
             "$ref": "#/definitions/protobufAuditEntry"
           }
+        }
+      }
+    },
+    "protobufListCourseLecturesAdminResponse": {
+      "type": "object",
+      "properties": {
+        "lectures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseLectureAdmin"
+          },
+          "description": "Newest first."
         }
       }
     },
