@@ -83,6 +83,15 @@ var services = []service{
 			"listScheduleLectureHalls": requires(model.PermLecture),
 			// The handler also checks the lecture is the course's.
 			"updateLecture": requiresCourseAdmin(),
+
+			// Lecture management. Each handler also checks the lecture is the
+			// course's; copyLecture checks the caller administers the target too.
+			"listCourseLecturesAdmin": requiresCourseAdmin(),
+			"updateLectureSeries":     requiresCourseAdmin(),
+			"updateLectureSeriesTime": requiresCourseAdmin(),
+			"deleteLectures":          requiresCourseAdmin(),
+			"deleteLectureSeries":     requiresCourseAdmin(),
+			"copyLecture":             requiresCourseAdmin(),
 		},
 	},
 	{

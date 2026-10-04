@@ -329,8 +329,78 @@ service CourseService {
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
-      summary: "Rename a lecture or change its description."
-      description: "Sets the fields that are present and leaves the rest. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload."
+      summary: "Change one of a course's lectures."
+      description: "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload."
+    };
+  }
+
+  // ----- Lecture administration -----
+  // The course page's lecture management. Every one of these checks the lecture
+  // named is one of the course's and answers 404 for any other.
+
+  rpc listCourseLecturesAdmin(ListCourseLecturesAdminRequest) returns (ListCourseLecturesAdminResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/lectures/admin"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "List a course's lectures for its administrators."
+      description: "Every lecture of the course, newest first, with what managing it needs: times, hall, series, stream key, state, files, sections and transcoding progress. Requires administering the course."
+    };
+  }
+
+  rpc updateLectureSeries(UpdateLectureSeriesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      patch: "/courses/{course_id}/streams/{stream_id}/series"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Change every lecture of a lecture's series."
+      description: "Sets the fields that are present on every lecture of the course sharing the lecture's series, the lecture included. Answers 400 for a lecture in no series. Requires administering the course."
+    };
+  }
+
+  rpc updateLectureSeriesTime(UpdateLectureSeriesTimeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/streams/{stream_id}/series/time"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Move a lecture and its whole series to a new time of day."
+      description: "Sets the lecture's start and end, then gives every other lecture of the course in its series the same time of day and duration, each on its own date. Answers 400 for a lecture in no series. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectures(DeleteLecturesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/delete"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete some of a course's lectures."
+      description: "Deletes nothing unless every lecture named is one of the course's. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureSeries(DeleteLectureSeriesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/series"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete a lecture and the rest of its series."
+      description: "Deletes every lecture of the course sharing the lecture's series. Answers 400 for a lecture in no series. Requires administering the course."
+    };
+  }
+
+  rpc copyLecture(CopyLectureRequest) returns (CopyLectureResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/copy"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Copy or move a lecture to another course."
+      description: "Creates a copy of the lecture in the target course and, with move, then deletes the original. Requires administering both courses; a target the caller does not administer answers 404, as a missing one does."
     };
   }
 }
@@ -2185,6 +2255,14 @@ message UpdateLectureRequest {
   uint32 stream_id = 2;
   optional string name = 3;
   optional string description = 4;
+  // Both or neither; end must be after start.
+  google.protobuf.Timestamp start = 5;
+  google.protobuf.Timestamp end = 6;
+  // 0 moves the lecture out of any hall (self-streamed).
+  optional uint32 lecture_hall_id = 7;
+  optional bool chat_enabled = 8;
+  // Withholds the lecture from everyone but the course's administrators.
+  optional bool private = 9;
 }
 
 message GetLectureStatsRequest {
@@ -2213,6 +2291,122 @@ message LectureStatsResponse {
   // (collected from 28 June 2021), so their numbers undercount.
   bool partial_history = 11;
 }
+
+// ----- Lecture administration -----
+
+message ListCourseLecturesAdminRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseLecturesAdminResponse {
+  // Newest first.
+  repeated CourseLectureAdmin lectures = 1;
+}
+
+// CourseLectureAdmin is a lecture as its course's administrators manage it. Unlike
+// Stream, it carries the stream key and no signed playlist URLs.
+message CourseLectureAdmin {
+  uint32 id = 1;
+  uint32 course_id = 2;
+  string name = 3;
+  string description = 4;
+  google.protobuf.Timestamp start = 5;
+  google.protobuf.Timestamp end = 6;
+  // 0 and empty for a lecture in no hall (self-streamed).
+  uint32 lecture_hall_id = 7;
+  string lecture_hall_name = 8;
+  // Shared by the lectures created together as a series; empty for a lone lecture.
+  string series_identifier = 9;
+  // The secret a self-streaming lecturer puts in the ingest URL.
+  string stream_key = 10;
+  bool chat_enabled = 11;
+  bool private = 12;
+  bool custom_thumbnail_enabled = 13;
+  bool live_now = 14;
+  // Has a recording (a VoD).
+  bool recording = 15;
+  // Ended and not yet recorded.
+  bool past = 16;
+  // A version is still transcoding.
+  bool converting = 17;
+  bool premiere = 18;
+  // The recorded versions there are: any of COMB, PRES and CAM.
+  repeated string vod_versions = 19;
+  // The recording's length in seconds, 0 when not known.
+  uint32 duration_seconds = 20;
+  repeated LectureFileAdmin files = 21;
+  repeated LectureTranscodingProgress transcoding_progresses = 22;
+  repeated LectureVideoSectionAdmin video_sections = 23;
+}
+
+message LectureFileAdmin {
+  uint32 id = 1;
+  // model.FileType: 2 = attachment, the thumbnail kinds above that.
+  uint32 type = 2;
+  string friendly_name = 3;
+}
+
+message LectureTranscodingProgress {
+  // COMB, PRES or CAM.
+  string version = 1;
+  // Percent.
+  int32 progress = 2;
+}
+
+message LectureVideoSectionAdmin {
+  uint32 id = 1;
+  string description = 2;
+  uint32 start_hours = 3;
+  uint32 start_minutes = 4;
+  uint32 start_seconds = 5;
+  uint32 file_id = 6;
+}
+
+message UpdateLectureSeriesRequest {
+  uint32 course_id = 1;
+  // Any lecture of the series; must be one of the course's.
+  uint32 stream_id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  // 0 moves the series out of any hall.
+  optional uint32 lecture_hall_id = 5;
+  optional bool chat_enabled = 6;
+}
+
+message UpdateLectureSeriesTimeRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // The lecture's own new times; the rest of the series takes their time of day
+  // and duration. End must be after start.
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+}
+
+message DeleteLecturesRequest {
+  uint32 course_id = 1;
+  repeated uint32 stream_ids = 2;
+}
+
+message DeleteLectureSeriesRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message CopyLectureRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // Must also be administered by the caller.
+  uint32 target_course_id = 3;
+  // Deletes the original once the copy exists.
+  bool move = 4;
+}
+
+message CopyLectureResponse {
+  // The copy's ID, a new one even on a move.
+  uint32 stream_id = 1;
+}
+
+// ----- end of lecture administration -----
 
 ///////////////////////////////
 ///// LECTURE_HALL_ADMIN //////

@@ -630,6 +630,12 @@ const (
 	CourseService_GetSchedule_FullMethodName              = "/protobuf.CourseService/getSchedule"
 	CourseService_ListScheduleLectureHalls_FullMethodName = "/protobuf.CourseService/listScheduleLectureHalls"
 	CourseService_UpdateLecture_FullMethodName            = "/protobuf.CourseService/updateLecture"
+	CourseService_ListCourseLecturesAdmin_FullMethodName  = "/protobuf.CourseService/listCourseLecturesAdmin"
+	CourseService_UpdateLectureSeries_FullMethodName      = "/protobuf.CourseService/updateLectureSeries"
+	CourseService_UpdateLectureSeriesTime_FullMethodName  = "/protobuf.CourseService/updateLectureSeriesTime"
+	CourseService_DeleteLectures_FullMethodName           = "/protobuf.CourseService/deleteLectures"
+	CourseService_DeleteLectureSeries_FullMethodName      = "/protobuf.CourseService/deleteLectureSeries"
+	CourseService_CopyLecture_FullMethodName              = "/protobuf.CourseService/copyLecture"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -659,6 +665,12 @@ type CourseServiceClient interface {
 	GetSchedule(ctx context.Context, in *GetScheduleRequest, opts ...grpc.CallOption) (*GetScheduleResponse, error)
 	ListScheduleLectureHalls(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListScheduleLectureHallsResponse, error)
 	UpdateLecture(ctx context.Context, in *UpdateLectureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListCourseLecturesAdmin(ctx context.Context, in *ListCourseLecturesAdminRequest, opts ...grpc.CallOption) (*ListCourseLecturesAdminResponse, error)
+	UpdateLectureSeries(ctx context.Context, in *UpdateLectureSeriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateLectureSeriesTime(ctx context.Context, in *UpdateLectureSeriesTimeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteLectures(ctx context.Context, in *DeleteLecturesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteLectureSeries(ctx context.Context, in *DeleteLectureSeriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CopyLecture(ctx context.Context, in *CopyLectureRequest, opts ...grpc.CallOption) (*CopyLectureResponse, error)
 }
 
 type courseServiceClient struct {
@@ -819,6 +831,66 @@ func (c *courseServiceClient) UpdateLecture(ctx context.Context, in *UpdateLectu
 	return out, nil
 }
 
+func (c *courseServiceClient) ListCourseLecturesAdmin(ctx context.Context, in *ListCourseLecturesAdminRequest, opts ...grpc.CallOption) (*ListCourseLecturesAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCourseLecturesAdminResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListCourseLecturesAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) UpdateLectureSeries(ctx context.Context, in *UpdateLectureSeriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_UpdateLectureSeries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) UpdateLectureSeriesTime(ctx context.Context, in *UpdateLectureSeriesTimeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_UpdateLectureSeriesTime_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) DeleteLectures(ctx context.Context, in *DeleteLecturesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_DeleteLectures_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) DeleteLectureSeries(ctx context.Context, in *DeleteLectureSeriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_DeleteLectureSeries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) CopyLecture(ctx context.Context, in *CopyLectureRequest, opts ...grpc.CallOption) (*CopyLectureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CopyLectureResponse)
+	err := c.cc.Invoke(ctx, CourseService_CopyLecture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -846,6 +918,12 @@ type CourseServiceServer interface {
 	GetSchedule(context.Context, *GetScheduleRequest) (*GetScheduleResponse, error)
 	ListScheduleLectureHalls(context.Context, *emptypb.Empty) (*ListScheduleLectureHallsResponse, error)
 	UpdateLecture(context.Context, *UpdateLectureRequest) (*emptypb.Empty, error)
+	ListCourseLecturesAdmin(context.Context, *ListCourseLecturesAdminRequest) (*ListCourseLecturesAdminResponse, error)
+	UpdateLectureSeries(context.Context, *UpdateLectureSeriesRequest) (*emptypb.Empty, error)
+	UpdateLectureSeriesTime(context.Context, *UpdateLectureSeriesTimeRequest) (*emptypb.Empty, error)
+	DeleteLectures(context.Context, *DeleteLecturesRequest) (*emptypb.Empty, error)
+	DeleteLectureSeries(context.Context, *DeleteLectureSeriesRequest) (*emptypb.Empty, error)
+	CopyLecture(context.Context, *CopyLectureRequest) (*CopyLectureResponse, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -900,6 +978,24 @@ func (UnimplementedCourseServiceServer) ListScheduleLectureHalls(context.Context
 }
 func (UnimplementedCourseServiceServer) UpdateLecture(context.Context, *UpdateLectureRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateLecture not implemented")
+}
+func (UnimplementedCourseServiceServer) ListCourseLecturesAdmin(context.Context, *ListCourseLecturesAdminRequest) (*ListCourseLecturesAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCourseLecturesAdmin not implemented")
+}
+func (UnimplementedCourseServiceServer) UpdateLectureSeries(context.Context, *UpdateLectureSeriesRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateLectureSeries not implemented")
+}
+func (UnimplementedCourseServiceServer) UpdateLectureSeriesTime(context.Context, *UpdateLectureSeriesTimeRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateLectureSeriesTime not implemented")
+}
+func (UnimplementedCourseServiceServer) DeleteLectures(context.Context, *DeleteLecturesRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteLectures not implemented")
+}
+func (UnimplementedCourseServiceServer) DeleteLectureSeries(context.Context, *DeleteLectureSeriesRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteLectureSeries not implemented")
+}
+func (UnimplementedCourseServiceServer) CopyLecture(context.Context, *CopyLectureRequest) (*CopyLectureResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CopyLecture not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -1192,6 +1288,114 @@ func _CourseService_UpdateLecture_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_ListCourseLecturesAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseLecturesAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListCourseLecturesAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListCourseLecturesAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListCourseLecturesAdmin(ctx, req.(*ListCourseLecturesAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_UpdateLectureSeries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLectureSeriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).UpdateLectureSeries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_UpdateLectureSeries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).UpdateLectureSeries(ctx, req.(*UpdateLectureSeriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_UpdateLectureSeriesTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLectureSeriesTimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).UpdateLectureSeriesTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_UpdateLectureSeriesTime_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).UpdateLectureSeriesTime(ctx, req.(*UpdateLectureSeriesTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_DeleteLectures_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteLecturesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).DeleteLectures(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_DeleteLectures_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).DeleteLectures(ctx, req.(*DeleteLecturesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_DeleteLectureSeries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteLectureSeriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).DeleteLectureSeries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_DeleteLectureSeries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).DeleteLectureSeries(ctx, req.(*DeleteLectureSeriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_CopyLecture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CopyLectureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).CopyLecture(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_CopyLecture_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).CopyLecture(ctx, req.(*CopyLectureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CourseService_ServiceDesc is the grpc.ServiceDesc for CourseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1258,6 +1462,30 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "updateLecture",
 			Handler:    _CourseService_UpdateLecture_Handler,
+		},
+		{
+			MethodName: "listCourseLecturesAdmin",
+			Handler:    _CourseService_ListCourseLecturesAdmin_Handler,
+		},
+		{
+			MethodName: "updateLectureSeries",
+			Handler:    _CourseService_UpdateLectureSeries_Handler,
+		},
+		{
+			MethodName: "updateLectureSeriesTime",
+			Handler:    _CourseService_UpdateLectureSeriesTime_Handler,
+		},
+		{
+			MethodName: "deleteLectures",
+			Handler:    _CourseService_DeleteLectures_Handler,
+		},
+		{
+			MethodName: "deleteLectureSeries",
+			Handler:    _CourseService_DeleteLectureSeries_Handler,
+		},
+		{
+			MethodName: "copyLecture",
+			Handler:    _CourseService_CopyLecture_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
