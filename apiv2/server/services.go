@@ -72,6 +72,10 @@ var services = []service{
 			"exportCourseStats": requiresCourseAdmin(),
 			// The handler also checks the lecture is the course's.
 			"getLectureStats": requiresCourseAdmin(),
+
+			// Any lecturer may start a course; the creator becomes its administrator.
+			"createCourse":           requires(model.PermLecture),
+			"searchTumOnlineCourses": requires(model.PermLecture),
 		},
 	},
 	{
