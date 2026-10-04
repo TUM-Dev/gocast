@@ -47,7 +47,6 @@ func ConfigGinRouter(
 	configTokenRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
-	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)

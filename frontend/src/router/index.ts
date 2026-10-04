@@ -12,6 +12,7 @@ import HomeView from "@/views/HomeView.vue";
 import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
+import AuditsView from "@/views/admin/AuditsView.vue";
 import CourseImportView from "@/views/admin/CourseImportView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import IntegrationsView from "@/views/admin/IntegrationsView.vue";
@@ -164,6 +165,11 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/notifications",
     name: "admin-notifications",
     component: NotificationsView,
+  },
+  {
+    path: "/admin/audits",
+    name: "admin-audits",
+    component: AuditsView,
   },
   {
     path: "/login",

@@ -70,6 +70,7 @@ var spaRoutes = map[string]bool{
 	"/about":                      true,
 	"/admin/server-notifications": true,
 	"/admin/notifications":        true,
+	"/admin/audits":               true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -310,9 +311,9 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/notifications", nil)
-	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/integrations", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/maintenance", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/audits", nil)
 
 	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
 	// same permission.
