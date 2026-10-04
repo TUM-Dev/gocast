@@ -6110,6 +6110,557 @@ func (x *DeleteMaintenanceEmailFailureRequest) GetId() uint32 {
 	return 0
 }
 
+// CourseImportEvent is one room booking TUMonline reports for a course, on its way to
+// becoming a model.Stream.
+type CourseImportEvent struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Start    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start,proto3" json:"start,omitempty"`
+	End      *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end,proto3" json:"end,omitempty"`
+	RoomName string                 `protobuf:"bytes,3,opt,name=room_name,json=roomName,proto3" json:"room_name,omitempty"`
+	// Set by TUMonline for a room change or similar; shown so an administrator can spot
+	// an event that needs a closer look before importing it.
+	Comment string `protobuf:"bytes,4,opt,name=comment,proto3" json:"comment,omitempty"`
+	// TUMonline's event id, kept so the created stream can be traced back to it.
+	EventId string `protobuf:"bytes,5,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	// Whether this event is included; an administrator may deselect single lectures
+	// (e.g. one already covered by a room the department switched away from).
+	Import        bool `protobuf:"varint,6,opt,name=import,proto3" json:"import,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportEvent) Reset() {
+	*x = CourseImportEvent{}
+	mi := &file_server_apiv2_proto_msgTypes[98]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportEvent) ProtoMessage() {}
+
+func (x *CourseImportEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[98]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportEvent.ProtoReflect.Descriptor instead.
+func (*CourseImportEvent) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{98}
+}
+
+func (x *CourseImportEvent) GetStart() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Start
+	}
+	return nil
+}
+
+func (x *CourseImportEvent) GetEnd() *timestamppb.Timestamp {
+	if x != nil {
+		return x.End
+	}
+	return nil
+}
+
+func (x *CourseImportEvent) GetRoomName() string {
+	if x != nil {
+		return x.RoomName
+	}
+	return ""
+}
+
+func (x *CourseImportEvent) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+func (x *CourseImportEvent) GetEventId() string {
+	if x != nil {
+		return x.EventId
+	}
+	return ""
+}
+
+func (x *CourseImportEvent) GetImport() bool {
+	if x != nil {
+		return x.Import
+	}
+	return false
+}
+
+// CourseImportContact is one person TUMonline lists against the course, with the main
+// contact flagged: importCourseImportCourses only emails whoever has main_contact set.
+type CourseImportContact struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FirstName     string                 `protobuf:"bytes,1,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	LastName      string                 `protobuf:"bytes,2,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Role          string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
+	MainContact   bool                   `protobuf:"varint,5,opt,name=main_contact,json=mainContact,proto3" json:"main_contact,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportContact) Reset() {
+	*x = CourseImportContact{}
+	mi := &file_server_apiv2_proto_msgTypes[99]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportContact) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportContact) ProtoMessage() {}
+
+func (x *CourseImportContact) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[99]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportContact.ProtoReflect.Descriptor instead.
+func (*CourseImportContact) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{99}
+}
+
+func (x *CourseImportContact) GetFirstName() string {
+	if x != nil {
+		return x.FirstName
+	}
+	return ""
+}
+
+func (x *CourseImportContact) GetLastName() string {
+	if x != nil {
+		return x.LastName
+	}
+	return ""
+}
+
+func (x *CourseImportContact) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *CourseImportContact) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *CourseImportContact) GetMainContact() bool {
+	if x != nil {
+		return x.MainContact
+	}
+	return false
+}
+
+// CourseImportCourse is one course as found in the TUMonline schedule, round-tripped
+// through the administrator's review before being created. slug and import are
+// editable client-side between the search and the import call.
+type CourseImportCourse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Title    string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Slug     string                 `protobuf:"bytes,2,opt,name=slug,proto3" json:"slug,omitempty"`
+	CourseId int32                  `protobuf:"varint,3,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	// "de" or "en", or empty when TUMonline reported neither.
+	Language      string                 `protobuf:"bytes,4,opt,name=language,proto3" json:"language,omitempty"`
+	Import        bool                   `protobuf:"varint,5,opt,name=import,proto3" json:"import,omitempty"`
+	Events        []*CourseImportEvent   `protobuf:"bytes,6,rep,name=events,proto3" json:"events,omitempty"`
+	Contacts      []*CourseImportContact `protobuf:"bytes,7,rep,name=contacts,proto3" json:"contacts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportCourse) Reset() {
+	*x = CourseImportCourse{}
+	mi := &file_server_apiv2_proto_msgTypes[100]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportCourse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportCourse) ProtoMessage() {}
+
+func (x *CourseImportCourse) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[100]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportCourse.ProtoReflect.Descriptor instead.
+func (*CourseImportCourse) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{100}
+}
+
+func (x *CourseImportCourse) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CourseImportCourse) GetSlug() string {
+	if x != nil {
+		return x.Slug
+	}
+	return ""
+}
+
+func (x *CourseImportCourse) GetCourseId() int32 {
+	if x != nil {
+		return x.CourseId
+	}
+	return 0
+}
+
+func (x *CourseImportCourse) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *CourseImportCourse) GetImport() bool {
+	if x != nil {
+		return x.Import
+	}
+	return false
+}
+
+func (x *CourseImportCourse) GetEvents() []*CourseImportEvent {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+func (x *CourseImportCourse) GetContacts() []*CourseImportContact {
+	if x != nil {
+		return x.Contacts
+	}
+	return nil
+}
+
+type CourseImportSearchRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	From  *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	// The TUMonline organisation unit id. The client offers presets for the usual
+	// departments (Computer Science, Computer Engineering, Mathematics, Physics) and a
+	// free-form field for any other; the server treats every id alike.
+	DepartmentId  int32 `protobuf:"varint,3,opt,name=department_id,json=departmentId,proto3" json:"department_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportSearchRequest) Reset() {
+	*x = CourseImportSearchRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[101]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportSearchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportSearchRequest) ProtoMessage() {}
+
+func (x *CourseImportSearchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[101]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportSearchRequest.ProtoReflect.Descriptor instead.
+func (*CourseImportSearchRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{101}
+}
+
+func (x *CourseImportSearchRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *CourseImportSearchRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *CourseImportSearchRequest) GetDepartmentId() int32 {
+	if x != nil {
+		return x.DepartmentId
+	}
+	return 0
+}
+
+type CourseImportRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Year  int32                  `protobuf:"varint,1,opt,name=year,proto3" json:"year,omitempty"`
+	// "W" (winter) or "S" (summer), matching model.Course.TeachingTerm.
+	Term string `protobuf:"bytes,2,opt,name=term,proto3" json:"term,omitempty"`
+	// Opt in: a lecturer must activate streaming. Opt out: it starts on unless they
+	// decline. Governs which link the invitation email sends.
+	OptIn         bool                  `protobuf:"varint,3,opt,name=opt_in,json=optIn,proto3" json:"opt_in,omitempty"`
+	Courses       []*CourseImportCourse `protobuf:"bytes,4,rep,name=courses,proto3" json:"courses,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportRequest) Reset() {
+	*x = CourseImportRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[102]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportRequest) ProtoMessage() {}
+
+func (x *CourseImportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[102]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportRequest.ProtoReflect.Descriptor instead.
+func (*CourseImportRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{102}
+}
+
+func (x *CourseImportRequest) GetYear() int32 {
+	if x != nil {
+		return x.Year
+	}
+	return 0
+}
+
+func (x *CourseImportRequest) GetTerm() string {
+	if x != nil {
+		return x.Term
+	}
+	return ""
+}
+
+func (x *CourseImportRequest) GetOptIn() bool {
+	if x != nil {
+		return x.OptIn
+	}
+	return false
+}
+
+func (x *CourseImportRequest) GetCourses() []*CourseImportCourse {
+	if x != nil {
+		return x.Courses
+	}
+	return nil
+}
+
+type CourseImportSearchResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Courses       []*CourseImportCourse  `protobuf:"bytes,1,rep,name=courses,proto3" json:"courses,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportSearchResponse) Reset() {
+	*x = CourseImportSearchResponse{}
+	mi := &file_server_apiv2_proto_msgTypes[103]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportSearchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportSearchResponse) ProtoMessage() {}
+
+func (x *CourseImportSearchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[103]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportSearchResponse.ProtoReflect.Descriptor instead.
+func (*CourseImportSearchResponse) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{103}
+}
+
+func (x *CourseImportSearchResponse) GetCourses() []*CourseImportCourse {
+	if x != nil {
+		return x.Courses
+	}
+	return nil
+}
+
+// CourseImportResult reports one course's outcome, so a failure importing one course
+// (a duplicate slug, an LDAP lookup miss) is visible without hiding the successes
+// that happened alongside it.
+type CourseImportResult struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Title   string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Success bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	// Empty when success is true.
+	Error         string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportResult) Reset() {
+	*x = CourseImportResult{}
+	mi := &file_server_apiv2_proto_msgTypes[104]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportResult) ProtoMessage() {}
+
+func (x *CourseImportResult) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[104]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportResult.ProtoReflect.Descriptor instead.
+func (*CourseImportResult) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{104}
+}
+
+func (x *CourseImportResult) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CourseImportResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CourseImportResult) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+type CourseImportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Results       []*CourseImportResult  `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CourseImportResponse) Reset() {
+	*x = CourseImportResponse{}
+	mi := &file_server_apiv2_proto_msgTypes[105]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseImportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseImportResponse) ProtoMessage() {}
+
+func (x *CourseImportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[105]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseImportResponse.ProtoReflect.Descriptor instead.
+func (*CourseImportResponse) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{105}
+}
+
+func (x *CourseImportResponse) GetResults() []*CourseImportResult {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
 var File_server_apiv2_proto protoreflect.FileDescriptor
 
 const file_server_apiv2_proto_rawDesc = "" +
@@ -6535,7 +7086,46 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"$ListMaintenanceEmailFailuresResponse\x12=\n" +
 	"\bfailures\x18\x01 \x03(\v2!.protobuf.MaintenanceEmailFailureR\bfailures\"6\n" +
 	"$DeleteMaintenanceEmailFailureRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id*\xb1\x01\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\"\xdd\x01\n" +
+	"\x11CourseImportEvent\x120\n" +
+	"\x05start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x05start\x12,\n" +
+	"\x03end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x03end\x12\x1b\n" +
+	"\troom_name\x18\x03 \x01(\tR\broomName\x12\x18\n" +
+	"\acomment\x18\x04 \x01(\tR\acomment\x12\x19\n" +
+	"\bevent_id\x18\x05 \x01(\tR\aeventId\x12\x16\n" +
+	"\x06import\x18\x06 \x01(\bR\x06import\"\x9e\x01\n" +
+	"\x13CourseImportContact\x12\x1d\n" +
+	"\n" +
+	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
+	"\tlast_name\x18\x02 \x01(\tR\blastName\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x12\n" +
+	"\x04role\x18\x04 \x01(\tR\x04role\x12!\n" +
+	"\fmain_contact\x18\x05 \x01(\bR\vmainContact\"\xff\x01\n" +
+	"\x12CourseImportCourse\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04slug\x18\x02 \x01(\tR\x04slug\x12\x1b\n" +
+	"\tcourse_id\x18\x03 \x01(\x05R\bcourseId\x12\x1a\n" +
+	"\blanguage\x18\x04 \x01(\tR\blanguage\x12\x16\n" +
+	"\x06import\x18\x05 \x01(\bR\x06import\x123\n" +
+	"\x06events\x18\x06 \x03(\v2\x1b.protobuf.CourseImportEventR\x06events\x129\n" +
+	"\bcontacts\x18\a \x03(\v2\x1d.protobuf.CourseImportContactR\bcontacts\"\x9c\x01\n" +
+	"\x19CourseImportSearchRequest\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12#\n" +
+	"\rdepartment_id\x18\x03 \x01(\x05R\fdepartmentId\"\x8c\x01\n" +
+	"\x13CourseImportRequest\x12\x12\n" +
+	"\x04year\x18\x01 \x01(\x05R\x04year\x12\x12\n" +
+	"\x04term\x18\x02 \x01(\tR\x04term\x12\x15\n" +
+	"\x06opt_in\x18\x03 \x01(\bR\x05optIn\x126\n" +
+	"\acourses\x18\x04 \x03(\v2\x1c.protobuf.CourseImportCourseR\acourses\"T\n" +
+	"\x1aCourseImportSearchResponse\x126\n" +
+	"\acourses\x18\x01 \x03(\v2\x1c.protobuf.CourseImportCourseR\acourses\"Z\n" +
+	"\x12CourseImportResult\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"N\n" +
+	"\x14CourseImportResponse\x126\n" +
+	"\aresults\x18\x01 \x03(\v2\x1c.protobuf.CourseImportResultR\aresults*\xb1\x01\n" +
 	"\x0fUserSettingType\x12\x12\n" +
 	"\x0ePREFERRED_NAME\x10\x00\x12\f\n" +
 	"\bGREETING\x10\x01\x12\x1a\n" +
@@ -6629,7 +7219,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0eupdateBookmark\x12\x1f.protobuf.UpdateBookmarkRequest\x1a .protobuf.UpdateBookmarkResponse\"a\x92A>\n" +
 	"\tBookmarks\x12\x12Update a bookmark.\x1a\x1dUpdates an existing bookmark.\x82\xd3\xe4\x93\x02\x1a\x1a\x18/bookmarks/{bookmark_id}\x12\xa2\x01\n" +
 	"\x0edeleteBookmark\x12\x1f.protobuf.DeleteBookmarkRequest\x1a\x16.google.protobuf.Empty\"W\x92A4\n" +
-	"\tBookmarks\x12\x12Delete a bookmark.\x1a\x13Deletes a bookmark.\x82\xd3\xe4\x93\x02\x1a*\x18/bookmarks/{bookmark_id}2\xa78\n" +
+	"\tBookmarks\x12\x12Delete a bookmark.\x1a\x13Deletes a bookmark.\x82\xd3\xe4\x93\x02\x1a*\x18/bookmarks/{bookmark_id}2\xf3>\n" +
 	"\fAdminService\x12\xff\x01\n" +
 	"\vlistRunners\x12\x16.google.protobuf.Empty\x1a\x1d.protobuf.ListRunnersResponse\"\xb8\x01\x92A\x9e\x01\n" +
 	"\aRunners\x12\x1dList the transcoding runners.\x1atRetrieves every registered runner with its current liveness and workload. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x10\x12\x0e/admin/runners\x12\x97\x02\n" +
@@ -6686,7 +7276,11 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x1clistMaintenanceEmailFailures\x12\x16.google.protobuf.Empty\x1a..protobuf.ListMaintenanceEmailFailuresResponse\"\xe7\x01\x92A\xba\x01\n" +
 	"\vMaintenance\x12\x13List failed emails.\x1a\x95\x01Retrieves every email that has exhausted its retries or is still failing, with its body and error history. Requires the server.administer permission.\x82\xd3\xe4\x93\x02#\x12!/admin/maintenance/email-failures\x12\xa4\x02\n" +
 	"\x1ddeleteMaintenanceEmailFailure\x12..protobuf.DeleteMaintenanceEmailFailureRequest\x1a\x16.google.protobuf.Empty\"\xba\x01\x92A\x88\x01\n" +
-	"\vMaintenance\x12\x17Dismiss a failed email.\x1a`Deletes a failed email; it is not retried afterwards. Requires the server.administer permission.\x82\xd3\xe4\x93\x02(*&/admin/maintenance/email-failures/{id}B\x8c\x04\x92A\xf6\x03\x12\xb8\x03\n" +
+	"\vMaintenance\x12\x17Dismiss a failed email.\x1a`Deletes a failed email; it is not retried afterwards. Requires the server.administer permission.\x82\xd3\xe4\x93\x02(*&/admin/maintenance/email-failures/{id}\x12\x97\x03\n" +
+	"\x1asearchCourseImportSchedule\x12#.protobuf.CourseImportSearchRequest\x1a$.protobuf.CourseImportSearchResponse\"\xad\x02\x92A\x83\x02\n" +
+	"\rCourse Import\x12/Search the TUMonline room schedule for courses.\x1a\xc0\x01Fetches the department's room schedule from TUMonline for the given date range, groups it by course and enriches each with its contacts and language. Requires the server.administer permission.\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/admin/course-import/search\x12\xaf\x03\n" +
+	"\x19importCourseImportCourses\x12\x1d.protobuf.CourseImportRequest\x1a\x1e.protobuf.CourseImportResponse\"\xd2\x02\x92A\xaf\x02\n" +
+	"\rCourse Import\x12\x1cImport the selected courses.\x1a\xff\x01Creates a course and its streams for each selected course, then emails its main contact an activation (or opt-out) link. A failure importing one course does not stop the others; the response reports each outcome. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/admin/course-importB\x8c\x04\x92A\xf6\x03\x12\xb8\x03\n" +
 	"\n" +
 	"gocast API\x12\xaa\x02The shiny new gocast API!\n" +
 	"This API is designed to be a user-friendly and easy-to-use interface for third party services.\n" +
@@ -6708,7 +7302,7 @@ func file_server_apiv2_proto_rawDescGZIP() []byte {
 }
 
 var file_server_apiv2_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_server_apiv2_proto_msgTypes = make([]protoimpl.MessageInfo, 98)
+var file_server_apiv2_proto_msgTypes = make([]protoimpl.MessageInfo, 106)
 var file_server_apiv2_proto_goTypes = []any{
 	(UserSettingType)(0),                               // 0: protobuf.UserSettingType
 	(VideoType)(0),                                     // 1: protobuf.VideoType
@@ -6811,9 +7405,17 @@ var file_server_apiv2_proto_goTypes = []any{
 	(*MaintenanceEmailFailure)(nil),                    // 98: protobuf.MaintenanceEmailFailure
 	(*ListMaintenanceEmailFailuresResponse)(nil),       // 99: protobuf.ListMaintenanceEmailFailuresResponse
 	(*DeleteMaintenanceEmailFailureRequest)(nil),       // 100: protobuf.DeleteMaintenanceEmailFailureRequest
-	(*timestamppb.Timestamp)(nil),                      // 101: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                              // 102: google.protobuf.Empty
-	(*httpbody.HttpBody)(nil),                          // 103: google.api.HttpBody
+	(*CourseImportEvent)(nil),                          // 101: protobuf.CourseImportEvent
+	(*CourseImportContact)(nil),                        // 102: protobuf.CourseImportContact
+	(*CourseImportCourse)(nil),                         // 103: protobuf.CourseImportCourse
+	(*CourseImportSearchRequest)(nil),                  // 104: protobuf.CourseImportSearchRequest
+	(*CourseImportRequest)(nil),                        // 105: protobuf.CourseImportRequest
+	(*CourseImportSearchResponse)(nil),                 // 106: protobuf.CourseImportSearchResponse
+	(*CourseImportResult)(nil),                         // 107: protobuf.CourseImportResult
+	(*CourseImportResponse)(nil),                       // 108: protobuf.CourseImportResponse
+	(*timestamppb.Timestamp)(nil),                      // 109: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                              // 110: google.protobuf.Empty
+	(*httpbody.HttpBody)(nil),                          // 111: google.api.HttpBody
 }
 var file_server_apiv2_proto_depIdxs = []int32{
 	4,   // 0: protobuf.GetFrontendConfigResponse.branding:type_name -> protobuf.Branding
@@ -6824,7 +7426,7 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	35,  // 5: protobuf.User.pinned_courses:type_name -> protobuf.Course
 	16,  // 6: protobuf.User.settings:type_name -> protobuf.UserSetting
 	27,  // 7: protobuf.User.bookmarks:type_name -> protobuf.Bookmark
-	101, // 8: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
+	109, // 8: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
 	0,   // 9: protobuf.UserSetting.type:type_name -> protobuf.UserSettingType
 	16,  // 10: protobuf.UpdateUserSettingsRequest.user_settings:type_name -> protobuf.UserSetting
 	15,  // 11: protobuf.GetUserResponse.user:type_name -> protobuf.User
@@ -6833,7 +7435,7 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	24,  // 14: protobuf.ExportPersonalDataResponse.enrollments:type_name -> protobuf.Enrollment
 	25,  // 15: protobuf.ExportPersonalDataResponse.video_views:type_name -> protobuf.VideoView
 	26,  // 16: protobuf.ExportPersonalDataResponse.chats:type_name -> protobuf.Chat
-	101, // 17: protobuf.Chat.created_at:type_name -> google.protobuf.Timestamp
+	109, // 17: protobuf.Chat.created_at:type_name -> google.protobuf.Timestamp
 	27,  // 18: protobuf.GetBookmarksResponse.bookmarks:type_name -> protobuf.Bookmark
 	27,  // 19: protobuf.AddBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
 	27,  // 20: protobuf.UpdateBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
@@ -6851,149 +7453,162 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	71,  // 32: protobuf.CourseStream.lecture_hall:type_name -> protobuf.LectureHall
 	49,  // 33: protobuf.GetSemestersResponse.current:type_name -> protobuf.Semester
 	49,  // 34: protobuf.GetSemestersResponse.semesters:type_name -> protobuf.Semester
-	101, // 35: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
-	101, // 36: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
-	101, // 37: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
+	109, // 35: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
+	109, // 36: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
+	109, // 37: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
 	66,  // 38: protobuf.Stream.downloads:type_name -> protobuf.Download
-	101, // 39: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
+	109, // 39: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
 	53,  // 40: protobuf.StreamPlaylistEntry.stream_progress:type_name -> protobuf.StreamProgress
-	101, // 41: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
+	109, // 41: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
 	1,   // 42: protobuf.GetThumbsRequest.thumb_type:type_name -> protobuf.VideoType
 	54,  // 43: protobuf.GetVideoSectionsResponse.sections:type_name -> protobuf.VideoSection
 	52,  // 44: protobuf.GetStreamPlaylistResponse.entries:type_name -> protobuf.StreamPlaylistEntry
 	53,  // 45: protobuf.GetProgressBatchResponse.progress_batch:type_name -> protobuf.StreamProgress
 	2,   // 46: protobuf.UserGroupNotification.target:type_name -> protobuf.NotificationTarget
-	101, // 47: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
-	101, // 48: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
-	101, // 49: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
+	109, // 47: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
+	109, // 48: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
+	109, // 49: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
 	67,  // 50: protobuf.GetNotificationsResponse.notifications:type_name -> protobuf.UserGroupNotification
 	68,  // 51: protobuf.GetServerNotificationsResponse.server_notifications:type_name -> protobuf.ServerNotification
 	72,  // 52: protobuf.LectureHall.camera_presets:type_name -> protobuf.CameraPreset
-	101, // 53: protobuf.Runner.last_seen:type_name -> google.protobuf.Timestamp
-	101, // 54: protobuf.Runner.time_of_register:type_name -> google.protobuf.Timestamp
+	109, // 53: protobuf.Runner.last_seen:type_name -> google.protobuf.Timestamp
+	109, // 54: protobuf.Runner.time_of_register:type_name -> google.protobuf.Timestamp
 	73,  // 55: protobuf.ListRunnersResponse.runners:type_name -> protobuf.Runner
-	101, // 56: protobuf.Worker.last_seen:type_name -> google.protobuf.Timestamp
+	109, // 56: protobuf.Worker.last_seen:type_name -> google.protobuf.Timestamp
 	76,  // 57: protobuf.ListWorkersResponse.workers:type_name -> protobuf.Worker
 	79,  // 58: protobuf.ListUsersResponse.users:type_name -> protobuf.UserSummary
 	85,  // 59: protobuf.ListIntegrationsResponse.integrations:type_name -> protobuf.IntegrationSummary
 	95,  // 60: protobuf.ListMaintenanceTranscodingFailuresResponse.failures:type_name -> protobuf.MaintenanceTranscodingFailure
-	101, // 61: protobuf.MaintenanceEmailFailure.last_try:type_name -> google.protobuf.Timestamp
+	109, // 61: protobuf.MaintenanceEmailFailure.last_try:type_name -> google.protobuf.Timestamp
 	98,  // 62: protobuf.ListMaintenanceEmailFailuresResponse.failures:type_name -> protobuf.MaintenanceEmailFailure
-	102, // 63: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
-	102, // 64: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
-	102, // 65: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
-	102, // 66: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
-	102, // 67: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
-	6,   // 68: protobuf.MetaService.getInfoPage:input_type -> protobuf.GetInfoPageRequest
-	102, // 69: protobuf.MetaService.listInfoPages:input_type -> google.protobuf.Empty
-	102, // 70: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
-	17,  // 71: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
-	102, // 72: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
-	18,  // 73: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
-	102, // 74: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
-	36,  // 75: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
-	37,  // 76: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
-	38,  // 77: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
-	102, // 78: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
-	102, // 79: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
-	39,  // 80: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
-	40,  // 81: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
-	55,  // 82: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
-	56,  // 83: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
-	58,  // 84: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
-	57,  // 85: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
-	59,  // 86: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
-	63,  // 87: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
-	64,  // 88: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
-	29,  // 89: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
-	28,  // 90: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
-	30,  // 91: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
-	31,  // 92: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
-	102, // 93: protobuf.AdminService.listRunners:input_type -> google.protobuf.Empty
-	74,  // 94: protobuf.AdminService.deleteRunner:input_type -> protobuf.DeleteRunnerRequest
-	102, // 95: protobuf.AdminService.listStaff:input_type -> google.protobuf.Empty
-	80,  // 96: protobuf.AdminService.searchUsers:input_type -> protobuf.SearchUsersRequest
-	81,  // 97: protobuf.AdminService.createUser:input_type -> protobuf.CreateUserRequest
-	82,  // 98: protobuf.AdminService.updateUserRole:input_type -> protobuf.UpdateUserRoleRequest
-	83,  // 99: protobuf.AdminService.deleteUser:input_type -> protobuf.DeleteUserRequest
-	102, // 100: protobuf.AdminService.listInfoPagesAdmin:input_type -> google.protobuf.Empty
-	12,  // 101: protobuf.AdminService.createInfoPage:input_type -> protobuf.CreateInfoPageRequest
-	13,  // 102: protobuf.AdminService.updateInfoPage:input_type -> protobuf.UpdateInfoPageRequest
-	14,  // 103: protobuf.AdminService.deleteInfoPage:input_type -> protobuf.DeleteInfoPageRequest
-	102, // 104: protobuf.AdminService.listIntegrations:input_type -> google.protobuf.Empty
-	87,  // 105: protobuf.AdminService.createIntegration:input_type -> protobuf.CreateIntegrationRequest
-	89,  // 106: protobuf.AdminService.rotateIntegrationKey:input_type -> protobuf.RotateIntegrationKeyRequest
-	91,  // 107: protobuf.AdminService.revokeIntegrationKey:input_type -> protobuf.RevokeIntegrationKeyRequest
-	102, // 108: protobuf.AdminService.listWorkers:input_type -> google.protobuf.Empty
-	77,  // 109: protobuf.AdminService.deleteWorker:input_type -> protobuf.DeleteWorkerRequest
-	102, // 110: protobuf.AdminService.getMaintenanceThumbnailStatus:input_type -> google.protobuf.Empty
-	102, // 111: protobuf.AdminService.generateMaintenanceThumbnails:input_type -> google.protobuf.Empty
-	102, // 112: protobuf.AdminService.listMaintenanceCronJobs:input_type -> google.protobuf.Empty
-	93,  // 113: protobuf.AdminService.runMaintenanceCronJob:input_type -> protobuf.RunMaintenanceCronJobRequest
-	102, // 114: protobuf.AdminService.listMaintenanceTranscodingFailures:input_type -> google.protobuf.Empty
-	97,  // 115: protobuf.AdminService.deleteMaintenanceTranscodingFailure:input_type -> protobuf.DeleteMaintenanceTranscodingFailureRequest
-	102, // 116: protobuf.AdminService.listMaintenanceEmailFailures:input_type -> google.protobuf.Empty
-	100, // 117: protobuf.AdminService.deleteMaintenanceEmailFailure:input_type -> protobuf.DeleteMaintenanceEmailFailureRequest
-	3,   // 118: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
-	5,   // 119: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
-	50,  // 120: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
-	69,  // 121: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
-	70,  // 122: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
-	7,   // 123: protobuf.MetaService.getInfoPage:output_type -> protobuf.GetInfoPageResponse
-	8,   // 124: protobuf.MetaService.listInfoPages:output_type -> protobuf.ListInfoPagesResponse
-	19,  // 125: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
-	20,  // 126: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
-	23,  // 127: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
-	21,  // 128: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
-	22,  // 129: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
-	42,  // 130: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
-	43,  // 131: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
-	44,  // 132: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
-	45,  // 133: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
-	41,  // 134: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
-	47,  // 135: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
-	46,  // 136: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
-	48,  // 137: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
-	60,  // 138: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
-	62,  // 139: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
-	103, // 140: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
-	103, // 141: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
-	65,  // 142: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
-	53,  // 143: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
-	33,  // 144: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
-	32,  // 145: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
-	34,  // 146: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
-	102, // 147: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
-	75,  // 148: protobuf.AdminService.listRunners:output_type -> protobuf.ListRunnersResponse
-	102, // 149: protobuf.AdminService.deleteRunner:output_type -> google.protobuf.Empty
-	84,  // 150: protobuf.AdminService.listStaff:output_type -> protobuf.ListUsersResponse
-	84,  // 151: protobuf.AdminService.searchUsers:output_type -> protobuf.ListUsersResponse
-	79,  // 152: protobuf.AdminService.createUser:output_type -> protobuf.UserSummary
-	79,  // 153: protobuf.AdminService.updateUserRole:output_type -> protobuf.UserSummary
-	102, // 154: protobuf.AdminService.deleteUser:output_type -> google.protobuf.Empty
-	11,  // 155: protobuf.AdminService.listInfoPagesAdmin:output_type -> protobuf.ListInfoPagesAdminResponse
-	10,  // 156: protobuf.AdminService.createInfoPage:output_type -> protobuf.InfoPage
-	10,  // 157: protobuf.AdminService.updateInfoPage:output_type -> protobuf.InfoPage
-	102, // 158: protobuf.AdminService.deleteInfoPage:output_type -> google.protobuf.Empty
-	86,  // 159: protobuf.AdminService.listIntegrations:output_type -> protobuf.ListIntegrationsResponse
-	88,  // 160: protobuf.AdminService.createIntegration:output_type -> protobuf.CreateIntegrationResponse
-	90,  // 161: protobuf.AdminService.rotateIntegrationKey:output_type -> protobuf.RotateIntegrationKeyResponse
-	102, // 162: protobuf.AdminService.revokeIntegrationKey:output_type -> google.protobuf.Empty
-	78,  // 163: protobuf.AdminService.listWorkers:output_type -> protobuf.ListWorkersResponse
-	102, // 164: protobuf.AdminService.deleteWorker:output_type -> google.protobuf.Empty
-	92,  // 165: protobuf.AdminService.getMaintenanceThumbnailStatus:output_type -> protobuf.MaintenanceThumbnailStatus
-	92,  // 166: protobuf.AdminService.generateMaintenanceThumbnails:output_type -> protobuf.MaintenanceThumbnailStatus
-	94,  // 167: protobuf.AdminService.listMaintenanceCronJobs:output_type -> protobuf.ListMaintenanceCronJobsResponse
-	102, // 168: protobuf.AdminService.runMaintenanceCronJob:output_type -> google.protobuf.Empty
-	96,  // 169: protobuf.AdminService.listMaintenanceTranscodingFailures:output_type -> protobuf.ListMaintenanceTranscodingFailuresResponse
-	102, // 170: protobuf.AdminService.deleteMaintenanceTranscodingFailure:output_type -> google.protobuf.Empty
-	99,  // 171: protobuf.AdminService.listMaintenanceEmailFailures:output_type -> protobuf.ListMaintenanceEmailFailuresResponse
-	102, // 172: protobuf.AdminService.deleteMaintenanceEmailFailure:output_type -> google.protobuf.Empty
-	118, // [118:173] is the sub-list for method output_type
-	63,  // [63:118] is the sub-list for method input_type
-	63,  // [63:63] is the sub-list for extension type_name
-	63,  // [63:63] is the sub-list for extension extendee
-	0,   // [0:63] is the sub-list for field type_name
+	109, // 63: protobuf.CourseImportEvent.start:type_name -> google.protobuf.Timestamp
+	109, // 64: protobuf.CourseImportEvent.end:type_name -> google.protobuf.Timestamp
+	101, // 65: protobuf.CourseImportCourse.events:type_name -> protobuf.CourseImportEvent
+	102, // 66: protobuf.CourseImportCourse.contacts:type_name -> protobuf.CourseImportContact
+	109, // 67: protobuf.CourseImportSearchRequest.from:type_name -> google.protobuf.Timestamp
+	109, // 68: protobuf.CourseImportSearchRequest.to:type_name -> google.protobuf.Timestamp
+	103, // 69: protobuf.CourseImportRequest.courses:type_name -> protobuf.CourseImportCourse
+	103, // 70: protobuf.CourseImportSearchResponse.courses:type_name -> protobuf.CourseImportCourse
+	107, // 71: protobuf.CourseImportResponse.results:type_name -> protobuf.CourseImportResult
+	110, // 72: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
+	110, // 73: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
+	110, // 74: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
+	110, // 75: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
+	110, // 76: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
+	6,   // 77: protobuf.MetaService.getInfoPage:input_type -> protobuf.GetInfoPageRequest
+	110, // 78: protobuf.MetaService.listInfoPages:input_type -> google.protobuf.Empty
+	110, // 79: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
+	17,  // 80: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
+	110, // 81: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
+	18,  // 82: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
+	110, // 83: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
+	36,  // 84: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
+	37,  // 85: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
+	38,  // 86: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
+	110, // 87: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
+	110, // 88: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
+	39,  // 89: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
+	40,  // 90: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
+	55,  // 91: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
+	56,  // 92: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
+	58,  // 93: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
+	57,  // 94: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
+	59,  // 95: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
+	63,  // 96: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
+	64,  // 97: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
+	29,  // 98: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
+	28,  // 99: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
+	30,  // 100: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
+	31,  // 101: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
+	110, // 102: protobuf.AdminService.listRunners:input_type -> google.protobuf.Empty
+	74,  // 103: protobuf.AdminService.deleteRunner:input_type -> protobuf.DeleteRunnerRequest
+	110, // 104: protobuf.AdminService.listStaff:input_type -> google.protobuf.Empty
+	80,  // 105: protobuf.AdminService.searchUsers:input_type -> protobuf.SearchUsersRequest
+	81,  // 106: protobuf.AdminService.createUser:input_type -> protobuf.CreateUserRequest
+	82,  // 107: protobuf.AdminService.updateUserRole:input_type -> protobuf.UpdateUserRoleRequest
+	83,  // 108: protobuf.AdminService.deleteUser:input_type -> protobuf.DeleteUserRequest
+	110, // 109: protobuf.AdminService.listInfoPagesAdmin:input_type -> google.protobuf.Empty
+	12,  // 110: protobuf.AdminService.createInfoPage:input_type -> protobuf.CreateInfoPageRequest
+	13,  // 111: protobuf.AdminService.updateInfoPage:input_type -> protobuf.UpdateInfoPageRequest
+	14,  // 112: protobuf.AdminService.deleteInfoPage:input_type -> protobuf.DeleteInfoPageRequest
+	110, // 113: protobuf.AdminService.listIntegrations:input_type -> google.protobuf.Empty
+	87,  // 114: protobuf.AdminService.createIntegration:input_type -> protobuf.CreateIntegrationRequest
+	89,  // 115: protobuf.AdminService.rotateIntegrationKey:input_type -> protobuf.RotateIntegrationKeyRequest
+	91,  // 116: protobuf.AdminService.revokeIntegrationKey:input_type -> protobuf.RevokeIntegrationKeyRequest
+	110, // 117: protobuf.AdminService.listWorkers:input_type -> google.protobuf.Empty
+	77,  // 118: protobuf.AdminService.deleteWorker:input_type -> protobuf.DeleteWorkerRequest
+	110, // 119: protobuf.AdminService.getMaintenanceThumbnailStatus:input_type -> google.protobuf.Empty
+	110, // 120: protobuf.AdminService.generateMaintenanceThumbnails:input_type -> google.protobuf.Empty
+	110, // 121: protobuf.AdminService.listMaintenanceCronJobs:input_type -> google.protobuf.Empty
+	93,  // 122: protobuf.AdminService.runMaintenanceCronJob:input_type -> protobuf.RunMaintenanceCronJobRequest
+	110, // 123: protobuf.AdminService.listMaintenanceTranscodingFailures:input_type -> google.protobuf.Empty
+	97,  // 124: protobuf.AdminService.deleteMaintenanceTranscodingFailure:input_type -> protobuf.DeleteMaintenanceTranscodingFailureRequest
+	110, // 125: protobuf.AdminService.listMaintenanceEmailFailures:input_type -> google.protobuf.Empty
+	100, // 126: protobuf.AdminService.deleteMaintenanceEmailFailure:input_type -> protobuf.DeleteMaintenanceEmailFailureRequest
+	104, // 127: protobuf.AdminService.searchCourseImportSchedule:input_type -> protobuf.CourseImportSearchRequest
+	105, // 128: protobuf.AdminService.importCourseImportCourses:input_type -> protobuf.CourseImportRequest
+	3,   // 129: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
+	5,   // 130: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
+	50,  // 131: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
+	69,  // 132: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
+	70,  // 133: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
+	7,   // 134: protobuf.MetaService.getInfoPage:output_type -> protobuf.GetInfoPageResponse
+	8,   // 135: protobuf.MetaService.listInfoPages:output_type -> protobuf.ListInfoPagesResponse
+	19,  // 136: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
+	20,  // 137: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
+	23,  // 138: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
+	21,  // 139: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
+	22,  // 140: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
+	42,  // 141: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
+	43,  // 142: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
+	44,  // 143: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
+	45,  // 144: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
+	41,  // 145: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
+	47,  // 146: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
+	46,  // 147: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
+	48,  // 148: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
+	60,  // 149: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
+	62,  // 150: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
+	111, // 151: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
+	111, // 152: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
+	65,  // 153: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
+	53,  // 154: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
+	33,  // 155: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
+	32,  // 156: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
+	34,  // 157: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
+	110, // 158: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
+	75,  // 159: protobuf.AdminService.listRunners:output_type -> protobuf.ListRunnersResponse
+	110, // 160: protobuf.AdminService.deleteRunner:output_type -> google.protobuf.Empty
+	84,  // 161: protobuf.AdminService.listStaff:output_type -> protobuf.ListUsersResponse
+	84,  // 162: protobuf.AdminService.searchUsers:output_type -> protobuf.ListUsersResponse
+	79,  // 163: protobuf.AdminService.createUser:output_type -> protobuf.UserSummary
+	79,  // 164: protobuf.AdminService.updateUserRole:output_type -> protobuf.UserSummary
+	110, // 165: protobuf.AdminService.deleteUser:output_type -> google.protobuf.Empty
+	11,  // 166: protobuf.AdminService.listInfoPagesAdmin:output_type -> protobuf.ListInfoPagesAdminResponse
+	10,  // 167: protobuf.AdminService.createInfoPage:output_type -> protobuf.InfoPage
+	10,  // 168: protobuf.AdminService.updateInfoPage:output_type -> protobuf.InfoPage
+	110, // 169: protobuf.AdminService.deleteInfoPage:output_type -> google.protobuf.Empty
+	86,  // 170: protobuf.AdminService.listIntegrations:output_type -> protobuf.ListIntegrationsResponse
+	88,  // 171: protobuf.AdminService.createIntegration:output_type -> protobuf.CreateIntegrationResponse
+	90,  // 172: protobuf.AdminService.rotateIntegrationKey:output_type -> protobuf.RotateIntegrationKeyResponse
+	110, // 173: protobuf.AdminService.revokeIntegrationKey:output_type -> google.protobuf.Empty
+	78,  // 174: protobuf.AdminService.listWorkers:output_type -> protobuf.ListWorkersResponse
+	110, // 175: protobuf.AdminService.deleteWorker:output_type -> google.protobuf.Empty
+	92,  // 176: protobuf.AdminService.getMaintenanceThumbnailStatus:output_type -> protobuf.MaintenanceThumbnailStatus
+	92,  // 177: protobuf.AdminService.generateMaintenanceThumbnails:output_type -> protobuf.MaintenanceThumbnailStatus
+	94,  // 178: protobuf.AdminService.listMaintenanceCronJobs:output_type -> protobuf.ListMaintenanceCronJobsResponse
+	110, // 179: protobuf.AdminService.runMaintenanceCronJob:output_type -> google.protobuf.Empty
+	96,  // 180: protobuf.AdminService.listMaintenanceTranscodingFailures:output_type -> protobuf.ListMaintenanceTranscodingFailuresResponse
+	110, // 181: protobuf.AdminService.deleteMaintenanceTranscodingFailure:output_type -> google.protobuf.Empty
+	99,  // 182: protobuf.AdminService.listMaintenanceEmailFailures:output_type -> protobuf.ListMaintenanceEmailFailuresResponse
+	110, // 183: protobuf.AdminService.deleteMaintenanceEmailFailure:output_type -> google.protobuf.Empty
+	106, // 184: protobuf.AdminService.searchCourseImportSchedule:output_type -> protobuf.CourseImportSearchResponse
+	108, // 185: protobuf.AdminService.importCourseImportCourses:output_type -> protobuf.CourseImportResponse
+	129, // [129:186] is the sub-list for method output_type
+	72,  // [72:129] is the sub-list for method input_type
+	72,  // [72:72] is the sub-list for extension type_name
+	72,  // [72:72] is the sub-list for extension extendee
+	0,   // [0:72] is the sub-list for field type_name
 }
 
 func init() { file_server_apiv2_proto_init() }
@@ -7010,7 +7625,7 @@ func file_server_apiv2_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_server_apiv2_proto_rawDesc), len(file_server_apiv2_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   98,
+			NumMessages:   106,
 			NumExtensions: 0,
 			NumServices:   5,
 		},

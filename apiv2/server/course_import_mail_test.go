@@ -1,4 +1,4 @@
-package api
+package apiv2
 
 import (
 	"bytes"
@@ -56,13 +56,13 @@ func TestMailCourseRegisteredTemplate(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
+			templ, err := template.ParseFS(courseImportTemplateFS, "template/*.gotemplate")
 			if err != nil {
 				t.Fatalf("parse template: %v", err)
 			}
 
 			var body bytes.Buffer
-			err = templ.ExecuteTemplate(&body, "mail-course-registered.gotemplate", MailTmpl{
+			err = templ.ExecuteTemplate(&body, "mail-course-registered.gotemplate", courseImportMailData{
 				Name:   "Max Mustermann",
 				OptIn:  tc.optIn,
 				Course: course,
