@@ -2051,6 +2051,56 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}": {
+      "patch": {
+        "summary": "Rename a lecture or change its description.",
+        "description": "Sets the fields that are present and leaves the rest. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload.",
+        "operationId": "CourseService_updateLecture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "description": "Must be one of the course's lectures; anything else answers as missing.",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceupdateLectureBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}/presets/{presetId}/switch": {
       "post": {
         "summary": "Switch a live stream's camera to a preset.",
@@ -2364,6 +2414,88 @@
         ],
         "tags": [
           "Progress"
+        ]
+      }
+    },
+    "/schedule": {
+      "get": {
+        "summary": "Get the lecture schedule.",
+        "description": "Returns the lectures overlapping [from, to) -- at most 100 days -- of the courses the caller administers, optionally only in some lecture halls. Requires the lecture permission.",
+        "operationId": "CourseService_getSchedule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetScheduleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "lectureHallIds",
+            "description": "Only lectures in these halls; 0 stands for lectures in none. Ignored when\nall_lecture_halls is set.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "allLectureHalls",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/schedule/lecture-halls": {
+      "get": {
+        "summary": "List the lecture halls the schedule can be filtered by.",
+        "description": "Names and IDs only; listLectureHallsAdmin has the rest. Requires the lecture permission.",
+        "operationId": "CourseService_listScheduleLectureHalls",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListScheduleLectureHallsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Courses"
         ]
       }
     },
@@ -2882,6 +3014,17 @@
       "properties": {
         "pin": {
           "type": "boolean"
+        }
+      }
+    },
+    "CourseServiceupdateLectureBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
         }
       }
     },
@@ -3763,6 +3906,18 @@
         }
       }
     },
+    "protobufGetScheduleResponse": {
+      "type": "object",
+      "properties": {
+        "lectures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufScheduledLecture"
+          }
+        }
+      }
+    },
     "protobufGetSemestersResponse": {
       "type": "object",
       "properties": {
@@ -4128,6 +4283,18 @@
         }
       }
     },
+    "protobufListScheduleLectureHallsResponse": {
+      "type": "object",
+      "properties": {
+        "lectureHalls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufScheduleLectureHall"
+          }
+        }
+      }
+    },
     "protobufListServerNotificationsAdminResponse": {
       "type": "object",
       "properties": {
@@ -4348,6 +4515,56 @@
         "timeOfRegister": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "protobufScheduleLectureHall": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufScheduledLecture": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "courseId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "courseName": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 and empty for a lecture in no hall (self-streamed)."
+        },
+        "lectureHallName": {
+          "type": "string"
         }
       }
     },

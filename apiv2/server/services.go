@@ -76,6 +76,13 @@ var services = []service{
 			// Any lecturer may start a course; the creator becomes its administrator.
 			"createCourse":           requires(model.PermLecture),
 			"searchTumOnlineCourses": requires(model.PermLecture),
+
+			// The schedule filters to the caller's own courses itself; the hall names
+			// are what the template showed every lecturer.
+			"getSchedule":              requires(model.PermLecture),
+			"listScheduleLectureHalls": requires(model.PermLecture),
+			// The handler also checks the lecture is the course's.
+			"updateLecture": requiresCourseAdmin(),
 		},
 	},
 	{

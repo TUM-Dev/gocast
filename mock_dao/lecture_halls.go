@@ -11,6 +11,7 @@ package mock_dao
 
 import (
 	reflect "reflect"
+	time "time"
 
 	dao "github.com/TUM-Dev/gocast/dao"
 	model "github.com/TUM-Dev/gocast/model"
@@ -141,6 +142,21 @@ func (m *MockLectureHallsDao) GetLiveStateForPwrCtrl() ([]dao.PwrCtrlLiveState, 
 func (mr *MockLectureHallsDaoMockRecorder) GetLiveStateForPwrCtrl() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveStateForPwrCtrl", reflect.TypeOf((*MockLectureHallsDao)(nil).GetLiveStateForPwrCtrl))
+}
+
+// GetSchedule mocks base method.
+func (m *MockLectureHallsDao) GetSchedule(userID uint, from, to time.Time, lectureHalls []uint, all bool) ([]dao.ScheduleEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSchedule", userID, from, to, lectureHalls, all)
+	ret0, _ := ret[0].([]dao.ScheduleEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSchedule indicates an expected call of GetSchedule.
+func (mr *MockLectureHallsDaoMockRecorder) GetSchedule(userID, from, to, lectureHalls, all any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSchedule", reflect.TypeOf((*MockLectureHallsDao)(nil).GetSchedule), userID, from, to, lectureHalls, all)
 }
 
 // GetStreamsForLectureHallIcal mocks base method.
