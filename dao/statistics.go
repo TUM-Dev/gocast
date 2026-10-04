@@ -81,10 +81,12 @@ func (d statisticsDao) GetLectureNumVodViews(streamID uint) (int, error) {
 	return res, err
 }
 
-// GetLectureNumLiveViews returns the sum of live views of a lecture
+// GetLectureNumLiveViews returns the most viewers a lecture had at once while live
 func (d statisticsDao) GetLectureNumLiveViews(streamID uint) (int, error) {
 	var res int
-	err := DB.Raw(`SELECT MAX(viewers) from stats where stream_id = ?`, streamID).Scan(&res).Error
+	// MAX over no rows is NULL, not 0, and NULL does not scan into an int: a lecture
+	// nobody watched live would fail instead of answering 0.
+	err := DB.Raw(`SELECT IFNULL(MAX(viewers), 0) from stats where stream_id = ?`, streamID).Scan(&res).Error
 	return res, err
 }
 
