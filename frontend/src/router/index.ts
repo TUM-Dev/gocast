@@ -16,6 +16,8 @@ import AuditsView from "@/views/admin/AuditsView.vue";
 import CourseImportView from "@/views/admin/CourseImportView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import IntegrationsView from "@/views/admin/IntegrationsView.vue";
+import LectureHallCreateView from "@/views/admin/LectureHallCreateView.vue";
+import LectureHallsView from "@/views/admin/LectureHallsView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
 import NotificationsView from "@/views/admin/NotificationsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
@@ -176,6 +178,16 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/server-stats",
     name: "admin-server-stats",
     component: ServerStatsView,
+  },
+  {
+    path: "/admin/lecture-halls",
+    name: "admin-lecture-halls",
+    component: LectureHallsView,
+  },
+  {
+    path: "/admin/lecture-halls/new",
+    name: "admin-lecture-halls-new",
+    component: LectureHallCreateView,
   },
   {
     path: "/login",
