@@ -292,6 +292,56 @@ func TestStatistics(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: gin.H{"res": views},
 			},
+			"success liveViews, lecture of this course": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+								Return(testutils.StreamFPVLive, nil).
+								AnyTimes()
+							return streamsMock
+						}(),
+						StatisticsDao: func() dao.StatisticsDao {
+							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
+							statisticsMock.
+								EXPECT().
+								GetLectureNumLiveViews(testutils.StreamFPVLive.ID).
+								Return(views, nil).
+								AnyTimes()
+							return statisticsMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Url:              fmt.Sprintf("%s?interval=liveViews&lecture=%d", baseUrl, testutils.StreamFPVLive.ID),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: gin.H{"res": views},
+			},
+			"liveViews, lecture of another course": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+						StreamsDao: func() dao.StreamsDao {
+							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+							streamsMock.
+								EXPECT().
+								GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamGBSLive.ID)).
+								Return(testutils.StreamGBSLive, nil).
+								AnyTimes()
+							return streamsMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Url:          fmt.Sprintf("%s?interval=liveViews&lecture=%d", baseUrl, testutils.StreamGBSLive.ID),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusNotFound,
+			},
 			"success allDays": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{

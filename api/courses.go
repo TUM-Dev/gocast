@@ -101,6 +101,23 @@ type coursesRoutes struct {
 	dao.DaoWrapper
 }
 
+// refuseForeignStream answers 404 and reports true when stream is not one of the
+// context course's. AdminOfCourse only vouches for the course in the URL; handlers that
+// look a stream up by an ID from the path, query or body must check it belongs there,
+// or an admin of one course could edit any course's lectures. 404 rather than 403 so
+// the reply doesn't reveal that the ID exists in another course.
+func refuseForeignStream(c *gin.Context, stream model.Stream) bool {
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	if tlctx.Course != nil && stream.CourseID == tlctx.Course.ID {
+		return false
+	}
+	_ = c.Error(tools.RequestError{
+		Status:        http.StatusNotFound,
+		CustomMessage: "can not find stream",
+	})
+	return true
+}
+
 const (
 	WorkerHTTPPort = "8060"
 	CutOffLength   = 256
@@ -307,6 +324,9 @@ func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
 			CustomMessage: "can not find stream",
 			Err:           err,
 		})
+		return
+	}
+	if refuseForeignStream(c, stream) {
 		return
 	}
 
@@ -712,6 +732,9 @@ func (r coursesRoutes) submitCut(c *gin.Context) {
 		})
 		return
 	}
+	if refuseForeignStream(c, stream) {
+		return
+	}
 	stream.StartOffset = req.From
 	stream.EndOffset = req.To
 	if err = r.StreamsDao.SaveStream(&stream); err != nil {
@@ -740,6 +763,18 @@ func (r coursesRoutes) deleteUnit(c *gin.Context) {
 		})
 		return
 	}
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(unit.StreamID)))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find unit",
+			Err:           err,
+		})
+		return
+	}
+	if refuseForeignStream(c, stream) {
+		return
+	}
 	r.StreamsDao.DeleteUnit(unit.Model.ID)
 }
 
@@ -761,6 +796,9 @@ func (r coursesRoutes) addUnit(c *gin.Context) {
 			CustomMessage: "stream not found",
 			Err:           err,
 		})
+		return
+	}
+	if refuseForeignStream(c, stream) {
 		return
 	}
 	stream.Units = append(stream.Units, model.StreamUnit{
@@ -817,6 +855,9 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 		})
 		return
 	}
+	if refuseForeignStream(c, stream) {
+		return
+	}
 	stream.Description = req.Name
 	if err = r.StreamsDao.UpdateStream(stream); err != nil {
 		_ = c.Error(tools.RequestError{
@@ -865,6 +906,9 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 			CustomMessage: "can not find stream",
 			Err:           err,
 		})
+		return
+	}
+	if refuseForeignStream(c, stream) {
 		return
 	}
 	stream.Name = req.Name
@@ -927,6 +971,9 @@ func (r coursesRoutes) updateLectureTime(c *gin.Context) {
 		})
 		return
 	}
+	if refuseForeignStream(c, stream) {
+		return
+	}
 	stream.Start = req.Start
 	stream.End = req.End
 	if err = r.StreamsDao.UpdateStream(stream); err != nil {
@@ -969,6 +1016,9 @@ func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
 		})
 		return
 	}
+	if refuseForeignStream(c, stream) {
+		return
+	}
 
 	if err = r.StreamsDao.UpdateLectureSeries(stream); err != nil {
 		logger.Error("couldn't update lecture series", "err", err)
@@ -993,6 +1043,9 @@ func (r coursesRoutes) updateLectureSeriesTime(c *gin.Context) {
 			CustomMessage: "can not find stream",
 			Err:           err,
 		})
+		return
+	}
+	if refuseForeignStream(c, stream) {
 		return
 	}
 
@@ -1020,6 +1073,9 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 			CustomMessage: "can not find stream",
 			Err:           err,
 		})
+		return
+	}
+	if refuseForeignStream(c, stream) {
 		return
 	}
 

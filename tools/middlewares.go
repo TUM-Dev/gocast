@@ -203,6 +203,15 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		}
 		var course model.Course
 		if tumLiveContext.Course != nil {
+			// InitCourse ran first and AdminOfCourse/visibility checks vouch only for
+			// that course, so a course's routes must not reach another course's stream.
+			// Answer as for a missing stream rather than 403, so the reply doesn't reveal
+			// that the ID exists elsewhere.
+			if stream.CourseID != tumLiveContext.Course.ID {
+				c.Status(http.StatusNotFound)
+				RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
+				return
+			}
 			course = *tumLiveContext.Course
 		} else {
 			foundCourse, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)

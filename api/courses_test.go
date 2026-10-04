@@ -1243,7 +1243,13 @@ func TestCoursesLectureActions(t *testing.T) {
 							streamsMock.
 								EXPECT().
 								GetStreamByID(gomock.Any(), gomock.Any()).
-								Return(testutils.StreamGBSLive, nil). // StreamGBSLive.SeriesIdentifier == ""
+								Return(func() model.Stream {
+									// A stream of the course in the URL, outside any series. (This used
+									// StreamGBSLive, which now gets a 404 for belonging to another course.)
+									s := testutils.StreamFPVLive
+									s.SeriesIdentifier = ""
+									return s
+								}(), nil).
 								AnyTimes()
 							return streamsMock
 						}(),
@@ -2782,4 +2788,83 @@ func TestGetTranscodingProgress(t *testing.T) {
 			Url("/api/course/40/stream/1969/transcodingProgress").
 			Run(t, testutils.Equal)
 	})
+}
+
+// An admin of one course must not reach another course's streams through that course's
+// routes: AdminOfCourse only vouches for the course in the URL. Every route below names
+// StreamGBSLive (course GBS) under CourseFPV's URL. The mocks expect no writes, so gomock
+// also fails the case if a handler goes on to change the stream.
+func TestForeignStreamRefused(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tools.SetTemplateExecutor(tools.ReleaseTemplateExecutor{
+		Template: template.Must(template.New("base").Funcs(sprig.FuncMap()).
+			ParseFiles("../web/template/error.gohtml")),
+	})
+
+	foreign := testutils.StreamGBSLive
+	course := testutils.CourseFPV.ID
+	router := func(r *gin.Engine) {
+		streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+		streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", foreign.ID)).Return(foreign, nil).AnyTimes()
+		streamsMock.EXPECT().GetUnitByID("7").Return(model.StreamUnit{Model: gorm.Model{ID: 7}, StreamID: foreign.ID}, nil).AnyTimes()
+		configGinCourseRouter(r, dao.DaoWrapper{
+			CoursesDao: testutils.GetCoursesMock(t),
+			StreamsDao: streamsMock,
+		})
+	}
+	admin := testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin))
+	at := func(format string) string { return fmt.Sprintf(format, course, foreign.ID) }
+
+	cases := gomino.TestCases{
+		"renameLecture": {
+			Method: http.MethodPost, Url: at("/api/course/%d/renameLecture/%d"),
+			Body: renameLectureRequest{Name: "Hijacked"},
+		},
+		"updateDescription": {
+			Method: http.MethodPut, Url: at("/api/course/%d/updateDescription/%d"),
+			Body: renameLectureRequest{Name: "Hijacked"},
+		},
+		"updateLectureTime": {
+			Method: http.MethodPut, Url: at("/api/course/%d/updateLectureTime/%d"),
+			Body: updateLectureTimeRequest{Start: time.Now(), End: time.Now().Add(time.Hour)},
+		},
+		"updateLectureSeries": {
+			Method: http.MethodPost, Url: at("/api/course/%d/updateLectureSeries/%d"),
+		},
+		"updateLectureSeriesTime": {
+			Method: http.MethodPost, Url: at("/api/course/%d/updateLectureSeriesTime/%d"),
+		},
+		"deleteLectureSeries": {
+			Method: http.MethodDelete, Url: at("/api/course/%d/deleteLectureSeries/%d"),
+		},
+		"submitCut": {
+			Method: http.MethodPost, Url: fmt.Sprintf("/api/course/%d/submitCut", course),
+			Body: submitCutRequest{LectureID: foreign.ID, From: 1, To: 2},
+		},
+		"addUnit": {
+			Method: http.MethodPost, Url: fmt.Sprintf("/api/course/%d/addUnit", course),
+			Body: addUnitRequest{LectureID: foreign.ID, Title: "Hijacked"},
+		},
+		"deleteUnit": {
+			Method: http.MethodPost, Url: fmt.Sprintf("/api/course/%d/deleteUnit/7", course),
+		},
+		"uploadVODMedia": {
+			Method: http.MethodPost, Url: at("/api/course/%d/uploadVODMedia?streamID=%d&videoType=COMB"),
+		},
+		"stream/transcodingProgress (InitStream)": {
+			Method: http.MethodGet, Url: at("/api/course/%d/stream/%d/transcodingProgress"),
+		},
+		"stream/copy (InitStream)": {
+			Method: http.MethodPost, Url: at("/api/course/%d/stream/%d/copy"),
+			Body: gin.H{"targetCourse": course},
+		},
+		"stats with lecture": {
+			Method: http.MethodGet, Url: at("/api/course/%d/stats?interval=liveViews&lecture=%d"),
+		},
+	}
+	for _, tc := range cases {
+		tc.Middlewares = admin
+		tc.ExpectedCode = http.StatusNotFound
+	}
+	cases.Router(router).Run(t, testutils.Equal)
 }
