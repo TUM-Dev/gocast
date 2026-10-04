@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 import AdminLayout from "@/components/admin/AdminLayout.vue";
-import UsageStatsPanel from "@/components/admin/UsageStatsPanel.vue";
+import StatsPanel from "@/components/admin/StatsPanel.vue";
 import { ApiError } from "@/lib/api";
 import { fetchServerStats, serverStatsExportLink, type ServerStats } from "@/lib/server-stats";
+import { usageCharts, usageCounters } from "@/lib/usage-stats";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
@@ -16,6 +17,11 @@ const auth = useAuthStore();
 
 const stats = ref<ServerStats | null>(null);
 const loading = ref(true);
+
+// Computed rather than called in the template: a fresh array on every render would
+// make StatsPanel redraw its charts each time.
+const counters = computed(() => (stats.value ? usageCounters(stats.value) : []));
+const charts = computed(() => (stats.value ? usageCharts(stats.value) : []));
 const error = ref("");
 
 const exportLinks = { json: serverStatsExportLink("json"), csv: serverStatsExportLink("csv") };
@@ -67,9 +73,10 @@ onMounted(async () => {
         The old page only showed the partial-history note for a course created in 2022
         or earlier, or for courseID 0 -- which this page always is.
       -->
-      <UsageStatsPanel
+      <StatsPanel
         v-else-if="stats"
-        :stats="stats"
+        :counters="counters"
+        :charts="charts"
         :export-links="exportLinks"
         export-name="server-stats"
         :partial-history="true"
