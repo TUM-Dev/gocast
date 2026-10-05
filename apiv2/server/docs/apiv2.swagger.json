@@ -2644,6 +2644,54 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}/attachments/{fileId}": {
+      "delete": {
+        "summary": "Delete one of a lecture's attachments.",
+        "description": "Deletes the attachment and its file on disk. The file must be one of the lecture's attachments; recordings and thumbnails answer 404. Requires administering the course.",
+        "operationId": "CourseService_deleteLectureAttachment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "fileId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}/copy": {
       "post": {
         "summary": "Copy or move a lecture to another course.",
@@ -2737,6 +2785,156 @@
         ],
         "tags": [
           "Streams"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/sections": {
+      "post": {
+        "summary": "Add chapters to a lecture.",
+        "description": "Creates the sections and answers all of the lecture's sections, in order. Minutes and seconds must be below 60 and every section needs a description. The sections' thumbnails are generated afterwards, by a runner or else a worker. Requires administering the course.",
+        "operationId": "CourseService_createLectureSections",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCreateLectureSectionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicecreateLectureSectionsBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/sections/{sectionId}": {
+      "delete": {
+        "summary": "Delete one of a lecture's chapters.",
+        "description": "Deletes the section and asks a worker to delete its thumbnail. Requires administering the course.",
+        "operationId": "CourseService_deleteLectureSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "put": {
+        "summary": "Change one of a lecture's chapters.",
+        "description": "Replaces the section's description and start. A moved start has its thumbnail generated again. Requires administering the course.",
+        "operationId": "CourseService_updateLectureSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceupdateLectureSectionBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
         ]
       }
     },
@@ -2908,6 +3106,136 @@
           {
             "name": "streamId",
             "description": "Must be one of the course's lectures; anything else answers as missing.",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/subtitles": {
+      "post": {
+        "summary": "Have subtitles generated for a lecture.",
+        "description": "Hands the lecture's recording to the voice service, which sends the subtitles back when done. Answers 400 for a lecture with no recording and 503 when no voice service is configured. Requires administering the course.",
+        "operationId": "CourseService_requestLectureSubtitles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicerequestLectureSubtitlesBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/thumbnail": {
+      "delete": {
+        "summary": "Delete a lecture's custom thumbnail.",
+        "description": "Deletes the uploaded thumbnail and its file, so the generated ones show again. Answers 404 when there is none. Requires administering the course.",
+        "operationId": "CourseService_deleteLectureThumbnail",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/transcoding-progress": {
+      "get": {
+        "summary": "Get how far a lecture's transcoding is.",
+        "description": "The versions still transcoding, with their progress; a version that has finished is no longer listed. For polling while a lecture is converting. Requires administering the course.",
+        "operationId": "CourseService_getLectureTranscodingProgress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetLectureTranscodingProgressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
             "in": "path",
             "required": true,
             "type": "integer",
@@ -3775,6 +4103,19 @@
         }
       }
     },
+    "CourseServicecreateLectureSectionsBody": {
+      "type": "object",
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureSectionInput"
+          },
+          "description": "At least one."
+        }
+      }
+    },
     "CourseServicedeleteLecturesBody": {
       "type": "object",
       "properties": {
@@ -3804,6 +4145,15 @@
       "properties": {
         "pin": {
           "type": "boolean"
+        }
+      }
+    },
+    "CourseServicerequestLectureSubtitlesBody": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string",
+          "description": "The spoken language, as an ISO 639 code: \"de\" or \"en\" on the old page."
         }
       }
     },
@@ -3879,6 +4229,26 @@
         "private": {
           "type": "boolean",
           "description": "Withholds the lecture from everyone but the course's administrators."
+        }
+      }
+    },
+    "CourseServiceupdateLectureSectionBody": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "startHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startMinutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startSeconds": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -4894,6 +5264,19 @@
         }
       }
     },
+    "protobufCreateLectureSectionsResponse": {
+      "type": "object",
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureVideoSectionAdmin"
+          },
+          "description": "All of the lecture's sections, the new ones included, in order of their start."
+        }
+      }
+    },
     "protobufCreateNotificationRequest": {
       "type": "object",
       "properties": {
@@ -5061,6 +5444,19 @@
         "content": {
           "type": "string",
           "description": "Rendered from Markdown and sanitised server-side; the client must not do it again."
+        }
+      }
+    },
+    "protobufGetLectureTranscodingProgressResponse": {
+      "type": "object",
+      "properties": {
+        "progresses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureTranscodingProgress"
+          },
+          "description": "Empty once every version has finished."
         }
       }
     },
@@ -5387,6 +5783,28 @@
         }
       },
       "description": "LectureHallAdmin is a lecture hall as an administrator configures it: the stream\nsources the worker/runner pulls from plus the optional hardware addresses. Distinct\nfrom LectureHall (LECTURE_HALL_MESSAGE above), which is the trimmed shape shown to\nviewers."
+    },
+    "protobufLectureSectionInput": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "startHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startMinutes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Below 60."
+        },
+        "startSeconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Below 60."
+        }
+      }
     },
     "protobufLectureStatsResponse": {
       "type": "object",

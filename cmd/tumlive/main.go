@@ -156,6 +156,8 @@ func run(ctx context.Context) error {
 		runner_manager.WithLiveStateNotifier(api.NotifyViewersLiveState),
 	}
 	var subtitleClient pb.SubtitleGeneratorClient
+	// What apiv2 requests subtitles through; nil without a voice service.
+	var apiv2Subtitles pb.SubtitleGeneratorClient
 	if tools.Cfg.VoiceService.Host != "" {
 		api.RunVoiceServiceReceiver(tools.Cfg.VoiceService.AuthToken)
 		c, err := grpc.NewClient(fmt.Sprintf("%s:%s", tools.Cfg.VoiceService.Host, tools.Cfg.VoiceService.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -163,6 +165,7 @@ func run(ctx context.Context) error {
 			logger.Error("failed to connect to voice service", "err", err)
 		} else {
 			opts = append(opts, runner_manager.WithSubtitleClient(pb.NewSubtitleGeneratorClient(c), tools.Cfg.VoiceService.AuthToken))
+			apiv2Subtitles = pb.NewSubtitleGeneratorClient(c)
 		}
 	}
 	m := runner_manager.New(dao.NewDaoWrapper(), opts...)
@@ -181,7 +184,7 @@ func run(ctx context.Context) error {
 	go mailer.Run()
 
 	initCron(logger, m)
-	return serveHttp(ctx, m, camService)
+	return serveHttp(ctx, m, camService, apiv2Subtitles)
 }
 
 var VersionTag = "development"
@@ -200,7 +203,7 @@ func initAll(initializers []initializer) {
 }
 
 // serveHttp launches all http servers
-func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService *camera.Service) (err error) {
+func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService *camera.Service, subtitles pb.SubtitleGeneratorClient) (err error) {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	gin.SetMode(gin.ReleaseMode)
@@ -240,12 +243,18 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 
 	// The same camera service and image directory v1 is given below, so a preset
 	// photographed through either API lands in the same place and is served from it.
-	api2Client := apiv2.New(
-		dao.DB,
+	api2Opts := []apiv2.Option{
 		apiv2.WithCamService(camService),
 		apiv2.WithPresetImageDir(tools.Cfg.Paths.Static),
 		apiv2.WithTUMOnline(tum.Catalog{Dao: dao.NewDaoWrapper()}),
-	)
+		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
+		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
+		apiv2.WithSectionImages(api.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
+	}
+	if subtitles != nil {
+		api2Opts = append(api2Opts, apiv2.WithSubtitleGenerator(subtitles, tools.Cfg.VoiceService.AuthToken))
+	}
+	api2Client := apiv2.New(dao.DB, api2Opts...)
 
 	g, _ := errgroup.WithContext(ctx)
 

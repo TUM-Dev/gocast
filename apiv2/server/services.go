@@ -112,6 +112,17 @@ var services = []service{
 			"searchUsersForCourse": requiresCourseAdmin(),
 			// The caller's own courses, for the sidebar; any lecturer.
 			"listAdministeredCourses": requires(model.PermLecture),
+
+			// A lecture's content. Each handler also checks the lecture is the
+			// course's, and a section or file named is the lecture's. The uploads beside
+			// the gateway (lecture_upload.go) are authorized the same way in code.
+			"createLectureSections":         requiresCourseAdmin(),
+			"updateLectureSection":          requiresCourseAdmin(),
+			"deleteLectureSection":          requiresCourseAdmin(),
+			"deleteLectureAttachment":       requiresCourseAdmin(),
+			"deleteLectureThumbnail":        requiresCourseAdmin(),
+			"requestLectureSubtitles":       requiresCourseAdmin(),
+			"getLectureTranscodingProgress": requiresCourseAdmin(),
 		},
 	},
 	{
