@@ -37,7 +37,8 @@ func (r mainRoutes) shortLinkOrInfoPage(c *gin.Context) {
 func (r mainRoutes) HighlightPage(c *gin.Context) {
 	course, err := r.CoursesDao.GetCourseByShortLink(c.Param("shortLink"))
 	if err != nil {
-		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
+		// Neither an info page nor a short link: the same 404 as any other path.
+		serveNotFound(c)
 		return
 	}
 	indexData := NewIndexData()

@@ -1,4 +1,4 @@
-import {
+import { START_LOCATION,
   createRouter,
   createWebHistory,
   type RouteLocationNormalized,
@@ -12,6 +12,7 @@ import HomeView from "@/views/HomeView.vue";
 import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
+import NotFoundView from "@/views/NotFoundView.vue";
 import SearchView from "@/views/SearchView.vue";
 import SetPasswordView from "@/views/SetPasswordView.vue";
 import CourseTokenView from "@/views/CourseTokenView.vue";
@@ -278,6 +279,15 @@ const routes: RouteRecordRaw[] = [
     component: OnboardingView,
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
+  {
+    // Everything nothing above claims. On a first load that is Go's 404, which serves
+    // the shell with that status; an in-app navigation here is a page Go still
+    // renders and is handed back to it in the guard below.
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: NotFoundView,
+    meta: { anonymous: true, footer: true },
+  },
 ];
 
 /**
@@ -338,7 +348,20 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, _from, next) => {
+/**
+ * Whether the navigation in flight is the page load itself. A path the SPA does not
+ * own is handed back to Go on an in-app navigation, but on a first load Go has
+ * already answered -- with the shell and a 404 -- and handing it back would reload
+ * forever.
+ */
+let inAppNavigations = 0;
+export const isInitialNavigation = (): boolean => inAppNavigations === 0;
+
+router.beforeEach((to, from, next) => {
+  // Counted as soon as it starts, so a view mounted by the first load still sees the
+  // load as initial whichever order the router's hooks and the mount run in.
+  if (from !== START_LOCATION) inAppNavigations += 1;
+
   const legacy = legacyStartPageRedirect(to);
   if (legacy) {
     next(legacy);
@@ -346,7 +369,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   /** Unclaimed paths belong to pages Go still renders, so hand them back. */
-  if (to.matched.length === 0) {
+  if (to.name === "not-found" && !isInitialNavigation()) {
     window.location.assign(to.fullPath);
     return;
   }
