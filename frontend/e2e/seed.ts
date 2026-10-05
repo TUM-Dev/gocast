@@ -315,8 +315,9 @@ export const transcodingFailures = {
  * is deleted by the maintenance e2e spec's delete test.
  */
 export const emailFailures = {
-  kept: { to: "broken@example.com", subject: "Welcome to TUM-Live", retries: 4 },
-  consumed: { to: "also-broken@example.com", subject: "Your stream is live", retries: 2 },
+  // No attempt counts here: the mailer retries both every minute, so they drift.
+  kept: { to: "broken@example.com", subject: "Welcome to TUM-Live" },
+  consumed: { to: "also-broken@example.com", subject: "Your stream is live" },
 } as const;
 
 /**

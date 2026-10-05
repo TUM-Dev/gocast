@@ -117,9 +117,11 @@ test.describe("the maintenance page", () => {
       const row = page
         .locator("li")
         .filter({ hasText: emailFailures.kept.to })
-        .filter({ hasText: `${emailFailures.kept.retries} attempts` })
         .first();
       await expect(row).toBeVisible();
+      // The mailer retries a failed email every minute while the server is up, so
+      // the count itself depends on how long the run has been going.
+      await expect(row).toContainText(/\d+ attempts/);
     });
 
     test("expands to show the body and errors", async ({ page }) => {
@@ -128,7 +130,6 @@ test.describe("the maintenance page", () => {
       const row = page
         .locator("li")
         .filter({ hasText: emailFailures.kept.to })
-        .filter({ hasText: `${emailFailures.kept.retries} attempts` })
         .first();
       await row.getByRole("button", { name: "Expand" }).click();
 
@@ -218,7 +219,6 @@ test.describe("dismissing a failure", () => {
     const consumedRow = page
       .locator("li")
       .filter({ hasText: emailFailures.consumed.to })
-      .filter({ hasText: `${emailFailures.consumed.retries} attempts` })
       .first();
     await expect(consumedRow).toBeVisible();
 
@@ -230,7 +230,6 @@ test.describe("dismissing a failure", () => {
       page
         .locator("li")
         .filter({ hasText: emailFailures.kept.to })
-        .filter({ hasText: `${emailFailures.kept.retries} attempts` })
         .first(),
     ).toBeVisible();
   });
