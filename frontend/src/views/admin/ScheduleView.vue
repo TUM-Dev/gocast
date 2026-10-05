@@ -297,12 +297,12 @@ onUnmounted(() => {
         <p class="text-5 mt-3 text-xs">
           Viewers watching right now see a new title or description when they next load the page.
         </p>
-        <!-- The course's page is still server-rendered. -->
+        <!-- The course's lecture list opens the card the fragment names. -->
         <a
           class="text-3 hover:text-1 mt-2 inline-block text-sm"
-          :href="`/admin/course/${selected.courseId}#lecture-li-${selected.streamId}`"
+          :href="`/admin/courses/${selected.courseId}/lectures#lecture-${selected.streamId}`"
         >
-          Edit everything else on the course page <i class="fas fa-external-link-alt"></i>
+          Edit everything else on the course's lectures page <i class="fas fa-external-link-alt"></i>
         </a>
       </div>
     </div>
