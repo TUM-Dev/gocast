@@ -2,6 +2,7 @@
 import { computed } from "vue";
 
 import LectureEditor from "@/components/admin/lectures/LectureEditor.vue";
+import TranscodingProgress from "@/components/admin/lectures/content/TranscodingProgress.vue";
 import {
   formatDuration,
   lectureBadges,
@@ -105,14 +106,13 @@ const watchLink = computed(() =>
           </span>
           <span v-if="seriesCount"><i class="fas fa-layer-group mr-1"></i>Series of {{ seriesCount }}</span>
         </p>
-        <div v-if="lecture.converting && lecture.transcodingProgresses.length" class="mt-1 flex flex-col gap-1">
-          <div v-for="p in lecture.transcodingProgresses" :key="p.version" class="text-xs">
-            <span class="text-4 font-semibold">{{ p.version }} ({{ p.progress }}%)</span>
-            <div class="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
-              <div class="h-1.5 rounded-full bg-blue-600 dark:bg-blue-500" :style="{ width: `${p.progress}%` }"></div>
-            </div>
-          </div>
-        </div>
+        <TranscodingProgress
+          :course-id="courseId"
+          :lecture-id="lecture.id"
+          :converting="lecture.converting"
+          :progresses="lecture.transcodingProgresses"
+          @done="emit('changed')"
+        />
       </div>
       <div class="flex flex-col items-end gap-2">
         <ul class="flex flex-wrap justify-end gap-1" aria-label="State">
