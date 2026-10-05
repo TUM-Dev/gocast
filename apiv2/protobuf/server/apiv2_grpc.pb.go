@@ -637,6 +637,7 @@ const (
 	CourseService_DeleteLectures_FullMethodName                  = "/protobuf.CourseService/deleteLectures"
 	CourseService_DeleteLectureSeries_FullMethodName             = "/protobuf.CourseService/deleteLectureSeries"
 	CourseService_CopyLecture_FullMethodName                     = "/protobuf.CourseService/copyLecture"
+	CourseService_CreateLectures_FullMethodName                  = "/protobuf.CourseService/createLectures"
 	CourseService_GetCourseAdmin_FullMethodName                  = "/protobuf.CourseService/getCourseAdmin"
 	CourseService_UpdateCourseSettings_FullMethodName            = "/protobuf.CourseService/updateCourseSettings"
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
@@ -694,6 +695,16 @@ type CourseServiceClient interface {
 	DeleteLectures(ctx context.Context, in *DeleteLecturesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteLectureSeries(ctx context.Context, in *DeleteLectureSeriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CopyLecture(ctx context.Context, in *CopyLectureRequest, opts ...grpc.CallOption) (*CopyLectureResponse, error)
+	// The upload of a VOD_UPLOAD lecture's recording sits beside the gateway, as the
+	// attachment and thumbnail uploads do, since it is a multipart body:
+	// POST /courses/{course_id}/streams/{stream_id}/media?type=COMB|PRES|CAM, the video
+	// in the form field `file`. Authorized as these RPCs are, a caller who does not
+	// administer the course answered 404, before anything of the body is read. The body
+	// is then streamed to the least busy worker, which transcodes it and attaches the
+	// result to the lecture as that version. Answers {} once the worker has the file;
+	// 400 for a missing or unknown type, 409 while the lecture is live, 503 when no
+	// worker is alive or the one chosen cannot be reached.
+	CreateLectures(ctx context.Context, in *CreateLecturesRequest, opts ...grpc.CallOption) (*CreateLecturesResponse, error)
 	GetCourseAdmin(ctx context.Context, in *GetCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
@@ -945,6 +956,16 @@ func (c *courseServiceClient) CopyLecture(ctx context.Context, in *CopyLectureRe
 	return out, nil
 }
 
+func (c *courseServiceClient) CreateLectures(ctx context.Context, in *CreateLecturesRequest, opts ...grpc.CallOption) (*CreateLecturesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateLecturesResponse)
+	err := c.cc.Invoke(ctx, CourseService_CreateLectures_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) GetCourseAdmin(ctx context.Context, in *GetCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdmin, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CourseAdmin)
@@ -1180,6 +1201,16 @@ type CourseServiceServer interface {
 	DeleteLectures(context.Context, *DeleteLecturesRequest) (*emptypb.Empty, error)
 	DeleteLectureSeries(context.Context, *DeleteLectureSeriesRequest) (*emptypb.Empty, error)
 	CopyLecture(context.Context, *CopyLectureRequest) (*CopyLectureResponse, error)
+	// The upload of a VOD_UPLOAD lecture's recording sits beside the gateway, as the
+	// attachment and thumbnail uploads do, since it is a multipart body:
+	// POST /courses/{course_id}/streams/{stream_id}/media?type=COMB|PRES|CAM, the video
+	// in the form field `file`. Authorized as these RPCs are, a caller who does not
+	// administer the course answered 404, before anything of the body is read. The body
+	// is then streamed to the least busy worker, which transcodes it and attaches the
+	// result to the lecture as that version. Answers {} once the worker has the file;
+	// 400 for a missing or unknown type, 409 while the lecture is live, 503 when no
+	// worker is alive or the one chosen cannot be reached.
+	CreateLectures(context.Context, *CreateLecturesRequest) (*CreateLecturesResponse, error)
 	GetCourseAdmin(context.Context, *GetCourseAdminRequest) (*CourseAdmin, error)
 	UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error)
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
@@ -1276,6 +1307,9 @@ func (UnimplementedCourseServiceServer) DeleteLectureSeries(context.Context, *De
 }
 func (UnimplementedCourseServiceServer) CopyLecture(context.Context, *CopyLectureRequest) (*CopyLectureResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CopyLecture not implemented")
+}
+func (UnimplementedCourseServiceServer) CreateLectures(context.Context, *CreateLecturesRequest) (*CreateLecturesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateLectures not implemented")
 }
 func (UnimplementedCourseServiceServer) GetCourseAdmin(context.Context, *GetCourseAdminRequest) (*CourseAdmin, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseAdmin not implemented")
@@ -1754,6 +1788,24 @@ func _CourseService_CopyLecture_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_CreateLectures_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLecturesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).CreateLectures(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_CreateLectures_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).CreateLectures(ctx, req.(*CreateLecturesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_GetCourseAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCourseAdminRequest)
 	if err := dec(in); err != nil {
@@ -2208,6 +2260,10 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "copyLecture",
 			Handler:    _CourseService_CopyLecture_Handler,
+		},
+		{
+			MethodName: "createLectures",
+			Handler:    _CourseService_CreateLectures_Handler,
 		},
 		{
 			MethodName: "getCourseAdmin",

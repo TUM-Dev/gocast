@@ -2552,6 +2552,47 @@
         ]
       }
     },
+    "/courses/{courseId}/streams": {
+      "post": {
+        "summary": "Create a lecture, or a series of them, in a course.",
+        "description": "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course.",
+        "operationId": "CourseService_createLectures",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCreateLecturesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicecreateLecturesBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/delete": {
       "post": {
         "summary": "Delete some of a course's lectures.",
@@ -4158,6 +4199,48 @@
         }
       }
     },
+    "CourseServicecreateLecturesBody": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Required; every lecture created gets it."
+        },
+        "kind": {
+          "$ref": "#/definitions/protobufLectureCreationKind"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The first lecture's start. Required unless ad_hoc."
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "How long each lecture runs. Required for a livestream; a VOD_UPLOAD or\nPREMIERE given 0 gets an hour."
+        },
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 for none: a self-streamed livestream, and always for the other kinds."
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "adHoc": {
+          "type": "boolean",
+          "description": "A livestream starting now (two minutes from now, for a worker to pick it up)."
+        },
+        "dateSeries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": "Further lectures besides the one at start, as v1's dateSeries: the client\ncomputes the weekly or daily dates. Empty for a single lecture."
+        }
+      }
+    },
     "CourseServicedeleteLecturesBody": {
       "type": "object",
       "properties": {
@@ -5336,6 +5419,19 @@
         }
       }
     },
+    "protobufCreateLecturesResponse": {
+      "type": "object",
+      "properties": {
+        "lectures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseLectureAdmin"
+          },
+          "description": "The one at start first, then one per date_series entry in the order given."
+        }
+      }
+    },
     "protobufCreateNotificationRequest": {
       "type": "object",
       "properties": {
@@ -5758,6 +5854,16 @@
           }
         }
       }
+    },
+    "protobufLectureCreationKind": {
+      "type": "string",
+      "enum": [
+        "LECTURE_CREATION_KIND_LIVESTREAM",
+        "LECTURE_CREATION_KIND_VOD_UPLOAD",
+        "LECTURE_CREATION_KIND_PREMIERE"
+      ],
+      "default": "LECTURE_CREATION_KIND_LIVESTREAM",
+      "description": "What a created lecture is. LIVESTREAM, the zero value, is v1's default.\n\n - LECTURE_CREATION_KIND_LIVESTREAM: Streamed live: from its lecture hall, or by the lecturer with its stream key.\n - LECTURE_CREATION_KIND_VOD_UPLOAD: A recording uploaded afterwards through POST .../streams/{stream_id}/media.\n - LECTURE_CREATION_KIND_PREMIERE: A recording a worker streams as if live, starting at the lecture's start."
     },
     "protobufLectureFileAdmin": {
       "type": "object",

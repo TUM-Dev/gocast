@@ -75,9 +75,16 @@ func serveUpload(api *API, req *http.Request) *httptest.ResponseRecorder {
 		api.handleLectureUpload(c, route)
 	})
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
+	r.ServeHTTP(closeNotifyingRecorder{rec}, req)
 	return rec
 }
+
+// closeNotifyingRecorder lets the media upload's reverse proxy run against a
+// recorder: it asks gin's writer for CloseNotify, which gin passes on to the
+// underlying writer and panics if that has none. A server's writer has.
+type closeNotifyingRecorder struct{ *httptest.ResponseRecorder }
+
+func (closeNotifyingRecorder) CloseNotify() <-chan bool { return make(chan bool) }
 
 // filesUnder lists every file below dir.
 func filesUnder(t *testing.T, dir string) []string {

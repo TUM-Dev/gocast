@@ -27,14 +27,16 @@ import (
 // maxLectureUploadSize is v1's MAX_FILE_SIZE, for attachments and thumbnails alike.
 const maxLectureUploadSize = 50 * 1000 * 1000
 
-// The two uploads a lecture takes.
+// The uploads a lecture takes. The media upload is a recording, which is not stored
+// here but proxied to a worker: see lecture_media.go.
 const (
 	uploadAttachment = "attachments"
 	uploadThumbnail  = "thumbnail"
+	uploadMedia      = "media"
 )
 
 // lectureUploadRoute is a request for one of the upload endpoints:
-// POST /api/v2/courses/{course_id}/streams/{stream_id}/{attachments|thumbnail}.
+// POST /api/v2/courses/{course_id}/streams/{stream_id}/{attachments|thumbnail|media}.
 type lectureUploadRoute struct {
 	courseID, streamID uint32
 	kind               string
@@ -54,7 +56,7 @@ func lectureUploadRouteOf(r *http.Request) (lectureUploadRoute, bool) {
 		return lectureUploadRoute{}, false
 	}
 	parts := strings.Split(rest, "/")
-	if len(parts) != 4 || parts[1] != "streams" || (parts[3] != uploadAttachment && parts[3] != uploadThumbnail) {
+	if len(parts) != 4 || parts[1] != "streams" || (parts[3] != uploadAttachment && parts[3] != uploadThumbnail && parts[3] != uploadMedia) {
 		return lectureUploadRoute{}, false
 	}
 	courseID, err1 := strconv.ParseUint(parts[0], 10, 32)
@@ -86,27 +88,22 @@ func writeUploadError(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(runtime.HTTPStatusFromCode(st.Code()), gin.H{"code": int(st.Code()), "message": st.Message()})
 }
 
-// handleLectureUpload replaces v1's newAttachment and putCustomLiveThumbnail. It is
-// authorized as the lecture administration RPCs are: authenticated by getCurrent, the
-// course by authorizeCourseAdmin, the lecture by courseLecture. A caller who does not
+// handleLectureUpload replaces v1's newAttachment and putCustomLiveThumbnail, and
+// through proxyLectureMedia its uploadVODMedia. It is authorized as the lecture
+// administration RPCs are: authenticated by getCurrent, the course by
+// authorizeCourseAdmin, the lecture by courseLecture. A caller who does not
 // administer the course is answered 404, as the RPCs answer, so the status cannot tell
 // a missing course from someone else's. All of that before the body is read, so a
 // refused upload is not buffered first.
 func (a *API) handleLectureUpload(c *gin.Context, route lectureUploadRoute) {
 	ctx := incomingContext(c.Request)
-	user, err := a.getCurrent(ctx)
+	stream, err := a.authorizeLectureUpload(ctx, route)
 	if err != nil {
-		writeUploadError(c, e.WithStatus(http.StatusUnauthorized, err))
-		return
-	}
-	method := "POST /courses/{course_id}/streams/{stream_id}/" + route.kind
-	if err := a.authorizeCourseAdmin(ctx, user, route, method); err != nil {
 		writeUploadError(c, err)
 		return
 	}
-	stream, err := a.courseLecture(ctx, route.courseID, route.streamID)
-	if err != nil {
-		writeUploadError(c, err)
+	if route.kind == uploadMedia {
+		a.proxyLectureMedia(c, stream)
 		return
 	}
 	if a.massStorage == "" {
@@ -157,6 +154,20 @@ func (a *API) handleLectureUpload(c *gin.Context, route lectureUploadRoute) {
 		return
 	}
 	c.Data(http.StatusOK, "application/json", body)
+}
+
+// authorizeLectureUpload answers the lecture an upload is for, once the caller is
+// known to administer its course.
+func (a *API) authorizeLectureUpload(ctx context.Context, route lectureUploadRoute) (model.Stream, error) {
+	user, err := a.getCurrent(ctx)
+	if err != nil {
+		return model.Stream{}, e.WithStatus(http.StatusUnauthorized, err)
+	}
+	method := "POST /courses/{course_id}/streams/{stream_id}/" + route.kind
+	if err := a.authorizeCourseAdmin(ctx, user, route, method); err != nil {
+		return model.Stream{}, err
+	}
+	return a.courseLecture(ctx, route.courseID, route.streamID)
 }
 
 // storeUpload writes an upload into dir under a fresh name, keeping its extension as

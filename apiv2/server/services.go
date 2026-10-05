@@ -97,6 +97,9 @@ var services = []service{
 			"deleteLectures":            requiresCourseAdmin(),
 			"deleteLectureSeries":       requiresCourseAdmin(),
 			"copyLecture":               requiresCourseAdmin(),
+			// The handler also refuses a hall for a VOD upload or premiere, and an
+			// unknown one.
+			"createLectures": requiresCourseAdmin(),
 
 			// ----- Course administration -----
 			// The course page, for its administrators. The handlers also refuse

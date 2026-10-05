@@ -21,6 +21,7 @@ import (
 
 type StreamsDao interface {
 	CreateStream(stream *model.Stream) error
+	CreateStreams(streams []model.Stream) error
 	AddVodView(id string) error
 
 	GetDueStreamsForWorkers() []model.Stream
@@ -119,6 +120,15 @@ func NewStreamsDao() StreamsDao {
 
 func (d streamsDao) CreateStream(stream *model.Stream) error {
 	return DB.Create(stream).Error
+}
+
+// CreateStreams creates the streams, with their files, all or none: one insert, in
+// gorm's transaction. The IDs are filled in.
+func (d streamsDao) CreateStreams(streams []model.Stream) error {
+	if len(streams) == 0 {
+		return nil
+	}
+	return DB.Create(&streams).Error
 }
 
 func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
