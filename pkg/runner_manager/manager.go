@@ -19,10 +19,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/tum-dev/gocast/runner/pkg/auth"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 
@@ -36,9 +36,10 @@ import (
 
 // Manager manages communication with runners and handles job distribution
 type Manager struct {
-	dao        dao.DaoWrapper
-	listenAddr string
-	logger     *log.Logger
+	dao         dao.DaoWrapper
+	listenAddr  string
+	logger      *log.Logger
+	runnerToken string
 
 	protobuf.UnimplementedRunnerManagerServiceServer
 
@@ -195,6 +196,14 @@ func WithSubtitleClient(client pb.SubtitleGeneratorClient, auth string) Option {
 	}
 }
 
+// WithRunnerToken sets the shared secret runners must present, and that the manager
+// presents to runners. Run refuses to start without one.
+func WithRunnerToken(token string) Option {
+	return func(m *Manager) {
+		m.runnerToken = token
+	}
+}
+
 // WithLiveStateNotifier registers a callback invoked when a stream starts or stops being live,
 // e.g. to notify viewers via websocket.
 func WithLiveStateNotifier(notifier LiveStateNotifier) Option {
@@ -210,19 +219,20 @@ func (m *Manager) applyOpts(opts []Option) {
 }
 
 func (m *Manager) Run() error {
+	if m.runnerToken == "" {
+		// Fail closed. External organisations' runners dial this port over the internet, so
+		// an unauthenticated manager hands out stream jobs and accepts playlist URLs from
+		// anyone.
+		return errors.New("run manager: no runner token configured")
+	}
 	lis, err := net.Listen("tcp", m.listenAddr)
 	if err != nil {
 		return fmt.Errorf("run manager: %v", err)
 	}
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
-		MaxConnectionAgeGrace: time.Second * 5,
-		Time:                  time.Minute * 10,
-		Timeout:               time.Second * 20,
-	}))
+	grpcServer := grpc.NewServer(m.serverOptions()...)
 	protobuf.RegisterRunnerManagerServiceServer(grpcServer, m)
-	reflection.Register(grpcServer)
+	// No reflection: the port is reachable from the internet by design, and listing the
+	// service only helps someone probing it.
 	go func(listener net.Listener) {
 		defer func() {
 			_ = listener.Close()
@@ -234,9 +244,78 @@ func (m *Manager) Run() error {
 	return nil
 }
 
+// serverOptions builds the gRPC server options. Recovery runs outermost so that a panic
+// anywhere below, the auth check included, becomes an Internal error instead of ending the
+// process: grpc-go doesn't recover handler panics, and a single notification with an unset
+// optional field used to be enough to take every stream on the server down.
+func (m *Manager) serverOptions() []grpc.ServerOption {
+	return []grpc.ServerOption{
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     time.Minute,
+			MaxConnectionAge:      time.Minute,
+			MaxConnectionAgeGrace: time.Second * 5,
+			Time:                  time.Minute * 10,
+			Timeout:               time.Second * 20,
+		}),
+		grpc.ChainUnaryInterceptor(
+			auth.RecoveryInterceptor(m.logger),
+			auth.UnaryServerInterceptor(m.runnerToken, true),
+		),
+	}
+}
+
+// caller returns the authenticated hostname of the runner making the request. The auth
+// interceptor guarantees it is set, so a missing value means the handler was reached
+// without the interceptor and must not proceed.
+func caller(ctx context.Context) (string, error) {
+	host, ok := auth.CallerHostname(ctx)
+	if !ok {
+		return "", status.Error(codes.Unauthenticated, "no authenticated runner")
+	}
+	return host, nil
+}
+
+// ownsStream checks that the calling runner is the one gocast gave this stream version to.
+// All runners share one token, so without this a misbehaving runner could overwrite the
+// playlist URL of a stream that runs somewhere else.
+func (m *Manager) ownsStream(hostname string, streamID uint, version model.StreamVersion) error {
+	jobs, err := m.dao.StreamsDao.GetRunnerJobsForStream(streamID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "get runner jobs: %v", err)
+	}
+	for _, j := range jobs {
+		if j.RunnerHostname == hostname && j.Version == version {
+			return nil
+		}
+	}
+	return status.Errorf(codes.PermissionDenied, "runner %s has no job for stream %d version %s", hostname, streamID, version)
+}
+
+// isRegistered checks that the calling runner registered with this manager. Notifications
+// that arrive after the stream's job was cleared (VoD, thumbnails, section images) can't be
+// tied to a job any more, so this is the check they get.
+func (m *Manager) isRegistered(ctx context.Context, hostname string) error {
+	if _, err := m.dao.RunnerDao.Get(ctx, hostname); err != nil {
+		return status.Errorf(codes.PermissionDenied, "runner %s is not registered: %v", hostname, err)
+	}
+	return nil
+}
+
 func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
+	host, err := caller(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Registering under another runner's name would re-point its jobs at this port and
+	// clear them below.
+	if req.GetHostname() != host {
+		return nil, status.Errorf(codes.PermissionDenied, "hostname %q does not match the authenticated runner %q", req.GetHostname(), host)
+	}
+	if req.GetPort() <= 0 || req.GetPort() > 65535 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid port %d", req.GetPort())
+	}
 	m.logger.Info("Register Runner", "d", req)
-	err := m.dao.RunnerDao.Create(ctx, &model.Runner{
+	err = m.dao.RunnerDao.Create(ctx, &model.Runner{
 		Hostname:       req.GetHostname(),
 		Port:           uint32(req.GetPort()),
 		TimeOfRegister: time.Now(),
@@ -256,9 +335,16 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 }
 
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
-	switch notification.Data.(type) {
+	host, err := caller(ctx)
+	if err != nil {
+		return nil, err
+	}
+	switch notification.GetData().(type) {
 	case *protobuf.Notification_Heartbeat:
-		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
+		if notification.GetHeartbeat().GetHostname() != host {
+			return nil, status.Errorf(codes.PermissionDenied, "heartbeat for %q from runner %q", notification.GetHeartbeat().GetHostname(), host)
+		}
+		runner, err := m.dao.RunnerDao.Get(ctx, host)
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
 		}
@@ -276,14 +362,31 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		}
 		return &protobuf.NotificationResponse{}, nil
 	case *protobuf.Notification_StreamStart:
-		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, notification.GetStreamStart())
+		n := notification.GetStreamStart()
+		if err := m.ownsStream(host, uint(n.GetStream().GetId()), modelStreamVersion(n.GetStreamVersion())); err != nil {
+			return nil, err
+		}
+		return &protobuf.NotificationResponse{}, m.streamStarted(ctx, n)
 	case *protobuf.Notification_StreamEnd:
-		return &protobuf.NotificationResponse{}, m.streamEnded(ctx, notification.GetStreamEnd())
+		n := notification.GetStreamEnd()
+		if err := m.ownsStream(host, uint(n.GetStream().GetId()), modelStreamVersion(n.GetStreamVersion())); err != nil {
+			return nil, err
+		}
+		return &protobuf.NotificationResponse{}, m.streamEnded(ctx, n)
 	case *protobuf.Notification_VodReady:
+		if err := m.isRegistered(ctx, host); err != nil {
+			return nil, err
+		}
 		return m.handleVODReady(ctx, notification.GetVodReady())
 	case *protobuf.Notification_ThumbnailReady:
+		if err := m.isRegistered(ctx, host); err != nil {
+			return nil, err
+		}
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
 	case *protobuf.Notification_SectionImagesReady:
+		if err := m.isRegistered(ctx, host); err != nil {
+			return nil, err
+		}
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
@@ -298,7 +401,7 @@ func (m *Manager) getClient(ctx context.Context) (model.Runner, protobuf.RunnerS
 	if err != nil {
 		return model.Runner{}, nil, nil, fmt.Errorf("reserve available runner: %w", err)
 	}
-	conn, err := dialRunner(r)
+	conn, err := m.dialRunner(r)
 	if err != nil {
 		return model.Runner{}, nil, nil, fmt.Errorf("dial runner: %w", err)
 	}
@@ -321,18 +424,21 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 	// This is usually called in bursts, which introduces a chance for race conditions,
 	// where a stream is fetched and overwrites the url that the other requests added.
 
-	stream, err := m.dao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
+	if req.GetUrl() == "" {
+		return status.Error(codes.InvalidArgument, "stream start without url")
+	}
+	stream, err := m.dao.GetStreamByID(ctx, strconv.FormatUint(req.GetStream().GetId(), 10))
 	if err != nil {
 		return err
 	}
 	m.streamStartLock.Lock()
 	switch req.GetStreamVersion() {
 	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
-		m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
+		m.dao.StreamsDao.SaveCOMBURL(&stream, req.GetUrl())
 	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
-		m.dao.StreamsDao.SavePRESURL(&stream, *req.Url)
+		m.dao.StreamsDao.SavePRESURL(&stream, req.GetUrl())
 	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
-		m.dao.StreamsDao.SaveCAMURL(&stream, *req.Url)
+		m.dao.StreamsDao.SaveCAMURL(&stream, req.GetUrl())
 	}
 	m.streamStartLock.Unlock()
 
@@ -472,9 +578,9 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.InvalidArgument, "invalid stream version %v", req.GetStreamVersion())
 	}
 
-	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
+	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(req.GetStream().GetId(), 10))
 	if err != nil {
-		return status.Errorf(codes.NotFound, "can't find stream for id %d: %v", req.Stream.GetId(), err)
+		return status.Errorf(codes.NotFound, "can't find stream for id %d: %v", req.GetStream().GetId(), err)
 	}
 
 	fpath := filepath.Join(m.massStorage, "thumbs", stream.Start.Format("2006/01"), fmt.Sprintf("%d", stream.CourseID))
@@ -516,13 +622,16 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 
 func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VODReadyNotification) (*protobuf.NotificationResponse, error) {
 	m.logger.Debug("vodReady", "payload", notification)
-	streamId := notification.Stream.GetId()
+	if notification.GetUrl() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "vod ready without url")
+	}
+	streamId := notification.GetStream().GetId()
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
 	if err != nil {
 		return nil, err
 	}
 	modelVersion := model.COMB
-	switch *notification.StreamVersion {
+	switch notification.GetStreamVersion() {
 	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
 		stream.PlaylistUrl = notification.GetUrl()
 	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
@@ -531,6 +640,10 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
 		modelVersion = model.CAM
 		stream.PlaylistUrlCAM = notification.GetUrl()
+	default:
+		// Used to be a nil dereference; silently marking the stream recorded without a
+		// playlist is no better.
+		return nil, status.Errorf(codes.InvalidArgument, "vod ready without stream version")
 	}
 	stream.Recording = true
 	err = m.dao.StreamsDao.SaveStream(&stream)
@@ -777,7 +890,7 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 	if err != nil {
 		return fmt.Errorf("get runner %s: %w", job.RunnerHostname, err)
 	}
-	conn, err := dialRunner(runner)
+	conn, err := m.dialRunner(runner)
 	if err != nil {
 		return fmt.Errorf("dial runner %s: %w", job.RunnerHostname, err)
 	}
@@ -801,8 +914,10 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 	return nil
 }
 
-func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
-	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (m *Manager) dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
+	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(auth.UnaryClientInterceptor(m.runnerToken, "")))
 }
 
 // ReapStaleStreams finds streams that are stuck in live state and cleans them up.

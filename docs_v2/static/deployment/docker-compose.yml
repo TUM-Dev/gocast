@@ -63,7 +63,7 @@ services:
       - GOCAST_SERVER=live.rbg.tum.de:50056
       - REALHOST={{.Node.Hostname}}
       - VERSION=dev
-      - TOKEN=<your-organization-token> # TODO: replace this with your organization JWT
+      - TOKEN=<runner-token> # TODO: the runnerToken from gocast's config.yaml; the runner refuses to start without it
     ports:
       - target: 8187
         published: 8187

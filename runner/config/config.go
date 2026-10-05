@@ -16,6 +16,10 @@ var Config struct {
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
 	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:8089"`
+	// Token is the shared secret from gocast's config.yaml (runnerToken). The runner sends it
+	// with every call to gocast and requires it on every call gocast makes to the runner.
+	// There is no default on purpose: a runner without a token refuses to start.
+	Token string `env:"TOKEN"`
 }
 
 func init() {
@@ -23,5 +27,10 @@ func init() {
 		slog.Error("error parsing envConfig", "error", err)
 	}
 
-	slog.Info("envConfig loaded", "envConfig", Config)
+	// Log a redacted copy; the token is a credential.
+	redacted := Config
+	if redacted.Token != "" {
+		redacted.Token = "<set>"
+	}
+	slog.Info("envConfig loaded", "envConfig", redacted)
 }

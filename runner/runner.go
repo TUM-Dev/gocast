@@ -15,12 +15,12 @@ import (
 	"github.com/sethvargo/go-retry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/actions"
+	"github.com/tum-dev/gocast/runner/pkg/auth"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
@@ -90,6 +90,12 @@ func NewRunner(v string) *Runner {
 
 func (r *Runner) Run(ctx context.Context) {
 	r.log.Info("Running!")
+	if config.Config.Token == "" {
+		// Fail closed: without the secret the gRPC server would have to accept anyone, and
+		// anyone can then run ffmpeg with arbitrary options on this host.
+		r.log.Error("TOKEN is not set; it must match runnerToken in gocast's config.yaml")
+		os.Exit(1)
+	}
 	if config.Config.Port == 0 {
 		r.log.Info("Getting free port")
 		p, err := netutil.GetFreePort()
@@ -162,16 +168,23 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to listen", "error", err)
 		os.Exit(1)
 	}
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
-		MaxConnectionAgeGrace: time.Second * 5,
-		Time:                  time.Minute * 10,
-		Timeout:               time.Second * 20,
-	}))
+	grpcServer := grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     time.Minute,
+			MaxConnectionAge:      time.Minute,
+			MaxConnectionAgeGrace: time.Second * 5,
+			Time:                  time.Minute * 10,
+			Timeout:               time.Second * 20,
+		}),
+		// Recovery runs outermost so a panic anywhere below, auth included, is still an error.
+		grpc.ChainUnaryInterceptor(
+			auth.RecoveryInterceptor(r.log),
+			auth.UnaryServerInterceptor(config.Config.Token, false),
+		),
+	)
 	protobuf.RegisterRunnerServiceServer(grpcServer, r)
-
-	reflection.Register(grpcServer)
+	// No reflection: this port is published to the internet in the documented deployment,
+	// and listing the services only helps someone probing it.
 	if err := grpcServer.Serve(lis); err != nil {
 		r.log.Error("failed to serve", "error", err)
 		os.Exit(1)

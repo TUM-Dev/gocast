@@ -438,6 +438,7 @@ paths:
   static: /var/www/public
   branding: /etc/TUM-Live/branding
 workertoken: abc123 # todo changeme
+runnertoken: abc123 # todo changeme; runners must set the same value as TOKEN
 weburl: https://live.rbg.tum.de
 monitoring:
   sentryDSN: https://abc@sentry.com/2 # todo changeme

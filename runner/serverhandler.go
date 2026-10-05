@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/auth"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -52,6 +53,7 @@ func (r *Runner) getManagerClient() (protobuf.RunnerManagerServiceClient, error)
 
 	conn, err := grpc.NewClient(config.Config.GocastServer,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(auth.UnaryClientInterceptor(config.Config.Token, config.Config.Hostname)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                30 * time.Second,
 			Timeout:             10 * time.Second,

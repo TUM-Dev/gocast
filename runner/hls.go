@@ -3,6 +3,7 @@ package runner
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type HLSServer struct {
@@ -22,6 +23,12 @@ func (h *HLSServer) Start() error {
 	return http.ListenAndServe(":8187", h)
 }
 
+// ServeHTTP serves playlists and segments but never a directory listing: the listing would
+// enumerate every live stream on this runner, including those of restricted courses.
 func (h *HLSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.HasSuffix(r.URL.Path, "/") {
+		http.NotFound(w, r)
+		return
+	}
 	h.fs.ServeHTTP(w, r)
 }

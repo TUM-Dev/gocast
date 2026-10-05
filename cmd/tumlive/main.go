@@ -154,6 +154,7 @@ func run(ctx context.Context) error {
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
 		runner_manager.WithCamService(camService),
 		runner_manager.WithLiveStateNotifier(api.NotifyViewersLiveState),
+		runner_manager.WithRunnerToken(tools.Cfg.RunnerToken),
 	}
 	var subtitleClient pb.SubtitleGeneratorClient
 	// What apiv2 requests subtitles through; nil without a voice service.
