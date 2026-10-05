@@ -2,6 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from "vue";
 
 import LectureCard from "@/components/admin/lectures/LectureCard.vue";
+import CreateLectureWizard from "@/components/admin/lectures/create/CreateLectureWizard.vue";
 import {
   deleteLectures,
   fetchAdministeredCourses,
@@ -19,6 +20,7 @@ import {
 import { SELF_STREAMED, fetchScheduleLectureHalls, type ScheduleLectureHall } from "@/lib/schedule";
 import { can } from "@/lib/settings";
 import { useAuthStore } from "@/stores/auth";
+import { useCourseAdminStore } from "@/stores/course-admin";
 
 /**
  * A course's lectures for its administrators: sorting, selecting several to delete
@@ -44,6 +46,29 @@ const auth = useAuthStore();
  * permission keeps the page from showing what would fail.
  */
 const canChangeHall = computed(() => can(auth.user, "server.administer"));
+
+/* Creating lectures. */
+
+const courseStore = useCourseAdminStore();
+const courseChatEnabled = computed(() =>
+  courseStore.course?.id === props.courseId ? courseStore.course.chatEnabled : false,
+);
+const creating = ref(false);
+
+/** Shows what the wizard created without reloading, and opens the first of it. */
+async function onCreated(created: CourseLecture[], problem: string): Promise<void> {
+  creating.value = false;
+  const known = new Set(lectures.value.map((l) => l.id));
+  lectures.value = [...lectures.value, ...created.filter((l) => !known.has(l.id))];
+  const noun = created.length === 1 ? "lecture" : "lectures";
+  status.value = `Created ${created.length} ${noun}.`;
+  error.value = problem;
+  const first = created[0];
+  if (!first) return;
+  expanded.add(first.id);
+  await nextTick();
+  document.getElementById(`lecture-${first.id}`)?.scrollIntoView({ block: "start" });
+}
 
 const halls = ref<ScheduleLectureHall[]>([]);
 const courses = ref<AdministeredCourse[]>([]);
@@ -146,6 +171,7 @@ watch(
   async () => {
     loading.value = true;
     selected.clear();
+    creating.value = false;
     expanded.clear();
     // Neither is needed to show the list, so a failure leaves the editors without
     // hall names or copy targets rather than the page without lectures.
@@ -205,19 +231,40 @@ watch(
           </button>
         </form>
       </div>
-      <button
-        type="button"
-        class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
-        title="Change the order"
-        @click="ascending = !ascending"
-      >
-        <i class="fas mr-1" :class="ascending ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
-        {{ ascending ? "Oldest first" : "Newest first" }}
-      </button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+          title="Change the order"
+          @click="ascending = !ascending"
+        >
+          <i class="fas mr-1" :class="ascending ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+          {{ ascending ? "Oldest first" : "Newest first" }}
+        </button>
+        <button
+          type="button"
+          class="tum-live-button-primary px-3 py-1 text-sm"
+          :aria-expanded="creating"
+          @click="creating = !creating"
+        >
+          <i class="fas fa-plus mr-1"></i>Create lecture
+        </button>
+      </div>
     </div>
 
+    <CreateLectureWizard
+      v-if="creating"
+      :course-id="courseId"
+      :halls="halls"
+      :can-choose-hall="canChangeHall"
+      :course-chat-enabled="courseChatEnabled"
+      @created="onCreated"
+      @close="creating = false"
+    />
+
     <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">{{ error }}</p>
-    <p v-else-if="status" class="text-5 text-sm" role="status">{{ status }}</p>
+    <!-- Beside an error rather than instead of it: a lecture created whose upload failed is both. -->
+    <p v-if="status" class="text-5 text-sm" role="status">{{ status }}</p>
 
     <p v-if="loading" class="text-5 text-sm">Loading lectures…</p>
     <p v-else-if="!lectures.length && !error" class="text-5 text-sm">This course has no lectures yet.</p>
