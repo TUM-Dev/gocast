@@ -330,7 +330,7 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Change one of a course's lectures."
-      description: "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload."
+      description: "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved). Unlike v1, viewers watching at the time are not told; they see the change on reload."
     };
   }
 
@@ -355,7 +355,7 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Change every lecture of a lecture's series."
-      description: "Sets the fields that are present on every lecture of the course sharing the lecture's series, the lecture included. Answers 400 for a lecture in no series. Requires administering the course."
+      description: "Sets the fields that are present on every lecture of the course sharing the lecture's series, the lecture included. Answers 400 for a lecture in no series. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved)."
     };
   }
 
@@ -368,6 +368,19 @@ service CourseService {
       tags: "Courses"
       summary: "Move a lecture and its whole series to a new time of day."
       description: "Sets the lecture's start and end, then gives every other lecture of the course in its series the same time of day and duration, each on its own date. Answers 400 for a lecture in no series. Requires administering the course."
+    };
+  }
+
+  // Server administrators only: a hall is shared across courses.
+  rpc updateLecturesLectureHall(UpdateLecturesLectureHallRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/streams/lecture-hall"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Move some of a course's lectures to a lecture hall."
+      description: "Sets the hall of every lecture named, 0 for none (self-streamed). Changes nothing unless every lecture is the course's (404) and the hall exists (400). Requires administering the course and being a server administrator."
     };
   }
 
@@ -2478,7 +2491,7 @@ message UpdateLectureRequest {
   // Both or neither; end must be after start.
   google.protobuf.Timestamp start = 5;
   google.protobuf.Timestamp end = 6;
-  // 0 moves the lecture out of any hall (self-streamed).
+  // 0 moves the lecture out of any hall (self-streamed). Server administrators only.
   optional uint32 lecture_hall_id = 7;
   optional bool chat_enabled = 8;
   // Withholds the lecture from everyone but the course's administrators.
@@ -2784,7 +2797,7 @@ message UpdateLectureSeriesRequest {
   uint32 stream_id = 2;
   optional string name = 3;
   optional string description = 4;
-  // 0 moves the series out of any hall.
+  // 0 moves the series out of any hall. Server administrators only.
   optional uint32 lecture_hall_id = 5;
   optional bool chat_enabled = 6;
 }
@@ -2796,6 +2809,13 @@ message UpdateLectureSeriesTimeRequest {
   // and duration. End must be after start.
   google.protobuf.Timestamp start = 3;
   google.protobuf.Timestamp end = 4;
+}
+
+message UpdateLecturesLectureHallRequest {
+  uint32 course_id = 1;
+  repeated uint32 stream_ids = 2;
+  // 0 moves the lectures out of any hall (self-streamed).
+  uint32 lecture_hall_id = 3;
 }
 
 message DeleteLecturesRequest {

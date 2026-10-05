@@ -81,17 +81,22 @@ var services = []service{
 			// are what the template showed every lecturer.
 			"getSchedule":              requires(model.PermLecture),
 			"listScheduleLectureHalls": requires(model.PermLecture),
-			// The handler also checks the lecture is the course's.
+			// The handler also checks the lecture is the course's, and that only a
+			// server administrator sets its lecture hall.
 			"updateLecture": requiresCourseAdmin(),
 
 			// Lecture management. Each handler also checks the lecture is the
 			// course's; copyLecture checks the caller administers the target too.
-			"listCourseLecturesAdmin": requiresCourseAdmin(),
-			"updateLectureSeries":     requiresCourseAdmin(),
-			"updateLectureSeriesTime": requiresCourseAdmin(),
-			"deleteLectures":          requiresCourseAdmin(),
-			"deleteLectureSeries":     requiresCourseAdmin(),
-			"copyLecture":             requiresCourseAdmin(),
+			// Changing a lecture hall -- updateLectureSeries with a hall, and
+			// updateLecturesLectureHall always -- also needs a server administrator,
+			// checked in the handler since the policy cannot see which fields are set.
+			"listCourseLecturesAdmin":   requiresCourseAdmin(),
+			"updateLecturesLectureHall": requiresCourseAdmin(),
+			"updateLectureSeries":       requiresCourseAdmin(),
+			"updateLectureSeriesTime":   requiresCourseAdmin(),
+			"deleteLectures":            requiresCourseAdmin(),
+			"deleteLectureSeries":       requiresCourseAdmin(),
+			"copyLecture":               requiresCourseAdmin(),
 
 			// ----- Course administration -----
 			// The course page, for its administrators. The handlers also refuse

@@ -633,6 +633,7 @@ const (
 	CourseService_ListCourseLecturesAdmin_FullMethodName         = "/protobuf.CourseService/listCourseLecturesAdmin"
 	CourseService_UpdateLectureSeries_FullMethodName             = "/protobuf.CourseService/updateLectureSeries"
 	CourseService_UpdateLectureSeriesTime_FullMethodName         = "/protobuf.CourseService/updateLectureSeriesTime"
+	CourseService_UpdateLecturesLectureHall_FullMethodName       = "/protobuf.CourseService/updateLecturesLectureHall"
 	CourseService_DeleteLectures_FullMethodName                  = "/protobuf.CourseService/deleteLectures"
 	CourseService_DeleteLectureSeries_FullMethodName             = "/protobuf.CourseService/deleteLectureSeries"
 	CourseService_CopyLecture_FullMethodName                     = "/protobuf.CourseService/copyLecture"
@@ -688,6 +689,8 @@ type CourseServiceClient interface {
 	ListCourseLecturesAdmin(ctx context.Context, in *ListCourseLecturesAdminRequest, opts ...grpc.CallOption) (*ListCourseLecturesAdminResponse, error)
 	UpdateLectureSeries(ctx context.Context, in *UpdateLectureSeriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateLectureSeriesTime(ctx context.Context, in *UpdateLectureSeriesTimeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Server administrators only: a hall is shared across courses.
+	UpdateLecturesLectureHall(ctx context.Context, in *UpdateLecturesLectureHallRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteLectures(ctx context.Context, in *DeleteLecturesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteLectureSeries(ctx context.Context, in *DeleteLectureSeriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CopyLecture(ctx context.Context, in *CopyLectureRequest, opts ...grpc.CallOption) (*CopyLectureResponse, error)
@@ -896,6 +899,16 @@ func (c *courseServiceClient) UpdateLectureSeriesTime(ctx context.Context, in *U
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, CourseService_UpdateLectureSeriesTime_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) UpdateLecturesLectureHall(ctx context.Context, in *UpdateLecturesLectureHallRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_UpdateLecturesLectureHall_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1162,6 +1175,8 @@ type CourseServiceServer interface {
 	ListCourseLecturesAdmin(context.Context, *ListCourseLecturesAdminRequest) (*ListCourseLecturesAdminResponse, error)
 	UpdateLectureSeries(context.Context, *UpdateLectureSeriesRequest) (*emptypb.Empty, error)
 	UpdateLectureSeriesTime(context.Context, *UpdateLectureSeriesTimeRequest) (*emptypb.Empty, error)
+	// Server administrators only: a hall is shared across courses.
+	UpdateLecturesLectureHall(context.Context, *UpdateLecturesLectureHallRequest) (*emptypb.Empty, error)
 	DeleteLectures(context.Context, *DeleteLecturesRequest) (*emptypb.Empty, error)
 	DeleteLectureSeries(context.Context, *DeleteLectureSeriesRequest) (*emptypb.Empty, error)
 	CopyLecture(context.Context, *CopyLectureRequest) (*CopyLectureResponse, error)
@@ -1249,6 +1264,9 @@ func (UnimplementedCourseServiceServer) UpdateLectureSeries(context.Context, *Up
 }
 func (UnimplementedCourseServiceServer) UpdateLectureSeriesTime(context.Context, *UpdateLectureSeriesTimeRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateLectureSeriesTime not implemented")
+}
+func (UnimplementedCourseServiceServer) UpdateLecturesLectureHall(context.Context, *UpdateLecturesLectureHallRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateLecturesLectureHall not implemented")
 }
 func (UnimplementedCourseServiceServer) DeleteLectures(context.Context, *DeleteLecturesRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteLectures not implemented")
@@ -1660,6 +1678,24 @@ func _CourseService_UpdateLectureSeriesTime_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CourseServiceServer).UpdateLectureSeriesTime(ctx, req.(*UpdateLectureSeriesTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_UpdateLecturesLectureHall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLecturesLectureHallRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).UpdateLecturesLectureHall(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_UpdateLecturesLectureHall_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).UpdateLecturesLectureHall(ctx, req.(*UpdateLecturesLectureHallRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2156,6 +2192,10 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "updateLectureSeriesTime",
 			Handler:    _CourseService_UpdateLectureSeriesTime_Handler,
+		},
+		{
+			MethodName: "updateLecturesLectureHall",
+			Handler:    _CourseService_UpdateLecturesLectureHall_Handler,
 		},
 		{
 			MethodName: "deleteLectures",

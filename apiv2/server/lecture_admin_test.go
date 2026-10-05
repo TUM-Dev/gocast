@@ -47,6 +47,9 @@ func newLectureAPI(t *testing.T) (*API, lectureMocks) {
 var (
 	lectureAdmin = &model.User{Model: gorm.Model{ID: 2}, Role: model.LecturerType,
 		AdministeredCourses: []model.Course{{Model: gorm.Model{ID: 1}}}}
+	// A server administrator, the only caller who may change a lecture's hall. Not in
+	// AdministeredCourses: the role administers every course.
+	serverAdmin  = &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType}
 	lectureStart = time.Date(2026, 10, 12, 8, 15, 0, 0, time.UTC)
 	lectureEnd   = lectureStart.Add(90 * time.Minute)
 )
@@ -135,7 +138,7 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 			return nil
 		})
 
-		_, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+		_, err := api.UpdateLecture(asCaller(serverAdmin), &protobuf.UpdateLectureRequest{
 			CourseId: 1, StreamId: 7,
 			Start: timestamppb.New(newStart), End: timestamppb.New(newStart.Add(time.Hour)),
 			LectureHallId: ptrU(4), ChatEnabled: ptrB(true), Private: ptrB(true),
@@ -151,7 +154,7 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 		m.streams.EXPECT().UnsetLectureHall([]uint{7}).Return(nil)
 		m.streams.EXPECT().UpdateStream(gomock.Any()).Return(nil)
 
-		if _, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+		if _, err := api.UpdateLecture(asCaller(serverAdmin), &protobuf.UpdateLectureRequest{
 			CourseId: 1, StreamId: 7, LectureHallId: ptrU(0),
 		}); err != nil {
 			t.Fatalf("UpdateLecture: %v", err)
@@ -179,7 +182,7 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
 		m.halls.EXPECT().GetLectureHallByID(uint(99)).Return(model.LectureHall{}, gorm.ErrRecordNotFound)
 
-		_, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+		_, err := api.UpdateLecture(asCaller(serverAdmin), &protobuf.UpdateLectureRequest{
 			CourseId: 1, StreamId: 7, LectureHallId: ptrU(99), Name: new(string),
 		})
 		wantCode(t, err, codes.NotFound)
@@ -193,6 +196,34 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 			CourseId: 1, StreamId: 7, Private: ptrB(true), LectureHallId: ptrU(0),
 		})
 		wantCode(t, err, codes.NotFound)
+	})
+
+	t.Run("refuses a lecturer the hall and writes nothing", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+
+		_, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+			CourseId: 1, StreamId: 7, LectureHallId: ptrU(4), Name: new(string),
+		})
+		wantCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("lets a lecturer change everything but the hall", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.streams.EXPECT().UpdateStream(gomock.Any()).DoAndReturn(func(s model.Stream) error {
+			if !s.ChatEnabled || s.Name != "Neu" {
+				t.Errorf("saved %+v", s)
+			}
+			return nil
+		})
+		name := "Neu"
+
+		if _, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+			CourseId: 1, StreamId: 7, Name: &name, ChatEnabled: ptrB(true),
+		}); err != nil {
+			t.Fatalf("UpdateLecture: %v", err)
+		}
 	})
 }
 
@@ -213,10 +244,39 @@ func TestUpdateLectureSeries(t *testing.T) {
 			})
 
 		hall := uint32(4)
-		_, err := api.UpdateLectureSeries(asCaller(lectureAdmin), &protobuf.UpdateLectureSeriesRequest{
+		_, err := api.UpdateLectureSeries(asCaller(serverAdmin), &protobuf.UpdateLectureSeriesRequest{
 			CourseId: 1, StreamId: 7, Name: &name, LectureHallId: &hall,
 		})
 		if err != nil {
+			t.Fatalf("UpdateLectureSeries: %v", err)
+		}
+	})
+
+	t.Run("refuses a lecturer the hall and writes nothing", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+
+		hall := uint32(4)
+		_, err := api.UpdateLectureSeries(asCaller(lectureAdmin), &protobuf.UpdateLectureSeriesRequest{
+			CourseId: 1, StreamId: 7, Name: &name, LectureHallId: &hall,
+		})
+		wantCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("lets a lecturer change the series without a hall", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.streams.EXPECT().UpdateCourseLectureSeries(uint(1), "s1", gomock.Any()).
+			DoAndReturn(func(_ uint, _ string, u dao.LectureSeriesUpdate) error {
+				if u.Name == nil || *u.Name != "Hopfen" || u.LectureHallID != nil {
+					t.Errorf("update = %+v", u)
+				}
+				return nil
+			})
+
+		if _, err := api.UpdateLectureSeries(asCaller(lectureAdmin), &protobuf.UpdateLectureSeriesRequest{
+			CourseId: 1, StreamId: 7, Name: &name,
+		}); err != nil {
 			t.Fatalf("UpdateLectureSeries: %v", err)
 		}
 	})
@@ -283,6 +343,76 @@ func TestUpdateLectureSeriesTime(t *testing.T) {
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(foreignLecture(), nil)
 		_, err := api.UpdateLectureSeriesTime(asCaller(lectureAdmin), req())
 		wantCode(t, err, codes.NotFound)
+	})
+}
+
+func TestUpdateLecturesLectureHall(t *testing.T) {
+	second := func() model.Stream {
+		s := courseOneLecture()
+		s.ID = 8
+		return s
+	}
+
+	t.Run("moves every lecture named into the hall", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "8").Return(second(), nil)
+		m.halls.EXPECT().GetLectureHallByID(uint(4)).Return(model.LectureHall{Model: gorm.Model{ID: 4}}, nil)
+		m.streams.EXPECT().SetLectureHall([]uint{7, 8}, uint(4)).Return(nil)
+
+		if _, err := api.UpdateLecturesLectureHall(asCaller(serverAdmin), &protobuf.UpdateLecturesLectureHallRequest{
+			CourseId: 1, StreamIds: []uint32{7, 8}, LectureHallId: 4,
+		}); err != nil {
+			t.Fatalf("UpdateLecturesLectureHall: %v", err)
+		}
+	})
+
+	t.Run("hall 0 takes them out of any hall", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.streams.EXPECT().UnsetLectureHall([]uint{7}).Return(nil)
+
+		if _, err := api.UpdateLecturesLectureHall(asCaller(serverAdmin), &protobuf.UpdateLecturesLectureHallRequest{
+			CourseId: 1, StreamIds: []uint32{7},
+		}); err != nil {
+			t.Fatalf("UpdateLecturesLectureHall: %v", err)
+		}
+	})
+
+	t.Run("refuses a lecturer before reading anything", func(t *testing.T) {
+		api, _ := newLectureAPI(t)
+		_, err := api.UpdateLecturesLectureHall(asCaller(lectureAdmin), &protobuf.UpdateLecturesLectureHallRequest{
+			CourseId: 1, StreamIds: []uint32{7}, LectureHallId: 4,
+		})
+		wantCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("404s when one lecture is another course's and writes nothing", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "8").Return(foreignLecture(), nil)
+
+		_, err := api.UpdateLecturesLectureHall(asCaller(serverAdmin), &protobuf.UpdateLecturesLectureHallRequest{
+			CourseId: 1, StreamIds: []uint32{7, 8}, LectureHallId: 4,
+		})
+		wantCode(t, err, codes.NotFound)
+	})
+
+	t.Run("400s an unknown hall and writes nothing", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.halls.EXPECT().GetLectureHallByID(uint(99)).Return(model.LectureHall{}, gorm.ErrRecordNotFound)
+
+		_, err := api.UpdateLecturesLectureHall(asCaller(serverAdmin), &protobuf.UpdateLecturesLectureHallRequest{
+			CourseId: 1, StreamIds: []uint32{7}, LectureHallId: 99,
+		})
+		wantCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("400s an empty selection", func(t *testing.T) {
+		api, _ := newLectureAPI(t)
+		_, err := api.UpdateLecturesLectureHall(asCaller(serverAdmin), &protobuf.UpdateLecturesLectureHallRequest{CourseId: 1})
+		wantCode(t, err, codes.InvalidArgument)
 	})
 }
 

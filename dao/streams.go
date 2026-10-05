@@ -595,11 +595,17 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 
 // SetLectureHall set lecture-halls of streamIds to lectureHallID
 func (d streamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
+	// GetStreamByID caches the stream with its hall; without this a moved lecture
+	// reads as still in its old hall until the cache expires.
+	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", lectureHallID).Error
 }
 
 // UnsetLectureHall set lecture-halls of streamIds to NULL
 func (d streamsDao) UnsetLectureHall(streamIDs []uint) error {
+	// GetStreamByID caches the stream with its hall; without this a moved lecture
+	// reads as still in its old hall until the cache expires.
+	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", nil).Error
 }
 
