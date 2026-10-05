@@ -25,7 +25,7 @@ func newTestRunner() *Runner {
 	return &Runner{
 		log:           slog.New(slog.NewTextHandler(io.Discard, nil)),
 		JobCount:      make(chan int, 64),
-		jobs:          make(map[string]context.CancelFunc),
+		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		notifications: make(chan *protobuf.Notification, 64),
 	}
@@ -324,4 +324,77 @@ func TestNotificationBackoffCriticalRetriesIndefinitelyWithCap(t *testing.T) {
 			t.Fatalf("delay %v exceeds 30s cap", d)
 		}
 	}
+}
+
+// Ending a stream early stops the capture, it does not cancel what comes after: the VoD is
+// made from the segments that were captured until then. Handing the VoD actions the
+// cancelled stream context makes every exec.CommandContext in them fail before it starts.
+func TestRunActionDoesNotCancelActionsAfterTheStream(t *testing.T) {
+	r := newTestRunner()
+	rec := &recorder{}
+
+	vod := func(ctx context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		if err := ctx.Err(); err != nil {
+			t.Errorf("the VoD action ran with a cancelled context: %v", err)
+		}
+		rec.record("vod")
+		return nil
+	}
+
+	// the stream action blocks until the test ended the job, so the cancellation happens
+	// while the job is still running, like a real end-stream request.
+	release := make(chan struct{})
+	stream := func(_ context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		<-release
+		return nil
+	}
+
+	job := r.RunAction([]actions.Action{stream}, []actions.Action{vod}, map[string]any{}, r.log)
+	endJob(t, r, job, false)
+	close(release)
+	waitForJob(t, r, job)
+
+	assertCalls(t, rec.get(), []string{"vod"})
+}
+
+// Regression: Cleanup only ever held the cancel for the stream phase, so a forced
+// shutdown left whatever ran after the stream -- the conversion, the cleanup -- running.
+func TestCleanupStopsThePhaseAfterTheStream(t *testing.T) {
+	r := newTestRunner()
+	rec := &recorder{}
+
+	started := make(chan struct{})
+	cancelled := make(chan struct{})
+	mkVod := func(ctx context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		rec.record("mkVod")
+		close(started)
+		select {
+		case <-ctx.Done():
+			close(cancelled)
+			return actions.AbortingError(ctx.Err())
+		case <-time.After(5 * time.Second):
+			return nil
+		}
+	}
+
+	job := r.RunAction(
+		[]actions.Action{rec.action("stream")},
+		[]actions.Action{mkVod},
+		map[string]any{}, r.log,
+	)
+
+	<-started
+	r.jobsMu.Lock()
+	for _, j := range r.jobs {
+		j.endStream()
+		j.endAfter()
+	}
+	r.jobsMu.Unlock()
+
+	select {
+	case <-cancelled:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a forced shutdown did not stop the phase after the stream")
+	}
+	waitForJob(t, r, job)
 }
