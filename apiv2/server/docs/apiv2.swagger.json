@@ -1819,6 +1819,30 @@
         ]
       }
     },
+    "/courses/administered": {
+      "get": {
+        "summary": "List the courses the caller administers.",
+        "description": "Every semester's; every course for someone who administers them all. Requires the lecture permission.",
+        "operationId": "CourseService_listAdministeredCourses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListAdministeredCoursesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
     "/courses/enrolled": {
       "get": {
         "summary": "Get user courses.",
@@ -1906,6 +1930,337 @@
         ]
       }
     },
+    "/courses/{courseId}": {
+      "delete": {
+        "summary": "Delete a course and its lectures.",
+        "description": "Requires administering the course.",
+        "operationId": "CourseService_deleteCourse",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/admin": {
+      "get": {
+        "summary": "Get a course's settings.",
+        "description": "What the course's settings tab shows and edits. Requires administering the course.",
+        "operationId": "CourseService_getCourseAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/admins": {
+      "get": {
+        "summary": "List a course's administrators.",
+        "description": "Those granted the course explicitly; neither its owner nor the server's administrators are listed unless they were. Requires administering the course.",
+        "operationId": "CourseService_listCourseAdmins",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListCourseAdminsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      },
+      "post": {
+        "summary": "Make a user an administrator of a course.",
+        "description": "A student or external participant is promoted to lecturer, as v1 did. Requires administering the course.",
+        "operationId": "CourseService_addCourseAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseAdminUser"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceaddCourseAdminBody"
+            }
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/admins/search": {
+      "get": {
+        "summary": "Find a user to make an administrator of a course.",
+        "description": "Matches name, login and email; at least three letters or digits. At most ten results. Requires administering the course.",
+        "operationId": "CourseService_searchUsersForCourse",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufSearchUsersForCourseResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/admins/{userId}": {
+      "delete": {
+        "summary": "Remove an administrator from a course.",
+        "description": "Answers 400 for the course's last administrator and 404 for someone who is not one. Requires administering the course.",
+        "operationId": "CourseService_removeCourseAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseAdminUser"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/copy": {
+      "post": {
+        "summary": "Copy a course into another semester.",
+        "description": "Copies the course's settings, every one of its lectures and its administrators into a new course in the given semester. Requires administering the course. Answers 409 if that semester already has a course with the slug.",
+        "operationId": "CourseService_copyCourse",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCopyCourseResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicecopyCourseBody"
+            }
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/lecture-halls": {
+      "get": {
+        "summary": "List the course's source settings per lecture hall.",
+        "description": "One entry per hall the course has a lecture in: which sources to stream and which camera preset to use. Requires administering the course.",
+        "operationId": "CourseService_listCourseLectureHallSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListCourseLectureHallSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      },
+      "put": {
+        "summary": "Replace the course's source settings per lecture hall.",
+        "description": "Replaces every hall's settings with the ones sent; a hall left out goes back to the defaults. Requires administering the course.",
+        "operationId": "CourseService_updateCourseLectureHallSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListCourseLectureHallSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceupdateCourseLectureHallSettingsBody"
+            }
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
     "/courses/{courseId}/lectures/admin": {
       "get": {
         "summary": "List a course's lectures for its administrators.",
@@ -1936,6 +2291,78 @@
         ],
         "tags": [
           "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/participants": {
+      "get": {
+        "summary": "List the external participants invited to a course.",
+        "description": "Accounts without a TUM login that were invited by email. Requires administering the course.",
+        "operationId": "CourseService_listCourseParticipants",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListCourseParticipantsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      },
+      "post": {
+        "summary": "Invite external participants to a course by email.",
+        "description": "An address without an account gets one and an email to set its password; an existing account is enrolled and notified. At most 200 per call. Requires administering the course.",
+        "operationId": "CourseService_inviteCourseParticipants",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufInviteCourseParticipantsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceinviteCourseParticipantsBody"
+            }
+          }
+        ],
+        "tags": [
+          "Course Administration"
         ]
       }
     },
@@ -2008,6 +2435,47 @@
         ],
         "tags": [
           "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/settings": {
+      "patch": {
+        "summary": "Change a course's settings.",
+        "description": "Sets the fields that are present and leaves the rest. Requires administering the course.",
+        "operationId": "CourseService_updateCourseSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseAdmin"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceupdateCourseSettingsBody"
+            }
+          }
+        ],
+        "tags": [
+          "Course Administration"
         ]
       }
     },
@@ -3270,6 +3738,29 @@
         }
       }
     },
+    "CourseServiceaddCourseAdminBody": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "CourseServicecopyCourseBody": {
+      "type": "object",
+      "properties": {
+        "year": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The semester to copy into."
+        },
+        "term": {
+          "type": "string",
+          "description": "\"W\" or \"S\"."
+        }
+      }
+    },
     "CourseServicecopyLectureBody": {
       "type": "object",
       "properties": {
@@ -3296,6 +3787,18 @@
         }
       }
     },
+    "CourseServiceinviteCourseParticipantsBody": {
+      "type": "object",
+      "properties": {
+        "invitees": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseInvitee"
+          }
+        }
+      }
+    },
     "CourseServicepinCourseBody": {
       "type": "object",
       "properties": {
@@ -3303,6 +3806,49 @@
           "type": "boolean"
         }
       }
+    },
+    "CourseServiceupdateCourseLectureHallSettingsBody": {
+      "type": "object",
+      "properties": {
+        "lectureHalls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseLectureHallSettingUpdate"
+          }
+        }
+      }
+    },
+    "CourseServiceupdateCourseSettingsBody": {
+      "type": "object",
+      "properties": {
+        "visibility": {
+          "type": "string",
+          "description": "\"public\", \"loggedin\", \"enrolled\" or \"hidden\"."
+        },
+        "vodEnabled": {
+          "type": "boolean"
+        },
+        "downloadsEnabled": {
+          "type": "boolean"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "anonymousChatEnabled": {
+          "type": "boolean"
+        },
+        "moderatedChatEnabled": {
+          "type": "boolean"
+        },
+        "livePrivate": {
+          "type": "boolean"
+        },
+        "vodPrivate": {
+          "type": "boolean"
+        }
+      },
+      "description": "The settings v1's course settings form edited."
     },
     "CourseServiceupdateLectureBody": {
       "type": "object",
@@ -3579,6 +4125,20 @@
         }
       }
     },
+    "protobufCopyCourseResponse": {
+      "type": "object",
+      "properties": {
+        "courseId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "numErrors": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Lectures and administrators that could not be copied; the course itself was."
+        }
+      }
+    },
     "protobufCopyLectureResponse": {
       "type": "object",
       "properties": {
@@ -3660,6 +4220,115 @@
           "description": "Whether the calling user administers this course, as opposed to being a global\nadmin. Drives the per-course admin link."
         }
       }
+    },
+    "protobufCourseAdmin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "term": {
+          "type": "string",
+          "description": "\"W\" or \"S\"."
+        },
+        "visibility": {
+          "type": "string",
+          "description": "\"public\", \"loggedin\", \"enrolled\" or \"hidden\"."
+        },
+        "vodEnabled": {
+          "type": "boolean"
+        },
+        "downloadsEnabled": {
+          "type": "boolean"
+        },
+        "chatEnabled": {
+          "type": "boolean"
+        },
+        "anonymousChatEnabled": {
+          "type": "boolean"
+        },
+        "moderatedChatEnabled": {
+          "type": "boolean"
+        },
+        "vodChatEnabled": {
+          "type": "boolean",
+          "description": "Read-only: nothing has ever set it, so no page offers it."
+        },
+        "livePrivate": {
+          "type": "boolean"
+        },
+        "vodPrivate": {
+          "type": "boolean"
+        },
+        "language": {
+          "type": "string",
+          "description": "\"de\", \"en\" or empty."
+        },
+        "tumOnlineIdentifier": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The course's owner; administrators are listed by listCourseAdmins."
+        }
+      },
+      "description": "A course as its administrators see and edit it."
+    },
+    "protobufCourseAdminSummary": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "term": {
+          "type": "string"
+        }
+      },
+      "description": "A course in the administration sidebar."
+    },
+    "protobufCourseAdminUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "login": {
+          "type": "string",
+          "description": "The email address, or the TUM login without one."
+        },
+        "role": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "description": "An account as the course page shows it to the course's administrators."
     },
     "protobufCourseImportContact": {
       "type": "object",
@@ -3830,6 +4499,33 @@
         }
       }
     },
+    "protobufCourseInvitationResult": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "accountCreated": {
+          "type": "boolean",
+          "description": "False when the address already had an account, which was enrolled instead."
+        },
+        "error": {
+          "type": "string",
+          "description": "Empty on success."
+        }
+      }
+    },
+    "protobufCourseInvitee": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    },
     "protobufCourseLectureAdmin": {
       "type": "object",
       "properties": {
@@ -3933,6 +4629,99 @@
         }
       },
       "description": "CourseLectureAdmin is a lecture as its course's administrators manage it. Unlike\nStream, it carries the stream key and no signed playlist URLs."
+    },
+    "protobufCourseLectureHallPreset": {
+      "type": "object",
+      "properties": {
+        "presetId": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The preset's number on the hall's camera."
+        },
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "isDefault": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufCourseLectureHallSetting": {
+      "type": "object",
+      "properties": {
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lectureHallName": {
+          "type": "string"
+        },
+        "presets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseLectureHallPreset"
+          }
+        },
+        "sourceMode": {
+          "$ref": "#/definitions/protobufCourseSourceMode"
+        },
+        "selectedPresetId": {
+          "type": "integer",
+          "format": "int32",
+          "description": "0 when the course chose none, and the hall's default preset applies."
+        }
+      },
+      "description": "A course's settings for one lecture hall it has lectures in."
+    },
+    "protobufCourseLectureHallSettingUpdate": {
+      "type": "object",
+      "properties": {
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sourceMode": {
+          "$ref": "#/definitions/protobufCourseSourceMode"
+        },
+        "selectedPresetId": {
+          "type": "integer",
+          "format": "int32",
+          "description": "One of the hall's presets, or 0 for its default."
+        }
+      }
+    },
+    "protobufCourseParticipant": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "accountSetUp": {
+          "type": "boolean",
+          "description": "Whether they have set a password yet."
+        }
+      }
+    },
+    "protobufCourseSourceMode": {
+      "type": "string",
+      "enum": [
+        "COURSE_SOURCE_MODE_COMBINED",
+        "COURSE_SOURCE_MODE_PRESENTATION_ONLY",
+        "COURSE_SOURCE_MODE_CAMERA_ONLY"
+      ],
+      "default": "COURSE_SOURCE_MODE_COMBINED",
+      "description": "Which sources a course's lectures in a hall stream; model.SourceMode."
     },
     "protobufCourseStatsResponse": {
       "type": "object",
@@ -4503,6 +5292,18 @@
         }
       }
     },
+    "protobufInviteCourseParticipantsResponse": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseInvitationResult"
+          }
+        }
+      }
+    },
     "protobufLectureFileAdmin": {
       "type": "object",
       "properties": {
@@ -4678,6 +5479,18 @@
         }
       }
     },
+    "protobufListAdministeredCoursesResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseAdminSummary"
+          }
+        }
+      }
+    },
     "protobufListAuditsResponse": {
       "type": "object",
       "properties": {
@@ -4686,6 +5499,30 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufAuditEntry"
+          }
+        }
+      }
+    },
+    "protobufListCourseAdminsResponse": {
+      "type": "object",
+      "properties": {
+        "admins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseAdminUser"
+          }
+        }
+      }
+    },
+    "protobufListCourseLectureHallSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "lectureHalls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseLectureHallSetting"
           }
         }
       }
@@ -4700,6 +5537,18 @@
             "$ref": "#/definitions/protobufCourseLectureAdmin"
           },
           "description": "Newest first."
+        }
+      }
+    },
+    "protobufListCourseParticipantsResponse": {
+      "type": "object",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseParticipant"
+          }
         }
       }
     },
@@ -5103,6 +5952,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufTumOnlineCourse"
+          }
+        }
+      }
+    },
+    "protobufSearchUsersForCourseResponse": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseAdminUser"
           }
         }
       }

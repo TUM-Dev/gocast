@@ -403,6 +403,143 @@ service CourseService {
       description: "Creates a copy of the lecture in the target course and, with move, then deletes the original. Requires administering both courses; a target the caller does not administer answers 404, as a missing one does."
     };
   }
+
+  // ----- Course administration -----
+  // The course page's settings, admins, lecture-hall sources and participants. The
+  // course-scoped ones require administering the course; course 0 answers 404.
+
+  rpc getCourseAdmin(GetCourseAdminRequest) returns (CourseAdmin) {
+    option (google.api.http) = {get: "/courses/{course_id}/admin"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Get a course's settings."
+      description: "What the course's settings tab shows and edits. Requires administering the course."
+    };
+  }
+
+  rpc updateCourseSettings(UpdateCourseSettingsRequest) returns (CourseAdmin) {
+    option (google.api.http) = {
+      patch: "/courses/{course_id}/settings"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Change a course's settings."
+      description: "Sets the fields that are present and leaves the rest. Requires administering the course."
+    };
+  }
+
+  rpc copyCourse(CopyCourseRequest) returns (CopyCourseResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/copy"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Copy a course into another semester."
+      description: "Copies the course's settings, every one of its lectures and its administrators into a new course in the given semester. Requires administering the course. Answers 409 if that semester already has a course with the slug."
+    };
+  }
+
+  rpc deleteCourse(DeleteCourseRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Delete a course and its lectures."
+      description: "Requires administering the course."
+    };
+  }
+
+  rpc listCourseAdmins(ListCourseAdminsRequest) returns (ListCourseAdminsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/admins"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List a course's administrators."
+      description: "Those granted the course explicitly; neither its owner nor the server's administrators are listed unless they were. Requires administering the course."
+    };
+  }
+
+  rpc addCourseAdmin(AddCourseAdminRequest) returns (CourseAdminUser) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/admins"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Make a user an administrator of a course."
+      description: "A student or external participant is promoted to lecturer, as v1 did. Requires administering the course."
+    };
+  }
+
+  rpc removeCourseAdmin(RemoveCourseAdminRequest) returns (CourseAdminUser) {
+    option (google.api.http) = {delete: "/courses/{course_id}/admins/{user_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Remove an administrator from a course."
+      description: "Answers 400 for the course's last administrator and 404 for someone who is not one. Requires administering the course."
+    };
+  }
+
+  rpc searchUsersForCourse(SearchUsersForCourseRequest) returns (SearchUsersForCourseResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/admins/search"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Find a user to make an administrator of a course."
+      description: "Matches name, login and email; at least three letters or digits. At most ten results. Requires administering the course."
+    };
+  }
+
+  rpc listCourseLectureHallSettings(ListCourseLectureHallSettingsRequest) returns (ListCourseLectureHallSettingsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/lecture-halls"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List the course's source settings per lecture hall."
+      description: "One entry per hall the course has a lecture in: which sources to stream and which camera preset to use. Requires administering the course."
+    };
+  }
+
+  rpc updateCourseLectureHallSettings(UpdateCourseLectureHallSettingsRequest) returns (ListCourseLectureHallSettingsResponse) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/lecture-halls"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Replace the course's source settings per lecture hall."
+      description: "Replaces every hall's settings with the ones sent; a hall left out goes back to the defaults. Requires administering the course."
+    };
+  }
+
+  rpc listCourseParticipants(ListCourseParticipantsRequest) returns (ListCourseParticipantsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/participants"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List the external participants invited to a course."
+      description: "Accounts without a TUM login that were invited by email. Requires administering the course."
+    };
+  }
+
+  rpc inviteCourseParticipants(InviteCourseParticipantsRequest) returns (InviteCourseParticipantsResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/participants"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Invite external participants to a course by email."
+      description: "An address without an account gets one and an email to set its password; an existing account is enrolled and notified. At most 200 per call. Requires administering the course."
+    };
+  }
+
+  // The sidebar's tree of courses; a flat list, grouped by semester by the caller.
+  rpc listAdministeredCourses(google.protobuf.Empty) returns (ListAdministeredCoursesResponse) {
+    option (google.api.http) = {get: "/courses/administered"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List the courses the caller administers."
+      description: "Every semester's; every course for someone who administers them all. Requires the lecture permission."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -2263,6 +2400,202 @@ message UpdateLectureRequest {
   optional bool chat_enabled = 8;
   // Withholds the lecture from everyone but the course's administrators.
   optional bool private = 9;
+}
+
+// ----- Course administration -----
+
+message GetCourseAdminRequest {
+  uint32 course_id = 1;
+}
+
+// A course as its administrators see and edit it.
+message CourseAdmin {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  int32 year = 4;
+  // "W" or "S".
+  string term = 5;
+  // "public", "loggedin", "enrolled" or "hidden".
+  string visibility = 6;
+  bool vod_enabled = 7;
+  bool downloads_enabled = 8;
+  bool chat_enabled = 9;
+  bool anonymous_chat_enabled = 10;
+  bool moderated_chat_enabled = 11;
+  // Read-only: nothing has ever set it, so no page offers it.
+  bool vod_chat_enabled = 12;
+  bool live_private = 13;
+  bool vod_private = 14;
+  // "de", "en" or empty.
+  string language = 15;
+  string tum_online_identifier = 16;
+  // The course's owner; administrators are listed by listCourseAdmins.
+  uint32 user_id = 17;
+}
+
+// The settings v1's course settings form edited.
+message UpdateCourseSettingsRequest {
+  uint32 course_id = 1;
+  // "public", "loggedin", "enrolled" or "hidden".
+  optional string visibility = 2;
+  optional bool vod_enabled = 3;
+  optional bool downloads_enabled = 4;
+  optional bool chat_enabled = 5;
+  optional bool anonymous_chat_enabled = 6;
+  optional bool moderated_chat_enabled = 7;
+  optional bool live_private = 8;
+  optional bool vod_private = 9;
+}
+
+message CopyCourseRequest {
+  uint32 course_id = 1;
+  // The semester to copy into.
+  int32 year = 2;
+  // "W" or "S".
+  string term = 3;
+}
+
+message CopyCourseResponse {
+  uint32 course_id = 1;
+  // Lectures and administrators that could not be copied; the course itself was.
+  int32 num_errors = 2;
+}
+
+message DeleteCourseRequest {
+  uint32 course_id = 1;
+}
+
+// An account as the course page shows it to the course's administrators.
+message CourseAdminUser {
+  uint32 id = 1;
+  string name = 2;
+  // The email address, or the TUM login without one.
+  string login = 3;
+  uint32 role = 4;
+}
+
+message ListCourseAdminsRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseAdminsResponse {
+  repeated CourseAdminUser admins = 1;
+}
+
+message AddCourseAdminRequest {
+  uint32 course_id = 1;
+  uint32 user_id = 2;
+}
+
+message RemoveCourseAdminRequest {
+  uint32 course_id = 1;
+  uint32 user_id = 2;
+}
+
+message SearchUsersForCourseRequest {
+  uint32 course_id = 1;
+  string q = 2;
+}
+
+message SearchUsersForCourseResponse {
+  repeated CourseAdminUser users = 1;
+}
+
+// Which sources a course's lectures in a hall stream; model.SourceMode.
+enum CourseSourceMode {
+  COURSE_SOURCE_MODE_COMBINED = 0;
+  COURSE_SOURCE_MODE_PRESENTATION_ONLY = 1;
+  COURSE_SOURCE_MODE_CAMERA_ONLY = 2;
+}
+
+message CourseLectureHallPreset {
+  // The preset's number on the hall's camera.
+  int32 preset_id = 1;
+  string name = 2;
+  string image = 3;
+  bool is_default = 4;
+}
+
+// A course's settings for one lecture hall it has lectures in.
+message CourseLectureHallSetting {
+  uint32 lecture_hall_id = 1;
+  string lecture_hall_name = 2;
+  repeated CourseLectureHallPreset presets = 3;
+  CourseSourceMode source_mode = 4;
+  // 0 when the course chose none, and the hall's default preset applies.
+  int32 selected_preset_id = 5;
+}
+
+message ListCourseLectureHallSettingsRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseLectureHallSettingsResponse {
+  repeated CourseLectureHallSetting lecture_halls = 1;
+}
+
+message CourseLectureHallSettingUpdate {
+  uint32 lecture_hall_id = 1;
+  CourseSourceMode source_mode = 2;
+  // One of the hall's presets, or 0 for its default.
+  int32 selected_preset_id = 3;
+}
+
+message UpdateCourseLectureHallSettingsRequest {
+  uint32 course_id = 1;
+  repeated CourseLectureHallSettingUpdate lecture_halls = 2;
+}
+
+message CourseParticipant {
+  uint32 id = 1;
+  string name = 2;
+  string email = 3;
+  // Whether they have set a password yet.
+  bool account_set_up = 4;
+}
+
+message ListCourseParticipantsRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseParticipantsResponse {
+  repeated CourseParticipant participants = 1;
+}
+
+message CourseInvitee {
+  string name = 1;
+  string email = 2;
+}
+
+message InviteCourseParticipantsRequest {
+  uint32 course_id = 1;
+  repeated CourseInvitee invitees = 2;
+}
+
+message CourseInvitationResult {
+  string email = 1;
+  // False when the address already had an account, which was enrolled instead.
+  bool account_created = 2;
+  // Empty on success.
+  string error = 3;
+}
+
+message InviteCourseParticipantsResponse {
+  repeated CourseInvitationResult results = 1;
+}
+
+// A course in the administration sidebar.
+message CourseAdminSummary {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  int32 year = 4;
+  string term = 5;
+}
+
+message ListAdministeredCoursesResponse {
+  repeated CourseAdminSummary courses = 1;
 }
 
 message GetLectureStatsRequest {

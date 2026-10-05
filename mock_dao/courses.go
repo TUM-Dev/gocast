@@ -56,6 +56,20 @@ func (mr *MockCoursesDaoMockRecorder) AddAdminToCourse(userID, courseID any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAdminToCourse", reflect.TypeOf((*MockCoursesDao)(nil).AddAdminToCourse), userID, courseID)
 }
 
+// AddUserToCourse mocks base method.
+func (m *MockCoursesDao) AddUserToCourse(ctx context.Context, userID, courseID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddUserToCourse", ctx, userID, courseID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddUserToCourse indicates an expected call of AddUserToCourse.
+func (mr *MockCoursesDaoMockRecorder) AddUserToCourse(ctx, userID, courseID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserToCourse", reflect.TypeOf((*MockCoursesDao)(nil).AddUserToCourse), ctx, userID, courseID)
+}
+
 // CreateCourse mocks base method.
 func (m *MockCoursesDao) CreateCourse(ctx context.Context, course *model.Course, keep bool) error {
 	m.ctrl.T.Helper()
@@ -356,6 +370,25 @@ func (m *MockCoursesDao) UpdateCourse(ctx context.Context, course model.Course) 
 func (mr *MockCoursesDaoMockRecorder) UpdateCourse(ctx, course any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCourse", reflect.TypeOf((*MockCoursesDao)(nil).UpdateCourse), ctx, course)
+}
+
+// UpdateCourseColumns mocks base method.
+func (m *MockCoursesDao) UpdateCourseColumns(ctx context.Context, course model.Course, columns ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, course}
+	for _, a := range columns {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateCourseColumns", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCourseColumns indicates an expected call of UpdateCourseColumns.
+func (mr *MockCoursesDaoMockRecorder) UpdateCourseColumns(ctx, course any, columns ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, course}, columns...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCourseColumns", reflect.TypeOf((*MockCoursesDao)(nil).UpdateCourseColumns), varargs...)
 }
 
 // UpdateCourseMetadata mocks base method.

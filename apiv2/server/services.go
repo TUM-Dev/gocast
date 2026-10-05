@@ -92,6 +92,26 @@ var services = []service{
 			"deleteLectures":          requiresCourseAdmin(),
 			"deleteLectureSeries":     requiresCourseAdmin(),
 			"copyLecture":             requiresCourseAdmin(),
+
+			// ----- Course administration -----
+			// The course page, for its administrators. The handlers also refuse
+			// course 0, which the statistics queries read as every course.
+			"getCourseAdmin":                  requiresCourseAdmin(),
+			"updateCourseSettings":            requiresCourseAdmin(),
+			"copyCourse":                      requiresCourseAdmin(),
+			"deleteCourse":                    requiresCourseAdmin(),
+			"listCourseAdmins":                requiresCourseAdmin(),
+			"addCourseAdmin":                  requiresCourseAdmin(),
+			"removeCourseAdmin":               requiresCourseAdmin(),
+			"listCourseLectureHallSettings":   requiresCourseAdmin(),
+			"updateCourseLectureHallSettings": requiresCourseAdmin(),
+			"listCourseParticipants":          requiresCourseAdmin(),
+			"inviteCourseParticipants":        requiresCourseAdmin(),
+			// Course-scoped, unlike searchUsers: a course's lecturers lack
+			// users.manage, and this answers only names, logins and roles.
+			"searchUsersForCourse": requiresCourseAdmin(),
+			// The caller's own courses, for the sidebar; any lecturer.
+			"listAdministeredCourses": requires(model.PermLecture),
 		},
 	},
 	{
