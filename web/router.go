@@ -52,30 +52,32 @@ const spaShellPath = "spa/index.html"
 // spa-routes.test.ts enforces that. Removing one moves the page back, but only while
 // its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
-	"/settings":                      true,
-	"/login":                         true,
-	"/":                              true,
-	"/courses/mine":                  true,
-	"/courses/public":                true,
-	"/course/:year/:term/:slug":      true,
-	"/admin/runners":                 true,
-	"/admin/integrations":            true,
-	"/admin/users":                   true,
-	"/admin/info-pages":              true,
-	"/admin/workers":                 true,
-	"/admin/maintenance":             true,
-	"/admin/course-import":           true,
-	"/admin/token":                   true,
-	"/privacy":                       true,
-	"/imprint":                       true,
-	"/about":                         true,
-	"/admin/server-notifications":    true,
-	"/admin/notifications":           true,
-	"/admin/audits":                  true,
-	"/admin/server-stats":            true,
-	"/admin/lecture-halls":           true,
-	"/admin/lecture-halls/new":       true,
-	"/admin/courses/:courseID/stats": true,
+	"/settings":                             true,
+	"/login":                                true,
+	"/":                                     true,
+	"/courses/mine":                         true,
+	"/courses/public":                       true,
+	"/course/:year/:term/:slug":             true,
+	"/admin/runners":                        true,
+	"/admin/integrations":                   true,
+	"/admin/users":                          true,
+	"/admin/info-pages":                     true,
+	"/admin/workers":                        true,
+	"/admin/maintenance":                    true,
+	"/admin/course-import":                  true,
+	"/admin/token":                          true,
+	"/privacy":                              true,
+	"/imprint":                              true,
+	"/about":                                true,
+	"/admin/server-notifications":           true,
+	"/admin/notifications":                  true,
+	"/admin/audits":                         true,
+	"/admin/server-stats":                   true,
+	"/admin/lecture-halls":                  true,
+	"/admin/lecture-halls/new":              true,
+	"/admin/courses/:courseID/stats":        true,
+	"/admin/courses/:courseID/settings":     true,
+	"/admin/courses/:courseID/participants": true,
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
 	"/admin/create-course":                              true,
 	"/admin":                                            true,
@@ -348,6 +350,10 @@ func configMainRoute(router *gin.Engine) {
 	// The first page on rule 2's plural path. The edit-course page's statistics tab
 	// shows the same thing; that tab becomes this route when the page migrates.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/stats", nil)
+	// The settings and external-participants tabs of the same page, as rule 4 child
+	// routes. Its lectures tab is still /admin/course/:courseID above until it moves.
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/settings", nil)
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/participants", nil)
 	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
 
 	// Outside the course group, like the redirects above: the destination checks.

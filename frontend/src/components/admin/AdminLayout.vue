@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
+import { useRoute } from "vue-router";
 
+import { groupBySemester } from "@/lib/course-admin";
+import { sameSemester } from "@/lib/semesters";
 import { can, type Permission } from "@/lib/settings";
 import { useAuthStore } from "@/stores/auth";
+import { useCourseAdminStore } from "@/stores/course-admin";
 
 /**
  * The frame every administration page sits in.
@@ -11,7 +15,9 @@ import { useAuthStore } from "@/stores/auth";
  * when following it works; the template gated the whole block on `Role == 1`, which
  * stopped matching the server once those routes split across two permissions.
  *
- * The sidebar's tree of administered courses needs an endpoint v2 does not have yet.
+ * Below the course links sits the tree of every course the user administers, by
+ * semester, as the template's sidebar had it. Only someone with the lecture
+ * permission is asked for it: listAdministeredCourses refuses anyone else.
  */
 interface AdminLink {
   label: string;
@@ -85,6 +91,23 @@ const allowed = (links: AdminLink[]) =>
 
 const administrationLinks = allowed(administration);
 const courseLinks = allowed(courses);
+
+const courseAdmin = useCourseAdminStore();
+watch(
+  () => can(auth.user, "lecture"),
+  (lecturer) => {
+    if (lecturer) void courseAdmin.loadAdministered();
+  },
+  { immediate: true },
+);
+
+// Every tab of a course's page highlights it, not only the one its link points at.
+const route = useRoute();
+const openCourseId = computed(() => Number(route.params.courseID) || 0);
+
+const semesterGroups = computed(() =>
+  can(auth.user, "lecture") ? groupBySemester(courseAdmin.administered) : [],
+);
 </script>
 
 <template>
@@ -128,6 +151,29 @@ const courseLinks = allowed(courses);
             >{{ link.label }}</a
           >
         </template>
+
+        <!-- Native <details>: collapsed semesters stay out of the tab order and out
+             of what assistive technology reads, with nothing to wire up. -->
+        <details
+          v-for="group in semesterGroups"
+          :key="group.label"
+          :open="sameSemester(group.semester, courseAdmin.currentSemester ?? undefined)"
+          class="tum-live-side-navigation-group-item"
+        >
+          <summary class="text-4 cursor-pointer text-sm">{{ group.label }}</summary>
+          <!-- The settings tab for now; the lectures tab is still a server page. -->
+          <RouterLink
+            v-for="course in group.courses"
+            :key="course.id"
+            :to="`/admin/courses/${course.id}/settings`"
+            class="hover block truncate py-1 pl-3 text-sm"
+            :title="course.name"
+          >
+            <span :class="course.id === openCourseId ? 'text-1 font-semibold' : 'text-5'">{{
+              course.name
+            }}</span>
+          </RouterLink>
+        </details>
       </section>
     </nav>
 
