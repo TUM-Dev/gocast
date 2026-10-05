@@ -17,6 +17,7 @@ import CourseAdminLayout from "@/components/admin/CourseAdminLayout.vue";
 import CourseImportView from "@/views/admin/CourseImportView.vue";
 import CourseParticipantsView from "@/views/admin/CourseParticipantsView.vue";
 import CourseSettingsView from "@/views/admin/CourseSettingsView.vue";
+import CourseLecturesView from "@/views/admin/CourseLecturesView.vue";
 import CourseStatsView from "@/views/admin/CourseStatsView.vue";
 import CreateCourseView from "@/views/admin/CreateCourseView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
@@ -208,6 +209,13 @@ const routes: RouteRecordRaw[] = [
       { path: "stats", name: "admin-course-stats", component: CourseStatsView },
       { path: "participants", name: "admin-course-participants", component: CourseParticipantsView },
     ],
+  },
+  {
+    // Becomes the `lectures` child of the course administration layout once that
+    // exists; everything on it is in components/admin/lectures.
+    path: "/admin/courses/:courseID/lectures",
+    name: "admin-course-lectures",
+    component: CourseLecturesView,
   },
   {
     path: "/admin/courses/:courseID/lectures/:streamID/stats",

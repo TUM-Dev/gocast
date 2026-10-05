@@ -78,6 +78,7 @@ var spaRoutes = map[string]bool{
 	"/admin/courses/:courseID/stats":        true,
 	"/admin/courses/:courseID/settings":     true,
 	"/admin/courses/:courseID/participants": true,
+	"/admin/courses/:courseID/lectures":     true,
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
 	"/admin/create-course":                              true,
 	"/admin":                                            true,
@@ -354,6 +355,9 @@ func configMainRoute(router *gin.Engine) {
 	// routes. Its lectures tab is still /admin/course/:courseID above until it moves.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/settings", nil)
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/participants", nil)
+	// The edit-course page's lecture list, on its own until the course-admin layout
+	// that will hold it beside the other tabs lands.
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/lectures", nil)
 	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
 
 	// Outside the course group, like the redirects above: the destination checks.
