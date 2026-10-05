@@ -417,6 +417,27 @@ service CourseService {
     };
   }
 
+  // The upload of a VOD_UPLOAD lecture's recording sits beside the gateway, as the
+  // attachment and thumbnail uploads do, since it is a multipart body:
+  // POST /courses/{course_id}/streams/{stream_id}/media?type=COMB|PRES|CAM, the video
+  // in the form field `file`. Authorized as these RPCs are, a caller who does not
+  // administer the course answered 404, before anything of the body is read. The body
+  // is then streamed to the least busy worker, which transcodes it and attaches the
+  // result to the lecture as that version. Answers {} once the worker has the file;
+  // 400 for a missing or unknown type, 409 while the lecture is live, 503 when no
+  // worker is alive or the one chosen cannot be reached.
+  rpc createLectures(CreateLecturesRequest) returns (CreateLecturesResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Create a lecture, or a series of them, in a course."
+      description: "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course."
+    };
+  }
+
   // ----- Course administration -----
   // The course page's settings, admins, lecture-hall sources and participants. The
   // course-scoped ones require administering the course; course 0 answers 404.
@@ -563,7 +584,8 @@ service CourseService {
   // multipart body: POST /courses/{course_id}/streams/{stream_id}/attachments and
   // POST /courses/{course_id}/streams/{stream_id}/thumbnail, each a multipart form with
   // the file in `file`, authorized as these RPCs are and answering the created file as
-  // a LectureFileAdmin.
+  // a LectureFileAdmin. A third, the recording of a VOD_UPLOAD lecture
+  // (POST .../streams/{stream_id}/media), is described at createLectures.
 
   rpc createLectureSections(CreateLectureSectionsRequest) returns (CreateLectureSectionsResponse) {
     option (google.api.http) = {
@@ -2840,6 +2862,41 @@ message CopyLectureRequest {
 message CopyLectureResponse {
   // The copy's ID, a new one even on a move.
   uint32 stream_id = 1;
+}
+
+// What a created lecture is. LIVESTREAM, the zero value, is v1's default.
+enum LectureCreationKind {
+  // Streamed live: from its lecture hall, or by the lecturer with its stream key.
+  LECTURE_CREATION_KIND_LIVESTREAM = 0;
+  // A recording uploaded afterwards through POST .../streams/{stream_id}/media.
+  LECTURE_CREATION_KIND_VOD_UPLOAD = 1;
+  // A recording a worker streams as if live, starting at the lecture's start.
+  LECTURE_CREATION_KIND_PREMIERE = 2;
+}
+
+message CreateLecturesRequest {
+  uint32 course_id = 1;
+  // Required; every lecture created gets it.
+  string title = 2;
+  LectureCreationKind kind = 3;
+  // The first lecture's start. Required unless ad_hoc.
+  google.protobuf.Timestamp start = 4;
+  // How long each lecture runs. Required for a livestream; a VOD_UPLOAD or
+  // PREMIERE given 0 gets an hour.
+  uint32 duration_minutes = 5;
+  // 0 for none: a self-streamed livestream, and always for the other kinds.
+  uint32 lecture_hall_id = 6;
+  bool chat_enabled = 7;
+  // A livestream starting now (two minutes from now, for a worker to pick it up).
+  bool ad_hoc = 8;
+  // Further lectures besides the one at start, as v1's dateSeries: the client
+  // computes the weekly or daily dates. Empty for a single lecture.
+  repeated google.protobuf.Timestamp date_series = 9;
+}
+
+message CreateLecturesResponse {
+  // The one at start first, then one per date_series entry in the order given.
+  repeated CourseLectureAdmin lectures = 1;
 }
 
 // ----- Lecture administration, part 2 -----
