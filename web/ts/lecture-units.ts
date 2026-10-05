@@ -78,7 +78,7 @@ export function submitCut(lectureID: number, courseID: number) {
         to: to,
     }).then((data) => {
         if (data.status == StatusCodes.OK) {
-            window.location.replace("/admin/course/" + courseID);
+            window.location.replace("/admin/courses/" + courseID + "/lectures");
         } else {
             data.text().then((text) => {
                 alert("error! status: " + data.status + ", message: " + text);

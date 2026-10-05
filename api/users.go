@@ -168,11 +168,11 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	switch {
 	case batchUsers != "":
 		go r.addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
-		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
+		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/courses/%v/participants", tumLiveContext.Course.ID))
 		return
 	case userName != "" && userEmail != "":
 		r.addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
-		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
+		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/courses/%v/participants", tumLiveContext.Course.ID))
 		return
 	default:
 		_ = c.Error(tools.RequestError{
