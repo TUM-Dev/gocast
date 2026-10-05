@@ -7,10 +7,12 @@ import { users, type SeedUser } from "./seed";
  * The course administration API, ahead of the edit-course page's move to the SPA.
  *
  * Course 1 (brauereiwesen) is administered by prof1 and prof2, course 2 (games101)
- * by prof2 alone and course 3 (godev) by prof1 alone. Every test that changes one of
- * them puts it back, since later specs assert on the fixture. Copying and deleting
- * only ever touch a course created here, in the test semester 1234 that the public
- * listings hide.
+ * by prof2 alone and course 3 (godev) by prof1 alone. Other files run alongside this
+ * one and read all three, so a write here has to land where none of them looks, not
+ * merely be put back: the settings test flips godev, which no other file reads the
+ * settings of, and granting an admin happens on a course created here. Copying and
+ * deleting likewise only ever touch a course created here, in the test semester 1234
+ * that the public listings hide.
  */
 
 interface Caller {
@@ -59,13 +61,15 @@ test.describe("getCourseAdmin", () => {
 
 test.describe("updateCourseSettings", () => {
   test("changes only what is sent, and changes it back", async ({ playwright }) => {
-    const { context, headers } = await callerAs(playwright, users.prof2);
-    const before = await (await context.get("/api/v2/courses/1/admin", { headers })).json();
+    // Course 3 rather than course 1: course-settings.spec.ts flips course 1's downloads
+    // too, and compares the whole settings object before and after.
+    const { context, headers } = await callerAs(playwright, users.prof1);
+    const before = await (await context.get("/api/v2/courses/3/admin", { headers })).json();
     // The JSON leaves false out.
     const downloads = before.downloadsEnabled ?? false;
 
     try {
-      const flipped = await context.patch("/api/v2/courses/1/settings", {
+      const flipped = await context.patch("/api/v2/courses/3/settings", {
         headers,
         data: { downloadsEnabled: !downloads },
       });
@@ -76,17 +80,17 @@ test.describe("updateCourseSettings", () => {
       expect(body.visibility).toBe(before.visibility);
       expect(body.vodEnabled ?? false).toBe(before.vodEnabled ?? false);
 
-      const reread = await (await context.get("/api/v2/courses/1/admin", { headers })).json();
+      const reread = await (await context.get("/api/v2/courses/3/admin", { headers })).json();
       expect(reread.downloadsEnabled ?? false).toBe(!downloads);
     } finally {
-      const restored = await context.patch("/api/v2/courses/1/settings", {
+      const restored = await context.patch("/api/v2/courses/3/settings", {
         headers,
         data: { downloadsEnabled: downloads },
       });
       expect(restored.status()).toBe(200);
     }
 
-    const after = await (await context.get("/api/v2/courses/1/admin", { headers })).json();
+    const after = await (await context.get("/api/v2/courses/3/admin", { headers })).json();
     expect(after).toEqual(before);
   });
 
@@ -112,31 +116,49 @@ test.describe("course admins", () => {
   });
 
   test("adds an admin who can then reach the course, and removes them again", async ({ playwright }) => {
+    // On a course of its own, not games101: making prof1 an admin of a seeded course,
+    // however briefly, is visible to every file that asserts what prof1 may not reach,
+    // and those run alongside this one.
     const prof2 = await callerAs(playwright, users.prof2);
     const prof1 = await callerAs(playwright, users.prof1);
+    const create = await prof2.context.post("/api/v2/courses", {
+      headers: prof2.headers,
+      data: { name: "E2E Admins Kurs", slug: "e2e-admins", year: 1234, term: "S", language: "" },
+    });
+    expect(create.status()).toBe(200);
+    const id = (await create.json()).courseId;
 
     try {
-      const added = await prof2.context.post("/api/v2/courses/2/admins", {
-        headers: prof2.headers,
-        data: { userId: 2 },
-      });
-      expect(added.status()).toBe(200);
-      expect((await added.json()).name).toBe(users.prof1.name);
+      // Its creator is its only admin, and prof1 cannot reach it yet.
+      const initial = await (await prof2.context.get(`/api/v2/courses/${id}/admins`, { headers: prof2.headers })).json();
+      expect(initial.admins.map((a: { id: number }) => a.id)).toEqual([3]);
+      expect((await prof1.context.get(`/api/v2/courses/${id}/admin`, { headers: prof1.headers })).status()).toBe(404);
 
-      const listed = await (await prof2.context.get("/api/v2/courses/2/admins", { headers: prof2.headers })).json();
-      expect(listed.admins.map((a: { id: number }) => a.id).sort()).toEqual([2, 3]);
+      try {
+        const added = await prof2.context.post(`/api/v2/courses/${id}/admins`, {
+          headers: prof2.headers,
+          data: { userId: 2 },
+        });
+        expect(added.status()).toBe(200);
+        expect((await added.json()).name).toBe(users.prof1.name);
 
-      // A fresh token: the policy reads the caller's administered courses.
-      const fresh = await callerAs(playwright, users.prof1);
-      expect((await fresh.context.get("/api/v2/courses/2/admin", { headers: fresh.headers })).status()).toBe(200);
+        const listed = await (await prof2.context.get(`/api/v2/courses/${id}/admins`, { headers: prof2.headers })).json();
+        expect(listed.admins.map((a: { id: number }) => a.id).sort()).toEqual([2, 3]);
+
+        // A fresh token: the policy reads the caller's administered courses.
+        const fresh = await callerAs(playwright, users.prof1);
+        expect((await fresh.context.get(`/api/v2/courses/${id}/admin`, { headers: fresh.headers })).status()).toBe(200);
+      } finally {
+        const removed = await prof2.context.delete(`/api/v2/courses/${id}/admins/2`, { headers: prof2.headers });
+        expect(removed.status()).toBe(200);
+      }
+
+      const listed = await (await prof2.context.get(`/api/v2/courses/${id}/admins`, { headers: prof2.headers })).json();
+      expect(listed.admins.map((a: { id: number }) => a.id)).toEqual([3]);
+      expect((await prof1.context.get(`/api/v2/courses/${id}/admin`, { headers: prof1.headers })).status()).toBe(404);
     } finally {
-      const removed = await prof2.context.delete("/api/v2/courses/2/admins/2", { headers: prof2.headers });
-      expect(removed.status()).toBe(200);
+      expect((await prof2.context.delete(`/api/v2/courses/${id}`, { headers: prof2.headers })).status()).toBe(200);
     }
-
-    const listed = await (await prof2.context.get("/api/v2/courses/2/admins", { headers: prof2.headers })).json();
-    expect(listed.admins.map((a: { id: number }) => a.id)).toEqual([3]);
-    expect((await prof1.context.get("/api/v2/courses/2/admin", { headers: prof1.headers })).status()).toBe(404);
   });
 
   test("refuses to remove a course's last admin", async ({ playwright }) => {
@@ -181,7 +203,12 @@ test.describe("listAdministeredCourses", () => {
 
     const response = await context.get("/api/v2/courses/administered", { headers });
     expect(response.status()).toBe(200);
-    const slugs = (await response.json()).courses.map((c: { slug: string }) => c.slug);
+    // Leaving out the test semester: create-course.spec.ts and course-settings.spec.ts
+    // create throwaway courses there as prof1 while this runs, and they are listed for
+    // as long as they exist.
+    const slugs = (await response.json()).courses
+      .filter((c: { year: number }) => c.year !== 1234)
+      .map((c: { slug: string }) => c.slug);
     // bierkunde is administered through course_admins too, added by the e2e seed.
     expect(slugs.sort()).toEqual(["bierkunde", "brauereiwesen", "godev"]);
   });
