@@ -54,6 +54,7 @@ const spaShellPath = "spa/index.html"
 var spaRoutes = map[string]bool{
 	"/settings":                             true,
 	"/login":                                true,
+	"/setPassword/:key":                     true,
 	"/":                                     true,
 	"/courses/mine":                         true,
 	"/courses/public":                       true,
@@ -378,8 +379,8 @@ func configMainRoute(router *gin.Engine) {
 	router.POST("/login", routes.LoginHandler)
 	registerPage(&router.RouterGroup, http.MethodGet, "/login", nil)
 	router.GET("/logout", routes.LogoutPage)
-	router.GET("/setPassword/:key", routes.CreatePasswordPage)
-	router.POST("/setPassword/:key", routes.CreatePasswordPage)
+	// The key in the link is the credential; the page asks v2 whether it is still good.
+	registerPage(&router.RouterGroup, http.MethodGet, "/setPassword/:key", nil)
 
 	// home & course pages
 	newStartPage(router, &routes)
