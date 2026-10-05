@@ -13,6 +13,7 @@ import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import SetPasswordView from "@/views/SetPasswordView.vue";
+import CourseTokenView from "@/views/CourseTokenView.vue";
 import AuditsView from "@/views/admin/AuditsView.vue";
 import CourseAdminLayout from "@/components/admin/CourseAdminLayout.vue";
 import CourseImportView from "@/views/admin/CourseImportView.vue";
@@ -242,6 +243,22 @@ const routes: RouteRecordRaw[] = [
     name: "set-password",
     component: SetPasswordView,
     props: true,
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // The links mailed to a lecturer when their course is imported; the token in the
+    // query string is the credential. Two paths, one view.
+    path: "/edit-course",
+    name: "course-opt-in",
+    component: CourseTokenView,
+    props: { mode: "opt-in" },
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    path: "/edit-course/opt-out",
+    name: "course-opt-out",
+    component: CourseTokenView,
+    props: { mode: "opt-out" },
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
 ];
