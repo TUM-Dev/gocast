@@ -9,11 +9,14 @@ import { users } from "./seed";
  * Einführung Brauereiwesen (course 1) is administered by prof1 and prof2,
  * Spieleentwicklung (course 2) by prof2 alone, and its "VL 1: Livestream" is stream 7.
  *
- * The one test that changes a lecture puts back exactly what it read, in a finally:
- * other specs look lectures up by name and by date. Deletes and copies are only ever
- * exercised as refusals, since there is no v2 way yet to recreate what they would
- * remove.
+ * The one test that changes a lecture puts back exactly what it read, in a finally,
+ * and changes "VL 3: Rückblick" (stream 4): a past lecture that was never recorded, so
+ * no page lists it and no other spec looks for it by name while this runs alongside
+ * them. Deletes and copies are only ever exercised as refusals, since there is no v2
+ * way yet to recreate what they would remove.
  */
+
+const renamed = "VL 3: Rückblick";
 
 interface AdminLecture {
   id: number;
@@ -62,19 +65,19 @@ test.describe("listing a course's lectures for administration", () => {
 test.describe("updating a lecture", () => {
   test("renames and reschedules one of the course's lectures", async ({ playwright }) => {
     const prof1 = await apiAs(playwright, users.prof1);
-    const original = (await lectures(prof1, 1)).find((l) => l.name === "VL 6: Hefe");
-    expect(original, "VL 6: Hefe is not listed").toBeTruthy();
+    const original = (await lectures(prof1, 1)).find((l) => l.name === renamed);
+    expect(original, `${renamed} is not listed`).toBeTruthy();
     const url = `/api/v2/courses/1/streams/${original!.id}`;
 
     const start = new Date(new Date(original!.start).getTime() + 60 * 60 * 1000).toISOString();
     const end = new Date(new Date(original!.end).getTime() + 60 * 60 * 1000).toISOString();
 
     try {
-      const response = await prof1.patch(url, { data: { name: "VL 6: Umbenannt", start, end } });
+      const response = await prof1.patch(url, { data: { name: "VL 3: Umbenannt", start, end } });
       expect(response.status()).toBe(200);
 
       const updated = (await lectures(prof1, 1)).find((l) => l.id === original!.id);
-      expect(updated?.name).toBe("VL 6: Umbenannt");
+      expect(updated?.name).toBe("VL 3: Umbenannt");
       expect(new Date(updated!.start).getTime()).toBe(new Date(start).getTime());
       expect(new Date(updated!.end).getTime()).toBe(new Date(end).getTime());
     } finally {
@@ -92,7 +95,7 @@ test.describe("updating a lecture", () => {
 
   test("refuses an end before the start, and a start alone", async ({ playwright }) => {
     const prof1 = await apiAs(playwright, users.prof1);
-    const lecture = (await lectures(prof1, 1)).find((l) => l.name === "VL 6: Hefe")!;
+    const lecture = (await lectures(prof1, 1)).find((l) => l.name === renamed)!;
     const url = `/api/v2/courses/1/streams/${lecture.id}`;
 
     expect((await prof1.patch(url, { data: { start: lecture.end, end: lecture.start } })).status()).toBe(400);

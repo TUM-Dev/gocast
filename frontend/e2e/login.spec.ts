@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { login, password, sessionCookie } from "./helpers";
+import { login, loginViaForm, password, sessionCookie } from "./helpers";
 import { users } from "./seed";
 
 /**
@@ -72,7 +72,9 @@ test.describe("login", () => {
       }
     });
 
-    await login(page, users.studi1, "/settings");
+    // Through the form: the stored session login() reuses never carries a password, so
+    // it could not catch one being sent.
+    await loginViaForm(page, users.studi1, "/settings");
     expect(apiRequests).toEqual([]);
   });
 });

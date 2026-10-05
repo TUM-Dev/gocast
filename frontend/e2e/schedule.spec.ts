@@ -11,15 +11,21 @@ import { schedule, users } from "./seed";
  * that has a hall. Spieleentwicklung's live lecture (course 2, prof2's but not
  * prof1's) also runs today. The day view opens on today.
  *
- * One test renames today's lecture; it puts the name back in a finally, because the
- * start page's specs look for it by name.
+ * One test renames a lecture from the popover and puts the name back in a finally. It
+ * renames Fortgeschrittene Bierkunde's "VL 2: Verkostung" rather than today's lecture
+ * of Einführung Brauereiwesen: course-lectures.spec.ts lists that course's lectures by
+ * name while this file runs alongside it, and nothing reads the Bierkunde one by name.
+ * prof1 administers both. It starts within the half hour, so between 23:35 and
+ * midnight it is tomorrow's and the test fails; the fixture is dated off the clock.
  */
 
 const courseOfToday = "Einführung Brauereiwesen";
 const prof2Only = "Spieleentwicklung für Dummies";
+const renamedCourse = "Fortgeschrittene Bierkunde";
+const renamed = schedule.comingUp.lecture;
 
-/** Today's lecture as the schedule API reports it. */
-async function todaysLecture(context: APIRequestContext) {
+/** The lecture to rename, as the schedule API reports it. */
+async function lectureToRename(context: APIRequestContext) {
   const from = new Date();
   from.setHours(0, 0, 0, 0);
   const to = new Date(from.getTime() + 24 * 60 * 60 * 1000);
@@ -29,8 +35,8 @@ async function todaysLecture(context: APIRequestContext) {
   expect(response.status()).toBe(200);
   const lectures: { streamId: number; courseId: number; name?: string }[] =
     (await response.json()).lectures ?? [];
-  const lecture = lectures.find((l) => l.name === schedule.today);
-  expect(lecture, `${schedule.today} is not on today's schedule`).toBeTruthy();
+  const lecture = lectures.find((l) => l.name === renamed);
+  expect(lecture, `${renamed} is not on today's schedule`).toBeTruthy();
   return lecture!;
 }
 
@@ -82,18 +88,18 @@ test.describe("the schedule page", () => {
 
   test("renames a lecture from its popover", async ({ page, playwright }) => {
     const api = await apiAs(playwright, users.prof1);
-    const lecture = await todaysLecture(api);
+    const lecture = await lectureToRename(api);
 
     try {
       await login(page, users.prof1, "/admin");
-      await page.locator(".fc-event", { hasText: courseOfToday }).click();
+      await page.locator(".fc-event", { hasText: renamedCourse }).click();
 
-      const dialog = page.getByRole("dialog", { name: courseOfToday });
+      const dialog = page.getByRole("dialog", { name: renamedCourse });
       await expect(dialog).toBeVisible();
       const title = dialog.getByRole("textbox", { name: "Lecture title" });
-      await expect(title).toHaveValue(schedule.today);
+      await expect(title).toHaveValue(renamed);
 
-      await title.fill("VL 5: Umbenannt");
+      await title.fill("VL 2: Umbenannt");
       await dialog.getByRole("button", { name: "Save" }).first().click();
       await expect(dialog.getByRole("status")).toHaveText("Title saved.");
 
@@ -102,10 +108,10 @@ test.describe("the schedule page", () => {
           `&to=${new Date(Date.now() + 864e5).toISOString()}&allLectureHalls=true`,
       );
       const names = ((await after.json()).lectures ?? []).map((l: { name?: string }) => l.name);
-      expect(names).toContain("VL 5: Umbenannt");
+      expect(names).toContain("VL 2: Umbenannt");
     } finally {
       const restored = await api.patch(`/api/v2/courses/${lecture.courseId}/streams/${lecture.streamId}`, {
-        data: { name: schedule.today },
+        data: { name: renamed },
       });
       expect(restored.status()).toBe(200);
     }
