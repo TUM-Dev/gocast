@@ -55,6 +55,8 @@ var spaRoutes = map[string]bool{
 	"/settings":                             true,
 	"/login":                                true,
 	"/setPassword/:key":                     true,
+	"/edit-course":                          true,
+	"/edit-course/opt-out":                  true,
 	"/":                                     true,
 	"/courses/mine":                         true,
 	"/courses/public":                       true,
@@ -396,8 +398,9 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/jwtPubKey", routes.JWTPubKey)
 
 	router.GET("/:shortLink", routes.shortLinkOrInfoPage)
-	router.GET("/edit-course", routes.editCourseByTokenPage)
-	router.GET("/edit-course/opt-out", routes.optOutPage)
+	// The course token in the mailed link is the credential; both pages ask v2 for it.
+	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course/opt-out", nil)
 
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
