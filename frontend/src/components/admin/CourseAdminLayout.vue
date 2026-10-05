@@ -31,9 +31,7 @@ interface Tab {
 }
 
 const tabs = computed<Tab[]>(() => [
-  // Still the server-rendered page: lecture management has not moved yet. It keeps
-  // serving its other tabs too, until this page has replaced each of them.
-  { label: "Lectures", href: `/admin/course/${courseId.value}` },
+  { label: "Lectures", to: `/admin/courses/${courseId.value}/lectures` },
   { label: "Settings", to: `/admin/courses/${courseId.value}/settings` },
   { label: "Statistics", to: `/admin/courses/${courseId.value}/stats` },
   { label: "Participants", to: `/admin/courses/${courseId.value}/participants` },

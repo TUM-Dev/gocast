@@ -1,55 +1,29 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 
-import AdminLayout from "@/components/admin/AdminLayout.vue";
 import CourseLectureList from "@/components/admin/lectures/CourseLectureList.vue";
-import { fetchCourseHeader, type CourseHeader } from "@/lib/course-lectures";
-import { redirectToLogin, useAuthStore } from "@/stores/auth";
+import { useCourseAdminStore } from "@/stores/course-admin";
 
 /**
- * A course's lectures, the edit-course page's lecture tab. Stands alone in
- * AdminLayout for now; once the course administration layout exists this page's
- * route becomes one of its children and only CourseLectureList is mounted there.
+ * A course's lectures: the lectures tab of the course's administration page, which
+ * supplies the frame, the course and the sign-in check. Everything on it is in
+ * components/admin/lectures.
  *
  * The server has refused anyone who does not administer the course before serving
  * this page, and every RPC behind it refuses them again.
  */
-const auth = useAuthStore();
 const route = useRoute();
+const store = useCourseAdminStore();
 
 const courseId = computed(() => Number(route.params.courseID));
-const course = ref<CourseHeader | null>(null);
-const ready = ref(false);
-
-watch(
-  courseId,
-  async (id) => {
-    const user = await auth.load().catch(() => null);
-    if (!user) {
-      redirectToLogin();
-      return;
-    }
-    ready.value = true;
-    course.value = null;
-    // Only the heading and the stream keys need it; the list loads regardless.
-    course.value = await fetchCourseHeader(id).catch(() => null);
-  },
-  { immediate: true },
-);
+// The layout only renders its tabs once the course has loaded, so this is set.
+const slug = computed(() => (store.course?.id === courseId.value ? store.course.slug : ""));
 </script>
 
 <template>
-  <AdminLayout>
-    <section class="mx-auto flex max-w-5xl flex-col gap-4">
-      <header>
-        <h1 class="text-1 text-2xl font-bold">Lectures</h1>
-        <p v-if="course" class="text-3">
-          <!-- The course's settings are still a server-rendered page. -->
-          <a :href="`/admin/course/${courseId}`" class="hover:underline">{{ course.name }}</a>
-        </p>
-      </header>
-      <CourseLectureList v-if="ready" :course-id="courseId" :course-slug="course?.slug ?? ''" />
-    </section>
-  </AdminLayout>
+  <section class="flex flex-col gap-4">
+    <h2 class="text-1 text-lg font-semibold">Lectures</h2>
+    <CourseLectureList :course-id="courseId" :course-slug="slug" />
+  </section>
 </template>

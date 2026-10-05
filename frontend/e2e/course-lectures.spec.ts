@@ -4,7 +4,7 @@ import { apiAs, login } from "./helpers";
 import { recordings, schedule, users } from "./seed";
 
 /**
- * A course's lecture list, the edit-course page's lectures tab.
+ * A course's lecture list, the lectures tab of its administration page.
  *
  * Course 1 (Einführung Brauereiwesen) is administered by prof1 and prof2; course 2 is
  * prof2's alone. The one test that renames a lecture puts the exact name back in a
@@ -31,8 +31,12 @@ test.describe("the course lectures page", () => {
   test("lists the course's lectures with their state", async ({ page }) => {
     await login(page, users.prof1, page1);
 
-    await expect(page.getByRole("heading", { name: "Lectures", level: 1 })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Einführung Brauereiwesen" })).toBeVisible();
+    // Inside the course's administration page, as its lectures tab.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Einführung Brauereiwesen");
+    await expect(
+      page.getByRole("navigation", { name: "Course administration" }).getByRole("link", { name: "Lectures" }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { name: "Lectures", level: 2 })).toBeVisible();
     for (const name of [...recordings.brauereiwesen, schedule.today, ...schedule.planned]) {
       await expect(card(page, name)).toHaveCount(1);
     }

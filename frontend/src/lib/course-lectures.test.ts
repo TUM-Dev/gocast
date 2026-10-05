@@ -6,7 +6,6 @@ import {
   deleteLectureSeries,
   deleteLectures,
   fetchAdministeredCourses,
-  fetchCourseHeader,
   fetchCourseLectures,
   formatDuration,
   lectureBadges,
@@ -98,13 +97,7 @@ describe("fetchCourseLectures", () => {
   });
 });
 
-describe("the course and its siblings", () => {
-  it("reads the course's name and slug", async () => {
-    respondWith({ id: 1, name: "Einführung Brauereiwesen", slug: "brauereiwesen" });
-    expect(await fetchCourseHeader(1)).toEqual({ name: "Einführung Brauereiwesen", slug: "brauereiwesen" });
-    expect(lastCall()[0]).toBe("/api/v2/courses/1/admin");
-  });
-
+describe("fetchAdministeredCourses", () => {
   it("lists the administered courses", async () => {
     respondWith({ courses: [{ id: 3, name: "Praktikum: Golang", slug: "godev", year: 2021, term: "W" }] });
     expect(await fetchAdministeredCourses()).toEqual([{ id: 3, name: "Praktikum: Golang", year: 2021, term: "W" }]);

@@ -351,12 +351,11 @@ func configMainRoute(router *gin.Engine) {
 	// The first page on rule 2's plural path. The edit-course page's statistics tab
 	// shows the same thing; that tab becomes this route when the page migrates.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/stats", nil)
-	// The settings and external-participants tabs of the same page, as rule 4 child
-	// routes. Its lectures tab is still /admin/course/:courseID above until it moves.
+	// The settings, external-participants and lectures tabs of the same page, as
+	// rule 4 child routes. The lectures tab leaves out the lecture content (videos,
+	// attachments, sections) still only on /admin/course/:courseID above.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/settings", nil)
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/participants", nil)
-	// The edit-course page's lecture list, on its own until the course-admin layout
-	// that will hold it beside the other tabs lands.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/lectures", nil)
 	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
 

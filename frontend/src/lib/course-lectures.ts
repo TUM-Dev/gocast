@@ -6,7 +6,6 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 
 import {
-  CourseAdminSchema,
   ListAdministeredCoursesResponseSchema,
   ListCourseLecturesAdminResponseSchema,
   type CourseLectureAdmin,
@@ -86,17 +85,6 @@ export async function fetchCourseLectures(courseId: number): Promise<CourseLectu
     `/courses/${courseId}/lectures/admin`,
   );
   return res.lectures.map(toLecture);
-}
-
-export interface CourseHeader {
-  name: string;
-  /** Part of a self-streamer's stream key, `<slug>-<lecture id>`. */
-  slug: string;
-}
-
-export async function fetchCourseHeader(courseId: number): Promise<CourseHeader> {
-  const res = await apiGetMessage(CourseAdminSchema, `/courses/${courseId}/admin`);
-  return { name: res.name, slug: res.slug };
 }
 
 export interface AdministeredCourse {

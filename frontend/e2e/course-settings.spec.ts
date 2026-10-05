@@ -52,8 +52,10 @@ test.describe("the course administration page", () => {
       "/course/2022/S/brauereiwesen",
     );
 
-    // Lectures is still the server-rendered page.
-    await expect(tabs(page).getByRole("link", { name: "Lectures" })).toHaveAttribute("href", "/admin/course/1");
+    await expect(tabs(page).getByRole("link", { name: "Lectures" })).toHaveAttribute(
+      "href",
+      "/admin/courses/1/lectures",
+    );
     await expect(tabs(page).getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
     await expect(tabs(page).getByRole("link", { name: "Statistics" })).toHaveAttribute(
       "href",

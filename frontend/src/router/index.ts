@@ -205,17 +205,11 @@ const routes: RouteRecordRaw[] = [
     component: CourseAdminLayout,
     children: [
       { path: "", redirect: { name: "admin-course-settings" } },
+      { path: "lectures", name: "admin-course-lectures", component: CourseLecturesView },
       { path: "settings", name: "admin-course-settings", component: CourseSettingsView },
       { path: "stats", name: "admin-course-stats", component: CourseStatsView },
       { path: "participants", name: "admin-course-participants", component: CourseParticipantsView },
     ],
-  },
-  {
-    // Becomes the `lectures` child of the course administration layout once that
-    // exists; everything on it is in components/admin/lectures.
-    path: "/admin/courses/:courseID/lectures",
-    name: "admin-course-lectures",
-    component: CourseLecturesView,
   },
   {
     path: "/admin/courses/:courseID/lectures/:streamID/stats",
