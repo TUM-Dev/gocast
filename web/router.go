@@ -99,12 +99,8 @@ var templatePaths = []string{
 	"template/*.gohtml",
 	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
-	"template/admin/admin_tabs/*.gohtml",
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
-	"template/partial/course/manage/*.gohtml",
-	"template/partial/course/manage/*.gohtml",
-	"template/partial/course/manage/create-lecture-form-slides/*.gohtml",
 }
 
 func ConfigGinRouter(router *gin.Engine) {
@@ -347,19 +343,21 @@ func configMainRoute(router *gin.Engine) {
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
 	courseAdminGroup.Use(tools.AdminOfCourse)
-	courseAdminGroup.GET("/admin/course/:courseID", routes.EditCoursePage)
 	// The first page on rule 2's plural path. The edit-course page's statistics tab
 	// shows the same thing; that tab becomes this route when the page migrates.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/stats", nil)
 	// The settings, external-participants and lectures tabs of the same page, as
-	// rule 4 child routes. The lectures tab leaves out the lecture content (videos,
-	// attachments, sections) still only on /admin/course/:courseID above.
+	// rule 4 child routes.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/settings", nil)
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/participants", nil)
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/lectures", nil)
-	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
 
 	// Outside the course group, like the redirects above: the destination checks.
+	// The server-rendered course page opened on its lectures tab; a fragment such as
+	// #lecture-li-7 never reaches the server, so it is lost here.
+	router.GET("/admin/course/:courseID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
+	})
 	router.GET("/admin/course/:courseID/stats", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/stats")
 	})

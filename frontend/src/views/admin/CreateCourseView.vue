@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { ApiError } from "@/lib/api";
@@ -19,6 +20,7 @@ import { redirectToLogin, useAuthStore } from "@/stores/auth";
  * where the old form also sent its lecturers.
  */
 const auth = useAuthStore();
+const router = useRouter();
 
 const initialYear = new Date().getFullYear();
 
@@ -123,8 +125,7 @@ async function submit(): Promise<void> {
   saving.value = true;
   try {
     const id = await createCourse({ ...form, name: form.name.trim() });
-    // The course's page is still server-rendered; ?created is what it greets with.
-    window.location.assign(`/admin/course/${id}?created`);
+    await router.push(`/admin/courses/${id}/lectures`);
   } catch (err) {
     error.value = message(err);
     saving.value = false;

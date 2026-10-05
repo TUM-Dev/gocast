@@ -90,13 +90,12 @@ test.describe("the create course page", () => {
     await page.getByLabel("Language").selectOption("en");
     await page.getByRole("button", { name: "Create Course" }).click();
 
-    await expect(page).toHaveURL(/\/admin\/course\/\d+\?created$/);
-    createdIds.push(Number(/\/admin\/course\/(\d+)/.exec(page.url())?.[1]));
+    await expect(page).toHaveURL(/\/admin\/courses\/\d+\/lectures$/);
+    createdIds.push(Number(/\/admin\/courses\/(\d+)/.exec(page.url())?.[1]));
 
     // The course page is behind AdminOfCourse, so getting it at all shows prof1 was
     // made an administrator of the new course.
-    await expect(page.getByText("Course was created successfully.")).toBeVisible();
-    await expect(page.getByRole("link", { name: "E2E Neuer Kurs" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "E2E Neuer Kurs" })).toBeVisible();
   });
 });
 
