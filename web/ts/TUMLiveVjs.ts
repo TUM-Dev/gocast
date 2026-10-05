@@ -696,32 +696,57 @@ export class Titlebar extends Component {
         // of the component's element.
         dom.emptyEl(this.el());
 
-        this.el().innerHTML = `
-        <div class="bg-linear-to-b from-black/75 to-transparent pb-10 px-2 pt-2">
-            <div class="flex">
-            <div class="grow">
-                <h1>
-                    <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
-                        window.location.origin + options.streamUrl
-                    }">${options.stream}</a>
-                </h1>
-                <h2 class="font-semibold">
-                    <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
-                        window.location.origin + options.courseUrl
-                    }">${options.course}</a>
-                </h2>
-            </div>
-            <div>
-                <a target="_blank" href="${
-                    window.location.origin + options.streamUrl
-                }" class="inline-block text-gray-200 hover:text-white hover:underline">
-                TUM-Live <i class="fas fa-external-link-alt"></i>
-                </a>
-            </div>
-            </div>
-        </div>
-        `;
+        // Lecture and course names are set by course admins, so they are untrusted here and
+        // must only ever become text nodes, never markup. See the overlay helpers below.
+        const left = el("div", "grow", [
+            el("h1", "", [
+                overlayLink(options.streamUrl, options.stream, "text-gray-100 hover:text-white hover:underline"),
+            ]),
+            el("h2", "font-semibold", [
+                overlayLink(options.courseUrl, options.course, "text-gray-100 hover:text-white hover:underline"),
+            ]),
+        ]);
+        const tumLive = overlayLink(
+            options.streamUrl,
+            "TUM-Live ",
+            "inline-block text-gray-200 hover:text-white hover:underline",
+        );
+        tumLive.appendChild(el("i", "fas fa-external-link-alt"));
+        this.el().appendChild(
+            el("div", "bg-linear-to-b from-black/75 to-transparent pb-10 px-2 pt-2", [
+                el("div", "flex", [left, el("div", "", [tumLive])]),
+            ]),
+        );
     }
+}
+
+/**
+ * el builds an element with a class list and children; children are nodes, so no string
+ * ever reaches innerHTML.
+ */
+function el(tag: string, className: string, children: Node[] = []): HTMLElement {
+    const e = document.createElement(tag);
+    if (className) {
+        e.className = className;
+    }
+    for (const c of children) {
+        e.appendChild(c);
+    }
+    return e;
+}
+
+/**
+ * overlayLink creates a link that opens on the TUM-Live origin. The path is resolved against
+ * the origin so a value that is not a relative path (e.g. `javascript:`) can't become the href.
+ */
+function overlayLink(path: string, text: string, className: string): HTMLAnchorElement {
+    const a = document.createElement("a");
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.className = className;
+    a.href = new URL(path ?? "", window.location.origin).toString();
+    a.textContent = text ?? "";
+    return a;
 }
 
 export class StartInOverlay extends Component {
@@ -745,19 +770,29 @@ export class StartInOverlay extends Component {
             return;
         }
 
-        this.el().innerHTML = `
-        <div class="p-4 rounded bg-gray-900/75">
-            <p><a target="_blank" href="${
-                options.streamUrl
-            }" class="text-gray-300 hover:text-white font-semibold text-m hover:underline">${options.stream}</a></p>
-            <p><a target="_blank" href="${
-                options.courseUrl
-            }" class="text-gray-300 hover:text-white text-sm hover:underline">${options.course}</a></p>
-            <p class="text-sm">Start in about <span class="font-semibold">${Math.floor(
-                options.startIn / 60,
-            )}</span> Minutes</p>
-        </div>
-        `;
+        const minutes = el("span", "font-semibold");
+        minutes.textContent = String(Math.floor(options.startIn / 60));
+        const startIn = el("p", "text-sm");
+        startIn.append("Start in about ", minutes, " Minutes");
+        this.el().appendChild(
+            el("div", "p-4 rounded bg-gray-900/75", [
+                el("p", "", [
+                    overlayLink(
+                        options.streamUrl,
+                        options.stream,
+                        "text-gray-300 hover:text-white font-semibold text-m hover:underline",
+                    ),
+                ]),
+                el("p", "", [
+                    overlayLink(
+                        options.courseUrl,
+                        options.course,
+                        "text-gray-300 hover:text-white text-sm hover:underline",
+                    ),
+                ]),
+                startIn,
+            ]),
+        );
         setTimeout(() => {
             options.startIn -= 10;
             this.updateTextContent(options);
