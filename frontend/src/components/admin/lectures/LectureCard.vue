@@ -23,6 +23,8 @@ const props = defineProps<{
   expanded: boolean;
   seriesCount: number;
   halls: ScheduleLectureHall[];
+  /** Server administrators only; see CourseLectureList. */
+  canChangeHall: boolean;
   courseId: number;
   courseSlug: string;
   targetCourses: AdministeredCourse[];
@@ -140,6 +142,7 @@ const watchLink = computed(() =>
       :lecture="lecture"
       :series-count="seriesCount"
       :halls="halls"
+      :can-change-hall="canChangeHall"
       :course-id="courseId"
       :course-slug="courseSlug"
       :target-courses="targetCourses"

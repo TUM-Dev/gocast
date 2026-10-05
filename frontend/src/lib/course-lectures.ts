@@ -159,6 +159,22 @@ export async function updateLectureSeriesTime(
   });
 }
 
+/**
+ * Moves the lectures into a hall, SELF_STREAMED (0) for none. Server administrators
+ * only; anyone else is answered 403.
+ */
+export async function updateLecturesLectureHall(
+  courseId: number,
+  streamIds: number[],
+  lectureHallId: number,
+): Promise<void> {
+  await apiFetch(`/courses/${courseId}/streams/lecture-hall`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ streamIds, lectureHallId }),
+  });
+}
+
 /** Deletes nothing unless every lecture is the course's. */
 export async function deleteLectures(courseId: number, streamIds: number[]): Promise<void> {
   await apiPost(`/courses/${courseId}/streams/delete`, { streamIds });
@@ -292,6 +308,7 @@ export function lectureErrorMessage(err: unknown): string {
     // Another course's lecture, and a course the caller does not administer, answer
     // the same as a missing one.
     if (err.status === 404) return "This lecture no longer exists or you do not administer it.";
+    if (err.status === 403) return "Only server administrators may change a lecture's hall.";
     return err.message;
   }
   return "Something went wrong. Please try again.";

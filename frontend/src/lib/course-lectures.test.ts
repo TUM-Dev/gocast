@@ -19,6 +19,7 @@ import {
   updateLecture,
   updateLectureSeries,
   updateLectureSeriesTime,
+  updateLecturesLectureHall,
   type CourseLecture,
 } from "./course-lectures";
 
@@ -148,6 +149,17 @@ describe("updating", () => {
     expect(url).toBe("/api/v2/courses/1/streams/12/series/time");
     expect(init.method).toBe("PUT");
     expect(sentBody()).toEqual({ start: "2026-10-05T08:00:00.000Z", end: "2026-10-05T10:00:00.000Z" });
+  });
+});
+
+describe("updateLecturesLectureHall", () => {
+  it("moves several lectures with one PUT, a hall of 0 included", async () => {
+    respondWith({});
+    await updateLecturesLectureHall(1, [4, 5], 0);
+    const [url, init] = lastCall();
+    expect(url).toBe("/api/v2/courses/1/streams/lecture-hall");
+    expect(init.method).toBe("PUT");
+    expect(sentBody()).toEqual({ streamIds: [4, 5], lectureHallId: 0 });
   });
 });
 
@@ -288,6 +300,10 @@ describe("list helpers", () => {
 describe("lectureErrorMessage", () => {
   it("explains a 404 as gone or not administered", () => {
     expect(lectureErrorMessage(new ApiError(404, "not found"))).toMatch(/no longer exists or you do not administer it/);
+  });
+
+  it("explains a 403 as the hall rule, the only thing these refuse a course admin", () => {
+    expect(lectureErrorMessage(new ApiError(403, "forbidden"))).toMatch(/server administrators/);
   });
 
   it("passes the server's message through otherwise", () => {
