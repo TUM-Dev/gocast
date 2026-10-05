@@ -36,7 +36,7 @@ test.describe("route ownership", () => {
   test("paths that have not moved are still rendered by Go", async ({ page }) => {
     await login(page, users.studi1, "/settings");
 
-    const response = await page.goto("/search");
+    const response = await page.goto("/w/brauereiwesen/1");
     const body = (await response?.text()) ?? "";
     expect(body).not.toContain("/spa-assets/");
   });
@@ -48,7 +48,7 @@ test.describe("route ownership", () => {
     // navigation, or the user lands on a blank shell. Not /semester/:year/:term, which
     // redirects into the start page and so now lands on the shell after all.
     await page.evaluate(() => window.history.pushState({}, "", "/settings"));
-    const response = await page.goto("/search");
+    const response = await page.goto("/w/brauereiwesen/1");
     expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
   });
 });
