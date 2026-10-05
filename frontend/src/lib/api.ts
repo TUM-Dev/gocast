@@ -79,13 +79,13 @@ export function clearToken(): void {
 }
 
 /** A token, or null when nobody is signed in. Anything else still throws. */
-async function tokenOrNull(): Promise<string | null> {
+async function tokenOrNull(forceRefresh = false): Promise<string | null> {
   if (sessionAbsent) {
     return null;
   }
 
   try {
-    return await getToken();
+    return await getToken(forceRefresh);
   } catch (err) {
     if (err instanceof ApiError && err.isUnauthenticated) {
       sessionAbsent = true;
@@ -176,6 +176,15 @@ export async function apiFetchPublic<T>(path: string, init: RequestInit = {}): P
  */
 export async function hasSession(): Promise<boolean> {
   return (await tokenOrNull()) !== null;
+}
+
+/**
+ * A freshly minted token, or null when nobody is signed in — for the realtime socket,
+ * which presents its token once per connection rather than per request, so a cached
+ * one could be about to expire by the time it reconnects.
+ */
+export function freshTokenOrNull(): Promise<string | null> {
+  return tokenOrNull(true);
 }
 
 /**
