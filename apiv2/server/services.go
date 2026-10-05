@@ -159,6 +159,22 @@ var services = []service{
 		},
 	},
 	{
+		desc:     &protobuf.ChatService_ServiceDesc,
+		register: func(s grpc.ServiceRegistrar, a *API) { protobuf.RegisterChatServiceServer(s, a) },
+		gateway:  protobuf.RegisterChatServiceHandlerFromEndpoint,
+		policies: map[string]accessPolicy{
+			// Whoever may watch the stream may read its chat, signed in or not:
+			// authorizeUserForStreamCourse decides, as for the stream itself. The
+			// handlers narrow what each caller sees.
+			"listChatMessages": public,
+			"getActivePoll":    public,
+			"listChatUsers":    public,
+			// For the course's administrators; the handler checks, since the request
+			// names a stream rather than a course.
+			"listPolls": authenticated,
+		},
+	},
+	{
 		desc:     &protobuf.AdminService_ServiceDesc,
 		register: func(s grpc.ServiceRegistrar, a *API) { protobuf.RegisterAdminServiceServer(s, a) },
 		gateway:  protobuf.RegisterAdminServiceHandlerFromEndpoint,

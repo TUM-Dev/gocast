@@ -29,6 +29,7 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/camera"
+	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
@@ -150,6 +151,11 @@ func run(ctx context.Context) error {
 	}
 	camService := camera.NewService(camAuths)
 
+	// One hub for the process: the v2 realtime socket reads it, and v1's producers
+	// publish to it beside their own sockets until api/ is gone.
+	hub := realtimehub.NewMemory()
+	api.SetRealtimeHub(hub)
+
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
 		runner_manager.WithCamService(camService),
@@ -184,7 +190,7 @@ func run(ctx context.Context) error {
 	go mailer.Run()
 
 	initCron(logger, m)
-	return serveHttp(ctx, m, camService, apiv2Subtitles)
+	return serveHttp(ctx, m, camService, apiv2Subtitles, hub)
 }
 
 var VersionTag = "development"
@@ -203,7 +209,7 @@ func initAll(initializers []initializer) {
 }
 
 // serveHttp launches all http servers
-func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService *camera.Service, subtitles pb.SubtitleGeneratorClient) (err error) {
+func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService *camera.Service, subtitles pb.SubtitleGeneratorClient, hub realtimehub.Hub) (err error) {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	gin.SetMode(gin.ReleaseMode)
@@ -250,6 +256,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
 		apiv2.WithSectionImages(api.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
+		apiv2.WithRealtimeHub(hub),
 	}
 	if subtitles != nil {
 		api2Opts = append(api2Opts, apiv2.WithSubtitleGenerator(subtitles, tools.Cfg.VoiceService.AuthToken))
@@ -269,7 +276,10 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)
 
-	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	// The v2 realtime socket is served by the /api/v2/*any route below, so it cannot be
+	// registered ahead of gzip like the two above: gin refuses a static route beside
+	// that catch-all. It is excluded by path instead.
+	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{apiv2.RealtimePath})))
 	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router, manager)
 	web.ConfigGinRouter(router)

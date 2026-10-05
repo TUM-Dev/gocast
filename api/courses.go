@@ -24,6 +24,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 )
@@ -877,6 +878,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 	} else {
 		logger.Error("couldn't marshal stream rename ws msg", "err", err)
 	}
+	publishV2(sID, realtimehub.DescriptionEvent(sID, stream.GetDescriptionHTML())) // temporary: see realtime_v2.go
 }
 
 func (r coursesRoutes) renameLecture(c *gin.Context) {
@@ -928,6 +930,7 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 	} else {
 		logger.Error("couldn't marshal stream rename ws msg", "err", err)
 	}
+	publishV2(sID, realtimehub.TitleEvent(sID, req.Name)) // temporary: see realtime_v2.go
 }
 
 type updateLectureTimeRequest struct {

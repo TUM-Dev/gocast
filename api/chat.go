@@ -14,6 +14,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/realtime"
 
@@ -690,6 +691,7 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 func NotifyViewersLiveState(streamId uint, live bool) {
 	req, _ := json.Marshal(gin.H{"live": live})
 	broadcastStream(streamId, req)
+	publishV2(streamId, realtimehub.LiveEvent(streamId, live)) // temporary: see realtime_v2.go
 }
 
 func chatOnSubscribe(psc *realtime.Context) {
