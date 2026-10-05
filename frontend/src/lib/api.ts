@@ -210,6 +210,17 @@ export function apiPost<T>(path: string, body: unknown): Promise<T> {
   });
 }
 
+/**
+ * POST of a multipart form, for the upload endpoints beside the gateway. No
+ * Content-Type of our own: the browser sets it with the boundary the body needs. Their
+ * failures come in the gateway's shape, so they surface as the same ApiError.
+ *
+ * fetch reports no upload progress; callers show a busy state instead.
+ */
+export function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  return apiFetch<T>(path, { method: "POST", body: form });
+}
+
 /** DELETE, for endpoints that answer with an empty body. */
 export function apiDelete(path: string): Promise<void> {
   return apiFetch<void>(path, { method: "DELETE" });
@@ -295,5 +306,24 @@ export async function apiPatchMessage<Req extends DescMessage, Res extends DescM
   message: MessageShape<Req>,
 ): Promise<MessageShape<Res>> {
   const json = await apiPatch<JsonValue>(path, toJson(requestSchema, message));
+  return fromJson(responseSchema, json, JSON_READ_OPTIONS);
+}
+
+export function apiPut<T>(path: string, body: unknown): Promise<T> {
+  return apiFetch<T>(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+/** Typed PUT, for the endpoints that replace a whole collection at once. */
+export async function apiPutMessage<Req extends DescMessage, Res extends DescMessage>(
+  requestSchema: Req,
+  responseSchema: Res,
+  path: string,
+  message: MessageShape<Req>,
+): Promise<MessageShape<Res>> {
+  const json = await apiPut<JsonValue>(path, toJson(requestSchema, message));
   return fromJson(responseSchema, json, JSON_READ_OPTIONS);
 }

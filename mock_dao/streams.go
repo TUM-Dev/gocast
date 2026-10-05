@@ -157,6 +157,34 @@ func (mr *MockStreamsDaoMockRecorder) CreateStream(stream any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStream", reflect.TypeOf((*MockStreamsDao)(nil).CreateStream), stream)
 }
 
+// CreateStreams mocks base method.
+func (m *MockStreamsDao) CreateStreams(streams []model.Stream) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateStreams", streams)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateStreams indicates an expected call of CreateStreams.
+func (mr *MockStreamsDaoMockRecorder) CreateStreams(streams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStreams", reflect.TypeOf((*MockStreamsDao)(nil).CreateStreams), streams)
+}
+
+// DeleteCourseLectureSeries mocks base method.
+func (m *MockStreamsDao) DeleteCourseLectureSeries(courseID uint, seriesIdentifier string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCourseLectureSeries", courseID, seriesIdentifier)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCourseLectureSeries indicates an expected call of DeleteCourseLectureSeries.
+func (mr *MockStreamsDaoMockRecorder) DeleteCourseLectureSeries(courseID, seriesIdentifier any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCourseLectureSeries", reflect.TypeOf((*MockStreamsDao)(nil).DeleteCourseLectureSeries), courseID, seriesIdentifier)
+}
+
 // DeleteLectureSeries mocks base method.
 func (m *MockStreamsDao) DeleteLectureSeries(arg0 string) error {
 	m.ctrl.T.Helper()
@@ -705,6 +733,34 @@ func (m *MockStreamsDao) UnsetLectureHall(streamIDs []uint) error {
 func (mr *MockStreamsDaoMockRecorder) UnsetLectureHall(streamIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsetLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).UnsetLectureHall), streamIDs)
+}
+
+// UpdateCourseLectureSeries mocks base method.
+func (m *MockStreamsDao) UpdateCourseLectureSeries(courseID uint, seriesIdentifier string, update dao.LectureSeriesUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCourseLectureSeries", courseID, seriesIdentifier, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCourseLectureSeries indicates an expected call of UpdateCourseLectureSeries.
+func (mr *MockStreamsDaoMockRecorder) UpdateCourseLectureSeries(courseID, seriesIdentifier, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCourseLectureSeries", reflect.TypeOf((*MockStreamsDao)(nil).UpdateCourseLectureSeries), courseID, seriesIdentifier, update)
+}
+
+// UpdateCourseLectureSeriesTime mocks base method.
+func (m *MockStreamsDao) UpdateCourseLectureSeriesTime(courseID, streamID uint, seriesIdentifier string, start, end time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCourseLectureSeriesTime", courseID, streamID, seriesIdentifier, start, end)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCourseLectureSeriesTime indicates an expected call of UpdateCourseLectureSeriesTime.
+func (mr *MockStreamsDaoMockRecorder) UpdateCourseLectureSeriesTime(courseID, streamID, seriesIdentifier, start, end any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCourseLectureSeriesTime", reflect.TypeOf((*MockStreamsDao)(nil).UpdateCourseLectureSeriesTime), courseID, streamID, seriesIdentifier, start, end)
 }
 
 // UpdateLectureSeries mocks base method.

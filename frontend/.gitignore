@@ -7,3 +7,6 @@ dist/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Sessions written by e2e/auth.setup.ts for the run
+/e2e/.auth/

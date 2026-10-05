@@ -62,6 +62,23 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			return
 		}
 		sid = uint(sidTemp)
+		// Several lecture queries filter by stream alone, so without this an admin of
+		// one course could read another course's lecture stats. Course 0 is the
+		// server-wide view, already limited to server admins above.
+		if cid != 0 {
+			stream, err := r.StreamsDao.GetStreamByID(c, req.Lecture)
+			if err != nil {
+				_ = c.Error(tools.RequestError{
+					Status:        http.StatusNotFound,
+					CustomMessage: "can not find stream",
+					Err:           err,
+				})
+				return
+			}
+			if refuseForeignStream(c, stream) {
+				return
+			}
+		}
 	} else {
 		sid = ^uint(0)
 	}

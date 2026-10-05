@@ -45,6 +45,11 @@ var services = []service{
 			// Drive the login page itself.
 			"getLoginOptions": public,
 			"resetPassword":   public,
+			// The mailed key is the credential; the page shows nothing without it.
+			"checkPasswordResetKey": public,
+			"setPasswordByResetKey": public,
+			// Refused by the handler as soon as any user exists.
+			"createFirstUser": public,
 
 			// The rest act on one particular account.
 			"getUser":            authenticated,
@@ -59,14 +64,85 @@ var services = []service{
 		policies: map[string]accessPolicy{
 			// Browsing; the handlers filter by visibility.
 			"getPublicCourses": public,
-			"getCourseBySlug":  public,
-			"getLiveCourses":   public,
+			// Anonymous callers find public courses; the handler narrows by the caller.
+			"search": public,
+			// The course token mailed to a lecturer is the credential.
+			"getCourseByToken":    public,
+			"optInCourseByToken":  public,
+			"optOutCourseByToken": public,
+			"getCourseBySlug":     public,
+			"getLiveCourses":      public,
 
 			// Tied to one account's enrolments and pins.
 			"getUserCourses":   authenticated,
 			"getPinnedCourses": authenticated,
 			"getPinForCourse":  authenticated,
 			"pinCourse":        authenticated,
+
+			// The course's own statistics, for its lecturers.
+			"getCourseStats":    requiresCourseAdmin(),
+			"exportCourseStats": requiresCourseAdmin(),
+			// The handler also checks the lecture is the course's.
+			"getLectureStats": requiresCourseAdmin(),
+
+			// Any lecturer may start a course; the creator becomes its administrator.
+			"createCourse":           requires(model.PermLecture),
+			"searchTumOnlineCourses": requires(model.PermLecture),
+
+			// The schedule filters to the caller's own courses itself; the hall names
+			// are what the template showed every lecturer.
+			"getSchedule":              requires(model.PermLecture),
+			"listScheduleLectureHalls": requires(model.PermLecture),
+			// The handler also checks the lecture is the course's, and that only a
+			// server administrator sets its lecture hall.
+			"updateLecture": requiresCourseAdmin(),
+
+			// Lecture management. Each handler also checks the lecture is the
+			// course's; copyLecture checks the caller administers the target too.
+			// Changing a lecture hall -- updateLectureSeries with a hall, and
+			// updateLecturesLectureHall always -- also needs a server administrator,
+			// checked in the handler since the policy cannot see which fields are set.
+			"listCourseLecturesAdmin":   requiresCourseAdmin(),
+			"updateLecturesLectureHall": requiresCourseAdmin(),
+			"updateLectureSeries":       requiresCourseAdmin(),
+			"updateLectureSeriesTime":   requiresCourseAdmin(),
+			"deleteLectures":            requiresCourseAdmin(),
+			"deleteLectureSeries":       requiresCourseAdmin(),
+			"copyLecture":               requiresCourseAdmin(),
+			// The handler also refuses a hall for a VOD upload or premiere, and an
+			// unknown one.
+			"createLectures": requiresCourseAdmin(),
+
+			// ----- Course administration -----
+			// The course page, for its administrators. The handlers also refuse
+			// course 0, which the statistics queries read as every course.
+			"getCourseAdmin":                  requiresCourseAdmin(),
+			"updateCourseSettings":            requiresCourseAdmin(),
+			"copyCourse":                      requiresCourseAdmin(),
+			"deleteCourse":                    requiresCourseAdmin(),
+			"listCourseAdmins":                requiresCourseAdmin(),
+			"addCourseAdmin":                  requiresCourseAdmin(),
+			"removeCourseAdmin":               requiresCourseAdmin(),
+			"listCourseLectureHallSettings":   requiresCourseAdmin(),
+			"updateCourseLectureHallSettings": requiresCourseAdmin(),
+			"listCourseParticipants":          requiresCourseAdmin(),
+			"inviteCourseParticipants":        requiresCourseAdmin(),
+			// Course-scoped, unlike searchUsers: a course's lecturers lack
+			// users.manage, and this answers only names, logins and roles.
+			"searchUsersForCourse": requiresCourseAdmin(),
+			// The caller's own courses, for the sidebar; any lecturer.
+			"listAdministeredCourses": requires(model.PermLecture),
+
+			// A lecture's content. Each handler also checks the lecture is the
+			// course's, and a section or file named is the lecture's. The uploads beside
+			// the gateway (lecture_upload.go) are authorized the same way in code.
+			"createLectureSections":         requiresCourseAdmin(),
+			"updateLectureSection":          requiresCourseAdmin(),
+			"deleteLectureSection":          requiresCourseAdmin(),
+			"deleteLectureAttachment":       requiresCourseAdmin(),
+			"deleteLectureThumbnail":        requiresCourseAdmin(),
+			"requestLectureSubtitles":       requiresCourseAdmin(),
+			"getLectureTranscodingProgress": requiresCourseAdmin(),
 		},
 	},
 	{
@@ -88,6 +164,10 @@ var services = []service{
 			"getBookmarks":     authenticated,
 			"updateBookmark":   authenticated,
 			"deleteBookmark":   authenticated,
+
+			// Moves a lecture hall's camera; the handler checks the stream is the
+			// course's and takes the hall from it.
+			"switchCameraPreset": requiresCourseAdmin(),
 		},
 	},
 	{
@@ -133,6 +213,40 @@ var services = []service{
 			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
 			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
 			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
+
+			// Course import reaches TUMonline directly and creates courses outright;
+			// server-wide, same as runners and info pages.
+			"searchCourseImportSchedule": requires(model.PermAdministerServer),
+			"importCourseImportCourses":  requires(model.PermAdministerServer),
+			// Tokens are the only way to reach the API as another account, so they
+			// stay behind the same permission as the accounts they authenticate as.
+			"listTokens":  requires(model.PermManageUsers),
+			"createToken": requires(model.PermManageUsers),
+			"deleteToken": requires(model.PermManageUsers),
+			// Server notifications belong to no course, same as runners.
+			"listServerNotificationsAdmin": requires(model.PermAdministerServer),
+			"createServerNotification":     requires(model.PermAdministerServer),
+			"updateServerNotification":     requires(model.PermAdministerServer),
+			"deleteServerNotification":     requires(model.PermAdministerServer),
+			// Notifications belong to no course, same as runners and info pages.
+			"listNotificationsAdmin": requires(model.PermAdministerServer),
+			"createNotification":     requires(model.PermAdministerServer),
+			"deleteNotification":     requires(model.PermAdministerServer),
+			// The audit log spans every course and the server itself, so it takes the
+			// same permission as runners and info pages rather than a course-scoped one.
+			"listAudits": requires(model.PermAdministerServer),
+			// Server-wide statistics, same permission the old /admin/server-stats
+			// route required.
+			"getServerStats":    requires(model.PermAdministerServer),
+			"exportServerStats": requires(model.PermAdministerServer),
+			// Lecture halls belong to no course, same as runners and info pages.
+			"listLectureHallsAdmin":          requires(model.PermAdministerServer),
+			"createLectureHallAdmin":         requires(model.PermAdministerServer),
+			"updateLectureHallAdmin":         requires(model.PermAdministerServer),
+			"deleteLectureHallAdmin":         requires(model.PermAdministerServer),
+			"refreshLectureHallPresetsAdmin": requires(model.PermAdministerServer),
+			"setDefaultCameraPresetAdmin":    requires(model.PermAdministerServer),
+			"takeCameraPresetSnapshotAdmin":  requires(model.PermAdministerServer),
 		},
 	},
 }

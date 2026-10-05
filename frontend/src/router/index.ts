@@ -1,4 +1,4 @@
-import {
+import { START_LOCATION,
   createRouter,
   createWebHistory,
   type RouteLocationNormalized,
@@ -12,10 +12,31 @@ import HomeView from "@/views/HomeView.vue";
 import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
+import NotFoundView from "@/views/NotFoundView.vue";
+import SearchView from "@/views/SearchView.vue";
+import SetPasswordView from "@/views/SetPasswordView.vue";
+import CourseTokenView from "@/views/CourseTokenView.vue";
+import OnboardingView from "@/views/OnboardingView.vue";
+import AuditsView from "@/views/admin/AuditsView.vue";
+import CourseAdminLayout from "@/components/admin/CourseAdminLayout.vue";
+import CourseImportView from "@/views/admin/CourseImportView.vue";
+import CourseParticipantsView from "@/views/admin/CourseParticipantsView.vue";
+import CourseSettingsView from "@/views/admin/CourseSettingsView.vue";
+import CourseLecturesView from "@/views/admin/CourseLecturesView.vue";
+import CourseStatsView from "@/views/admin/CourseStatsView.vue";
+import CreateCourseView from "@/views/admin/CreateCourseView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import IntegrationsView from "@/views/admin/IntegrationsView.vue";
+import LectureHallCreateView from "@/views/admin/LectureHallCreateView.vue";
+import LectureHallsView from "@/views/admin/LectureHallsView.vue";
+import LectureStatsView from "@/views/admin/LectureStatsView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
+import NotificationsView from "@/views/admin/NotificationsView.vue";
 import RunnersView from "@/views/admin/RunnersView.vue";
+import ScheduleView from "@/views/admin/ScheduleView.vue";
+import ServerNotificationsView from "@/views/admin/ServerNotificationsView.vue";
+import ServerStatsView from "@/views/admin/ServerStatsView.vue";
+import TokensView from "@/views/admin/TokensView.vue";
 import UsersView from "@/views/admin/UsersView.vue";
 import WorkersView from "@/views/admin/WorkersView.vue";
 import MyCoursesView from "@/views/MyCoursesView.vue";
@@ -87,6 +108,14 @@ const routes: RouteRecordRaw[] = [
     name: "settings",
     component: SettingsView,
   },
+  {
+    // Visitors search public courses, a signed-in user finds more; the shell loads
+    // the user as it does for the start page.
+    path: "/search",
+    name: "search",
+    component: SearchView,
+    meta: { footer: true },
+  },
   // The three built-in pages keep their own routes rather than falling under
   // "/:slug" below, so their URLs are unaffected by whatever an administrator does
   // to the dynamic ones. Anonymous because nothing on these pages is per-user.
@@ -142,12 +171,122 @@ const routes: RouteRecordRaw[] = [
     component: MaintenanceView,
   },
   {
+    path: "/admin/course-import",
+    name: "admin-course-import",
+    component: CourseImportView,
+  },
+  {
+    path: "/admin/token",
+    name: "admin-token",
+    component: TokensView,
+  },
+  {
+    path: "/admin/server-notifications",
+    name: "admin-server-notifications",
+    component: ServerNotificationsView,
+  },
+  {
+    path: "/admin/notifications",
+    name: "admin-notifications",
+    component: NotificationsView,
+  },
+  {
+    path: "/admin/audits",
+    name: "admin-audits",
+    component: AuditsView,
+  },
+  {
+    path: "/admin/server-stats",
+    name: "admin-server-stats",
+    component: ServerStatsView,
+  },
+  {
+    path: "/admin/lecture-halls",
+    name: "admin-lecture-halls",
+    component: LectureHallsView,
+  },
+  {
+    path: "/admin/lecture-halls/new",
+    name: "admin-lecture-halls-new",
+    component: LectureHallCreateView,
+  },
+  {
+    // A course's administration page; each tab is a child route (rule 4 in
+    // web/router.go). The parent path is not in spaRoutes, so Go does not serve it;
+    // the redirect only catches an in-app navigation to it.
+    path: "/admin/courses/:courseID",
+    component: CourseAdminLayout,
+    children: [
+      { path: "", redirect: { name: "admin-course-settings" } },
+      { path: "lectures", name: "admin-course-lectures", component: CourseLecturesView },
+      { path: "settings", name: "admin-course-settings", component: CourseSettingsView },
+      { path: "stats", name: "admin-course-stats", component: CourseStatsView },
+      { path: "participants", name: "admin-course-participants", component: CourseParticipantsView },
+    ],
+  },
+  {
+    path: "/admin/courses/:courseID/lectures/:streamID/stats",
+    name: "admin-lecture-stats",
+    component: LectureStatsView,
+  },
+  {
+    path: "/admin/create-course",
+    name: "admin-create-course",
+    component: CreateCourseView,
+  },
+  {
+    path: "/admin",
+    name: "admin-schedule",
+    component: ScheduleView,
+  },
+  {
     path: "/login",
     name: "login",
     component: LoginView,
     // Search, notifications and the account menu do not apply before signing in. The
     // server-rendered login page uses the same reduced chrome.
     meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // The link a password reset or account invite mails. camelCase, unlike every other
+    // path: it is in emails that were already sent.
+    path: "/setPassword/:key",
+    name: "set-password",
+    component: SetPasswordView,
+    props: true,
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // The links mailed to a lecturer when their course is imported; the token in the
+    // query string is the credential. Two paths, one view.
+    path: "/edit-course",
+    name: "course-opt-in",
+    component: CourseTokenView,
+    props: { mode: "opt-in" },
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    path: "/edit-course/opt-out",
+    name: "course-opt-out",
+    component: CourseTokenView,
+    props: { mode: "opt-out" },
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // Where "/" sends a fresh deployment; the page refuses once an account exists.
+    path: "/onboarding",
+    name: "onboarding",
+    component: OnboardingView,
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // Everything nothing above claims. On a first load that is Go's 404, which serves
+    // the shell with that status; an in-app navigation here is a page Go still
+    // renders and is handed back to it in the guard below.
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: NotFoundView,
+    meta: { anonymous: true, footer: true },
   },
 ];
 
@@ -209,7 +348,20 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, _from, next) => {
+/**
+ * Whether the navigation in flight is the page load itself. A path the SPA does not
+ * own is handed back to Go on an in-app navigation, but on a first load Go has
+ * already answered -- with the shell and a 404 -- and handing it back would reload
+ * forever.
+ */
+let inAppNavigations = 0;
+export const isInitialNavigation = (): boolean => inAppNavigations === 0;
+
+router.beforeEach((to, from, next) => {
+  // Counted as soon as it starts, so a view mounted by the first load still sees the
+  // load as initial whichever order the router's hooks and the mount run in.
+  if (from !== START_LOCATION) inAppNavigations += 1;
+
   const legacy = legacyStartPageRedirect(to);
   if (legacy) {
     next(legacy);
@@ -217,7 +369,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   /** Unclaimed paths belong to pages Go still renders, so hand them back. */
-  if (to.matched.length === 0) {
+  if (to.name === "not-found" && !isInitialNavigation()) {
     window.location.assign(to.fullPath);
     return;
   }

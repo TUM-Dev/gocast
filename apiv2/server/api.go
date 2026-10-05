@@ -23,6 +23,7 @@ import (
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
 // API is the grpc server for the v2 api. It implements all four services, which are
@@ -33,6 +34,23 @@ type API struct {
 	dao dao.DaoWrapper
 	log *slog.Logger
 
+	// Reaching the lecture hall cameras, for the administration endpoints that move
+	// one to a preset or photograph it. Optional: see WithCamService.
+	cams           CamService
+	presetImageDir string
+
+	// TUMOnline, for creating courses. Optional: see WithTUMOnline.
+	tumOnline TUMOnline
+
+	// A lecture's content: section thumbnails, subtitles and where uploads go. All
+	// optional: see WithSectionImages, WithSubtitleGenerator and WithMassStorage.
+	sectionImages SectionImages
+	// Courses, lectures and subtitles by text; see WithSearch.
+	search        Search
+	subtitles     pb.SubtitleGeneratorClient
+	subtitlesAuth string
+	massStorage   string
+
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedUserServiceServer
 	protobuf.UnimplementedCourseServiceServer
@@ -40,14 +58,25 @@ type API struct {
 	protobuf.UnimplementedAdminServiceServer
 }
 
+// Option configures an API beyond what it needs to exist. What is optional here is
+// what the API can serve without: an API with no camera service still answers every
+// endpoint that does not touch a camera.
+type Option func(*API)
+
 // New creates a new API and assigns the given db and a logger
-func New(db *gorm.DB) *API {
+func New(db *gorm.DB, opts ...Option) *API {
 	log := slog.With("apiVersion", "2")
-	return &API{
+	a := &API{
 		db:  db,
 		dao: dao.NewDaoWrapper(),
 		log: log,
 	}
+
+	for _, opt := range opts {
+		opt(a)
+	}
+
+	return a
 }
 
 // Run starts the grpc server on port 12544 and the grpc gateway on ::8081/api/v2
@@ -102,6 +131,11 @@ func (a *API) Proxy() func(c *gin.Context) {
 		// gateway deliberately abstracts away.
 		if c.Request.URL.Path == "/api/v2/auth/token" {
 			a.handleAuthToken(c)
+			return
+		}
+		// Beside the gateway too: it cannot take a multipart body.
+		if route, ok := lectureUploadRouteOf(c.Request); ok {
+			a.handleLectureUpload(c, route)
 			return
 		}
 		http.StripPrefix("/api/v2", mux).ServeHTTP(c.Writer, c.Request)

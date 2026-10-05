@@ -39,6 +39,13 @@ type CoursesDao interface {
 
 	UpdateCourse(ctx context.Context, course model.Course) error
 	UpdateCourseMetadata(ctx context.Context, course model.Course)
+	// UpdateCourseColumns writes the named columns of course, zero values included,
+	// and nothing else. UpdateCourse skips zero values, so it cannot switch a setting
+	// off, and UpdateCourseMetadata saves every association the course was loaded
+	// with.
+	UpdateCourseColumns(ctx context.Context, course model.Course, columns ...string) error
+	// AddUserToCourse enrols a user in a course; enrolling them twice is no error.
+	AddUserToCourse(ctx context.Context, userID uint, courseID uint) error
 	UnDeleteCourse(ctx context.Context, course model.Course) error
 
 	RemoveAdminFromCourse(userID uint, courseID uint) error
@@ -321,6 +328,22 @@ func (d CoursesDaoImpl) UpdateCourse(ctx context.Context, course model.Course) e
 func (d CoursesDaoImpl) UpdateCourseMetadata(ctx context.Context, course model.Course) {
 	defer Cache.Clear()
 	DB.Save(&course)
+}
+
+func (d CoursesDaoImpl) UpdateCourseColumns(ctx context.Context, course model.Course, columns ...string) error {
+	if len(columns) == 0 {
+		return nil
+	}
+	defer Cache.Clear()
+	// Select limits the write to these columns, associations included: without it
+	// Updates would skip false and empty values. The model is the whole course, not
+	// just its ID, because BeforeSave validates the slug and name on it.
+	return DB.WithContext(ctx).Model(&course).Select(columns).Updates(&course).Error
+}
+
+func (d CoursesDaoImpl) AddUserToCourse(ctx context.Context, userID uint, courseID uint) error {
+	defer Cache.Clear()
+	return DB.WithContext(ctx).Exec("insert into course_users (user_id, course_id) values (?, ?) on duplicate key update user_id = user_id", userID, courseID).Error
 }
 
 func (d CoursesDaoImpl) UnDeleteCourse(ctx context.Context, course model.Course) error {

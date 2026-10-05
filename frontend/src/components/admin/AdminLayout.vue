@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
+import { groupBySemester } from "@/lib/course-admin";
+import { sameSemester } from "@/lib/semesters";
 import { can, type Permission } from "@/lib/settings";
 import { useAuthStore } from "@/stores/auth";
+import { useCourseAdminStore } from "@/stores/course-admin";
 
 /**
  * The frame every administration page sits in.
@@ -11,7 +15,13 @@ import { useAuthStore } from "@/stores/auth";
  * when following it works; the template gated the whole block on `Role == 1`, which
  * stopped matching the server once those routes split across two permissions.
  *
- * The sidebar's tree of administered courses needs an endpoint v2 does not have yet.
+ * Below the course links sits the tree of every course the user administers, by
+ * semester, as the template's sidebar had it. Only someone with the lecture
+ * permission is asked for it: listAdministeredCourses refuses anyone else.
+ *
+ * On a phone the sidebar is folded away behind a button: open, it takes the full
+ * width above the page rather than a column beside it, which left a lecture card
+ * about 170px wide.
  */
 interface AdminLink {
   label: string;
@@ -24,20 +34,41 @@ interface AdminLink {
 
 const administration: AdminLink[] = [
   { label: "Users", path: "/admin/users", permission: "users.manage", migrated: true },
-  { label: "Lecture Halls", path: "/admin/lecture-halls", permission: "server.administer" },
+  {
+    label: "Lecture Halls",
+    path: "/admin/lecture-halls",
+    permission: "server.administer",
+    migrated: true,
+  },
   { label: "Workers", path: "/admin/workers", permission: "server.administer", migrated: true },
   { label: "Runners", path: "/admin/runners", permission: "server.administer", migrated: true },
   {
     label: "Server Notifications",
     path: "/admin/server-notifications",
     permission: "server.administer",
+    migrated: true,
   },
-  { label: "User Notifications", path: "/admin/notifications", permission: "server.administer" },
-  { label: "Server Statistics", path: "/admin/server-stats", permission: "server.administer" },
-  { label: "Course Import", path: "/admin/course-import", permission: "server.administer" },
-  { label: "Token Management", path: "/admin/token", permission: "users.manage" },
+  {
+    label: "User Notifications",
+    path: "/admin/notifications",
+    permission: "server.administer",
+    migrated: true,
+  },
+  {
+    label: "Server Statistics",
+    path: "/admin/server-stats",
+    permission: "server.administer",
+    migrated: true,
+  },
+  {
+    label: "Course Import",
+    path: "/admin/course-import",
+    permission: "server.administer",
+    migrated: true,
+  },
+  { label: "Token Management", path: "/admin/token", permission: "users.manage", migrated: true },
   { label: "Integrations", path: "/admin/integrations", permission: "server.administer", migrated: true },
-  { label: "Audits", path: "/admin/audits", permission: "server.administer" },
+  { label: "Audits", path: "/admin/audits", permission: "server.administer", migrated: true },
   {
     label: "Info Pages",
     path: "/admin/info-pages",
@@ -53,8 +84,8 @@ const administration: AdminLink[] = [
 ];
 
 const courses: AdminLink[] = [
-  { label: "Schedule", path: "/admin", permission: "lecture" },
-  { label: "Create Course", path: "/admin/create-course", permission: "lecture" },
+  { label: "Schedule", path: "/admin", permission: "lecture", migrated: true },
+  { label: "Create Course", path: "/admin/create-course", permission: "lecture", migrated: true },
 ];
 
 const auth = useAuthStore();
@@ -64,11 +95,46 @@ const allowed = (links: AdminLink[]) =>
 
 const administrationLinks = allowed(administration);
 const courseLinks = allowed(courses);
+
+const courseAdmin = useCourseAdminStore();
+watch(
+  () => can(auth.user, "lecture"),
+  (lecturer) => {
+    if (lecturer) void courseAdmin.loadAdministered();
+  },
+  { immediate: true },
+);
+
+// Every tab of a course's page highlights it, not only the one its link points at.
+const route = useRoute();
+const openCourseId = computed(() => Number(route.params.courseID) || 0);
+
+/** The sidebar on a phone; following a link closes it, as a menu would. */
+const menuOpen = ref(false);
+watch(() => route.fullPath, () => (menuOpen.value = false));
+
+const semesterGroups = computed(() =>
+  can(auth.user, "lecture") ? groupBySemester(courseAdmin.administered) : [],
+);
 </script>
 
 <template>
-  <div class="flex w-full grow">
-    <nav class="tum-live-side-navigation md:block md:w-56 lg:w-72" aria-label="Administration">
+  <div class="flex w-full grow flex-col md:flex-row">
+    <button
+      type="button"
+      class="tum-live-button-secondary tum-live-button mx-4 mt-4 self-start px-3 py-1 text-sm md:hidden"
+      :aria-expanded="menuOpen"
+      aria-controls="admin-navigation"
+      @click="menuOpen = !menuOpen"
+    >
+      <i class="fas fa-bars mr-2" aria-hidden="true"></i>Administration menu
+    </button>
+    <nav
+      id="admin-navigation"
+      class="tum-live-side-navigation md:w-56 lg:w-72"
+      :class="menuOpen ? 'block' : 'hidden md:block'"
+      aria-label="Administration"
+    >
       <section v-if="administrationLinks.length" class="tum-live-side-navigation-group">
         <header class="text-2 text-xs uppercase tracking-wide">Administration</header>
         <template v-for="link in administrationLinks" :key="link.path">
@@ -91,13 +157,45 @@ const courseLinks = allowed(courses);
 
       <section v-if="courseLinks.length" class="tum-live-side-navigation-group">
         <header class="text-2 text-xs uppercase tracking-wide">Courses</header>
-        <a
-          v-for="link in courseLinks"
-          :key="link.path"
-          :href="link.path"
-          class="tum-live-side-navigation-group-item hover text-5 block"
-          >{{ link.label }}</a
+        <template v-for="link in courseLinks" :key="link.path">
+          <RouterLink
+            v-if="link.migrated"
+            v-slot="{ isActive }"
+            :to="link.path"
+            class="tum-live-side-navigation-group-item hover block"
+          >
+            <span :class="isActive ? 'text-1 font-semibold' : 'text-5'">{{ link.label }}</span>
+          </RouterLink>
+          <a
+            v-else
+            :href="link.path"
+            class="tum-live-side-navigation-group-item hover text-5 block"
+            >{{ link.label }}</a
+          >
+        </template>
+
+        <!-- Native <details>: collapsed semesters stay out of the tab order and out
+             of what assistive technology reads, with nothing to wire up. -->
+        <details
+          v-for="group in semesterGroups"
+          :key="group.label"
+          :open="sameSemester(group.semester, courseAdmin.currentSemester ?? undefined)"
+          class="tum-live-side-navigation-group-item"
         >
+          <summary class="text-4 cursor-pointer text-sm">{{ group.label }}</summary>
+          <!-- The settings tab for now; the lectures tab is still a server page. -->
+          <RouterLink
+            v-for="course in group.courses"
+            :key="course.id"
+            :to="`/admin/courses/${course.id}/settings`"
+            class="hover block truncate py-1 pl-3 text-sm"
+            :title="course.name"
+          >
+            <span :class="course.id === openCourseId ? 'text-1 font-semibold' : 'text-5'">{{
+              course.name
+            }}</span>
+          </RouterLink>
+        </details>
       </section>
     </nav>
 

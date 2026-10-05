@@ -8,8 +8,8 @@ easily.
 Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
 `/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — the info pages —
 `/privacy`, `/imprint`, `/about` and any further page an administrator adds, at
-`/:slug` — and four administration pages, **`/admin/runners`**, **`/admin/users`**,
-**`/admin/info-pages`** and **`/admin/maintenance`**.
+`/:slug` — and five administration pages, **`/admin/runners`**, **`/admin/users`**,
+**`/admin/info-pages`**, **`/admin/maintenance`** and **`/admin/server-stats`**.
 
 Two things the start page had and this one does not, both waiting on the v1 API:
 
@@ -48,6 +48,14 @@ session cookies — the same reason login posts to Go. And the two listings mask
 details differently: the staff list does not, search results do. That is inherited from
 the page it replaces, and preserved rather than tidied, because changing what an
 administrator can see is a decision about a privacy control rather than part of a port.
+
+**`/admin/server-stats` shares its v1 data layer with two pages that have not moved.**
+`api/statistics.go`'s `getStats`/`exportStats` and `dao/statistics.go` treat courseID 0
+as "every course", which is how the old server-wide page reused the per-course
+template and DAO queries. `getServerStats`/`exportServerStats` call the same DAO
+methods with that same convention; the v1 handlers, `web/template/admin/admin_tabs/stats.gohtml`
+and `web/ts/stats.ts` stay exactly as they are, because they still serve the
+per-course (`/admin/course/:courseID/stats`) and per-lecture statistics pages.
 
 One thing worth knowing before adding the next page: `apiv2.proto` and `runner/*.proto`
 both declare `package protobuf` and are linked into the same binary, so their type
@@ -205,13 +213,15 @@ stays ahead of the clock — after 23:45 that test skips itself rather than fail
   case is there because it once broke outright: the page loads the semester list before
   anything else, and asking for that with a bearer token failed for a visitor with no
   session, leaving the whole page blank. Every unit test still passed.
-- **`visibility.spec.ts`** — the matrix: for each of the six users and for an anonymous
-  visitor, which courses are listed, which are theirs, which they may open by URL,
-  which live lectures they are shown, which lectures a course page lists, whether a
-  private one is among them, and who is offered the admin link. Asserted against the
-  rendered page, because a listing the server filters correctly and the page then
-  renders from the wrong array is exactly as wrong — and neither the Go tests nor the
-  component tests would notice.
+- **`visibility-start-page.spec.ts`** and **`visibility-course-page.spec.ts`** — the
+  matrix: for each of the six users and for an anonymous visitor, which courses are
+  listed, which are theirs, which live lectures they are shown (the start page half);
+  which they may open by URL, which lectures a course page lists, whether a private one
+  is among them, and who is offered the admin link (the course page half). Asserted
+  against the rendered page, because a listing the server filters correctly and the
+  page then renders from the wrong array is exactly as wrong — and neither the Go tests
+  nor the component tests would notice. Two files so they run on two workers: as one
+  they were the suite's critical path. `visibility.ts` holds what both use.
 
   The case worth knowing is `hidden`, where being listed and being reachable come
   apart: the hidden course is in nobody's public listing, its live lecture reaches only
@@ -228,10 +238,11 @@ Two things to know before adding to them:
   starting value would pass once and then fail on the state its predecessor left
   behind. `runners.spec.ts` goes further and deletes a runner that nothing can
   recreate — runners register themselves over gRPC. `make test_e2e` reloads the dump
-  first for exactly this reason. For the same reason the suite runs with one worker.
-  The reload is once per run and not once per file, so a test that changes a seeded
-  account breaks the later files that assert on it — `users.spec.ts` creates the
-  accounts it deletes and promotes rather than borrowing the seeded ones.
+  first for exactly this reason. The reload is once per run and not once per file, and
+  the files run in parallel, so a test that changes a seeded row breaks whichever file
+  is asserting on it at that moment — `users.spec.ts` creates the accounts it deletes
+  and promotes rather than borrowing the seeded ones. `playwright.config.ts` spells
+  out the rules a writing test has to follow.
 - **The visibility tests only read**, so they neither depend on nor disturb that. Add
   new expectations to `e2e/seed.ts`, not to the spec.
 - **Add cases to the dump, not to the tests.** A rule with no data behind it cannot be

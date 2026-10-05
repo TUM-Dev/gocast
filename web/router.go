@@ -6,8 +6,10 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
@@ -51,21 +53,41 @@ const spaShellPath = "spa/index.html"
 // spa-routes.test.ts enforces that. Removing one moves the page back, but only while
 // its template handler is still registered — see registerPage.
 var spaRoutes = map[string]bool{
-	"/settings":                 true,
-	"/login":                    true,
-	"/":                         true,
-	"/courses/mine":             true,
-	"/courses/public":           true,
-	"/course/:year/:term/:slug": true,
-	"/admin/runners":            true,
-	"/admin/integrations":       true,
-	"/admin/users":              true,
-	"/admin/info-pages":         true,
-	"/admin/workers":            true,
-	"/admin/maintenance":        true,
-	"/privacy":                  true,
-	"/imprint":                  true,
-	"/about":                    true,
+	"/settings":                             true,
+	"/login":                                true,
+	"/search":                               true,
+	"/setPassword/:key":                     true,
+	"/edit-course":                          true,
+	"/edit-course/opt-out":                  true,
+	"/onboarding":                           true,
+	"/":                                     true,
+	"/courses/mine":                         true,
+	"/courses/public":                       true,
+	"/course/:year/:term/:slug":             true,
+	"/admin/runners":                        true,
+	"/admin/integrations":                   true,
+	"/admin/users":                          true,
+	"/admin/info-pages":                     true,
+	"/admin/workers":                        true,
+	"/admin/maintenance":                    true,
+	"/admin/course-import":                  true,
+	"/admin/token":                          true,
+	"/privacy":                              true,
+	"/imprint":                              true,
+	"/about":                                true,
+	"/admin/server-notifications":           true,
+	"/admin/notifications":                  true,
+	"/admin/audits":                         true,
+	"/admin/server-stats":                   true,
+	"/admin/lecture-halls":                  true,
+	"/admin/lecture-halls/new":              true,
+	"/admin/courses/:courseID/stats":        true,
+	"/admin/courses/:courseID/settings":     true,
+	"/admin/courses/:courseID/participants": true,
+	"/admin/courses/:courseID/lectures":     true,
+	"/admin/courses/:courseID/lectures/:streamID/stats": true,
+	"/admin/create-course":                              true,
+	"/admin":                                            true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -83,12 +105,8 @@ var templatePaths = []string{
 	"template/*.gohtml",
 	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
-	"template/admin/admin_tabs/*.gohtml",
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
-	"template/partial/course/manage/*.gohtml",
-	"template/partial/course/manage/*.gohtml",
-	"template/partial/course/manage/create-lecture-form-slides/*.gohtml",
 }
 
 func ConfigGinRouter(router *gin.Engine) {
@@ -217,7 +235,7 @@ func pageHandler(path string, legacy gin.HandlerFunc, spaBuilt bool) (gin.Handle
 	return func(c *gin.Context) {
 		hook(c)
 		// A hook may answer the request instead of preparing for the shell: the
-		// fresh-installation check on "/" renders the onboarding page and aborts.
+		// fresh-installation check on "/" redirects to the onboarding page and aborts.
 		// Writing the shell after that would append it to a finished response.
 		if c.IsAborted() {
 			return
@@ -277,45 +295,46 @@ func configMainRoute(router *gin.Engine) {
 	// lecturers
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.RequirePermission(model.PermLecture))
-	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
-	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
+	registerPage(atLeastLecturerGroup, http.MethodGet, "/admin", nil)
+	registerPage(atLeastLecturerGroup, http.MethodGet, "/admin/create-course", nil)
 
 	// info-pages. Public, so no middleware; the rows are getInfoPage's business now.
 	registerPage(&router.RouterGroup, http.MethodGet, "/privacy", nil)
 	registerPage(&router.RouterGroup, http.MethodGet, "/imprint", nil)
 	registerPage(&router.RouterGroup, http.MethodGet, "/about", nil)
 
-	// search
-	router.GET("/search", routes.SearchPage)
+	// Public: anonymous callers search public courses; the page itself asks v2.
+	registerPage(&router.RouterGroup, http.MethodGet, "/search", nil)
 
 	// admins
 	//
-	// AdminPage checks only that someone is signed in, so without these any student
-	// could render every tab. The template hid the links, which is not a guard.
+	// The SPA shell checks nothing itself, so without these any student could load
+	// every page. (The template these replaced only checked that someone was signed
+	// in, and hid the links, which is not a guard.)
 	//
 	// Split by what each page administers. Both permissions belong to admins today;
 	// the distinction is what makes an operator role a change to the role table.
 	serverAdminGroup := router.Group("/")
 	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
-	serverAdminGroup.GET("/admin/lecture-halls", routes.AdminPage)
-	serverAdminGroup.GET("/admin/lecture-halls/new", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls/new", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/workers", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners", nil)
-	serverAdminGroup.GET("/admin/server-notifications", routes.AdminPage)
-	serverAdminGroup.GET("/admin/server-stats", routes.AdminPage)
-	serverAdminGroup.GET("/admin/course-import", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-notifications", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-stats", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/info-pages", nil)
-	serverAdminGroup.GET("/admin/notifications", routes.AdminPage)
-	serverAdminGroup.GET("/admin/audits", routes.AdminPage)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/notifications", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/integrations", nil)
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/maintenance", nil)
+	registerPage(serverAdminGroup, http.MethodGet, "/admin/audits", nil)
 
 	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
 	// same permission.
 	userAdminGroup := router.Group("/")
 	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
 	registerPage(userAdminGroup, http.MethodGet, "/admin/users", nil)
-	userAdminGroup.GET("/admin/token", routes.AdminPage)
+	registerPage(userAdminGroup, http.MethodGet, "/admin/token", nil)
 
 	// Outside the permission groups: a redirect reveals nothing, and the destination
 	// does the checking.
@@ -330,23 +349,45 @@ func configMainRoute(router *gin.Engine) {
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
 	courseAdminGroup.Use(tools.AdminOfCourse)
-	courseAdminGroup.GET("/admin/course/:courseID", routes.EditCoursePage)
-	courseAdminGroup.GET("/admin/course/:courseID/stats", routes.CourseStatsPage)
-	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
+	// The first page on rule 2's plural path. The edit-course page's statistics tab
+	// shows the same thing; that tab becomes this route when the page migrates.
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/stats", nil)
+	// The settings, external-participants and lectures tabs of the same page, as
+	// rule 4 child routes.
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/settings", nil)
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/participants", nil)
+	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/lectures", nil)
+
+	// Outside the course group, like the redirects above: the destination checks.
+	// The server-rendered course page opened on its lectures tab; a fragment such as
+	// #lecture-li-7 never reaches the server, so it is lost here.
+	router.GET("/admin/course/:courseID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
+	})
+	router.GET("/admin/course/:courseID/stats", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/stats")
+	})
+	router.GET("/admin/stats/:courseID/:streamID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
+			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/stats")
+	})
 
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
-	withStream.GET("/admin/stats/:courseID/:streamID", routes.LectureStatsPage)
+	// Rule 3's nested path; the old one redirects below.
+	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats", nil)
 	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
 	registerPage(&router.RouterGroup, http.MethodGet, "/login", nil)
+	// Public: the page itself finds out from getFrontendConfig whether it still applies.
+	registerPage(&router.RouterGroup, http.MethodGet, "/onboarding", nil)
 	router.GET("/logout", routes.LogoutPage)
-	router.GET("/setPassword/:key", routes.CreatePasswordPage)
-	router.POST("/setPassword/:key", routes.CreatePasswordPage)
+	// The key in the link is the credential; the page asks v2 whether it is still good.
+	registerPage(&router.RouterGroup, http.MethodGet, "/setPassword/:key", nil)
 
 	// home & course pages
 	newStartPage(router, &routes)
@@ -362,8 +403,9 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/jwtPubKey", routes.JWTPubKey)
 
 	router.GET("/:shortLink", routes.shortLinkOrInfoPage)
-	router.GET("/edit-course", routes.editCourseByTokenPage)
-	router.GET("/edit-course/opt-out", routes.optOutPage)
+	// The course token in the mailed link is the credential; both pages ask v2 for it.
+	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course/opt-out", nil)
 
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
@@ -377,21 +419,39 @@ func configMainRoute(router *gin.Engine) {
 		c.Redirect(http.StatusFound, "/")
 	})
 
-	router.NoRoute(func(c *gin.Context) {
+	router.NoRoute(serveNotFound)
+}
+
+// serveNotFound is the 404 for a path nothing owns. A page gets the SPA shell with
+// that status and the client renders the not-found page; a request under /api/ keeps
+// the error template, which v1's clients and the browser tests read as text.
+func serveNotFound(c *gin.Context) {
+	if !spaAvailable() || strings.HasPrefix(c.Request.URL.Path, "/api/") {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
-	})
+		return
+	}
+	shell, err := readSPAShell()
+	if err != nil {
+		logger.Error("can't read SPA shell", "err", err)
+		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusNotFound, "text/html; charset=utf-8", shell)
+	c.Abort()
 }
 
 type mainRoutes struct {
 	dao.DaoWrapper
 }
 
-// onboardingIfFresh answers "/" itself while the deployment has no users, offering to
-// create the first account instead of a start page nobody can sign in to.
+// onboardingIfFresh sends "/" to the onboarding page while the deployment has no
+// users, where the first account is created, instead of a start page nobody can sign
+// in to.
 //
 // This stays server-side because the shell would otherwise render the start page for
-// a moment before finding out. GetFrontendConfig reports the same flag, so the
-// onboarding page can move to the client once it is migrated too.
+// a moment before finding out. The onboarding page itself asks GetFrontendConfig,
+// which reports the same flag, so it can refuse once an account exists.
 func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
@@ -403,20 +463,8 @@ func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 		return
 	}
 
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
-		logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-		return
-	}
+	c.Redirect(http.StatusFound, "/onboarding")
 	c.Abort()
-}
-
-func (r mainRoutes) SearchPage(c *gin.Context) {
-	indexData := NewIndexDataWithContext(c)
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "search-page.gohtml", indexData); err != nil {
-		logger.Error("Could not execute template: 'search-page.gohtml'", "err", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-	}
 }
 
 func (r mainRoutes) semesterRedirect(c *gin.Context) {

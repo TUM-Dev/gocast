@@ -83,7 +83,7 @@ func NewRunner(v string) *Runner {
 		stats:         vmstats,
 		StartTime:     start,
 		notifications: make(chan *protobuf.Notification),
-		Metrics:       metrics.NewBroker(),
+		Metrics:       metrics.NewBroker(metrics.WithHostname(config.Config.Hostname), metrics.WithVersion(v)),
 		Version:       v,
 	}
 }

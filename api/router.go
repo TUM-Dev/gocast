@@ -30,7 +30,6 @@ func ConfigRealtimeRouter(router *gin.RouterGroup) {
 func ConfigGinRouter(
 	router *gin.Engine,
 	manager *runner_manager.Manager,
-	camService CamService,
 ) {
 	daoWrapper := dao.NewDaoWrapper()
 
@@ -41,14 +40,12 @@ func ConfigGinRouter(
 	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
-	configGinLectureHallApiRouter(router, daoWrapper, camService, tools.Cfg.Paths.Static)
+	configGinLectureHallApiRouter(router, daoWrapper)
 	configProgressRouter(router, daoWrapper)
 	configSeekStatsRouter(router, daoWrapper)
-	configServerNotificationsRoutes(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
-	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)

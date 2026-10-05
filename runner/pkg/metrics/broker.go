@@ -15,6 +15,8 @@ import (
 // Broker manages Prometheus metrics.
 type Broker struct {
 	port                 int
+	hostname             string
+	version              string
 	Streams              *prometheus.GaugeVec
 	StreamErrors         *prometheus.CounterVec
 	ConvertingProgresses *prometheus.GaugeVec
@@ -36,45 +38,47 @@ type Option func(broker *Broker)
 //	b.Streams.With(b.With().Stream(123).Input("rtmp://1.2.3.4/src")).Set(5)  // Set active streams
 func NewBroker(options ...Option) *Broker {
 	startedAt := time.Now()
-	b := &Broker{
-		port: 9947,
-		Streams: promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "runner",
-			Subsystem: "stream",
-			Name:      "n_streams",
-			Help:      "Number of active streams",
-		}, []string{"stream_id", "source"}),
-
-		StreamErrors: promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "runner",
-			Subsystem: "stream",
-			Name:      "n_errors",
-			Help:      "Number of stream ffmpeg errors",
-		}, []string{"stream_id", "source"}),
-
-		ConvertingProgresses: promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "runner",
-			Subsystem: "converting",
-			Name:      "n_converting",
-			Help:      "Number of streams currently being converted",
-		}, []string{"stream_id"}),
-		ConvertingErrors: promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "runner",
-			Subsystem: "converting",
-			Name:      "n_converting_errs",
-			Help:      "Number of failures during conversion",
-		}, []string{"stream_id", "stream_version"}),
-		Uptime: promauto.NewGaugeFunc(prometheus.GaugeOpts{
-			Namespace: "runner",
-			Name:      "uptime_seconds",
-			Help:      "Runner process uptime in seconds",
-		}, func() float64 {
-			return time.Since(startedAt).Seconds()
-		}),
-	}
+	b := &Broker{port: 9947}
+	// Options are applied before the metrics are built because the uptime
+	// gauge bakes the hostname and version into its constant labels.
 	for _, option := range options {
 		option(b)
 	}
+
+	b.Streams = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "runner",
+		Subsystem: "stream",
+		Name:      "n_streams",
+		Help:      "Number of active streams",
+	}, []string{"stream_id", "source"})
+	b.StreamErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "runner",
+		Subsystem: "stream",
+		Name:      "n_errors",
+		Help:      "Number of stream ffmpeg errors",
+	}, []string{"stream_id", "source"})
+	b.ConvertingProgresses = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "runner",
+		Subsystem: "converting",
+		Name:      "n_converting",
+		Help:      "Number of streams currently being converted",
+	}, []string{"stream_id"})
+	b.ConvertingErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "runner",
+		Subsystem: "converting",
+		Name:      "n_converting_errs",
+		Help:      "Number of failures during conversion",
+	}, []string{"stream_id", "stream_version"})
+	b.Uptime = promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "runner",
+		Name:      "uptime_seconds",
+		Help:      "Runner process uptime in seconds",
+		// The host label is the name the runner registers with gocast under,
+		// which Prometheus' instance label (the scrape address) doesn't give us.
+		ConstLabels: prometheus.Labels{"host": b.hostname, "version": b.version},
+	}, func() float64 {
+		return time.Since(startedAt).Seconds()
+	})
 	return b
 }
 
@@ -82,6 +86,20 @@ func NewBroker(options ...Option) *Broker {
 func WithPort(port int) Option {
 	return func(broker *Broker) {
 		broker.port = port
+	}
+}
+
+// WithHostname sets the host label reported alongside the uptime metric.
+func WithHostname(hostname string) Option {
+	return func(broker *Broker) {
+		broker.hostname = hostname
+	}
+}
+
+// WithVersion sets the version label reported alongside the uptime metric.
+func WithVersion(version string) Option {
+	return func(broker *Broker) {
+		broker.version = version
 	}
 }
 

@@ -3,7 +3,6 @@ import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
 import { Course, CoursesAPI } from "../api/courses";
 import { AlpineComponent } from "../components/alpine-component";
 import { PinnedUpdate, Tunnel } from "../utilities/tunnels";
-import { updateSearchBarPlaceholder } from "../search";
 
 export function skeleton(): AlpineComponent {
     return {
@@ -78,7 +77,6 @@ export function skeleton(): AlpineComponent {
                 view: View.Course,
                 slug: this.state.slug,
             });
-            updateSearchBarPlaceholder();
         },
 
         switchView(view: View) {

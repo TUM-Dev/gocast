@@ -1,11 +1,28 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 import AdminLayout from "./AdminLayout.vue";
+import { fetchAdministeredCourses, type AdministeredCourse } from "@/lib/course-admin";
+import { fetchSemesters } from "@/lib/semesters";
 import type { Permission } from "@/lib/settings";
 import { useAuthStore } from "@/stores/auth";
+
+vi.mock("@/lib/course-admin", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/course-admin")>()),
+  fetchAdministeredCourses: vi.fn(),
+}));
+vi.mock("@/lib/semesters", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/semesters")>()),
+  fetchSemesters: vi.fn(),
+}));
+
+const prof1Courses: AdministeredCourse[] = [
+  { id: 1, name: "Einführung Brauereiwesen", slug: "brauereiwesen", year: 2022, term: "S" },
+  { id: 4, name: "Fortgeschrittene Bierkunde", slug: "bierkunde", year: 2022, term: "S" },
+  { id: 3, name: "Praktikum: Golang", slug: "godev", year: 2021, term: "W" },
+];
 
 /**
  * The sidebar offers a link exactly when following it works. The template it replaces
@@ -21,6 +38,7 @@ function makeRouter(): Router {
     routes: [
       { path: "/admin/runners", name: "admin-runners", component: blank },
       { path: "/admin/users", name: "admin-users", component: blank },
+      { path: "/admin/courses/:courseID/settings", component: blank },
     ],
   });
 }
@@ -39,6 +57,10 @@ function links(wrapper: ReturnType<typeof mountAs>): string[] {
 
 beforeEach(() => {
   setActivePinia(createPinia());
+  vi.mocked(fetchAdministeredCourses).mockReset().mockResolvedValue([]);
+  vi.mocked(fetchSemesters)
+    .mockReset()
+    .mockResolvedValue({ current: { year: 2022, term: "S" }, all: [] });
 });
 
 describe("the administration sidebar", () => {
@@ -103,5 +125,70 @@ describe("the administration sidebar", () => {
     const runners = wrapper.findAll("nav a").find((link) => link.text() === "Runners");
     expect(runners?.attributes("href")).toBe("/admin/runners");
     expect(runners?.element.className).not.toContain("text-5");
+  });
+
+  describe("the tree of administered courses", () => {
+    it("groups a lecturer's courses by semester, newest first, linking to their settings", async () => {
+      vi.mocked(fetchAdministeredCourses).mockResolvedValue(prof1Courses);
+      const wrapper = mountAs(["lecture"]);
+      await flushPromises();
+
+      const groups = wrapper.findAll("nav details");
+      expect(groups.map((g) => g.find("summary").text())).toEqual(["Summer 2022", "Winter 2021/22"]);
+      expect(groups[0].findAll("a").map((a) => a.text())).toEqual([
+        "Einführung Brauereiwesen",
+        "Fortgeschrittene Bierkunde",
+      ]);
+      expect(groups[1].find("a").attributes("href")).toBe("/admin/courses/3/settings");
+    });
+
+    it("expands only the current semester", async () => {
+      vi.mocked(fetchAdministeredCourses).mockResolvedValue(prof1Courses);
+      const wrapper = mountAs(["lecture"]);
+      await flushPromises();
+
+      const open = wrapper.findAll("nav details").map((g) => (g.element as HTMLDetailsElement).open);
+      expect(open).toEqual([true, false]);
+    });
+
+    it("is not asked for without the lecture permission", async () => {
+      // listAdministeredCourses refuses them; asking would only log a 403.
+      const wrapper = mountAs(["users.manage"]);
+      await flushPromises();
+
+      expect(fetchAdministeredCourses).not.toHaveBeenCalled();
+      expect(wrapper.findAll("nav details")).toHaveLength(0);
+    });
+
+    it("leaves the sidebar's links alone when the tree cannot be loaded", async () => {
+      vi.mocked(fetchAdministeredCourses).mockRejectedValue(new Error("down"));
+      const wrapper = mountAs(["lecture"]);
+      await flushPromises();
+
+      expect(links(wrapper)).toEqual(["Schedule", "Create Course"]);
+    });
+  });
+});
+
+describe("the sidebar on a phone", () => {
+  it("is folded away behind its button and closes again after following a link", async () => {
+    const wrapper = mountAs(["server.administer"]);
+    await wrapper.vm.$nextTick();
+    const nav = wrapper.get("nav");
+    const button = wrapper.get("button[aria-controls='admin-navigation']");
+
+    // Hidden below md, a column from md up: the classes carry the breakpoint.
+    expect(nav.classes()).toContain("hidden");
+    expect(nav.classes()).toContain("md:block");
+    expect(button.attributes("aria-expanded")).toBe("false");
+
+    await button.trigger("click");
+    expect(nav.classes()).toContain("block");
+    expect(nav.classes()).not.toContain("hidden");
+    expect(button.attributes("aria-expanded")).toBe("true");
+
+    await wrapper.vm.$router.push("/admin/users");
+    await flushPromises();
+    expect(nav.classes()).toContain("hidden");
   });
 });

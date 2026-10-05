@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, apiFetchOptionalAuth, apiGet, clearToken } from "./api";
+import { ApiError, apiFetchOptionalAuth, apiGet, apiUpload, clearToken } from "./api";
 
 /**
  * These cover the credential handling rather than any single endpoint: the token is
@@ -167,5 +167,32 @@ describe("apiFetchOptionalAuth", () => {
 
     await expect(apiFetchOptionalAuth("/courses")).rejects.toBeInstanceOf(ApiError);
     expect(calls()).toEqual([TOKEN_URL]);
+  });
+});
+
+describe("apiUpload", () => {
+  it("posts the form as it is, leaving the multipart Content-Type to the browser", async () => {
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ id: 4 }));
+    const form = new FormData();
+    form.append("file", new Blob(["x"]), "x.txt");
+
+    expect(await apiUpload("/courses/1/streams/2/attachments", form)).toEqual({ id: 4 });
+
+    const init = fetchMock.mock.calls[1][1] as RequestInit;
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe(form);
+    expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
+    expect(authHeaderOf(1)).toBe("Bearer token-1");
+  });
+
+  it("maps a refusal to an ApiError carrying the server's message", async () => {
+    fetchMock
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(jsonResponse({ code: 3, message: "file too large (limit is 50 MB)" }, 400));
+
+    const err = await apiUpload("/courses/1/streams/2/attachments", new FormData()).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(400);
+    expect((err as ApiError).message).toBe("file too large (limit is 50 MB)");
   });
 });

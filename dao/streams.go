@@ -21,6 +21,7 @@ import (
 
 type StreamsDao interface {
 	CreateStream(stream *model.Stream) error
+	CreateStreams(streams []model.Stream) error
 	AddVodView(id string) error
 
 	GetDueStreamsForWorkers() []model.Stream
@@ -75,6 +76,21 @@ type StreamsDao interface {
 	UpdateLectureSeries(model.Stream) error
 	UpdateLectureSeriesTime(model.Stream) error
 	DeleteLectureSeries(string) error
+
+	// The course-scoped series operations v2 uses. A copied lecture keeps its series
+	// identifier, so the identifier alone can name lectures in more than one course.
+	UpdateCourseLectureSeries(courseID uint, seriesIdentifier string, update LectureSeriesUpdate) error
+	UpdateCourseLectureSeriesTime(courseID, streamID uint, seriesIdentifier string, start, end time.Time) error
+	DeleteCourseLectureSeries(courseID uint, seriesIdentifier string) error
+}
+
+// LectureSeriesUpdate is what UpdateCourseLectureSeries sets; nil fields are left.
+type LectureSeriesUpdate struct {
+	Name        *string
+	Description *string
+	ChatEnabled *bool
+	// 0 moves the series out of any hall.
+	LectureHallID *uint
 }
 
 type streamsDao struct {
@@ -104,6 +120,15 @@ func NewStreamsDao() StreamsDao {
 
 func (d streamsDao) CreateStream(stream *model.Stream) error {
 	return DB.Create(stream).Error
+}
+
+// CreateStreams creates the streams, with their files, all or none: one insert, in
+// gorm's transaction. The IDs are filled in.
+func (d streamsDao) CreateStreams(streams []model.Stream) error {
+	if len(streams) == 0 {
+		return nil
+	}
+	return DB.Create(&streams).Error
 }
 
 func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
@@ -255,6 +280,80 @@ func (d streamsDao) DeleteLectureSeries(seriesIdentifier string) error {
 	defer Cache.Clear()
 	err := DB.Delete(&model.Stream{}, "`series_identifier` = ?", seriesIdentifier).Error
 	return err
+}
+
+// courseSeries narrows a query to one course's lectures of a series.
+func courseSeries(db *gorm.DB, courseID uint, seriesIdentifier string) *gorm.DB {
+	return db.Model(&model.Stream{}).Where("course_id = ? AND series_identifier = ?", courseID, seriesIdentifier)
+}
+
+func (d streamsDao) UpdateCourseLectureSeries(courseID uint, seriesIdentifier string, update LectureSeriesUpdate) error {
+	defer Cache.Clear()
+
+	fields := map[string]interface{}{}
+	if update.Name != nil {
+		fields["name"] = *update.Name
+	}
+	if update.Description != nil {
+		fields["description"] = *update.Description
+	}
+	if update.ChatEnabled != nil {
+		fields["chat_enabled"] = *update.ChatEnabled
+	}
+	if update.LectureHallID != nil {
+		// NULL rather than 0: lecture_hall_id is a foreign key.
+		if *update.LectureHallID == 0 {
+			fields["lecture_hall_id"] = nil
+		} else {
+			fields["lecture_hall_id"] = *update.LectureHallID
+		}
+	}
+	if len(fields) == 0 {
+		return nil
+	}
+
+	return courseSeries(DB, courseID, seriesIdentifier).Updates(fields).Error
+}
+
+// UpdateCourseLectureSeriesTime sets one lecture's start and end, and gives every other
+// lecture of the course in its series the same wall-clock time of day and duration on
+// its own date. The time of day is read in each lecture's own location, so a series
+// that crosses a daylight saving change stays at, say, 10:15 local.
+func (d streamsDao) UpdateCourseLectureSeriesTime(courseID, streamID uint, seriesIdentifier string, start, end time.Time) error {
+	defer Cache.Clear()
+
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.Stream{}).Where("id = ? AND course_id = ?", streamID, courseID).
+			Updates(map[string]interface{}{"start": start, "end": end}).Error; err != nil {
+			return err
+		}
+
+		var others []model.Stream
+		if err := courseSeries(tx, courseID, seriesIdentifier).Where("id != ?", streamID).
+			Find(&others).Error; err != nil {
+			return err
+		}
+
+		duration := end.Sub(start)
+		for _, s := range others {
+			ref := start.In(s.Start.Location())
+			newStart := time.Date(s.Start.Year(), s.Start.Month(), s.Start.Day(),
+				ref.Hour(), ref.Minute(), ref.Second(), 0, s.Start.Location())
+			if err := tx.Model(&model.Stream{}).Where("id = ?", s.ID).Updates(map[string]interface{}{
+				"start": newStart,
+				"end":   newStart.Add(duration),
+			}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (d streamsDao) DeleteCourseLectureSeries(courseID uint, seriesIdentifier string) error {
+	defer Cache.Clear()
+	return DB.Where("course_id = ? AND series_identifier = ?", courseID, seriesIdentifier).
+		Delete(&model.Stream{}).Error
 }
 
 // GetWorkersForStream retrieves all workers for a given stream with streamID
@@ -506,11 +605,17 @@ func (d streamsDao) CreateOrGetTestCourse(user *model.User) (model.Course, error
 
 // SetLectureHall set lecture-halls of streamIds to lectureHallID
 func (d streamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
+	// GetStreamByID caches the stream with its hall; without this a moved lecture
+	// reads as still in its old hall until the cache expires.
+	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", lectureHallID).Error
 }
 
 // UnsetLectureHall set lecture-halls of streamIds to NULL
 func (d streamsDao) UnsetLectureHall(streamIDs []uint) error {
+	// GetStreamByID caches the stream with its hall; without this a moved lecture
+	// reads as still in its old hall until the cache expires.
+	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", nil).Error
 }
 

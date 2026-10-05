@@ -81,13 +81,12 @@ test.describe("info pages", () => {
     ).toBeVisible();
   });
 
-  test("a path that is not a real info page still falls through to Go's own 404", async ({
-    page,
-  }) => {
+  test("a path that is not a real info page is a 404", async ({ page }) => {
     // web/course.go's shortLinkOrInfoPage checks the same table before falling back to
-    // a course short link, so an unknown single-segment path is not swallowed by the SPA.
-    await page.goto("/this-page-does-not-exist");
+    // a course short link, and then to the not-found page with that status.
+    const response = await page.goto("/this-page-does-not-exist");
 
+    expect(response?.status()).toBe(404);
     await expect(page.getByText("This page does not exist.")).toBeVisible();
   });
 });

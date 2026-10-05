@@ -179,6 +179,43 @@ service UserService {
     };
   }
 
+  // ----- Password reset and onboarding -----
+  // Both serve anonymous callers: the mailed key, or an empty users table, is the
+  // credential.
+
+  rpc checkPasswordResetKey(PasswordResetKeyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {get: "/users/password-reset/{key}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Check a password reset key."
+      description: "Answers 404 when the key was never issued or has been used, so the set-password page can say so instead of showing a form that cannot work."
+    };
+  }
+
+  rpc setPasswordByResetKey(SetPasswordByResetKeyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/users/password-reset/{key}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Set a password with a reset key."
+      description: "Sets the password of the user the key was mailed to (at least 8 characters, 400 otherwise) and spends the key. 404 for an unknown or used key."
+    };
+  }
+
+  rpc createFirstUser(CreateFirstUserRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/users/first"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Create the first administrator of a fresh deployment."
+      description: "Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password."
+    };
+  }
+
   rpc getLoginOptions(google.protobuf.Empty) returns (GetLoginOptionsResponse) {
     option (google.api.http) = {get: "/login-options"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -206,6 +243,53 @@ service CourseService {
       tags: "Courses"
       summary: "Get course by slug."
       description: "Retrieves a course by its slug, year, and term."
+    };
+  }
+
+  // ----- Search and course tokens -----
+
+  rpc search(SearchRequest) returns (SearchResponse) {
+    option (google.api.http) = {get: "/search"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Search courses, lectures and subtitles."
+      description: "Finds what the caller may see, anonymous callers included. Without a scope every semester's courses are searched; `semesters` (written 2022S) or `first_semester` with `last_semester` narrow that, and a single semester also finds lectures. Naming up to three `courses` (written brauereiwesen2022S) searches their lectures and subtitle lines instead, hidden courses included, and answers 404 for one the caller may not watch. `limit` is per kind, 10 by default and 100 at most. 503 while Meilisearch is unreachable."
+    };
+  }
+
+  rpc getCourseByToken(CourseTokenRequest) returns (CourseByToken) {
+    option (google.api.http) = {
+      post: "/courses/by-token"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Name the course a token opens."
+      description: "The token is mailed to a course's lecturer when it is imported from TUMOnline, before they need an account; it is the credential here. The body carries it so it stays out of logs. 404 for an unknown token."
+    };
+  }
+
+  rpc optInCourseByToken(CourseTokenRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/by-token/opt-in"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Switch an imported course on."
+      description: "Makes the course visible to anyone signed in, with recordings, and restores it if it was opted out before. Whoever is signed in is named in the audit entry."
+    };
+  }
+
+  rpc optOutCourseByToken(CourseTokenRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/by-token/opt-out"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete an imported course the lecturer does not want."
+      description: "Soft-deletes the course and its lectures; opting in again restores the course. Whoever is signed in is named in the audit entry."
     };
   }
 
@@ -256,6 +340,415 @@ service CourseService {
       tags: "Courses"
       summary: "Pin or unpin a course."
       description: "Pins or unpins a course for the user."
+    };
+  }
+
+  // The course's own counterparts of getServerStats/exportServerStats, for its
+  // lecturers. The charts and the export carry the same series, scoped to the course.
+  rpc getCourseStats(GetCourseStatsRequest) returns (CourseStatsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/stats"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get a course's usage statistics."
+      description: "Returns the quick counters and charted viewer activity of one course. Requires administering the course."
+    };
+  }
+
+  rpc exportCourseStats(ExportCourseStatsRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/courses/{course_id}/stats/export"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Export a course's usage statistics."
+      description: "Bundles the same data getCourseStats returns as a single downloadable file, as JSON or CSV. Requires administering the course."
+    };
+  }
+
+  rpc getLectureStats(GetLectureStatsRequest) returns (LectureStatsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/stats"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get one lecture's usage statistics."
+      description: "Returns the viewer counters and charted activity of one of the course's lectures. Requires administering the course."
+    };
+  }
+
+  // Creating a course is open to every lecturer, not only to administrators of an
+  // existing one; the creator becomes its administrator.
+  rpc createCourse(CreateCourseRequest) returns (CreateCourseResponse) {
+    option (google.api.http) = {
+      post: "/courses"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Create a course."
+      description: "Creates a course visible to signed-in users, with VoDs on and downloads and chat off, and makes the caller its administrator. Requires the lecture permission. Answers 409 if the semester already has a course with the slug."
+    };
+  }
+
+  rpc searchTumOnlineCourses(SearchTumOnlineCoursesRequest) returns (SearchTumOnlineCoursesResponse) {
+    option (google.api.http) = {get: "/tumonline-courses"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Search TUMOnline's courses."
+      description: "Searches the courses prefetched from TUMOnline, to fill in a new course. Requires the lecture permission. Answers 503 when the search backend is unavailable."
+    };
+  }
+
+  // The administration schedule: the lectures of the courses the caller administers
+  // (every course, for someone who may view them all), in a window of their choosing.
+  rpc getSchedule(GetScheduleRequest) returns (GetScheduleResponse) {
+    option (google.api.http) = {get: "/schedule"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get the lecture schedule."
+      description: "Returns the lectures overlapping [from, to) -- at most 100 days -- of the courses the caller administers, optionally only in some lecture halls. Requires the lecture permission."
+    };
+  }
+
+  rpc listScheduleLectureHalls(google.protobuf.Empty) returns (ListScheduleLectureHallsResponse) {
+    option (google.api.http) = {get: "/schedule/lecture-halls"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "List the lecture halls the schedule can be filtered by."
+      description: "Names and IDs only; listLectureHallsAdmin has the rest. Requires the lecture permission."
+    };
+  }
+
+  rpc updateLecture(UpdateLectureRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      patch: "/courses/{course_id}/streams/{stream_id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Change one of a course's lectures."
+      description: "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved). Unlike v1, viewers watching at the time are not told; they see the change on reload."
+    };
+  }
+
+  // ----- Lecture administration -----
+  // The course page's lecture management. Every one of these checks the lecture
+  // named is one of the course's and answers 404 for any other.
+
+  rpc listCourseLecturesAdmin(ListCourseLecturesAdminRequest) returns (ListCourseLecturesAdminResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/lectures/admin"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "List a course's lectures for its administrators."
+      description: "Every lecture of the course, newest first, with what managing it needs: times, hall, series, stream key, state, files, sections and transcoding progress. Requires administering the course."
+    };
+  }
+
+  rpc updateLectureSeries(UpdateLectureSeriesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      patch: "/courses/{course_id}/streams/{stream_id}/series"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Change every lecture of a lecture's series."
+      description: "Sets the fields that are present on every lecture of the course sharing the lecture's series, the lecture included. Answers 400 for a lecture in no series. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved)."
+    };
+  }
+
+  rpc updateLectureSeriesTime(UpdateLectureSeriesTimeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/streams/{stream_id}/series/time"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Move a lecture and its whole series to a new time of day."
+      description: "Sets the lecture's start and end, then gives every other lecture of the course in its series the same time of day and duration, each on its own date. Answers 400 for a lecture in no series. Requires administering the course."
+    };
+  }
+
+  // Server administrators only: a hall is shared across courses.
+  rpc updateLecturesLectureHall(UpdateLecturesLectureHallRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/streams/lecture-hall"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Move some of a course's lectures to a lecture hall."
+      description: "Sets the hall of every lecture named, 0 for none (self-streamed). Changes nothing unless every lecture is the course's (404) and the hall exists (400). Requires administering the course and being a server administrator."
+    };
+  }
+
+  rpc deleteLectures(DeleteLecturesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/delete"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete some of a course's lectures."
+      description: "Deletes nothing unless every lecture named is one of the course's. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureSeries(DeleteLectureSeriesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/series"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete a lecture and the rest of its series."
+      description: "Deletes every lecture of the course sharing the lecture's series. Answers 400 for a lecture in no series. Requires administering the course."
+    };
+  }
+
+  rpc copyLecture(CopyLectureRequest) returns (CopyLectureResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/copy"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Copy or move a lecture to another course."
+      description: "Creates a copy of the lecture in the target course and, with move, then deletes the original. Requires administering both courses; a target the caller does not administer answers 404, as a missing one does."
+    };
+  }
+
+  // The upload of a VOD_UPLOAD lecture's recording sits beside the gateway, as the
+  // attachment and thumbnail uploads do, since it is a multipart body:
+  // POST /courses/{course_id}/streams/{stream_id}/media?type=COMB|PRES|CAM, the video
+  // in the form field `file`. Authorized as these RPCs are, a caller who does not
+  // administer the course answered 404, before anything of the body is read. The body
+  // is then streamed to the least busy worker, which transcodes it and attaches the
+  // result to the lecture as that version. Answers {} once the worker has the file;
+  // 400 for a missing or unknown type, 409 while the lecture is live, 503 when no
+  // worker is alive or the one chosen cannot be reached.
+  rpc createLectures(CreateLecturesRequest) returns (CreateLecturesResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Create a lecture, or a series of them, in a course."
+      description: "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course."
+    };
+  }
+
+  // ----- Course administration -----
+  // The course page's settings, admins, lecture-hall sources and participants. The
+  // course-scoped ones require administering the course; course 0 answers 404.
+
+  rpc getCourseAdmin(GetCourseAdminRequest) returns (CourseAdmin) {
+    option (google.api.http) = {get: "/courses/{course_id}/admin"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Get a course's settings."
+      description: "What the course's settings tab shows and edits. Requires administering the course."
+    };
+  }
+
+  rpc updateCourseSettings(UpdateCourseSettingsRequest) returns (CourseAdmin) {
+    option (google.api.http) = {
+      patch: "/courses/{course_id}/settings"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Change a course's settings."
+      description: "Sets the fields that are present and leaves the rest. Requires administering the course."
+    };
+  }
+
+  rpc copyCourse(CopyCourseRequest) returns (CopyCourseResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/copy"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Copy a course into another semester."
+      description: "Copies the course's settings, every one of its lectures and its administrators into a new course in the given semester. Requires administering the course. Answers 409 if that semester already has a course with the slug."
+    };
+  }
+
+  rpc deleteCourse(DeleteCourseRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Delete a course and its lectures."
+      description: "Requires administering the course."
+    };
+  }
+
+  rpc listCourseAdmins(ListCourseAdminsRequest) returns (ListCourseAdminsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/admins"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List a course's administrators."
+      description: "Those granted the course explicitly; neither its owner nor the server's administrators are listed unless they were. Requires administering the course."
+    };
+  }
+
+  rpc addCourseAdmin(AddCourseAdminRequest) returns (CourseAdminUser) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/admins"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Make a user an administrator of a course."
+      description: "A student or external participant is promoted to lecturer, as v1 did. Requires administering the course."
+    };
+  }
+
+  rpc removeCourseAdmin(RemoveCourseAdminRequest) returns (CourseAdminUser) {
+    option (google.api.http) = {delete: "/courses/{course_id}/admins/{user_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Remove an administrator from a course."
+      description: "Answers 400 for the course's last administrator and 404 for someone who is not one. Requires administering the course."
+    };
+  }
+
+  rpc searchUsersForCourse(SearchUsersForCourseRequest) returns (SearchUsersForCourseResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/admins/search"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Find a user to make an administrator of a course."
+      description: "Matches name, login and email; at least three letters or digits. At most ten results. Requires administering the course."
+    };
+  }
+
+  rpc listCourseLectureHallSettings(ListCourseLectureHallSettingsRequest) returns (ListCourseLectureHallSettingsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/lecture-halls"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List the course's source settings per lecture hall."
+      description: "One entry per hall the course has a lecture in: which sources to stream and which camera preset to use. Requires administering the course."
+    };
+  }
+
+  rpc updateCourseLectureHallSettings(UpdateCourseLectureHallSettingsRequest) returns (ListCourseLectureHallSettingsResponse) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/lecture-halls"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Replace the course's source settings per lecture hall."
+      description: "Replaces every hall's settings with the ones sent; a hall left out goes back to the defaults. Requires administering the course."
+    };
+  }
+
+  rpc listCourseParticipants(ListCourseParticipantsRequest) returns (ListCourseParticipantsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/participants"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List the external participants invited to a course."
+      description: "Accounts without a TUM login that were invited by email. Requires administering the course."
+    };
+  }
+
+  rpc inviteCourseParticipants(InviteCourseParticipantsRequest) returns (InviteCourseParticipantsResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/participants"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Invite external participants to a course by email."
+      description: "An address without an account gets one and an email to set its password; an existing account is enrolled and notified. At most 200 per call. Requires administering the course."
+    };
+  }
+
+  // The sidebar's tree of courses; a flat list, grouped by semester by the caller.
+  rpc listAdministeredCourses(google.protobuf.Empty) returns (ListAdministeredCoursesResponse) {
+    option (google.api.http) = {get: "/courses/administered"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List the courses the caller administers."
+      description: "Every semester's; every course for someone who administers them all. Requires the lecture permission."
+    };
+  }
+
+  // ----- Lecture administration, part 2 -----
+  // What the lecture card does to a lecture's content. Every one of these checks the
+  // lecture named is one of the course's and answers 404 for any other; a section or
+  // file named must also be that lecture's.
+  //
+  // Two uploads sit beside the gateway rather than in it, because it cannot take a
+  // multipart body: POST /courses/{course_id}/streams/{stream_id}/attachments and
+  // POST /courses/{course_id}/streams/{stream_id}/thumbnail, each a multipart form with
+  // the file in `file`, authorized as these RPCs are and answering the created file as
+  // a LectureFileAdmin. A third, the recording of a VOD_UPLOAD lecture
+  // (POST .../streams/{stream_id}/media), is described at createLectures.
+
+  rpc createLectureSections(CreateLectureSectionsRequest) returns (CreateLectureSectionsResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/sections"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Add chapters to a lecture."
+      description: "Creates the sections and answers all of the lecture's sections, in order. Minutes and seconds must be below 60 and every section needs a description. The sections' thumbnails are generated afterwards, by a runner or else a worker. Requires administering the course."
+    };
+  }
+
+  rpc updateLectureSection(UpdateLectureSectionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/streams/{stream_id}/sections/{section_id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Change one of a lecture's chapters."
+      description: "Replaces the section's description and start. A moved start has its thumbnail generated again. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureSection(DeleteLectureSectionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/sections/{section_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete one of a lecture's chapters."
+      description: "Deletes the section and asks a worker to delete its thumbnail. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureAttachment(DeleteLectureAttachmentRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/attachments/{file_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete one of a lecture's attachments."
+      description: "Deletes the attachment and its file on disk. The file must be one of the lecture's attachments; recordings and thumbnails answer 404. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureThumbnail(DeleteLectureThumbnailRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/thumbnail"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete a lecture's custom thumbnail."
+      description: "Deletes the uploaded thumbnail and its file, so the generated ones show again. Answers 404 when there is none. Requires administering the course."
+    };
+  }
+
+  rpc requestLectureSubtitles(RequestLectureSubtitlesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/subtitles"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Have subtitles generated for a lecture."
+      description: "Hands the lecture's recording to the voice service, which sends the subtitles back when done. Answers 400 for a lecture with no recording and 503 when no voice service is configured. Requires administering the course."
+    };
+  }
+
+  rpc getLectureTranscodingProgress(GetLectureTranscodingProgressRequest) returns (GetLectureTranscodingProgressResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/transcoding-progress"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get how far a lecture's transcoding is."
+      description: "The versions still transcoding, with their progress; a version that has finished is no longer listed. For polling while a lecture is converting. Requires administering the course."
     };
   }
 }
@@ -364,6 +857,18 @@ service StreamService {
       description: "Deletes a bookmark."
     };
   }
+
+  // Points the camera of a live stream's lecture hall at one of its presets. Reaches
+  // the physical camera, so it answers the way (*API).cameraFor documents on top of
+  // the usual permission failures.
+  rpc switchCameraPreset(SwitchCameraPresetRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {post: "/courses/{course_id}/streams/{stream_id}/presets/{preset_id}/switch"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Switch a live stream's camera to a preset."
+      description: "Moves the camera of the stream's lecture hall to the preset and returns once it has had time to arrive. The stream must be live and the preset must belong to its lecture hall. Requires administering the course."
+    };
+  }
 }
 
 // Server administration: everything belonging to no particular course.
@@ -443,6 +948,48 @@ service AdminService {
       tags: "Users"
       summary: "Delete an account."
       description: "Deletes an account. Administrators cannot be deleted. Requires the users.manage permission."
+    };
+  }
+
+  rpc listServerNotificationsAdmin(google.protobuf.Empty) returns (ListServerNotificationsAdminResponse) {
+    option (google.api.http) = {get: "/admin/server-notifications"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "List every server notification for administration."
+      description: "Retrieves every server notification, past, active and future, with its id. Requires the server.administer permission."
+    };
+  }
+
+  rpc createServerNotification(CreateServerNotificationRequest) returns (ServerNotificationAdmin) {
+    option (google.api.http) = {
+      post: "/admin/server-notifications"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Create a server notification."
+      description: "Creates a banner shown site-wide between start and expires. Requires the server.administer permission."
+    };
+  }
+
+  rpc updateServerNotification(UpdateServerNotificationRequest) returns (ServerNotificationAdmin) {
+    option (google.api.http) = {
+      patch: "/admin/server-notifications/{id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Update a server notification."
+      description: "Replaces a server notification's text, severity and active window. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteServerNotification(DeleteServerNotificationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/server-notifications/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Delete a server notification."
+      description: "Deletes a server notification; it stops showing immediately. Requires the server.administer permission."
     };
   }
 
@@ -620,6 +1167,204 @@ service AdminService {
       tags: "Maintenance"
       summary: "Dismiss a failed email."
       description: "Deletes a failed email; it is not retried afterwards. Requires the server.administer permission."
+    };
+  }
+
+  // Course import reaches TUMonline directly (rather than a dao) and belongs to no
+  // course yet, so it is server-wide like runners and info pages.
+  rpc searchCourseImportSchedule(CourseImportSearchRequest) returns (CourseImportSearchResponse) {
+    option (google.api.http) = {
+      post: "/admin/course-import/search"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Import"
+      summary: "Search the TUMonline room schedule for courses."
+      description: "Fetches the department's room schedule from TUMonline for the given date range, groups it by course and enriches each with its contacts and language. Requires the server.administer permission."
+    };
+  }
+
+  rpc importCourseImportCourses(CourseImportRequest) returns (CourseImportResponse) {
+    option (google.api.http) = {
+      post: "/admin/course-import"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Import"
+      summary: "Import the selected courses."
+      description: "Creates a course and its streams for each selected course, then emails its main contact an activation (or opt-out) link. A failure importing one course does not stop the others; the response reports each outcome. Requires the server.administer permission."
+    };
+  }
+
+  // Tokens are gated on users.manage, same as the account pages, rather than
+  // server.administer: this is the only place they can be issued or revoked at all.
+  rpc listTokens(google.protobuf.Empty) returns (ListTokensResponse) {
+    option (google.api.http) = {get: "/admin/tokens"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Tokens"
+      summary: "List API tokens."
+      description: "Retrieves every issued token's owner, scope and usage -- never the secret itself, which is shown only once, at creation. Requires the users.manage permission."
+    };
+  }
+
+  rpc createToken(CreateTokenRequest) returns (TokenSecret) {
+    option (google.api.http) = {
+      post: "/admin/tokens"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Tokens"
+      summary: "Create an API token."
+      description: "Creates a token for self-streaming or admin API access and returns its secret. The secret is returned only in this response and cannot be retrieved again. Requires the users.manage permission."
+    };
+  }
+
+  rpc deleteToken(DeleteTokenRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/tokens/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Tokens"
+      summary: "Revoke an API token."
+      description: "Deletes a token; it stops authenticating immediately. Requires the users.manage permission."
+    };
+  }
+
+  rpc listNotificationsAdmin(google.protobuf.Empty) returns (ListNotificationsAdminResponse) {
+    option (google.api.http) = {get: "/admin/notifications"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "List every user notification for administration."
+      description: "Retrieves every notification ever broadcast to users, newest first. Requires the server.administer permission."
+    };
+  }
+
+  rpc createNotification(CreateNotificationRequest) returns (AdminNotification) {
+    option (google.api.http) = {
+      post: "/admin/notifications"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Broadcast a notification."
+      description: "Creates a notification shown to users matching its target group. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteNotification(DeleteNotificationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/notifications/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Notifications"
+      summary: "Delete a notification."
+      description: "Deletes a notification; it stops showing to users immediately. Requires the server.administer permission."
+    };
+  }
+
+  rpc listAudits(ListAuditsRequest) returns (ListAuditsResponse) {
+    option (google.api.http) = {get: "/admin/audits"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Audits"
+      summary: "List server audit log entries."
+      description: "Retrieves one page of the server-wide audit log -- course and stream changes, camera moves, and warnings or errors the backend surfaced itself -- newest first. Requires the server.administer permission."
+    };
+  }
+
+  rpc getServerStats(google.protobuf.Empty) returns (ServerStatsResponse) {
+    option (google.api.http) = {get: "/admin/server-stats"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Server Statistics"
+      summary: "Get server-wide usage statistics."
+      description: "Retrieves the quick counters and the charted activity for the whole deployment, i.e. the same data api/statistics.go serves a course for, with courseID 0. Requires the server.administer permission."
+    };
+  }
+
+  rpc exportServerStats(ExportServerStatsRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/admin/server-stats/export"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Server Statistics"
+      summary: "Export server-wide usage statistics."
+      description: "Bundles the same data getServerStats renders as a single downloadable file, as JSON or CSV. Requires the server.administer permission."
+    };
+  }
+
+  // The methods below manage the lecture halls known to the scheduler and the
+  // recording pipeline. Named "*Admin" and "LectureHallAdmin" rather than plain
+  // "LectureHall" because that name, and CameraPreset, are already taken by the
+  // viewer-facing messages further down (see LECTURE_HALL_MESSAGE) with a different
+  // shape; the admin preset type is CameraPresetAdmin for the same reason.
+  rpc listLectureHallsAdmin(google.protobuf.Empty) returns (ListLectureHallsAdminResponse) {
+    option (google.api.http) = {get: "/admin/lecture-halls"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "List every lecture hall for administration."
+      description: "Retrieves every lecture hall with its stream sources. Requires the server.administer permission."
+    };
+  }
+
+  rpc createLectureHallAdmin(CreateLectureHallAdminRequest) returns (LectureHallAdmin) {
+    option (google.api.http) = {
+      post: "/admin/lecture-halls"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Create a lecture hall."
+      description: "Creates a lecture hall the scheduler can assign lectures to. Requires the server.administer permission."
+    };
+  }
+
+  rpc updateLectureHallAdmin(UpdateLectureHallAdminRequest) returns (LectureHallAdmin) {
+    option (google.api.http) = {
+      patch: "/admin/lecture-halls/{id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Update a lecture hall."
+      description: "Replaces a lecture hall's name, stream protocol and stream sources. Requires the server.administer permission."
+    };
+  }
+
+  rpc deleteLectureHallAdmin(DeleteLectureHallAdminRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/admin/lecture-halls/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Delete a lecture hall."
+      description: "Deletes a lecture hall; its streams keep playing but lose the hall association. Requires the server.administer permission."
+    };
+  }
+
+  // The three methods below manage a hall's camera presets. All three reach the
+  // physical camera, so they answer Unknown/InvalidArgument/Unavailable the way
+  // (*API).cameraFor documents, on top of the usual permission failures.
+  rpc refreshLectureHallPresetsAdmin(RefreshLectureHallPresetsAdminRequest) returns (LectureHallAdmin) {
+    option (google.api.http) = {post: "/admin/lecture-halls/{id}/presets/refresh"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Refresh a lecture hall's camera presets."
+      description: "Fetches the presets configured on the hall's camera and replaces the stored list with them. Requires the server.administer permission."
+    };
+  }
+
+  rpc setDefaultCameraPresetAdmin(SetDefaultCameraPresetAdminRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/admin/lecture-halls/{lecture_hall_id}/presets/{preset_id}/default"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Mark a camera preset the hall's default."
+      description: "Marks one preset default for the hall and unsets the others. The default is what a stream's recording starts pointed at. Requires the server.administer permission."
+    };
+  }
+
+  rpc takeCameraPresetSnapshotAdmin(TakeCameraPresetSnapshotAdminRequest) returns (CameraPresetAdmin) {
+    option (google.api.http) = {
+      post: "/admin/lecture-halls/{lecture_hall_id}/presets/{preset_id}/snapshot"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Lecture Halls"
+      summary: "Take a new preview snapshot of a camera preset."
+      description: "Moves the camera to the preset, waits for it to arrive, and photographs it. Requires the server.administer permission."
     };
   }
 }
@@ -1203,6 +1948,82 @@ message GetServerNotificationsResponse {
   repeated ServerNotification server_notifications = 1;
 }
 
+///////////////////////////////////
+//// SERVER_NOTIFICATION_ADMIN /////
+///////////////////////////////////
+
+// ServerNotificationAdmin is a server notification as an administrator manages it,
+// carrying the id ServerNotification (the public read model above) omits.
+message ServerNotificationAdmin {
+  uint32 id = 1;
+  string text = 2;
+  bool warn = 3;
+  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp expires = 5;
+}
+
+message ListServerNotificationsAdminResponse {
+  repeated ServerNotificationAdmin notifications = 1;
+}
+
+message CreateServerNotificationRequest {
+  string text = 1;
+  bool warn = 2;
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp expires = 4;
+}
+
+message UpdateServerNotificationRequest {
+  uint32 id = 1;
+  string text = 2;
+  bool warn = 3;
+  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp expires = 5;
+}
+
+message DeleteServerNotificationRequest {
+  uint32 id = 1;
+}
+
+///////////////////////////////
+//// NOTIFICATION_ADMIN_MESSAGE
+///////////////////////////////
+
+// AdminNotification is a broadcast notification as an administrator manages it.
+// Distinct from UserGroupNotification above, which is what a recipient is shown:
+// this carries an id, so a specific entry can be deleted. Named with the Admin
+// prefix because a bare "Notification" already exists in runner/notifications.proto,
+// registered under the same "protobuf" package -- reusing the name panics the
+// process at startup with a proto registry name conflict.
+message AdminNotification {
+  uint32 id = 1;
+  // Empty when the notification has no title.
+  string title = 2;
+  string body = 3;
+  // Reuses NotificationTarget's values, but model.NotificationTarget numbers its
+  // targets from 1, not 0, so this is a plain uint32 rather than the enum -- casting
+  // model.NotificationTarget straight into NotificationTarget would shift every value
+  // down by one (see apiv2/helpers/parser.go's ParseNotificationToProto, which already
+  // does this for the read side; nothing there reads the shifted field back out, so it
+  // has gone unnoticed).
+  uint32 target = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message ListNotificationsAdminResponse {
+  repeated AdminNotification notifications = 1;
+}
+
+message CreateNotificationRequest {
+  string title = 1;
+  string body = 2;
+  uint32 target = 3;
+}
+
+message DeleteNotificationRequest {
+  uint32 id = 1;
+}
+
 ///////////////////////////////
 /////// LECTURE_HALL_MESSAGE ///
 ///////////////////////////////
@@ -1448,6 +2269,975 @@ message ListMaintenanceEmailFailuresResponse {
 
 message DeleteMaintenanceEmailFailureRequest {
   uint32 id = 1;
+}
+
+///////////////////////////////
+//// COURSE_IMPORT_MESSAGE ////
+///////////////////////////////
+
+// CourseImportEvent is one room booking TUMonline reports for a course, on its way to
+// becoming a model.Stream.
+message CourseImportEvent {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+  string room_name = 3;
+  // Set by TUMonline for a room change or similar; shown so an administrator can spot
+  // an event that needs a closer look before importing it.
+  string comment = 4;
+  // TUMonline's event id, kept so the created stream can be traced back to it.
+  string event_id = 5;
+  // Whether this event is included; an administrator may deselect single lectures
+  // (e.g. one already covered by a room the department switched away from).
+  bool import = 6;
+}
+
+// CourseImportContact is one person TUMonline lists against the course, with the main
+// contact flagged: importCourseImportCourses only emails whoever has main_contact set.
+message CourseImportContact {
+  string first_name = 1;
+  string last_name = 2;
+  string email = 3;
+  string role = 4;
+  bool main_contact = 5;
+}
+
+// CourseImportCourse is one course as found in the TUMonline schedule, round-tripped
+// through the administrator's review before being created. slug and import are
+// editable client-side between the search and the import call.
+message CourseImportCourse {
+  string title = 1;
+  string slug = 2;
+  int32 course_id = 3;
+  // "de" or "en", or empty when TUMonline reported neither.
+  string language = 4;
+  bool import = 5;
+  repeated CourseImportEvent events = 6;
+  repeated CourseImportContact contacts = 7;
+}
+
+///////////////////////////////
+//// COURSE_IMPORT_REQUEST ////
+///////////////////////////////
+
+message CourseImportSearchRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // The TUMonline organisation unit id. The client offers presets for the usual
+  // departments (Computer Science, Computer Engineering, Mathematics, Physics) and a
+  // free-form field for any other; the server treats every id alike.
+  int32 department_id = 3;
+}
+
+message CourseImportRequest {
+  int32 year = 1;
+  // "W" (winter) or "S" (summer), matching model.Course.TeachingTerm.
+  string term = 2;
+  // Opt in: a lecturer must activate streaming. Opt out: it starts on unless they
+  // decline. Governs which link the invitation email sends.
+  bool opt_in = 3;
+  repeated CourseImportCourse courses = 4;
+}
+
+///////////////////////////////
+//// COURSE_IMPORT_RESPONSE ///
+///////////////////////////////
+
+message CourseImportSearchResponse {
+  repeated CourseImportCourse courses = 1;
+}
+
+// CourseImportResult reports one course's outcome, so a failure importing one course
+// (a duplicate slug, an LDAP lookup miss) is visible without hiding the successes
+// that happened alongside it.
+message CourseImportResult {
+  string title = 1;
+  bool success = 2;
+  // Empty when success is true.
+  string error = 3;
+}
+
+message CourseImportResponse {
+  repeated CourseImportResult results = 1;
+}
+
+///////////////////////////////
+///////// TOKEN_MESSAGE ///////
+///////////////////////////////
+
+// Token is an issued API token as the administration page lists it: who holds it,
+// what it can do and when it was last used -- never the secret itself. The secret
+// exists only in the response to createToken, once, and nowhere else.
+message Token {
+  uint32 id = 1;
+  // The account it authenticates as. Mirrors how the account is shown elsewhere:
+  // the email when there is one, name and LRZ id otherwise.
+  string user_name = 2;
+  string user_email = 3;
+  string user_lrz_id = 4;
+  // "admin" or "lecturer" -- see model.TokenScope*.
+  string scope = 5;
+  // Unset means no expiration.
+  google.protobuf.Timestamp expires = 6;
+  // Unset means never used.
+  google.protobuf.Timestamp last_use = 7;
+}
+
+///////////////////////////////
+///////// TOKEN_REQUEST ///////
+///////////////////////////////
+
+message CreateTokenRequest {
+  // "admin" or "lecturer". An admin-scoped token additionally requires the caller
+  // to hold users.manage, which every caller of this RPC already does.
+  string scope = 1;
+  // Unset means no expiration.
+  google.protobuf.Timestamp expires = 2;
+}
+
+message DeleteTokenRequest {
+  uint32 id = 1;
+}
+
+///////////////////////////////
+//////// TOKEN_RESPONSE ///////
+///////////////////////////////
+
+message ListTokensResponse {
+  repeated Token tokens = 1;
+  // Where a lecturer-scoped token points a streaming client, e.g. OBS's "Server"
+  // field. Bundled here rather than in GetFrontendConfigResponse: nothing but this
+  // page needs it, and it is meaningless without a token to go with it.
+  string rtmp_proxy_url = 2;
+}
+
+// TokenSecret carries a freshly created token's value. It is deliberately its own
+// message, distinct from Token, so no future field added to Token can leak a secret
+// into the listing by accident.
+message TokenSecret {
+  string token = 1;
+}
+
+///////////////////////////////
+///// AUDIT_MESSAGE ///////////
+///////////////////////////////
+
+// AuditEntry is one row of the server-wide audit log.
+message AuditEntry {
+  uint32 id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  // The audit kind, already rendered to text by model.AuditType.String() -- "Course
+  // Created", "Camera Moved", etc. -- so the client needs no copy of that mapping.
+  string type = 3;
+  string message = 4;
+  // 0 when the audit was made by the system rather than a signed-in user.
+  uint32 user_id = 5;
+  // "- System -" when there is no user, matching model.User.GetLoginString().
+  string user_name = 6;
+}
+
+///////////////////////////////
+///// AUDIT_REQUEST ///////////
+///////////////////////////////
+
+message ListAuditsRequest {
+  // Defaults to 10 server-side when omitted or zero, matching the page size the old
+  // admin page used.
+  uint32 limit = 1;
+  uint32 offset = 2;
+}
+
+///////////////////////////////
+///// AUDIT_RESPONSE //////////
+///////////////////////////////
+
+message ListAuditsResponse {
+  repeated AuditEntry audits = 1;
+}
+
+///////////////////////////////
+///// SERVER_STATS_MESSAGE ////
+///////////////////////////////
+
+// ServerStatsDataPoint is a single point of a chart, matching dao.Stat: a label and
+// its value, ready to plot without further lookup.
+message ServerStatsDataPoint {
+  string x = 1;
+  int32 y = 2;
+}
+
+// ServerStatsSeries is one of the page's charts: a label for the dataset plus its
+// points, in the order they should be plotted.
+message ServerStatsSeries {
+  string label = 1;
+  repeated ServerStatsDataPoint points = 2;
+}
+
+message ServerStatsResponse {
+  int64 num_students = 1;
+  int32 vod_views = 2;
+  int32 live_views = 3;
+  // Streams that are recorded or currently live, across every course. Matches
+  // model.Course.NumStreams(), which the old page called with courseID 0.
+  int32 num_lectures = 9;
+  // Weekly peak concurrent live viewers, summed across courses.
+  ServerStatsSeries activity_live = 4;
+  // Weekly VoD views, summed across courses.
+  ServerStatsSeries activity_vod = 5;
+  // VoD views by hour of day.
+  ServerStatsSeries hourly = 6;
+  // VoD views by day of week.
+  ServerStatsSeries weekdays = 7;
+  // VoD views by calendar day.
+  ServerStatsSeries all_days = 8;
+}
+
+///////////////////////////////
+///// SERVER_STATS_REQUEST ////
+///////////////////////////////
+
+message ExportServerStatsRequest {
+  // "json" or "csv".
+  string format = 1;
+}
+
+message GetCourseStatsRequest {
+  uint32 course_id = 1;
+}
+
+// The course page's counterpart of ServerStatsResponse; the series are the same, each
+// counted over this course alone.
+message CourseStatsResponse {
+  string course_name = 1;
+  int64 num_students = 2;
+  int32 vod_views = 3;
+  int32 live_views = 4;
+  // Streams of the course that are recorded or currently live (model.Course.NumStreams).
+  int32 num_lectures = 5;
+  ServerStatsSeries activity_live = 6;
+  ServerStatsSeries activity_vod = 7;
+  ServerStatsSeries hourly = 8;
+  ServerStatsSeries weekdays = 9;
+  ServerStatsSeries all_days = 10;
+  // Set for courses from 2022 or earlier, which ran partly before viewing data was
+  // collected (from 28 June 2021), so their numbers undercount.
+  bool partial_history = 11;
+}
+
+message ExportCourseStatsRequest {
+  uint32 course_id = 1;
+  // "json" or "csv".
+  string format = 2;
+}
+
+message CreateCourseRequest {
+  string name = 1;
+  // Unique within the semester; letters, digits, '-' and '_'.
+  string slug = 2;
+  int32 year = 3;
+  // "W" or "S". A winter semester starts in `year`.
+  string term = 4;
+  // TUMOnline's ID for the course, when it was picked from searchTumOnlineCourses.
+  string tum_online_id = 5;
+  // "de", "en", or empty for unspecified.
+  string language = 6;
+}
+
+message CreateCourseResponse {
+  uint32 course_id = 1;
+}
+
+message SearchTumOnlineCoursesRequest {
+  string q = 1;
+}
+
+message TumOnlineCourse {
+  string tum_online_id = 1;
+  string name = 2;
+  int32 year = 3;
+  // "W" or "S".
+  string term = 4;
+}
+
+message SearchTumOnlineCoursesResponse {
+  repeated TumOnlineCourse courses = 1;
+}
+
+message GetScheduleRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // Only lectures in these halls; 0 stands for lectures in none. Ignored when
+  // all_lecture_halls is set.
+  repeated uint32 lecture_hall_ids = 3;
+  bool all_lecture_halls = 4;
+}
+
+message ScheduledLecture {
+  uint32 stream_id = 1;
+  uint32 course_id = 2;
+  string course_name = 3;
+  string name = 4;
+  string description = 5;
+  google.protobuf.Timestamp start = 6;
+  google.protobuf.Timestamp end = 7;
+  // 0 and empty for a lecture in no hall (self-streamed).
+  uint32 lecture_hall_id = 8;
+  string lecture_hall_name = 9;
+}
+
+message GetScheduleResponse {
+  repeated ScheduledLecture lectures = 1;
+}
+
+message ScheduleLectureHall {
+  uint32 id = 1;
+  string name = 2;
+}
+
+message ListScheduleLectureHallsResponse {
+  repeated ScheduleLectureHall lecture_halls = 1;
+}
+
+message UpdateLectureRequest {
+  uint32 course_id = 1;
+  // Must be one of the course's lectures; anything else answers as missing.
+  uint32 stream_id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  // Both or neither; end must be after start.
+  google.protobuf.Timestamp start = 5;
+  google.protobuf.Timestamp end = 6;
+  // 0 moves the lecture out of any hall (self-streamed). Server administrators only.
+  optional uint32 lecture_hall_id = 7;
+  optional bool chat_enabled = 8;
+  // Withholds the lecture from everyone but the course's administrators.
+  optional bool private = 9;
+}
+
+// ----- Course administration -----
+
+message GetCourseAdminRequest {
+  uint32 course_id = 1;
+}
+
+// A course as its administrators see and edit it.
+message CourseAdmin {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  int32 year = 4;
+  // "W" or "S".
+  string term = 5;
+  // "public", "loggedin", "enrolled" or "hidden".
+  string visibility = 6;
+  bool vod_enabled = 7;
+  bool downloads_enabled = 8;
+  bool chat_enabled = 9;
+  bool anonymous_chat_enabled = 10;
+  bool moderated_chat_enabled = 11;
+  // Read-only: nothing has ever set it, so no page offers it.
+  bool vod_chat_enabled = 12;
+  bool live_private = 13;
+  bool vod_private = 14;
+  // "de", "en" or empty.
+  string language = 15;
+  string tum_online_identifier = 16;
+  // The course's owner; administrators are listed by listCourseAdmins.
+  uint32 user_id = 17;
+}
+
+// The settings v1's course settings form edited.
+message UpdateCourseSettingsRequest {
+  uint32 course_id = 1;
+  // "public", "loggedin", "enrolled" or "hidden".
+  optional string visibility = 2;
+  optional bool vod_enabled = 3;
+  optional bool downloads_enabled = 4;
+  optional bool chat_enabled = 5;
+  optional bool anonymous_chat_enabled = 6;
+  optional bool moderated_chat_enabled = 7;
+  optional bool live_private = 8;
+  optional bool vod_private = 9;
+}
+
+message CopyCourseRequest {
+  uint32 course_id = 1;
+  // The semester to copy into.
+  int32 year = 2;
+  // "W" or "S".
+  string term = 3;
+}
+
+message CopyCourseResponse {
+  uint32 course_id = 1;
+  // Lectures and administrators that could not be copied; the course itself was.
+  int32 num_errors = 2;
+}
+
+message DeleteCourseRequest {
+  uint32 course_id = 1;
+}
+
+// An account as the course page shows it to the course's administrators.
+message CourseAdminUser {
+  uint32 id = 1;
+  string name = 2;
+  // The email address, or the TUM login without one.
+  string login = 3;
+  uint32 role = 4;
+}
+
+message ListCourseAdminsRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseAdminsResponse {
+  repeated CourseAdminUser admins = 1;
+}
+
+message AddCourseAdminRequest {
+  uint32 course_id = 1;
+  uint32 user_id = 2;
+}
+
+message RemoveCourseAdminRequest {
+  uint32 course_id = 1;
+  uint32 user_id = 2;
+}
+
+message SearchUsersForCourseRequest {
+  uint32 course_id = 1;
+  string q = 2;
+}
+
+message SearchUsersForCourseResponse {
+  repeated CourseAdminUser users = 1;
+}
+
+// Which sources a course's lectures in a hall stream; model.SourceMode.
+enum CourseSourceMode {
+  COURSE_SOURCE_MODE_COMBINED = 0;
+  COURSE_SOURCE_MODE_PRESENTATION_ONLY = 1;
+  COURSE_SOURCE_MODE_CAMERA_ONLY = 2;
+}
+
+message CourseLectureHallPreset {
+  // The preset's number on the hall's camera.
+  int32 preset_id = 1;
+  string name = 2;
+  string image = 3;
+  bool is_default = 4;
+}
+
+// A course's settings for one lecture hall it has lectures in.
+message CourseLectureHallSetting {
+  uint32 lecture_hall_id = 1;
+  string lecture_hall_name = 2;
+  repeated CourseLectureHallPreset presets = 3;
+  CourseSourceMode source_mode = 4;
+  // 0 when the course chose none, and the hall's default preset applies.
+  int32 selected_preset_id = 5;
+}
+
+message ListCourseLectureHallSettingsRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseLectureHallSettingsResponse {
+  repeated CourseLectureHallSetting lecture_halls = 1;
+}
+
+message CourseLectureHallSettingUpdate {
+  uint32 lecture_hall_id = 1;
+  CourseSourceMode source_mode = 2;
+  // One of the hall's presets, or 0 for its default.
+  int32 selected_preset_id = 3;
+}
+
+message UpdateCourseLectureHallSettingsRequest {
+  uint32 course_id = 1;
+  repeated CourseLectureHallSettingUpdate lecture_halls = 2;
+}
+
+message CourseParticipant {
+  uint32 id = 1;
+  string name = 2;
+  string email = 3;
+  // Whether they have set a password yet.
+  bool account_set_up = 4;
+}
+
+message ListCourseParticipantsRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseParticipantsResponse {
+  repeated CourseParticipant participants = 1;
+}
+
+message CourseInvitee {
+  string name = 1;
+  string email = 2;
+}
+
+message InviteCourseParticipantsRequest {
+  uint32 course_id = 1;
+  repeated CourseInvitee invitees = 2;
+}
+
+message CourseInvitationResult {
+  string email = 1;
+  // False when the address already had an account, which was enrolled instead.
+  bool account_created = 2;
+  // Empty on success.
+  string error = 3;
+}
+
+message InviteCourseParticipantsResponse {
+  repeated CourseInvitationResult results = 1;
+}
+
+// A course in the administration sidebar.
+message CourseAdminSummary {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  int32 year = 4;
+  string term = 5;
+}
+
+message ListAdministeredCoursesResponse {
+  repeated CourseAdminSummary courses = 1;
+}
+
+message GetLectureStatsRequest {
+  uint32 course_id = 1;
+  // Must be one of the course's lectures; anything else answers as missing.
+  uint32 stream_id = 2;
+}
+
+message LectureStatsResponse {
+  string course_name = 1;
+  string lecture_name = 2;
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+  // Enrolled in the course; a lecture has no enrolment of its own.
+  int64 num_students = 5;
+  int32 vod_views = 6;
+  // The most viewers the lecture had at once while it was live.
+  int32 max_live_views = 7;
+  // Concurrent viewers through the live lecture, by time of day.
+  ServerStatsSeries live_viewers = 8;
+  // VoD views by day of week.
+  ServerStatsSeries weekdays = 9;
+  // VoD views by calendar day.
+  ServerStatsSeries all_days = 10;
+  // Set for lectures from 2021 or earlier, which can predate the viewing data
+  // (collected from 28 June 2021), so their numbers undercount.
+  bool partial_history = 11;
+}
+
+// ----- Lecture administration -----
+
+message ListCourseLecturesAdminRequest {
+  uint32 course_id = 1;
+}
+
+message ListCourseLecturesAdminResponse {
+  // Newest first.
+  repeated CourseLectureAdmin lectures = 1;
+}
+
+// CourseLectureAdmin is a lecture as its course's administrators manage it. Unlike
+// Stream, it carries the stream key and no signed playlist URLs.
+message CourseLectureAdmin {
+  uint32 id = 1;
+  uint32 course_id = 2;
+  string name = 3;
+  string description = 4;
+  google.protobuf.Timestamp start = 5;
+  google.protobuf.Timestamp end = 6;
+  // 0 and empty for a lecture in no hall (self-streamed).
+  uint32 lecture_hall_id = 7;
+  string lecture_hall_name = 8;
+  // Shared by the lectures created together as a series; empty for a lone lecture.
+  string series_identifier = 9;
+  // The secret a self-streaming lecturer puts in the ingest URL.
+  string stream_key = 10;
+  bool chat_enabled = 11;
+  bool private = 12;
+  bool custom_thumbnail_enabled = 13;
+  bool live_now = 14;
+  // Has a recording (a VoD).
+  bool recording = 15;
+  // Ended and not yet recorded.
+  bool past = 16;
+  // A version is still transcoding.
+  bool converting = 17;
+  bool premiere = 18;
+  // The recorded versions there are: any of COMB, PRES and CAM.
+  repeated string vod_versions = 19;
+  // The recording's length in seconds, 0 when not known.
+  uint32 duration_seconds = 20;
+  repeated LectureFileAdmin files = 21;
+  repeated LectureTranscodingProgress transcoding_progresses = 22;
+  repeated LectureVideoSectionAdmin video_sections = 23;
+}
+
+message LectureFileAdmin {
+  uint32 id = 1;
+  // model.FileType: 2 = attachment, the thumbnail kinds above that.
+  uint32 type = 2;
+  string friendly_name = 3;
+}
+
+message LectureTranscodingProgress {
+  // COMB, PRES or CAM.
+  string version = 1;
+  // Percent.
+  int32 progress = 2;
+}
+
+message LectureVideoSectionAdmin {
+  uint32 id = 1;
+  string description = 2;
+  uint32 start_hours = 3;
+  uint32 start_minutes = 4;
+  uint32 start_seconds = 5;
+  uint32 file_id = 6;
+}
+
+message UpdateLectureSeriesRequest {
+  uint32 course_id = 1;
+  // Any lecture of the series; must be one of the course's.
+  uint32 stream_id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  // 0 moves the series out of any hall. Server administrators only.
+  optional uint32 lecture_hall_id = 5;
+  optional bool chat_enabled = 6;
+}
+
+message UpdateLectureSeriesTimeRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // The lecture's own new times; the rest of the series takes their time of day
+  // and duration. End must be after start.
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+}
+
+message UpdateLecturesLectureHallRequest {
+  uint32 course_id = 1;
+  repeated uint32 stream_ids = 2;
+  // 0 moves the lectures out of any hall (self-streamed).
+  uint32 lecture_hall_id = 3;
+}
+
+message DeleteLecturesRequest {
+  uint32 course_id = 1;
+  repeated uint32 stream_ids = 2;
+}
+
+message DeleteLectureSeriesRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message CopyLectureRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // Must also be administered by the caller.
+  uint32 target_course_id = 3;
+  // Deletes the original once the copy exists.
+  bool move = 4;
+}
+
+message CopyLectureResponse {
+  // The copy's ID, a new one even on a move.
+  uint32 stream_id = 1;
+}
+
+// What a created lecture is. LIVESTREAM, the zero value, is v1's default.
+enum LectureCreationKind {
+  // Streamed live: from its lecture hall, or by the lecturer with its stream key.
+  LECTURE_CREATION_KIND_LIVESTREAM = 0;
+  // A recording uploaded afterwards through POST .../streams/{stream_id}/media.
+  LECTURE_CREATION_KIND_VOD_UPLOAD = 1;
+  // A recording a worker streams as if live, starting at the lecture's start.
+  LECTURE_CREATION_KIND_PREMIERE = 2;
+}
+
+message CreateLecturesRequest {
+  uint32 course_id = 1;
+  // Required; every lecture created gets it.
+  string title = 2;
+  LectureCreationKind kind = 3;
+  // The first lecture's start. Required unless ad_hoc.
+  google.protobuf.Timestamp start = 4;
+  // How long each lecture runs. Required for a livestream; a VOD_UPLOAD or
+  // PREMIERE given 0 gets an hour.
+  uint32 duration_minutes = 5;
+  // 0 for none: a self-streamed livestream, and always for the other kinds.
+  uint32 lecture_hall_id = 6;
+  bool chat_enabled = 7;
+  // A livestream starting now (two minutes from now, for a worker to pick it up).
+  bool ad_hoc = 8;
+  // Further lectures besides the one at start, as v1's dateSeries: the client
+  // computes the weekly or daily dates. Empty for a single lecture.
+  repeated google.protobuf.Timestamp date_series = 9;
+}
+
+message CreateLecturesResponse {
+  // The one at start first, then one per date_series entry in the order given.
+  repeated CourseLectureAdmin lectures = 1;
+}
+
+// ----- Lecture administration, part 2 -----
+
+message LectureSectionInput {
+  string description = 1;
+  uint32 start_hours = 2;
+  // Below 60.
+  uint32 start_minutes = 3;
+  // Below 60.
+  uint32 start_seconds = 4;
+}
+
+message CreateLectureSectionsRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // At least one.
+  repeated LectureSectionInput sections = 3;
+}
+
+message CreateLectureSectionsResponse {
+  // All of the lecture's sections, the new ones included, in order of their start.
+  repeated LectureVideoSectionAdmin sections = 1;
+}
+
+message UpdateLectureSectionRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 section_id = 3;
+  string description = 4;
+  uint32 start_hours = 5;
+  uint32 start_minutes = 6;
+  uint32 start_seconds = 7;
+}
+
+message DeleteLectureSectionRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 section_id = 3;
+}
+
+message DeleteLectureAttachmentRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 file_id = 3;
+}
+
+message DeleteLectureThumbnailRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message RequestLectureSubtitlesRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // The spoken language, as an ISO 639 code: "de" or "en" on the old page.
+  string language = 3;
+}
+
+message GetLectureTranscodingProgressRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureTranscodingProgressResponse {
+  // Empty once every version has finished.
+  repeated LectureTranscodingProgress progresses = 1;
+}
+
+// ----- end of lecture administration -----
+
+///////////////////////////////
+///// LECTURE_HALL_ADMIN //////
+///////////////////////////////
+
+// LectureHallAdmin is a lecture hall as an administrator configures it: the stream
+// sources the worker/runner pulls from plus the optional hardware addresses. Distinct
+// from LectureHall (LECTURE_HALL_MESSAGE above), which is the trimmed shape shown to
+// viewers.
+message LectureHallAdmin {
+  uint32 id = 1;
+  // As the hall is named in SMP, e.g. room_00_13_009A -- not a free-form label.
+  string name = 2;
+  // 1 = rtsp, 2 = srt; mirrors model.StreamProtocol.
+  uint32 stream_protocol = 3;
+  string comb_ip = 4;
+  string pres_ip = 5;
+  string cam_ip = 6;
+  // IP of the physical Axis camera itself (not the SMP address above). Empty for
+  // halls with no camera, e.g. VMP backed ones.
+  string camera_ip = 7;
+  // Drives the red live light through an Anel PWR-Ctrl. Empty when there is none.
+  string pwr_ctrl_ip = 8;
+  // Empty until refreshLectureHallPresetsAdmin has fetched them at least once. Only
+  // ever populated for a hall with camera_ip set.
+  repeated CameraPresetAdmin camera_presets = 9;
+}
+
+// CameraPresetAdmin is a camera preset as an administrator manages it: named
+// "*Admin" for the same reason as LectureHallAdmin -- CameraPreset above is the
+// trimmed, viewer-facing shape.
+message CameraPresetAdmin {
+  uint32 lecture_hall_id = 1;
+  // The camera's own numbering, not a database id -- this is what SetPreset on the
+  // camera takes.
+  uint32 preset_id = 2;
+  string name = 3;
+  // Filename under the static directory, empty until a snapshot has been taken.
+  // Rendered as /public/{image}.
+  string image = 4;
+  bool is_default = 5;
+}
+
+message ListLectureHallsAdminResponse {
+  repeated LectureHallAdmin lecture_halls = 1;
+}
+
+message CreateLectureHallAdminRequest {
+  string name = 1;
+  uint32 stream_protocol = 2;
+  string comb_ip = 3;
+  string pres_ip = 4;
+  string cam_ip = 5;
+  string camera_ip = 6;
+  string pwr_ctrl_ip = 7;
+}
+
+message UpdateLectureHallAdminRequest {
+  uint32 id = 1;
+  string name = 2;
+  uint32 stream_protocol = 3;
+  string comb_ip = 4;
+  string pres_ip = 5;
+  string cam_ip = 6;
+  string camera_ip = 7;
+  string pwr_ctrl_ip = 8;
+}
+
+message DeleteLectureHallAdminRequest {
+  uint32 id = 1;
+}
+
+message RefreshLectureHallPresetsAdminRequest {
+  uint32 id = 1;
+}
+
+message SetDefaultCameraPresetAdminRequest {
+  uint32 lecture_hall_id = 1;
+  uint32 preset_id = 2;
+}
+
+message TakeCameraPresetSnapshotAdminRequest {
+  uint32 lecture_hall_id = 1;
+  uint32 preset_id = 2;
+}
+
+// The hall is not part of the request: it is the stream's, so a course's
+// administrators cannot reach the camera of a room their stream is not in.
+message SwitchCameraPresetRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 preset_id = 3;
+}
+
+///////////////////////////////
+//// SEARCH, TOKENS, ONBOARDING
+///////////////////////////////
+
+message SearchRequest {
+  string query = 1;
+  // Per kind of hit; 10 by default, 100 at most.
+  uint32 limit = 2;
+  // Semesters written like 2022S. Wins over the range below.
+  repeated string semesters = 3;
+  string first_semester = 4;
+  string last_semester = 5;
+  // Courses written like brauereiwesen2022S, at most three.
+  repeated string courses = 6;
+  // Find courses only, never lectures, as the start page's search box does.
+  bool courses_only = 7;
+}
+
+message SearchCourseHit {
+  string name = 1;
+  string slug = 2;
+  uint32 year = 3;
+  string term = 4;
+}
+
+message SearchStreamHit {
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+  string course_name = 4;
+  string course_slug = 5;
+  uint32 year = 6;
+  string term = 7;
+}
+
+message SearchSubtitleHit {
+  uint32 stream_id = 1;
+  // Milliseconds into the recording.
+  int64 timestamp = 2;
+  string text_prev = 3;
+  string text = 4;
+  string text_next = 5;
+  string stream_name = 6;
+  google.protobuf.Timestamp stream_start = 7;
+  google.protobuf.Timestamp stream_end = 8;
+  string course_name = 9;
+  string course_slug = 10;
+  uint32 year = 11;
+  string term = 12;
+}
+
+message SearchResponse {
+  repeated SearchCourseHit courses = 1;
+  repeated SearchStreamHit streams = 2;
+  repeated SearchSubtitleHit subtitles = 3;
+}
+
+message CourseTokenRequest {
+  string token = 1;
+}
+
+message CourseByToken {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  uint32 year = 4;
+  string term = 5;
+  // Opted out earlier: the course is soft-deleted and opting in restores it.
+  bool opted_out = 6;
+}
+
+message PasswordResetKeyRequest {
+  string key = 1;
+}
+
+message SetPasswordByResetKeyRequest {
+  string key = 1;
+  string password = 2;
+}
+
+message CreateFirstUserRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
 }
 
 message GetIntegrationResponse {

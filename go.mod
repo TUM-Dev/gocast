@@ -6,7 +6,7 @@ tool go.uber.org/mock/mockgen
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
-	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002102603-e29517f689c2
+	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002130556-2a3785adffe6
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20250907134856-9d3b4d5385a2

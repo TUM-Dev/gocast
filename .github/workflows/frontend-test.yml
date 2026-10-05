@@ -107,9 +107,11 @@ jobs:
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile && pnpm run build
 
-      # Its own step, so a compile failure reads as one and `go run` below starts warm.
+      # Its own step, so a compile failure reads as one. The binary is what Playwright
+      # starts: `go run` would link it a second time, which on this runner is most of a
+      # minute the browser tests then wait out.
       - name: Build the server
-        run: go build ./...
+        run: go build ./... && go build -o "$RUNNER_TEMP/tumlive" ./cmd/tumlive
 
       - name: Install Playwright browsers
         working-directory: ./frontend
@@ -120,6 +122,8 @@ jobs:
       # forward on boot, so seeding under a running one takes away what it created.
       - name: Run the browser tests
         working-directory: ./frontend
+        env:
+          E2E_SERVER_CMD: ${{ runner.temp }}/tumlive
         run: pnpm run test:e2e
 
       # Traces and screenshots for the failing tests; Playwright is configured to keep

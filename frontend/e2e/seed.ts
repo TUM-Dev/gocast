@@ -240,10 +240,22 @@ export const pinned = {
   hiddenFromThem: "bierkunde",
 } as const;
 
-/** Both are active from before the dump was loaded until long after. */
+/**
+ * Both are active from before the dump was loaded until long after. `source` is what
+ * is stored and what the admin page shows for editing; `text` is what the start page's
+ * banner renders from it.
+ */
 export const serverNotifications = [
-  { warn: false, text: "Am Wochenende finden Wartungsarbeiten statt." },
-  { warn: true, text: "Livestreams können heute unterbrochen sein." },
+  {
+    warn: false,
+    source: "Am Wochenende finden <b>Wartungsarbeiten</b> statt.",
+    text: "Am Wochenende finden Wartungsarbeiten statt.",
+  },
+  {
+    warn: true,
+    source: "Livestreams können heute unterbrochen sein.",
+    text: "Livestreams können heute unterbrochen sein.",
+  },
 ] as const;
 
 export const courseUrl = (slug: CourseKey): string => {
@@ -303,8 +315,9 @@ export const transcodingFailures = {
  * is deleted by the maintenance e2e spec's delete test.
  */
 export const emailFailures = {
-  kept: { to: "broken@example.com", subject: "Welcome to TUM-Live", retries: 4 },
-  consumed: { to: "also-broken@example.com", subject: "Your stream is live", retries: 2 },
+  // No attempt counts here: the mailer retries both every minute, so they drift.
+  kept: { to: "broken@example.com", subject: "Welcome to TUM-Live" },
+  consumed: { to: "also-broken@example.com", subject: "Your stream is live" },
 } as const;
 
 /**
@@ -320,7 +333,28 @@ export const infoPages = {
 export type InfoPageKey = keyof typeof infoPages;
 
 /**
+ * Two of the twelve seeded audits (tum-live-starter.sql), enough to assert
+ * pagination without hard-coding all twelve here. `newest` is the top row of page
+ * one; `oldest` is the bottom row of page two, since the endpoint orders by
+ * `created_at desc` and the fixture stages one row per minute.
+ */
+export const audits = {
+  newest: { message: "Camera moved to preset 1 in room 2", type: "Camera Moved" },
+  oldest: { message: "Initial audit log entry", type: "Info" },
+  // No user_id, so the page must fall back to "- System -" rather than blanking it.
+  system: { message: "Nightly cleanup job finished", type: "Info" },
+} as const;
+
+/**
  * A fourth page, seeded to prove one an administrator adds after the built-in three
  * works the same way: reachable at its slug with no route of its own in the frontend.
  */
 export const dynamicInfoPage = { slug: "accessibility", title: "Accessibility", heading: "Accessibility" } as const;
+
+/**
+ * The one seeded API token, owned by `admin`. Its secret is not listed here on
+ * purpose: the listing endpoint never returns it, so no test should expect to see it.
+ */
+export const tokens = {
+  seeded: { id: 1, owner: users.admin.username, scope: "admin" },
+} as const;
