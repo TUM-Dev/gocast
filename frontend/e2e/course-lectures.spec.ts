@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 import { apiAs, login } from "./helpers";
 import { recordings, schedule, users } from "./seed";
@@ -117,5 +117,86 @@ test.describe("the course lectures page", () => {
     const response = await page.goto(page1);
     expect(response?.ok()).toBe(false);
     expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+  });
+});
+
+/**
+ * Lecture halls are shared across courses, so only server administrators move
+ * lectures between them. The fixture's lectures in a hall are all in HS001, ID 1;
+ * every test that moves one puts it back there in a finally.
+ */
+test.describe("changing a lecture's hall", () => {
+  const HS001 = 1;
+  const moved = [schedule.planned[0], schedule.planned[1]];
+
+  async function idsOf(context: APIRequestContext, names: readonly string[]): Promise<number[]> {
+    const response = await context.get("/api/v2/courses/1/lectures/admin");
+    expect(response.status()).toBe(200);
+    const listed: { id: number; name: string; lectureHallId?: number }[] = (await response.json()).lectures;
+    return names.map((name) => {
+      const found = listed.find((l) => l.name === name);
+      expect(found, `${name} is not listed`).toBeTruthy();
+      return found!.id;
+    });
+  }
+
+  async function hallsOf(context: APIRequestContext, ids: number[]): Promise<number[]> {
+    const response = await context.get("/api/v2/courses/1/lectures/admin");
+    const listed: { id: number; lectureHallId?: number }[] = (await response.json()).lectures;
+    return ids.map((id) => listed.find((l) => l.id === id)?.lectureHallId ?? 0);
+  }
+
+  test("is refused to a lecturer by the API", async ({ playwright }) => {
+    const prof1 = await apiAs(playwright, users.prof1);
+    const [id] = await idsOf(prof1, [moved[0]]);
+
+    expect((await prof1.patch(`/api/v2/courses/1/streams/${id}`, { data: { lectureHallId: 0 } })).status()).toBe(
+      403,
+    );
+    expect(
+      (await prof1.put("/api/v2/courses/1/streams/lecture-hall", { data: { streamIds: [id], lectureHallId: 0 } }))
+        .status(),
+    ).toBe(403);
+    // Everything else still saves for them.
+    expect((await prof1.patch(`/api/v2/courses/1/streams/${id}`, { data: { name: moved[0] } })).status()).toBe(200);
+
+    expect(await hallsOf(prof1, [id])).toEqual([HS001]);
+  });
+
+  test("is not offered to a lecturer on the page", async ({ page }) => {
+    await login(page, users.prof1, page1);
+
+    const target = card(page, moved[0]);
+    await target.getByRole("button", { name: "Edit" }).click();
+    await expect(target.getByText("Streamed from")).toBeVisible();
+    await expect(target.locator("select")).toHaveCount(1); // the copy target only
+    await expect(page.getByLabel("Move selected to")).toHaveCount(0);
+  });
+
+  test("moves selected lectures in bulk for a server administrator", async ({ page, playwright }) => {
+    const admin = await apiAs(playwright, users.admin);
+    const ids = await idsOf(admin, moved);
+
+    try {
+      await login(page, users.admin, page1);
+      for (const name of moved) {
+        await page.getByRole("checkbox", { name: `Select ${name}` }).check();
+      }
+      await page.getByLabel("Move selected to").selectOption({ label: "Self-streaming" });
+      await page.getByRole("button", { name: "Move", exact: true }).click();
+      await expect(page.getByRole("status")).toHaveText("Moved 2 lectures to self-streaming.");
+      for (const name of moved) {
+        await expect(card(page, name)).toContainText("Self-streamed");
+      }
+
+      expect(await hallsOf(admin, ids)).toEqual([0, 0]);
+    } finally {
+      const restored = await admin.put("/api/v2/courses/1/streams/lecture-hall", {
+        data: { streamIds: ids, lectureHallId: HS001 },
+      });
+      expect(restored.status()).toBe(200);
+    }
+
+    expect(await hallsOf(admin, ids)).toEqual([HS001, HS001]);
   });
 });

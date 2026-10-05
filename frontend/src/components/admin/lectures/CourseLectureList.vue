@@ -12,18 +12,19 @@ import {
   saveSortAscending,
   seriesSize,
   sortLectures,
+  updateLecturesLectureHall,
   type AdministeredCourse,
   type CourseLecture,
 } from "@/lib/course-lectures";
-import { fetchScheduleLectureHalls, type ScheduleLectureHall } from "@/lib/schedule";
+import { SELF_STREAMED, fetchScheduleLectureHalls, type ScheduleLectureHall } from "@/lib/schedule";
+import { can } from "@/lib/settings";
+import { useAuthStore } from "@/stores/auth";
 
 /**
- * A course's lectures for its administrators: sorting, selecting several to delete,
- * and each lecture's card. Needs nothing but the course, so it renders the same
- * inside whichever layout holds it.
- *
- * Bulk lecture-hall changes, which v1 offered server administrators, are left out:
- * v2 has no RPC for them, and updateLecture per lecture is a poor substitute.
+ * A course's lectures for its administrators: sorting, selecting several to delete
+ * or (for server administrators) to move to another hall, and each lecture's card.
+ * Needs nothing but the course, so it renders the same inside whichever layout holds
+ * it.
  */
 const props = defineProps<{
   courseId: number;
@@ -35,6 +36,14 @@ const lectures = ref<CourseLecture[]>([]);
 const loading = ref(true);
 const error = ref("");
 const status = ref("");
+
+const auth = useAuthStore();
+/**
+ * Halls are shared across courses, so only server administrators move lectures
+ * between them; the server refuses anyone else. Offering the control by the same
+ * permission keeps the page from showing what would fail.
+ */
+const canChangeHall = computed(() => can(auth.user, "server.administer"));
 
 const halls = ref<ScheduleLectureHall[]>([]);
 const courses = ref<AdministeredCourse[]>([]);
@@ -86,6 +95,34 @@ async function openFromHash(): Promise<void> {
   expanded.add(id);
   await nextTick();
   document.getElementById(`lecture-${id}`)?.scrollIntoView({ block: "start" });
+}
+
+const bulkHall = ref(SELF_STREAMED);
+/*
+ * As v1: a lecture that has ended or been recorded no longer streams from anywhere,
+ * so moving it is refused here rather than silently doing nothing useful.
+ */
+const bulkHallBlocked = computed(() =>
+  lectures.value.some((l) => selected.has(l.id) && (l.past || l.recording)),
+);
+
+async function moveSelected(): Promise<void> {
+  const ids = [...selected];
+  if (!ids.length || bulkHallBlocked.value) return;
+  const noun = ids.length === 1 ? "lecture" : "lectures";
+  const name =
+    bulkHall.value === SELF_STREAMED
+      ? "self-streaming"
+      : (halls.value.find((h) => h.id === bulkHall.value)?.name ?? "the hall");
+  status.value = "";
+  try {
+    await updateLecturesLectureHall(props.courseId, ids, bulkHall.value);
+    status.value = `Moved ${ids.length} ${noun} to ${name}.`;
+    selected.clear();
+  } catch (err) {
+    error.value = lectureErrorMessage(err);
+  }
+  await reload();
 }
 
 async function deleteSelected(): Promise<void> {
@@ -147,6 +184,26 @@ watch(
         >
           Delete {{ selected.size }} {{ selected.size === 1 ? "lecture" : "lectures" }}
         </button>
+        <form v-if="canChangeHall" class="flex flex-wrap items-center gap-2" @submit.prevent="moveSelected">
+          <label for="lectures-bulk-hall" class="text-3 text-sm">Move selected to</label>
+          <select
+            id="lectures-bulk-hall"
+            v-model.number="bulkHall"
+            class="tum-live-input py-1 text-sm"
+            :disabled="selected.size === 0 || bulkHallBlocked"
+          >
+            <option :value="SELF_STREAMED">Self-streaming</option>
+            <option v-for="hall in halls" :key="hall.id" :value="hall.id">{{ hall.name }}</option>
+          </select>
+          <button
+            type="submit"
+            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+            :disabled="selected.size === 0 || bulkHallBlocked"
+            :title="bulkHallBlocked ? 'Lectures that have ended or been recorded keep their hall.' : undefined"
+          >
+            Move
+          </button>
+        </form>
       </div>
       <button
         type="button"
@@ -174,6 +231,7 @@ watch(
         :expanded="expanded.has(lecture.id)"
         :series-count="seriesSize(lectures, lecture)"
         :halls="halls"
+        :can-change-hall="canChangeHall"
         :course-id="courseId"
         :course-slug="courseSlug"
         :target-courses="targetCourses"

@@ -32,6 +32,11 @@ const props = defineProps<{
   /** The lectures in its series, itself included; 0 when it is in none. */
   seriesCount: number;
   halls: ScheduleLectureHall[];
+  /**
+   * Only server administrators may change the hall (the server refuses anyone else),
+   * so the rest see it read-only, as v1's page showed lecturers.
+   */
+  canChangeHall: boolean;
   courseId: number;
   /** For the self-streaming key; empty until the course has loaded. */
   courseSlug: string;
@@ -315,18 +320,27 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
       <h3 class="text-5 border-b text-xs font-semibold uppercase tracking-wide dark:border-gray-700">
         Lecture hall
       </h3>
-      <label :for="field('hall')" class="text-2">Streamed from</label>
-      <select :id="field('hall')" v-model.number="edit.hallId" class="tum-live-input">
-        <option :value="SELF_STREAMED">None (self-streamed)</option>
-        <option v-for="hall in halls" :key="hall.id" :value="hall.id">{{ hall.name }}</option>
-        <!-- A hall the list names but the hall listing does not, so the select never shows blank. -->
-        <option
-          v-if="lecture.lectureHallId && !halls.some((h) => h.id === lecture.lectureHallId)"
-          :value="lecture.lectureHallId"
-        >
-          {{ lecture.lectureHallName || `Hall ${lecture.lectureHallId}` }}
-        </option>
-      </select>
+      <template v-if="canChangeHall">
+        <label :for="field('hall')" class="text-2">Streamed from</label>
+        <select :id="field('hall')" v-model.number="edit.hallId" class="tum-live-input">
+          <option :value="SELF_STREAMED">None (self-streamed)</option>
+          <option v-for="hall in halls" :key="hall.id" :value="hall.id">{{ hall.name }}</option>
+          <!-- A hall the list names but the hall listing does not, so the select never shows blank. -->
+          <option
+            v-if="lecture.lectureHallId && !halls.some((h) => h.id === lecture.lectureHallId)"
+            :value="lecture.lectureHallId"
+          >
+            {{ lecture.lectureHallName || `Hall ${lecture.lectureHallId}` }}
+          </option>
+        </select>
+      </template>
+      <template v-else>
+        <p class="text-3">
+          Streamed from
+          <span class="font-semibold">{{ lecture.lectureHallName || "your own setup (self-streamed)" }}</span>.
+        </p>
+        <p class="text-5 text-xs">To stream from a lecture hall or from home instead, please contact the RBG.</p>
+      </template>
       <StreamKeyInfo
         v-if="edit.hallId === SELF_STREAMED && !lecture.recording"
         :lecture-id="lecture.id"
@@ -334,7 +348,7 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
         :stream-key="lecture.streamKey"
         :pending="hallDirty"
       />
-      <div class="flex flex-wrap items-center justify-end gap-3">
+      <div v-if="canChangeHall" class="flex flex-wrap items-center justify-end gap-3">
         <label v-if="inSeries" class="text-3 mr-auto flex items-center gap-2">
           <input v-model="series.hall" type="checkbox" />
           Apply to all {{ seriesCount }} lectures of the series

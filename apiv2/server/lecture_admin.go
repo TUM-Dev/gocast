@@ -73,6 +73,24 @@ func (a *API) checkLectureHall(id uint32) error {
 	return nil
 }
 
+var errHallNeedsServerAdmin = errors.New("only server administrators may change a lecture's hall")
+
+// mayChangeLectureHall refuses a caller who is not a server administrator. A hall is
+// shared infrastructure, scheduled across every course, so a course's lecturers do
+// not get to move their lectures into or out of one. v1's page hid the hall select
+// from lecturers (`{{if eq $user.Role 1}}`) but its handler took the field from any
+// course administrator; v2 enforces what the page meant.
+func (a *API) mayChangeLectureHall(ctx context.Context) error {
+	user, err := a.getCurrent(ctx)
+	if err != nil {
+		return e.WithStatus(http.StatusUnauthorized, err)
+	}
+	if !user.Can(model.PermAdministerServer) {
+		return e.WithStatus(http.StatusForbidden, errHallNeedsServerAdmin)
+	}
+	return nil
+}
+
 // audit records an administrator's change. A failure is logged, not answered: the
 // change itself has been made.
 func (a *API) audit(ctx context.Context, typ model.AuditType, message string) {
@@ -196,6 +214,9 @@ func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequ
 		return nil, err
 	}
 	if req.LectureHallId != nil {
+		if err := a.mayChangeLectureHall(ctx); err != nil {
+			return nil, err
+		}
 		if err := a.checkLectureHall(req.GetLectureHallId()); err != nil {
 			return nil, err
 		}
@@ -264,6 +285,9 @@ func (a *API) UpdateLectureSeries(ctx context.Context, req *protobuf.UpdateLectu
 		update.Name = &name
 	}
 	if req.LectureHallId != nil {
+		if err := a.mayChangeLectureHall(ctx); err != nil {
+			return nil, err
+		}
 		if err := a.checkLectureHall(req.GetLectureHallId()); err != nil {
 			return nil, err
 		}
@@ -300,6 +324,48 @@ func (a *API) UpdateLectureSeriesTime(ctx context.Context, req *protobuf.UpdateL
 	}
 
 	if err := a.dao.StreamsDao.UpdateCourseLectureSeriesTime(stream.CourseID, stream.ID, stream.SeriesIdentifier, start, end); err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// UpdateLecturesLectureHall replaces v1's setLectureHall for the lectures selected on
+// the course page. Server administrators only, as for the hall in UpdateLecture.
+//
+// Nothing is written unless every lecture is the course's, and an unknown hall is
+// the request's mistake rather than a missing resource: the lectures are what the
+// path names.
+func (a *API) UpdateLecturesLectureHall(ctx context.Context, req *protobuf.UpdateLecturesLectureHallRequest) (*emptypb.Empty, error) {
+	if len(req.GetStreamIds()) == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("no lectures given"))
+	}
+	if err := a.mayChangeLectureHall(ctx); err != nil {
+		return nil, err
+	}
+
+	ids := make([]uint, 0, len(req.GetStreamIds()))
+	for _, id := range req.GetStreamIds() {
+		stream, err := a.courseLecture(ctx, req.GetCourseId(), id)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, stream.ID)
+	}
+
+	var err error
+	if req.GetLectureHallId() == 0 {
+		err = a.dao.StreamsDao.UnsetLectureHall(ids)
+	} else {
+		hall, hallErr := a.dao.LectureHallsDao.GetLectureHallByID(uint(req.GetLectureHallId()))
+		if errors.Is(hallErr, gorm.ErrRecordNotFound) || (hallErr == nil && hall.ID == 0) {
+			return nil, e.WithStatus(http.StatusBadRequest, errors.New("no such lecture hall"))
+		}
+		if hallErr != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, hallErr)
+		}
+		err = a.dao.StreamsDao.SetLectureHall(ids, hall.ID)
+	}
+	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 	return &emptypb.Empty{}, nil

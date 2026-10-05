@@ -2594,10 +2594,52 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/lecture-hall": {
+      "put": {
+        "summary": "Move some of a course's lectures to a lecture hall.",
+        "description": "Sets the hall of every lecture named, 0 for none (self-streamed). Changes nothing unless every lecture is the course's (404) and the hall exists (400). Requires administering the course and being a server administrator.",
+        "operationId": "CourseService_updateLecturesLectureHall",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceupdateLecturesLectureHallBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}": {
       "patch": {
         "summary": "Change one of a course's lectures.",
-        "description": "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course. Unlike v1, viewers watching at the time are not told; they see the change on reload.",
+        "description": "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved). Unlike v1, viewers watching at the time are not told; they see the change on reload.",
         "operationId": "CourseService_updateLecture",
         "responses": {
           "200": {
@@ -2980,7 +3022,7 @@
       },
       "patch": {
         "summary": "Change every lecture of a lecture's series.",
-        "description": "Sets the fields that are present on every lecture of the course sharing the lecture's series, the lecture included. Answers 400 for a lecture in no series. Requires administering the course.",
+        "description": "Sets the fields that are present on every lecture of the course sharing the lecture's series, the lecture included. Answers 400 for a lecture in no series. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved).",
         "operationId": "CourseService_updateLectureSeries",
         "responses": {
           "200": {
@@ -4221,7 +4263,7 @@
         "lectureHallId": {
           "type": "integer",
           "format": "int64",
-          "description": "0 moves the lecture out of any hall (self-streamed)."
+          "description": "0 moves the lecture out of any hall (self-streamed). Server administrators only."
         },
         "chatEnabled": {
           "type": "boolean"
@@ -4264,7 +4306,7 @@
         "lectureHallId": {
           "type": "integer",
           "format": "int64",
-          "description": "0 moves the series out of any hall."
+          "description": "0 moves the series out of any hall. Server administrators only."
         },
         "chatEnabled": {
           "type": "boolean"
@@ -4282,6 +4324,23 @@
         "end": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "CourseServiceupdateLecturesLectureHallBody": {
+      "type": "object",
+      "properties": {
+        "streamIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 moves the lectures out of any hall (self-streamed)."
         }
       }
     },
