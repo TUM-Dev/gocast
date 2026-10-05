@@ -4783,3 +4783,219 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "server/apiv2.proto",
 }
+
+const (
+	ChatService_ListChatMessages_FullMethodName = "/protobuf.ChatService/listChatMessages"
+	ChatService_GetActivePoll_FullMethodName    = "/protobuf.ChatService/getActivePoll"
+	ChatService_ListPolls_FullMethodName        = "/protobuf.ChatService/listPolls"
+	ChatService_ListChatUsers_FullMethodName    = "/protobuf.ChatService/listChatUsers"
+)
+
+// ChatServiceClient is the client API for ChatService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ChatServiceClient interface {
+	ListChatMessages(ctx context.Context, in *ListChatMessagesRequest, opts ...grpc.CallOption) (*ListChatMessagesResponse, error)
+	GetActivePoll(ctx context.Context, in *GetActiveChatPollRequest, opts ...grpc.CallOption) (*GetActiveChatPollResponse, error)
+	ListPolls(ctx context.Context, in *ListChatPollsRequest, opts ...grpc.CallOption) (*ListChatPollsResponse, error)
+	ListChatUsers(ctx context.Context, in *ListChatUsersRequest, opts ...grpc.CallOption) (*ListChatUsersResponse, error)
+}
+
+type chatServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewChatServiceClient(cc grpc.ClientConnInterface) ChatServiceClient {
+	return &chatServiceClient{cc}
+}
+
+func (c *chatServiceClient) ListChatMessages(ctx context.Context, in *ListChatMessagesRequest, opts ...grpc.CallOption) (*ListChatMessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListChatMessagesResponse)
+	err := c.cc.Invoke(ctx, ChatService_ListChatMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) GetActivePoll(ctx context.Context, in *GetActiveChatPollRequest, opts ...grpc.CallOption) (*GetActiveChatPollResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetActiveChatPollResponse)
+	err := c.cc.Invoke(ctx, ChatService_GetActivePoll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) ListPolls(ctx context.Context, in *ListChatPollsRequest, opts ...grpc.CallOption) (*ListChatPollsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListChatPollsResponse)
+	err := c.cc.Invoke(ctx, ChatService_ListPolls_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) ListChatUsers(ctx context.Context, in *ListChatUsersRequest, opts ...grpc.CallOption) (*ListChatUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListChatUsersResponse)
+	err := c.cc.Invoke(ctx, ChatService_ListChatUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ChatServiceServer is the server API for ChatService service.
+// All implementations must embed UnimplementedChatServiceServer
+// for forward compatibility.
+type ChatServiceServer interface {
+	ListChatMessages(context.Context, *ListChatMessagesRequest) (*ListChatMessagesResponse, error)
+	GetActivePoll(context.Context, *GetActiveChatPollRequest) (*GetActiveChatPollResponse, error)
+	ListPolls(context.Context, *ListChatPollsRequest) (*ListChatPollsResponse, error)
+	ListChatUsers(context.Context, *ListChatUsersRequest) (*ListChatUsersResponse, error)
+	mustEmbedUnimplementedChatServiceServer()
+}
+
+// UnimplementedChatServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedChatServiceServer struct{}
+
+func (UnimplementedChatServiceServer) ListChatMessages(context.Context, *ListChatMessagesRequest) (*ListChatMessagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListChatMessages not implemented")
+}
+func (UnimplementedChatServiceServer) GetActivePoll(context.Context, *GetActiveChatPollRequest) (*GetActiveChatPollResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetActivePoll not implemented")
+}
+func (UnimplementedChatServiceServer) ListPolls(context.Context, *ListChatPollsRequest) (*ListChatPollsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPolls not implemented")
+}
+func (UnimplementedChatServiceServer) ListChatUsers(context.Context, *ListChatUsersRequest) (*ListChatUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListChatUsers not implemented")
+}
+func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
+func (UnimplementedChatServiceServer) testEmbeddedByValue()                     {}
+
+// UnsafeChatServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ChatServiceServer will
+// result in compilation errors.
+type UnsafeChatServiceServer interface {
+	mustEmbedUnimplementedChatServiceServer()
+}
+
+func RegisterChatServiceServer(s grpc.ServiceRegistrar, srv ChatServiceServer) {
+	// If the following call panics, it indicates UnimplementedChatServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ChatService_ServiceDesc, srv)
+}
+
+func _ChatService_ListChatMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChatMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ListChatMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ListChatMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ListChatMessages(ctx, req.(*ListChatMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_GetActivePoll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetActiveChatPollRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).GetActivePoll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_GetActivePoll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).GetActivePoll(ctx, req.(*GetActiveChatPollRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_ListPolls_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChatPollsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ListPolls(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ListPolls_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ListPolls(ctx, req.(*ListChatPollsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_ListChatUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChatUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ListChatUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ListChatUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ListChatUsers(ctx, req.(*ListChatUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ChatService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "protobuf.ChatService",
+	HandlerType: (*ChatServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "listChatMessages",
+			Handler:    _ChatService_ListChatMessages_Handler,
+		},
+		{
+			MethodName: "getActivePoll",
+			Handler:    _ChatService_GetActivePoll_Handler,
+		},
+		{
+			MethodName: "listPolls",
+			Handler:    _ChatService_ListPolls_Handler,
+		},
+		{
+			MethodName: "listChatUsers",
+			Handler:    _ChatService_ListChatUsers_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "server/apiv2.proto",
+}

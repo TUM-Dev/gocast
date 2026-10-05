@@ -3060,3 +3060,242 @@ message SwitchCameraPresetRequest {
   uint32 stream_id = 2;
   uint32 preset_id = 3;
 }
+
+// ----- Chat and realtime -----
+//
+// The chat's reads, and the events pushed over GET /api/v2/realtime. Names carry a
+// Chat or Realtime prefix because `package protobuf` is shared with the runner's
+// protos and `Chat` is already the personal-data export's.
+
+service ChatService {
+  rpc listChatMessages(ListChatMessagesRequest) returns (ListChatMessagesResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/chat/messages"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "List a stream's chat messages."
+      description:
+        "The visible messages, with their replies. A course administrator also "
+        "gets the messages still awaiting approval, and every caller their own."
+    };
+  }
+
+  rpc getActivePoll(GetActiveChatPollRequest) returns (GetActiveChatPollResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/chat/polls/active"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "Get a stream's running poll."
+      description:
+        "Empty when no poll is running. Vote counts are only filled in for the "
+        "course's administrators; everyone else learns them when the poll closes."
+    };
+  }
+
+  rpc listPolls(ListChatPollsRequest) returns (ListChatPollsResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/chat/polls"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "List a stream's closed polls, newest first."
+      description: "For the course's administrators."
+    };
+  }
+
+  rpc listChatUsers(ListChatUsersRequest) returns (ListChatUsersResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/chat/users"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "List the users who have written in a stream's chat."
+      description: "For @-mentions. Anonymous messages do not put their author on the list."
+    };
+  }
+}
+
+message ListChatMessagesRequest {
+  uint32 stream_id = 1;
+}
+
+message ListChatMessagesResponse {
+  // Top-level messages in the order they were written, replies nested under them.
+  repeated ChatMessage messages = 1;
+}
+
+message GetActiveChatPollRequest {
+  uint32 stream_id = 1;
+}
+
+message GetActiveChatPollResponse {
+  // Unset when no poll is running.
+  ChatPoll poll = 1;
+}
+
+message ListChatPollsRequest {
+  uint32 stream_id = 1;
+}
+
+message ListChatPollsResponse {
+  repeated ChatPoll polls = 1;
+}
+
+message ListChatUsersRequest {
+  uint32 stream_id = 1;
+}
+
+message ListChatUsersResponse {
+  repeated ChatUser users = 1;
+}
+
+message ChatUser {
+  uint32 id = 1;
+  string name = 2;
+}
+
+// All reactions with one emoji on one message.
+message ChatReactionSummary {
+  // The emoji's short name, e.g. "+1" or "tada".
+  string emoji = 1;
+  uint32 count = 2;
+  // Who reacted, so a client can tell whether its own user is among them.
+  repeated uint32 user_ids = 3;
+  repeated string user_names = 4;
+}
+
+message ChatMessage {
+  uint32 id = 1;
+  // 0 on an anonymous message, unless the caller wrote it.
+  uint32 user_id = 2;
+  // "Anonymous" on an anonymous message.
+  string user_name = 3;
+  // The name's colour, derived from the author's id.
+  string color = 4;
+  // Sanitised HTML: escaped text with links turned into anchors. Safe to render.
+  string message_html = 5;
+  // The text as written. Never render it as HTML.
+  string message_text = 6;
+  // Written by one of the course's administrators.
+  bool admin = 7;
+  // False while the message awaits approval in a moderated chat, or once retracted.
+  bool visible = 8;
+  bool resolved = 9;
+  // The message this one replies to; 0 when it is not a reply.
+  uint32 reply_to = 10;
+  repeated uint32 addressed_to = 11;
+  google.protobuf.Timestamp created_at = 12;
+  repeated ChatReactionSummary reactions = 13;
+  // Only on top-level messages: replies cannot be replied to.
+  repeated ChatMessage replies = 14;
+}
+
+message ChatPollOption {
+  uint32 id = 1;
+  string answer = 2;
+  // 0 where the caller may not see the count yet.
+  uint32 votes = 3;
+}
+
+message ChatPoll {
+  uint32 id = 1;
+  string question = 2;
+  bool active = 3;
+  repeated ChatPollOption options = 4;
+  // The option the caller voted for; 0 when they have not, or are anonymous.
+  uint32 voted_option_id = 5;
+}
+
+// One frame on the realtime socket (GET /api/v2/realtime?stream=<id>), protojson
+// encoded. Server to client only.
+message RealtimeEvent {
+  // Who an event is for. The socket drops what its user is not in the audience of.
+  enum Audience {
+    // Delivered to nobody: forgetting to set an audience must not broadcast.
+    AUDIENCE_UNSPECIFIED = 0;
+    AUDIENCE_ALL = 1;
+    // The course's administrators, and audience_user_id when it is set: a message
+    // awaiting moderation goes to the moderators and its author.
+    AUDIENCE_COURSE_ADMINS = 2;
+    // audience_user_id alone.
+    AUDIENCE_USER = 3;
+  }
+
+  uint32 stream_id = 1;
+  google.protobuf.Timestamp at = 2;
+  Audience audience = 3;
+  uint32 audience_user_id = 4;
+
+  oneof event {
+    // A new message, or one just approved. Clients upsert by id.
+    ChatMessageEvent message = 10;
+    ChatMessageDeletedEvent message_deleted = 11;
+    ChatMessageResolvedEvent message_resolved = 12;
+    ChatMessageRetractedEvent message_retracted = 13;
+    ChatReactionsEvent reactions = 14;
+    ChatPollStartedEvent poll_started = 15;
+    ChatPollClosedEvent poll_closed = 16;
+    // Course administrators only.
+    ChatPollVoteEvent poll_vote = 17;
+    ViewersEvent viewers = 18;
+    StreamLiveEvent live = 19;
+    StreamTitleEvent title = 20;
+    StreamDescriptionEvent description = 21;
+    // Events were lost; re-fetch everything.
+    ResyncEvent resync = 22;
+  }
+}
+
+message ChatMessageEvent {
+  ChatMessage message = 1;
+}
+
+// Deleting a message deletes its replies with it.
+message ChatMessageDeletedEvent {
+  uint32 message_id = 1;
+}
+
+message ChatMessageResolvedEvent {
+  uint32 message_id = 1;
+}
+
+// The message is hidden again and its reactions are gone.
+message ChatMessageRetractedEvent {
+  uint32 message_id = 1;
+}
+
+// The message's reactions in full, replacing what the client had.
+message ChatReactionsEvent {
+  uint32 message_id = 1;
+  repeated ChatReactionSummary reactions = 2;
+}
+
+message ChatPollStartedEvent {
+  ChatPoll poll = 1;
+}
+
+// Carries the final vote counts.
+message ChatPollClosedEvent {
+  ChatPoll poll = 1;
+}
+
+message ChatPollVoteEvent {
+  uint32 poll_option_id = 1;
+  uint32 votes = 2;
+}
+
+// How many sockets are watching the stream.
+message ViewersEvent {
+  uint32 viewers = 1;
+}
+
+message StreamLiveEvent {
+  bool live = 1;
+}
+
+message StreamTitleEvent {
+  string title = 1;
+}
+
+message StreamDescriptionEvent {
+  // Rendered and sanitised, as the stream's description is everywhere else.
+  string html = 1;
+}
+
+message ResyncEvent {
+  string reason = 1;
+}

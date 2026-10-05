@@ -23,6 +23,7 @@ import (
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
@@ -48,12 +49,16 @@ type API struct {
 	subtitles     pb.SubtitleGeneratorClient
 	subtitlesAuth string
 	massStorage   string
+	// Pushes per-stream events to the realtime socket. New gives every API one of its
+	// own; WithRealtimeHub shares it with the producers outside this package.
+	hub realtimehub.Hub
 
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedUserServiceServer
 	protobuf.UnimplementedCourseServiceServer
 	protobuf.UnimplementedStreamServiceServer
 	protobuf.UnimplementedAdminServiceServer
+	protobuf.UnimplementedChatServiceServer
 }
 
 // Option configures an API beyond what it needs to exist. What is optional here is
@@ -72,6 +77,10 @@ func New(db *gorm.DB, opts ...Option) *API {
 
 	for _, opt := range opts {
 		opt(a)
+	}
+
+	if a.hub == nil {
+		a.hub = realtimehub.NewMemory()
 	}
 
 	return a
@@ -134,6 +143,11 @@ func (a *API) Proxy() func(c *gin.Context) {
 		// Beside the gateway too: it cannot take a multipart body.
 		if route, ok := lectureUploadRouteOf(c.Request); ok {
 			a.handleLectureUpload(c, route)
+			return
+		}
+		// A websocket; the gateway cannot serve one. Must stay outside gzip, see main.
+		if c.Request.URL.Path == RealtimePath {
+			a.serveRealtime(c.Writer, c.Request)
 			return
 		}
 		http.StripPrefix("/api/v2", mux).ServeHTTP(c.Writer, c.Request)

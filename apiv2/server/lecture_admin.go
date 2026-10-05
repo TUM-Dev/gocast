@@ -17,6 +17,7 @@ import (
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 )
 
 var (
@@ -200,9 +201,9 @@ func courseLectureAdmin(s *model.Stream, hallNames map[uint]string) *protobuf.Co
 // Everything is validated before anything is written, so a bad hall or time leaves
 // the lecture as it was.
 //
-// v1 also pushed renames and time changes to everyone watching over its websocket.
-// That realtime layer lives in api/ and has no v2 counterpart yet, so viewers see the
-// change when they next load the page.
+// Renames and description changes reach everyone watching over the realtime socket,
+// as v1 pushed them over its own. Time changes do not: RealtimeEvent has no kind for
+// them yet, so viewers see those when they next load the page.
 func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequest) (*emptypb.Empty, error) {
 	stream, err := a.courseLecture(ctx, req.GetCourseId(), req.GetStreamId())
 	if err != nil {
@@ -260,6 +261,13 @@ func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequ
 	// Last, also because it is what clears the stream cache the hall update skips.
 	if err := a.dao.StreamsDao.UpdateStream(stream); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	if req.Name != nil {
+		a.publish(ctx, stream.ID, realtimehub.TitleEvent(stream.ID, stream.Name))
+	}
+	if req.Description != nil {
+		a.publish(ctx, stream.ID, realtimehub.DescriptionEvent(stream.ID, stream.GetDescriptionHTML()))
 	}
 	return &emptypb.Empty{}, nil
 }

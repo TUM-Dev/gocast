@@ -91,6 +91,10 @@ func TestOnlyExpectedMethodsArePublic(t *testing.T) {
 		"getServerNotifications": true,
 		"getInfoPage":            true,
 		"listInfoPages":          true,
+		// The stream's chat, for whoever may watch the stream.
+		"listChatMessages": true,
+		"getActivePoll":    true,
+		"listChatUsers":    true,
 	}
 
 	for _, svc := range services {

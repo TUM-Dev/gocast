@@ -33,6 +33,9 @@
     {
       "name": "AdminService",
       "description": "Server administration: everything belonging to no particular course.\n\nOne service rather than one per resource, because runner/*.proto shares this proto\npackage and is linked into the same binary — `RunnerService` is already taken there,\nand a collision only shows up as a panic at boot.\n\nIt groups endpoints, not permissions: policies are per method in services.go, and\nthe account pages need PermManageUsers rather than PermAdministerServer."
+    },
+    {
+      "name": "ChatService"
     }
   ],
   "host": "tum.live",
@@ -3924,6 +3927,138 @@
         ]
       }
     },
+    "/streams/{streamId}/chat/messages": {
+      "get": {
+        "summary": "List a stream's chat messages.",
+        "description": "The visible messages, with their replies. A course administrator also gets the messages still awaiting approval, and every caller their own.",
+        "operationId": "ChatService_listChatMessages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListChatMessagesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/polls": {
+      "get": {
+        "summary": "List a stream's closed polls, newest first.",
+        "description": "For the course's administrators.",
+        "operationId": "ChatService_listPolls",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListChatPollsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/polls/active": {
+      "get": {
+        "summary": "Get a stream's running poll.",
+        "description": "Empty when no poll is running. Vote counts are only filled in for the course's administrators; everyone else learns them when the poll closes.",
+        "operationId": "ChatService_getActivePoll",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetActiveChatPollResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/users": {
+      "get": {
+        "summary": "List the users who have written in a stream's chat.",
+        "description": "For @-mentions. Anonymous messages do not put their author on the list.",
+        "operationId": "ChatService_listChatUsers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListChatUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/tumonline-courses": {
       "get": {
         "summary": "Search TUMOnline's courses.",
@@ -4634,6 +4769,162 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "protobufChatMessage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 on an anonymous message, unless the caller wrote it."
+        },
+        "userName": {
+          "type": "string",
+          "description": "\"Anonymous\" on an anonymous message."
+        },
+        "color": {
+          "type": "string",
+          "description": "The name's colour, derived from the author's id."
+        },
+        "messageHtml": {
+          "type": "string",
+          "description": "Sanitised HTML: escaped text with links turned into anchors. Safe to render."
+        },
+        "messageText": {
+          "type": "string",
+          "description": "The text as written. Never render it as HTML."
+        },
+        "admin": {
+          "type": "boolean",
+          "description": "Written by one of the course's administrators."
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "False while the message awaits approval in a moderated chat, or once retracted."
+        },
+        "resolved": {
+          "type": "boolean"
+        },
+        "replyTo": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The message this one replies to; 0 when it is not a reply."
+        },
+        "addressedTo": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatReactionSummary"
+          }
+        },
+        "replies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatMessage"
+          },
+          "description": "Only on top-level messages: replies cannot be replied to."
+        }
+      }
+    },
+    "protobufChatPoll": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "question": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatPollOption"
+          }
+        },
+        "votedOptionId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The option the caller voted for; 0 when they have not, or are anonymous."
+        }
+      }
+    },
+    "protobufChatPollOption": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "votes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "0 where the caller may not see the count yet."
+        }
+      }
+    },
+    "protobufChatReactionSummary": {
+      "type": "object",
+      "properties": {
+        "emoji": {
+          "type": "string",
+          "description": "The emoji's short name, e.g. \"+1\" or \"tada\"."
+        },
+        "count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "description": "Who reacted, so a client can tell whether its own user is among them."
+        },
+        "userNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "All reactions with one emoji on one message."
+    },
+    "protobufChatUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },
@@ -5546,6 +5837,15 @@
         }
       }
     },
+    "protobufGetActiveChatPollResponse": {
+      "type": "object",
+      "properties": {
+        "poll": {
+          "$ref": "#/definitions/protobufChatPoll",
+          "description": "Unset when no poll is running."
+        }
+      }
+    },
     "protobufGetBookmarksResponse": {
       "type": "object",
       "properties": {
@@ -6082,6 +6382,43 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufAuditEntry"
+          }
+        }
+      }
+    },
+    "protobufListChatMessagesResponse": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatMessage"
+          },
+          "description": "Top-level messages in the order they were written, replies nested under them."
+        }
+      }
+    },
+    "protobufListChatPollsResponse": {
+      "type": "object",
+      "properties": {
+        "polls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatPoll"
+          }
+        }
+      }
+    },
+    "protobufListChatUsersResponse": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatUser"
           }
         }
       }
