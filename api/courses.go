@@ -828,7 +828,7 @@ type addUnitRequest struct {
 }
 
 func (r coursesRoutes) updateDescription(c *gin.Context) {
-	sIDInt, err := strconv.Atoi(c.Param("streamID"))
+	sIDUint64, err := strconv.ParseUint(c.Param("streamID"), 10, 32)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -837,7 +837,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 		})
 		return
 	}
-	sID := uint(sIDInt)
+	sID := uint(sIDUint64)
 	var req renameLectureRequest
 	if err = c.Bind(&req); err != nil {
 		_ = c.Error(tools.RequestError{
@@ -882,7 +882,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 }
 
 func (r coursesRoutes) renameLecture(c *gin.Context) {
-	sIDInt, err := strconv.Atoi(c.Param("streamID"))
+	sIDUint64, err := strconv.ParseUint(c.Param("streamID"), 10, 32)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -891,7 +891,7 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 		})
 		return
 	}
-	sID := uint(sIDInt)
+	sID := uint(sIDUint64)
 	var req renameLectureRequest
 	if err = c.Bind(&req); err != nil {
 		_ = c.Error(tools.RequestError{
