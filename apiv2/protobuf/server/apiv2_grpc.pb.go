@@ -355,11 +355,14 @@ var MetaService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	UserService_GetUser_FullMethodName            = "/protobuf.UserService/getUser"
-	UserService_UpdateUserSettings_FullMethodName = "/protobuf.UserService/updateUserSettings"
-	UserService_ExportPersonalData_FullMethodName = "/protobuf.UserService/exportPersonalData"
-	UserService_ResetPassword_FullMethodName      = "/protobuf.UserService/resetPassword"
-	UserService_GetLoginOptions_FullMethodName    = "/protobuf.UserService/getLoginOptions"
+	UserService_GetUser_FullMethodName               = "/protobuf.UserService/getUser"
+	UserService_UpdateUserSettings_FullMethodName    = "/protobuf.UserService/updateUserSettings"
+	UserService_ExportPersonalData_FullMethodName    = "/protobuf.UserService/exportPersonalData"
+	UserService_ResetPassword_FullMethodName         = "/protobuf.UserService/resetPassword"
+	UserService_CheckPasswordResetKey_FullMethodName = "/protobuf.UserService/checkPasswordResetKey"
+	UserService_SetPasswordByResetKey_FullMethodName = "/protobuf.UserService/setPasswordByResetKey"
+	UserService_CreateFirstUser_FullMethodName       = "/protobuf.UserService/createFirstUser"
+	UserService_GetLoginOptions_FullMethodName       = "/protobuf.UserService/getLoginOptions"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -373,6 +376,9 @@ type UserServiceClient interface {
 	UpdateUserSettings(ctx context.Context, in *UpdateUserSettingsRequest, opts ...grpc.CallOption) (*UpdateUserSettingsResponse, error)
 	ExportPersonalData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExportPersonalDataResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
+	CheckPasswordResetKey(ctx context.Context, in *PasswordResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SetPasswordByResetKey(ctx context.Context, in *SetPasswordByResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateFirstUser(ctx context.Context, in *CreateFirstUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetLoginOptions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLoginOptionsResponse, error)
 }
 
@@ -424,6 +430,36 @@ func (c *userServiceClient) ResetPassword(ctx context.Context, in *ResetPassword
 	return out, nil
 }
 
+func (c *userServiceClient) CheckPasswordResetKey(ctx context.Context, in *PasswordResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_CheckPasswordResetKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) SetPasswordByResetKey(ctx context.Context, in *SetPasswordByResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_SetPasswordByResetKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) CreateFirstUser(ctx context.Context, in *CreateFirstUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_CreateFirstUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) GetLoginOptions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLoginOptionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetLoginOptionsResponse)
@@ -445,6 +481,9 @@ type UserServiceServer interface {
 	UpdateUserSettings(context.Context, *UpdateUserSettingsRequest) (*UpdateUserSettingsResponse, error)
 	ExportPersonalData(context.Context, *emptypb.Empty) (*ExportPersonalDataResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
+	CheckPasswordResetKey(context.Context, *PasswordResetKeyRequest) (*emptypb.Empty, error)
+	SetPasswordByResetKey(context.Context, *SetPasswordByResetKeyRequest) (*emptypb.Empty, error)
+	CreateFirstUser(context.Context, *CreateFirstUserRequest) (*emptypb.Empty, error)
 	GetLoginOptions(context.Context, *emptypb.Empty) (*GetLoginOptionsResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -467,6 +506,15 @@ func (UnimplementedUserServiceServer) ExportPersonalData(context.Context, *empty
 }
 func (UnimplementedUserServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetPassword not implemented")
+}
+func (UnimplementedUserServiceServer) CheckPasswordResetKey(context.Context, *PasswordResetKeyRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckPasswordResetKey not implemented")
+}
+func (UnimplementedUserServiceServer) SetPasswordByResetKey(context.Context, *SetPasswordByResetKeyRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetPasswordByResetKey not implemented")
+}
+func (UnimplementedUserServiceServer) CreateFirstUser(context.Context, *CreateFirstUserRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateFirstUser not implemented")
 }
 func (UnimplementedUserServiceServer) GetLoginOptions(context.Context, *emptypb.Empty) (*GetLoginOptionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLoginOptions not implemented")
@@ -564,6 +612,60 @@ func _UserService_ResetPassword_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CheckPasswordResetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PasswordResetKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckPasswordResetKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CheckPasswordResetKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckPasswordResetKey(ctx, req.(*PasswordResetKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_SetPasswordByResetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPasswordByResetKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SetPasswordByResetKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_SetPasswordByResetKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).SetPasswordByResetKey(ctx, req.(*SetPasswordByResetKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_CreateFirstUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateFirstUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CreateFirstUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CreateFirstUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CreateFirstUser(ctx, req.(*CreateFirstUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_GetLoginOptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -606,6 +708,18 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_ResetPassword_Handler,
 		},
 		{
+			MethodName: "checkPasswordResetKey",
+			Handler:    _UserService_CheckPasswordResetKey_Handler,
+		},
+		{
+			MethodName: "setPasswordByResetKey",
+			Handler:    _UserService_SetPasswordByResetKey_Handler,
+		},
+		{
+			MethodName: "createFirstUser",
+			Handler:    _UserService_CreateFirstUser_Handler,
+		},
+		{
 			MethodName: "getLoginOptions",
 			Handler:    _UserService_GetLoginOptions_Handler,
 		},
@@ -617,6 +731,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 const (
 	CourseService_GetPublicCourses_FullMethodName                = "/protobuf.CourseService/getPublicCourses"
 	CourseService_GetCourseBySlug_FullMethodName                 = "/protobuf.CourseService/getCourseBySlug"
+	CourseService_Search_FullMethodName                          = "/protobuf.CourseService/search"
+	CourseService_GetCourseByToken_FullMethodName                = "/protobuf.CourseService/getCourseByToken"
+	CourseService_OptInCourseByToken_FullMethodName              = "/protobuf.CourseService/optInCourseByToken"
+	CourseService_OptOutCourseByToken_FullMethodName             = "/protobuf.CourseService/optOutCourseByToken"
 	CourseService_GetUserCourses_FullMethodName                  = "/protobuf.CourseService/getUserCourses"
 	CourseService_GetPinnedCourses_FullMethodName                = "/protobuf.CourseService/getPinnedCourses"
 	CourseService_GetLiveCourses_FullMethodName                  = "/protobuf.CourseService/getLiveCourses"
@@ -668,6 +786,10 @@ const (
 type CourseServiceClient interface {
 	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(ctx context.Context, in *GetCourseBySlugRequest, opts ...grpc.CallOption) (*GetCourseBySlugResponse, error)
+	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
+	GetCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*CourseByToken, error)
+	OptInCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	OptOutCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUserCourses(ctx context.Context, in *GetUserCoursesRequest, opts ...grpc.CallOption) (*GetUserCoursesResponse, error)
 	GetPinnedCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error)
 	GetLiveCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveCoursesResponse, error)
@@ -750,6 +872,46 @@ func (c *courseServiceClient) GetCourseBySlug(ctx context.Context, in *GetCourse
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCourseBySlugResponse)
 	err := c.cc.Invoke(ctx, CourseService_GetCourseBySlug_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchResponse)
+	err := c.cc.Invoke(ctx, CourseService_Search_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) GetCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*CourseByToken, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseByToken)
+	err := c.cc.Invoke(ctx, CourseService_GetCourseByToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) OptInCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_OptInCourseByToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) OptOutCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_OptOutCourseByToken_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1174,6 +1336,10 @@ func (c *courseServiceClient) GetLectureTranscodingProgress(ctx context.Context,
 type CourseServiceServer interface {
 	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(context.Context, *GetCourseBySlugRequest) (*GetCourseBySlugResponse, error)
+	Search(context.Context, *SearchRequest) (*SearchResponse, error)
+	GetCourseByToken(context.Context, *CourseTokenRequest) (*CourseByToken, error)
+	OptInCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error)
+	OptOutCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error)
 	GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error)
 	GetPinnedCourses(context.Context, *emptypb.Empty) (*GetPinnedCoursesResponse, error)
 	GetLiveCourses(context.Context, *emptypb.Empty) (*GetLiveCoursesResponse, error)
@@ -1247,6 +1413,18 @@ func (UnimplementedCourseServiceServer) GetPublicCourses(context.Context, *GetPu
 }
 func (UnimplementedCourseServiceServer) GetCourseBySlug(context.Context, *GetCourseBySlugRequest) (*GetCourseBySlugResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseBySlug not implemented")
+}
+func (UnimplementedCourseServiceServer) Search(context.Context, *SearchRequest) (*SearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Search not implemented")
+}
+func (UnimplementedCourseServiceServer) GetCourseByToken(context.Context, *CourseTokenRequest) (*CourseByToken, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCourseByToken not implemented")
+}
+func (UnimplementedCourseServiceServer) OptInCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method OptInCourseByToken not implemented")
+}
+func (UnimplementedCourseServiceServer) OptOutCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method OptOutCourseByToken not implemented")
 }
 func (UnimplementedCourseServiceServer) GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserCourses not implemented")
@@ -1424,6 +1602,78 @@ func _CourseService_GetCourseBySlug_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CourseServiceServer).GetCourseBySlug(ctx, req.(*GetCourseBySlugRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).Search(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_Search_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).Search(ctx, req.(*SearchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_GetCourseByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetCourseByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetCourseByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetCourseByToken(ctx, req.(*CourseTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_OptInCourseByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).OptInCourseByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_OptInCourseByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).OptInCourseByToken(ctx, req.(*CourseTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_OptOutCourseByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).OptOutCourseByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_OptOutCourseByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).OptOutCourseByToken(ctx, req.(*CourseTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2180,6 +2430,22 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getCourseBySlug",
 			Handler:    _CourseService_GetCourseBySlug_Handler,
+		},
+		{
+			MethodName: "search",
+			Handler:    _CourseService_Search_Handler,
+		},
+		{
+			MethodName: "getCourseByToken",
+			Handler:    _CourseService_GetCourseByToken_Handler,
+		},
+		{
+			MethodName: "optInCourseByToken",
+			Handler:    _CourseService_OptInCourseByToken_Handler,
+		},
+		{
+			MethodName: "optOutCourseByToken",
+			Handler:    _CourseService_OptOutCourseByToken_Handler,
 		},
 		{
 			MethodName: "getUserCourses",

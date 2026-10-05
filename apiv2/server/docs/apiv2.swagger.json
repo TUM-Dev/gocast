@@ -1843,6 +1843,110 @@
         ]
       }
     },
+    "/courses/by-token": {
+      "post": {
+        "summary": "Name the course a token opens.",
+        "description": "The token is mailed to a course's lecturer when it is imported from TUMOnline, before they need an account; it is the credential here. The body carries it so it stays out of logs. 404 for an unknown token.",
+        "operationId": "CourseService_getCourseByToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCourseByToken"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCourseTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/by-token/opt-in": {
+      "post": {
+        "summary": "Switch an imported course on.",
+        "description": "Makes the course visible to anyone signed in, with recordings, and restores it if it was opted out before. Whoever is signed in is named in the audit entry.",
+        "operationId": "CourseService_optInCourseByToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCourseTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/by-token/opt-out": {
+      "post": {
+        "summary": "Delete an imported course the lecturer does not want.",
+        "description": "Soft-deletes the course and its lectures; opting in again restores the course. Whoever is signed in is named in the audit entry.",
+        "operationId": "CourseService_optOutCourseByToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCourseTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/enrolled": {
       "get": {
         "summary": "Get user courses.",
@@ -3639,6 +3743,87 @@
         ]
       }
     },
+    "/search": {
+      "get": {
+        "summary": "Search courses, lectures and subtitles.",
+        "description": "Finds what the caller may see, anonymous callers included. Without a scope every semester's courses are searched; `semesters` (written 2022S) or `first_semester` with `last_semester` narrow that, and a single semester also finds lectures. Naming up to three `courses` (written brauereiwesen2022S) searches their lectures and subtitle lines instead, hidden courses included, and answers 404 for one the caller may not watch. `limit` is per kind, 10 by default and 100 at most. 503 while Meilisearch is unreachable.",
+        "operationId": "CourseService_search",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufSearchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "Per kind of hit; 10 by default, 100 at most.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "semesters",
+            "description": "Semesters written like 2022S. Wins over the range below.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "firstSemester",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "lastSemester",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "courses",
+            "description": "Courses written like brauereiwesen2022S, at most three.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "coursesOnly",
+            "description": "Find courses only, never lectures, as the start page's search box does.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/semesters": {
       "get": {
         "summary": "Get available semesters.",
@@ -3980,6 +4165,41 @@
         ]
       }
     },
+    "/users/first": {
+      "post": {
+        "summary": "Create the first administrator of a fresh deployment.",
+        "description": "Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password.",
+        "operationId": "UserService_createFirstUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufCreateFirstUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/users/me": {
       "get": {
         "summary": "Get user.",
@@ -3999,6 +4219,78 @@
             }
           }
         },
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/users/password-reset/{key}": {
+      "get": {
+        "summary": "Check a password reset key.",
+        "description": "Answers 404 when the key was never issued or has been used, so the set-password page can say so instead of showing a form that cannot work.",
+        "operationId": "UserService_checkPasswordResetKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      },
+      "post": {
+        "summary": "Set a password with a reset key.",
+        "description": "Sets the password of the user the key was mailed to (at least 8 characters, 400 otherwise) and spends the key. 404 for an unknown or used key.",
+        "operationId": "UserService_setPasswordByResetKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserServicesetPasswordByResetKeyBody"
+            }
+          }
+        ],
         "tags": [
           "User"
         ]
@@ -4439,6 +4731,14 @@
         }
       }
     },
+    "UserServicesetPasswordByResetKeyBody": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string"
+        }
+      }
+    },
     "apiHttpBody": {
       "type": "object",
       "properties": {
@@ -4841,6 +5141,32 @@
         }
       },
       "description": "An account as the course page shows it to the course's administrators."
+    },
+    "protobufCourseByToken": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "term": {
+          "type": "string"
+        },
+        "optedOut": {
+          "type": "boolean",
+          "description": "Opted out earlier: the course is soft-deleted and opting in restores it."
+        }
+      }
     },
     "protobufCourseImportContact": {
       "type": "object",
@@ -5298,6 +5624,14 @@
         }
       }
     },
+    "protobufCourseTokenRequest": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
+    },
     "protobufCreateCourseRequest": {
       "type": "object",
       "properties": {
@@ -5332,6 +5666,20 @@
         "courseId": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "protobufCreateFirstUserRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
         }
       }
     },
@@ -6523,6 +6871,125 @@
           "description": "0 and empty for a lecture in no hall (self-streamed)."
         },
         "lectureHallName": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufSearchCourseHit": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "term": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufSearchResponse": {
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufSearchCourseHit"
+          }
+        },
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufSearchStreamHit"
+          }
+        },
+        "subtitles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufSearchSubtitleHit"
+          }
+        }
+      }
+    },
+    "protobufSearchStreamHit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "courseName": {
+          "type": "string"
+        },
+        "courseSlug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "term": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufSearchSubtitleHit": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64",
+          "description": "Milliseconds into the recording."
+        },
+        "textPrev": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "textNext": {
+          "type": "string"
+        },
+        "streamName": {
+          "type": "string"
+        },
+        "streamStart": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "streamEnd": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "courseName": {
+          "type": "string"
+        },
+        "courseSlug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "term": {
           "type": "string"
         }
       }

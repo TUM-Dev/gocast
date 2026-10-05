@@ -170,6 +170,43 @@ service UserService {
     };
   }
 
+  // ----- Password reset and onboarding -----
+  // Both serve anonymous callers: the mailed key, or an empty users table, is the
+  // credential.
+
+  rpc checkPasswordResetKey(PasswordResetKeyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {get: "/users/password-reset/{key}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Check a password reset key."
+      description: "Answers 404 when the key was never issued or has been used, so the set-password page can say so instead of showing a form that cannot work."
+    };
+  }
+
+  rpc setPasswordByResetKey(SetPasswordByResetKeyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/users/password-reset/{key}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Set a password with a reset key."
+      description: "Sets the password of the user the key was mailed to (at least 8 characters, 400 otherwise) and spends the key. 404 for an unknown or used key."
+    };
+  }
+
+  rpc createFirstUser(CreateFirstUserRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/users/first"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "User"
+      summary: "Create the first administrator of a fresh deployment."
+      description: "Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password."
+    };
+  }
+
   rpc getLoginOptions(google.protobuf.Empty) returns (GetLoginOptionsResponse) {
     option (google.api.http) = {get: "/login-options"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -197,6 +234,53 @@ service CourseService {
       tags: "Courses"
       summary: "Get course by slug."
       description: "Retrieves a course by its slug, year, and term."
+    };
+  }
+
+  // ----- Search and course tokens -----
+
+  rpc search(SearchRequest) returns (SearchResponse) {
+    option (google.api.http) = {get: "/search"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Search courses, lectures and subtitles."
+      description: "Finds what the caller may see, anonymous callers included. Without a scope every semester's courses are searched; `semesters` (written 2022S) or `first_semester` with `last_semester` narrow that, and a single semester also finds lectures. Naming up to three `courses` (written brauereiwesen2022S) searches their lectures and subtitle lines instead, hidden courses included, and answers 404 for one the caller may not watch. `limit` is per kind, 10 by default and 100 at most. 503 while Meilisearch is unreachable."
+    };
+  }
+
+  rpc getCourseByToken(CourseTokenRequest) returns (CourseByToken) {
+    option (google.api.http) = {
+      post: "/courses/by-token"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Name the course a token opens."
+      description: "The token is mailed to a course's lecturer when it is imported from TUMOnline, before they need an account; it is the credential here. The body carries it so it stays out of logs. 404 for an unknown token."
+    };
+  }
+
+  rpc optInCourseByToken(CourseTokenRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/by-token/opt-in"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Switch an imported course on."
+      description: "Makes the course visible to anyone signed in, with recordings, and restores it if it was opted out before. Whoever is signed in is named in the audit entry."
+    };
+  }
+
+  rpc optOutCourseByToken(CourseTokenRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/by-token/opt-out"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete an imported course the lecturer does not want."
+      description: "Soft-deletes the course and its lectures; opting in again restores the course. Whoever is signed in is named in the audit entry."
     };
   }
 
@@ -3059,4 +3143,90 @@ message SwitchCameraPresetRequest {
   uint32 course_id = 1;
   uint32 stream_id = 2;
   uint32 preset_id = 3;
+}
+
+///////////////////////////////
+//// SEARCH, TOKENS, ONBOARDING
+///////////////////////////////
+
+message SearchRequest {
+  string query = 1;
+  // Per kind of hit; 10 by default, 100 at most.
+  uint32 limit = 2;
+  // Semesters written like 2022S. Wins over the range below.
+  repeated string semesters = 3;
+  string first_semester = 4;
+  string last_semester = 5;
+  // Courses written like brauereiwesen2022S, at most three.
+  repeated string courses = 6;
+  // Find courses only, never lectures, as the start page's search box does.
+  bool courses_only = 7;
+}
+
+message SearchCourseHit {
+  string name = 1;
+  string slug = 2;
+  uint32 year = 3;
+  string term = 4;
+}
+
+message SearchStreamHit {
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+  string course_name = 4;
+  string course_slug = 5;
+  uint32 year = 6;
+  string term = 7;
+}
+
+message SearchSubtitleHit {
+  uint32 stream_id = 1;
+  // Milliseconds into the recording.
+  int64 timestamp = 2;
+  string text_prev = 3;
+  string text = 4;
+  string text_next = 5;
+  string stream_name = 6;
+  google.protobuf.Timestamp stream_start = 7;
+  google.protobuf.Timestamp stream_end = 8;
+  string course_name = 9;
+  string course_slug = 10;
+  uint32 year = 11;
+  string term = 12;
+}
+
+message SearchResponse {
+  repeated SearchCourseHit courses = 1;
+  repeated SearchStreamHit streams = 2;
+  repeated SearchSubtitleHit subtitles = 3;
+}
+
+message CourseTokenRequest {
+  string token = 1;
+}
+
+message CourseByToken {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  uint32 year = 4;
+  string term = 5;
+  // Opted out earlier: the course is soft-deleted and opting in restores it.
+  bool opted_out = 6;
+}
+
+message PasswordResetKeyRequest {
+  string key = 1;
+}
+
+message SetPasswordByResetKeyRequest {
+  string key = 1;
+  string password = 2;
+}
+
+message CreateFirstUserRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
 }

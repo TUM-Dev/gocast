@@ -250,6 +250,8 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
 		apiv2.WithSectionImages(api.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
+		// The same Meilisearch and filters v1's search uses, so both find the same.
+		apiv2.WithSearch(api.SearchCatalog{Dao: dao.NewDaoWrapper(), Meili: tools.NewMeiliSearchFunctions()}),
 	}
 	if subtitles != nil {
 		api2Opts = append(api2Opts, apiv2.WithSubtitleGenerator(subtitles, tools.Cfg.VoiceService.AuthToken))
