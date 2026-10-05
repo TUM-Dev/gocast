@@ -297,3 +297,22 @@ export async function apiPatchMessage<Req extends DescMessage, Res extends DescM
   const json = await apiPatch<JsonValue>(path, toJson(requestSchema, message));
   return fromJson(responseSchema, json, JSON_READ_OPTIONS);
 }
+
+export function apiPut<T>(path: string, body: unknown): Promise<T> {
+  return apiFetch<T>(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+/** Typed PUT, for the endpoints that replace a whole collection at once. */
+export async function apiPutMessage<Req extends DescMessage, Res extends DescMessage>(
+  requestSchema: Req,
+  responseSchema: Res,
+  path: string,
+  message: MessageShape<Req>,
+): Promise<MessageShape<Res>> {
+  const json = await apiPut<JsonValue>(path, toJson(requestSchema, message));
+  return fromJson(responseSchema, json, JSON_READ_OPTIONS);
+}

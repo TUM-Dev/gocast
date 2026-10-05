@@ -13,7 +13,10 @@ import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import AuditsView from "@/views/admin/AuditsView.vue";
+import CourseAdminLayout from "@/components/admin/CourseAdminLayout.vue";
 import CourseImportView from "@/views/admin/CourseImportView.vue";
+import CourseParticipantsView from "@/views/admin/CourseParticipantsView.vue";
+import CourseSettingsView from "@/views/admin/CourseSettingsView.vue";
 import CourseStatsView from "@/views/admin/CourseStatsView.vue";
 import CreateCourseView from "@/views/admin/CreateCourseView.vue";
 import InfoPagesView from "@/views/admin/InfoPagesView.vue";
@@ -194,9 +197,17 @@ const routes: RouteRecordRaw[] = [
     component: LectureHallCreateView,
   },
   {
-    path: "/admin/courses/:courseID/stats",
-    name: "admin-course-stats",
-    component: CourseStatsView,
+    // A course's administration page; each tab is a child route (rule 4 in
+    // web/router.go). The parent path is not in spaRoutes, so Go does not serve it;
+    // the redirect only catches an in-app navigation to it.
+    path: "/admin/courses/:courseID",
+    component: CourseAdminLayout,
+    children: [
+      { path: "", redirect: { name: "admin-course-settings" } },
+      { path: "settings", name: "admin-course-settings", component: CourseSettingsView },
+      { path: "stats", name: "admin-course-stats", component: CourseStatsView },
+      { path: "participants", name: "admin-course-participants", component: CourseParticipantsView },
+    ],
   },
   {
     path: "/admin/courses/:courseID/lectures/:streamID/stats",

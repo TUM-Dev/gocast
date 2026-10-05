@@ -2,7 +2,6 @@
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
-import AdminLayout from "@/components/admin/AdminLayout.vue";
 import StatsPanel from "@/components/admin/StatsPanel.vue";
 import { ApiError } from "@/lib/api";
 import { courseStatsExportLink, fetchCourseStats, type CourseStats } from "@/lib/course-stats";
@@ -10,9 +9,10 @@ import { usageCharts, usageCounters } from "@/lib/usage-stats";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
- * One course's usage statistics, for its lecturers. The server has already refused
- * anyone who does not administer the course before serving this page; getCourseStats
- * refuses them again, so the page cannot be the only guard.
+ * One course's usage statistics, for its lecturers: the statistics tab of the course's
+ * administration page, which supplies the frame and the course's name. The server has
+ * already refused anyone who does not administer the course before serving this page;
+ * getCourseStats refuses them again, so the page cannot be the only guard.
  */
 const auth = useAuthStore();
 const route = useRoute();
@@ -71,30 +71,22 @@ watch(
 </script>
 
 <template>
-  <AdminLayout>
-    <section class="mx-auto flex max-w-5xl flex-col gap-6">
-      <header>
-        <h1 class="text-1 text-2xl font-bold">Statistics</h1>
-        <p v-if="stats" class="text-3">
-          <!-- The course's settings are still a server-rendered page. -->
-          <a :href="`/admin/course/${courseId}`" class="hover:underline">{{ stats.courseName }}</a>
-        </p>
-      </header>
+  <section class="flex flex-col gap-6">
+    <h2 class="text-1 text-lg font-semibold">Statistics</h2>
 
-      <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
-        {{ error }}
-      </p>
+    <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
+      {{ error }}
+    </p>
 
-      <p v-if="loading" class="text-5 text-sm">Loading statistics…</p>
+    <p v-if="loading" class="text-5 text-sm">Loading statistics…</p>
 
-      <StatsPanel
-        v-else-if="stats"
-        :counters="counters"
-        :charts="charts"
-        :export-links="exportLinks"
-        :export-name="`course-${courseId}-stats`"
-        :partial-history="stats.partialHistory"
-      />
-    </section>
-  </AdminLayout>
+    <StatsPanel
+      v-else-if="stats"
+      :counters="counters"
+      :charts="charts"
+      :export-links="exportLinks"
+      :export-name="`course-${courseId}-stats`"
+      :partial-history="stats.partialHistory"
+    />
+  </section>
 </template>
