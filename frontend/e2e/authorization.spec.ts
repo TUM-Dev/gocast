@@ -5,7 +5,8 @@ import { permissionsByRole, users, type SeedUser } from "./seed";
 
 /**
  * What the v2 API lets each caller reach, end to end. policy_test.go covers the
- * interceptor in isolation; visibility.spec.ts covers what a handler then shows.
+ * interceptor in isolation; the visibility-*.spec.ts files cover what a handler then
+ * shows.
  */
 
 /** GET as `token`'s owner, or anonymously when it is null. */
