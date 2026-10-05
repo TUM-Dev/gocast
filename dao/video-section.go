@@ -11,6 +11,9 @@ import (
 type VideoSectionDao interface {
 	Create([]model.VideoSection) error
 	Update(*model.VideoSection) error
+	// UpdateContent writes the section's description and start, zero values included,
+	// which Update skips: it cannot move a section back to 0:00:00.
+	UpdateContent(*model.VideoSection) error
 	Delete(uint) error
 	Get(uint) (model.VideoSection, error)
 	GetByStreamId(uint) ([]model.VideoSection, error)
@@ -30,6 +33,12 @@ func (d videoSectionDao) Create(sections []model.VideoSection) error {
 
 func (d videoSectionDao) Update(section *model.VideoSection) error {
 	return d.db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&section).Error
+}
+
+func (d videoSectionDao) UpdateContent(section *model.VideoSection) error {
+	return d.db.Model(section).
+		Select("description", "start_hours", "start_minutes", "start_seconds").
+		Updates(section).Error
 }
 
 func (d videoSectionDao) Delete(videoSectionID uint) error {

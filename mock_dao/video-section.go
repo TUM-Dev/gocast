@@ -111,3 +111,17 @@ func (mr *MockVideoSectionDaoMockRecorder) Update(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockVideoSectionDao)(nil).Update), arg0)
 }
+
+// UpdateContent mocks base method.
+func (m *MockVideoSectionDao) UpdateContent(arg0 *model.VideoSection) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateContent", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateContent indicates an expected call of UpdateContent.
+func (mr *MockVideoSectionDaoMockRecorder) UpdateContent(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContent", reflect.TypeOf((*MockVideoSectionDao)(nil).UpdateContent), arg0)
+}

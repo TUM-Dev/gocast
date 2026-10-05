@@ -23,6 +23,7 @@ import (
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
 // API is the grpc server for the v2 api. It implements all four services, which are
@@ -40,6 +41,13 @@ type API struct {
 
 	// TUMOnline, for creating courses. Optional: see WithTUMOnline.
 	tumOnline TUMOnline
+
+	// A lecture's content: section thumbnails, subtitles and where uploads go. All
+	// optional: see WithSectionImages, WithSubtitleGenerator and WithMassStorage.
+	sectionImages SectionImages
+	subtitles     pb.SubtitleGeneratorClient
+	subtitlesAuth string
+	massStorage   string
 
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedUserServiceServer
@@ -121,6 +129,11 @@ func (a *API) Proxy() func(c *gin.Context) {
 		// gateway deliberately abstracts away.
 		if c.Request.URL.Path == "/api/v2/auth/token" {
 			a.handleAuthToken(c)
+			return
+		}
+		// Beside the gateway too: it cannot take a multipart body.
+		if route, ok := lectureUploadRouteOf(c.Request); ok {
+			a.handleLectureUpload(c, route)
 			return
 		}
 		http.StripPrefix("/api/v2", mux).ServeHTTP(c.Writer, c.Request)

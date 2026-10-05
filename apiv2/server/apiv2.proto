@@ -540,6 +540,89 @@ service CourseService {
       description: "Every semester's; every course for someone who administers them all. Requires the lecture permission."
     };
   }
+
+  // ----- Lecture administration, part 2 -----
+  // What the lecture card does to a lecture's content. Every one of these checks the
+  // lecture named is one of the course's and answers 404 for any other; a section or
+  // file named must also be that lecture's.
+  //
+  // Two uploads sit beside the gateway rather than in it, because it cannot take a
+  // multipart body: POST /courses/{course_id}/streams/{stream_id}/attachments and
+  // POST /courses/{course_id}/streams/{stream_id}/thumbnail, each a multipart form with
+  // the file in `file`, authorized as these RPCs are and answering the created file as
+  // a LectureFileAdmin.
+
+  rpc createLectureSections(CreateLectureSectionsRequest) returns (CreateLectureSectionsResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/sections"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Add chapters to a lecture."
+      description: "Creates the sections and answers all of the lecture's sections, in order. Minutes and seconds must be below 60 and every section needs a description. The sections' thumbnails are generated afterwards, by a runner or else a worker. Requires administering the course."
+    };
+  }
+
+  rpc updateLectureSection(UpdateLectureSectionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/streams/{stream_id}/sections/{section_id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Change one of a lecture's chapters."
+      description: "Replaces the section's description and start. A moved start has its thumbnail generated again. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureSection(DeleteLectureSectionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/sections/{section_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete one of a lecture's chapters."
+      description: "Deletes the section and asks a worker to delete its thumbnail. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureAttachment(DeleteLectureAttachmentRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/attachments/{file_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete one of a lecture's attachments."
+      description: "Deletes the attachment and its file on disk. The file must be one of the lecture's attachments; recordings and thumbnails answer 404. Requires administering the course."
+    };
+  }
+
+  rpc deleteLectureThumbnail(DeleteLectureThumbnailRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/thumbnail"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Delete a lecture's custom thumbnail."
+      description: "Deletes the uploaded thumbnail and its file, so the generated ones show again. Answers 404 when there is none. Requires administering the course."
+    };
+  }
+
+  rpc requestLectureSubtitles(RequestLectureSubtitlesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/subtitles"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Have subtitles generated for a lecture."
+      description: "Hands the lecture's recording to the voice service, which sends the subtitles back when done. Answers 400 for a lecture with no recording and 503 when no voice service is configured. Requires administering the course."
+    };
+  }
+
+  rpc getLectureTranscodingProgress(GetLectureTranscodingProgressRequest) returns (GetLectureTranscodingProgressResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/transcoding-progress"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get how far a lecture's transcoding is."
+      description: "The versions still transcoding, with their progress; a version that has finished is no longer listed. For polling while a lecture is converting. Requires administering the course."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -2737,6 +2820,73 @@ message CopyLectureRequest {
 message CopyLectureResponse {
   // The copy's ID, a new one even on a move.
   uint32 stream_id = 1;
+}
+
+// ----- Lecture administration, part 2 -----
+
+message LectureSectionInput {
+  string description = 1;
+  uint32 start_hours = 2;
+  // Below 60.
+  uint32 start_minutes = 3;
+  // Below 60.
+  uint32 start_seconds = 4;
+}
+
+message CreateLectureSectionsRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // At least one.
+  repeated LectureSectionInput sections = 3;
+}
+
+message CreateLectureSectionsResponse {
+  // All of the lecture's sections, the new ones included, in order of their start.
+  repeated LectureVideoSectionAdmin sections = 1;
+}
+
+message UpdateLectureSectionRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 section_id = 3;
+  string description = 4;
+  uint32 start_hours = 5;
+  uint32 start_minutes = 6;
+  uint32 start_seconds = 7;
+}
+
+message DeleteLectureSectionRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 section_id = 3;
+}
+
+message DeleteLectureAttachmentRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 file_id = 3;
+}
+
+message DeleteLectureThumbnailRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message RequestLectureSubtitlesRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // The spoken language, as an ISO 639 code: "de" or "en" on the old page.
+  string language = 3;
+}
+
+message GetLectureTranscodingProgressRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureTranscodingProgressResponse {
+  // Empty once every version has finished.
+  repeated LectureTranscodingProgress progresses = 1;
 }
 
 // ----- end of lecture administration -----
