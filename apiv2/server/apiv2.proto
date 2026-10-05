@@ -122,6 +122,15 @@ service MetaService {
         "without a redeploy."
     };
   }
+
+  rpc getIntegration(google.protobuf.Empty) returns (GetIntegrationResponse) {
+    option (google.api.http) = {get: "/integration"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Check integration credentials."
+      description: "Returns the integration authenticated by the bearer API key."
+    };
+  }
 }
 
 // The signed-in user's own account, and the endpoints the login page needs
@@ -3229,4 +3238,10 @@ message CreateFirstUserRequest {
   string name = 1;
   string email = 2;
   string password = 3;
+}
+
+message GetIntegrationResponse {
+  uint32 id = 1;
+  string name = 2;
+  string return_url = 3;
 }

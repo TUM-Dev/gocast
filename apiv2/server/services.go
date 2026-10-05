@@ -34,6 +34,7 @@ var services = []service{
 			"getInfoPage":            public,
 			"listInfoPages":          public,
 			"getNotifications":       authenticated,
+			"getIntegration":         integrationOnly,
 		},
 	},
 	{

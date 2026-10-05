@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"
@@ -10,6 +12,7 @@ import (
 
 type IntegrationDao interface {
 	CreateIntegration(*model.Integration) error
+	GetIntegrationByAPIKeyHash(context.Context, []byte) (model.Integration, error)
 	GetIntegrations() ([]model.Integration, error)
 	SetIntegrationAPIKey(uint, []byte) error
 }
@@ -22,6 +25,12 @@ func NewIntegrationDao() IntegrationDao { return &integrationDao{db: DB} }
 
 func (d integrationDao) CreateIntegration(integration *model.Integration) error {
 	return d.db.Create(integration).Error
+}
+
+func (d integrationDao) GetIntegrationByAPIKeyHash(ctx context.Context, hash []byte) (model.Integration, error) {
+	var integration model.Integration
+	err := d.db.WithContext(ctx).Where("api_key_hash = ?", hash).First(&integration).Error
+	return integration, err
 }
 
 func (d integrationDao) GetIntegrations() ([]model.Integration, error) {
