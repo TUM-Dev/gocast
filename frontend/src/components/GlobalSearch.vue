@@ -1,23 +1,21 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 /**
- * The header search field.
- *
- * Submitting navigates to /search, which is still server-rendered — so this is a full
- * navigation, not a route change. The live typeahead from search-global.gohtml is not
- * ported yet: it needs the Meilisearch endpoints, which exist only on the v1 API, and
- * it is course-context aware in a way that belongs with the course page. It arrives
- * with the start page.
+ * The header search field. Submitting opens the search page with the query; the
+ * live typeahead the template had is not ported, the page itself searches as one
+ * types.
  */
 const query = ref("");
+const router = useRouter();
 
 function submit(): void {
   const q = query.value.trim();
   if (q === "") {
     return;
   }
-  window.location.assign(`/search?q=${encodeURIComponent(q)}`);
+  void router.push({ name: "search", query: { q } });
 }
 </script>
 

@@ -12,6 +12,7 @@ import HomeView from "@/views/HomeView.vue";
 import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
+import SearchView from "@/views/SearchView.vue";
 import SetPasswordView from "@/views/SetPasswordView.vue";
 import CourseTokenView from "@/views/CourseTokenView.vue";
 import AuditsView from "@/views/admin/AuditsView.vue";
@@ -104,6 +105,14 @@ const routes: RouteRecordRaw[] = [
     path: "/settings",
     name: "settings",
     component: SettingsView,
+  },
+  {
+    // Visitors search public courses, a signed-in user finds more; the shell loads
+    // the user as it does for the start page.
+    path: "/search",
+    name: "search",
+    component: SearchView,
+    meta: { footer: true },
   },
   // The three built-in pages keep their own routes rather than falling under
   // "/:slug" below, so their URLs are unaffected by whatever an administrator does

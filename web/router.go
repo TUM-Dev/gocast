@@ -54,6 +54,7 @@ const spaShellPath = "spa/index.html"
 var spaRoutes = map[string]bool{
 	"/settings":                             true,
 	"/login":                                true,
+	"/search":                               true,
 	"/setPassword/:key":                     true,
 	"/edit-course":                          true,
 	"/edit-course/opt-out":                  true,
@@ -300,8 +301,8 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(&router.RouterGroup, http.MethodGet, "/imprint", nil)
 	registerPage(&router.RouterGroup, http.MethodGet, "/about", nil)
 
-	// search
-	router.GET("/search", routes.SearchPage)
+	// Public: anonymous callers search public courses; the page itself asks v2.
+	registerPage(&router.RouterGroup, http.MethodGet, "/search", nil)
 
 	// admins
 	//
@@ -446,14 +447,6 @@ func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 		return
 	}
 	c.Abort()
-}
-
-func (r mainRoutes) SearchPage(c *gin.Context) {
-	indexData := NewIndexDataWithContext(c)
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "search-page.gohtml", indexData); err != nil {
-		logger.Error("Could not execute template: 'search-page.gohtml'", "err", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-	}
 }
 
 func (r mainRoutes) semesterRedirect(c *gin.Context) {
