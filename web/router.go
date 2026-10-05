@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
@@ -418,9 +419,26 @@ func configMainRoute(router *gin.Engine) {
 		c.Redirect(http.StatusFound, "/")
 	})
 
-	router.NoRoute(func(c *gin.Context) {
+	router.NoRoute(serveNotFound)
+}
+
+// serveNotFound is the 404 for a path nothing owns. A page gets the SPA shell with
+// that status and the client renders the not-found page; a request under /api/ keeps
+// the error template, which v1's clients and the browser tests read as text.
+func serveNotFound(c *gin.Context) {
+	if !spaAvailable() || strings.HasPrefix(c.Request.URL.Path, "/api/") {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
-	})
+		return
+	}
+	shell, err := readSPAShell()
+	if err != nil {
+		logger.Error("can't read SPA shell", "err", err)
+		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusNotFound, "text/html; charset=utf-8", shell)
+	c.Abort()
 }
 
 type mainRoutes struct {
