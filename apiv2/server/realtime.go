@@ -84,7 +84,9 @@ func (a *API) serveRealtime(w http.ResponseWriter, r *http.Request) {
 		// The upgrader has already answered with an HTTP error.
 		return
 	}
-	defer conn.Close()
+	// The close error is uninteresting here: the socket is done either way, and a
+	// failed close has nothing left to report to.
+	defer func() { _ = conn.Close() }()
 
 	streamID, err := strconv.ParseUint(r.URL.Query().Get("stream"), 10, 32)
 	if err != nil || streamID == 0 {
