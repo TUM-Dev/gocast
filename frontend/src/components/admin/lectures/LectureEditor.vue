@@ -5,8 +5,8 @@ import { computed, reactive, ref, watch } from "vue";
 
 import LectureCopyForm from "@/components/admin/lectures/LectureCopyForm.vue";
 import StreamKeyInfo from "@/components/admin/lectures/StreamKeyInfo.vue";
+import LectureContent from "@/components/admin/lectures/content/LectureContent.vue";
 import {
-  FILE_TYPE_ATTACHMENT,
   deleteLectureSeries,
   deleteLectures,
   lectureErrorMessage,
@@ -222,10 +222,6 @@ function deleteSeries(): void {
   void run(() => deleteLectureSeries(props.courseId, id.value), "Series deleted.");
 }
 
-/* What the list carries about content, shown read-only. */
-
-const attachments = computed(() => props.lecture.files.filter((f) => f.type === FILE_TYPE_ATTACHMENT));
-
 const field = (name: string) => `lecture-${id.value}-${name}`;
 </script>
 
@@ -383,36 +379,8 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
       </div>
     </form>
 
-    <!-- Recording and content, read-only here. -->
-    <section class="flex flex-col gap-2 text-sm">
-      <h3 class="text-5 border-b text-xs font-semibold uppercase tracking-wide dark:border-gray-700">
-        Recording and content
-      </h3>
-      <!--
-        Extension point: uploading or replacing videos, attachments, a custom
-        thumbnail, editing sections, requesting subtitles and VoD downloads land here
-        with their RPCs (lecture content, part 2). Until then they are on the
-        server-rendered course page.
-      -->
-      <dl class="text-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-        <dt class="text-5">Versions</dt>
-        <dd>{{ lecture.vodVersions.length ? lecture.vodVersions.join(", ") : "None recorded" }}</dd>
-        <dt class="text-5">Attachments</dt>
-        <dd>
-          <template v-if="attachments.length">
-            {{ attachments.map((f) => f.friendlyName).join(", ") }}
-          </template>
-          <template v-else>None</template>
-        </dd>
-        <dt class="text-5">Sections</dt>
-        <dd>{{ lecture.videoSectionCount }}</dd>
-      </dl>
-      <p class="text-5 text-xs">
-        Videos, attachments, the thumbnail, sections and subtitles are still managed on
-        <a :href="`/admin/course/${courseId}#lecture-${lecture.id}`" class="underline hover:text-1">the
-          course page</a>.
-      </p>
-    </section>
+    <!-- Recording, sections, attachments and thumbnail. -->
+    <LectureContent :course-id="courseId" :lecture="lecture" @changed="emit('changed')" />
 
     <!-- Copy or move -->
     <LectureCopyForm

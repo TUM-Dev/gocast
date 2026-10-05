@@ -83,7 +83,9 @@ describe("fetchCourseLectures", () => {
     expect(lecture.vodVersions).toEqual(["COMB", "PRES"]);
     expect(lecture.files).toEqual([{ id: 3, type: 2, friendlyName: "slides.pdf" }]);
     expect(lecture.transcodingProgresses).toEqual([{ version: "CAM", progress: 40 }]);
-    expect(lecture.videoSectionCount).toBe(1);
+    expect(lecture.videoSections).toEqual([
+      { id: 1, description: "Intro", startHours: 0, startMinutes: 0, startSeconds: 0, fileId: 0 },
+    ]);
     expect(lecture.seriesIdentifier).toBe("abc");
   });
 
@@ -213,7 +215,7 @@ function lecture(overrides: Partial<CourseLecture> = {}): CourseLecture {
     durationSeconds: 0,
     files: [],
     transcodingProgresses: [],
-    videoSectionCount: 0,
+    videoSections: [],
     ...overrides,
   };
 }

@@ -15,6 +15,17 @@ import { ApiError, apiDelete, apiFetch, apiGetMessage, apiPatch, apiPost } from 
 /** model.FileType's attachment; the kinds above it are thumbnails. */
 export const FILE_TYPE_ATTACHMENT = 2;
 
+/** A chapter of a lecture's recording. */
+export interface LectureSection {
+  id: number;
+  description: string;
+  startHours: number;
+  startMinutes: number;
+  startSeconds: number;
+  /** Its thumbnail's file, 0 until one has been generated. */
+  fileId: number;
+}
+
 export interface CourseLecture {
   id: number;
   courseId: number;
@@ -44,7 +55,8 @@ export interface CourseLecture {
   durationSeconds: number;
   files: { id: number; type: number; friendlyName: string }[];
   transcodingProgresses: { version: string; progress: number }[];
-  videoSectionCount: number;
+  /** In order of their start, as the server sends them. */
+  videoSections: LectureSection[];
 }
 
 function toLecture(l: CourseLectureAdmin): CourseLecture {
@@ -74,7 +86,14 @@ function toLecture(l: CourseLectureAdmin): CourseLecture {
       version: p.version,
       progress: p.progress,
     })),
-    videoSectionCount: l.videoSections.length,
+    videoSections: l.videoSections.map((v) => ({
+      id: v.id,
+      description: v.description,
+      startHours: v.startHours,
+      startMinutes: v.startMinutes,
+      startSeconds: v.startSeconds,
+      fileId: v.fileId,
+    })),
   };
 }
 

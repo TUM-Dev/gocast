@@ -210,6 +210,17 @@ export function apiPost<T>(path: string, body: unknown): Promise<T> {
   });
 }
 
+/**
+ * POST of a multipart form, for the upload endpoints beside the gateway. No
+ * Content-Type of our own: the browser sets it with the boundary the body needs. Their
+ * failures come in the gateway's shape, so they surface as the same ApiError.
+ *
+ * fetch reports no upload progress; callers show a busy state instead.
+ */
+export function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  return apiFetch<T>(path, { method: "POST", body: form });
+}
+
 /** DELETE, for endpoints that answer with an empty body. */
 export function apiDelete(path: string): Promise<void> {
   return apiFetch<void>(path, { method: "DELETE" });
