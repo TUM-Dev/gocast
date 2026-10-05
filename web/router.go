@@ -58,6 +58,7 @@ var spaRoutes = map[string]bool{
 	"/setPassword/:key":                     true,
 	"/edit-course":                          true,
 	"/edit-course/opt-out":                  true,
+	"/onboarding":                           true,
 	"/":                                     true,
 	"/courses/mine":                         true,
 	"/courses/public":                       true,
@@ -233,7 +234,7 @@ func pageHandler(path string, legacy gin.HandlerFunc, spaBuilt bool) (gin.Handle
 	return func(c *gin.Context) {
 		hook(c)
 		// A hook may answer the request instead of preparing for the shell: the
-		// fresh-installation check on "/" renders the onboarding page and aborts.
+		// fresh-installation check on "/" redirects to the onboarding page and aborts.
 		// Writing the shell after that would append it to a finished response.
 		if c.IsAborted() {
 			return
@@ -381,6 +382,8 @@ func configMainRoute(router *gin.Engine) {
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
 	registerPage(&router.RouterGroup, http.MethodGet, "/login", nil)
+	// Public: the page itself finds out from getFrontendConfig whether it still applies.
+	registerPage(&router.RouterGroup, http.MethodGet, "/onboarding", nil)
 	router.GET("/logout", routes.LogoutPage)
 	// The key in the link is the credential; the page asks v2 whether it is still good.
 	registerPage(&router.RouterGroup, http.MethodGet, "/setPassword/:key", nil)
@@ -424,12 +427,13 @@ type mainRoutes struct {
 	dao.DaoWrapper
 }
 
-// onboardingIfFresh answers "/" itself while the deployment has no users, offering to
-// create the first account instead of a start page nobody can sign in to.
+// onboardingIfFresh sends "/" to the onboarding page while the deployment has no
+// users, where the first account is created, instead of a start page nobody can sign
+// in to.
 //
 // This stays server-side because the shell would otherwise render the start page for
-// a moment before finding out. GetFrontendConfig reports the same flag, so the
-// onboarding page can move to the client once it is migrated too.
+// a moment before finding out. The onboarding page itself asks GetFrontendConfig,
+// which reports the same flag, so it can refuse once an account exists.
 func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
@@ -441,11 +445,7 @@ func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 		return
 	}
 
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
-		logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-		return
-	}
+	c.Redirect(http.StatusFound, "/onboarding")
 	c.Abort()
 }
 

@@ -15,6 +15,7 @@ import LoginView from "@/views/LoginView.vue";
 import SearchView from "@/views/SearchView.vue";
 import SetPasswordView from "@/views/SetPasswordView.vue";
 import CourseTokenView from "@/views/CourseTokenView.vue";
+import OnboardingView from "@/views/OnboardingView.vue";
 import AuditsView from "@/views/admin/AuditsView.vue";
 import CourseAdminLayout from "@/components/admin/CourseAdminLayout.vue";
 import CourseImportView from "@/views/admin/CourseImportView.vue";
@@ -268,6 +269,13 @@ const routes: RouteRecordRaw[] = [
     name: "course-opt-out",
     component: CourseTokenView,
     props: { mode: "opt-out" },
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // Where "/" sends a fresh deployment; the page refuses once an account exists.
+    path: "/onboarding",
+    name: "onboarding",
+    component: OnboardingView,
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
 ];
