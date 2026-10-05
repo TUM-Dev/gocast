@@ -198,7 +198,7 @@ type SearchSubtitlesDTO struct {
 // ---
 // canSearchHiddenCourses indicates whether the response may include streams or subtitles of a hidden course
 // should only be true when the user has explicitly named the hidden course he wants to search through in the url params
-func checkAndFillResponse(c *gin.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse, canSearchHiddenCourses bool) {
+func checkAndFillResponse(c context.Context, user *model.User, limit int64, daoWrapper dao.DaoWrapper, response *meilisearch.MultiSearchResponse, canSearchHiddenCourses bool) {
 	var userEligibleToSeeResultsOfHiddenCourse func(course model.Course) bool
 	if canSearchHiddenCourses {
 		userEligibleToSeeResultsOfHiddenCourse = user.IsEligibleToWatchCourse
@@ -543,7 +543,7 @@ func parseSemesters(semestersParam string) ([]model.Semester, error) {
 // parseCourses parses the URL Parameter course (urlParamCourse) and returns a slice containing every course in the parameter or an error code
 //
 // Checking if the user is allowed to see returned courses is the caller's responsibility
-func parseCourses(c *gin.Context, daoWrapper dao.DaoWrapper, urlParamCourse string) ([]model.Course, uint) {
+func parseCourses(c context.Context, daoWrapper dao.DaoWrapper, urlParamCourse string) ([]model.Course, uint) {
 	coursesStrings := strings.Split(urlParamCourse, ",")
 
 	regex, err := regexp.Compile(`^.+[0-9]{4}[WS]$`) //nolint:all

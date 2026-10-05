@@ -45,6 +45,8 @@ type API struct {
 	// A lecture's content: section thumbnails, subtitles and where uploads go. All
 	// optional: see WithSectionImages, WithSubtitleGenerator and WithMassStorage.
 	sectionImages SectionImages
+	// Courses, lectures and subtitles by text; see WithSearch.
+	search        Search
 	subtitles     pb.SubtitleGeneratorClient
 	subtitlesAuth string
 	massStorage   string
