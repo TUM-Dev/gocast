@@ -12,6 +12,7 @@ import HomeView from "@/views/HomeView.vue";
 import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
+import SetPasswordView from "@/views/SetPasswordView.vue";
 import AuditsView from "@/views/admin/AuditsView.vue";
 import CourseAdminLayout from "@/components/admin/CourseAdminLayout.vue";
 import CourseImportView from "@/views/admin/CourseImportView.vue";
@@ -232,6 +233,15 @@ const routes: RouteRecordRaw[] = [
     component: LoginView,
     // Search, notifications and the account menu do not apply before signing in. The
     // server-rendered login page uses the same reduced chrome.
+    meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // The link a password reset or account invite mails. camelCase, unlike every other
+    // path: it is in emails that were already sent.
+    path: "/setPassword/:key",
+    name: "set-password",
+    component: SetPasswordView,
+    props: true,
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
 ];
