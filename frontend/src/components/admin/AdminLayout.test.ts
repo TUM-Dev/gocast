@@ -169,3 +169,26 @@ describe("the administration sidebar", () => {
     });
   });
 });
+
+describe("the sidebar on a phone", () => {
+  it("is folded away behind its button and closes again after following a link", async () => {
+    const wrapper = mountAs(["server.administer"]);
+    await wrapper.vm.$nextTick();
+    const nav = wrapper.get("nav");
+    const button = wrapper.get("button[aria-controls='admin-navigation']");
+
+    // Hidden below md, a column from md up: the classes carry the breakpoint.
+    expect(nav.classes()).toContain("hidden");
+    expect(nav.classes()).toContain("md:block");
+    expect(button.attributes("aria-expanded")).toBe("false");
+
+    await button.trigger("click");
+    expect(nav.classes()).toContain("block");
+    expect(nav.classes()).not.toContain("hidden");
+    expect(button.attributes("aria-expanded")).toBe("true");
+
+    await wrapper.vm.$router.push("/admin/users");
+    await flushPromises();
+    expect(nav.classes()).toContain("hidden");
+  });
+});
