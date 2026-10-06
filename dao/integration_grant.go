@@ -34,6 +34,7 @@ func (d integrationGrantDao) GetIntegrationByID(ctx context.Context, id uint) (m
 	return integration, err
 }
 
+// Unlike the cached administered-course list, approval needs a current owner or explicit course administrator.
 func (d integrationGrantDao) GetAuthorizableCourses(ctx context.Context, userID uint) ([]model.Course, error) {
 	var courses []model.Course
 	err := d.db.WithContext(ctx).Distinct("courses.*").
@@ -52,6 +53,7 @@ func (d integrationGrantDao) GetCourseForAuthorization(ctx context.Context, cour
 func (d integrationGrantDao) ApproveIntegrationCourse(ctx context.Context, integrationID, courseID uint, codeHash, stateHash []byte, expiresAt time.Time) (grantID uint, err error) {
 	err = d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var integration model.Integration
+		// Serialize approvals so concurrent requests reuse one active grant.
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id").First(&integration, integrationID).Error; err != nil {
 			return err
 		}

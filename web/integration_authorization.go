@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -36,6 +37,7 @@ func integrationPathID(c *gin.Context, name string) (uint, bool) {
 	return uint(id), err == nil && id != 0
 }
 
+// Approval needs an explicit course role; CanAdminister also permits instance admins.
 func canAuthorizeCourse(user *model.User, course model.Course) bool {
 	if user == nil || user.ID == 0 {
 		return false
@@ -151,11 +153,19 @@ func (r mainRoutes) authorizeIntegration(c *gin.Context) {
 		return
 	}
 	codeHash, stateHash := sha256.Sum256(codeRaw), sha256.Sum256(stateRaw)
-	if _, err := r.IntegrationGrantDao.ApproveIntegrationCourse(c, integrationID, courseID, codeHash[:], stateHash[:], time.Now().Add(integrationCodeLifetime)); err != nil {
+	grantID, err := r.IntegrationGrantDao.ApproveIntegrationCourse(c, integrationID, courseID, codeHash[:], stateHash[:], time.Now().Add(integrationCodeLifetime))
+	if err != nil {
 		logger.Error("could not save integration authorization", "err", err)
 		c.Status(http.StatusInternalServerError)
 		tools.RenderErrorPage(c, http.StatusInternalServerError, "We couldn't save this authorization. Go back to the authorization page and try again.")
 		return
+	}
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    user,
+		Message: fmt.Sprintf("%s:'%s' authorize integration: %s (%d)", course.Name, course.Slug, integration.Name, grantID),
+		Type:    model.AuditCourseEdit,
+	}); err != nil {
+		logger.Error("Create Audit:", "err", err)
 	}
 	code := base64.RawURLEncoding.EncodeToString(codeRaw)
 	c.Redirect(http.StatusFound, integrationReturnURL(integration.ReturnURL, state, "code", code))

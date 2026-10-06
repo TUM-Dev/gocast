@@ -46,7 +46,7 @@ func authorizationState(fill byte) string {
 	return base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{fill}, 32))
 }
 
-func serveAuthorization(t *testing.T, integrationGrantDao dao.IntegrationGrantDao, user *model.User, method, target string, form url.Values) (*httptest.ResponseRecorder, *authorizationTemplateCapture) {
+func serveAuthorization(t *testing.T, integrationGrantDao dao.IntegrationGrantDao, auditDao dao.AuditDao, user *model.User, method, target string, form url.Values) (*httptest.ResponseRecorder, *authorizationTemplateCapture) {
 	t.Helper()
 	capture := &authorizationTemplateCapture{}
 	previousTemplateExecutor := templateExecutor
@@ -57,7 +57,7 @@ func serveAuthorization(t *testing.T, integrationGrantDao dao.IntegrationGrantDa
 	router.Use(func(c *gin.Context) { c.Set("TUMLiveContext", tools.TUMLiveContext{User: user}) })
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
-	routes := mainRoutes{DaoWrapper: dao.DaoWrapper{IntegrationGrantDao: integrationGrantDao}}
+	routes := mainRoutes{DaoWrapper: dao.DaoWrapper{IntegrationGrantDao: integrationGrantDao, AuditDao: auditDao}}
 	loggedIn.GET("/integration/authorize/:id", routes.integrationAuthorizationPage)
 	loggedIn.POST("/integration/authorize/:id", routes.authorizeIntegration)
 	var body io.Reader
@@ -83,7 +83,7 @@ func TestIntegrationAuthorizationPage(t *testing.T) {
 	user := &model.User{Model: gorm.Model{ID: 1}, Role: model.LecturerType}
 	state := authorizationState(1)
 
-	recorder, capture := serveAuthorization(t, integrationGrantDao, user, http.MethodGet, "/integration/authorize/7?state="+state, nil)
+	recorder, capture := serveAuthorization(t, integrationGrantDao, nil, user, http.MethodGet, "/integration/authorize/7?state="+state, nil)
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	require.NotNil(t, capture.authorization)
@@ -95,24 +95,30 @@ func TestIntegrationAuthorizationPage(t *testing.T) {
 func TestIntegrationAuthorizationApprovesOnlyOwnerOrDelegate(t *testing.T) {
 	state := authorizationState(3)
 	course := model.Course{
+		Name:   "Example course",
+		Slug:   "example",
 		UserID: 1,
 		Admins: []model.User{{Model: gorm.Model{ID: 2}}},
 	}
 	for _, test := range []struct {
-		name    string
-		userID  uint
-		role    uint
-		allowed bool
+		name     string
+		userID   uint
+		role     uint
+		allowed  bool
+		auditErr error
 	}{
 		{name: "owner", userID: 1, role: model.LecturerType, allowed: true},
 		{name: "delegate", userID: 2, role: model.LecturerType, allowed: true},
+		{name: "audit failure", userID: 1, role: model.LecturerType, allowed: true, auditErr: errors.New("audit failed")},
 		{name: "outsider", userID: 3, role: model.LecturerType},
 		{name: "instance admin without course grant", userID: 4, role: model.AdminType},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			integrationGrantDao := mock_dao.NewMockIntegrationGrantDao(ctrl)
-			integration := model.Integration{ID: 7, ReturnURL: "https://client.example/callback?existing=1"}
+			auditDao := mock_dao.NewMockAuditDao(ctrl)
+			user := &model.User{Model: gorm.Model{ID: test.userID}, Role: test.role}
+			integration := model.Integration{ID: 7, Name: "Course portal", ReturnURL: "https://client.example/callback?existing=1"}
 			integrationGrantDao.EXPECT().GetIntegrationByID(gomock.Any(), uint(7)).Return(integration, nil)
 			integrationGrantDao.EXPECT().GetCourseForAuthorization(gomock.Any(), uint(11)).Return(course, nil)
 			var codeHash, stateHash []byte
@@ -125,11 +131,15 @@ func TestIntegrationAuthorizationApprovesOnlyOwnerOrDelegate(t *testing.T) {
 						expiresAt = gotExpiresAt
 						return 19, nil
 					})
+				auditDao.EXPECT().Create(&model.Audit{
+					User:    user,
+					Message: "Example course:'example' authorize integration: Course portal (19)",
+					Type:    model.AuditCourseEdit,
+				}).Return(test.auditErr)
 			}
-			user := &model.User{Model: gorm.Model{ID: test.userID}, Role: test.role}
 			form := url.Values{"state": {state}, "decision": {"approve"}, "course_id": {"11"}}
 
-			recorder, capture := serveAuthorization(t, integrationGrantDao, user, http.MethodPost, "/integration/authorize/7", form)
+			recorder, capture := serveAuthorization(t, integrationGrantDao, auditDao, user, http.MethodPost, "/integration/authorize/7", form)
 
 			if !test.allowed {
 				assert.Equal(t, http.StatusForbidden, recorder.Code)
@@ -156,7 +166,7 @@ func TestIntegrationAuthorizationApprovesOnlyOwnerOrDelegate(t *testing.T) {
 func TestIntegrationAuthorizationRejectsInvalidStateBeforeWrites(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	user := &model.User{Model: gorm.Model{ID: 1}, Role: model.LecturerType}
-	recorder, capture := serveAuthorization(t, mock_dao.NewMockIntegrationGrantDao(ctrl), user, http.MethodPost, "/integration/authorize/7", url.Values{
+	recorder, capture := serveAuthorization(t, mock_dao.NewMockIntegrationGrantDao(ctrl), nil, user, http.MethodPost, "/integration/authorize/7", url.Values{
 		"state": {"short"}, "decision": {"approve"}, "course_id": {"11"},
 	})
 
@@ -173,7 +183,7 @@ func TestIntegrationAuthorizationCancelDoesNotPersist(t *testing.T) {
 	state := authorizationState(6)
 	user := &model.User{Model: gorm.Model{ID: 1}}
 
-	recorder, _ := serveAuthorization(t, integrationGrantDao, user, http.MethodPost, "/integration/authorize/7", url.Values{
+	recorder, _ := serveAuthorization(t, integrationGrantDao, nil, user, http.MethodPost, "/integration/authorize/7", url.Values{
 		"state": {state}, "decision": {"cancel"},
 	})
 
@@ -192,7 +202,7 @@ func TestIntegrationAuthorizationReportsWriteFailure(t *testing.T) {
 	integrationGrantDao.EXPECT().GetCourseForAuthorization(gomock.Any(), uint(11)).Return(model.Course{UserID: 1}, nil)
 	integrationGrantDao.EXPECT().ApproveIntegrationCourse(gomock.Any(), uint(7), uint(11), gomock.Any(), gomock.Any(), gomock.Any()).Return(uint(0), errors.New("write failed"))
 	user := &model.User{Model: gorm.Model{ID: 1}}
-	recorder, capture := serveAuthorization(t, integrationGrantDao, user, http.MethodPost, "/integration/authorize/7", url.Values{
+	recorder, capture := serveAuthorization(t, integrationGrantDao, nil, user, http.MethodPost, "/integration/authorize/7", url.Values{
 		"state": {authorizationState(10)}, "decision": {"approve"}, "course_id": {"11"},
 	})
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
