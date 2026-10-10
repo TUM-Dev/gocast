@@ -119,7 +119,7 @@ func (a *API) GetPublicCourses(ctx context.Context, req *protobuf.GetPublicCours
 
 	resp := make([]*protobuf.Course, len(courses))
 	for i, course := range courses {
-		resp[i] = h.ParseCourseToProto(course, user)
+		resp[i] = h.ParseCourseSummaryToProto(course, user)
 	}
 
 	return &protobuf.GetPublicCoursesResponse{Courses: resp}, nil

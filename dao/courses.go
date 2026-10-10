@@ -57,6 +57,30 @@ type CoursesDaoImpl struct {
 	usersDao UsersDao
 }
 
+// publicCourseStreamFilter narrows a course's preloaded streams to the ones the
+// course listings derive anything from: Course.GetNextLecture reads the lectures that
+// have not ended, Course.GetLastRecording the newest recording that has started.
+//
+// The newest recording is taken once among the private lectures and once among the
+// rest, hence the GROUP BY: which of the two a caller gets depends on whether they
+// administer the course, and that is decided after this query, per caller.
+func publicCourseStreamFilter(db *gorm.DB) *gorm.DB {
+	// From the server's clock, not NOW(): the getters compare against time.Now(), and
+	// the database session need not be in the same time zone.
+	now := time.Now()
+
+	// Aliased, or MySQL resolves `streams.course_id` against the subquery itself. A
+	// table without a model also gets no soft-delete scope, so that is spelled out.
+	latestRecordings := DB.Table("streams AS s").
+		Select("MAX(s.start)").
+		Where("s.course_id = streams.course_id AND s.recording AND s.start <= ? AND s.deleted_at IS NULL", now).
+		Group("s.private")
+
+	return db.
+		Where("(streams.end > ? OR (streams.recording AND streams.start IN (?)))", now, latestRecordings).
+		Order("start asc")
+}
+
 func NewCoursesDao() CoursesDaoImpl {
 	return CoursesDaoImpl{db: DB, usersDao: NewUsersDao()}
 }
@@ -168,9 +192,8 @@ func (d CoursesDaoImpl) GetPublicCourses(year int, term string) (courses []model
 	}
 	var publicCourses []model.Course
 
-	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?",
+	err = DB.Preload("Streams", publicCourseStreamFilter).Find(&publicCourses,
+		"visibility = 'public' AND teaching_term = ? AND year = ?",
 		term, year).Error
 
 	if err == nil {
@@ -186,9 +209,7 @@ func (d CoursesDaoImpl) GetPublicAndLoggedInCourses(year int, term string) (cour
 	}
 	var publicCourses []model.Course
 
-	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
-	}).Find(&publicCourses,
+	err = DB.Preload("Streams", publicCourseStreamFilter).Find(&publicCourses,
 		"(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?", term, year).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term), publicCourses, 1, time.Minute)
