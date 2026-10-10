@@ -91,6 +91,10 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	args = append(args, strings.Split(`-f hls -hls_time 2 -hls_playlist_type event -hls_flags append_list -hls_segment_filename `+liveRecDir+"/%05d.ts "+liveRecDir+"/playlist.m3u8", " ")...)
 
 	command := exec.CommandContext(ctx, "ffmpeg", args...)
+	// Interrupt rather than kill, which is what CommandContext does by default: ffmpeg
+	// writes the HLS trailer, #EXT-X-ENDLIST, only on a graceful shutdown, and MkVOD
+	// reads a playlist without it as a live one and waits for segments forever.
+	command.Cancel = func() error { return command.Process.Signal(os.Interrupt) }
 	// give ffmpeg 10 seconds on sigterm (context cancellation) to shut down before sending sigkill.
 	command.WaitDelay = 10 * time.Second
 

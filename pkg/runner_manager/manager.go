@@ -754,6 +754,12 @@ func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool)
 	if err := m.dao.StreamsDao.SetStreamNotLiveById(streamID); err != nil {
 		errs = append(errs, fmt.Errorf("set stream not live: %w", err))
 	}
+	// Not-live alone makes the stream due again: TriggerDueStreams picks up every stream that
+	// is not live and not ended within 10 minutes of its start, and only skips the ones that
+	// still have a runner job — which was just cleared. Mark it ended so it stays stopped.
+	if err := m.dao.StreamsDao.SaveEndedState(streamID, true); err != nil {
+		errs = append(errs, fmt.Errorf("set stream ended: %w", err))
+	}
 	m.notifyLiveState(streamID, false)
 
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(uint64(streamID), 10))
