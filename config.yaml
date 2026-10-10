@@ -107,6 +107,7 @@ voiceservice:
   port: 50055
 weburl: https://live.rbg.tum.de
 workertoken: abc
+runnertoken: abc # runners set the same value as TOKEN
 meili:
   host: http://localhost:7700
   apiKey: MASTER_KEY

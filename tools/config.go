@@ -61,6 +61,14 @@ func initConfig() {
 			logger.Warn("Can't write out config ", "err", err)
 		}
 	}
+	if Cfg.RunnerToken == "" {
+		Cfg.RunnerToken = uuid.NewV4().String()
+		viper.Set("runnerToken", Cfg.RunnerToken)
+		err = viper.WriteConfig()
+		if err != nil {
+			logger.Warn("Can't write out config ", "err", err)
+		}
+	}
 	if Cfg.JWTKey == nil {
 		logger.Info("Generating new JWT key")
 		JWTKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
@@ -174,9 +182,13 @@ type Config struct {
 		Port      string `yaml:"port"`
 		AuthToken string `yaml:"authToken"`
 	}
-	IngestBase  string  `yaml:"ingestBase"`
-	WebUrl      string  `yaml:"webUrl"`
-	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool
+	IngestBase  string `yaml:"ingestBase"`
+	WebUrl      string `yaml:"webUrl"`
+	WorkerToken string `yaml:"workerToken"` // used for workers to join the worker pool
+	// RunnerToken is the shared secret runners present on :50056 and gocast presents to a
+	// runner's gRPC port. Deliberately separate from WorkerToken: the workers are on their
+	// way out and their token has been handed to third parties.
+	RunnerToken string  `yaml:"runnerToken"`
 	JWTKey      *string `yaml:"jwtKey"`
 	Meili       *struct {
 		Host   string `yaml:"host"`

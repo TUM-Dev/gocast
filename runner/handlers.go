@@ -13,6 +13,9 @@ import (
 )
 
 func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
+	if err := validateStreamRequest(req); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 	data := map[string]any{
 		"streamID":      req.GetStreamId(),
 		"streamVersion": protobuf.StreamVersion_name[int32(req.GetVersion())],
@@ -22,7 +25,8 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		"outputOpts":    req.GetFfmpegOutputOptions(),
 		"input":         req.GetInput(),
 	}
-	r.log.Info("RequestStream data constructed", "data", data)
+	// The input url carries the camera credentials, so it stays out of the log.
+	r.log.Info("RequestStream data constructed", "streamID", req.GetStreamId(), "version", req.GetVersion(), "end", req.GetEnd().AsTime())
 	a := []actions.Action{
 		actions.Stream,
 		actions.StreamEnd,
@@ -32,7 +36,7 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
-	jID := r.RunAction(a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
+	jID := r.RunAction(a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion()))
 	r.log.Info("job added", "ID", jID)
 
 	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
@@ -69,8 +73,8 @@ func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionIm
 	if len(sections) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "no sections given")
 	}
-	if req.GetPlaylistUrl() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "no playlist url given")
+	if err := validatePlaylistURL(req.GetPlaylistUrl()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	data := map[string]any{
