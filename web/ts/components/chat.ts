@@ -51,7 +51,10 @@ export function chatContext(streamId: number, user: User, isRecording: boolean):
                     this.replay.activate(player, this.updateGrayedOut.bind(this));
                 });
             } else {
-                Alpine.nextTick(() => this.scrollToBottom());
+                this.__initpromise.then(() => {
+                    this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.user)));
+                    Alpine.nextTick(() => this.scrollToBottom());
+                });
             }
             this.attachedPlayer = player;
             this.streamStart = new Date(streamStart);
