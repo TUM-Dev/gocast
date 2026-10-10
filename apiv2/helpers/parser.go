@@ -67,12 +67,23 @@ func ParseBookmarkToProto(b model.Bookmark) *protobuf.Bookmark {
 	}
 }
 
+// ParseCourseSummaryToProto converts a course to the reduced representation used
+// on list pages. Its two streams carry no playlist URLs and no downloads: signing a
+// playlist costs an RSA signature each, and only the player and detail pages use them.
+func ParseCourseSummaryToProto(c model.Course, u *model.User) *protobuf.Course {
+	return parseCourseToProto(c, u, true)
+}
+
 // ParseCourseToProto converts a Course model to its protobuf representation.
 //
 // Everything derived here is derived for u: the private lectures of a course the
 // caller does not administer are left out of the last recording and the next lecture,
 // and the pin is the caller's own.
 func ParseCourseToProto(c model.Course, u *model.User) *protobuf.Course {
+	return parseCourseToProto(c, u, false)
+}
+
+func parseCourseToProto(c model.Course, u *model.User, summary bool) *protobuf.Course {
 	course := &protobuf.Course{
 		Id:   uint32(c.ID),
 		Name: c.Name,
@@ -99,10 +110,10 @@ func ParseCourseToProto(c model.Course, u *model.User) *protobuf.Course {
 	// absent rather than sent as a stream with id 0, which every caller would then
 	// have to know to test for — as the Alpine start page did.
 	if last := c.GetLastRecording(u); last.ID != 0 {
-		course.LastRecording = ParseStreamToProto(*last, c, u)
+		course.LastRecording = parseStreamToProto(*last, c, u, summary)
 	}
 	if next := c.GetNextLecture(u); next.ID != 0 {
-		course.NextLecture = ParseStreamToProto(*next, c, u)
+		course.NextLecture = parseStreamToProto(*next, c, u, summary)
 	}
 
 	return course
@@ -134,9 +145,19 @@ func ParseSemesterToProto(semester model.Semester) *protobuf.Semester {
 
 // ParseStreamToProto converts a Stream model to its protobuf representation.
 func ParseStreamToProto(stream model.Stream, course model.Course, user *model.User) *protobuf.Stream {
+	return parseStreamToProto(stream, course, user, false)
+}
+
+func parseStreamToProto(stream model.Stream, course model.Course, user *model.User, summary bool) *protobuf.Stream {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
-	_ = tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled)
+	if summary {
+		// Left out rather than sent unsigned: a playlist URL without its token plays
+		// nothing, and would look like one that should.
+		stream.PlaylistUrl, stream.PlaylistUrlPRES, stream.PlaylistUrlCAM = "", "", ""
+	} else {
+		_ = tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled)
+	}
 
 	s := &protobuf.Stream{
 		Id:               uint32(stream.ID),
@@ -164,10 +185,15 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		EndOffset:        uint32(stream.EndOffset),
 		IsPlanned:        stream.IsPlanned(),
 		IsComingUp:       stream.IsComingUp(),
-		HlsUrl:           stream.HLSUrl(),
 		// A private stream reaches nobody but a course administrator, so this marks
 		// the ones the page should show as withheld from everyone else.
 		IsPubliclyVisible: !stream.Private,
+	}
+
+	// Derived from the playlist URL, so absent from a summary along with it; HLSUrl
+	// would otherwise answer a trimmed lecture with a bare query string.
+	if !summary {
+		s.HlsUrl = stream.HLSUrl()
 	}
 
 	// The column is null until a recording has been processed. v1 answered with the
@@ -181,7 +207,7 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		s.Duration = uint32(duration)
 	}
 
-	if course.DownloadsEnabled {
+	if !summary && course.DownloadsEnabled {
 		for _, download := range stream.GetVodFiles() {
 			s.Downloads = append(s.Downloads, ParseDownloadToProto(download))
 		}

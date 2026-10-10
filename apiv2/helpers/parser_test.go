@@ -208,3 +208,33 @@ func TestParseNotificationTargetMatchesTheModel(t *testing.T) {
 		})
 	}
 }
+
+// The listings fetch every course of a semester at once and link to the player rather
+// than being one, so a summary spares the signature per playlist and the downloads.
+func TestParseCourseSummaryToProtoLeavesOutPlaybackData(t *testing.T) {
+	now := time.Now()
+	course := model.Course{
+		Model: gorm.Model{ID: 1}, Slug: "course", DownloadsEnabled: true,
+		Streams: []model.Stream{{
+			Model: gorm.Model{ID: 1}, Start: now.Add(-2 * time.Hour), End: now.Add(-time.Hour), Recording: true,
+			PlaylistUrl: "https://example.org/a.m3u8", PlaylistUrlPRES: "https://example.org/p.m3u8",
+			PlaylistUrlCAM: "https://example.org/c.m3u8", StartOffset: 5, EndOffset: 10,
+			Files: []model.File{{Path: "/a.mp4", Type: model.FILETYPE_VOD}},
+		}},
+	}
+
+	got := ParseCourseSummaryToProto(course, nil).LastRecording
+	if got == nil || got.Id != 1 {
+		t.Fatalf("last recording = %v, want stream 1", got)
+	}
+	if got.PlaylistUrl != "" || got.PlaylistUrlPres != "" || got.PlaylistUrlCam != "" || got.HlsUrl != "" {
+		t.Errorf("summary carries playback URLs: %q %q %q %q",
+			got.PlaylistUrl, got.PlaylistUrlPres, got.PlaylistUrlCam, got.HlsUrl)
+	}
+	if len(got.Downloads) != 0 {
+		t.Errorf("summary carries %d downloads, want none", len(got.Downloads))
+	}
+	if got.StartOffset != 5 || got.EndOffset != 10 {
+		t.Errorf("offsets = %d/%d, want them untouched", got.StartOffset, got.EndOffset)
+	}
+}
