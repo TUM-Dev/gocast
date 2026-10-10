@@ -39,6 +39,7 @@ type DaoWrapper struct {
 	StreamReactionDao
 	RunnerDao RunnerDao
 	IntegrationDao
+	IntegrationGrantDao
 }
 
 func NewDaoWrapper() DaoWrapper {
@@ -69,5 +70,6 @@ func NewDaoWrapper() DaoWrapper {
 		StreamReactionDao:     NewStreamReactionDao(),
 		RunnerDao:             NewRunnerDao(),
 		IntegrationDao:        NewIntegrationDao(),
+		IntegrationGrantDao:   NewIntegrationGrantDao(),
 	}
 }

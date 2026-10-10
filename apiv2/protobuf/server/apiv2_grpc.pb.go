@@ -795,6 +795,8 @@ const (
 	CourseService_CopyLecture_FullMethodName                     = "/protobuf.CourseService/copyLecture"
 	CourseService_CreateLectures_FullMethodName                  = "/protobuf.CourseService/createLectures"
 	CourseService_GetCourseAdmin_FullMethodName                  = "/protobuf.CourseService/getCourseAdmin"
+	CourseService_ListCourseIntegrationGrants_FullMethodName     = "/protobuf.CourseService/listCourseIntegrationGrants"
+	CourseService_RevokeCourseIntegrationGrant_FullMethodName    = "/protobuf.CourseService/revokeCourseIntegrationGrant"
 	CourseService_UpdateCourseSettings_FullMethodName            = "/protobuf.CourseService/updateCourseSettings"
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
 	CourseService_DeleteCourse_FullMethodName                    = "/protobuf.CourseService/deleteCourse"
@@ -866,6 +868,8 @@ type CourseServiceClient interface {
 	// worker is alive or the one chosen cannot be reached.
 	CreateLectures(ctx context.Context, in *CreateLecturesRequest, opts ...grpc.CallOption) (*CreateLecturesResponse, error)
 	GetCourseAdmin(ctx context.Context, in *GetCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
+	ListCourseIntegrationGrants(ctx context.Context, in *ListCourseIntegrationGrantsRequest, opts ...grpc.CallOption) (*ListCourseIntegrationGrantsResponse, error)
+	RevokeCourseIntegrationGrant(ctx context.Context, in *RevokeCourseIntegrationGrantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -1176,6 +1180,26 @@ func (c *courseServiceClient) GetCourseAdmin(ctx context.Context, in *GetCourseA
 	return out, nil
 }
 
+func (c *courseServiceClient) ListCourseIntegrationGrants(ctx context.Context, in *ListCourseIntegrationGrantsRequest, opts ...grpc.CallOption) (*ListCourseIntegrationGrantsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCourseIntegrationGrantsResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListCourseIntegrationGrants_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) RevokeCourseIntegrationGrant(ctx context.Context, in *RevokeCourseIntegrationGrantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_RevokeCourseIntegrationGrant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CourseAdmin)
@@ -1416,6 +1440,8 @@ type CourseServiceServer interface {
 	// worker is alive or the one chosen cannot be reached.
 	CreateLectures(context.Context, *CreateLecturesRequest) (*CreateLecturesResponse, error)
 	GetCourseAdmin(context.Context, *GetCourseAdminRequest) (*CourseAdmin, error)
+	ListCourseIntegrationGrants(context.Context, *ListCourseIntegrationGrantsRequest) (*ListCourseIntegrationGrantsResponse, error)
+	RevokeCourseIntegrationGrant(context.Context, *RevokeCourseIntegrationGrantRequest) (*emptypb.Empty, error)
 	UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error)
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error)
@@ -1529,6 +1555,12 @@ func (UnimplementedCourseServiceServer) CreateLectures(context.Context, *CreateL
 }
 func (UnimplementedCourseServiceServer) GetCourseAdmin(context.Context, *GetCourseAdminRequest) (*CourseAdmin, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseAdmin not implemented")
+}
+func (UnimplementedCourseServiceServer) ListCourseIntegrationGrants(context.Context, *ListCourseIntegrationGrantsRequest) (*ListCourseIntegrationGrantsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCourseIntegrationGrants not implemented")
+}
+func (UnimplementedCourseServiceServer) RevokeCourseIntegrationGrant(context.Context, *RevokeCourseIntegrationGrantRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeCourseIntegrationGrant not implemented")
 }
 func (UnimplementedCourseServiceServer) UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateCourseSettings not implemented")
@@ -2112,6 +2144,42 @@ func _CourseService_GetCourseAdmin_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_ListCourseIntegrationGrants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseIntegrationGrantsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListCourseIntegrationGrants(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListCourseIntegrationGrants_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListCourseIntegrationGrants(ctx, req.(*ListCourseIntegrationGrantsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_RevokeCourseIntegrationGrant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeCourseIntegrationGrantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).RevokeCourseIntegrationGrant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_RevokeCourseIntegrationGrant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).RevokeCourseIntegrationGrant(ctx, req.(*RevokeCourseIntegrationGrantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_UpdateCourseSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateCourseSettingsRequest)
 	if err := dec(in); err != nil {
@@ -2572,6 +2640,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getCourseAdmin",
 			Handler:    _CourseService_GetCourseAdmin_Handler,
+		},
+		{
+			MethodName: "listCourseIntegrationGrants",
+			Handler:    _CourseService_ListCourseIntegrationGrants_Handler,
+		},
+		{
+			MethodName: "revokeCourseIntegrationGrant",
+			Handler:    _CourseService_RevokeCourseIntegrationGrant_Handler,
 		},
 		{
 			MethodName: "updateCourseSettings",

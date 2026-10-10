@@ -544,6 +544,24 @@ service CourseService {
     };
   }
 
+  rpc listCourseIntegrationGrants(ListCourseIntegrationGrantsRequest) returns (ListCourseIntegrationGrantsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/integrations"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List applications authorized for a course."
+      description: "Lists active grants. Requires administering the course."
+    };
+  }
+
+  rpc revokeCourseIntegrationGrant(RevokeCourseIntegrationGrantRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/integrations/{grant_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Revoke an application's access to a course."
+      description: "Revokes the active grant belonging to this course. Requires administering the course. A missing or revoked grant answers 404."
+    };
+  }
+
   rpc updateCourseSettings(UpdateCourseSettingsRequest) returns (CourseAdmin) {
     option (google.api.http) = {
       patch: "/courses/{course_id}/settings"
@@ -3244,4 +3262,22 @@ message GetIntegrationResponse {
   uint32 id = 1;
   string name = 2;
   string return_url = 3;
+}
+
+message ListCourseIntegrationGrantsRequest {
+  uint32 course_id = 1;
+}
+
+message CourseIntegrationGrant {
+  uint32 id = 1;
+  string name = 2;
+}
+
+message ListCourseIntegrationGrantsResponse {
+  repeated CourseIntegrationGrant grants = 1;
+}
+
+message RevokeCourseIntegrationGrantRequest {
+  uint32 course_id = 1;
+  uint32 grant_id = 2;
 }
