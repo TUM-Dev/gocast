@@ -13,8 +13,6 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/TUM-Dev/gocast/tools/pathprovider"
-
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -23,7 +21,6 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/tools"
-	"github.com/TUM-Dev/gocast/tools/bot"
 	"github.com/TUM-Dev/gocast/tools/safepath"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
@@ -34,7 +31,6 @@ const (
 
 func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, manager *runner_manager.Manager) {
 	routes := streamRoutes{daoWrapper, manager}
-	reactionRoutes := StreamReactionRoutes{daoWrapper}
 
 	stream := router.Group("/api/stream")
 	{
@@ -44,30 +40,11 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, ma
 		streamById := stream.Group("/:streamID")
 		streamById.Use(tools.InitStream(daoWrapper))
 		{
-			// All User Endpoints
-			streamById.GET("/sections", routes.getVideoSections)
-			streamById.GET("/subtitles/:lang", routes.getSubtitles)
-
-			streamById.GET("/playlist", routes.getStreamPlaylist)
-
-			streamById.POST("/reaction", reactionRoutes.addReaction)
-			streamById.GET("/reaction/allowed", reactionRoutes.allowedReactions)
-
-			thumbs := streamById.Group("/thumbs")
-			{
-				thumbs.GET(":fid", routes.getThumbs)
-				thumbs.GET("/live", routes.getLiveThumbs)
-				thumbs.GET("/vod", routes.getVODThumbs)
-			}
-		}
-		{
 			// Admin-Only Endpoints
 			admins := streamById.Group("")
 			admins.Use(tools.AdminOfCourse)
 			admins.GET("", routes.getStream)
-			admins.GET("/end", routes.endStream)
 			admins.GET("/thumb", routes.RegenerateThumbs)
-			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
 			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
 			admins.POST("/", routes.putCustomLiveThumbnail)
@@ -105,129 +82,6 @@ type liveStreamDto struct {
 	PRES        string
 	CAM         string
 	End         time.Time
-}
-
-func (r streamRoutes) getThumbs(c *gin.Context) {
-	ctx, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "context should exist but doesn't",
-		})
-		return
-	}
-	tumLiveContext := ctx.(tools.TUMLiveContext)
-	file, err := r.GetFileById(c.Param("fid"))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find file",
-			Err:           err,
-		})
-		return
-	}
-	if !file.IsThumb() {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusForbidden,
-			CustomMessage: "file is not a thumbnail",
-		})
-		return
-	}
-	if tumLiveContext.Stream.ID != file.StreamID {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "streamID of file doesn't match stream id of request url",
-		})
-		return
-	}
-	sendDownloadFile(c, file, tumLiveContext)
-}
-
-func (r streamRoutes) getVODThumbs(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	queryType := c.Query("type")
-
-	if queryType == "" {
-		if customThumb, err := r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_CUSTOM); err == nil {
-			c.File(customThumb.Path)
-			return
-		}
-
-		thumb, err := tumLiveContext.Stream.GetLGThumbnail()
-		if err != nil {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusNotFound,
-				CustomMessage: "Large Thumbnail not found",
-			})
-			return
-		}
-		c.File(thumb)
-		return
-	}
-
-	videoType := model.VideoType(queryType)
-	if !videoType.Valid() {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "Invalid VideoType",
-		})
-		return
-	}
-
-	thumb, err := tumLiveContext.Stream.GetLGThumbnailForVideoType(videoType)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "Large Thumbnail not found",
-		})
-		return
-	}
-	c.File(thumb)
-}
-
-func (r streamRoutes) getLiveThumbs(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
-
-	file, err := r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_CUSTOM)
-	if err == nil {
-		c.File(file.Path)
-		return
-	}
-
-	file, err = r.DaoWrapper.FileDao.GetThumbnail(tumLiveContext.Stream.ID, model.FILETYPE_THUMB_LG_CAM_PRES)
-	if err != nil {
-		path := pathprovider.LiveThumbnail(streamId)
-		c.File(path)
-		return
-	}
-	c.File(file.Path)
-}
-
-func (r streamRoutes) getSubtitles(c *gin.Context) {
-	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	lang := c.Param("lang")
-
-	subtitlesObj, err := r.SubtitlesDao.GetByStreamIDandLang(context.Background(), ctx.Stream.ID, lang)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusNotFound,
-				CustomMessage: "invalid streamID or language",
-			})
-		} else {
-			_ = c.Error(tools.RequestError{
-				Err:           err,
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "can not get by streamID and language",
-			})
-		}
-		return
-	}
-	c.Data(http.StatusOK, "text/vtt", []byte(subtitlesObj.Content))
 }
 
 // livestreams returns all streams that are live
@@ -270,106 +124,6 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func (r streamRoutes) endStream(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	discardVoD := c.Request.URL.Query().Get("discard") == "true"
-	logger.Info("End stream: " + strconv.FormatBool(discardVoD))
-	if err := r.manager.EndStream(c.Request.Context(), tumLiveContext.Stream.ID, discardVoD); err != nil {
-		logger.Error("Could not end stream on runner", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not end stream",
-			Err:           err,
-		})
-	}
-}
-
-// reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
-func (r streamRoutes) reportStreamIssue(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	stream := tumLiveContext.Stream
-
-	type alertMessage struct {
-		Comment     string  `json:"description"`
-		PhoneNumber string  `json:"phone"`
-		Email       string  `json:"email"`
-		Categories  []uint8 `json:"categories"`
-		Name        string  `json:"name"`
-	}
-
-	var alert alertMessage
-	if err := c.ShouldBindJSON(&alert); err != nil {
-		logger.Error("can not bind body", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-	}
-
-	// Get lecture hall of the stream that has issues.
-	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
-	if err != nil {
-		logger.Error("can not get lecturehall by id", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not get lecturehall by id",
-			Err:           err,
-		})
-		return
-	}
-
-	// Get course of the stream that has issues.
-	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
-	if err != nil {
-		logger.Error("can not get course by id", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not get course by id",
-			Err:           err,
-		})
-		return
-	}
-
-	// Build stream URL, e.g. https://live.rbg.tum.de/w/gbs/1234
-	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
-	categories := map[uint8]string{1: "🎥 Camera", 2: "🎤 Microphone", 3: "🔊 Audio", 4: "🎬 Video", 5: "💡Light", 6: "Other"}
-	var categoryList []string
-	for _, category := range alert.Categories {
-		categoryList = append(categoryList, categories[category])
-	}
-	botInfo := bot.AlertMessage{
-		PhoneNumber: alert.PhoneNumber,
-		Name:        alert.Name,
-		Email:       alert.Email,
-		Comment:     alert.Comment,
-		Categories:  strings.Join(categoryList, " · "),
-		CourseName:  course.Name,
-		LectureHall: lectureHall.Name,
-		StreamUrl:   streamUrl,
-		CombIP:      lectureHall.CombIP,
-		CameraIP:    lectureHall.CameraIP,
-		IsLecturer:  tumLiveContext.User.IsAdminOfCourse(course),
-		Stream:      *stream,
-		User:        *tumLiveContext.User,
-	}
-
-	// Send notification to the matrix room.
-	var alertBot bot.Bot
-	alertBot.SetMessagingMethod(&bot.Matrix{})
-
-	// Set messaging strategy as specified in strategy pattern
-	if err = alertBot.SendAlert(botInfo, r.StatisticsDao); err != nil {
-		logger.Error("can not send bot alert", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not send bot alert",
-			Err:           err,
-		})
-	}
-}
-
 func (r streamRoutes) getStream(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
@@ -392,72 +146,6 @@ func (r streamRoutes) getStream(c *gin.Context) {
 		"live":        stream.LiveNow,
 		"vod":         stream.Recording,
 	})
-}
-
-func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
-	type StreamPlaylistEntry struct {
-		StreamID       uint                 `json:"streamId"`
-		CourseSlug     string               `json:"courseSlug"`
-		StreamName     string               `json:"streamName"`
-		LiveNow        bool                 `json:"liveNow"`
-		Watched        bool                 `json:"watched"`
-		Start          time.Time            `json:"start"`
-		StreamProgress model.StreamProgress `json:"streamProgress"`
-		CreatedAt      time.Time            `json:"createdAt"`
-	}
-
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	user := tumLiveContext.User
-	course, _ := r.GetCourseById(context.Background(), tumLiveContext.Course.ID)
-
-	// Create mapping of stream id to progress for all progresses of user
-	var streamIDs []uint
-	for _, stream := range tumLiveContext.Course.Streams {
-		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
-			continue
-		}
-		streamIDs = append(streamIDs, stream.ID)
-	}
-	streamProgresses := make(map[uint]model.StreamProgress)
-	if user != nil {
-		res, err := r.LoadProgress(user.ID, streamIDs)
-		if err != nil {
-			logger.Error("Couldn't load progresses", "err", err)
-		} else {
-			for _, progress := range res {
-				streamProgresses[progress.StreamID] = progress
-			}
-		}
-	}
-
-	var result []StreamPlaylistEntry
-	for _, stream := range tumLiveContext.Course.Streams {
-		if stream.Private && (user == nil || !user.IsAdminOfCourse(course)) {
-			continue
-		}
-		result = append(result, StreamPlaylistEntry{
-			StreamID:       stream.ID,
-			CourseSlug:     tumLiveContext.Course.Slug,
-			StreamName:     stream.GetName(),
-			LiveNow:        stream.LiveNow,
-			Watched:        stream.Watched,
-			Start:          stream.Start,
-			StreamProgress: streamProgresses[stream.ID],
-			CreatedAt:      stream.CreatedAt,
-		})
-	}
-
-	c.JSON(http.StatusOK, result)
-}
-
-func (r streamRoutes) getVideoSections(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	sections, err := r.VideoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
-	if err != nil {
-		logger.Error("Can't get video sections", "err", err)
-	}
-
-	c.JSON(http.StatusOK, sections)
 }
 
 // RegenerateThumbs regenerates the thumbnails for a stream.

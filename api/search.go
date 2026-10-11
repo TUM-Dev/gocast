@@ -25,9 +25,6 @@ func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, meiliS
 
 	searchGroup := router.Group("/api/search")
 	searchGroup.GET("", routes.search)
-	withStream := searchGroup.Group("/stream/:streamID")
-	withStream.Use(tools.InitStream(daoWrapper))
-	withStream.GET("/subtitles", routes.searchSubtitles)
 
 	searchGroup.GET("/courses", routes.searchCourses)
 }
@@ -43,12 +40,6 @@ const (
 )
 
 type MeiliSearchMap map[string]any
-
-func (r searchRoutes) searchSubtitles(c *gin.Context) {
-	s := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
-	q := c.Query("q")
-	c.JSON(http.StatusOK, r.m.SearchSubtitles(q, s.ID))
-}
 
 /*
 Expected format for URL Parameters:

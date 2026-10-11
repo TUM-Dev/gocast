@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import AppFooter from "@/components/AppFooter.vue";
 import AppHeader from "@/components/AppHeader.vue";
+import { isEmbedQuery } from "@/lib/watch-admin-embed";
 import { useAuthStore } from "@/stores/auth";
 import { useSidenavStore } from "@/stores/sidenav";
 
@@ -11,6 +12,10 @@ const auth = useAuthStore();
 const sidenav = useSidenavStore();
 const route = useRoute();
 const router = useRouter();
+
+// The popup chat, and the embedded player Artemis frames (`?video_only`), are windows of
+// their own: no header, no footer.
+const bare = computed(() => !!route.meta.bare || (isEmbedQuery(route.query) && route.name === "watch") || (isEmbedQuery(route.query) && route.name === "watch-layout"));
 
 // The header renders on every page and needs to know who is signed in, so the user is
 // loaded here rather than by each view. The store only fetches once.
@@ -34,7 +39,7 @@ onMounted(async () => {
   <!-- Layout copied from the body and #content wrapper of the server-rendered pages. -->
   <div class="tum-live-bg flex h-screen flex-col items-stretch">
     <AppHeader
-      v-if="!route.meta.bare"
+      v-if="!bare"
       :minimal="route.meta.minimalHeader"
       :show-sidenav-toggle="route.meta.sidenav"
       @toggle-sidenav="sidenav.toggle()"
@@ -47,6 +52,6 @@ onMounted(async () => {
       inside it instead — which is how the templates arrange it, `footer` and
       `mobile_footer` being separate partials for exactly this reason.
     -->
-    <AppFooter v-if="route.meta.footer" :only="route.meta.sidenav ? 'desktop' : undefined" />
+    <AppFooter v-if="route.meta.footer && !bare" :only="route.meta.sidenav ? 'desktop' : undefined" />
   </div>
 </template>

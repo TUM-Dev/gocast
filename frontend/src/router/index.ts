@@ -15,6 +15,7 @@ import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import SearchView from "@/views/SearchView.vue";
+import WatchView from "@/views/WatchView.vue";
 import SetPasswordView from "@/views/SetPasswordView.vue";
 import CourseTokenView from "@/views/CourseTokenView.vue";
 import OnboardingView from "@/views/OnboardingView.vue";
@@ -30,6 +31,7 @@ import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import IntegrationsView from "@/views/admin/IntegrationsView.vue";
 import LectureHallCreateView from "@/views/admin/LectureHallCreateView.vue";
 import LectureHallsView from "@/views/admin/LectureHallsView.vue";
+import LectureLiveView from "@/views/admin/LectureLiveView.vue";
 import LectureStatsView from "@/views/admin/LectureStatsView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
 import NotificationsView from "@/views/admin/NotificationsView.vue";
@@ -233,6 +235,13 @@ const routes: RouteRecordRaw[] = [
     component: LectureStatsView,
   },
   {
+    // The lecturer's view of a running lecture; replaces /admin/management/:c/:s. Not in
+    // spaRoutes until the watch flip, which also redirects the old URL here.
+    path: "/admin/courses/:courseID/lectures/:streamID/live",
+    name: "admin-lecture-live",
+    component: LectureLiveView,
+  },
+  {
     path: "/admin/create-course",
     name: "admin-create-course",
     component: CreateCourseView,
@@ -276,9 +285,29 @@ const routes: RouteRecordRaw[] = [
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
   {
-    // The chat on a page of its own. Deliberately not the popup's current URL
-    // (`/w/:slug/:streamID/chat/popup`, still the old template): nothing links here yet.
+    // The watch page. `:version` is the layout (COMB, PRES, CAM or SPLIT). Anonymous
+    // because a public course's stream is watchable without a session. The version is checked by the view.
+    path: "/w/:slug/:streamID",
+    name: "watch",
+    component: WatchView,
+    meta: { anonymous: true },
+  },
+  {
+    path: "/w/:slug/:streamID/:version",
+    name: "watch-layout",
+    component: WatchView,
+    meta: { anonymous: true },
+  },
+  {
+    // The chat on a page of its own, for a window beside the player. Two URLs, one
+    // page: `/chat/popup` is what the old player's popup button and any old link use.
     // Anonymous because the chat is readable without a session on a public stream.
+    path: "/w/:slug/:streamID/chat/popup",
+    name: "stream-chat-popup",
+    component: ChatPopupView,
+    meta: { bare: true, anonymous: true },
+  },
+  {
     path: "/w/:slug/:streamID/chat",
     name: "stream-chat",
     component: ChatPopupView,

@@ -8,24 +8,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// ConfigChatRouter configure gin router for chat (without gzip)
-func ConfigChatRouter(router *gin.RouterGroup) {
-	daoWrapper := dao.NewDaoWrapper()
-	router.Use(tools.ErrorHandler)
-	configGinChatRouter(router, daoWrapper)
-}
-
-// ConfigRealtimeRouter configure gin router for live-updates (without gzip)
-func ConfigRealtimeRouter(router *gin.RouterGroup) {
-	daoWrapper := dao.NewDaoWrapper()
-	configGinRealtimeRouter(router, daoWrapper)
-
-	// Register Channels
-	RegisterLiveUpdateRealtimeChannel()
-	RegisterReactionUpdateRealtimeChannel(daoWrapper)
-	RegisterRealtimeChatChannel()
-}
-
 // ConfigGinRouter for non ws endpoints
 func ConfigGinRouter(
 	router *gin.Engine,
@@ -41,12 +23,9 @@ func ConfigGinRouter(
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router, daoWrapper)
-	configProgressRouter(router, daoWrapper)
-	configSeekStatsRouter(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
-	configGinBookmarksRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)
 }

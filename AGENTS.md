@@ -26,7 +26,8 @@ The app is **mid-migration from server-rendered templates to a Vue SPA**, page b
 Both are live at once, and which one serves a given URL is a deliberate choice:
 
 - **`web/`** — Go templates (`web/template/*.gohtml`) with Alpine.js and TypeScript in
-  `web/ts/`, bundled by webpack. The legacy side.
+  `web/ts/`, bundled by webpack. The legacy side, down to the error page and the
+  integration approval page; `web/ts/` is only the small `global` bundle those load.
 - **`frontend/`** — Vue 3 + Vite SPA, with Pinia and vue-router. Builds into `web/spa/`,
   which is embedded into the Go binary.
 

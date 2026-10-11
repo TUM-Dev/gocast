@@ -54,7 +54,6 @@ func run(ctx context.Context) error {
 		Level: slog.LevelDebug,
 	})).With("service", "main")
 	initAll(initializers)
-	defer api.RealtimeInstance.CloseAll()
 
 	web.VersionTag = VersionTag
 	tools.VersionTag = VersionTag
@@ -152,11 +151,10 @@ func run(ctx context.Context) error {
 	}
 	camService := camera.NewService(camAuths)
 
-	// One hub for the process: the v2 realtime socket reads it, and v1's producers
-	// publish to it beside their own sockets until api/ is gone.
-	// Its ViewersEvent adds the v1 sockets, so the SPA's panel shows the same total
-	// the statistics record.
-	hub := realtimehub.NewMemory(realtimehub.WithExtraViewers(api.V1Viewers))
+	// One hub for the process: the v2 realtime socket reads it, and the producers that
+	// still live in api/ (the runner's live flips, v1's title and description edits)
+	// publish to it.
+	hub := realtimehub.NewMemory()
 	api.SetRealtimeHub(hub)
 
 	opts := []runner_manager.Option{
@@ -277,16 +275,9 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		return api2Client.Run(grpcl)
 	})
 
-	liveUpdates := router.Group("/api/pub-sub")
-	api.ConfigRealtimeRouter(liveUpdates)
-
-	// event streams don't work with gzip, configure group without
-	chat := router.Group("/api/chat")
-	api.ConfigChatRouter(chat)
-
 	// The v2 realtime socket is served by the /api/v2/*any route below, so it cannot be
-	// registered ahead of gzip like the two above: gin refuses a static route beside
-	// that catch-all. It is excluded by path instead.
+	// registered ahead of gzip: gin refuses a static route beside that catch-all. It is
+	// excluded by path instead.
 	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{apiv2.RealtimePath})))
 	router.Any("/api/v2/*any", api2Client.Proxy())
 	api.ConfigGinRouter(router, manager)

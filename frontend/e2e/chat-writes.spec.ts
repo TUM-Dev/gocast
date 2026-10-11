@@ -4,7 +4,7 @@ import { apiAs, login } from "./helpers";
 import { users } from "./seed";
 
 /**
- * The chat's writes, API and sockets only: no page sends yet.
+ * The chat's writes, API and sockets only: chat-moderation.spec.ts drives the page.
  *
  * Stream 10 is the live lecture of "geheim" (course 5, hidden: anyone signed in may
  * open it by its address, prof2 administers it); stream 9 is in the enrolled-only
@@ -15,8 +15,7 @@ import { users } from "./seed";
  * streams 9 and 10 and puts every setting it changes back in afterAll.
  *
  * The cooldown counts a user's messages of the last two minutes in the database, so
- * afterAll also deletes every message the run wrote (through the old UI's socket,
- * the only delete there is until moderation moves to v2). A run that crashed before
+ * afterAll also deletes every message the run wrote. A run that crashed before
  * that leaves messages behind, which only the cooldown test tolerates.
  */
 
@@ -46,46 +45,23 @@ async function setCourse(who: APIRequestContext, course: number, settings: objec
   expect(r.status()).toBe(200);
 }
 
-/** Runs `messages` through the old UI's chat socket, as `page`'s user. */
-async function viaV1(page: Page, stream: number, payloads: object[]): Promise<void> {
-  await page.evaluate(
-    ({ stream, payloads }) =>
-      new Promise<void>((resolve, reject) => {
-        const ws = new WebSocket(`ws://${location.host}/api/pub-sub/ws`);
-        ws.onopen = () => {
-          ws.send(JSON.stringify({ type: "subscribe", channel: `chat/${stream}` }));
-          for (const payload of payloads) {
-            ws.send(JSON.stringify({ type: "message", channel: `chat/${stream}`, payload }));
-          }
-          // No acknowledgement exists; give the server a moment to act.
-          setTimeout(() => {
-            ws.close();
-            resolve();
-          }, 1000);
-        };
-        ws.onerror = () => reject(new Error("v1 chat socket failed"));
-      }),
-    { stream, payloads },
-  );
+/** Closes the stream's running poll, if any; a 404 means none was running. */
+async function closePoll(who: APIRequestContext, stream: number) {
+  await who.post(`/api/v2/streams/${stream}/chat/polls/active/close`, { data: {} });
 }
 
 /**
  * Listens to a stream's socket from `page` and returns a reader of the frames so far.
- * `kind` is the v2 realtime socket or the old UI's.
  */
-async function listen(page: Page, stream: number, kind: "v2" | "v1" = "v2") {
-  const key = `${kind}-${stream}`;
+async function listen(page: Page, stream: number) {
+  const key = `v2-${stream}`;
   await page.evaluate(
-    ({ stream, kind, key }) =>
+    ({ stream, key }) =>
       new Promise<void>((resolve, reject) => {
         const w = window as unknown as { __frames: Record<string, unknown[]> };
         w.__frames ??= {};
         const frames: unknown[] = (w.__frames[key] = []);
-        const url =
-          kind === "v2"
-            ? `ws://${location.host}/api/v2/realtime?stream=${stream}`
-            : `ws://${location.host}/api/pub-sub/ws`;
-        const ws = new WebSocket(url);
+        const ws = new WebSocket(`ws://${location.host}/api/v2/realtime?stream=${stream}`);
         ws.onmessage = (e) => {
           try {
             frames.push(JSON.parse(String(e.data)));
@@ -94,14 +70,10 @@ async function listen(page: Page, stream: number, kind: "v2" | "v1" = "v2") {
           }
           if (frames.length === 1) resolve(); // subscribed: the viewer count came first
         };
-        ws.onopen = () => {
-          if (kind === "v2") ws.send("{}");
-          else ws.send(JSON.stringify({ type: "subscribe", channel: `chat/${stream}` }));
-        };
+        ws.onopen = () => ws.send("{}");
         ws.onclose = (e) => reject(new Error(`closed ${e.code}`));
-        setTimeout(resolve, 3000); // the v1 socket sends no frame on subscribe in every case
       }),
-    { stream, kind, key },
+    { stream, key },
   );
   return () =>
     page.evaluate((key) => (window as unknown as { __frames: Record<string, unknown[]> }).__frames[key], key);
@@ -122,18 +94,13 @@ test.beforeAll(async ({ playwright }) => {
   await setStream(prof2, 5, 10, true);
 });
 
-test.afterAll(async ({ browser }) => {
+test.afterAll(async () => {
   // Cleanup that must not fail the run, and must run whatever failed before it.
-  const page = await browser.newPage();
-  try {
-    await login(page, users.prof2);
-    await viaV1(page, 10, [{ type: "close_active_poll" }, ...[...written].map((id) => ({ type: "delete", id }))]);
-    await setCourse(prof2, 5, { moderated_chat_enabled: false, anonymous_chat_enabled: true });
-    await setStream(prof2, 5, 10, false);
-    await setStream(prof1, 4, 9, false);
-  } finally {
-    await page.close();
-  }
+  await closePoll(prof2, 10);
+  for (const id of written) await prof2.delete(`${messages(10)}/${id}`);
+  await setCourse(prof2, 5, { moderated_chat_enabled: false, anonymous_chat_enabled: true });
+  await setStream(prof2, 5, 10, false);
+  await setStream(prof1, 4, 9, false);
 });
 
 test.describe("sendChatMessage", () => {
@@ -153,14 +120,13 @@ test.describe("sendChatMessage", () => {
     expect((await studi1.post(messages(999999), { data: { text: "hi" } })).status()).toBe(404);
   });
 
-  test("stores a message, renders it as a read does and pushes it to both UIs", async ({
+  test("stores a message, renders it as a read does and pushes it to the socket", async ({
     browser,
     playwright,
   }) => {
     const watcher = await browser.newPage();
     await login(watcher, users.admin, "/");
     const v2 = await listen(watcher, 10);
-    const v1 = await listen(watcher, 10, "v1");
 
     const studi1 = await apiAs(playwright, users.studi1);
     const text = `write-${Date.now()} <b>x</b> https://example.org`;
@@ -177,11 +143,6 @@ test.describe("sendChatMessage", () => {
     const [pushed] = (await eventsOf(v2, "message")).filter((f) => f.message.message.id === message.id);
     expect(pushed).toMatchObject({ streamId: 10, audience: "AUDIENCE_ALL" });
     expect(pushed.message.message.messageHtml).toBe(message.messageHtml);
-
-    // The old UI hears the same message, in its own shape.
-    await expect
-      .poll(async () => JSON.stringify(await v1()))
-      .toContain(JSON.stringify(message.messageHtml));
 
     // And a read returns what was pushed.
     const read = await (await studi1.get(messages(10))).json();
@@ -365,11 +326,15 @@ test.describe("votePoll", () => {
     const adminSees = await listen(admin, 10);
     const bystanderSees = await listen(bystander, 10);
 
-    // Polls start over the old socket until moderation and polls move to v2.
-    await viaV1(admin, 10, [
-      { type: "close_active_poll" },
-      { type: "start_poll", question: `Poll ${Date.now()}?`, pollAnswers: ["Ja", "Nein"] },
-    ]);
+    const prof2 = await apiAs(playwright, users.prof2);
+    await closePoll(prof2, 10);
+    expect(
+      (
+        await prof2.post("/api/v2/streams/10/chat/polls", {
+          data: { question: `Poll ${Date.now()}?`, answers: ["Ja", "Nein"] },
+        })
+      ).status(),
+    ).toBe(200);
     const studi1 = await apiAs(playwright, users.studi1);
     const poll = (await (await studi1.get("/api/v2/streams/10/chat/polls/active")).json()).poll;
     expect(poll.options).toHaveLength(2);
@@ -389,7 +354,7 @@ test.describe("votePoll", () => {
     expect((await studi1.post("/api/v2/streams/10/chat/polls/votes", { data: { pollOptionId: 999999 } })).status()).toBe(404);
     expect((await (await apiAs(playwright)).post("/api/v2/streams/10/chat/polls/votes", { data: { pollOptionId: yes!.id } })).status()).toBe(401);
 
-    await viaV1(admin, 10, [{ type: "close_active_poll" }]);
+    await closePoll(prof2, 10);
     const studi3 = await apiAs(playwright, users.studi3);
     expect((await studi3.post("/api/v2/streams/10/chat/polls/votes", { data: { pollOptionId: no!.id } })).status()).toBe(404);
     await Promise.all([admin.close(), bystander.close()]);

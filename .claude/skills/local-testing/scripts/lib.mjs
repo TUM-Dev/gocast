@@ -40,7 +40,7 @@ export async function login(page, who = "admin") {
 
 // Pages worth looking at, all reachable with the starter fixture. Everything under
 // /admin needs the login. There is no /schedule route -- /admin *is* the schedule
-// page (see GetPageString in web/admin.go), and /schedule renders the 404 page,
+// page, and /schedule renders the 404 page,
 // whose animated GIF also makes it diff against itself.
 export const PAGES = [
   ["login", "/login"],

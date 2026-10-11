@@ -2,15 +2,16 @@ package api
 
 import (
 	"context"
+	"time"
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/dao"
+	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 )
 
-// TEMPORARY, deleted with api/: the v1 producers below the chat (live state, title,
-// description) also publish to the v2 hub, so the SPA's socket hears about changes
-// made through v1. The reverse direction is deliberately not built; the old UI's
-// sockets are frozen and never see v2 events.
+// The v1 producers of live state, title and description publish to the v2 hub, so the
+// SPA's socket hears about changes made through v1. Deleted with api/.
 var realtimeHub realtimehub.Hub
 
 // SetRealtimeHub is called once at startup, before anything is served.
@@ -31,20 +32,34 @@ type ViewerCounter interface {
 	Viewers(streamID uint) int
 }
 
-// viewerCount is the stream's total audience: v1 sockets plus v2 sockets. Adding is
-// not double counting because a client holds one kind only: the old templates open
-// just the v1 socket and the SPA just the v2 one, and each page is served by exactly
-// one of them. v2 may be nil (tests, or before startup wiring).
-func viewerCount(streamID uint, v2 ViewerCounter) int {
-	n := len(sessionsFor(streamID))
-	if v2 != nil {
-		n += v2.Viewers(streamID)
-	}
-	return n
+// NotifyViewersLiveState tells the stream's viewers it went live or stopped.
+func NotifyViewersLiveState(streamID uint, live bool) {
+	publishV2(streamID, realtimehub.LiveEvent(streamID, live))
 }
 
-// V1Viewers is the number of v1 sockets on the stream. The v2 hub adds it to the
-// count in its ViewersEvent so the SPA shows the true total.
-func V1Viewers(streamID uint) int {
-	return len(sessionsFor(streamID))
+// CollectStats records the viewer count of every live stream once per tick. Only live
+// streams get a row; the count is the v2 hub's.
+func CollectStats(daoWrapper dao.DaoWrapper, v2 ViewerCounter) func() {
+	return func() {
+		live, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
+		if err != nil {
+			logger.Error("Loading live streams for stats failed", "err", err)
+			return
+		}
+		for _, s := range live {
+			viewers := v2.Viewers(s.ID)
+			if viewers == 0 {
+				continue
+			}
+			stat := model.Stat{
+				Time:     time.Now(),
+				StreamID: s.ID,
+				Viewers:  uint(viewers),
+				Live:     true,
+			}
+			if err := daoWrapper.AddStat(stat); err != nil {
+				logger.Error("Saving stat failed", "err", err)
+			}
+		}
+	}
 }

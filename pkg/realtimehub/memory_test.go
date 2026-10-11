@@ -213,18 +213,3 @@ func TestEventEnvelope(t *testing.T) {
 		t.Errorf("audience = %v, want ALL", ev.GetAudience())
 	}
 }
-
-func TestExtraViewersAreCountedInEventsButNotInViewers(t *testing.T) {
-	hub := NewMemory(WithExtraViewers(func(uint) int { return 4 }))
-
-	watcher, cancel := hub.Subscribe(1)
-	defer cancel()
-
-	if got := receive(t, watcher).GetViewers().GetViewers(); got != 5 {
-		t.Errorf("ViewersEvent = %d, want 1 subscriber + 4 extra", got)
-	}
-	// Statistics add the v1 count themselves; Viewers must stay the hub's own.
-	if got := hub.Viewers(1); got != 1 {
-		t.Errorf("Viewers = %d, want 1", got)
-	}
-}

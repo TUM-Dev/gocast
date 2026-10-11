@@ -117,7 +117,6 @@ func refuseForeignStream(c *gin.Context, stream model.Stream) bool {
 
 const (
 	WorkerHTTPPort = "8060"
-	CutOffLength   = 256
 )
 
 type createVODReq struct {
@@ -751,17 +750,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 		})
 		return
 	}
-	wsMsg := gin.H{
-		"description": gin.H{
-			"full": stream.GetDescriptionHTML(),
-		},
-	}
-	if msg, err := json.Marshal(wsMsg); err == nil {
-		broadcastStream(sID, msg)
-	} else {
-		logger.Error("couldn't marshal stream rename ws msg", "err", err)
-	}
-	publishV2(sID, realtimehub.DescriptionEvent(sID, stream.GetDescriptionHTML())) // temporary: see realtime_v2.go
+	publishV2(sID, realtimehub.DescriptionEvent(sID, stream.GetDescriptionHTML()))
 }
 
 func (r coursesRoutes) renameLecture(c *gin.Context) {
@@ -805,15 +794,7 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 		})
 		return
 	}
-	wsMsg := gin.H{
-		"title": req.Name,
-	}
-	if msg, err := json.Marshal(wsMsg); err == nil {
-		broadcastStream(sID, msg)
-	} else {
-		logger.Error("couldn't marshal stream rename ws msg", "err", err)
-	}
-	publishV2(sID, realtimehub.TitleEvent(sID, req.Name)) // temporary: see realtime_v2.go
+	publishV2(sID, realtimehub.TitleEvent(sID, req.Name))
 }
 
 type updateLectureTimeRequest struct {
@@ -870,15 +851,7 @@ func (r coursesRoutes) updateLectureTime(c *gin.Context) {
 		})
 		return
 	}
-	wsMsg := gin.H{
-		"start": stream.Start,
-		"end":   stream.End,
-	}
-	if msg, err := json.Marshal(wsMsg); err == nil {
-		broadcastStream(sID, msg)
-	} else {
-		logger.Error("couldn't marshal stream time update ws msg", "err", err)
-	}
+	publishV2(sID, realtimehub.TimeChangedEvent(sID, stream.Start, stream.End))
 }
 
 func (r coursesRoutes) fetchLectures(c *gin.Context) {
