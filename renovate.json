@@ -60,6 +60,12 @@
       "allowedVersions": "<7.0.0"
     },
     {
+      "description": "Hold FullCalendar on 6.x. frontend/ uses @fullcalendar/core with @fullcalendar/timegrid, which has no stable v7 release and peers on core ~6.1.x, so bumping core alone cannot install. v7 is also a rewrite on @full-ui/headless-calendar. Drop this once the plugin packages ship stable v7.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@fullcalendar/**"],
+      "allowedVersions": "<7.0.0"
+    },
+    {
       "description": "Keep the Go toolchain in one PR: the golang base images and the go directive in every go.mod. CI reads its version from go.mod via go-version-file, so it follows automatically. Must stay last so it wins over the per-manager grouping above.",
       "groupName": "go toolchain",
       "groupSlug": "go-toolchain",
