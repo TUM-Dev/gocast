@@ -70,16 +70,16 @@ func (mr *MockProgressDaoMockRecorder) LoadProgress(userID, streamIDs any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadProgress", reflect.TypeOf((*MockProgressDao)(nil).LoadProgress), userID, streamIDs)
 }
 
-// SaveProgresses mocks base method.
-func (m *MockProgressDao) SaveProgresses(progresses []model.StreamProgress) error {
+// SaveProgress mocks base method.
+func (m *MockProgressDao) SaveProgress(progress model.StreamProgress, watched *bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveProgresses", progresses)
+	ret := m.ctrl.Call(m, "SaveProgress", progress, watched)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SaveProgresses indicates an expected call of SaveProgresses.
-func (mr *MockProgressDaoMockRecorder) SaveProgresses(progresses any) *gomock.Call {
+// SaveProgress indicates an expected call of SaveProgress.
+func (mr *MockProgressDaoMockRecorder) SaveProgress(progress, watched any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveProgresses", reflect.TypeOf((*MockProgressDao)(nil).SaveProgresses), progresses)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveProgress", reflect.TypeOf((*MockProgressDao)(nil).SaveProgress), progress, watched)
 }

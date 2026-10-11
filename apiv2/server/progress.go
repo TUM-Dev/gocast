@@ -56,13 +56,18 @@ func (a *API) UpdateProgress(ctx context.Context, req *protobuf.UpdateProgressRe
 		StreamID: stream.ID,
 		UserID:   user.ID,
 		Progress: float64(req.Progress),
-		Watched:  req.Watched,
 	}
 
-	err = a.dao.SaveProgresses([]model.StreamProgress{progress}) // Only support one progress update at a time for now
-	if err != nil {
+	// req.Watched is nil for a plain progress report, which must not touch the flag.
+	if err := a.dao.SaveProgress(progress, req.Watched); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
-	return h.ParseStreamProgressToProto(progress), nil
+	// Answer with what is stored: a report that left the flag alone has no value of its own to echo.
+	stored, err := a.dao.LoadProgress(user.ID, []uint{stream.ID})
+	if err != nil || len(stored) == 0 {
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not read back the saved progress"))
+	}
+
+	return h.ParseStreamProgressToProto(stored[0]), nil
 }

@@ -52,4 +52,19 @@ describe("ActionMenu", () => {
     expect(menu.classes()).not.toContain("bottom-full");
     w.unmount();
   });
+
+  it("shows a visible caption and keeps the menu's own name when asked", () => {
+    const w = mount(ActionMenu, { props: { label: "Menu", icon: "fa-x", text: "Current", buttonLabel: "Menu, current: Current" } });
+    const btn = w.find("button");
+    expect(btn.text()).toBe("Current");
+    expect(btn.attributes("aria-label")).toBe("Menu, current: Current");
+    w.unmount();
+  });
+
+  it("stays an icon-only button without a caption", () => {
+    const w = mount(ActionMenu, { props: { label: "Menu", icon: "fa-x" } });
+    expect(w.find("button").text()).toBe("");
+    expect(w.find("button").attributes("aria-label")).toBe("Menu");
+    w.unmount();
+  });
 });

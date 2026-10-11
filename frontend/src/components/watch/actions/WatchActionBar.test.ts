@@ -73,7 +73,7 @@ describe("WatchActionBar", () => {
 
   it("emits the chosen layout and marks the current one", async () => {
     const w = bar();
-    await byLabel(w, "Change view").trigger("click");
+    await byLabel(w, "Change view, current: Combined view").trigger("click");
     const items = w.findAll("[role=menuitemradio]");
     expect(items.map((i) => i.text())).toEqual([
       "Combined view",
@@ -87,9 +87,18 @@ describe("WatchActionBar", () => {
     w.unmount();
   });
 
+  it("labels the view button with the current view", () => {
+    const w = bar({ layout: WatchLayout.SPLIT });
+    const btn = w.find('button[aria-label^="Change view"]');
+    expect(btn.attributes("aria-label")).toBe("Change view, current: Split view");
+    expect(btn.attributes("aria-haspopup")).toBe("menu");
+    expect(btn.text()).toBe("Split view");
+    w.unmount();
+  });
+
   it("hides the view menu with a single view", () => {
     const w = bar({ views: [views[0]], splitAvailable: false });
-    expect(byLabel(w, "Change view").exists()).toBe(false);
+    expect(w.find('button[aria-label^="Change view"]').exists()).toBe(false);
     w.unmount();
   });
 

@@ -3,17 +3,13 @@ import { computed, onMounted, ref, watch } from "vue";
 
 import CourseListItem from "@/components/start-page/CourseListItem.vue";
 import LiveStreamCard from "@/components/start-page/LiveStreamCard.vue";
+import ProgressLoadNotice from "@/components/start-page/ProgressLoadNotice.vue";
 import StartPageLayout from "@/components/start-page/StartPageLayout.vue";
 import StreamThumbnail from "@/components/start-page/StreamThumbnail.vue";
 import { courseUrl, type Course } from "@/lib/courses";
 import { fetchServerNotifications, type ServerNotification } from "@/lib/notifications";
-import {
-  fetchProgress,
-  isToday,
-  minutesUntilStart,
-  watchUrl,
-  type StreamProgress,
-} from "@/lib/streams";
+import { isToday, minutesUntilStart, watchUrl } from "@/lib/streams";
+import { useWatchProgress } from "@/lib/use-watch-progress";
 import { useAuthStore } from "@/stores/auth";
 import { useCourseStore } from "@/stores/courses";
 
@@ -32,7 +28,13 @@ const auth = useAuthStore();
 const courses = useCourseStore();
 
 const serverNotifications = ref<ServerNotification[]>([]);
-const progress = ref<Map<number, StreamProgress>>(new Map());
+const {
+  progress,
+  failed: progressFailed,
+  loading: progressLoading,
+  load: loadProgress,
+  retry: retryProgress,
+} = useWatchProgress();
 const recentShown = ref(RECENT_PAGE_SIZE);
 const moreSentinel = ref<HTMLElement | null>(null);
 
@@ -109,8 +111,7 @@ watch(
       .filter((id) => !progress.value.has(id));
     if (missing.length === 0) return;
 
-    const loaded = await fetchProgress(missing).catch(() => new Map<number, StreamProgress>());
-    progress.value = new Map([...progress.value, ...loaded]);
+    await loadProgress(missing);
   },
   { immediate: true },
 );
@@ -139,6 +140,8 @@ watch(
         <!-- eslint-disable-next-line vue/no-v-html -->
         <span class="title" v-html="notification.html"></span>
       </div>
+
+      <ProgressLoadNotice v-if="progressFailed" :loading="progressLoading" @retry="retryProgress" />
 
       <h1 v-if="greeting" id="greeting" class="mb-4 px-3 text-xl font-bold md:text-2xl">
         {{ greeting }}

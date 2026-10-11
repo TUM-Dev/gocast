@@ -9,14 +9,15 @@ export async function saveProgress(streamId: number, progress: number): Promise<
     UpdateProgressRequestSchema,
     StreamProgressSchema,
     `/progress/${streamId}`,
-    create(UpdateProgressRequestSchema, { streamId, progress, watched: false }),
+    // No `watched`: absent means "leave the flag alone", while an explicit false would unmark.
+    create(UpdateProgressRequestSchema, { streamId, progress }),
   );
 }
 
 /**
  * Marks the lecture watched (what the course page's eye icon reads). The plain progress
- * saves above never touch the flag (the DAO only writes `watched` when it is true), so
- * a late pause report cannot undo this.
+ * saves above leave `watched` out of the request, which the server reads as "keep the
+ * flag", so a late pause report cannot undo this.
  */
 export async function markWatched(streamId: number): Promise<void> {
   await apiPatchMessage(

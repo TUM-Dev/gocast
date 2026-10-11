@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 import HomeView from "./HomeView.vue";
+import { ApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
 import { useCourseStore } from "@/stores/courses";
 
@@ -188,6 +189,23 @@ describe("Recent VODs", () => {
 
     await wrapper.get("#recent-vods button").trigger("click");
     expect(wrapper.findAll("#recent-vods article.tum-live-stream")).toHaveLength(14);
+  });
+});
+
+describe("a watch progress that cannot be loaded", () => {
+  it("says so on the start page, and keeps the recordings listed", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout"] });
+    vi.setSystemTime(new Date(2026, 8, 11, 12, 0, 0));
+    fetchProgress.mockRejectedValue(new ApiError(500, "down"));
+
+    const pending = render({
+      user: [course(1, "Mine", { lastRecording: lecture(101, -48 * HOUR) })],
+    });
+    await vi.advanceTimersByTimeAsync(10_000);
+    const wrapper = await pending;
+
+    expect(wrapper.text()).toContain("Couldn't load your watch progress");
+    expect(wrapper.find("#recent-vods").text()).toContain("Mine");
   });
 });
 
