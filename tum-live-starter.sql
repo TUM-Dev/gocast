@@ -881,39 +881,6 @@ INSERT INTO `stream_progresses` VALUES (0,0,1,1);
 UNLOCK TABLES;
 
 --
--- Table structure for table `stream_units`
---
-
-DROP TABLE IF EXISTS `stream_units`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `stream_units` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  `deleted_at` datetime(3) DEFAULT NULL,
-  `unit_name` longtext DEFAULT NULL,
-  `unit_description` longtext DEFAULT NULL,
-  `unit_start` bigint(20) unsigned NOT NULL,
-  `unit_end` bigint(20) unsigned NOT NULL,
-  `stream_id` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_stream_units_deleted_at` (`deleted_at`),
-  KEY `fk_streams_units` (`stream_id`),
-  CONSTRAINT `fk_streams_units` FOREIGN KEY (`stream_id`) REFERENCES `streams` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `stream_units`
---
-
-LOCK TABLES `stream_units` WRITE;
-/*!40000 ALTER TABLE `stream_units` DISABLE KEYS */;
-/*!40000 ALTER TABLE `stream_units` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `stream_workers`
 --
 

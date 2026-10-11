@@ -92,7 +92,6 @@ func run(ctx context.Context) error {
 		&model.Silence{},
 		&model.ShortLink{},
 		&model.Stat{},
-		&model.StreamUnit{},
 		&model.LectureHall{},
 		&model.IngestServer{},
 		&model.StreamName{},

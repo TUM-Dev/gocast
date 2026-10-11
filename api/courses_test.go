@@ -2553,7 +2553,6 @@ func TestForeignStreamRefused(t *testing.T) {
 	router := func(r *gin.Engine) {
 		streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 		streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", foreign.ID)).Return(foreign, nil).AnyTimes()
-		streamsMock.EXPECT().GetUnitByID("7").Return(model.StreamUnit{Model: gorm.Model{ID: 7}, StreamID: foreign.ID}, nil).AnyTimes()
 		configGinCourseRouter(r, dao.DaoWrapper{
 			CoursesDao: testutils.GetCoursesMock(t),
 			StreamsDao: streamsMock,

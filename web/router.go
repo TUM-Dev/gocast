@@ -42,7 +42,7 @@ const spaShellPath = "spa/index.html"
 //
 //  1. Kebab-case: /admin/lecture-halls. The old spellings redirect.
 //  2. Plural collections: /admin/courses/:courseID.
-//  3. Lectures nest: /admin/courses/:courseID/lectures/:streamID/{units,cut,stats,live}.
+//  3. Lectures nest: /admin/courses/:courseID/lectures/:streamID/{stats,live}.
 //  4. In-page tabs are child routes, not component state.
 //
 // Rules 2 and 3 do not hold for the server-rendered pages yet; each is normalized as
@@ -86,7 +86,6 @@ var spaRoutes = map[string]bool{
 	"/admin/courses/:courseID/participants": true,
 	"/admin/courses/:courseID/lectures":     true,
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
-	"/admin/courses/:courseID/lectures/:streamID/units": true,
 	"/admin/create-course":                              true,
 	"/admin":                                            true,
 	"/w/:slug/:streamID/chat":                           true,
@@ -377,21 +376,25 @@ func configMainRoute(router *gin.Engine) {
 	courseAdminGroup.GET("/admin/cut/:courseID/:streamID", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
 	})
+	// Lecture units were dropped too; both of the page's URLs redirect the same way,
+	// behind the same middleware and for the same reason.
+	for _, path := range []string{
+		"/admin/units/:courseID/:streamID",
+		"/admin/courses/:courseID/lectures/:streamID/units",
+	} {
+		courseAdminGroup.GET(path, func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
+		})
+	}
 	router.GET("/admin/stats/:courseID/:streamID", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
 			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/stats")
-	})
-
-	router.GET("/admin/units/:courseID/:streamID", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
-			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/units")
 	})
 
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))
 	// Rule 3's nested path; the old one redirects below.
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats", nil)
-	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/units", nil)
 	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
 
 	// login/logout/password-mgmt

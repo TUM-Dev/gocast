@@ -171,20 +171,6 @@ func (mr *MockStreamsDaoMockRecorder) CreateStreams(streams any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStreams", reflect.TypeOf((*MockStreamsDao)(nil).CreateStreams), streams)
 }
 
-// CreateUnit mocks base method.
-func (m *MockStreamsDao) CreateUnit(unit *model.StreamUnit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUnit", unit)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateUnit indicates an expected call of CreateUnit.
-func (mr *MockStreamsDaoMockRecorder) CreateUnit(unit any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnit", reflect.TypeOf((*MockStreamsDao)(nil).CreateUnit), unit)
-}
-
 // DeleteCourseLectureSeries mocks base method.
 func (m *MockStreamsDao) DeleteCourseLectureSeries(courseID uint, seriesIdentifier string) error {
 	m.ctrl.T.Helper()
@@ -249,18 +235,6 @@ func (m *MockStreamsDao) DeleteStreamsWithTumID(ids []uint) {
 func (mr *MockStreamsDaoMockRecorder) DeleteStreamsWithTumID(ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStreamsWithTumID", reflect.TypeOf((*MockStreamsDao)(nil).DeleteStreamsWithTumID), ids)
-}
-
-// DeleteUnit mocks base method.
-func (m *MockStreamsDao) DeleteUnit(id uint) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteUnit", id)
-}
-
-// DeleteUnit indicates an expected call of DeleteUnit.
-func (mr *MockStreamsDaoMockRecorder) DeleteUnit(id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUnit", reflect.TypeOf((*MockStreamsDao)(nil).DeleteUnit), id)
 }
 
 // ExecAllStreamsWithCoursesAndSubtitlesBatched mocks base method.
@@ -512,21 +486,6 @@ func (m *MockStreamsDao) GetTranscodingProgressByVersion(streamVersion model.Str
 func (mr *MockStreamsDaoMockRecorder) GetTranscodingProgressByVersion(streamVersion, streamId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTranscodingProgressByVersion", reflect.TypeOf((*MockStreamsDao)(nil).GetTranscodingProgressByVersion), streamVersion, streamId)
-}
-
-// GetUnitByID mocks base method.
-func (m *MockStreamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUnitByID", id)
-	ret0, _ := ret[0].(model.StreamUnit)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUnitByID indicates an expected call of GetUnitByID.
-func (mr *MockStreamsDaoMockRecorder) GetUnitByID(id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitByID", reflect.TypeOf((*MockStreamsDao)(nil).GetUnitByID), id)
 }
 
 // GetWorkersForStream mocks base method.

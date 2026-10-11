@@ -505,11 +505,6 @@ func copyOfLecture(stream model.Stream, courseID uint, move bool) model.Stream {
 		f.Model, f.StreamID = gorm.Model{}, 0
 		c.Files[i] = f
 	}
-	c.Units = make([]model.StreamUnit, len(stream.Units))
-	for i, u := range stream.Units {
-		u.Model, u.StreamID = gorm.Model{}, 0
-		c.Units[i] = u
-	}
 	c.Silences = make([]model.Silence, len(stream.Silences))
 	for i, s := range stream.Silences {
 		s.Model, s.StreamID = gorm.Model{}, 0

@@ -372,39 +372,6 @@ service CourseService {
     };
   }
 
-  // A lecture's units: named, described ranges of its recording, listed with the
-  // recording so the page can preview them. Each handler checks the lecture is the
-  // course's, as getLectureStats does.
-  rpc listLectureUnits(ListLectureUnitsRequest) returns (ListLectureUnitsResponse) {
-    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/units"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Courses"
-      summary: "List a lecture's units."
-      description: "Returns the lecture's units, in recording order, with a signed playlist URL of its recording to preview them against. Requires administering the course."
-    };
-  }
-
-  rpc createLectureUnit(CreateLectureUnitRequest) returns (LectureUnit) {
-    option (google.api.http) = {
-      post: "/courses/{course_id}/streams/{stream_id}/units"
-      body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Courses"
-      summary: "Add a unit to a lecture."
-      description: "Adds a named range of the recording to the lecture. A missing title, or a range that is empty or runs backwards, answers 400. Requires administering the course."
-    };
-  }
-
-  rpc deleteLectureUnit(DeleteLectureUnitRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/units/{unit_id}"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Courses"
-      summary: "Remove a unit from a lecture."
-      description: "Answers 404 for a unit that is not the lecture's. Requires administering the course."
-    };
-  }
-
   // Creating a course is open to every lecturer, not only to administrators of an
   // existing one; the creator becomes its administrator.
   rpc createCourse(CreateCourseRequest) returns (CreateCourseResponse) {
@@ -2885,52 +2852,6 @@ message LectureStatsResponse {
   // Set for lectures from 2021 or earlier, which can predate the viewing data
   // (collected from 28 June 2021), so their numbers undercount.
   bool partial_history = 11;
-}
-
-// ----- Lecture units -----
-
-message ListLectureUnitsRequest {
-  uint32 course_id = 1;
-  // Must be one of the course's lectures; anything else answers as missing.
-  uint32 stream_id = 2;
-}
-
-message ListLectureUnitsResponse {
-  string lecture_name = 1;
-  // The recording, signed for the caller; empty while the lecture has none. The
-  // combined view when there is one, else the presentation, else the camera.
-  string playlist_url = 2;
-  // Length of the recording in seconds, 0 when not known yet.
-  uint32 duration_seconds = 3;
-  // By start.
-  repeated LectureUnit units = 4;
-}
-
-// LectureUnit is a named range of a lecture's recording. Unlike a video section it
-// has an end as well as a start, and is described in Markdown.
-message LectureUnit {
-  uint32 id = 1;
-  string title = 2;
-  // Markdown, as entered; the client renders it.
-  string description = 3;
-  // Milliseconds from the start of the recording.
-  uint32 from_ms = 4;
-  uint32 to_ms = 5;
-}
-
-message CreateLectureUnitRequest {
-  uint32 course_id = 1;
-  uint32 stream_id = 2;
-  string title = 3;
-  string description = 4;
-  uint32 from_ms = 5;
-  uint32 to_ms = 6;
-}
-
-message DeleteLectureUnitRequest {
-  uint32 course_id = 1;
-  uint32 stream_id = 2;
-  uint32 unit_id = 3;
 }
 
 // ----- Lecture administration -----
