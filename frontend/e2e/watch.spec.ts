@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { login } from "./helpers";
+import { apiAs, login } from "./helpers";
 import { users } from "./seed";
 
 /**
@@ -21,7 +21,8 @@ test.describe("the watch page", () => {
 
     await expect(page.getByTestId("watch-title")).toHaveText("VL 1: Was ist Bier?");
     await expect(page.getByTestId("watch-player")).toBeVisible();
-    // The chat is off in the fixture, so the panels start closed; the button opens them.
+    // The chat is off in the fixture, and the old page showed no column then, so the
+    // panels start collapsed; the button opens them.
     await expect(page.getByTestId("region-sidebar")).toBeHidden();
     await page.getByTestId("open-sidebar").click();
     await expect(page.getByTestId("region-sidebar")).toBeVisible();
@@ -45,10 +46,18 @@ test.describe("the watch page", () => {
     await expect(page.getByTestId("split-view")).toBeVisible();
   });
 
-  test("an unknown version is the not-found page, not a blank one", async ({ page }) => {
-    await page.goto("/w/brauereiwesen/1/NOPE");
+  test("an unknown version is the not-found page with a 404 status", async ({ page }) => {
+    const response = await page.goto("/w/brauereiwesen/1/NOPE");
 
+    expect(response?.status()).toBe(404);
     await expect(page.getByText("This page does not exist.")).toBeVisible();
+  });
+
+  test("a known version is found whatever its case", async ({ page }) => {
+    const response = await page.goto("/w/brauereiwesen/1/pres");
+
+    expect(response?.status()).toBe(200);
+    await expect(page.getByTestId("watch-player")).toBeVisible();
   });
 
   test("shows the waiting room for a lecture that has not started", async ({ page }) => {
@@ -74,6 +83,54 @@ test.describe("the watch page", () => {
 
     await expect(page.getByTestId("watch-admin")).toBeVisible();
     await expect(page.getByRole("link", { name: "Live management" })).toBeVisible();
+  });
+});
+
+/**
+ * With the chat on the sidebar is there from the start, as the old page's chat column
+ * was. Stream 2 is a recording of brauereiwesen that no other spec reads; prof1
+ * administers the course. The chat goes back off afterwards.
+ */
+test.describe("the watch page with the chat on", () => {
+  test.describe.configure({ mode: "serial" });
+  const stream = "/api/v2/courses/1/streams/2";
+
+  test.beforeAll(async ({ playwright }) => {
+    const prof1 = await apiAs(playwright, users.prof1);
+    expect((await prof1.patch(stream, { data: { chat_enabled: true } })).status()).toBe(200);
+  });
+  test.afterAll(async ({ playwright }) => {
+    const prof1 = await apiAs(playwright, users.prof1);
+    await prof1.patch(stream, { data: { chat_enabled: false } });
+  });
+
+  test("shows the chat beside the player without asking", async ({ page }) => {
+    await page.goto("/w/brauereiwesen/2");
+
+    await expect(page.getByTestId("region-sidebar")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Chat" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByTestId("open-sidebar")).toHaveCount(0);
+    const player = await page.getByTestId("region-player").boundingBox();
+    const sidebar = await page.getByTestId("region-sidebar").boundingBox();
+    expect(sidebar!.x).toBeGreaterThanOrEqual(player!.x + player!.width - 1);
+  });
+
+  test("puts the chat below the player on a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/w/brauereiwesen/2");
+
+    await expect(page.getByTestId("region-sidebar")).toBeVisible();
+    const player = await page.getByTestId("region-player").boundingBox();
+    const sidebar = await page.getByTestId("region-sidebar").boundingBox();
+    expect(sidebar!.y).toBeGreaterThanOrEqual(player!.y + player!.height - 1);
+  });
+
+  test("keeps the tab the viewer chose earlier", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("watch.sidebarTab", "sections"));
+    await page.goto("/w/brauereiwesen/2");
+
+    await expect(page.getByTestId("region-sidebar")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Sections" })).toHaveAttribute("aria-selected", "true");
   });
 });
 
