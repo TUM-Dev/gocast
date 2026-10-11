@@ -43,14 +43,14 @@ export interface Route {
 /** Answers the token request and each route in order of declaration; 404 otherwise. */
 export function routeFetch(routes: Route[]) {
   clearToken();
-  const calls: { method: string; url: string }[] = [];
+  const calls: { method: string; url: string; body?: BodyInit | null }[] = [];
   const mock = vi.fn((input: string, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? "GET";
     if (url.endsWith("/auth/token")) {
       return Promise.resolve(new Response(JSON.stringify({ access_token: "t", expires_in: 900 })));
     }
-    calls.push({ method, url });
+    calls.push({ method, url, body: init?.body });
     const rest = url.replace("/api/v2", "");
     const route = routes.find(
       (r) =>

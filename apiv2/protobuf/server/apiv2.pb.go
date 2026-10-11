@@ -21046,7 +21046,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x17requestLectureSubtitles\x12(.protobuf.RequestLectureSubtitlesRequest\x1a\x16.google.protobuf.Empty\"\xcf\x02\x92A\x8e\x02\n" +
 	"\aCourses\x12'Have subtitles generated for a lecture.\x1a\xd9\x01Hands the lecture's recording to the voice service, which sends the subtitles back when done. Answers 400 for a lecture with no recording and 503 when no voice service is configured. Requires administering the course.\x82\xd3\xe4\x93\x027:\x01*\"2/courses/{course_id}/streams/{stream_id}/subtitles\x12\xb4\x03\n" +
 	"\x1dgetLectureTranscodingProgress\x12..protobuf.GetLectureTranscodingProgressRequest\x1a/.protobuf.GetLectureTranscodingProgressResponse\"\xb1\x02\x92A\xe8\x01\n" +
-	"\aCourses\x12'Get how far a lecture's transcoding is.\x1a\xb3\x01The versions still transcoding, with their progress; a version that has finished is no longer listed. For polling while a lecture is converting. Requires administering the course.\x82\xd3\xe4\x93\x02?\x12=/courses/{course_id}/streams/{stream_id}/transcoding-progress2\xa42\n" +
+	"\aCourses\x12'Get how far a lecture's transcoding is.\x1a\xb3\x01The versions still transcoding, with their progress; a version that has finished is no longer listed. For polling while a lecture is converting. Requires administering the course.\x82\xd3\xe4\x93\x02?\x12=/courses/{course_id}/streams/{stream_id}/transcoding-progress2\xaa2\n" +
 	"\rStreamService\x12\xdb\x01\n" +
 	"\tgetStream\x12\x1a.protobuf.GetStreamRequest\x1a\x16.protobuf.CourseStream\"\x99\x01\x92As\n" +
 	"\aStreams\x123Get stream and course by course slug and stream ID.\x1a3Retrieves a stream and its course by its stream ID.\x82\xd3\xe4\x93\x02\x1d\x12\x1b/streams/{slug}/{stream_id}\x12\xf2\x01\n" +
@@ -21061,15 +21061,15 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10getProgressBatch\x12!.protobuf.GetProgressBatchRequest\x1a\".protobuf.GetProgressBatchResponse\"\x80\x01\x92Al\n" +
 	"\bProgress\x12*Get watch progress for a batch of streams.\x1a4Retrieves all watch progresses for the current user.\x82\xd3\xe4\x93\x02\v\x12\t/progress\x12\xdc\x01\n" +
 	"\x0eupdateProgress\x12\x1f.protobuf.UpdateProgressRequest\x1a\x18.protobuf.StreamProgress\"\x8e\x01\x92Ak\n" +
-	"\bProgress\x12!Update watch progress for stream.\x1a<Updates the watch progress of a stream for the current user.\x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/progress/{stream_id}\x12\x93\x01\n" +
-	"\vaddBookmark\x12\x1c.protobuf.AddBookmarkRequest\x1a\x1d.protobuf.AddBookmarkResponse\"G\x92A2\n" +
-	"\tBookmarks\x12\x0fAdd a bookmark.\x1a\x14Adds a new bookmark.\x82\xd3\xe4\x93\x02\f\"\n" +
+	"\bProgress\x12!Update watch progress for stream.\x1a<Updates the watch progress of a stream for the current user.\x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/progress/{stream_id}\x12\x96\x01\n" +
+	"\vaddBookmark\x12\x1c.protobuf.AddBookmarkRequest\x1a\x1d.protobuf.AddBookmarkResponse\"J\x92A2\n" +
+	"\tBookmarks\x12\x0fAdd a bookmark.\x1a\x14Adds a new bookmark.\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/bookmarks\x12\xaf\x01\n" +
 	"\fgetBookmarks\x12\x1d.protobuf.GetBookmarksRequest\x1a\x1e.protobuf.GetBookmarksResponse\"`\x92AK\n" +
 	"\tBookmarks\x12\x1bGet bookmarks by stream ID.\x1a!Retrieves bookmarks by stream ID.\x82\xd3\xe4\x93\x02\f\x12\n" +
-	"/bookmarks\x12\xb6\x01\n" +
-	"\x0eupdateBookmark\x12\x1f.protobuf.UpdateBookmarkRequest\x1a .protobuf.UpdateBookmarkResponse\"a\x92A>\n" +
-	"\tBookmarks\x12\x12Update a bookmark.\x1a\x1dUpdates an existing bookmark.\x82\xd3\xe4\x93\x02\x1a\x1a\x18/bookmarks/{bookmark_id}\x12\xa2\x01\n" +
+	"/bookmarks\x12\xb9\x01\n" +
+	"\x0eupdateBookmark\x12\x1f.protobuf.UpdateBookmarkRequest\x1a .protobuf.UpdateBookmarkResponse\"d\x92A>\n" +
+	"\tBookmarks\x12\x12Update a bookmark.\x1a\x1dUpdates an existing bookmark.\x82\xd3\xe4\x93\x02\x1d:\x01*\x1a\x18/bookmarks/{bookmark_id}\x12\xa2\x01\n" +
 	"\x0edeleteBookmark\x12\x1f.protobuf.DeleteBookmarkRequest\x1a\x16.google.protobuf.Empty\"W\x92A4\n" +
 	"\tBookmarks\x12\x12Delete a bookmark.\x1a\x13Deletes a bookmark.\x82\xd3\xe4\x93\x02\x1a*\x18/bookmarks/{bookmark_id}\x12\xad\x03\n" +
 	"\x12switchCameraPreset\x12#.protobuf.SwitchCameraPresetRequest\x1a\x16.google.protobuf.Empty\"\xd9\x02\x92A\x8a\x02\n" +
