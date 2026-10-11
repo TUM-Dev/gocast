@@ -781,6 +781,9 @@ const (
 	CourseService_GetCourseStats_FullMethodName                  = "/protobuf.CourseService/getCourseStats"
 	CourseService_ExportCourseStats_FullMethodName               = "/protobuf.CourseService/exportCourseStats"
 	CourseService_GetLectureStats_FullMethodName                 = "/protobuf.CourseService/getLectureStats"
+	CourseService_ListLectureUnits_FullMethodName                = "/protobuf.CourseService/listLectureUnits"
+	CourseService_CreateLectureUnit_FullMethodName               = "/protobuf.CourseService/createLectureUnit"
+	CourseService_DeleteLectureUnit_FullMethodName               = "/protobuf.CourseService/deleteLectureUnit"
 	CourseService_CreateCourse_FullMethodName                    = "/protobuf.CourseService/createCourse"
 	CourseService_SearchTumOnlineCourses_FullMethodName          = "/protobuf.CourseService/searchTumOnlineCourses"
 	CourseService_GetSchedule_FullMethodName                     = "/protobuf.CourseService/getSchedule"
@@ -840,6 +843,12 @@ type CourseServiceClient interface {
 	GetCourseStats(ctx context.Context, in *GetCourseStatsRequest, opts ...grpc.CallOption) (*CourseStatsResponse, error)
 	ExportCourseStats(ctx context.Context, in *ExportCourseStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 	GetLectureStats(ctx context.Context, in *GetLectureStatsRequest, opts ...grpc.CallOption) (*LectureStatsResponse, error)
+	// A lecture's units: named, described ranges of its recording, listed with the
+	// recording so the page can preview them. Each handler checks the lecture is the
+	// course's, as getLectureStats does.
+	ListLectureUnits(ctx context.Context, in *ListLectureUnitsRequest, opts ...grpc.CallOption) (*ListLectureUnitsResponse, error)
+	CreateLectureUnit(ctx context.Context, in *CreateLectureUnitRequest, opts ...grpc.CallOption) (*LectureUnit, error)
+	DeleteLectureUnit(ctx context.Context, in *DeleteLectureUnitRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Creating a course is open to every lecturer, not only to administrators of an
 	// existing one; the creator becomes its administrator.
 	CreateCourse(ctx context.Context, in *CreateCourseRequest, opts ...grpc.CallOption) (*CreateCourseResponse, error)
@@ -1034,6 +1043,36 @@ func (c *courseServiceClient) GetLectureStats(ctx context.Context, in *GetLectur
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LectureStatsResponse)
 	err := c.cc.Invoke(ctx, CourseService_GetLectureStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) ListLectureUnits(ctx context.Context, in *ListLectureUnitsRequest, opts ...grpc.CallOption) (*ListLectureUnitsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListLectureUnitsResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListLectureUnits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) CreateLectureUnit(ctx context.Context, in *CreateLectureUnitRequest, opts ...grpc.CallOption) (*LectureUnit, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LectureUnit)
+	err := c.cc.Invoke(ctx, CourseService_CreateLectureUnit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) DeleteLectureUnit(ctx context.Context, in *DeleteLectureUnitRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_DeleteLectureUnit_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1412,6 +1451,12 @@ type CourseServiceServer interface {
 	GetCourseStats(context.Context, *GetCourseStatsRequest) (*CourseStatsResponse, error)
 	ExportCourseStats(context.Context, *ExportCourseStatsRequest) (*httpbody.HttpBody, error)
 	GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error)
+	// A lecture's units: named, described ranges of its recording, listed with the
+	// recording so the page can preview them. Each handler checks the lecture is the
+	// course's, as getLectureStats does.
+	ListLectureUnits(context.Context, *ListLectureUnitsRequest) (*ListLectureUnitsResponse, error)
+	CreateLectureUnit(context.Context, *CreateLectureUnitRequest) (*LectureUnit, error)
+	DeleteLectureUnit(context.Context, *DeleteLectureUnitRequest) (*emptypb.Empty, error)
 	// Creating a course is open to every lecturer, not only to administrators of an
 	// existing one; the creator becomes its administrator.
 	CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error)
@@ -1513,6 +1558,15 @@ func (UnimplementedCourseServiceServer) ExportCourseStats(context.Context, *Expo
 }
 func (UnimplementedCourseServiceServer) GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLectureStats not implemented")
+}
+func (UnimplementedCourseServiceServer) ListLectureUnits(context.Context, *ListLectureUnitsRequest) (*ListLectureUnitsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListLectureUnits not implemented")
+}
+func (UnimplementedCourseServiceServer) CreateLectureUnit(context.Context, *CreateLectureUnitRequest) (*LectureUnit, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateLectureUnit not implemented")
+}
+func (UnimplementedCourseServiceServer) DeleteLectureUnit(context.Context, *DeleteLectureUnitRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteLectureUnit not implemented")
 }
 func (UnimplementedCourseServiceServer) CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCourse not implemented")
@@ -1888,6 +1942,60 @@ func _CourseService_GetLectureStats_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CourseServiceServer).GetLectureStats(ctx, req.(*GetLectureStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_ListLectureUnits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLectureUnitsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListLectureUnits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListLectureUnits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListLectureUnits(ctx, req.(*ListLectureUnitsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_CreateLectureUnit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLectureUnitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).CreateLectureUnit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_CreateLectureUnit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).CreateLectureUnit(ctx, req.(*CreateLectureUnitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_DeleteLectureUnit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteLectureUnitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).DeleteLectureUnit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_DeleteLectureUnit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).DeleteLectureUnit(ctx, req.(*DeleteLectureUnitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2584,6 +2692,18 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getLectureStats",
 			Handler:    _CourseService_GetLectureStats_Handler,
+		},
+		{
+			MethodName: "listLectureUnits",
+			Handler:    _CourseService_ListLectureUnits_Handler,
+		},
+		{
+			MethodName: "createLectureUnit",
+			Handler:    _CourseService_CreateLectureUnit_Handler,
+		},
+		{
+			MethodName: "deleteLectureUnit",
+			Handler:    _CourseService_DeleteLectureUnit_Handler,
 		},
 		{
 			MethodName: "createCourse",

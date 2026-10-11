@@ -3511,6 +3511,141 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}/units": {
+      "get": {
+        "summary": "List a lecture's units.",
+        "description": "Returns the lecture's units, in recording order, with a signed playlist URL of its recording to preview them against. Requires administering the course.",
+        "operationId": "CourseService_listLectureUnits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListLectureUnitsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "description": "Must be one of the course's lectures; anything else answers as missing.",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "post": {
+        "summary": "Add a unit to a lecture.",
+        "description": "Adds a named range of the recording to the lecture. A missing title, or a range that is empty or runs backwards, answers 400. Requires administering the course.",
+        "operationId": "CourseService_createLectureUnit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLectureUnit"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicecreateLectureUnitBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/units/{unitId}": {
+      "delete": {
+        "summary": "Remove a unit from a lecture.",
+        "description": "Answers 404 for a unit that is not the lecture's. Requires administering the course.",
+        "operationId": "CourseService_deleteLectureUnit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{slug}": {
       "get": {
         "summary": "Get course by slug.",
@@ -4721,6 +4856,25 @@
             "$ref": "#/definitions/protobufLectureSectionInput"
           },
           "description": "At least one."
+        }
+      }
+    },
+    "CourseServicecreateLectureUnitBody": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "fromMs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "toMs": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -6807,6 +6961,32 @@
         }
       }
     },
+    "protobufLectureUnit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "Markdown, as entered; the client renders it."
+        },
+        "fromMs": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Milliseconds from the start of the recording."
+        },
+        "toMs": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "description": "LectureUnit is a named range of a lecture's recording. Unlike a video section it\nhas an end as well as a start, and is described in Markdown."
+    },
     "protobufLectureVideoSectionAdmin": {
       "type": "object",
       "properties": {
@@ -7002,6 +7182,31 @@
             "type": "object",
             "$ref": "#/definitions/protobufLectureHallAdmin"
           }
+        }
+      }
+    },
+    "protobufListLectureUnitsResponse": {
+      "type": "object",
+      "properties": {
+        "lectureName": {
+          "type": "string"
+        },
+        "playlistUrl": {
+          "type": "string",
+          "description": "The recording, signed for the caller; empty while the lecture has none. The\ncombined view when there is one, else the presentation, else the camera."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Length of the recording in seconds, 0 when not known yet."
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureUnit"
+          },
+          "description": "By start."
         }
       }
     },
