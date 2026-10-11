@@ -45,6 +45,9 @@ async function submitAdd(): Promise<void> {
   if (await add(draft.value.description.trim(), time)) adding.value = false;
 }
 
+// For the "B" hotkey: the page opens the same form as the button.
+defineExpose({ openAdd });
+
 const editingId = ref<number | null>(null);
 const edit = ref({ description: "", time: "" });
 

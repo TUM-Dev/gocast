@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import VideoPlayer from "@/components/player/VideoPlayer.vue";
 import SkipSilenceButton from "@/components/watch/SkipSilenceButton.vue";
+import type { Hotkey } from "@/lib/player/hotkeys";
 import type { Clip } from "@/lib/player/clip";
 import type { QualityPreference } from "@/lib/player/quality";
 import type { SubtitleTrack } from "@/lib/player/tracks";
@@ -39,6 +40,8 @@ const props = withDefaults(
     reportProgress?: boolean;
     /** The recording's length in seconds, which progress is a fraction of. */
     recordingDuration?: number;
+    /** Added to the player's key bindings (see lib/player/hotkeys.ts). */
+    extraHotkeys?: Record<string, Hotkey>;
   }>(),
   {
     subtitles: undefined,
@@ -50,6 +53,7 @@ const props = withDefaults(
     silences: () => [],
     reportProgress: false,
     recordingDuration: undefined,
+    extraHotkeys: undefined,
   },
 );
 
@@ -143,6 +147,7 @@ onBeforeUnmount(() => {
       persist
       hold-to-fast
       hotkeys="page"
+      :extra-hotkeys="extraHotkeys"
       airplay
     />
     <SkipSilenceButton v-if="silences.length > 0 && !live" :controller="controller" :silences="silences" :clip="clip" />

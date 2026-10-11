@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { HOTKEY_HELP } from "@/lib/player/hotkeys";
+import { BOOKMARK_ACTION, BOOKMARK_KEYS_LABEL, HOTKEY_HELP } from "@/lib/player/hotkeys";
 
 defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
@@ -8,6 +8,7 @@ const emit = defineEmits<{ close: [] }>();
 // cannot drift from what the keys do. Escape is the popup's, not the player's.
 const SHORTCUTS: { action: string; keys: string }[] = [
   ...HOTKEY_HELP,
+  { action: BOOKMARK_ACTION, keys: BOOKMARK_KEYS_LABEL },
   { action: "Skip silence", keys: "S / s" },
   { action: "Close any kind of popup", keys: "ESCAPE" },
 ];

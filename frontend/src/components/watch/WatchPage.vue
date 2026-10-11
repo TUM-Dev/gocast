@@ -20,6 +20,7 @@ import { WatchViewKind } from "@/gen/server/apiv2_pb";
 import { canonicalUrl, useCanonicalLink } from "@/lib/canonical-link";
 import { singleRouteParam } from "@/lib/route-query";
 import { fetchConfig } from "@/lib/config";
+import { bookmarkHotkey } from "@/lib/player/hotkeys";
 import { parseNumberParam } from "@/lib/player/start-time";
 import {
   WatchLayout as Layout,
@@ -243,6 +244,17 @@ const sprites = computed(() => {
   return presentation ? spriteSource(props.streamId, presentation) : undefined;
 });
 
+// "B" adds a bookmark: for a signed-in viewer of a recording, the viewers who have the
+// bookmarks tab (and a position worth keeping, which a live stream lacks).
+const sidebarPanel = ref<InstanceType<typeof WatchSidebar> | null>(null);
+function addBookmarkHere(): void {
+  store.openSidebar("bookmarks");
+  void sidebarPanel.value?.addBookmark();
+}
+const extraHotkeys = computed(() =>
+  phase.value === "vod" && data.value?.viewer?.signedIn === true ? bookmarkHotkey(addBookmarkHere) : undefined,
+);
+
 function setSplitController(el: unknown): void {
   if (el) controller.value = el as WatchController;
 }
@@ -346,6 +358,7 @@ provide(watchContextKey, context);
         persist
         hold-to-fast
         hotkeys="page"
+        :extra-hotkeys="extraHotkeys"
         airplay
       />
 
@@ -364,6 +377,7 @@ provide(watchContextKey, context);
         :silences="data.silences"
         :report-progress="phase === 'vod' && data.viewer?.signedIn === true"
         :recording-duration="data.stream?.duration"
+        :extra-hotkeys="extraHotkeys"
         @controller="controller = $event"
         @ended="watchedMarker.fire()"
       >
@@ -445,6 +459,7 @@ provide(watchContextKey, context);
         </div>
         <div class="min-h-0 grow">
           <WatchSidebar
+            ref="sidebarPanel"
             :stream-id="streamId"
             :slug="slug"
             :player="panelPlayer.player"

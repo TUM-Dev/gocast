@@ -145,6 +145,30 @@ export function defaultHotkeys(seekSeconds: number): Record<string, Hotkey> {
   };
 }
 
+/**
+ * "B" adds a bookmark at the current time. The old player had no key for it, so this one
+ * is new, and a page's choice rather than a default: only a signed-in viewer of a
+ * recording has bookmarks, so the watch page passes it as `extra` (VideoPlayer's
+ * `extraHotkeys`) when that holds. `onAdd` opens the add form; the player's own time
+ * is read there.
+ */
+export function bookmarkHotkey(onAdd: () => void): Record<string, Hotkey> {
+  return {
+    addBookmark: {
+      keys: ["b", "B"],
+      action: BOOKMARK_ACTION,
+      label: BOOKMARK_KEYS_LABEL,
+      handle() {
+        onAdd();
+        return faIcon("bookmark");
+      },
+    },
+  };
+}
+/** Shown in the shortcuts popup, which lists the bookmark key although it is not a default. */
+export const BOOKMARK_KEYS_LABEL = "B / b";
+export const BOOKMARK_ACTION = "Add a bookmark (signed in)";
+
 /** The rows of the shortcuts popup (KeyboardShortcuts.vue), derived from the bindings. */
 export const HOTKEY_HELP: { action: string; keys: string }[] = Object.values(defaultHotkeys(0)).map((h) => ({
   action: h.action,

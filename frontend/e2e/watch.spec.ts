@@ -68,6 +68,19 @@ test.describe("the watch page", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/w\/brauereiwesen\/1\/PRES$/);
   });
 
+  test("opens the add-bookmark form on the B key for a signed-in viewer", async ({ page }) => {
+    await login(page, users.studi1, "/w/brauereiwesen/1");
+    await expect(page.getByTestId("watch-player")).toBeVisible();
+    await page.getByTestId("watch-player").hover();
+
+    await page.keyboard.press("b");
+    // The sidebar is closed on this stream until the key opens it on the Bookmarks tab.
+    await expect(page.getByRole("tab", { name: "Bookmarks", selected: true })).toBeVisible();
+    await expect(page.getByLabel("Description")).toBeFocused();
+    // Nothing is saved: the form is cancelled.
+    await page.getByRole("button", { name: "Cancel" }).click();
+  });
+
   test("shows the waiting room for a lecture that has not started", async ({ page }) => {
     await login(page, users.studi1, "/w/bierkunde/17");
 

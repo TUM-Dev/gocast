@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fakePlayer } from "@/test/fake-player";
 import { timeRanges } from "./types";
 
-import { attachHotkeys, defaultHotkeys, HOTKEY_HELP, isTypingTarget, timeAtFraction } from "./hotkeys";
+import { attachHotkeys, bookmarkHotkey, defaultHotkeys, HOTKEY_HELP, isTypingTarget, timeAtFraction } from "./hotkeys";
 
 let detach: (() => void) | null = null;
 afterEach(() => {
@@ -174,5 +174,48 @@ describe("helpers", () => {
   it("documents every binding for the shortcuts popup", () => {
     expect(HOTKEY_HELP).toHaveLength(Object.keys(defaultHotkeys(10)).length);
     expect(HOTKEY_HELP).toContainEqual({ action: "Increase playback rate", keys: ">" });
+  });
+});
+
+describe("the bookmark key", () => {
+  function withBookmarkKey(onAdd: () => void) {
+    const f = fakePlayer({ duration: 200 });
+    document.body.appendChild(f.el);
+    detach = attachHotkeys(f.player, { scope: "page", seekSeconds: 10, extra: bookmarkHotkey(onAdd) });
+    return f;
+  }
+
+  it("is free: no default binding uses b", () => {
+    const keys = Object.values(defaultHotkeys(10)).flatMap((h) => h.keys.map((k) => k.toLowerCase()));
+    expect(keys).not.toContain("b");
+  });
+
+  it("asks the page to add a bookmark on b and B, and leaves playback alone", () => {
+    const onAdd = vi.fn();
+    const { state } = withBookmarkKey(onAdd);
+    const e = press(document, "b");
+    press(document, "B");
+    expect(onAdd).toHaveBeenCalledTimes(2);
+    expect(e.defaultPrevented).toBe(true);
+    expect(state.paused).toBe(true);
+  });
+
+  it("does nothing while typing in a field, or with a modifier", () => {
+    const onAdd = vi.fn();
+    withBookmarkKey(onAdd);
+    const input = document.body.appendChild(document.createElement("input"));
+    input.focus();
+    press(input, "b");
+    input.blur();
+    press(document, "b", { ctrlKey: true });
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it("is absent without the page opting in", () => {
+    const f = fakePlayer({ duration: 200 });
+    document.body.appendChild(f.el);
+    detach = attachHotkeys(f.player, { scope: "page", seekSeconds: 10 });
+    const e = press(document, "b");
+    expect(e.defaultPrevented).toBe(false);
   });
 });
