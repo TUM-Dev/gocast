@@ -13,7 +13,10 @@ import { users } from "./seed";
 /** The names in the table, in order. */
 async function rows(page: Page): Promise<string[]> {
   await expect(page.getByRole("table")).toBeVisible();
-  return page.locator("tbody tr td:first-child").allInnerTexts();
+  const cells = page.locator("tbody tr td:first-child");
+  // The table shows empty placeholder rows while the listing loads; wait for names.
+  await expect.poll(async () => (await cells.allInnerTexts()).some((name) => name.trim() !== "")).toBe(true);
+  return cells.allInnerTexts();
 }
 
 test.describe("who may open the page", () => {
