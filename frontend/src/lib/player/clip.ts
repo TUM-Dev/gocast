@@ -2,7 +2,7 @@ import type { PlayerLike } from "./types";
 import { timeRanges } from "./types";
 
 /**
- * Play only part of a recording. Used for lecture units and cut offsets: the server-side
+ * Play only part of a recording. Used for a stream's start and end offsets: the server-side
  * `wowzaplaystart` offsets do not work on signed streams (nothing reads them), so the
  * player does the clipping itself.
  */

@@ -8,7 +8,7 @@ import { attachHotkeys, type Hotkey } from "@/lib/player/hotkeys";
 import { attachHoldSpeed } from "@/lib/player/hold-speed";
 import { resetRateAtLiveEdge, type LiveTrackerLike } from "@/lib/player/live";
 import type { QualityLevelListLike, QualityPreference } from "@/lib/player/quality";
-import { menuRates } from "@/lib/player/speeds";
+import { keepRateAcrossSources, menuRates } from "@/lib/player/speeds";
 import { isMobileViewport, markTimeTooltip, spriteOptions, type SpriteSource } from "@/lib/player/sprites";
 import { applyStartTime } from "@/lib/player/start-time";
 import { applyStoredSettings, persistSettings, resolveRate } from "@/lib/player/storage";
@@ -190,6 +190,7 @@ async function create(): Promise<void> {
   } else if (props.rate !== undefined) {
     p.playbackRate(resolveRate(props.rate, props.live));
   }
+  if (props.persist || props.rate !== undefined) cleanups.push(keepRateAcrossSources(p));
   const hold = props.holdToFast ? attachHoldSpeed(p) : null;
   if (hold) cleanups.push(hold.dispose);
   if (props.persist) cleanups.push(persistSettings(p, { live: props.live, ignoreRate: () => !!hold?.active() }));

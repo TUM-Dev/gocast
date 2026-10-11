@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { menuRates, stepRate } from "./speeds";
+import { fakePlayer } from "@/test/fake-player";
+
+import { keepRateAcrossSources, menuRates, stepRate } from "./speeds";
 
 describe("menuRates", () => {
   it("sorts, de-duplicates and drops non-positive speeds", () => {
@@ -25,5 +27,24 @@ describe("stepRate", () => {
   it("steps from a rate that is not in the list", () => {
     expect(stepRate(rates, 1.1, true)).toBe(1.5);
     expect(stepRate(rates, 1.1, false)).toBe(1);
+  });
+});
+
+describe("keepRateAcrossSources", () => {
+  it("keeps the default rate in step with the rate", () => {
+    const { player } = fakePlayer();
+    const setDefault = vi.fn();
+    const p = Object.assign(player, { defaultPlaybackRate: setDefault });
+    p.playbackRate(1.5);
+    const stop = keepRateAcrossSources(p);
+    expect(setDefault).toHaveBeenLastCalledWith(1.5);
+    p.playbackRate(2);
+    expect(setDefault).toHaveBeenLastCalledWith(2);
+    stop();
+    p.playbackRate(1);
+    expect(setDefault).toHaveBeenLastCalledWith(2);
+  });
+  it("tolerates a player without it", () => {
+    expect(() => keepRateAcrossSources(fakePlayer().player)).not.toThrow();
   });
 });
