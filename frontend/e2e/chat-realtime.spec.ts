@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { baseURL } from "../playwright.config";
 import { apiAs, bearerToken, login } from "./helpers";
 import { users } from "./seed";
 
@@ -106,6 +107,18 @@ test.describe("the realtime socket", () => {
   test("lets an anonymous viewer watch a public course", async ({ page }) => {
     await page.goto("/");
     expect((await openSocket(page, "1", {})).frame).toHaveProperty("viewers");
+  });
+
+  test("falls back to the first frame when the session cookie is expired", async ({ page }) => {
+    // The browser keeps sending a dead cookie and the page cannot clear it (it is
+    // HttpOnly), so the cookie must not decide: a client holding a fresh token, or
+    // watching anonymously, still gets in. This used to close with 4401, for ever.
+    await page.context().addCookies([{ name: "jwt", value: "expired", url: baseURL }]);
+    await page.goto("/");
+
+    expect((await openSocket(page, "1", {})).frame).toHaveProperty("viewers");
+    // Still checked as hard as ever where it matters: no token, no signed-in course.
+    expect((await openSocket(page, "7", {})).closed).toBe(4403);
   });
 
   test("closes with a code saying why", async ({ page }) => {

@@ -32,10 +32,20 @@ export type RealtimeStatus = "connecting" | "open" | "closed";
 
 /**
  * Close codes the server sends: 4000 + the HTTP status the same failure gets over
- * REST. A 401 is retried with a new token, since tokens expire; the rest will not
- * change by trying again.
+ * REST. The rest will not change by trying again.
  */
 const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404]);
+
+/** The session was not accepted; see UNAUTHORIZED_RETRIES. */
+export const CLOSE_UNAUTHORIZED = 4401;
+
+/**
+ * A 401 is retried with a freshly minted token, since a token can expire between
+ * being minted and being checked. One that is refused again, on a connection that
+ * never got as far as subscribing, is final: the session is gone, and retrying would
+ * loop for as long as the page stays open.
+ */
+const UNAUTHORIZED_RETRIES = 1;
 
 const INITIAL_BACKOFF_MS = 1_000;
 const MAX_BACKOFF_MS = 30_000;
@@ -52,7 +62,10 @@ export interface RealtimeOptions {
    */
   onResync?: () => void;
   onStatus?: (status: RealtimeStatus) => void;
-  /** The server refused the stream for good; no reconnect follows. */
+  /**
+   * The server refused the stream for good; no reconnect follows. Code 4401 here means
+   * the session has expired or been revoked: the user has to sign in again.
+   */
   onFatal?: (code: number, reason: string) => void;
   /**
    * The server closed the socket, for any reason, before `onFatal` or a retry. Lets a
@@ -84,6 +97,8 @@ export class RealtimeConnection {
   private socket: WebSocket | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private attempt = 0;
+  /** Consecutive 4401s without a subscription in between. */
+  private unauthorized = 0;
   private closed = false;
   private readonly listeners = new Map<
     RealtimeEventCase,
@@ -162,6 +177,7 @@ export class RealtimeConnection {
       if (!subscribed) {
         subscribed = true;
         this.attempt = 0;
+        this.unauthorized = 0;
         this.options.onStatus?.("open");
         this.options.onResync?.();
       } else if (event.event.case === "resync") {
@@ -174,14 +190,23 @@ export class RealtimeConnection {
       this.socket = null;
       this.options.onClose?.(close.code, close.reason);
 
+      if (close.code === CLOSE_UNAUTHORIZED && this.unauthorized++ >= UNAUTHORIZED_RETRIES) {
+        this.giveUp(close);
+        return;
+      }
+
       if (FATAL_CLOSE_CODES.has(close.code)) {
-        this.closed = true;
-        this.options.onStatus?.("closed");
-        this.options.onFatal?.(close.code, close.reason);
+        this.giveUp(close);
         return;
       }
       this.scheduleReconnect();
     };
+  }
+
+  private giveUp(close: CloseEvent | { code: number; reason: string }): void {
+    this.closed = true;
+    this.options.onStatus?.("closed");
+    this.options.onFatal?.(close.code, close.reason);
   }
 
   private dispatch(event: RealtimeEvent): void {
