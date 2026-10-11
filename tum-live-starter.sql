@@ -1136,6 +1136,12 @@ INSERT INTO `course_admins` (`course_id`,`user_id`) VALUES (4,2),(5,3);
 -- other students are in neither, which is what makes them the negative cases.
 INSERT INTO `course_users` (`course_id`,`user_id`) VALUES (4,4),(5,5);
 
+-- Short links (`/<link>`) to a public, a logged-in-only and an enrolled-only course:
+-- they redirect to the current or next lecture, whose page then applies the course's
+-- visibility, which is what short-link.spec.ts checks.
+INSERT INTO `short_links` (`created_at`,`updated_at`,`link`,`course_id`)
+VALUES (NOW(),NOW(),'brauer',1),(NOW(),NOW(),'games',2),(NOW(),NOW(),'bier',4);
+
 --
 -- Lectures.
 --

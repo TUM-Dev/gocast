@@ -3,13 +3,10 @@ package web
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-
-	"github.com/TUM-Dev/gocast/tools"
 )
 
 // shortLinkOrInfoPage serves an info page created after the three built-in ones,
@@ -34,6 +31,15 @@ func (r mainRoutes) shortLinkOrInfoPage(c *gin.Context) {
 	r.HighlightPage(c)
 }
 
+// HighlightPage sends a course short link to the watch page of the course's current
+// or next lecture, or to the course page when there is none.
+//
+// It deliberately renders nothing about the lecture itself: the watch page enforces
+// the course's visibility and the viewer's enrolment, while this handler never did, so
+// rendering here leaked the lecture name and description of non-public courses.
+//
+// The redirect is a 302, not a 301: the target is "whatever is live or next", which
+// changes over time, so a client or proxy must not cache it.
 func (r mainRoutes) HighlightPage(c *gin.Context) {
 	course, err := r.CoursesDao.GetCourseByShortLink(c.Param("shortLink"))
 	if err != nil {
@@ -41,39 +47,13 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 		serveNotFound(c)
 		return
 	}
-	indexData := NewIndexData()
-	var tumLiveContext tools.TUMLiveContext
-	tumLiveContextQueried, found := c.Get("TUMLiveContext")
-	if found {
-		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
-		indexData.TUMLiveContext = tumLiveContext
-	} else {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	indexData.TUMLiveContext.Course = &course
 	s, err := r.CoursesDao.GetCurrentOrNextLectureForCourse(c, course.ID)
 	switch {
 	case err == nil:
-		indexData.TUMLiveContext.Stream = &s
-	case errors.Is(err, gorm.ErrRecordNotFound):
-		c.Redirect(http.StatusFound, fmt.Sprintf("/course/%d/%s/%s", course.Year, course.TeachingTerm, course.Slug))
+		c.Redirect(http.StatusFound, fmt.Sprintf("/w/%s/%d", course.Slug, s.ID))
 		return
-	default:
+	case !errors.Is(err, gorm.ErrRecordNotFound):
 		logger.Error("Error getting current or next lecture for course", "err", err)
 	}
-	description := ""
-	if indexData.TUMLiveContext.Stream != nil {
-		description = indexData.TUMLiveContext.Stream.GetDescriptionHTML()
-	}
-	d2 := WatchPageData{
-		IndexData:       indexData,
-		Description:     template.HTML(description),
-		Version:         "",
-		IsHighlightPage: true,
-	}
-	if err = templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", d2); err != nil {
-		logger.Error("Error executing template watch.gohtml", "err", err)
-		return
-	}
+	c.Redirect(http.StatusFound, fmt.Sprintf("/course/%d/%s/%s", course.Year, course.TeachingTerm, course.Slug))
 }
