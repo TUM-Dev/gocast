@@ -70,7 +70,6 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.PUT("/updateLectureTime/:streamID", routes.updateLectureTime)
 			courses.POST("/updateLectureSeriesTime/:streamID", routes.updateLectureSeriesTime)
 			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
-			courses.POST("/submitCut", routes.submitCut)
 
 			courses.POST("/addUnit", routes.addUnit)
 			courses.POST("/deleteUnit/:unitID", routes.deleteUnit)
@@ -712,46 +711,6 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 	}
 
 	c.JSON(http.StatusOK, lectureHallData)
-}
-
-func (r coursesRoutes) submitCut(c *gin.Context) {
-	var req submitCutRequest
-	if err := c.BindJSON(&req); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid body",
-			Err:           err,
-		})
-		return
-	}
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "stream not found",
-			Err:           err,
-		})
-		return
-	}
-	if refuseForeignStream(c, stream) {
-		return
-	}
-	stream.StartOffset = req.From
-	stream.EndOffset = req.To
-	if err = r.StreamsDao.SaveStream(&stream); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not save stream",
-			Err:           err,
-		})
-		return
-	}
-}
-
-type submitCutRequest struct {
-	LectureID uint `json:"lectureID"`
-	From      uint `json:"from"`
-	To        uint `json:"to"`
 }
 
 func (r coursesRoutes) deleteUnit(c *gin.Context) {

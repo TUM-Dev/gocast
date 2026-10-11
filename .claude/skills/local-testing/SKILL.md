@@ -75,7 +75,7 @@ all with password `password`. The login field is the users table's `email` colum
 `name`. Roles: 1 admin, 2 lecturer, 4 student.
 
 Useful URLs: `/`, `/course/2022/S/brauereiwesen`, `/w/brauereiwesen/2`, `/admin`,
-`/admin/course/1`, `/admin/units/1/1`, `/admin/cut/1/1`. Courses in the fixture are
+`/admin/course/1`, `/admin/units/1/1`. Courses in the fixture are
 `brauereiwesen`, `games101`, `godev` (2021/W), `bierkunde`, `geheim`.
 
 **There is no `/schedule` route** — `/admin` *is* the schedule page. `/schedule`
