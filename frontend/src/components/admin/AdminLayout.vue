@@ -183,11 +183,10 @@ const semesterGroups = computed(() =>
           class="tum-live-side-navigation-group-item"
         >
           <summary class="text-4 cursor-pointer text-sm">{{ group.label }}</summary>
-          <!-- The settings tab for now; the lectures tab is still a server page. -->
           <RouterLink
             v-for="course in group.courses"
             :key="course.id"
-            :to="`/admin/courses/${course.id}/settings`"
+            :to="`/admin/courses/${course.id}/lectures`"
             class="hover block truncate py-1 pl-3 text-sm"
             :title="course.name"
           >
