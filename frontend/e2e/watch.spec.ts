@@ -13,6 +13,10 @@ import { users } from "./seed";
  * the same course, 7 the live lecture of the signed-in-only games101 (prof2
  * administers it), 9 a recording in the enrolled-only bierkunde, and 17 the lecture of
  * bierkunde that starts within the half hour.
+ *
+ * Signed-in visits to stream 1 use studi3, never studi1: studi1's progress on that
+ * stream is seeded for visibility-course-page.spec.ts to assert on (see `watched`), and
+ * a spec that opens a recording as studi1 is one more way to disturb it.
  */
 
 test.describe("the watch page", () => {
@@ -32,7 +36,7 @@ test.describe("the watch page", () => {
   });
 
   test("switches the layout from the view menu", async ({ page }) => {
-    await login(page, users.studi1, "/w/brauereiwesen/1");
+    await login(page, users.studi3, "/w/brauereiwesen/1");
     await expect(page.getByTestId("watch-player")).toBeVisible();
 
     await page.getByRole("button", { name: "Change view" }).click();
@@ -69,7 +73,7 @@ test.describe("the watch page", () => {
   });
 
   test("opens the add-bookmark form on the B key for a signed-in viewer", async ({ page }) => {
-    await login(page, users.studi1, "/w/brauereiwesen/1");
+    await login(page, users.studi3, "/w/brauereiwesen/1");
     await expect(page.getByTestId("watch-player")).toBeVisible();
     await page.getByTestId("watch-player").hover();
 
@@ -271,7 +275,7 @@ test.describe("the watch page of a recording with subtitles", () => {
   });
 
   test("lists the transcript and keeps the other tabs reachable afterwards", async ({ page }) => {
-    await login(page, users.studi1, "/w/brauereiwesen/1");
+    await login(page, users.studi3, "/w/brauereiwesen/1");
     await page.getByTestId("open-sidebar").click();
     await expect(page.getByRole("tab", { name: "Search" })).toBeVisible();
 
@@ -311,7 +315,7 @@ test.describe("the watch page of a recording with subtitles", () => {
 
   test("keeps the action bar menus inside a phone screen", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await login(page, users.studi1, "/w/brauereiwesen/1");
+    await login(page, users.studi3, "/w/brauereiwesen/1");
     await expect(page.getByTestId("watch-action-bar")).toBeVisible();
 
     for (const name of ["Change view", "Attachments and downloads"]) {
