@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -662,27 +661,32 @@ type submitPollOptionVote struct {
 	PollOptionId uint `json:"pollOptionId"`
 }
 
-func CollectStats(daoWrapper dao.DaoWrapper) func() {
+// CollectStats records the viewer count of every live stream once per tick and pushes
+// the totals to v1 sockets. v2 may be nil.
+func CollectStats(daoWrapper dao.DaoWrapper, v2 ViewerCounter) func() {
 	return func() {
-		BroadcastStats(daoWrapper.StreamsDao)
-		for _, sID := range streamIDsWithSessions() {
-			viewers := len(sessionsFor(sID))
+		BroadcastStats(daoWrapper.StreamsDao, v2)
+		// Walk the live streams rather than the v1 session map: a stream watched only
+		// through the v2 socket has no v1 sessions to find it by. Only live streams
+		// get a row.
+		live, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
+		if err != nil {
+			logger.Error("Loading live streams for stats failed", "err", err)
+			return
+		}
+		for _, s := range live {
+			viewers := viewerCount(s.ID, v2)
 			if viewers == 0 {
 				continue
 			}
 			stat := model.Stat{
 				Time:     time.Now(),
-				StreamID: sID,
+				StreamID: s.ID,
 				Viewers:  uint(viewers),
 				Live:     true,
 			}
-			if s, err := daoWrapper.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
-				if s.LiveNow { // store stats for livestreams only
-					s.Stats = append(s.Stats, stat)
-					if err := daoWrapper.AddStat(stat); err != nil {
-						logger.Error("Saving stat failed", "err", err)
-					}
-				}
+			if err := daoWrapper.AddStat(stat); err != nil {
+				logger.Error("Saving stat failed", "err", err)
 			}
 		}
 	}

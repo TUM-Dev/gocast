@@ -115,7 +115,9 @@ func sendServerMessage(msg string, t string, sessions ...*realtime.Context) {
 	}
 }
 
-func BroadcastStats(streamsDao dao.StreamsDao) {
+// BroadcastStats sends every stream's total viewer count to its v1 sockets. The total
+// includes v2 viewers, so the old UI shows the same number the statistics record.
+func BroadcastStats(streamsDao dao.StreamsDao, v2 ViewerCounter) {
 	for _, sID := range streamIDsWithSessions() {
 		sessions := sessionsFor(sID)
 		if len(sessions) == 0 {
@@ -125,7 +127,7 @@ func BroadcastStats(streamsDao dao.StreamsDao) {
 		if err != nil || stream.Recording {
 			continue
 		}
-		msg, _ := json.Marshal(gin.H{"viewers": len(sessions)})
+		msg, _ := json.Marshal(gin.H{"viewers": viewerCount(sID, v2)})
 		broadcastStream(sID, msg)
 	}
 }
