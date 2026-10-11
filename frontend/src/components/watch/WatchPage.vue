@@ -360,6 +360,10 @@ provide(watchContextKey, context);
         hotkeys="page"
         :extra-hotkeys="extraHotkeys"
         airplay
+        :stream-id="streamId"
+        :report-progress="phase === 'vod' && data.viewer?.signedIn === true"
+        :recording-duration="data.stream?.duration"
+        @ended="watchedMarker.fire()"
       />
 
       <WatchPlayer

@@ -9,7 +9,7 @@ import type { QualityPreference } from "@/lib/player/quality";
 import type { SubtitleTrack } from "@/lib/player/tracks";
 import { spriteSource, type WatchSilence, type WatchView } from "@/lib/watch";
 import type { WatchController } from "@/lib/watch-context";
-import { createProgressReporter, saveProgress } from "@/lib/watch-progress";
+import { attachProgressReporting } from "@/lib/watch-progress";
 
 /**
  * One view of a stream in the video player, with what the watch page adds: the seek
@@ -94,26 +94,12 @@ const sprites = computed(() => spriteSource(props.streamId, props.view));
 
 let stopReporting: (() => void) | null = null;
 function startReporting(c: WatchController): void {
-  const reporter = createProgressReporter({
-    fraction() {
-      const total = props.recordingDuration ?? c.getDuration() + (props.clip?.start ?? 0);
-      if (!Number.isFinite(total) || total <= 0) return undefined;
-      return c.toRecordingTime(c.getCurrentTime()) / total;
-    },
-    save: (progress) => saveProgress(props.streamId, progress),
+  stopReporting = attachProgressReporting(c, {
+    streamId: props.streamId,
+    recordingDuration: props.recordingDuration,
+    clipStart: props.clip?.start,
+    onEnded: () => emit("ended"),
   });
-  const offs = [
-    c.on("play", reporter.onPlay),
-    c.on("pause", reporter.onPause),
-    c.on("ended", () => {
-      reporter.onEnded();
-      emit("ended");
-    }),
-  ];
-  stopReporting = () => {
-    offs.forEach((off) => off());
-    reporter.dispose();
-  };
 }
 
 onMounted(() => {

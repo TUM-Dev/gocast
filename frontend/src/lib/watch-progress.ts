@@ -105,3 +105,43 @@ export function createProgressReporter(options: ProgressReporterOptions): Progre
     dispose: stop,
   };
 }
+
+/** What {@link attachProgressReporting} needs of a player: both layouts' controllers have it. */
+export interface ReportablePlayer {
+  getCurrentTime(): number;
+  getDuration(): number;
+  toRecordingTime(clipTime: number): number;
+  on(event: "play" | "pause" | "ended", fn: () => void): () => void;
+}
+
+/**
+ * Reports the position of `player` as the single player and the split view both do:
+ * the fraction of the recording (the clip's start is added back when the recording's
+ * length is not known), on the reporter's cadence. `onEnded` runs when playback reaches
+ * the end of the recording or of its clip. Returns the function that detaches it.
+ */
+export function attachProgressReporting(
+  player: ReportablePlayer,
+  options: { streamId: number; recordingDuration?: number; clipStart?: number; onEnded?: () => void },
+): () => void {
+  const reporter = createProgressReporter({
+    fraction() {
+      const total = options.recordingDuration ?? player.getDuration() + (options.clipStart ?? 0);
+      if (!Number.isFinite(total) || total <= 0) return undefined;
+      return player.toRecordingTime(player.getCurrentTime()) / total;
+    },
+    save: (progress) => saveProgress(options.streamId, progress),
+  });
+  const offs = [
+    player.on("play", reporter.onPlay),
+    player.on("pause", reporter.onPause),
+    player.on("ended", () => {
+      reporter.onEnded();
+      options.onEnded?.();
+    }),
+  ];
+  return () => {
+    offs.forEach((off) => off());
+    reporter.dispose();
+  };
+}
