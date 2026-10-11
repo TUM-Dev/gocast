@@ -368,7 +368,7 @@ func (x RealtimeEvent_Audience) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RealtimeEvent_Audience.Descriptor instead.
 func (RealtimeEvent_Audience) EnumDescriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{219, 0}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{224, 0}
 }
 
 type HealthCheckResponse struct {
@@ -10939,6 +10939,355 @@ func (x *LectureStatsResponse) GetPartialHistory() bool {
 	return false
 }
 
+type ListLectureUnitsRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	CourseId uint32                 `protobuf:"varint,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	// Must be one of the course's lectures; anything else answers as missing.
+	StreamId      uint32 `protobuf:"varint,2,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListLectureUnitsRequest) Reset() {
+	*x = ListLectureUnitsRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[171]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListLectureUnitsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListLectureUnitsRequest) ProtoMessage() {}
+
+func (x *ListLectureUnitsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[171]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListLectureUnitsRequest.ProtoReflect.Descriptor instead.
+func (*ListLectureUnitsRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{171}
+}
+
+func (x *ListLectureUnitsRequest) GetCourseId() uint32 {
+	if x != nil {
+		return x.CourseId
+	}
+	return 0
+}
+
+func (x *ListLectureUnitsRequest) GetStreamId() uint32 {
+	if x != nil {
+		return x.StreamId
+	}
+	return 0
+}
+
+type ListLectureUnitsResponse struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	LectureName string                 `protobuf:"bytes,1,opt,name=lecture_name,json=lectureName,proto3" json:"lecture_name,omitempty"`
+	// The recording, signed for the caller; empty while the lecture has none. The
+	// combined view when there is one, else the presentation, else the camera.
+	PlaylistUrl string `protobuf:"bytes,2,opt,name=playlist_url,json=playlistUrl,proto3" json:"playlist_url,omitempty"`
+	// Length of the recording in seconds, 0 when not known yet.
+	DurationSeconds uint32 `protobuf:"varint,3,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
+	// By start.
+	Units         []*LectureUnit `protobuf:"bytes,4,rep,name=units,proto3" json:"units,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListLectureUnitsResponse) Reset() {
+	*x = ListLectureUnitsResponse{}
+	mi := &file_server_apiv2_proto_msgTypes[172]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListLectureUnitsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListLectureUnitsResponse) ProtoMessage() {}
+
+func (x *ListLectureUnitsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[172]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListLectureUnitsResponse.ProtoReflect.Descriptor instead.
+func (*ListLectureUnitsResponse) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{172}
+}
+
+func (x *ListLectureUnitsResponse) GetLectureName() string {
+	if x != nil {
+		return x.LectureName
+	}
+	return ""
+}
+
+func (x *ListLectureUnitsResponse) GetPlaylistUrl() string {
+	if x != nil {
+		return x.PlaylistUrl
+	}
+	return ""
+}
+
+func (x *ListLectureUnitsResponse) GetDurationSeconds() uint32 {
+	if x != nil {
+		return x.DurationSeconds
+	}
+	return 0
+}
+
+func (x *ListLectureUnitsResponse) GetUnits() []*LectureUnit {
+	if x != nil {
+		return x.Units
+	}
+	return nil
+}
+
+// LectureUnit is a named range of a lecture's recording. Unlike a video section it
+// has an end as well as a start, and is described in Markdown.
+type LectureUnit struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Markdown, as entered; the client renders it.
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// Milliseconds from the start of the recording.
+	FromMs        uint32 `protobuf:"varint,4,opt,name=from_ms,json=fromMs,proto3" json:"from_ms,omitempty"`
+	ToMs          uint32 `protobuf:"varint,5,opt,name=to_ms,json=toMs,proto3" json:"to_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LectureUnit) Reset() {
+	*x = LectureUnit{}
+	mi := &file_server_apiv2_proto_msgTypes[173]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LectureUnit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LectureUnit) ProtoMessage() {}
+
+func (x *LectureUnit) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[173]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LectureUnit.ProtoReflect.Descriptor instead.
+func (*LectureUnit) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{173}
+}
+
+func (x *LectureUnit) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *LectureUnit) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *LectureUnit) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *LectureUnit) GetFromMs() uint32 {
+	if x != nil {
+		return x.FromMs
+	}
+	return 0
+}
+
+func (x *LectureUnit) GetToMs() uint32 {
+	if x != nil {
+		return x.ToMs
+	}
+	return 0
+}
+
+type CreateLectureUnitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CourseId      uint32                 `protobuf:"varint,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	StreamId      uint32                 `protobuf:"varint,2,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	FromMs        uint32                 `protobuf:"varint,5,opt,name=from_ms,json=fromMs,proto3" json:"from_ms,omitempty"`
+	ToMs          uint32                 `protobuf:"varint,6,opt,name=to_ms,json=toMs,proto3" json:"to_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLectureUnitRequest) Reset() {
+	*x = CreateLectureUnitRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[174]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLectureUnitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLectureUnitRequest) ProtoMessage() {}
+
+func (x *CreateLectureUnitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[174]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLectureUnitRequest.ProtoReflect.Descriptor instead.
+func (*CreateLectureUnitRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{174}
+}
+
+func (x *CreateLectureUnitRequest) GetCourseId() uint32 {
+	if x != nil {
+		return x.CourseId
+	}
+	return 0
+}
+
+func (x *CreateLectureUnitRequest) GetStreamId() uint32 {
+	if x != nil {
+		return x.StreamId
+	}
+	return 0
+}
+
+func (x *CreateLectureUnitRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CreateLectureUnitRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateLectureUnitRequest) GetFromMs() uint32 {
+	if x != nil {
+		return x.FromMs
+	}
+	return 0
+}
+
+func (x *CreateLectureUnitRequest) GetToMs() uint32 {
+	if x != nil {
+		return x.ToMs
+	}
+	return 0
+}
+
+type DeleteLectureUnitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CourseId      uint32                 `protobuf:"varint,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	StreamId      uint32                 `protobuf:"varint,2,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
+	UnitId        uint32                 `protobuf:"varint,3,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteLectureUnitRequest) Reset() {
+	*x = DeleteLectureUnitRequest{}
+	mi := &file_server_apiv2_proto_msgTypes[175]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteLectureUnitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteLectureUnitRequest) ProtoMessage() {}
+
+func (x *DeleteLectureUnitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_apiv2_proto_msgTypes[175]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteLectureUnitRequest.ProtoReflect.Descriptor instead.
+func (*DeleteLectureUnitRequest) Descriptor() ([]byte, []int) {
+	return file_server_apiv2_proto_rawDescGZIP(), []int{175}
+}
+
+func (x *DeleteLectureUnitRequest) GetCourseId() uint32 {
+	if x != nil {
+		return x.CourseId
+	}
+	return 0
+}
+
+func (x *DeleteLectureUnitRequest) GetStreamId() uint32 {
+	if x != nil {
+		return x.StreamId
+	}
+	return 0
+}
+
+func (x *DeleteLectureUnitRequest) GetUnitId() uint32 {
+	if x != nil {
+		return x.UnitId
+	}
+	return 0
+}
+
 type ListCourseLecturesAdminRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CourseId      uint32                 `protobuf:"varint,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
@@ -10948,7 +11297,7 @@ type ListCourseLecturesAdminRequest struct {
 
 func (x *ListCourseLecturesAdminRequest) Reset() {
 	*x = ListCourseLecturesAdminRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[171]
+	mi := &file_server_apiv2_proto_msgTypes[176]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10960,7 +11309,7 @@ func (x *ListCourseLecturesAdminRequest) String() string {
 func (*ListCourseLecturesAdminRequest) ProtoMessage() {}
 
 func (x *ListCourseLecturesAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[171]
+	mi := &file_server_apiv2_proto_msgTypes[176]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10973,7 +11322,7 @@ func (x *ListCourseLecturesAdminRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseLecturesAdminRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseLecturesAdminRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{171}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{176}
 }
 
 func (x *ListCourseLecturesAdminRequest) GetCourseId() uint32 {
@@ -10993,7 +11342,7 @@ type ListCourseLecturesAdminResponse struct {
 
 func (x *ListCourseLecturesAdminResponse) Reset() {
 	*x = ListCourseLecturesAdminResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[172]
+	mi := &file_server_apiv2_proto_msgTypes[177]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11005,7 +11354,7 @@ func (x *ListCourseLecturesAdminResponse) String() string {
 func (*ListCourseLecturesAdminResponse) ProtoMessage() {}
 
 func (x *ListCourseLecturesAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[172]
+	mi := &file_server_apiv2_proto_msgTypes[177]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11018,7 +11367,7 @@ func (x *ListCourseLecturesAdminResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseLecturesAdminResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseLecturesAdminResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{172}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{177}
 }
 
 func (x *ListCourseLecturesAdminResponse) GetLectures() []*CourseLectureAdmin {
@@ -11069,7 +11418,7 @@ type CourseLectureAdmin struct {
 
 func (x *CourseLectureAdmin) Reset() {
 	*x = CourseLectureAdmin{}
-	mi := &file_server_apiv2_proto_msgTypes[173]
+	mi := &file_server_apiv2_proto_msgTypes[178]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11081,7 +11430,7 @@ func (x *CourseLectureAdmin) String() string {
 func (*CourseLectureAdmin) ProtoMessage() {}
 
 func (x *CourseLectureAdmin) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[173]
+	mi := &file_server_apiv2_proto_msgTypes[178]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11094,7 +11443,7 @@ func (x *CourseLectureAdmin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseLectureAdmin.ProtoReflect.Descriptor instead.
 func (*CourseLectureAdmin) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{173}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{178}
 }
 
 func (x *CourseLectureAdmin) GetId() uint32 {
@@ -11270,7 +11619,7 @@ type LectureFileAdmin struct {
 
 func (x *LectureFileAdmin) Reset() {
 	*x = LectureFileAdmin{}
-	mi := &file_server_apiv2_proto_msgTypes[174]
+	mi := &file_server_apiv2_proto_msgTypes[179]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11282,7 +11631,7 @@ func (x *LectureFileAdmin) String() string {
 func (*LectureFileAdmin) ProtoMessage() {}
 
 func (x *LectureFileAdmin) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[174]
+	mi := &file_server_apiv2_proto_msgTypes[179]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11295,7 +11644,7 @@ func (x *LectureFileAdmin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LectureFileAdmin.ProtoReflect.Descriptor instead.
 func (*LectureFileAdmin) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{174}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{179}
 }
 
 func (x *LectureFileAdmin) GetId() uint32 {
@@ -11331,7 +11680,7 @@ type LectureTranscodingProgress struct {
 
 func (x *LectureTranscodingProgress) Reset() {
 	*x = LectureTranscodingProgress{}
-	mi := &file_server_apiv2_proto_msgTypes[175]
+	mi := &file_server_apiv2_proto_msgTypes[180]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11343,7 +11692,7 @@ func (x *LectureTranscodingProgress) String() string {
 func (*LectureTranscodingProgress) ProtoMessage() {}
 
 func (x *LectureTranscodingProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[175]
+	mi := &file_server_apiv2_proto_msgTypes[180]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11356,7 +11705,7 @@ func (x *LectureTranscodingProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LectureTranscodingProgress.ProtoReflect.Descriptor instead.
 func (*LectureTranscodingProgress) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{175}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{180}
 }
 
 func (x *LectureTranscodingProgress) GetVersion() string {
@@ -11387,7 +11736,7 @@ type LectureVideoSectionAdmin struct {
 
 func (x *LectureVideoSectionAdmin) Reset() {
 	*x = LectureVideoSectionAdmin{}
-	mi := &file_server_apiv2_proto_msgTypes[176]
+	mi := &file_server_apiv2_proto_msgTypes[181]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11399,7 +11748,7 @@ func (x *LectureVideoSectionAdmin) String() string {
 func (*LectureVideoSectionAdmin) ProtoMessage() {}
 
 func (x *LectureVideoSectionAdmin) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[176]
+	mi := &file_server_apiv2_proto_msgTypes[181]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11412,7 +11761,7 @@ func (x *LectureVideoSectionAdmin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LectureVideoSectionAdmin.ProtoReflect.Descriptor instead.
 func (*LectureVideoSectionAdmin) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{176}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{181}
 }
 
 func (x *LectureVideoSectionAdmin) GetId() uint32 {
@@ -11473,7 +11822,7 @@ type UpdateLectureSeriesRequest struct {
 
 func (x *UpdateLectureSeriesRequest) Reset() {
 	*x = UpdateLectureSeriesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[177]
+	mi := &file_server_apiv2_proto_msgTypes[182]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11485,7 +11834,7 @@ func (x *UpdateLectureSeriesRequest) String() string {
 func (*UpdateLectureSeriesRequest) ProtoMessage() {}
 
 func (x *UpdateLectureSeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[177]
+	mi := &file_server_apiv2_proto_msgTypes[182]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11498,7 +11847,7 @@ func (x *UpdateLectureSeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLectureSeriesRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLectureSeriesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{177}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{182}
 }
 
 func (x *UpdateLectureSeriesRequest) GetCourseId() uint32 {
@@ -11557,7 +11906,7 @@ type UpdateLectureSeriesTimeRequest struct {
 
 func (x *UpdateLectureSeriesTimeRequest) Reset() {
 	*x = UpdateLectureSeriesTimeRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[178]
+	mi := &file_server_apiv2_proto_msgTypes[183]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11569,7 +11918,7 @@ func (x *UpdateLectureSeriesTimeRequest) String() string {
 func (*UpdateLectureSeriesTimeRequest) ProtoMessage() {}
 
 func (x *UpdateLectureSeriesTimeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[178]
+	mi := &file_server_apiv2_proto_msgTypes[183]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11582,7 +11931,7 @@ func (x *UpdateLectureSeriesTimeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLectureSeriesTimeRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLectureSeriesTimeRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{178}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{183}
 }
 
 func (x *UpdateLectureSeriesTimeRequest) GetCourseId() uint32 {
@@ -11625,7 +11974,7 @@ type UpdateLecturesLectureHallRequest struct {
 
 func (x *UpdateLecturesLectureHallRequest) Reset() {
 	*x = UpdateLecturesLectureHallRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[179]
+	mi := &file_server_apiv2_proto_msgTypes[184]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11637,7 +11986,7 @@ func (x *UpdateLecturesLectureHallRequest) String() string {
 func (*UpdateLecturesLectureHallRequest) ProtoMessage() {}
 
 func (x *UpdateLecturesLectureHallRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[179]
+	mi := &file_server_apiv2_proto_msgTypes[184]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11650,7 +11999,7 @@ func (x *UpdateLecturesLectureHallRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLecturesLectureHallRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLecturesLectureHallRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{179}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{184}
 }
 
 func (x *UpdateLecturesLectureHallRequest) GetCourseId() uint32 {
@@ -11684,7 +12033,7 @@ type DeleteLecturesRequest struct {
 
 func (x *DeleteLecturesRequest) Reset() {
 	*x = DeleteLecturesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[180]
+	mi := &file_server_apiv2_proto_msgTypes[185]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11696,7 +12045,7 @@ func (x *DeleteLecturesRequest) String() string {
 func (*DeleteLecturesRequest) ProtoMessage() {}
 
 func (x *DeleteLecturesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[180]
+	mi := &file_server_apiv2_proto_msgTypes[185]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11709,7 +12058,7 @@ func (x *DeleteLecturesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLecturesRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLecturesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{180}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{185}
 }
 
 func (x *DeleteLecturesRequest) GetCourseId() uint32 {
@@ -11736,7 +12085,7 @@ type DeleteLectureSeriesRequest struct {
 
 func (x *DeleteLectureSeriesRequest) Reset() {
 	*x = DeleteLectureSeriesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[181]
+	mi := &file_server_apiv2_proto_msgTypes[186]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11748,7 +12097,7 @@ func (x *DeleteLectureSeriesRequest) String() string {
 func (*DeleteLectureSeriesRequest) ProtoMessage() {}
 
 func (x *DeleteLectureSeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[181]
+	mi := &file_server_apiv2_proto_msgTypes[186]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11761,7 +12110,7 @@ func (x *DeleteLectureSeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLectureSeriesRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLectureSeriesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{181}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{186}
 }
 
 func (x *DeleteLectureSeriesRequest) GetCourseId() uint32 {
@@ -11792,7 +12141,7 @@ type CopyLectureRequest struct {
 
 func (x *CopyLectureRequest) Reset() {
 	*x = CopyLectureRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[182]
+	mi := &file_server_apiv2_proto_msgTypes[187]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11804,7 +12153,7 @@ func (x *CopyLectureRequest) String() string {
 func (*CopyLectureRequest) ProtoMessage() {}
 
 func (x *CopyLectureRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[182]
+	mi := &file_server_apiv2_proto_msgTypes[187]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11817,7 +12166,7 @@ func (x *CopyLectureRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CopyLectureRequest.ProtoReflect.Descriptor instead.
 func (*CopyLectureRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{182}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{187}
 }
 
 func (x *CopyLectureRequest) GetCourseId() uint32 {
@@ -11858,7 +12207,7 @@ type CopyLectureResponse struct {
 
 func (x *CopyLectureResponse) Reset() {
 	*x = CopyLectureResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[183]
+	mi := &file_server_apiv2_proto_msgTypes[188]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11870,7 +12219,7 @@ func (x *CopyLectureResponse) String() string {
 func (*CopyLectureResponse) ProtoMessage() {}
 
 func (x *CopyLectureResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[183]
+	mi := &file_server_apiv2_proto_msgTypes[188]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11883,7 +12232,7 @@ func (x *CopyLectureResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CopyLectureResponse.ProtoReflect.Descriptor instead.
 func (*CopyLectureResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{183}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{188}
 }
 
 func (x *CopyLectureResponse) GetStreamId() uint32 {
@@ -11918,7 +12267,7 @@ type CreateLecturesRequest struct {
 
 func (x *CreateLecturesRequest) Reset() {
 	*x = CreateLecturesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[184]
+	mi := &file_server_apiv2_proto_msgTypes[189]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11930,7 +12279,7 @@ func (x *CreateLecturesRequest) String() string {
 func (*CreateLecturesRequest) ProtoMessage() {}
 
 func (x *CreateLecturesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[184]
+	mi := &file_server_apiv2_proto_msgTypes[189]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11943,7 +12292,7 @@ func (x *CreateLecturesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLecturesRequest.ProtoReflect.Descriptor instead.
 func (*CreateLecturesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{184}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{189}
 }
 
 func (x *CreateLecturesRequest) GetCourseId() uint32 {
@@ -12019,7 +12368,7 @@ type CreateLecturesResponse struct {
 
 func (x *CreateLecturesResponse) Reset() {
 	*x = CreateLecturesResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[185]
+	mi := &file_server_apiv2_proto_msgTypes[190]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12031,7 +12380,7 @@ func (x *CreateLecturesResponse) String() string {
 func (*CreateLecturesResponse) ProtoMessage() {}
 
 func (x *CreateLecturesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[185]
+	mi := &file_server_apiv2_proto_msgTypes[190]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12044,7 +12393,7 @@ func (x *CreateLecturesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLecturesResponse.ProtoReflect.Descriptor instead.
 func (*CreateLecturesResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{185}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{190}
 }
 
 func (x *CreateLecturesResponse) GetLectures() []*CourseLectureAdmin {
@@ -12068,7 +12417,7 @@ type LectureSectionInput struct {
 
 func (x *LectureSectionInput) Reset() {
 	*x = LectureSectionInput{}
-	mi := &file_server_apiv2_proto_msgTypes[186]
+	mi := &file_server_apiv2_proto_msgTypes[191]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12080,7 +12429,7 @@ func (x *LectureSectionInput) String() string {
 func (*LectureSectionInput) ProtoMessage() {}
 
 func (x *LectureSectionInput) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[186]
+	mi := &file_server_apiv2_proto_msgTypes[191]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12093,7 +12442,7 @@ func (x *LectureSectionInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LectureSectionInput.ProtoReflect.Descriptor instead.
 func (*LectureSectionInput) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{186}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{191}
 }
 
 func (x *LectureSectionInput) GetDescription() string {
@@ -12136,7 +12485,7 @@ type CreateLectureSectionsRequest struct {
 
 func (x *CreateLectureSectionsRequest) Reset() {
 	*x = CreateLectureSectionsRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[187]
+	mi := &file_server_apiv2_proto_msgTypes[192]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12148,7 +12497,7 @@ func (x *CreateLectureSectionsRequest) String() string {
 func (*CreateLectureSectionsRequest) ProtoMessage() {}
 
 func (x *CreateLectureSectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[187]
+	mi := &file_server_apiv2_proto_msgTypes[192]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12161,7 +12510,7 @@ func (x *CreateLectureSectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLectureSectionsRequest.ProtoReflect.Descriptor instead.
 func (*CreateLectureSectionsRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{187}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{192}
 }
 
 func (x *CreateLectureSectionsRequest) GetCourseId() uint32 {
@@ -12195,7 +12544,7 @@ type CreateLectureSectionsResponse struct {
 
 func (x *CreateLectureSectionsResponse) Reset() {
 	*x = CreateLectureSectionsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[188]
+	mi := &file_server_apiv2_proto_msgTypes[193]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12207,7 +12556,7 @@ func (x *CreateLectureSectionsResponse) String() string {
 func (*CreateLectureSectionsResponse) ProtoMessage() {}
 
 func (x *CreateLectureSectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[188]
+	mi := &file_server_apiv2_proto_msgTypes[193]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12220,7 +12569,7 @@ func (x *CreateLectureSectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLectureSectionsResponse.ProtoReflect.Descriptor instead.
 func (*CreateLectureSectionsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{188}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{193}
 }
 
 func (x *CreateLectureSectionsResponse) GetSections() []*LectureVideoSectionAdmin {
@@ -12245,7 +12594,7 @@ type UpdateLectureSectionRequest struct {
 
 func (x *UpdateLectureSectionRequest) Reset() {
 	*x = UpdateLectureSectionRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[189]
+	mi := &file_server_apiv2_proto_msgTypes[194]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12257,7 +12606,7 @@ func (x *UpdateLectureSectionRequest) String() string {
 func (*UpdateLectureSectionRequest) ProtoMessage() {}
 
 func (x *UpdateLectureSectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[189]
+	mi := &file_server_apiv2_proto_msgTypes[194]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12270,7 +12619,7 @@ func (x *UpdateLectureSectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLectureSectionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLectureSectionRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{189}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{194}
 }
 
 func (x *UpdateLectureSectionRequest) GetCourseId() uint32 {
@@ -12333,7 +12682,7 @@ type DeleteLectureSectionRequest struct {
 
 func (x *DeleteLectureSectionRequest) Reset() {
 	*x = DeleteLectureSectionRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[190]
+	mi := &file_server_apiv2_proto_msgTypes[195]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12345,7 +12694,7 @@ func (x *DeleteLectureSectionRequest) String() string {
 func (*DeleteLectureSectionRequest) ProtoMessage() {}
 
 func (x *DeleteLectureSectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[190]
+	mi := &file_server_apiv2_proto_msgTypes[195]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12358,7 +12707,7 @@ func (x *DeleteLectureSectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLectureSectionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLectureSectionRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{190}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{195}
 }
 
 func (x *DeleteLectureSectionRequest) GetCourseId() uint32 {
@@ -12393,7 +12742,7 @@ type DeleteLectureAttachmentRequest struct {
 
 func (x *DeleteLectureAttachmentRequest) Reset() {
 	*x = DeleteLectureAttachmentRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[191]
+	mi := &file_server_apiv2_proto_msgTypes[196]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12405,7 +12754,7 @@ func (x *DeleteLectureAttachmentRequest) String() string {
 func (*DeleteLectureAttachmentRequest) ProtoMessage() {}
 
 func (x *DeleteLectureAttachmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[191]
+	mi := &file_server_apiv2_proto_msgTypes[196]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12418,7 +12767,7 @@ func (x *DeleteLectureAttachmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLectureAttachmentRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLectureAttachmentRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{191}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{196}
 }
 
 func (x *DeleteLectureAttachmentRequest) GetCourseId() uint32 {
@@ -12452,7 +12801,7 @@ type DeleteLectureThumbnailRequest struct {
 
 func (x *DeleteLectureThumbnailRequest) Reset() {
 	*x = DeleteLectureThumbnailRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[192]
+	mi := &file_server_apiv2_proto_msgTypes[197]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12464,7 +12813,7 @@ func (x *DeleteLectureThumbnailRequest) String() string {
 func (*DeleteLectureThumbnailRequest) ProtoMessage() {}
 
 func (x *DeleteLectureThumbnailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[192]
+	mi := &file_server_apiv2_proto_msgTypes[197]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12477,7 +12826,7 @@ func (x *DeleteLectureThumbnailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLectureThumbnailRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLectureThumbnailRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{192}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{197}
 }
 
 func (x *DeleteLectureThumbnailRequest) GetCourseId() uint32 {
@@ -12506,7 +12855,7 @@ type RequestLectureSubtitlesRequest struct {
 
 func (x *RequestLectureSubtitlesRequest) Reset() {
 	*x = RequestLectureSubtitlesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[193]
+	mi := &file_server_apiv2_proto_msgTypes[198]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12518,7 +12867,7 @@ func (x *RequestLectureSubtitlesRequest) String() string {
 func (*RequestLectureSubtitlesRequest) ProtoMessage() {}
 
 func (x *RequestLectureSubtitlesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[193]
+	mi := &file_server_apiv2_proto_msgTypes[198]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12531,7 +12880,7 @@ func (x *RequestLectureSubtitlesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestLectureSubtitlesRequest.ProtoReflect.Descriptor instead.
 func (*RequestLectureSubtitlesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{193}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{198}
 }
 
 func (x *RequestLectureSubtitlesRequest) GetCourseId() uint32 {
@@ -12565,7 +12914,7 @@ type GetLectureTranscodingProgressRequest struct {
 
 func (x *GetLectureTranscodingProgressRequest) Reset() {
 	*x = GetLectureTranscodingProgressRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[194]
+	mi := &file_server_apiv2_proto_msgTypes[199]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12577,7 +12926,7 @@ func (x *GetLectureTranscodingProgressRequest) String() string {
 func (*GetLectureTranscodingProgressRequest) ProtoMessage() {}
 
 func (x *GetLectureTranscodingProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[194]
+	mi := &file_server_apiv2_proto_msgTypes[199]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12590,7 +12939,7 @@ func (x *GetLectureTranscodingProgressRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetLectureTranscodingProgressRequest.ProtoReflect.Descriptor instead.
 func (*GetLectureTranscodingProgressRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{194}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{199}
 }
 
 func (x *GetLectureTranscodingProgressRequest) GetCourseId() uint32 {
@@ -12617,7 +12966,7 @@ type GetLectureTranscodingProgressResponse struct {
 
 func (x *GetLectureTranscodingProgressResponse) Reset() {
 	*x = GetLectureTranscodingProgressResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[195]
+	mi := &file_server_apiv2_proto_msgTypes[200]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12629,7 +12978,7 @@ func (x *GetLectureTranscodingProgressResponse) String() string {
 func (*GetLectureTranscodingProgressResponse) ProtoMessage() {}
 
 func (x *GetLectureTranscodingProgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[195]
+	mi := &file_server_apiv2_proto_msgTypes[200]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12642,7 +12991,7 @@ func (x *GetLectureTranscodingProgressResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetLectureTranscodingProgressResponse.ProtoReflect.Descriptor instead.
 func (*GetLectureTranscodingProgressResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{195}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{200}
 }
 
 func (x *GetLectureTranscodingProgressResponse) GetProgresses() []*LectureTranscodingProgress {
@@ -12680,7 +13029,7 @@ type LectureHallAdmin struct {
 
 func (x *LectureHallAdmin) Reset() {
 	*x = LectureHallAdmin{}
-	mi := &file_server_apiv2_proto_msgTypes[196]
+	mi := &file_server_apiv2_proto_msgTypes[201]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12692,7 +13041,7 @@ func (x *LectureHallAdmin) String() string {
 func (*LectureHallAdmin) ProtoMessage() {}
 
 func (x *LectureHallAdmin) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[196]
+	mi := &file_server_apiv2_proto_msgTypes[201]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12705,7 +13054,7 @@ func (x *LectureHallAdmin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LectureHallAdmin.ProtoReflect.Descriptor instead.
 func (*LectureHallAdmin) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{196}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{201}
 }
 
 func (x *LectureHallAdmin) GetId() uint32 {
@@ -12791,7 +13140,7 @@ type CameraPresetAdmin struct {
 
 func (x *CameraPresetAdmin) Reset() {
 	*x = CameraPresetAdmin{}
-	mi := &file_server_apiv2_proto_msgTypes[197]
+	mi := &file_server_apiv2_proto_msgTypes[202]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12803,7 +13152,7 @@ func (x *CameraPresetAdmin) String() string {
 func (*CameraPresetAdmin) ProtoMessage() {}
 
 func (x *CameraPresetAdmin) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[197]
+	mi := &file_server_apiv2_proto_msgTypes[202]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12816,7 +13165,7 @@ func (x *CameraPresetAdmin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CameraPresetAdmin.ProtoReflect.Descriptor instead.
 func (*CameraPresetAdmin) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{197}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{202}
 }
 
 func (x *CameraPresetAdmin) GetLectureHallId() uint32 {
@@ -12863,7 +13212,7 @@ type ListLectureHallsAdminResponse struct {
 
 func (x *ListLectureHallsAdminResponse) Reset() {
 	*x = ListLectureHallsAdminResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[198]
+	mi := &file_server_apiv2_proto_msgTypes[203]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12875,7 +13224,7 @@ func (x *ListLectureHallsAdminResponse) String() string {
 func (*ListLectureHallsAdminResponse) ProtoMessage() {}
 
 func (x *ListLectureHallsAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[198]
+	mi := &file_server_apiv2_proto_msgTypes[203]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12888,7 +13237,7 @@ func (x *ListLectureHallsAdminResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLectureHallsAdminResponse.ProtoReflect.Descriptor instead.
 func (*ListLectureHallsAdminResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{198}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{203}
 }
 
 func (x *ListLectureHallsAdminResponse) GetLectureHalls() []*LectureHallAdmin {
@@ -12913,7 +13262,7 @@ type CreateLectureHallAdminRequest struct {
 
 func (x *CreateLectureHallAdminRequest) Reset() {
 	*x = CreateLectureHallAdminRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[199]
+	mi := &file_server_apiv2_proto_msgTypes[204]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12925,7 +13274,7 @@ func (x *CreateLectureHallAdminRequest) String() string {
 func (*CreateLectureHallAdminRequest) ProtoMessage() {}
 
 func (x *CreateLectureHallAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[199]
+	mi := &file_server_apiv2_proto_msgTypes[204]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12938,7 +13287,7 @@ func (x *CreateLectureHallAdminRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLectureHallAdminRequest.ProtoReflect.Descriptor instead.
 func (*CreateLectureHallAdminRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{199}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{204}
 }
 
 func (x *CreateLectureHallAdminRequest) GetName() string {
@@ -13006,7 +13355,7 @@ type UpdateLectureHallAdminRequest struct {
 
 func (x *UpdateLectureHallAdminRequest) Reset() {
 	*x = UpdateLectureHallAdminRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[200]
+	mi := &file_server_apiv2_proto_msgTypes[205]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13018,7 +13367,7 @@ func (x *UpdateLectureHallAdminRequest) String() string {
 func (*UpdateLectureHallAdminRequest) ProtoMessage() {}
 
 func (x *UpdateLectureHallAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[200]
+	mi := &file_server_apiv2_proto_msgTypes[205]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13031,7 +13380,7 @@ func (x *UpdateLectureHallAdminRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLectureHallAdminRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLectureHallAdminRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{200}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{205}
 }
 
 func (x *UpdateLectureHallAdminRequest) GetId() uint32 {
@@ -13099,7 +13448,7 @@ type DeleteLectureHallAdminRequest struct {
 
 func (x *DeleteLectureHallAdminRequest) Reset() {
 	*x = DeleteLectureHallAdminRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[201]
+	mi := &file_server_apiv2_proto_msgTypes[206]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13111,7 +13460,7 @@ func (x *DeleteLectureHallAdminRequest) String() string {
 func (*DeleteLectureHallAdminRequest) ProtoMessage() {}
 
 func (x *DeleteLectureHallAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[201]
+	mi := &file_server_apiv2_proto_msgTypes[206]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13124,7 +13473,7 @@ func (x *DeleteLectureHallAdminRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLectureHallAdminRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLectureHallAdminRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{201}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{206}
 }
 
 func (x *DeleteLectureHallAdminRequest) GetId() uint32 {
@@ -13143,7 +13492,7 @@ type RefreshLectureHallPresetsAdminRequest struct {
 
 func (x *RefreshLectureHallPresetsAdminRequest) Reset() {
 	*x = RefreshLectureHallPresetsAdminRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[202]
+	mi := &file_server_apiv2_proto_msgTypes[207]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13155,7 +13504,7 @@ func (x *RefreshLectureHallPresetsAdminRequest) String() string {
 func (*RefreshLectureHallPresetsAdminRequest) ProtoMessage() {}
 
 func (x *RefreshLectureHallPresetsAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[202]
+	mi := &file_server_apiv2_proto_msgTypes[207]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13168,7 +13517,7 @@ func (x *RefreshLectureHallPresetsAdminRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use RefreshLectureHallPresetsAdminRequest.ProtoReflect.Descriptor instead.
 func (*RefreshLectureHallPresetsAdminRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{202}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{207}
 }
 
 func (x *RefreshLectureHallPresetsAdminRequest) GetId() uint32 {
@@ -13188,7 +13537,7 @@ type SetDefaultCameraPresetAdminRequest struct {
 
 func (x *SetDefaultCameraPresetAdminRequest) Reset() {
 	*x = SetDefaultCameraPresetAdminRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[203]
+	mi := &file_server_apiv2_proto_msgTypes[208]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13200,7 +13549,7 @@ func (x *SetDefaultCameraPresetAdminRequest) String() string {
 func (*SetDefaultCameraPresetAdminRequest) ProtoMessage() {}
 
 func (x *SetDefaultCameraPresetAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[203]
+	mi := &file_server_apiv2_proto_msgTypes[208]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13213,7 +13562,7 @@ func (x *SetDefaultCameraPresetAdminRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use SetDefaultCameraPresetAdminRequest.ProtoReflect.Descriptor instead.
 func (*SetDefaultCameraPresetAdminRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{203}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{208}
 }
 
 func (x *SetDefaultCameraPresetAdminRequest) GetLectureHallId() uint32 {
@@ -13240,7 +13589,7 @@ type TakeCameraPresetSnapshotAdminRequest struct {
 
 func (x *TakeCameraPresetSnapshotAdminRequest) Reset() {
 	*x = TakeCameraPresetSnapshotAdminRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[204]
+	mi := &file_server_apiv2_proto_msgTypes[209]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13252,7 +13601,7 @@ func (x *TakeCameraPresetSnapshotAdminRequest) String() string {
 func (*TakeCameraPresetSnapshotAdminRequest) ProtoMessage() {}
 
 func (x *TakeCameraPresetSnapshotAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[204]
+	mi := &file_server_apiv2_proto_msgTypes[209]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13265,7 +13614,7 @@ func (x *TakeCameraPresetSnapshotAdminRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use TakeCameraPresetSnapshotAdminRequest.ProtoReflect.Descriptor instead.
 func (*TakeCameraPresetSnapshotAdminRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{204}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{209}
 }
 
 func (x *TakeCameraPresetSnapshotAdminRequest) GetLectureHallId() uint32 {
@@ -13295,7 +13644,7 @@ type SwitchCameraPresetRequest struct {
 
 func (x *SwitchCameraPresetRequest) Reset() {
 	*x = SwitchCameraPresetRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[205]
+	mi := &file_server_apiv2_proto_msgTypes[210]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13307,7 +13656,7 @@ func (x *SwitchCameraPresetRequest) String() string {
 func (*SwitchCameraPresetRequest) ProtoMessage() {}
 
 func (x *SwitchCameraPresetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[205]
+	mi := &file_server_apiv2_proto_msgTypes[210]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13320,7 +13669,7 @@ func (x *SwitchCameraPresetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SwitchCameraPresetRequest.ProtoReflect.Descriptor instead.
 func (*SwitchCameraPresetRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{205}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{210}
 }
 
 func (x *SwitchCameraPresetRequest) GetCourseId() uint32 {
@@ -13353,7 +13702,7 @@ type ListChatMessagesRequest struct {
 
 func (x *ListChatMessagesRequest) Reset() {
 	*x = ListChatMessagesRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[206]
+	mi := &file_server_apiv2_proto_msgTypes[211]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13365,7 +13714,7 @@ func (x *ListChatMessagesRequest) String() string {
 func (*ListChatMessagesRequest) ProtoMessage() {}
 
 func (x *ListChatMessagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[206]
+	mi := &file_server_apiv2_proto_msgTypes[211]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13378,7 +13727,7 @@ func (x *ListChatMessagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatMessagesRequest.ProtoReflect.Descriptor instead.
 func (*ListChatMessagesRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{206}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{211}
 }
 
 func (x *ListChatMessagesRequest) GetStreamId() uint32 {
@@ -13398,7 +13747,7 @@ type ListChatMessagesResponse struct {
 
 func (x *ListChatMessagesResponse) Reset() {
 	*x = ListChatMessagesResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[207]
+	mi := &file_server_apiv2_proto_msgTypes[212]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13410,7 +13759,7 @@ func (x *ListChatMessagesResponse) String() string {
 func (*ListChatMessagesResponse) ProtoMessage() {}
 
 func (x *ListChatMessagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[207]
+	mi := &file_server_apiv2_proto_msgTypes[212]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13423,7 +13772,7 @@ func (x *ListChatMessagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatMessagesResponse.ProtoReflect.Descriptor instead.
 func (*ListChatMessagesResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{207}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{212}
 }
 
 func (x *ListChatMessagesResponse) GetMessages() []*ChatMessage {
@@ -13442,7 +13791,7 @@ type GetActiveChatPollRequest struct {
 
 func (x *GetActiveChatPollRequest) Reset() {
 	*x = GetActiveChatPollRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[208]
+	mi := &file_server_apiv2_proto_msgTypes[213]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13454,7 +13803,7 @@ func (x *GetActiveChatPollRequest) String() string {
 func (*GetActiveChatPollRequest) ProtoMessage() {}
 
 func (x *GetActiveChatPollRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[208]
+	mi := &file_server_apiv2_proto_msgTypes[213]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13467,7 +13816,7 @@ func (x *GetActiveChatPollRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetActiveChatPollRequest.ProtoReflect.Descriptor instead.
 func (*GetActiveChatPollRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{208}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{213}
 }
 
 func (x *GetActiveChatPollRequest) GetStreamId() uint32 {
@@ -13487,7 +13836,7 @@ type GetActiveChatPollResponse struct {
 
 func (x *GetActiveChatPollResponse) Reset() {
 	*x = GetActiveChatPollResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[209]
+	mi := &file_server_apiv2_proto_msgTypes[214]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13499,7 +13848,7 @@ func (x *GetActiveChatPollResponse) String() string {
 func (*GetActiveChatPollResponse) ProtoMessage() {}
 
 func (x *GetActiveChatPollResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[209]
+	mi := &file_server_apiv2_proto_msgTypes[214]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13512,7 +13861,7 @@ func (x *GetActiveChatPollResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetActiveChatPollResponse.ProtoReflect.Descriptor instead.
 func (*GetActiveChatPollResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{209}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{214}
 }
 
 func (x *GetActiveChatPollResponse) GetPoll() *ChatPoll {
@@ -13531,7 +13880,7 @@ type ListChatPollsRequest struct {
 
 func (x *ListChatPollsRequest) Reset() {
 	*x = ListChatPollsRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[210]
+	mi := &file_server_apiv2_proto_msgTypes[215]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13543,7 +13892,7 @@ func (x *ListChatPollsRequest) String() string {
 func (*ListChatPollsRequest) ProtoMessage() {}
 
 func (x *ListChatPollsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[210]
+	mi := &file_server_apiv2_proto_msgTypes[215]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13556,7 +13905,7 @@ func (x *ListChatPollsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatPollsRequest.ProtoReflect.Descriptor instead.
 func (*ListChatPollsRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{210}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{215}
 }
 
 func (x *ListChatPollsRequest) GetStreamId() uint32 {
@@ -13575,7 +13924,7 @@ type ListChatPollsResponse struct {
 
 func (x *ListChatPollsResponse) Reset() {
 	*x = ListChatPollsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[211]
+	mi := &file_server_apiv2_proto_msgTypes[216]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13587,7 +13936,7 @@ func (x *ListChatPollsResponse) String() string {
 func (*ListChatPollsResponse) ProtoMessage() {}
 
 func (x *ListChatPollsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[211]
+	mi := &file_server_apiv2_proto_msgTypes[216]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13600,7 +13949,7 @@ func (x *ListChatPollsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatPollsResponse.ProtoReflect.Descriptor instead.
 func (*ListChatPollsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{211}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{216}
 }
 
 func (x *ListChatPollsResponse) GetPolls() []*ChatPoll {
@@ -13619,7 +13968,7 @@ type ListChatUsersRequest struct {
 
 func (x *ListChatUsersRequest) Reset() {
 	*x = ListChatUsersRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[212]
+	mi := &file_server_apiv2_proto_msgTypes[217]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13631,7 +13980,7 @@ func (x *ListChatUsersRequest) String() string {
 func (*ListChatUsersRequest) ProtoMessage() {}
 
 func (x *ListChatUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[212]
+	mi := &file_server_apiv2_proto_msgTypes[217]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13644,7 +13993,7 @@ func (x *ListChatUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatUsersRequest.ProtoReflect.Descriptor instead.
 func (*ListChatUsersRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{212}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{217}
 }
 
 func (x *ListChatUsersRequest) GetStreamId() uint32 {
@@ -13663,7 +14012,7 @@ type ListChatUsersResponse struct {
 
 func (x *ListChatUsersResponse) Reset() {
 	*x = ListChatUsersResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[213]
+	mi := &file_server_apiv2_proto_msgTypes[218]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13675,7 +14024,7 @@ func (x *ListChatUsersResponse) String() string {
 func (*ListChatUsersResponse) ProtoMessage() {}
 
 func (x *ListChatUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[213]
+	mi := &file_server_apiv2_proto_msgTypes[218]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13688,7 +14037,7 @@ func (x *ListChatUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatUsersResponse.ProtoReflect.Descriptor instead.
 func (*ListChatUsersResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{213}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{218}
 }
 
 func (x *ListChatUsersResponse) GetUsers() []*ChatUser {
@@ -13708,7 +14057,7 @@ type ChatUser struct {
 
 func (x *ChatUser) Reset() {
 	*x = ChatUser{}
-	mi := &file_server_apiv2_proto_msgTypes[214]
+	mi := &file_server_apiv2_proto_msgTypes[219]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13720,7 +14069,7 @@ func (x *ChatUser) String() string {
 func (*ChatUser) ProtoMessage() {}
 
 func (x *ChatUser) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[214]
+	mi := &file_server_apiv2_proto_msgTypes[219]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13733,7 +14082,7 @@ func (x *ChatUser) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatUser.ProtoReflect.Descriptor instead.
 func (*ChatUser) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{214}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{219}
 }
 
 func (x *ChatUser) GetId() uint32 {
@@ -13765,7 +14114,7 @@ type ChatReactionSummary struct {
 
 func (x *ChatReactionSummary) Reset() {
 	*x = ChatReactionSummary{}
-	mi := &file_server_apiv2_proto_msgTypes[215]
+	mi := &file_server_apiv2_proto_msgTypes[220]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13777,7 +14126,7 @@ func (x *ChatReactionSummary) String() string {
 func (*ChatReactionSummary) ProtoMessage() {}
 
 func (x *ChatReactionSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[215]
+	mi := &file_server_apiv2_proto_msgTypes[220]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13790,7 +14139,7 @@ func (x *ChatReactionSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatReactionSummary.ProtoReflect.Descriptor instead.
 func (*ChatReactionSummary) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{215}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{220}
 }
 
 func (x *ChatReactionSummary) GetEmoji() string {
@@ -13852,7 +14201,7 @@ type ChatMessage struct {
 
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
-	mi := &file_server_apiv2_proto_msgTypes[216]
+	mi := &file_server_apiv2_proto_msgTypes[221]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13864,7 +14213,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[216]
+	mi := &file_server_apiv2_proto_msgTypes[221]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13877,7 +14226,7 @@ func (x *ChatMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
 func (*ChatMessage) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{216}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{221}
 }
 
 func (x *ChatMessage) GetId() uint32 {
@@ -13990,7 +14339,7 @@ type ChatPollOption struct {
 
 func (x *ChatPollOption) Reset() {
 	*x = ChatPollOption{}
-	mi := &file_server_apiv2_proto_msgTypes[217]
+	mi := &file_server_apiv2_proto_msgTypes[222]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14002,7 +14351,7 @@ func (x *ChatPollOption) String() string {
 func (*ChatPollOption) ProtoMessage() {}
 
 func (x *ChatPollOption) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[217]
+	mi := &file_server_apiv2_proto_msgTypes[222]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14015,7 +14364,7 @@ func (x *ChatPollOption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatPollOption.ProtoReflect.Descriptor instead.
 func (*ChatPollOption) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{217}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{222}
 }
 
 func (x *ChatPollOption) GetId() uint32 {
@@ -14053,7 +14402,7 @@ type ChatPoll struct {
 
 func (x *ChatPoll) Reset() {
 	*x = ChatPoll{}
-	mi := &file_server_apiv2_proto_msgTypes[218]
+	mi := &file_server_apiv2_proto_msgTypes[223]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14065,7 +14414,7 @@ func (x *ChatPoll) String() string {
 func (*ChatPoll) ProtoMessage() {}
 
 func (x *ChatPoll) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[218]
+	mi := &file_server_apiv2_proto_msgTypes[223]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14078,7 +14427,7 @@ func (x *ChatPoll) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatPoll.ProtoReflect.Descriptor instead.
 func (*ChatPoll) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{218}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{223}
 }
 
 func (x *ChatPoll) GetId() uint32 {
@@ -14146,7 +14495,7 @@ type RealtimeEvent struct {
 
 func (x *RealtimeEvent) Reset() {
 	*x = RealtimeEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[219]
+	mi := &file_server_apiv2_proto_msgTypes[224]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14158,7 +14507,7 @@ func (x *RealtimeEvent) String() string {
 func (*RealtimeEvent) ProtoMessage() {}
 
 func (x *RealtimeEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[219]
+	mi := &file_server_apiv2_proto_msgTypes[224]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14171,7 +14520,7 @@ func (x *RealtimeEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RealtimeEvent.ProtoReflect.Descriptor instead.
 func (*RealtimeEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{219}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{224}
 }
 
 func (x *RealtimeEvent) GetStreamId() uint32 {
@@ -14420,7 +14769,7 @@ type ChatMessageEvent struct {
 
 func (x *ChatMessageEvent) Reset() {
 	*x = ChatMessageEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[220]
+	mi := &file_server_apiv2_proto_msgTypes[225]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14432,7 +14781,7 @@ func (x *ChatMessageEvent) String() string {
 func (*ChatMessageEvent) ProtoMessage() {}
 
 func (x *ChatMessageEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[220]
+	mi := &file_server_apiv2_proto_msgTypes[225]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14445,7 +14794,7 @@ func (x *ChatMessageEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessageEvent.ProtoReflect.Descriptor instead.
 func (*ChatMessageEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{220}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{225}
 }
 
 func (x *ChatMessageEvent) GetMessage() *ChatMessage {
@@ -14465,7 +14814,7 @@ type ChatMessageDeletedEvent struct {
 
 func (x *ChatMessageDeletedEvent) Reset() {
 	*x = ChatMessageDeletedEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[221]
+	mi := &file_server_apiv2_proto_msgTypes[226]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14477,7 +14826,7 @@ func (x *ChatMessageDeletedEvent) String() string {
 func (*ChatMessageDeletedEvent) ProtoMessage() {}
 
 func (x *ChatMessageDeletedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[221]
+	mi := &file_server_apiv2_proto_msgTypes[226]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14490,7 +14839,7 @@ func (x *ChatMessageDeletedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessageDeletedEvent.ProtoReflect.Descriptor instead.
 func (*ChatMessageDeletedEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{221}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{226}
 }
 
 func (x *ChatMessageDeletedEvent) GetMessageId() uint32 {
@@ -14509,7 +14858,7 @@ type ChatMessageResolvedEvent struct {
 
 func (x *ChatMessageResolvedEvent) Reset() {
 	*x = ChatMessageResolvedEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[222]
+	mi := &file_server_apiv2_proto_msgTypes[227]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14521,7 +14870,7 @@ func (x *ChatMessageResolvedEvent) String() string {
 func (*ChatMessageResolvedEvent) ProtoMessage() {}
 
 func (x *ChatMessageResolvedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[222]
+	mi := &file_server_apiv2_proto_msgTypes[227]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14534,7 +14883,7 @@ func (x *ChatMessageResolvedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessageResolvedEvent.ProtoReflect.Descriptor instead.
 func (*ChatMessageResolvedEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{222}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{227}
 }
 
 func (x *ChatMessageResolvedEvent) GetMessageId() uint32 {
@@ -14554,7 +14903,7 @@ type ChatMessageRetractedEvent struct {
 
 func (x *ChatMessageRetractedEvent) Reset() {
 	*x = ChatMessageRetractedEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[223]
+	mi := &file_server_apiv2_proto_msgTypes[228]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14566,7 +14915,7 @@ func (x *ChatMessageRetractedEvent) String() string {
 func (*ChatMessageRetractedEvent) ProtoMessage() {}
 
 func (x *ChatMessageRetractedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[223]
+	mi := &file_server_apiv2_proto_msgTypes[228]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14579,7 +14928,7 @@ func (x *ChatMessageRetractedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessageRetractedEvent.ProtoReflect.Descriptor instead.
 func (*ChatMessageRetractedEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{223}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{228}
 }
 
 func (x *ChatMessageRetractedEvent) GetMessageId() uint32 {
@@ -14600,7 +14949,7 @@ type ChatReactionsEvent struct {
 
 func (x *ChatReactionsEvent) Reset() {
 	*x = ChatReactionsEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[224]
+	mi := &file_server_apiv2_proto_msgTypes[229]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14612,7 +14961,7 @@ func (x *ChatReactionsEvent) String() string {
 func (*ChatReactionsEvent) ProtoMessage() {}
 
 func (x *ChatReactionsEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[224]
+	mi := &file_server_apiv2_proto_msgTypes[229]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14625,7 +14974,7 @@ func (x *ChatReactionsEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatReactionsEvent.ProtoReflect.Descriptor instead.
 func (*ChatReactionsEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{224}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{229}
 }
 
 func (x *ChatReactionsEvent) GetMessageId() uint32 {
@@ -14651,7 +15000,7 @@ type ChatPollStartedEvent struct {
 
 func (x *ChatPollStartedEvent) Reset() {
 	*x = ChatPollStartedEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[225]
+	mi := &file_server_apiv2_proto_msgTypes[230]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14663,7 +15012,7 @@ func (x *ChatPollStartedEvent) String() string {
 func (*ChatPollStartedEvent) ProtoMessage() {}
 
 func (x *ChatPollStartedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[225]
+	mi := &file_server_apiv2_proto_msgTypes[230]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14676,7 +15025,7 @@ func (x *ChatPollStartedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatPollStartedEvent.ProtoReflect.Descriptor instead.
 func (*ChatPollStartedEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{225}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{230}
 }
 
 func (x *ChatPollStartedEvent) GetPoll() *ChatPoll {
@@ -14696,7 +15045,7 @@ type ChatPollClosedEvent struct {
 
 func (x *ChatPollClosedEvent) Reset() {
 	*x = ChatPollClosedEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[226]
+	mi := &file_server_apiv2_proto_msgTypes[231]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14708,7 +15057,7 @@ func (x *ChatPollClosedEvent) String() string {
 func (*ChatPollClosedEvent) ProtoMessage() {}
 
 func (x *ChatPollClosedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[226]
+	mi := &file_server_apiv2_proto_msgTypes[231]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14721,7 +15070,7 @@ func (x *ChatPollClosedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatPollClosedEvent.ProtoReflect.Descriptor instead.
 func (*ChatPollClosedEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{226}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{231}
 }
 
 func (x *ChatPollClosedEvent) GetPoll() *ChatPoll {
@@ -14741,7 +15090,7 @@ type ChatPollVoteEvent struct {
 
 func (x *ChatPollVoteEvent) Reset() {
 	*x = ChatPollVoteEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[227]
+	mi := &file_server_apiv2_proto_msgTypes[232]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14753,7 +15102,7 @@ func (x *ChatPollVoteEvent) String() string {
 func (*ChatPollVoteEvent) ProtoMessage() {}
 
 func (x *ChatPollVoteEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[227]
+	mi := &file_server_apiv2_proto_msgTypes[232]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14766,7 +15115,7 @@ func (x *ChatPollVoteEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatPollVoteEvent.ProtoReflect.Descriptor instead.
 func (*ChatPollVoteEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{227}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{232}
 }
 
 func (x *ChatPollVoteEvent) GetPollOptionId() uint32 {
@@ -14793,7 +15142,7 @@ type ViewersEvent struct {
 
 func (x *ViewersEvent) Reset() {
 	*x = ViewersEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[228]
+	mi := &file_server_apiv2_proto_msgTypes[233]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14805,7 +15154,7 @@ func (x *ViewersEvent) String() string {
 func (*ViewersEvent) ProtoMessage() {}
 
 func (x *ViewersEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[228]
+	mi := &file_server_apiv2_proto_msgTypes[233]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14818,7 +15167,7 @@ func (x *ViewersEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ViewersEvent.ProtoReflect.Descriptor instead.
 func (*ViewersEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{228}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{233}
 }
 
 func (x *ViewersEvent) GetViewers() uint32 {
@@ -14837,7 +15186,7 @@ type StreamLiveEvent struct {
 
 func (x *StreamLiveEvent) Reset() {
 	*x = StreamLiveEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[229]
+	mi := &file_server_apiv2_proto_msgTypes[234]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14849,7 +15198,7 @@ func (x *StreamLiveEvent) String() string {
 func (*StreamLiveEvent) ProtoMessage() {}
 
 func (x *StreamLiveEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[229]
+	mi := &file_server_apiv2_proto_msgTypes[234]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14862,7 +15211,7 @@ func (x *StreamLiveEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamLiveEvent.ProtoReflect.Descriptor instead.
 func (*StreamLiveEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{229}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{234}
 }
 
 func (x *StreamLiveEvent) GetLive() bool {
@@ -14881,7 +15230,7 @@ type StreamTitleEvent struct {
 
 func (x *StreamTitleEvent) Reset() {
 	*x = StreamTitleEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[230]
+	mi := &file_server_apiv2_proto_msgTypes[235]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14893,7 +15242,7 @@ func (x *StreamTitleEvent) String() string {
 func (*StreamTitleEvent) ProtoMessage() {}
 
 func (x *StreamTitleEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[230]
+	mi := &file_server_apiv2_proto_msgTypes[235]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14906,7 +15255,7 @@ func (x *StreamTitleEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamTitleEvent.ProtoReflect.Descriptor instead.
 func (*StreamTitleEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{230}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{235}
 }
 
 func (x *StreamTitleEvent) GetTitle() string {
@@ -14926,7 +15275,7 @@ type StreamDescriptionEvent struct {
 
 func (x *StreamDescriptionEvent) Reset() {
 	*x = StreamDescriptionEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[231]
+	mi := &file_server_apiv2_proto_msgTypes[236]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14938,7 +15287,7 @@ func (x *StreamDescriptionEvent) String() string {
 func (*StreamDescriptionEvent) ProtoMessage() {}
 
 func (x *StreamDescriptionEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[231]
+	mi := &file_server_apiv2_proto_msgTypes[236]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14951,7 +15300,7 @@ func (x *StreamDescriptionEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamDescriptionEvent.ProtoReflect.Descriptor instead.
 func (*StreamDescriptionEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{231}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{236}
 }
 
 func (x *StreamDescriptionEvent) GetHtml() string {
@@ -14970,7 +15319,7 @@ type ResyncEvent struct {
 
 func (x *ResyncEvent) Reset() {
 	*x = ResyncEvent{}
-	mi := &file_server_apiv2_proto_msgTypes[232]
+	mi := &file_server_apiv2_proto_msgTypes[237]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14982,7 +15331,7 @@ func (x *ResyncEvent) String() string {
 func (*ResyncEvent) ProtoMessage() {}
 
 func (x *ResyncEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[232]
+	mi := &file_server_apiv2_proto_msgTypes[237]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14995,7 +15344,7 @@ func (x *ResyncEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResyncEvent.ProtoReflect.Descriptor instead.
 func (*ResyncEvent) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{232}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{237}
 }
 
 func (x *ResyncEvent) GetReason() string {
@@ -15024,7 +15373,7 @@ type SearchRequest struct {
 
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[233]
+	mi := &file_server_apiv2_proto_msgTypes[238]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15036,7 +15385,7 @@ func (x *SearchRequest) String() string {
 func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[233]
+	mi := &file_server_apiv2_proto_msgTypes[238]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15049,7 +15398,7 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{233}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{238}
 }
 
 func (x *SearchRequest) GetQuery() string {
@@ -15113,7 +15462,7 @@ type SearchCourseHit struct {
 
 func (x *SearchCourseHit) Reset() {
 	*x = SearchCourseHit{}
-	mi := &file_server_apiv2_proto_msgTypes[234]
+	mi := &file_server_apiv2_proto_msgTypes[239]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15125,7 +15474,7 @@ func (x *SearchCourseHit) String() string {
 func (*SearchCourseHit) ProtoMessage() {}
 
 func (x *SearchCourseHit) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[234]
+	mi := &file_server_apiv2_proto_msgTypes[239]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15138,7 +15487,7 @@ func (x *SearchCourseHit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchCourseHit.ProtoReflect.Descriptor instead.
 func (*SearchCourseHit) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{234}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{239}
 }
 
 func (x *SearchCourseHit) GetName() string {
@@ -15184,7 +15533,7 @@ type SearchStreamHit struct {
 
 func (x *SearchStreamHit) Reset() {
 	*x = SearchStreamHit{}
-	mi := &file_server_apiv2_proto_msgTypes[235]
+	mi := &file_server_apiv2_proto_msgTypes[240]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15196,7 +15545,7 @@ func (x *SearchStreamHit) String() string {
 func (*SearchStreamHit) ProtoMessage() {}
 
 func (x *SearchStreamHit) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[235]
+	mi := &file_server_apiv2_proto_msgTypes[240]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15209,7 +15558,7 @@ func (x *SearchStreamHit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchStreamHit.ProtoReflect.Descriptor instead.
 func (*SearchStreamHit) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{235}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{240}
 }
 
 func (x *SearchStreamHit) GetId() uint32 {
@@ -15282,7 +15631,7 @@ type SearchSubtitleHit struct {
 
 func (x *SearchSubtitleHit) Reset() {
 	*x = SearchSubtitleHit{}
-	mi := &file_server_apiv2_proto_msgTypes[236]
+	mi := &file_server_apiv2_proto_msgTypes[241]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15294,7 +15643,7 @@ func (x *SearchSubtitleHit) String() string {
 func (*SearchSubtitleHit) ProtoMessage() {}
 
 func (x *SearchSubtitleHit) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[236]
+	mi := &file_server_apiv2_proto_msgTypes[241]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15307,7 +15656,7 @@ func (x *SearchSubtitleHit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchSubtitleHit.ProtoReflect.Descriptor instead.
 func (*SearchSubtitleHit) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{236}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{241}
 }
 
 func (x *SearchSubtitleHit) GetStreamId() uint32 {
@@ -15405,7 +15754,7 @@ type SearchResponse struct {
 
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[237]
+	mi := &file_server_apiv2_proto_msgTypes[242]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15417,7 +15766,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[237]
+	mi := &file_server_apiv2_proto_msgTypes[242]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15430,7 +15779,7 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{237}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{242}
 }
 
 func (x *SearchResponse) GetCourses() []*SearchCourseHit {
@@ -15463,7 +15812,7 @@ type CourseTokenRequest struct {
 
 func (x *CourseTokenRequest) Reset() {
 	*x = CourseTokenRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[238]
+	mi := &file_server_apiv2_proto_msgTypes[243]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15475,7 +15824,7 @@ func (x *CourseTokenRequest) String() string {
 func (*CourseTokenRequest) ProtoMessage() {}
 
 func (x *CourseTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[238]
+	mi := &file_server_apiv2_proto_msgTypes[243]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15488,7 +15837,7 @@ func (x *CourseTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseTokenRequest.ProtoReflect.Descriptor instead.
 func (*CourseTokenRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{238}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{243}
 }
 
 func (x *CourseTokenRequest) GetToken() string {
@@ -15513,7 +15862,7 @@ type CourseByToken struct {
 
 func (x *CourseByToken) Reset() {
 	*x = CourseByToken{}
-	mi := &file_server_apiv2_proto_msgTypes[239]
+	mi := &file_server_apiv2_proto_msgTypes[244]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15525,7 +15874,7 @@ func (x *CourseByToken) String() string {
 func (*CourseByToken) ProtoMessage() {}
 
 func (x *CourseByToken) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[239]
+	mi := &file_server_apiv2_proto_msgTypes[244]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15538,7 +15887,7 @@ func (x *CourseByToken) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseByToken.ProtoReflect.Descriptor instead.
 func (*CourseByToken) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{239}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{244}
 }
 
 func (x *CourseByToken) GetId() uint32 {
@@ -15592,7 +15941,7 @@ type PasswordResetKeyRequest struct {
 
 func (x *PasswordResetKeyRequest) Reset() {
 	*x = PasswordResetKeyRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[240]
+	mi := &file_server_apiv2_proto_msgTypes[245]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15604,7 +15953,7 @@ func (x *PasswordResetKeyRequest) String() string {
 func (*PasswordResetKeyRequest) ProtoMessage() {}
 
 func (x *PasswordResetKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[240]
+	mi := &file_server_apiv2_proto_msgTypes[245]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15617,7 +15966,7 @@ func (x *PasswordResetKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PasswordResetKeyRequest.ProtoReflect.Descriptor instead.
 func (*PasswordResetKeyRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{240}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{245}
 }
 
 func (x *PasswordResetKeyRequest) GetKey() string {
@@ -15637,7 +15986,7 @@ type SetPasswordByResetKeyRequest struct {
 
 func (x *SetPasswordByResetKeyRequest) Reset() {
 	*x = SetPasswordByResetKeyRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[241]
+	mi := &file_server_apiv2_proto_msgTypes[246]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15649,7 +15998,7 @@ func (x *SetPasswordByResetKeyRequest) String() string {
 func (*SetPasswordByResetKeyRequest) ProtoMessage() {}
 
 func (x *SetPasswordByResetKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[241]
+	mi := &file_server_apiv2_proto_msgTypes[246]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15662,7 +16011,7 @@ func (x *SetPasswordByResetKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPasswordByResetKeyRequest.ProtoReflect.Descriptor instead.
 func (*SetPasswordByResetKeyRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{241}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{246}
 }
 
 func (x *SetPasswordByResetKeyRequest) GetKey() string {
@@ -15690,7 +16039,7 @@ type CreateFirstUserRequest struct {
 
 func (x *CreateFirstUserRequest) Reset() {
 	*x = CreateFirstUserRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[242]
+	mi := &file_server_apiv2_proto_msgTypes[247]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15702,7 +16051,7 @@ func (x *CreateFirstUserRequest) String() string {
 func (*CreateFirstUserRequest) ProtoMessage() {}
 
 func (x *CreateFirstUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[242]
+	mi := &file_server_apiv2_proto_msgTypes[247]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15715,7 +16064,7 @@ func (x *CreateFirstUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateFirstUserRequest.ProtoReflect.Descriptor instead.
 func (*CreateFirstUserRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{242}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{247}
 }
 
 func (x *CreateFirstUserRequest) GetName() string {
@@ -15750,7 +16099,7 @@ type GetIntegrationResponse struct {
 
 func (x *GetIntegrationResponse) Reset() {
 	*x = GetIntegrationResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[243]
+	mi := &file_server_apiv2_proto_msgTypes[248]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15762,7 +16111,7 @@ func (x *GetIntegrationResponse) String() string {
 func (*GetIntegrationResponse) ProtoMessage() {}
 
 func (x *GetIntegrationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[243]
+	mi := &file_server_apiv2_proto_msgTypes[248]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15775,7 +16124,7 @@ func (x *GetIntegrationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIntegrationResponse.ProtoReflect.Descriptor instead.
 func (*GetIntegrationResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{243}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{248}
 }
 
 func (x *GetIntegrationResponse) GetId() uint32 {
@@ -15808,7 +16157,7 @@ type ListCourseIntegrationGrantsRequest struct {
 
 func (x *ListCourseIntegrationGrantsRequest) Reset() {
 	*x = ListCourseIntegrationGrantsRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[244]
+	mi := &file_server_apiv2_proto_msgTypes[249]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15820,7 +16169,7 @@ func (x *ListCourseIntegrationGrantsRequest) String() string {
 func (*ListCourseIntegrationGrantsRequest) ProtoMessage() {}
 
 func (x *ListCourseIntegrationGrantsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[244]
+	mi := &file_server_apiv2_proto_msgTypes[249]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15833,7 +16182,7 @@ func (x *ListCourseIntegrationGrantsRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ListCourseIntegrationGrantsRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseIntegrationGrantsRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{244}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{249}
 }
 
 func (x *ListCourseIntegrationGrantsRequest) GetCourseId() uint32 {
@@ -15853,7 +16202,7 @@ type CourseIntegrationGrant struct {
 
 func (x *CourseIntegrationGrant) Reset() {
 	*x = CourseIntegrationGrant{}
-	mi := &file_server_apiv2_proto_msgTypes[245]
+	mi := &file_server_apiv2_proto_msgTypes[250]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15865,7 +16214,7 @@ func (x *CourseIntegrationGrant) String() string {
 func (*CourseIntegrationGrant) ProtoMessage() {}
 
 func (x *CourseIntegrationGrant) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[245]
+	mi := &file_server_apiv2_proto_msgTypes[250]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15878,7 +16227,7 @@ func (x *CourseIntegrationGrant) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseIntegrationGrant.ProtoReflect.Descriptor instead.
 func (*CourseIntegrationGrant) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{245}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{250}
 }
 
 func (x *CourseIntegrationGrant) GetId() uint32 {
@@ -15904,7 +16253,7 @@ type ListCourseIntegrationGrantsResponse struct {
 
 func (x *ListCourseIntegrationGrantsResponse) Reset() {
 	*x = ListCourseIntegrationGrantsResponse{}
-	mi := &file_server_apiv2_proto_msgTypes[246]
+	mi := &file_server_apiv2_proto_msgTypes[251]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15916,7 +16265,7 @@ func (x *ListCourseIntegrationGrantsResponse) String() string {
 func (*ListCourseIntegrationGrantsResponse) ProtoMessage() {}
 
 func (x *ListCourseIntegrationGrantsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[246]
+	mi := &file_server_apiv2_proto_msgTypes[251]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15929,7 +16278,7 @@ func (x *ListCourseIntegrationGrantsResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ListCourseIntegrationGrantsResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseIntegrationGrantsResponse) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{246}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{251}
 }
 
 func (x *ListCourseIntegrationGrantsResponse) GetGrants() []*CourseIntegrationGrant {
@@ -15949,7 +16298,7 @@ type RevokeCourseIntegrationGrantRequest struct {
 
 func (x *RevokeCourseIntegrationGrantRequest) Reset() {
 	*x = RevokeCourseIntegrationGrantRequest{}
-	mi := &file_server_apiv2_proto_msgTypes[247]
+	mi := &file_server_apiv2_proto_msgTypes[252]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15961,7 +16310,7 @@ func (x *RevokeCourseIntegrationGrantRequest) String() string {
 func (*RevokeCourseIntegrationGrantRequest) ProtoMessage() {}
 
 func (x *RevokeCourseIntegrationGrantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_apiv2_proto_msgTypes[247]
+	mi := &file_server_apiv2_proto_msgTypes[252]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15974,7 +16323,7 @@ func (x *RevokeCourseIntegrationGrantRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use RevokeCourseIntegrationGrantRequest.ProtoReflect.Descriptor instead.
 func (*RevokeCourseIntegrationGrantRequest) Descriptor() ([]byte, []int) {
-	return file_server_apiv2_proto_rawDescGZIP(), []int{247}
+	return file_server_apiv2_proto_rawDescGZIP(), []int{252}
 }
 
 func (x *RevokeCourseIntegrationGrantRequest) GetCourseId() uint32 {
@@ -16768,7 +17117,32 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\bweekdays\x18\t \x01(\v2\x1b.protobuf.ServerStatsSeriesR\bweekdays\x126\n" +
 	"\ball_days\x18\n" +
 	" \x01(\v2\x1b.protobuf.ServerStatsSeriesR\aallDays\x12'\n" +
-	"\x0fpartial_history\x18\v \x01(\bR\x0epartialHistory\"=\n" +
+	"\x0fpartial_history\x18\v \x01(\bR\x0epartialHistory\"S\n" +
+	"\x17ListLectureUnitsRequest\x12\x1b\n" +
+	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x1b\n" +
+	"\tstream_id\x18\x02 \x01(\rR\bstreamId\"\xb8\x01\n" +
+	"\x18ListLectureUnitsResponse\x12!\n" +
+	"\flecture_name\x18\x01 \x01(\tR\vlectureName\x12!\n" +
+	"\fplaylist_url\x18\x02 \x01(\tR\vplaylistUrl\x12)\n" +
+	"\x10duration_seconds\x18\x03 \x01(\rR\x0fdurationSeconds\x12+\n" +
+	"\x05units\x18\x04 \x03(\v2\x15.protobuf.LectureUnitR\x05units\"\x83\x01\n" +
+	"\vLectureUnit\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x17\n" +
+	"\afrom_ms\x18\x04 \x01(\rR\x06fromMs\x12\x13\n" +
+	"\x05to_ms\x18\x05 \x01(\rR\x04toMs\"\xba\x01\n" +
+	"\x18CreateLectureUnitRequest\x12\x1b\n" +
+	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x1b\n" +
+	"\tstream_id\x18\x02 \x01(\rR\bstreamId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x17\n" +
+	"\afrom_ms\x18\x05 \x01(\rR\x06fromMs\x12\x13\n" +
+	"\x05to_ms\x18\x06 \x01(\rR\x04toMs\"m\n" +
+	"\x18DeleteLectureUnitRequest\x12\x1b\n" +
+	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x1b\n" +
+	"\tstream_id\x18\x02 \x01(\rR\bstreamId\x12\x17\n" +
+	"\aunit_id\x18\x03 \x01(\rR\x06unitId\"=\n" +
 	"\x1eListCourseLecturesAdminRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"[\n" +
 	"\x1fListCourseLecturesAdminResponse\x128\n" +
@@ -17214,7 +17588,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0fcreateFirstUser\x12 .protobuf.CreateFirstUserRequest\x1a\x16.google.protobuf.Empty\"\xf5\x01\x92A\xda\x01\n" +
 	"\x04User\x125Create the first administrator of a fresh deployment.\x1a\x9a\x01Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password.\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/users/first\x12\x8b\x02\n" +
 	"\x0fgetLoginOptions\x12\x16.google.protobuf.Empty\x1a!.protobuf.GetLoginOptionsResponse\"\xbc\x01\x92A\xa2\x01\n" +
-	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2Ȉ\x01\n" +
+	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\x8b\x90\x01\n" +
 	"\rCourseService\x12\xc0\x01\n" +
 	"\x10getPublicCourses\x12!.protobuf.GetPublicCoursesRequest\x1a\".protobuf.GetPublicCoursesResponse\"e\x92AR\n" +
 	"\aCourses\x12\x13Get public courses.\x1a2Retrieves the public courses for a given semester.\x82\xd3\xe4\x93\x02\n" +
@@ -17244,7 +17618,13 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x11exportCourseStats\x12\".protobuf.ExportCourseStatsRequest\x1a\x14.google.api.HttpBody\"\xdb\x01\x92A\xae\x01\n" +
 	"\aCourses\x12#Export a course's usage statistics.\x1a~Bundles the same data getCourseStats returns as a single downloadable file, as JSON or CSV. Requires administering the course.\x82\xd3\xe4\x93\x02#\x12!/courses/{course_id}/stats/export\x12\xb4\x02\n" +
 	"\x0fgetLectureStats\x12 .protobuf.GetLectureStatsRequest\x1a\x1e.protobuf.LectureStatsResponse\"\xde\x01\x92A\xa4\x01\n" +
-	"\aCourses\x12#Get one lecture's usage statistics.\x1atReturns the viewer counters and charted activity of one of the course's lectures. Requires administering the course.\x82\xd3\xe4\x93\x020\x12./courses/{course_id}/streams/{stream_id}/stats\x12\xe3\x02\n" +
+	"\aCourses\x12#Get one lecture's usage statistics.\x1atReturns the viewer counters and charted activity of one of the course's lectures. Requires administering the course.\x82\xd3\xe4\x93\x020\x12./courses/{course_id}/streams/{stream_id}/stats\x12\xd3\x02\n" +
+	"\x10listLectureUnits\x12!.protobuf.ListLectureUnitsRequest\x1a\".protobuf.ListLectureUnitsResponse\"\xf7\x01\x92A\xbd\x01\n" +
+	"\aCourses\x12\x17List a lecture's units.\x1a\x98\x01Returns the lecture's units, in recording order, with a signed playlist URL of its recording to preview them against. Requires administering the course.\x82\xd3\xe4\x93\x020\x12./courses/{course_id}/streams/{stream_id}/units\x12\xd4\x02\n" +
+	"\x11createLectureUnit\x12\".protobuf.CreateLectureUnitRequest\x1a\x15.protobuf.LectureUnit\"\x83\x02\x92A\xc6\x01\n" +
+	"\aCourses\x12\x18Add a unit to a lecture.\x1a\xa0\x01Adds a named range of the recording to the lecture. A missing title, or a range that is empty or runs backwards, answers 400. Requires administering the course.\x82\xd3\xe4\x93\x023:\x01*\"./courses/{course_id}/streams/{stream_id}/units\x12\x93\x02\n" +
+	"\x11deleteLectureUnit\x12\".protobuf.DeleteLectureUnitRequest\x1a\x16.google.protobuf.Empty\"\xc1\x01\x92A~\n" +
+	"\aCourses\x12\x1dRemove a unit from a lecture.\x1aTAnswers 404 for a unit that is not the lecture's. Requires administering the course.\x82\xd3\xe4\x93\x02:*8/courses/{course_id}/streams/{stream_id}/units/{unit_id}\x12\xe3\x02\n" +
 	"\fcreateCourse\x12\x1d.protobuf.CreateCourseRequest\x1a\x1e.protobuf.CreateCourseResponse\"\x93\x02\x92A\xfc\x01\n" +
 	"\aCourses\x12\x10Create a course.\x1a\xde\x01Creates a course visible to signed-in users, with VoDs on and downloads and chat off, and makes the caller its administrator. Requires the lecture permission. Answers 409 if the semester already has a course with the slug.\x82\xd3\xe4\x93\x02\r:\x01*\"\b/courses\x12\xd2\x02\n" +
 	"\x16searchTumOnlineCourses\x12'.protobuf.SearchTumOnlineCoursesRequest\x1a(.protobuf.SearchTumOnlineCoursesResponse\"\xe4\x01\x92A\xc6\x01\n" +
@@ -17476,7 +17856,7 @@ func file_server_apiv2_proto_rawDescGZIP() []byte {
 }
 
 var file_server_apiv2_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_server_apiv2_proto_msgTypes = make([]protoimpl.MessageInfo, 248)
+var file_server_apiv2_proto_msgTypes = make([]protoimpl.MessageInfo, 253)
 var file_server_apiv2_proto_goTypes = []any{
 	(UserSettingType)(0),                               // 0: protobuf.UserSettingType
 	(VideoType)(0),                                     // 1: protobuf.VideoType
@@ -17655,86 +18035,91 @@ var file_server_apiv2_proto_goTypes = []any{
 	(*ListAdministeredCoursesResponse)(nil),            // 174: protobuf.ListAdministeredCoursesResponse
 	(*GetLectureStatsRequest)(nil),                     // 175: protobuf.GetLectureStatsRequest
 	(*LectureStatsResponse)(nil),                       // 176: protobuf.LectureStatsResponse
-	(*ListCourseLecturesAdminRequest)(nil),             // 177: protobuf.ListCourseLecturesAdminRequest
-	(*ListCourseLecturesAdminResponse)(nil),            // 178: protobuf.ListCourseLecturesAdminResponse
-	(*CourseLectureAdmin)(nil),                         // 179: protobuf.CourseLectureAdmin
-	(*LectureFileAdmin)(nil),                           // 180: protobuf.LectureFileAdmin
-	(*LectureTranscodingProgress)(nil),                 // 181: protobuf.LectureTranscodingProgress
-	(*LectureVideoSectionAdmin)(nil),                   // 182: protobuf.LectureVideoSectionAdmin
-	(*UpdateLectureSeriesRequest)(nil),                 // 183: protobuf.UpdateLectureSeriesRequest
-	(*UpdateLectureSeriesTimeRequest)(nil),             // 184: protobuf.UpdateLectureSeriesTimeRequest
-	(*UpdateLecturesLectureHallRequest)(nil),           // 185: protobuf.UpdateLecturesLectureHallRequest
-	(*DeleteLecturesRequest)(nil),                      // 186: protobuf.DeleteLecturesRequest
-	(*DeleteLectureSeriesRequest)(nil),                 // 187: protobuf.DeleteLectureSeriesRequest
-	(*CopyLectureRequest)(nil),                         // 188: protobuf.CopyLectureRequest
-	(*CopyLectureResponse)(nil),                        // 189: protobuf.CopyLectureResponse
-	(*CreateLecturesRequest)(nil),                      // 190: protobuf.CreateLecturesRequest
-	(*CreateLecturesResponse)(nil),                     // 191: protobuf.CreateLecturesResponse
-	(*LectureSectionInput)(nil),                        // 192: protobuf.LectureSectionInput
-	(*CreateLectureSectionsRequest)(nil),               // 193: protobuf.CreateLectureSectionsRequest
-	(*CreateLectureSectionsResponse)(nil),              // 194: protobuf.CreateLectureSectionsResponse
-	(*UpdateLectureSectionRequest)(nil),                // 195: protobuf.UpdateLectureSectionRequest
-	(*DeleteLectureSectionRequest)(nil),                // 196: protobuf.DeleteLectureSectionRequest
-	(*DeleteLectureAttachmentRequest)(nil),             // 197: protobuf.DeleteLectureAttachmentRequest
-	(*DeleteLectureThumbnailRequest)(nil),              // 198: protobuf.DeleteLectureThumbnailRequest
-	(*RequestLectureSubtitlesRequest)(nil),             // 199: protobuf.RequestLectureSubtitlesRequest
-	(*GetLectureTranscodingProgressRequest)(nil),       // 200: protobuf.GetLectureTranscodingProgressRequest
-	(*GetLectureTranscodingProgressResponse)(nil),      // 201: protobuf.GetLectureTranscodingProgressResponse
-	(*LectureHallAdmin)(nil),                           // 202: protobuf.LectureHallAdmin
-	(*CameraPresetAdmin)(nil),                          // 203: protobuf.CameraPresetAdmin
-	(*ListLectureHallsAdminResponse)(nil),              // 204: protobuf.ListLectureHallsAdminResponse
-	(*CreateLectureHallAdminRequest)(nil),              // 205: protobuf.CreateLectureHallAdminRequest
-	(*UpdateLectureHallAdminRequest)(nil),              // 206: protobuf.UpdateLectureHallAdminRequest
-	(*DeleteLectureHallAdminRequest)(nil),              // 207: protobuf.DeleteLectureHallAdminRequest
-	(*RefreshLectureHallPresetsAdminRequest)(nil),      // 208: protobuf.RefreshLectureHallPresetsAdminRequest
-	(*SetDefaultCameraPresetAdminRequest)(nil),         // 209: protobuf.SetDefaultCameraPresetAdminRequest
-	(*TakeCameraPresetSnapshotAdminRequest)(nil),       // 210: protobuf.TakeCameraPresetSnapshotAdminRequest
-	(*SwitchCameraPresetRequest)(nil),                  // 211: protobuf.SwitchCameraPresetRequest
-	(*ListChatMessagesRequest)(nil),                    // 212: protobuf.ListChatMessagesRequest
-	(*ListChatMessagesResponse)(nil),                   // 213: protobuf.ListChatMessagesResponse
-	(*GetActiveChatPollRequest)(nil),                   // 214: protobuf.GetActiveChatPollRequest
-	(*GetActiveChatPollResponse)(nil),                  // 215: protobuf.GetActiveChatPollResponse
-	(*ListChatPollsRequest)(nil),                       // 216: protobuf.ListChatPollsRequest
-	(*ListChatPollsResponse)(nil),                      // 217: protobuf.ListChatPollsResponse
-	(*ListChatUsersRequest)(nil),                       // 218: protobuf.ListChatUsersRequest
-	(*ListChatUsersResponse)(nil),                      // 219: protobuf.ListChatUsersResponse
-	(*ChatUser)(nil),                                   // 220: protobuf.ChatUser
-	(*ChatReactionSummary)(nil),                        // 221: protobuf.ChatReactionSummary
-	(*ChatMessage)(nil),                                // 222: protobuf.ChatMessage
-	(*ChatPollOption)(nil),                             // 223: protobuf.ChatPollOption
-	(*ChatPoll)(nil),                                   // 224: protobuf.ChatPoll
-	(*RealtimeEvent)(nil),                              // 225: protobuf.RealtimeEvent
-	(*ChatMessageEvent)(nil),                           // 226: protobuf.ChatMessageEvent
-	(*ChatMessageDeletedEvent)(nil),                    // 227: protobuf.ChatMessageDeletedEvent
-	(*ChatMessageResolvedEvent)(nil),                   // 228: protobuf.ChatMessageResolvedEvent
-	(*ChatMessageRetractedEvent)(nil),                  // 229: protobuf.ChatMessageRetractedEvent
-	(*ChatReactionsEvent)(nil),                         // 230: protobuf.ChatReactionsEvent
-	(*ChatPollStartedEvent)(nil),                       // 231: protobuf.ChatPollStartedEvent
-	(*ChatPollClosedEvent)(nil),                        // 232: protobuf.ChatPollClosedEvent
-	(*ChatPollVoteEvent)(nil),                          // 233: protobuf.ChatPollVoteEvent
-	(*ViewersEvent)(nil),                               // 234: protobuf.ViewersEvent
-	(*StreamLiveEvent)(nil),                            // 235: protobuf.StreamLiveEvent
-	(*StreamTitleEvent)(nil),                           // 236: protobuf.StreamTitleEvent
-	(*StreamDescriptionEvent)(nil),                     // 237: protobuf.StreamDescriptionEvent
-	(*ResyncEvent)(nil),                                // 238: protobuf.ResyncEvent
-	(*SearchRequest)(nil),                              // 239: protobuf.SearchRequest
-	(*SearchCourseHit)(nil),                            // 240: protobuf.SearchCourseHit
-	(*SearchStreamHit)(nil),                            // 241: protobuf.SearchStreamHit
-	(*SearchSubtitleHit)(nil),                          // 242: protobuf.SearchSubtitleHit
-	(*SearchResponse)(nil),                             // 243: protobuf.SearchResponse
-	(*CourseTokenRequest)(nil),                         // 244: protobuf.CourseTokenRequest
-	(*CourseByToken)(nil),                              // 245: protobuf.CourseByToken
-	(*PasswordResetKeyRequest)(nil),                    // 246: protobuf.PasswordResetKeyRequest
-	(*SetPasswordByResetKeyRequest)(nil),               // 247: protobuf.SetPasswordByResetKeyRequest
-	(*CreateFirstUserRequest)(nil),                     // 248: protobuf.CreateFirstUserRequest
-	(*GetIntegrationResponse)(nil),                     // 249: protobuf.GetIntegrationResponse
-	(*ListCourseIntegrationGrantsRequest)(nil),         // 250: protobuf.ListCourseIntegrationGrantsRequest
-	(*CourseIntegrationGrant)(nil),                     // 251: protobuf.CourseIntegrationGrant
-	(*ListCourseIntegrationGrantsResponse)(nil),        // 252: protobuf.ListCourseIntegrationGrantsResponse
-	(*RevokeCourseIntegrationGrantRequest)(nil),        // 253: protobuf.RevokeCourseIntegrationGrantRequest
-	(*timestamppb.Timestamp)(nil),                      // 254: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                              // 255: google.protobuf.Empty
-	(*httpbody.HttpBody)(nil),                          // 256: google.api.HttpBody
+	(*ListLectureUnitsRequest)(nil),                    // 177: protobuf.ListLectureUnitsRequest
+	(*ListLectureUnitsResponse)(nil),                   // 178: protobuf.ListLectureUnitsResponse
+	(*LectureUnit)(nil),                                // 179: protobuf.LectureUnit
+	(*CreateLectureUnitRequest)(nil),                   // 180: protobuf.CreateLectureUnitRequest
+	(*DeleteLectureUnitRequest)(nil),                   // 181: protobuf.DeleteLectureUnitRequest
+	(*ListCourseLecturesAdminRequest)(nil),             // 182: protobuf.ListCourseLecturesAdminRequest
+	(*ListCourseLecturesAdminResponse)(nil),            // 183: protobuf.ListCourseLecturesAdminResponse
+	(*CourseLectureAdmin)(nil),                         // 184: protobuf.CourseLectureAdmin
+	(*LectureFileAdmin)(nil),                           // 185: protobuf.LectureFileAdmin
+	(*LectureTranscodingProgress)(nil),                 // 186: protobuf.LectureTranscodingProgress
+	(*LectureVideoSectionAdmin)(nil),                   // 187: protobuf.LectureVideoSectionAdmin
+	(*UpdateLectureSeriesRequest)(nil),                 // 188: protobuf.UpdateLectureSeriesRequest
+	(*UpdateLectureSeriesTimeRequest)(nil),             // 189: protobuf.UpdateLectureSeriesTimeRequest
+	(*UpdateLecturesLectureHallRequest)(nil),           // 190: protobuf.UpdateLecturesLectureHallRequest
+	(*DeleteLecturesRequest)(nil),                      // 191: protobuf.DeleteLecturesRequest
+	(*DeleteLectureSeriesRequest)(nil),                 // 192: protobuf.DeleteLectureSeriesRequest
+	(*CopyLectureRequest)(nil),                         // 193: protobuf.CopyLectureRequest
+	(*CopyLectureResponse)(nil),                        // 194: protobuf.CopyLectureResponse
+	(*CreateLecturesRequest)(nil),                      // 195: protobuf.CreateLecturesRequest
+	(*CreateLecturesResponse)(nil),                     // 196: protobuf.CreateLecturesResponse
+	(*LectureSectionInput)(nil),                        // 197: protobuf.LectureSectionInput
+	(*CreateLectureSectionsRequest)(nil),               // 198: protobuf.CreateLectureSectionsRequest
+	(*CreateLectureSectionsResponse)(nil),              // 199: protobuf.CreateLectureSectionsResponse
+	(*UpdateLectureSectionRequest)(nil),                // 200: protobuf.UpdateLectureSectionRequest
+	(*DeleteLectureSectionRequest)(nil),                // 201: protobuf.DeleteLectureSectionRequest
+	(*DeleteLectureAttachmentRequest)(nil),             // 202: protobuf.DeleteLectureAttachmentRequest
+	(*DeleteLectureThumbnailRequest)(nil),              // 203: protobuf.DeleteLectureThumbnailRequest
+	(*RequestLectureSubtitlesRequest)(nil),             // 204: protobuf.RequestLectureSubtitlesRequest
+	(*GetLectureTranscodingProgressRequest)(nil),       // 205: protobuf.GetLectureTranscodingProgressRequest
+	(*GetLectureTranscodingProgressResponse)(nil),      // 206: protobuf.GetLectureTranscodingProgressResponse
+	(*LectureHallAdmin)(nil),                           // 207: protobuf.LectureHallAdmin
+	(*CameraPresetAdmin)(nil),                          // 208: protobuf.CameraPresetAdmin
+	(*ListLectureHallsAdminResponse)(nil),              // 209: protobuf.ListLectureHallsAdminResponse
+	(*CreateLectureHallAdminRequest)(nil),              // 210: protobuf.CreateLectureHallAdminRequest
+	(*UpdateLectureHallAdminRequest)(nil),              // 211: protobuf.UpdateLectureHallAdminRequest
+	(*DeleteLectureHallAdminRequest)(nil),              // 212: protobuf.DeleteLectureHallAdminRequest
+	(*RefreshLectureHallPresetsAdminRequest)(nil),      // 213: protobuf.RefreshLectureHallPresetsAdminRequest
+	(*SetDefaultCameraPresetAdminRequest)(nil),         // 214: protobuf.SetDefaultCameraPresetAdminRequest
+	(*TakeCameraPresetSnapshotAdminRequest)(nil),       // 215: protobuf.TakeCameraPresetSnapshotAdminRequest
+	(*SwitchCameraPresetRequest)(nil),                  // 216: protobuf.SwitchCameraPresetRequest
+	(*ListChatMessagesRequest)(nil),                    // 217: protobuf.ListChatMessagesRequest
+	(*ListChatMessagesResponse)(nil),                   // 218: protobuf.ListChatMessagesResponse
+	(*GetActiveChatPollRequest)(nil),                   // 219: protobuf.GetActiveChatPollRequest
+	(*GetActiveChatPollResponse)(nil),                  // 220: protobuf.GetActiveChatPollResponse
+	(*ListChatPollsRequest)(nil),                       // 221: protobuf.ListChatPollsRequest
+	(*ListChatPollsResponse)(nil),                      // 222: protobuf.ListChatPollsResponse
+	(*ListChatUsersRequest)(nil),                       // 223: protobuf.ListChatUsersRequest
+	(*ListChatUsersResponse)(nil),                      // 224: protobuf.ListChatUsersResponse
+	(*ChatUser)(nil),                                   // 225: protobuf.ChatUser
+	(*ChatReactionSummary)(nil),                        // 226: protobuf.ChatReactionSummary
+	(*ChatMessage)(nil),                                // 227: protobuf.ChatMessage
+	(*ChatPollOption)(nil),                             // 228: protobuf.ChatPollOption
+	(*ChatPoll)(nil),                                   // 229: protobuf.ChatPoll
+	(*RealtimeEvent)(nil),                              // 230: protobuf.RealtimeEvent
+	(*ChatMessageEvent)(nil),                           // 231: protobuf.ChatMessageEvent
+	(*ChatMessageDeletedEvent)(nil),                    // 232: protobuf.ChatMessageDeletedEvent
+	(*ChatMessageResolvedEvent)(nil),                   // 233: protobuf.ChatMessageResolvedEvent
+	(*ChatMessageRetractedEvent)(nil),                  // 234: protobuf.ChatMessageRetractedEvent
+	(*ChatReactionsEvent)(nil),                         // 235: protobuf.ChatReactionsEvent
+	(*ChatPollStartedEvent)(nil),                       // 236: protobuf.ChatPollStartedEvent
+	(*ChatPollClosedEvent)(nil),                        // 237: protobuf.ChatPollClosedEvent
+	(*ChatPollVoteEvent)(nil),                          // 238: protobuf.ChatPollVoteEvent
+	(*ViewersEvent)(nil),                               // 239: protobuf.ViewersEvent
+	(*StreamLiveEvent)(nil),                            // 240: protobuf.StreamLiveEvent
+	(*StreamTitleEvent)(nil),                           // 241: protobuf.StreamTitleEvent
+	(*StreamDescriptionEvent)(nil),                     // 242: protobuf.StreamDescriptionEvent
+	(*ResyncEvent)(nil),                                // 243: protobuf.ResyncEvent
+	(*SearchRequest)(nil),                              // 244: protobuf.SearchRequest
+	(*SearchCourseHit)(nil),                            // 245: protobuf.SearchCourseHit
+	(*SearchStreamHit)(nil),                            // 246: protobuf.SearchStreamHit
+	(*SearchSubtitleHit)(nil),                          // 247: protobuf.SearchSubtitleHit
+	(*SearchResponse)(nil),                             // 248: protobuf.SearchResponse
+	(*CourseTokenRequest)(nil),                         // 249: protobuf.CourseTokenRequest
+	(*CourseByToken)(nil),                              // 250: protobuf.CourseByToken
+	(*PasswordResetKeyRequest)(nil),                    // 251: protobuf.PasswordResetKeyRequest
+	(*SetPasswordByResetKeyRequest)(nil),               // 252: protobuf.SetPasswordByResetKeyRequest
+	(*CreateFirstUserRequest)(nil),                     // 253: protobuf.CreateFirstUserRequest
+	(*GetIntegrationResponse)(nil),                     // 254: protobuf.GetIntegrationResponse
+	(*ListCourseIntegrationGrantsRequest)(nil),         // 255: protobuf.ListCourseIntegrationGrantsRequest
+	(*CourseIntegrationGrant)(nil),                     // 256: protobuf.CourseIntegrationGrant
+	(*ListCourseIntegrationGrantsResponse)(nil),        // 257: protobuf.ListCourseIntegrationGrantsResponse
+	(*RevokeCourseIntegrationGrantRequest)(nil),        // 258: protobuf.RevokeCourseIntegrationGrantRequest
+	(*timestamppb.Timestamp)(nil),                      // 259: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                              // 260: google.protobuf.Empty
+	(*httpbody.HttpBody)(nil),                          // 261: google.api.HttpBody
 }
 var file_server_apiv2_proto_depIdxs = []int32{
 	7,   // 0: protobuf.GetFrontendConfigResponse.branding:type_name -> protobuf.Branding
@@ -17745,7 +18130,7 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	38,  // 5: protobuf.User.pinned_courses:type_name -> protobuf.Course
 	19,  // 6: protobuf.User.settings:type_name -> protobuf.UserSetting
 	30,  // 7: protobuf.User.bookmarks:type_name -> protobuf.Bookmark
-	254, // 8: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
+	259, // 8: protobuf.User.created_at:type_name -> google.protobuf.Timestamp
 	0,   // 9: protobuf.UserSetting.type:type_name -> protobuf.UserSettingType
 	19,  // 10: protobuf.UpdateUserSettingsRequest.user_settings:type_name -> protobuf.UserSetting
 	18,  // 11: protobuf.GetUserResponse.user:type_name -> protobuf.User
@@ -17754,7 +18139,7 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	27,  // 14: protobuf.ExportPersonalDataResponse.enrollments:type_name -> protobuf.Enrollment
 	28,  // 15: protobuf.ExportPersonalDataResponse.video_views:type_name -> protobuf.VideoView
 	29,  // 16: protobuf.ExportPersonalDataResponse.chats:type_name -> protobuf.Chat
-	254, // 17: protobuf.Chat.created_at:type_name -> google.protobuf.Timestamp
+	259, // 17: protobuf.Chat.created_at:type_name -> google.protobuf.Timestamp
 	30,  // 18: protobuf.GetBookmarksResponse.bookmarks:type_name -> protobuf.Bookmark
 	30,  // 19: protobuf.AddBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
 	30,  // 20: protobuf.UpdateBookmarkResponse.bookmark:type_name -> protobuf.Bookmark
@@ -17772,57 +18157,57 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	83,  // 32: protobuf.CourseStream.lecture_hall:type_name -> protobuf.LectureHall
 	52,  // 33: protobuf.GetSemestersResponse.current:type_name -> protobuf.Semester
 	52,  // 34: protobuf.GetSemestersResponse.semesters:type_name -> protobuf.Semester
-	254, // 35: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
-	254, // 36: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
-	254, // 37: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
+	259, // 35: protobuf.Stream.start:type_name -> google.protobuf.Timestamp
+	259, // 36: protobuf.Stream.end:type_name -> google.protobuf.Timestamp
+	259, // 37: protobuf.Stream.live_now_timestamp:type_name -> google.protobuf.Timestamp
 	69,  // 38: protobuf.Stream.downloads:type_name -> protobuf.Download
-	254, // 39: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
+	259, // 39: protobuf.StreamPlaylistEntry.start:type_name -> google.protobuf.Timestamp
 	56,  // 40: protobuf.StreamPlaylistEntry.stream_progress:type_name -> protobuf.StreamProgress
-	254, // 41: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
+	259, // 41: protobuf.StreamPlaylistEntry.created_at:type_name -> google.protobuf.Timestamp
 	1,   // 42: protobuf.GetThumbsRequest.thumb_type:type_name -> protobuf.VideoType
 	57,  // 43: protobuf.GetVideoSectionsResponse.sections:type_name -> protobuf.VideoSection
 	55,  // 44: protobuf.GetStreamPlaylistResponse.entries:type_name -> protobuf.StreamPlaylistEntry
 	56,  // 45: protobuf.GetProgressBatchResponse.progress_batch:type_name -> protobuf.StreamProgress
 	2,   // 46: protobuf.UserGroupNotification.target:type_name -> protobuf.NotificationTarget
-	254, // 47: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
-	254, // 48: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
-	254, // 49: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
+	259, // 47: protobuf.UserGroupNotification.created_at:type_name -> google.protobuf.Timestamp
+	259, // 48: protobuf.ServerNotification.start:type_name -> google.protobuf.Timestamp
+	259, // 49: protobuf.ServerNotification.expires:type_name -> google.protobuf.Timestamp
 	70,  // 50: protobuf.GetNotificationsResponse.notifications:type_name -> protobuf.UserGroupNotification
 	71,  // 51: protobuf.GetServerNotificationsResponse.server_notifications:type_name -> protobuf.ServerNotification
-	254, // 52: protobuf.ServerNotificationAdmin.start:type_name -> google.protobuf.Timestamp
-	254, // 53: protobuf.ServerNotificationAdmin.expires:type_name -> google.protobuf.Timestamp
+	259, // 52: protobuf.ServerNotificationAdmin.start:type_name -> google.protobuf.Timestamp
+	259, // 53: protobuf.ServerNotificationAdmin.expires:type_name -> google.protobuf.Timestamp
 	74,  // 54: protobuf.ListServerNotificationsAdminResponse.notifications:type_name -> protobuf.ServerNotificationAdmin
-	254, // 55: protobuf.CreateServerNotificationRequest.start:type_name -> google.protobuf.Timestamp
-	254, // 56: protobuf.CreateServerNotificationRequest.expires:type_name -> google.protobuf.Timestamp
-	254, // 57: protobuf.UpdateServerNotificationRequest.start:type_name -> google.protobuf.Timestamp
-	254, // 58: protobuf.UpdateServerNotificationRequest.expires:type_name -> google.protobuf.Timestamp
-	254, // 59: protobuf.AdminNotification.created_at:type_name -> google.protobuf.Timestamp
+	259, // 55: protobuf.CreateServerNotificationRequest.start:type_name -> google.protobuf.Timestamp
+	259, // 56: protobuf.CreateServerNotificationRequest.expires:type_name -> google.protobuf.Timestamp
+	259, // 57: protobuf.UpdateServerNotificationRequest.start:type_name -> google.protobuf.Timestamp
+	259, // 58: protobuf.UpdateServerNotificationRequest.expires:type_name -> google.protobuf.Timestamp
+	259, // 59: protobuf.AdminNotification.created_at:type_name -> google.protobuf.Timestamp
 	79,  // 60: protobuf.ListNotificationsAdminResponse.notifications:type_name -> protobuf.AdminNotification
 	84,  // 61: protobuf.LectureHall.camera_presets:type_name -> protobuf.CameraPreset
-	254, // 62: protobuf.Runner.last_seen:type_name -> google.protobuf.Timestamp
-	254, // 63: protobuf.Runner.time_of_register:type_name -> google.protobuf.Timestamp
+	259, // 62: protobuf.Runner.last_seen:type_name -> google.protobuf.Timestamp
+	259, // 63: protobuf.Runner.time_of_register:type_name -> google.protobuf.Timestamp
 	85,  // 64: protobuf.ListRunnersResponse.runners:type_name -> protobuf.Runner
-	254, // 65: protobuf.Worker.last_seen:type_name -> google.protobuf.Timestamp
+	259, // 65: protobuf.Worker.last_seen:type_name -> google.protobuf.Timestamp
 	88,  // 66: protobuf.ListWorkersResponse.workers:type_name -> protobuf.Worker
 	91,  // 67: protobuf.ListUsersResponse.users:type_name -> protobuf.UserSummary
 	97,  // 68: protobuf.ListIntegrationsResponse.integrations:type_name -> protobuf.IntegrationSummary
 	107, // 69: protobuf.ListMaintenanceTranscodingFailuresResponse.failures:type_name -> protobuf.MaintenanceTranscodingFailure
-	254, // 70: protobuf.MaintenanceEmailFailure.last_try:type_name -> google.protobuf.Timestamp
+	259, // 70: protobuf.MaintenanceEmailFailure.last_try:type_name -> google.protobuf.Timestamp
 	110, // 71: protobuf.ListMaintenanceEmailFailuresResponse.failures:type_name -> protobuf.MaintenanceEmailFailure
-	254, // 72: protobuf.CourseImportEvent.start:type_name -> google.protobuf.Timestamp
-	254, // 73: protobuf.CourseImportEvent.end:type_name -> google.protobuf.Timestamp
+	259, // 72: protobuf.CourseImportEvent.start:type_name -> google.protobuf.Timestamp
+	259, // 73: protobuf.CourseImportEvent.end:type_name -> google.protobuf.Timestamp
 	113, // 74: protobuf.CourseImportCourse.events:type_name -> protobuf.CourseImportEvent
 	114, // 75: protobuf.CourseImportCourse.contacts:type_name -> protobuf.CourseImportContact
-	254, // 76: protobuf.CourseImportSearchRequest.from:type_name -> google.protobuf.Timestamp
-	254, // 77: protobuf.CourseImportSearchRequest.to:type_name -> google.protobuf.Timestamp
+	259, // 76: protobuf.CourseImportSearchRequest.from:type_name -> google.protobuf.Timestamp
+	259, // 77: protobuf.CourseImportSearchRequest.to:type_name -> google.protobuf.Timestamp
 	115, // 78: protobuf.CourseImportRequest.courses:type_name -> protobuf.CourseImportCourse
 	115, // 79: protobuf.CourseImportSearchResponse.courses:type_name -> protobuf.CourseImportCourse
 	119, // 80: protobuf.CourseImportResponse.results:type_name -> protobuf.CourseImportResult
-	254, // 81: protobuf.Token.expires:type_name -> google.protobuf.Timestamp
-	254, // 82: protobuf.Token.last_use:type_name -> google.protobuf.Timestamp
-	254, // 83: protobuf.CreateTokenRequest.expires:type_name -> google.protobuf.Timestamp
+	259, // 81: protobuf.Token.expires:type_name -> google.protobuf.Timestamp
+	259, // 82: protobuf.Token.last_use:type_name -> google.protobuf.Timestamp
+	259, // 83: protobuf.CreateTokenRequest.expires:type_name -> google.protobuf.Timestamp
 	121, // 84: protobuf.ListTokensResponse.tokens:type_name -> protobuf.Token
-	254, // 85: protobuf.AuditEntry.created_at:type_name -> google.protobuf.Timestamp
+	259, // 85: protobuf.AuditEntry.created_at:type_name -> google.protobuf.Timestamp
 	126, // 86: protobuf.ListAuditsResponse.audits:type_name -> protobuf.AuditEntry
 	129, // 87: protobuf.ServerStatsSeries.points:type_name -> protobuf.ServerStatsDataPoint
 	130, // 88: protobuf.ServerStatsResponse.activity_live:type_name -> protobuf.ServerStatsSeries
@@ -17836,14 +18221,14 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	130, // 96: protobuf.CourseStatsResponse.weekdays:type_name -> protobuf.ServerStatsSeries
 	130, // 97: protobuf.CourseStatsResponse.all_days:type_name -> protobuf.ServerStatsSeries
 	139, // 98: protobuf.SearchTumOnlineCoursesResponse.courses:type_name -> protobuf.TumOnlineCourse
-	254, // 99: protobuf.GetScheduleRequest.from:type_name -> google.protobuf.Timestamp
-	254, // 100: protobuf.GetScheduleRequest.to:type_name -> google.protobuf.Timestamp
-	254, // 101: protobuf.ScheduledLecture.start:type_name -> google.protobuf.Timestamp
-	254, // 102: protobuf.ScheduledLecture.end:type_name -> google.protobuf.Timestamp
+	259, // 99: protobuf.GetScheduleRequest.from:type_name -> google.protobuf.Timestamp
+	259, // 100: protobuf.GetScheduleRequest.to:type_name -> google.protobuf.Timestamp
+	259, // 101: protobuf.ScheduledLecture.start:type_name -> google.protobuf.Timestamp
+	259, // 102: protobuf.ScheduledLecture.end:type_name -> google.protobuf.Timestamp
 	142, // 103: protobuf.GetScheduleResponse.lectures:type_name -> protobuf.ScheduledLecture
 	144, // 104: protobuf.ListScheduleLectureHallsResponse.lecture_halls:type_name -> protobuf.ScheduleLectureHall
-	254, // 105: protobuf.UpdateLectureRequest.start:type_name -> google.protobuf.Timestamp
-	254, // 106: protobuf.UpdateLectureRequest.end:type_name -> google.protobuf.Timestamp
+	259, // 105: protobuf.UpdateLectureRequest.start:type_name -> google.protobuf.Timestamp
+	259, // 106: protobuf.UpdateLectureRequest.end:type_name -> google.protobuf.Timestamp
 	153, // 107: protobuf.ListCourseAdminsResponse.admins:type_name -> protobuf.CourseAdminUser
 	153, // 108: protobuf.SearchUsersForCourseResponse.users:type_name -> protobuf.CourseAdminUser
 	160, // 109: protobuf.CourseLectureHallSetting.presets:type_name -> protobuf.CourseLectureHallPreset
@@ -17855,322 +18240,329 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	169, // 115: protobuf.InviteCourseParticipantsRequest.invitees:type_name -> protobuf.CourseInvitee
 	171, // 116: protobuf.InviteCourseParticipantsResponse.results:type_name -> protobuf.CourseInvitationResult
 	173, // 117: protobuf.ListAdministeredCoursesResponse.courses:type_name -> protobuf.CourseAdminSummary
-	254, // 118: protobuf.LectureStatsResponse.start:type_name -> google.protobuf.Timestamp
-	254, // 119: protobuf.LectureStatsResponse.end:type_name -> google.protobuf.Timestamp
+	259, // 118: protobuf.LectureStatsResponse.start:type_name -> google.protobuf.Timestamp
+	259, // 119: protobuf.LectureStatsResponse.end:type_name -> google.protobuf.Timestamp
 	130, // 120: protobuf.LectureStatsResponse.live_viewers:type_name -> protobuf.ServerStatsSeries
 	130, // 121: protobuf.LectureStatsResponse.weekdays:type_name -> protobuf.ServerStatsSeries
 	130, // 122: protobuf.LectureStatsResponse.all_days:type_name -> protobuf.ServerStatsSeries
-	179, // 123: protobuf.ListCourseLecturesAdminResponse.lectures:type_name -> protobuf.CourseLectureAdmin
-	254, // 124: protobuf.CourseLectureAdmin.start:type_name -> google.protobuf.Timestamp
-	254, // 125: protobuf.CourseLectureAdmin.end:type_name -> google.protobuf.Timestamp
-	180, // 126: protobuf.CourseLectureAdmin.files:type_name -> protobuf.LectureFileAdmin
-	181, // 127: protobuf.CourseLectureAdmin.transcoding_progresses:type_name -> protobuf.LectureTranscodingProgress
-	182, // 128: protobuf.CourseLectureAdmin.video_sections:type_name -> protobuf.LectureVideoSectionAdmin
-	254, // 129: protobuf.UpdateLectureSeriesTimeRequest.start:type_name -> google.protobuf.Timestamp
-	254, // 130: protobuf.UpdateLectureSeriesTimeRequest.end:type_name -> google.protobuf.Timestamp
-	4,   // 131: protobuf.CreateLecturesRequest.kind:type_name -> protobuf.LectureCreationKind
-	254, // 132: protobuf.CreateLecturesRequest.start:type_name -> google.protobuf.Timestamp
-	254, // 133: protobuf.CreateLecturesRequest.date_series:type_name -> google.protobuf.Timestamp
-	179, // 134: protobuf.CreateLecturesResponse.lectures:type_name -> protobuf.CourseLectureAdmin
-	192, // 135: protobuf.CreateLectureSectionsRequest.sections:type_name -> protobuf.LectureSectionInput
-	182, // 136: protobuf.CreateLectureSectionsResponse.sections:type_name -> protobuf.LectureVideoSectionAdmin
-	181, // 137: protobuf.GetLectureTranscodingProgressResponse.progresses:type_name -> protobuf.LectureTranscodingProgress
-	203, // 138: protobuf.LectureHallAdmin.camera_presets:type_name -> protobuf.CameraPresetAdmin
-	202, // 139: protobuf.ListLectureHallsAdminResponse.lecture_halls:type_name -> protobuf.LectureHallAdmin
-	222, // 140: protobuf.ListChatMessagesResponse.messages:type_name -> protobuf.ChatMessage
-	224, // 141: protobuf.GetActiveChatPollResponse.poll:type_name -> protobuf.ChatPoll
-	224, // 142: protobuf.ListChatPollsResponse.polls:type_name -> protobuf.ChatPoll
-	220, // 143: protobuf.ListChatUsersResponse.users:type_name -> protobuf.ChatUser
-	254, // 144: protobuf.ChatMessage.created_at:type_name -> google.protobuf.Timestamp
-	221, // 145: protobuf.ChatMessage.reactions:type_name -> protobuf.ChatReactionSummary
-	222, // 146: protobuf.ChatMessage.replies:type_name -> protobuf.ChatMessage
-	223, // 147: protobuf.ChatPoll.options:type_name -> protobuf.ChatPollOption
-	254, // 148: protobuf.RealtimeEvent.at:type_name -> google.protobuf.Timestamp
-	5,   // 149: protobuf.RealtimeEvent.audience:type_name -> protobuf.RealtimeEvent.Audience
-	226, // 150: protobuf.RealtimeEvent.message:type_name -> protobuf.ChatMessageEvent
-	227, // 151: protobuf.RealtimeEvent.message_deleted:type_name -> protobuf.ChatMessageDeletedEvent
-	228, // 152: protobuf.RealtimeEvent.message_resolved:type_name -> protobuf.ChatMessageResolvedEvent
-	229, // 153: protobuf.RealtimeEvent.message_retracted:type_name -> protobuf.ChatMessageRetractedEvent
-	230, // 154: protobuf.RealtimeEvent.reactions:type_name -> protobuf.ChatReactionsEvent
-	231, // 155: protobuf.RealtimeEvent.poll_started:type_name -> protobuf.ChatPollStartedEvent
-	232, // 156: protobuf.RealtimeEvent.poll_closed:type_name -> protobuf.ChatPollClosedEvent
-	233, // 157: protobuf.RealtimeEvent.poll_vote:type_name -> protobuf.ChatPollVoteEvent
-	234, // 158: protobuf.RealtimeEvent.viewers:type_name -> protobuf.ViewersEvent
-	235, // 159: protobuf.RealtimeEvent.live:type_name -> protobuf.StreamLiveEvent
-	236, // 160: protobuf.RealtimeEvent.title:type_name -> protobuf.StreamTitleEvent
-	237, // 161: protobuf.RealtimeEvent.description:type_name -> protobuf.StreamDescriptionEvent
-	238, // 162: protobuf.RealtimeEvent.resync:type_name -> protobuf.ResyncEvent
-	222, // 163: protobuf.ChatMessageEvent.message:type_name -> protobuf.ChatMessage
-	221, // 164: protobuf.ChatReactionsEvent.reactions:type_name -> protobuf.ChatReactionSummary
-	224, // 165: protobuf.ChatPollStartedEvent.poll:type_name -> protobuf.ChatPoll
-	224, // 166: protobuf.ChatPollClosedEvent.poll:type_name -> protobuf.ChatPoll
-	254, // 167: protobuf.SearchSubtitleHit.stream_start:type_name -> google.protobuf.Timestamp
-	254, // 168: protobuf.SearchSubtitleHit.stream_end:type_name -> google.protobuf.Timestamp
-	240, // 169: protobuf.SearchResponse.courses:type_name -> protobuf.SearchCourseHit
-	241, // 170: protobuf.SearchResponse.streams:type_name -> protobuf.SearchStreamHit
-	242, // 171: protobuf.SearchResponse.subtitles:type_name -> protobuf.SearchSubtitleHit
-	251, // 172: protobuf.ListCourseIntegrationGrantsResponse.grants:type_name -> protobuf.CourseIntegrationGrant
-	255, // 173: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
-	255, // 174: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
-	255, // 175: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
-	255, // 176: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
-	255, // 177: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
-	9,   // 178: protobuf.MetaService.getInfoPage:input_type -> protobuf.GetInfoPageRequest
-	255, // 179: protobuf.MetaService.listInfoPages:input_type -> google.protobuf.Empty
-	255, // 180: protobuf.MetaService.getIntegration:input_type -> google.protobuf.Empty
-	255, // 181: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
-	20,  // 182: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
-	255, // 183: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
-	21,  // 184: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
-	246, // 185: protobuf.UserService.checkPasswordResetKey:input_type -> protobuf.PasswordResetKeyRequest
-	247, // 186: protobuf.UserService.setPasswordByResetKey:input_type -> protobuf.SetPasswordByResetKeyRequest
-	248, // 187: protobuf.UserService.createFirstUser:input_type -> protobuf.CreateFirstUserRequest
-	255, // 188: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
-	39,  // 189: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
-	40,  // 190: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
-	239, // 191: protobuf.CourseService.search:input_type -> protobuf.SearchRequest
-	244, // 192: protobuf.CourseService.getCourseByToken:input_type -> protobuf.CourseTokenRequest
-	244, // 193: protobuf.CourseService.optInCourseByToken:input_type -> protobuf.CourseTokenRequest
-	244, // 194: protobuf.CourseService.optOutCourseByToken:input_type -> protobuf.CourseTokenRequest
-	41,  // 195: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
-	255, // 196: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
-	255, // 197: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
-	42,  // 198: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
-	43,  // 199: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
-	133, // 200: protobuf.CourseService.getCourseStats:input_type -> protobuf.GetCourseStatsRequest
-	135, // 201: protobuf.CourseService.exportCourseStats:input_type -> protobuf.ExportCourseStatsRequest
-	175, // 202: protobuf.CourseService.getLectureStats:input_type -> protobuf.GetLectureStatsRequest
-	136, // 203: protobuf.CourseService.createCourse:input_type -> protobuf.CreateCourseRequest
-	138, // 204: protobuf.CourseService.searchTumOnlineCourses:input_type -> protobuf.SearchTumOnlineCoursesRequest
-	141, // 205: protobuf.CourseService.getSchedule:input_type -> protobuf.GetScheduleRequest
-	255, // 206: protobuf.CourseService.listScheduleLectureHalls:input_type -> google.protobuf.Empty
-	146, // 207: protobuf.CourseService.updateLecture:input_type -> protobuf.UpdateLectureRequest
-	177, // 208: protobuf.CourseService.listCourseLecturesAdmin:input_type -> protobuf.ListCourseLecturesAdminRequest
-	183, // 209: protobuf.CourseService.updateLectureSeries:input_type -> protobuf.UpdateLectureSeriesRequest
-	184, // 210: protobuf.CourseService.updateLectureSeriesTime:input_type -> protobuf.UpdateLectureSeriesTimeRequest
-	185, // 211: protobuf.CourseService.updateLecturesLectureHall:input_type -> protobuf.UpdateLecturesLectureHallRequest
-	186, // 212: protobuf.CourseService.deleteLectures:input_type -> protobuf.DeleteLecturesRequest
-	187, // 213: protobuf.CourseService.deleteLectureSeries:input_type -> protobuf.DeleteLectureSeriesRequest
-	188, // 214: protobuf.CourseService.copyLecture:input_type -> protobuf.CopyLectureRequest
-	190, // 215: protobuf.CourseService.createLectures:input_type -> protobuf.CreateLecturesRequest
-	147, // 216: protobuf.CourseService.getCourseAdmin:input_type -> protobuf.GetCourseAdminRequest
-	250, // 217: protobuf.CourseService.listCourseIntegrationGrants:input_type -> protobuf.ListCourseIntegrationGrantsRequest
-	253, // 218: protobuf.CourseService.revokeCourseIntegrationGrant:input_type -> protobuf.RevokeCourseIntegrationGrantRequest
-	149, // 219: protobuf.CourseService.updateCourseSettings:input_type -> protobuf.UpdateCourseSettingsRequest
-	150, // 220: protobuf.CourseService.copyCourse:input_type -> protobuf.CopyCourseRequest
-	152, // 221: protobuf.CourseService.deleteCourse:input_type -> protobuf.DeleteCourseRequest
-	154, // 222: protobuf.CourseService.listCourseAdmins:input_type -> protobuf.ListCourseAdminsRequest
-	156, // 223: protobuf.CourseService.addCourseAdmin:input_type -> protobuf.AddCourseAdminRequest
-	157, // 224: protobuf.CourseService.removeCourseAdmin:input_type -> protobuf.RemoveCourseAdminRequest
-	158, // 225: protobuf.CourseService.searchUsersForCourse:input_type -> protobuf.SearchUsersForCourseRequest
-	162, // 226: protobuf.CourseService.listCourseLectureHallSettings:input_type -> protobuf.ListCourseLectureHallSettingsRequest
-	165, // 227: protobuf.CourseService.updateCourseLectureHallSettings:input_type -> protobuf.UpdateCourseLectureHallSettingsRequest
-	167, // 228: protobuf.CourseService.listCourseParticipants:input_type -> protobuf.ListCourseParticipantsRequest
-	170, // 229: protobuf.CourseService.inviteCourseParticipants:input_type -> protobuf.InviteCourseParticipantsRequest
-	255, // 230: protobuf.CourseService.listAdministeredCourses:input_type -> google.protobuf.Empty
-	193, // 231: protobuf.CourseService.createLectureSections:input_type -> protobuf.CreateLectureSectionsRequest
-	195, // 232: protobuf.CourseService.updateLectureSection:input_type -> protobuf.UpdateLectureSectionRequest
-	196, // 233: protobuf.CourseService.deleteLectureSection:input_type -> protobuf.DeleteLectureSectionRequest
-	197, // 234: protobuf.CourseService.deleteLectureAttachment:input_type -> protobuf.DeleteLectureAttachmentRequest
-	198, // 235: protobuf.CourseService.deleteLectureThumbnail:input_type -> protobuf.DeleteLectureThumbnailRequest
-	199, // 236: protobuf.CourseService.requestLectureSubtitles:input_type -> protobuf.RequestLectureSubtitlesRequest
-	200, // 237: protobuf.CourseService.getLectureTranscodingProgress:input_type -> protobuf.GetLectureTranscodingProgressRequest
-	58,  // 238: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
-	59,  // 239: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
-	61,  // 240: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
-	60,  // 241: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
-	62,  // 242: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
-	66,  // 243: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
-	67,  // 244: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
-	32,  // 245: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
-	31,  // 246: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
-	33,  // 247: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
-	34,  // 248: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
-	211, // 249: protobuf.StreamService.switchCameraPreset:input_type -> protobuf.SwitchCameraPresetRequest
-	255, // 250: protobuf.AdminService.listRunners:input_type -> google.protobuf.Empty
-	86,  // 251: protobuf.AdminService.deleteRunner:input_type -> protobuf.DeleteRunnerRequest
-	255, // 252: protobuf.AdminService.listStaff:input_type -> google.protobuf.Empty
-	92,  // 253: protobuf.AdminService.searchUsers:input_type -> protobuf.SearchUsersRequest
-	93,  // 254: protobuf.AdminService.createUser:input_type -> protobuf.CreateUserRequest
-	94,  // 255: protobuf.AdminService.updateUserRole:input_type -> protobuf.UpdateUserRoleRequest
-	95,  // 256: protobuf.AdminService.deleteUser:input_type -> protobuf.DeleteUserRequest
-	255, // 257: protobuf.AdminService.listServerNotificationsAdmin:input_type -> google.protobuf.Empty
-	76,  // 258: protobuf.AdminService.createServerNotification:input_type -> protobuf.CreateServerNotificationRequest
-	77,  // 259: protobuf.AdminService.updateServerNotification:input_type -> protobuf.UpdateServerNotificationRequest
-	78,  // 260: protobuf.AdminService.deleteServerNotification:input_type -> protobuf.DeleteServerNotificationRequest
-	255, // 261: protobuf.AdminService.listInfoPagesAdmin:input_type -> google.protobuf.Empty
-	15,  // 262: protobuf.AdminService.createInfoPage:input_type -> protobuf.CreateInfoPageRequest
-	16,  // 263: protobuf.AdminService.updateInfoPage:input_type -> protobuf.UpdateInfoPageRequest
-	17,  // 264: protobuf.AdminService.deleteInfoPage:input_type -> protobuf.DeleteInfoPageRequest
-	255, // 265: protobuf.AdminService.listIntegrations:input_type -> google.protobuf.Empty
-	99,  // 266: protobuf.AdminService.createIntegration:input_type -> protobuf.CreateIntegrationRequest
-	101, // 267: protobuf.AdminService.rotateIntegrationKey:input_type -> protobuf.RotateIntegrationKeyRequest
-	103, // 268: protobuf.AdminService.revokeIntegrationKey:input_type -> protobuf.RevokeIntegrationKeyRequest
-	255, // 269: protobuf.AdminService.listWorkers:input_type -> google.protobuf.Empty
-	89,  // 270: protobuf.AdminService.deleteWorker:input_type -> protobuf.DeleteWorkerRequest
-	255, // 271: protobuf.AdminService.getMaintenanceThumbnailStatus:input_type -> google.protobuf.Empty
-	255, // 272: protobuf.AdminService.generateMaintenanceThumbnails:input_type -> google.protobuf.Empty
-	255, // 273: protobuf.AdminService.listMaintenanceCronJobs:input_type -> google.protobuf.Empty
-	105, // 274: protobuf.AdminService.runMaintenanceCronJob:input_type -> protobuf.RunMaintenanceCronJobRequest
-	255, // 275: protobuf.AdminService.listMaintenanceTranscodingFailures:input_type -> google.protobuf.Empty
-	109, // 276: protobuf.AdminService.deleteMaintenanceTranscodingFailure:input_type -> protobuf.DeleteMaintenanceTranscodingFailureRequest
-	255, // 277: protobuf.AdminService.listMaintenanceEmailFailures:input_type -> google.protobuf.Empty
-	112, // 278: protobuf.AdminService.deleteMaintenanceEmailFailure:input_type -> protobuf.DeleteMaintenanceEmailFailureRequest
-	116, // 279: protobuf.AdminService.searchCourseImportSchedule:input_type -> protobuf.CourseImportSearchRequest
-	117, // 280: protobuf.AdminService.importCourseImportCourses:input_type -> protobuf.CourseImportRequest
-	255, // 281: protobuf.AdminService.listTokens:input_type -> google.protobuf.Empty
-	122, // 282: protobuf.AdminService.createToken:input_type -> protobuf.CreateTokenRequest
-	123, // 283: protobuf.AdminService.deleteToken:input_type -> protobuf.DeleteTokenRequest
-	255, // 284: protobuf.AdminService.listNotificationsAdmin:input_type -> google.protobuf.Empty
-	81,  // 285: protobuf.AdminService.createNotification:input_type -> protobuf.CreateNotificationRequest
-	82,  // 286: protobuf.AdminService.deleteNotification:input_type -> protobuf.DeleteNotificationRequest
-	127, // 287: protobuf.AdminService.listAudits:input_type -> protobuf.ListAuditsRequest
-	255, // 288: protobuf.AdminService.getServerStats:input_type -> google.protobuf.Empty
-	132, // 289: protobuf.AdminService.exportServerStats:input_type -> protobuf.ExportServerStatsRequest
-	255, // 290: protobuf.AdminService.listLectureHallsAdmin:input_type -> google.protobuf.Empty
-	205, // 291: protobuf.AdminService.createLectureHallAdmin:input_type -> protobuf.CreateLectureHallAdminRequest
-	206, // 292: protobuf.AdminService.updateLectureHallAdmin:input_type -> protobuf.UpdateLectureHallAdminRequest
-	207, // 293: protobuf.AdminService.deleteLectureHallAdmin:input_type -> protobuf.DeleteLectureHallAdminRequest
-	208, // 294: protobuf.AdminService.refreshLectureHallPresetsAdmin:input_type -> protobuf.RefreshLectureHallPresetsAdminRequest
-	209, // 295: protobuf.AdminService.setDefaultCameraPresetAdmin:input_type -> protobuf.SetDefaultCameraPresetAdminRequest
-	210, // 296: protobuf.AdminService.takeCameraPresetSnapshotAdmin:input_type -> protobuf.TakeCameraPresetSnapshotAdminRequest
-	212, // 297: protobuf.ChatService.listChatMessages:input_type -> protobuf.ListChatMessagesRequest
-	214, // 298: protobuf.ChatService.getActivePoll:input_type -> protobuf.GetActiveChatPollRequest
-	216, // 299: protobuf.ChatService.listPolls:input_type -> protobuf.ListChatPollsRequest
-	218, // 300: protobuf.ChatService.listChatUsers:input_type -> protobuf.ListChatUsersRequest
-	6,   // 301: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
-	8,   // 302: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
-	53,  // 303: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
-	72,  // 304: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
-	73,  // 305: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
-	10,  // 306: protobuf.MetaService.getInfoPage:output_type -> protobuf.GetInfoPageResponse
-	11,  // 307: protobuf.MetaService.listInfoPages:output_type -> protobuf.ListInfoPagesResponse
-	249, // 308: protobuf.MetaService.getIntegration:output_type -> protobuf.GetIntegrationResponse
-	22,  // 309: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
-	23,  // 310: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
-	26,  // 311: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
-	24,  // 312: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
-	255, // 313: protobuf.UserService.checkPasswordResetKey:output_type -> google.protobuf.Empty
-	255, // 314: protobuf.UserService.setPasswordByResetKey:output_type -> google.protobuf.Empty
-	255, // 315: protobuf.UserService.createFirstUser:output_type -> google.protobuf.Empty
-	25,  // 316: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
-	45,  // 317: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
-	46,  // 318: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
-	243, // 319: protobuf.CourseService.search:output_type -> protobuf.SearchResponse
-	245, // 320: protobuf.CourseService.getCourseByToken:output_type -> protobuf.CourseByToken
-	255, // 321: protobuf.CourseService.optInCourseByToken:output_type -> google.protobuf.Empty
-	255, // 322: protobuf.CourseService.optOutCourseByToken:output_type -> google.protobuf.Empty
-	47,  // 323: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
-	48,  // 324: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
-	44,  // 325: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
-	50,  // 326: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
-	49,  // 327: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
-	134, // 328: protobuf.CourseService.getCourseStats:output_type -> protobuf.CourseStatsResponse
-	256, // 329: protobuf.CourseService.exportCourseStats:output_type -> google.api.HttpBody
-	176, // 330: protobuf.CourseService.getLectureStats:output_type -> protobuf.LectureStatsResponse
-	137, // 331: protobuf.CourseService.createCourse:output_type -> protobuf.CreateCourseResponse
-	140, // 332: protobuf.CourseService.searchTumOnlineCourses:output_type -> protobuf.SearchTumOnlineCoursesResponse
-	143, // 333: protobuf.CourseService.getSchedule:output_type -> protobuf.GetScheduleResponse
-	145, // 334: protobuf.CourseService.listScheduleLectureHalls:output_type -> protobuf.ListScheduleLectureHallsResponse
-	255, // 335: protobuf.CourseService.updateLecture:output_type -> google.protobuf.Empty
-	178, // 336: protobuf.CourseService.listCourseLecturesAdmin:output_type -> protobuf.ListCourseLecturesAdminResponse
-	255, // 337: protobuf.CourseService.updateLectureSeries:output_type -> google.protobuf.Empty
-	255, // 338: protobuf.CourseService.updateLectureSeriesTime:output_type -> google.protobuf.Empty
-	255, // 339: protobuf.CourseService.updateLecturesLectureHall:output_type -> google.protobuf.Empty
-	255, // 340: protobuf.CourseService.deleteLectures:output_type -> google.protobuf.Empty
-	255, // 341: protobuf.CourseService.deleteLectureSeries:output_type -> google.protobuf.Empty
-	189, // 342: protobuf.CourseService.copyLecture:output_type -> protobuf.CopyLectureResponse
-	191, // 343: protobuf.CourseService.createLectures:output_type -> protobuf.CreateLecturesResponse
-	148, // 344: protobuf.CourseService.getCourseAdmin:output_type -> protobuf.CourseAdmin
-	252, // 345: protobuf.CourseService.listCourseIntegrationGrants:output_type -> protobuf.ListCourseIntegrationGrantsResponse
-	255, // 346: protobuf.CourseService.revokeCourseIntegrationGrant:output_type -> google.protobuf.Empty
-	148, // 347: protobuf.CourseService.updateCourseSettings:output_type -> protobuf.CourseAdmin
-	151, // 348: protobuf.CourseService.copyCourse:output_type -> protobuf.CopyCourseResponse
-	255, // 349: protobuf.CourseService.deleteCourse:output_type -> google.protobuf.Empty
-	155, // 350: protobuf.CourseService.listCourseAdmins:output_type -> protobuf.ListCourseAdminsResponse
-	153, // 351: protobuf.CourseService.addCourseAdmin:output_type -> protobuf.CourseAdminUser
-	153, // 352: protobuf.CourseService.removeCourseAdmin:output_type -> protobuf.CourseAdminUser
-	159, // 353: protobuf.CourseService.searchUsersForCourse:output_type -> protobuf.SearchUsersForCourseResponse
-	163, // 354: protobuf.CourseService.listCourseLectureHallSettings:output_type -> protobuf.ListCourseLectureHallSettingsResponse
-	163, // 355: protobuf.CourseService.updateCourseLectureHallSettings:output_type -> protobuf.ListCourseLectureHallSettingsResponse
-	168, // 356: protobuf.CourseService.listCourseParticipants:output_type -> protobuf.ListCourseParticipantsResponse
-	172, // 357: protobuf.CourseService.inviteCourseParticipants:output_type -> protobuf.InviteCourseParticipantsResponse
-	174, // 358: protobuf.CourseService.listAdministeredCourses:output_type -> protobuf.ListAdministeredCoursesResponse
-	194, // 359: protobuf.CourseService.createLectureSections:output_type -> protobuf.CreateLectureSectionsResponse
-	255, // 360: protobuf.CourseService.updateLectureSection:output_type -> google.protobuf.Empty
-	255, // 361: protobuf.CourseService.deleteLectureSection:output_type -> google.protobuf.Empty
-	255, // 362: protobuf.CourseService.deleteLectureAttachment:output_type -> google.protobuf.Empty
-	255, // 363: protobuf.CourseService.deleteLectureThumbnail:output_type -> google.protobuf.Empty
-	255, // 364: protobuf.CourseService.requestLectureSubtitles:output_type -> google.protobuf.Empty
-	201, // 365: protobuf.CourseService.getLectureTranscodingProgress:output_type -> protobuf.GetLectureTranscodingProgressResponse
-	51,  // 366: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
-	63,  // 367: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
-	65,  // 368: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
-	256, // 369: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
-	256, // 370: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
-	68,  // 371: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
-	56,  // 372: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
-	36,  // 373: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
-	35,  // 374: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
-	37,  // 375: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
-	255, // 376: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
-	255, // 377: protobuf.StreamService.switchCameraPreset:output_type -> google.protobuf.Empty
-	87,  // 378: protobuf.AdminService.listRunners:output_type -> protobuf.ListRunnersResponse
-	255, // 379: protobuf.AdminService.deleteRunner:output_type -> google.protobuf.Empty
-	96,  // 380: protobuf.AdminService.listStaff:output_type -> protobuf.ListUsersResponse
-	96,  // 381: protobuf.AdminService.searchUsers:output_type -> protobuf.ListUsersResponse
-	91,  // 382: protobuf.AdminService.createUser:output_type -> protobuf.UserSummary
-	91,  // 383: protobuf.AdminService.updateUserRole:output_type -> protobuf.UserSummary
-	255, // 384: protobuf.AdminService.deleteUser:output_type -> google.protobuf.Empty
-	75,  // 385: protobuf.AdminService.listServerNotificationsAdmin:output_type -> protobuf.ListServerNotificationsAdminResponse
-	74,  // 386: protobuf.AdminService.createServerNotification:output_type -> protobuf.ServerNotificationAdmin
-	74,  // 387: protobuf.AdminService.updateServerNotification:output_type -> protobuf.ServerNotificationAdmin
-	255, // 388: protobuf.AdminService.deleteServerNotification:output_type -> google.protobuf.Empty
-	14,  // 389: protobuf.AdminService.listInfoPagesAdmin:output_type -> protobuf.ListInfoPagesAdminResponse
-	13,  // 390: protobuf.AdminService.createInfoPage:output_type -> protobuf.InfoPage
-	13,  // 391: protobuf.AdminService.updateInfoPage:output_type -> protobuf.InfoPage
-	255, // 392: protobuf.AdminService.deleteInfoPage:output_type -> google.protobuf.Empty
-	98,  // 393: protobuf.AdminService.listIntegrations:output_type -> protobuf.ListIntegrationsResponse
-	100, // 394: protobuf.AdminService.createIntegration:output_type -> protobuf.CreateIntegrationResponse
-	102, // 395: protobuf.AdminService.rotateIntegrationKey:output_type -> protobuf.RotateIntegrationKeyResponse
-	255, // 396: protobuf.AdminService.revokeIntegrationKey:output_type -> google.protobuf.Empty
-	90,  // 397: protobuf.AdminService.listWorkers:output_type -> protobuf.ListWorkersResponse
-	255, // 398: protobuf.AdminService.deleteWorker:output_type -> google.protobuf.Empty
-	104, // 399: protobuf.AdminService.getMaintenanceThumbnailStatus:output_type -> protobuf.MaintenanceThumbnailStatus
-	104, // 400: protobuf.AdminService.generateMaintenanceThumbnails:output_type -> protobuf.MaintenanceThumbnailStatus
-	106, // 401: protobuf.AdminService.listMaintenanceCronJobs:output_type -> protobuf.ListMaintenanceCronJobsResponse
-	255, // 402: protobuf.AdminService.runMaintenanceCronJob:output_type -> google.protobuf.Empty
-	108, // 403: protobuf.AdminService.listMaintenanceTranscodingFailures:output_type -> protobuf.ListMaintenanceTranscodingFailuresResponse
-	255, // 404: protobuf.AdminService.deleteMaintenanceTranscodingFailure:output_type -> google.protobuf.Empty
-	111, // 405: protobuf.AdminService.listMaintenanceEmailFailures:output_type -> protobuf.ListMaintenanceEmailFailuresResponse
-	255, // 406: protobuf.AdminService.deleteMaintenanceEmailFailure:output_type -> google.protobuf.Empty
-	118, // 407: protobuf.AdminService.searchCourseImportSchedule:output_type -> protobuf.CourseImportSearchResponse
-	120, // 408: protobuf.AdminService.importCourseImportCourses:output_type -> protobuf.CourseImportResponse
-	124, // 409: protobuf.AdminService.listTokens:output_type -> protobuf.ListTokensResponse
-	125, // 410: protobuf.AdminService.createToken:output_type -> protobuf.TokenSecret
-	255, // 411: protobuf.AdminService.deleteToken:output_type -> google.protobuf.Empty
-	80,  // 412: protobuf.AdminService.listNotificationsAdmin:output_type -> protobuf.ListNotificationsAdminResponse
-	79,  // 413: protobuf.AdminService.createNotification:output_type -> protobuf.AdminNotification
-	255, // 414: protobuf.AdminService.deleteNotification:output_type -> google.protobuf.Empty
-	128, // 415: protobuf.AdminService.listAudits:output_type -> protobuf.ListAuditsResponse
-	131, // 416: protobuf.AdminService.getServerStats:output_type -> protobuf.ServerStatsResponse
-	256, // 417: protobuf.AdminService.exportServerStats:output_type -> google.api.HttpBody
-	204, // 418: protobuf.AdminService.listLectureHallsAdmin:output_type -> protobuf.ListLectureHallsAdminResponse
-	202, // 419: protobuf.AdminService.createLectureHallAdmin:output_type -> protobuf.LectureHallAdmin
-	202, // 420: protobuf.AdminService.updateLectureHallAdmin:output_type -> protobuf.LectureHallAdmin
-	255, // 421: protobuf.AdminService.deleteLectureHallAdmin:output_type -> google.protobuf.Empty
-	202, // 422: protobuf.AdminService.refreshLectureHallPresetsAdmin:output_type -> protobuf.LectureHallAdmin
-	255, // 423: protobuf.AdminService.setDefaultCameraPresetAdmin:output_type -> google.protobuf.Empty
-	203, // 424: protobuf.AdminService.takeCameraPresetSnapshotAdmin:output_type -> protobuf.CameraPresetAdmin
-	213, // 425: protobuf.ChatService.listChatMessages:output_type -> protobuf.ListChatMessagesResponse
-	215, // 426: protobuf.ChatService.getActivePoll:output_type -> protobuf.GetActiveChatPollResponse
-	217, // 427: protobuf.ChatService.listPolls:output_type -> protobuf.ListChatPollsResponse
-	219, // 428: protobuf.ChatService.listChatUsers:output_type -> protobuf.ListChatUsersResponse
-	301, // [301:429] is the sub-list for method output_type
-	173, // [173:301] is the sub-list for method input_type
-	173, // [173:173] is the sub-list for extension type_name
-	173, // [173:173] is the sub-list for extension extendee
-	0,   // [0:173] is the sub-list for field type_name
+	179, // 123: protobuf.ListLectureUnitsResponse.units:type_name -> protobuf.LectureUnit
+	184, // 124: protobuf.ListCourseLecturesAdminResponse.lectures:type_name -> protobuf.CourseLectureAdmin
+	259, // 125: protobuf.CourseLectureAdmin.start:type_name -> google.protobuf.Timestamp
+	259, // 126: protobuf.CourseLectureAdmin.end:type_name -> google.protobuf.Timestamp
+	185, // 127: protobuf.CourseLectureAdmin.files:type_name -> protobuf.LectureFileAdmin
+	186, // 128: protobuf.CourseLectureAdmin.transcoding_progresses:type_name -> protobuf.LectureTranscodingProgress
+	187, // 129: protobuf.CourseLectureAdmin.video_sections:type_name -> protobuf.LectureVideoSectionAdmin
+	259, // 130: protobuf.UpdateLectureSeriesTimeRequest.start:type_name -> google.protobuf.Timestamp
+	259, // 131: protobuf.UpdateLectureSeriesTimeRequest.end:type_name -> google.protobuf.Timestamp
+	4,   // 132: protobuf.CreateLecturesRequest.kind:type_name -> protobuf.LectureCreationKind
+	259, // 133: protobuf.CreateLecturesRequest.start:type_name -> google.protobuf.Timestamp
+	259, // 134: protobuf.CreateLecturesRequest.date_series:type_name -> google.protobuf.Timestamp
+	184, // 135: protobuf.CreateLecturesResponse.lectures:type_name -> protobuf.CourseLectureAdmin
+	197, // 136: protobuf.CreateLectureSectionsRequest.sections:type_name -> protobuf.LectureSectionInput
+	187, // 137: protobuf.CreateLectureSectionsResponse.sections:type_name -> protobuf.LectureVideoSectionAdmin
+	186, // 138: protobuf.GetLectureTranscodingProgressResponse.progresses:type_name -> protobuf.LectureTranscodingProgress
+	208, // 139: protobuf.LectureHallAdmin.camera_presets:type_name -> protobuf.CameraPresetAdmin
+	207, // 140: protobuf.ListLectureHallsAdminResponse.lecture_halls:type_name -> protobuf.LectureHallAdmin
+	227, // 141: protobuf.ListChatMessagesResponse.messages:type_name -> protobuf.ChatMessage
+	229, // 142: protobuf.GetActiveChatPollResponse.poll:type_name -> protobuf.ChatPoll
+	229, // 143: protobuf.ListChatPollsResponse.polls:type_name -> protobuf.ChatPoll
+	225, // 144: protobuf.ListChatUsersResponse.users:type_name -> protobuf.ChatUser
+	259, // 145: protobuf.ChatMessage.created_at:type_name -> google.protobuf.Timestamp
+	226, // 146: protobuf.ChatMessage.reactions:type_name -> protobuf.ChatReactionSummary
+	227, // 147: protobuf.ChatMessage.replies:type_name -> protobuf.ChatMessage
+	228, // 148: protobuf.ChatPoll.options:type_name -> protobuf.ChatPollOption
+	259, // 149: protobuf.RealtimeEvent.at:type_name -> google.protobuf.Timestamp
+	5,   // 150: protobuf.RealtimeEvent.audience:type_name -> protobuf.RealtimeEvent.Audience
+	231, // 151: protobuf.RealtimeEvent.message:type_name -> protobuf.ChatMessageEvent
+	232, // 152: protobuf.RealtimeEvent.message_deleted:type_name -> protobuf.ChatMessageDeletedEvent
+	233, // 153: protobuf.RealtimeEvent.message_resolved:type_name -> protobuf.ChatMessageResolvedEvent
+	234, // 154: protobuf.RealtimeEvent.message_retracted:type_name -> protobuf.ChatMessageRetractedEvent
+	235, // 155: protobuf.RealtimeEvent.reactions:type_name -> protobuf.ChatReactionsEvent
+	236, // 156: protobuf.RealtimeEvent.poll_started:type_name -> protobuf.ChatPollStartedEvent
+	237, // 157: protobuf.RealtimeEvent.poll_closed:type_name -> protobuf.ChatPollClosedEvent
+	238, // 158: protobuf.RealtimeEvent.poll_vote:type_name -> protobuf.ChatPollVoteEvent
+	239, // 159: protobuf.RealtimeEvent.viewers:type_name -> protobuf.ViewersEvent
+	240, // 160: protobuf.RealtimeEvent.live:type_name -> protobuf.StreamLiveEvent
+	241, // 161: protobuf.RealtimeEvent.title:type_name -> protobuf.StreamTitleEvent
+	242, // 162: protobuf.RealtimeEvent.description:type_name -> protobuf.StreamDescriptionEvent
+	243, // 163: protobuf.RealtimeEvent.resync:type_name -> protobuf.ResyncEvent
+	227, // 164: protobuf.ChatMessageEvent.message:type_name -> protobuf.ChatMessage
+	226, // 165: protobuf.ChatReactionsEvent.reactions:type_name -> protobuf.ChatReactionSummary
+	229, // 166: protobuf.ChatPollStartedEvent.poll:type_name -> protobuf.ChatPoll
+	229, // 167: protobuf.ChatPollClosedEvent.poll:type_name -> protobuf.ChatPoll
+	259, // 168: protobuf.SearchSubtitleHit.stream_start:type_name -> google.protobuf.Timestamp
+	259, // 169: protobuf.SearchSubtitleHit.stream_end:type_name -> google.protobuf.Timestamp
+	245, // 170: protobuf.SearchResponse.courses:type_name -> protobuf.SearchCourseHit
+	246, // 171: protobuf.SearchResponse.streams:type_name -> protobuf.SearchStreamHit
+	247, // 172: protobuf.SearchResponse.subtitles:type_name -> protobuf.SearchSubtitleHit
+	256, // 173: protobuf.ListCourseIntegrationGrantsResponse.grants:type_name -> protobuf.CourseIntegrationGrant
+	260, // 174: protobuf.MetaService.healthCheck:input_type -> google.protobuf.Empty
+	260, // 175: protobuf.MetaService.getFrontendConfig:input_type -> google.protobuf.Empty
+	260, // 176: protobuf.MetaService.getSemesters:input_type -> google.protobuf.Empty
+	260, // 177: protobuf.MetaService.getNotifications:input_type -> google.protobuf.Empty
+	260, // 178: protobuf.MetaService.getServerNotifications:input_type -> google.protobuf.Empty
+	9,   // 179: protobuf.MetaService.getInfoPage:input_type -> protobuf.GetInfoPageRequest
+	260, // 180: protobuf.MetaService.listInfoPages:input_type -> google.protobuf.Empty
+	260, // 181: protobuf.MetaService.getIntegration:input_type -> google.protobuf.Empty
+	260, // 182: protobuf.UserService.getUser:input_type -> google.protobuf.Empty
+	20,  // 183: protobuf.UserService.updateUserSettings:input_type -> protobuf.UpdateUserSettingsRequest
+	260, // 184: protobuf.UserService.exportPersonalData:input_type -> google.protobuf.Empty
+	21,  // 185: protobuf.UserService.resetPassword:input_type -> protobuf.ResetPasswordRequest
+	251, // 186: protobuf.UserService.checkPasswordResetKey:input_type -> protobuf.PasswordResetKeyRequest
+	252, // 187: protobuf.UserService.setPasswordByResetKey:input_type -> protobuf.SetPasswordByResetKeyRequest
+	253, // 188: protobuf.UserService.createFirstUser:input_type -> protobuf.CreateFirstUserRequest
+	260, // 189: protobuf.UserService.getLoginOptions:input_type -> google.protobuf.Empty
+	39,  // 190: protobuf.CourseService.getPublicCourses:input_type -> protobuf.GetPublicCoursesRequest
+	40,  // 191: protobuf.CourseService.getCourseBySlug:input_type -> protobuf.GetCourseBySlugRequest
+	244, // 192: protobuf.CourseService.search:input_type -> protobuf.SearchRequest
+	249, // 193: protobuf.CourseService.getCourseByToken:input_type -> protobuf.CourseTokenRequest
+	249, // 194: protobuf.CourseService.optInCourseByToken:input_type -> protobuf.CourseTokenRequest
+	249, // 195: protobuf.CourseService.optOutCourseByToken:input_type -> protobuf.CourseTokenRequest
+	41,  // 196: protobuf.CourseService.getUserCourses:input_type -> protobuf.GetUserCoursesRequest
+	260, // 197: protobuf.CourseService.getPinnedCourses:input_type -> google.protobuf.Empty
+	260, // 198: protobuf.CourseService.getLiveCourses:input_type -> google.protobuf.Empty
+	42,  // 199: protobuf.CourseService.getPinForCourse:input_type -> protobuf.GetPinForCourseRequest
+	43,  // 200: protobuf.CourseService.pinCourse:input_type -> protobuf.PinCourseRequest
+	133, // 201: protobuf.CourseService.getCourseStats:input_type -> protobuf.GetCourseStatsRequest
+	135, // 202: protobuf.CourseService.exportCourseStats:input_type -> protobuf.ExportCourseStatsRequest
+	175, // 203: protobuf.CourseService.getLectureStats:input_type -> protobuf.GetLectureStatsRequest
+	177, // 204: protobuf.CourseService.listLectureUnits:input_type -> protobuf.ListLectureUnitsRequest
+	180, // 205: protobuf.CourseService.createLectureUnit:input_type -> protobuf.CreateLectureUnitRequest
+	181, // 206: protobuf.CourseService.deleteLectureUnit:input_type -> protobuf.DeleteLectureUnitRequest
+	136, // 207: protobuf.CourseService.createCourse:input_type -> protobuf.CreateCourseRequest
+	138, // 208: protobuf.CourseService.searchTumOnlineCourses:input_type -> protobuf.SearchTumOnlineCoursesRequest
+	141, // 209: protobuf.CourseService.getSchedule:input_type -> protobuf.GetScheduleRequest
+	260, // 210: protobuf.CourseService.listScheduleLectureHalls:input_type -> google.protobuf.Empty
+	146, // 211: protobuf.CourseService.updateLecture:input_type -> protobuf.UpdateLectureRequest
+	182, // 212: protobuf.CourseService.listCourseLecturesAdmin:input_type -> protobuf.ListCourseLecturesAdminRequest
+	188, // 213: protobuf.CourseService.updateLectureSeries:input_type -> protobuf.UpdateLectureSeriesRequest
+	189, // 214: protobuf.CourseService.updateLectureSeriesTime:input_type -> protobuf.UpdateLectureSeriesTimeRequest
+	190, // 215: protobuf.CourseService.updateLecturesLectureHall:input_type -> protobuf.UpdateLecturesLectureHallRequest
+	191, // 216: protobuf.CourseService.deleteLectures:input_type -> protobuf.DeleteLecturesRequest
+	192, // 217: protobuf.CourseService.deleteLectureSeries:input_type -> protobuf.DeleteLectureSeriesRequest
+	193, // 218: protobuf.CourseService.copyLecture:input_type -> protobuf.CopyLectureRequest
+	195, // 219: protobuf.CourseService.createLectures:input_type -> protobuf.CreateLecturesRequest
+	147, // 220: protobuf.CourseService.getCourseAdmin:input_type -> protobuf.GetCourseAdminRequest
+	255, // 221: protobuf.CourseService.listCourseIntegrationGrants:input_type -> protobuf.ListCourseIntegrationGrantsRequest
+	258, // 222: protobuf.CourseService.revokeCourseIntegrationGrant:input_type -> protobuf.RevokeCourseIntegrationGrantRequest
+	149, // 223: protobuf.CourseService.updateCourseSettings:input_type -> protobuf.UpdateCourseSettingsRequest
+	150, // 224: protobuf.CourseService.copyCourse:input_type -> protobuf.CopyCourseRequest
+	152, // 225: protobuf.CourseService.deleteCourse:input_type -> protobuf.DeleteCourseRequest
+	154, // 226: protobuf.CourseService.listCourseAdmins:input_type -> protobuf.ListCourseAdminsRequest
+	156, // 227: protobuf.CourseService.addCourseAdmin:input_type -> protobuf.AddCourseAdminRequest
+	157, // 228: protobuf.CourseService.removeCourseAdmin:input_type -> protobuf.RemoveCourseAdminRequest
+	158, // 229: protobuf.CourseService.searchUsersForCourse:input_type -> protobuf.SearchUsersForCourseRequest
+	162, // 230: protobuf.CourseService.listCourseLectureHallSettings:input_type -> protobuf.ListCourseLectureHallSettingsRequest
+	165, // 231: protobuf.CourseService.updateCourseLectureHallSettings:input_type -> protobuf.UpdateCourseLectureHallSettingsRequest
+	167, // 232: protobuf.CourseService.listCourseParticipants:input_type -> protobuf.ListCourseParticipantsRequest
+	170, // 233: protobuf.CourseService.inviteCourseParticipants:input_type -> protobuf.InviteCourseParticipantsRequest
+	260, // 234: protobuf.CourseService.listAdministeredCourses:input_type -> google.protobuf.Empty
+	198, // 235: protobuf.CourseService.createLectureSections:input_type -> protobuf.CreateLectureSectionsRequest
+	200, // 236: protobuf.CourseService.updateLectureSection:input_type -> protobuf.UpdateLectureSectionRequest
+	201, // 237: protobuf.CourseService.deleteLectureSection:input_type -> protobuf.DeleteLectureSectionRequest
+	202, // 238: protobuf.CourseService.deleteLectureAttachment:input_type -> protobuf.DeleteLectureAttachmentRequest
+	203, // 239: protobuf.CourseService.deleteLectureThumbnail:input_type -> protobuf.DeleteLectureThumbnailRequest
+	204, // 240: protobuf.CourseService.requestLectureSubtitles:input_type -> protobuf.RequestLectureSubtitlesRequest
+	205, // 241: protobuf.CourseService.getLectureTranscodingProgress:input_type -> protobuf.GetLectureTranscodingProgressRequest
+	58,  // 242: protobuf.StreamService.getStream:input_type -> protobuf.GetStreamRequest
+	59,  // 243: protobuf.StreamService.getVideoSections:input_type -> protobuf.GetVideoSectionsRequest
+	61,  // 244: protobuf.StreamService.getStreamPlaylist:input_type -> protobuf.GetStreamPlaylistRequest
+	60,  // 245: protobuf.StreamService.getSubtitles:input_type -> protobuf.GetSubtitlesRequest
+	62,  // 246: protobuf.StreamService.getThumbs:input_type -> protobuf.GetThumbsRequest
+	66,  // 247: protobuf.StreamService.getProgressBatch:input_type -> protobuf.GetProgressBatchRequest
+	67,  // 248: protobuf.StreamService.updateProgress:input_type -> protobuf.UpdateProgressRequest
+	32,  // 249: protobuf.StreamService.addBookmark:input_type -> protobuf.AddBookmarkRequest
+	31,  // 250: protobuf.StreamService.getBookmarks:input_type -> protobuf.GetBookmarksRequest
+	33,  // 251: protobuf.StreamService.updateBookmark:input_type -> protobuf.UpdateBookmarkRequest
+	34,  // 252: protobuf.StreamService.deleteBookmark:input_type -> protobuf.DeleteBookmarkRequest
+	216, // 253: protobuf.StreamService.switchCameraPreset:input_type -> protobuf.SwitchCameraPresetRequest
+	260, // 254: protobuf.AdminService.listRunners:input_type -> google.protobuf.Empty
+	86,  // 255: protobuf.AdminService.deleteRunner:input_type -> protobuf.DeleteRunnerRequest
+	260, // 256: protobuf.AdminService.listStaff:input_type -> google.protobuf.Empty
+	92,  // 257: protobuf.AdminService.searchUsers:input_type -> protobuf.SearchUsersRequest
+	93,  // 258: protobuf.AdminService.createUser:input_type -> protobuf.CreateUserRequest
+	94,  // 259: protobuf.AdminService.updateUserRole:input_type -> protobuf.UpdateUserRoleRequest
+	95,  // 260: protobuf.AdminService.deleteUser:input_type -> protobuf.DeleteUserRequest
+	260, // 261: protobuf.AdminService.listServerNotificationsAdmin:input_type -> google.protobuf.Empty
+	76,  // 262: protobuf.AdminService.createServerNotification:input_type -> protobuf.CreateServerNotificationRequest
+	77,  // 263: protobuf.AdminService.updateServerNotification:input_type -> protobuf.UpdateServerNotificationRequest
+	78,  // 264: protobuf.AdminService.deleteServerNotification:input_type -> protobuf.DeleteServerNotificationRequest
+	260, // 265: protobuf.AdminService.listInfoPagesAdmin:input_type -> google.protobuf.Empty
+	15,  // 266: protobuf.AdminService.createInfoPage:input_type -> protobuf.CreateInfoPageRequest
+	16,  // 267: protobuf.AdminService.updateInfoPage:input_type -> protobuf.UpdateInfoPageRequest
+	17,  // 268: protobuf.AdminService.deleteInfoPage:input_type -> protobuf.DeleteInfoPageRequest
+	260, // 269: protobuf.AdminService.listIntegrations:input_type -> google.protobuf.Empty
+	99,  // 270: protobuf.AdminService.createIntegration:input_type -> protobuf.CreateIntegrationRequest
+	101, // 271: protobuf.AdminService.rotateIntegrationKey:input_type -> protobuf.RotateIntegrationKeyRequest
+	103, // 272: protobuf.AdminService.revokeIntegrationKey:input_type -> protobuf.RevokeIntegrationKeyRequest
+	260, // 273: protobuf.AdminService.listWorkers:input_type -> google.protobuf.Empty
+	89,  // 274: protobuf.AdminService.deleteWorker:input_type -> protobuf.DeleteWorkerRequest
+	260, // 275: protobuf.AdminService.getMaintenanceThumbnailStatus:input_type -> google.protobuf.Empty
+	260, // 276: protobuf.AdminService.generateMaintenanceThumbnails:input_type -> google.protobuf.Empty
+	260, // 277: protobuf.AdminService.listMaintenanceCronJobs:input_type -> google.protobuf.Empty
+	105, // 278: protobuf.AdminService.runMaintenanceCronJob:input_type -> protobuf.RunMaintenanceCronJobRequest
+	260, // 279: protobuf.AdminService.listMaintenanceTranscodingFailures:input_type -> google.protobuf.Empty
+	109, // 280: protobuf.AdminService.deleteMaintenanceTranscodingFailure:input_type -> protobuf.DeleteMaintenanceTranscodingFailureRequest
+	260, // 281: protobuf.AdminService.listMaintenanceEmailFailures:input_type -> google.protobuf.Empty
+	112, // 282: protobuf.AdminService.deleteMaintenanceEmailFailure:input_type -> protobuf.DeleteMaintenanceEmailFailureRequest
+	116, // 283: protobuf.AdminService.searchCourseImportSchedule:input_type -> protobuf.CourseImportSearchRequest
+	117, // 284: protobuf.AdminService.importCourseImportCourses:input_type -> protobuf.CourseImportRequest
+	260, // 285: protobuf.AdminService.listTokens:input_type -> google.protobuf.Empty
+	122, // 286: protobuf.AdminService.createToken:input_type -> protobuf.CreateTokenRequest
+	123, // 287: protobuf.AdminService.deleteToken:input_type -> protobuf.DeleteTokenRequest
+	260, // 288: protobuf.AdminService.listNotificationsAdmin:input_type -> google.protobuf.Empty
+	81,  // 289: protobuf.AdminService.createNotification:input_type -> protobuf.CreateNotificationRequest
+	82,  // 290: protobuf.AdminService.deleteNotification:input_type -> protobuf.DeleteNotificationRequest
+	127, // 291: protobuf.AdminService.listAudits:input_type -> protobuf.ListAuditsRequest
+	260, // 292: protobuf.AdminService.getServerStats:input_type -> google.protobuf.Empty
+	132, // 293: protobuf.AdminService.exportServerStats:input_type -> protobuf.ExportServerStatsRequest
+	260, // 294: protobuf.AdminService.listLectureHallsAdmin:input_type -> google.protobuf.Empty
+	210, // 295: protobuf.AdminService.createLectureHallAdmin:input_type -> protobuf.CreateLectureHallAdminRequest
+	211, // 296: protobuf.AdminService.updateLectureHallAdmin:input_type -> protobuf.UpdateLectureHallAdminRequest
+	212, // 297: protobuf.AdminService.deleteLectureHallAdmin:input_type -> protobuf.DeleteLectureHallAdminRequest
+	213, // 298: protobuf.AdminService.refreshLectureHallPresetsAdmin:input_type -> protobuf.RefreshLectureHallPresetsAdminRequest
+	214, // 299: protobuf.AdminService.setDefaultCameraPresetAdmin:input_type -> protobuf.SetDefaultCameraPresetAdminRequest
+	215, // 300: protobuf.AdminService.takeCameraPresetSnapshotAdmin:input_type -> protobuf.TakeCameraPresetSnapshotAdminRequest
+	217, // 301: protobuf.ChatService.listChatMessages:input_type -> protobuf.ListChatMessagesRequest
+	219, // 302: protobuf.ChatService.getActivePoll:input_type -> protobuf.GetActiveChatPollRequest
+	221, // 303: protobuf.ChatService.listPolls:input_type -> protobuf.ListChatPollsRequest
+	223, // 304: protobuf.ChatService.listChatUsers:input_type -> protobuf.ListChatUsersRequest
+	6,   // 305: protobuf.MetaService.healthCheck:output_type -> protobuf.HealthCheckResponse
+	8,   // 306: protobuf.MetaService.getFrontendConfig:output_type -> protobuf.GetFrontendConfigResponse
+	53,  // 307: protobuf.MetaService.getSemesters:output_type -> protobuf.GetSemestersResponse
+	72,  // 308: protobuf.MetaService.getNotifications:output_type -> protobuf.GetNotificationsResponse
+	73,  // 309: protobuf.MetaService.getServerNotifications:output_type -> protobuf.GetServerNotificationsResponse
+	10,  // 310: protobuf.MetaService.getInfoPage:output_type -> protobuf.GetInfoPageResponse
+	11,  // 311: protobuf.MetaService.listInfoPages:output_type -> protobuf.ListInfoPagesResponse
+	254, // 312: protobuf.MetaService.getIntegration:output_type -> protobuf.GetIntegrationResponse
+	22,  // 313: protobuf.UserService.getUser:output_type -> protobuf.GetUserResponse
+	23,  // 314: protobuf.UserService.updateUserSettings:output_type -> protobuf.UpdateUserSettingsResponse
+	26,  // 315: protobuf.UserService.exportPersonalData:output_type -> protobuf.ExportPersonalDataResponse
+	24,  // 316: protobuf.UserService.resetPassword:output_type -> protobuf.ResetPasswordResponse
+	260, // 317: protobuf.UserService.checkPasswordResetKey:output_type -> google.protobuf.Empty
+	260, // 318: protobuf.UserService.setPasswordByResetKey:output_type -> google.protobuf.Empty
+	260, // 319: protobuf.UserService.createFirstUser:output_type -> google.protobuf.Empty
+	25,  // 320: protobuf.UserService.getLoginOptions:output_type -> protobuf.GetLoginOptionsResponse
+	45,  // 321: protobuf.CourseService.getPublicCourses:output_type -> protobuf.GetPublicCoursesResponse
+	46,  // 322: protobuf.CourseService.getCourseBySlug:output_type -> protobuf.GetCourseBySlugResponse
+	248, // 323: protobuf.CourseService.search:output_type -> protobuf.SearchResponse
+	250, // 324: protobuf.CourseService.getCourseByToken:output_type -> protobuf.CourseByToken
+	260, // 325: protobuf.CourseService.optInCourseByToken:output_type -> google.protobuf.Empty
+	260, // 326: protobuf.CourseService.optOutCourseByToken:output_type -> google.protobuf.Empty
+	47,  // 327: protobuf.CourseService.getUserCourses:output_type -> protobuf.GetUserCoursesResponse
+	48,  // 328: protobuf.CourseService.getPinnedCourses:output_type -> protobuf.GetPinnedCoursesResponse
+	44,  // 329: protobuf.CourseService.getLiveCourses:output_type -> protobuf.GetLiveCoursesResponse
+	50,  // 330: protobuf.CourseService.getPinForCourse:output_type -> protobuf.GetPinForCourseResponse
+	49,  // 331: protobuf.CourseService.pinCourse:output_type -> protobuf.PinCourseResponse
+	134, // 332: protobuf.CourseService.getCourseStats:output_type -> protobuf.CourseStatsResponse
+	261, // 333: protobuf.CourseService.exportCourseStats:output_type -> google.api.HttpBody
+	176, // 334: protobuf.CourseService.getLectureStats:output_type -> protobuf.LectureStatsResponse
+	178, // 335: protobuf.CourseService.listLectureUnits:output_type -> protobuf.ListLectureUnitsResponse
+	179, // 336: protobuf.CourseService.createLectureUnit:output_type -> protobuf.LectureUnit
+	260, // 337: protobuf.CourseService.deleteLectureUnit:output_type -> google.protobuf.Empty
+	137, // 338: protobuf.CourseService.createCourse:output_type -> protobuf.CreateCourseResponse
+	140, // 339: protobuf.CourseService.searchTumOnlineCourses:output_type -> protobuf.SearchTumOnlineCoursesResponse
+	143, // 340: protobuf.CourseService.getSchedule:output_type -> protobuf.GetScheduleResponse
+	145, // 341: protobuf.CourseService.listScheduleLectureHalls:output_type -> protobuf.ListScheduleLectureHallsResponse
+	260, // 342: protobuf.CourseService.updateLecture:output_type -> google.protobuf.Empty
+	183, // 343: protobuf.CourseService.listCourseLecturesAdmin:output_type -> protobuf.ListCourseLecturesAdminResponse
+	260, // 344: protobuf.CourseService.updateLectureSeries:output_type -> google.protobuf.Empty
+	260, // 345: protobuf.CourseService.updateLectureSeriesTime:output_type -> google.protobuf.Empty
+	260, // 346: protobuf.CourseService.updateLecturesLectureHall:output_type -> google.protobuf.Empty
+	260, // 347: protobuf.CourseService.deleteLectures:output_type -> google.protobuf.Empty
+	260, // 348: protobuf.CourseService.deleteLectureSeries:output_type -> google.protobuf.Empty
+	194, // 349: protobuf.CourseService.copyLecture:output_type -> protobuf.CopyLectureResponse
+	196, // 350: protobuf.CourseService.createLectures:output_type -> protobuf.CreateLecturesResponse
+	148, // 351: protobuf.CourseService.getCourseAdmin:output_type -> protobuf.CourseAdmin
+	257, // 352: protobuf.CourseService.listCourseIntegrationGrants:output_type -> protobuf.ListCourseIntegrationGrantsResponse
+	260, // 353: protobuf.CourseService.revokeCourseIntegrationGrant:output_type -> google.protobuf.Empty
+	148, // 354: protobuf.CourseService.updateCourseSettings:output_type -> protobuf.CourseAdmin
+	151, // 355: protobuf.CourseService.copyCourse:output_type -> protobuf.CopyCourseResponse
+	260, // 356: protobuf.CourseService.deleteCourse:output_type -> google.protobuf.Empty
+	155, // 357: protobuf.CourseService.listCourseAdmins:output_type -> protobuf.ListCourseAdminsResponse
+	153, // 358: protobuf.CourseService.addCourseAdmin:output_type -> protobuf.CourseAdminUser
+	153, // 359: protobuf.CourseService.removeCourseAdmin:output_type -> protobuf.CourseAdminUser
+	159, // 360: protobuf.CourseService.searchUsersForCourse:output_type -> protobuf.SearchUsersForCourseResponse
+	163, // 361: protobuf.CourseService.listCourseLectureHallSettings:output_type -> protobuf.ListCourseLectureHallSettingsResponse
+	163, // 362: protobuf.CourseService.updateCourseLectureHallSettings:output_type -> protobuf.ListCourseLectureHallSettingsResponse
+	168, // 363: protobuf.CourseService.listCourseParticipants:output_type -> protobuf.ListCourseParticipantsResponse
+	172, // 364: protobuf.CourseService.inviteCourseParticipants:output_type -> protobuf.InviteCourseParticipantsResponse
+	174, // 365: protobuf.CourseService.listAdministeredCourses:output_type -> protobuf.ListAdministeredCoursesResponse
+	199, // 366: protobuf.CourseService.createLectureSections:output_type -> protobuf.CreateLectureSectionsResponse
+	260, // 367: protobuf.CourseService.updateLectureSection:output_type -> google.protobuf.Empty
+	260, // 368: protobuf.CourseService.deleteLectureSection:output_type -> google.protobuf.Empty
+	260, // 369: protobuf.CourseService.deleteLectureAttachment:output_type -> google.protobuf.Empty
+	260, // 370: protobuf.CourseService.deleteLectureThumbnail:output_type -> google.protobuf.Empty
+	260, // 371: protobuf.CourseService.requestLectureSubtitles:output_type -> google.protobuf.Empty
+	206, // 372: protobuf.CourseService.getLectureTranscodingProgress:output_type -> protobuf.GetLectureTranscodingProgressResponse
+	51,  // 373: protobuf.StreamService.getStream:output_type -> protobuf.CourseStream
+	63,  // 374: protobuf.StreamService.getVideoSections:output_type -> protobuf.GetVideoSectionsResponse
+	65,  // 375: protobuf.StreamService.getStreamPlaylist:output_type -> protobuf.GetStreamPlaylistResponse
+	261, // 376: protobuf.StreamService.getSubtitles:output_type -> google.api.HttpBody
+	261, // 377: protobuf.StreamService.getThumbs:output_type -> google.api.HttpBody
+	68,  // 378: protobuf.StreamService.getProgressBatch:output_type -> protobuf.GetProgressBatchResponse
+	56,  // 379: protobuf.StreamService.updateProgress:output_type -> protobuf.StreamProgress
+	36,  // 380: protobuf.StreamService.addBookmark:output_type -> protobuf.AddBookmarkResponse
+	35,  // 381: protobuf.StreamService.getBookmarks:output_type -> protobuf.GetBookmarksResponse
+	37,  // 382: protobuf.StreamService.updateBookmark:output_type -> protobuf.UpdateBookmarkResponse
+	260, // 383: protobuf.StreamService.deleteBookmark:output_type -> google.protobuf.Empty
+	260, // 384: protobuf.StreamService.switchCameraPreset:output_type -> google.protobuf.Empty
+	87,  // 385: protobuf.AdminService.listRunners:output_type -> protobuf.ListRunnersResponse
+	260, // 386: protobuf.AdminService.deleteRunner:output_type -> google.protobuf.Empty
+	96,  // 387: protobuf.AdminService.listStaff:output_type -> protobuf.ListUsersResponse
+	96,  // 388: protobuf.AdminService.searchUsers:output_type -> protobuf.ListUsersResponse
+	91,  // 389: protobuf.AdminService.createUser:output_type -> protobuf.UserSummary
+	91,  // 390: protobuf.AdminService.updateUserRole:output_type -> protobuf.UserSummary
+	260, // 391: protobuf.AdminService.deleteUser:output_type -> google.protobuf.Empty
+	75,  // 392: protobuf.AdminService.listServerNotificationsAdmin:output_type -> protobuf.ListServerNotificationsAdminResponse
+	74,  // 393: protobuf.AdminService.createServerNotification:output_type -> protobuf.ServerNotificationAdmin
+	74,  // 394: protobuf.AdminService.updateServerNotification:output_type -> protobuf.ServerNotificationAdmin
+	260, // 395: protobuf.AdminService.deleteServerNotification:output_type -> google.protobuf.Empty
+	14,  // 396: protobuf.AdminService.listInfoPagesAdmin:output_type -> protobuf.ListInfoPagesAdminResponse
+	13,  // 397: protobuf.AdminService.createInfoPage:output_type -> protobuf.InfoPage
+	13,  // 398: protobuf.AdminService.updateInfoPage:output_type -> protobuf.InfoPage
+	260, // 399: protobuf.AdminService.deleteInfoPage:output_type -> google.protobuf.Empty
+	98,  // 400: protobuf.AdminService.listIntegrations:output_type -> protobuf.ListIntegrationsResponse
+	100, // 401: protobuf.AdminService.createIntegration:output_type -> protobuf.CreateIntegrationResponse
+	102, // 402: protobuf.AdminService.rotateIntegrationKey:output_type -> protobuf.RotateIntegrationKeyResponse
+	260, // 403: protobuf.AdminService.revokeIntegrationKey:output_type -> google.protobuf.Empty
+	90,  // 404: protobuf.AdminService.listWorkers:output_type -> protobuf.ListWorkersResponse
+	260, // 405: protobuf.AdminService.deleteWorker:output_type -> google.protobuf.Empty
+	104, // 406: protobuf.AdminService.getMaintenanceThumbnailStatus:output_type -> protobuf.MaintenanceThumbnailStatus
+	104, // 407: protobuf.AdminService.generateMaintenanceThumbnails:output_type -> protobuf.MaintenanceThumbnailStatus
+	106, // 408: protobuf.AdminService.listMaintenanceCronJobs:output_type -> protobuf.ListMaintenanceCronJobsResponse
+	260, // 409: protobuf.AdminService.runMaintenanceCronJob:output_type -> google.protobuf.Empty
+	108, // 410: protobuf.AdminService.listMaintenanceTranscodingFailures:output_type -> protobuf.ListMaintenanceTranscodingFailuresResponse
+	260, // 411: protobuf.AdminService.deleteMaintenanceTranscodingFailure:output_type -> google.protobuf.Empty
+	111, // 412: protobuf.AdminService.listMaintenanceEmailFailures:output_type -> protobuf.ListMaintenanceEmailFailuresResponse
+	260, // 413: protobuf.AdminService.deleteMaintenanceEmailFailure:output_type -> google.protobuf.Empty
+	118, // 414: protobuf.AdminService.searchCourseImportSchedule:output_type -> protobuf.CourseImportSearchResponse
+	120, // 415: protobuf.AdminService.importCourseImportCourses:output_type -> protobuf.CourseImportResponse
+	124, // 416: protobuf.AdminService.listTokens:output_type -> protobuf.ListTokensResponse
+	125, // 417: protobuf.AdminService.createToken:output_type -> protobuf.TokenSecret
+	260, // 418: protobuf.AdminService.deleteToken:output_type -> google.protobuf.Empty
+	80,  // 419: protobuf.AdminService.listNotificationsAdmin:output_type -> protobuf.ListNotificationsAdminResponse
+	79,  // 420: protobuf.AdminService.createNotification:output_type -> protobuf.AdminNotification
+	260, // 421: protobuf.AdminService.deleteNotification:output_type -> google.protobuf.Empty
+	128, // 422: protobuf.AdminService.listAudits:output_type -> protobuf.ListAuditsResponse
+	131, // 423: protobuf.AdminService.getServerStats:output_type -> protobuf.ServerStatsResponse
+	261, // 424: protobuf.AdminService.exportServerStats:output_type -> google.api.HttpBody
+	209, // 425: protobuf.AdminService.listLectureHallsAdmin:output_type -> protobuf.ListLectureHallsAdminResponse
+	207, // 426: protobuf.AdminService.createLectureHallAdmin:output_type -> protobuf.LectureHallAdmin
+	207, // 427: protobuf.AdminService.updateLectureHallAdmin:output_type -> protobuf.LectureHallAdmin
+	260, // 428: protobuf.AdminService.deleteLectureHallAdmin:output_type -> google.protobuf.Empty
+	207, // 429: protobuf.AdminService.refreshLectureHallPresetsAdmin:output_type -> protobuf.LectureHallAdmin
+	260, // 430: protobuf.AdminService.setDefaultCameraPresetAdmin:output_type -> google.protobuf.Empty
+	208, // 431: protobuf.AdminService.takeCameraPresetSnapshotAdmin:output_type -> protobuf.CameraPresetAdmin
+	218, // 432: protobuf.ChatService.listChatMessages:output_type -> protobuf.ListChatMessagesResponse
+	220, // 433: protobuf.ChatService.getActivePoll:output_type -> protobuf.GetActiveChatPollResponse
+	222, // 434: protobuf.ChatService.listPolls:output_type -> protobuf.ListChatPollsResponse
+	224, // 435: protobuf.ChatService.listChatUsers:output_type -> protobuf.ListChatUsersResponse
+	305, // [305:436] is the sub-list for method output_type
+	174, // [174:305] is the sub-list for method input_type
+	174, // [174:174] is the sub-list for extension type_name
+	174, // [174:174] is the sub-list for extension extendee
+	0,   // [0:174] is the sub-list for field type_name
 }
 
 func init() { file_server_apiv2_proto_init() }
@@ -18183,8 +18575,8 @@ func file_server_apiv2_proto_init() {
 	file_server_apiv2_proto_msgTypes[86].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[140].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[143].OneofWrappers = []any{}
-	file_server_apiv2_proto_msgTypes[177].OneofWrappers = []any{}
-	file_server_apiv2_proto_msgTypes[219].OneofWrappers = []any{
+	file_server_apiv2_proto_msgTypes[182].OneofWrappers = []any{}
+	file_server_apiv2_proto_msgTypes[224].OneofWrappers = []any{
 		(*RealtimeEvent_Message)(nil),
 		(*RealtimeEvent_MessageDeleted)(nil),
 		(*RealtimeEvent_MessageResolved)(nil),
@@ -18205,7 +18597,7 @@ func file_server_apiv2_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_server_apiv2_proto_rawDesc), len(file_server_apiv2_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   248,
+			NumMessages:   253,
 			NumExtensions: 0,
 			NumServices:   6,
 		},

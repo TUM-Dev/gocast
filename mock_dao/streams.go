@@ -171,6 +171,20 @@ func (mr *MockStreamsDaoMockRecorder) CreateStreams(streams any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStreams", reflect.TypeOf((*MockStreamsDao)(nil).CreateStreams), streams)
 }
 
+// CreateUnit mocks base method.
+func (m *MockStreamsDao) CreateUnit(unit *model.StreamUnit) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUnit", unit)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateUnit indicates an expected call of CreateUnit.
+func (mr *MockStreamsDaoMockRecorder) CreateUnit(unit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnit", reflect.TypeOf((*MockStreamsDao)(nil).CreateUnit), unit)
+}
+
 // DeleteCourseLectureSeries mocks base method.
 func (m *MockStreamsDao) DeleteCourseLectureSeries(courseID uint, seriesIdentifier string) error {
 	m.ctrl.T.Helper()

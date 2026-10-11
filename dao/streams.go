@@ -29,6 +29,9 @@ type StreamsDao interface {
 	GetDuePremieresForWorkers() []model.Stream
 	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
 	GetUnitByID(id string) (model.StreamUnit, error)
+	// CreateUnit inserts one unit, filling in its ID. Unlike UpdateStreamFullAssoc it
+	// rewrites nothing else of the stream.
+	CreateUnit(unit *model.StreamUnit) error
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
 	GetStreamsByIds(ids []uint) ([]model.Stream, error)
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
@@ -193,6 +196,11 @@ func (d streamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
 	var unit model.StreamUnit
 	err := DB.First(&unit, "id = ?", id).Error
 	return unit, err
+}
+
+func (d streamsDao) CreateUnit(unit *model.StreamUnit) error {
+	defer Cache.Clear()
+	return DB.Create(unit).Error
 }
 
 func (d streamsDao) GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error) {
