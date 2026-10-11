@@ -46,9 +46,10 @@ export interface ConnectionState {
 /**
  * The line to show above the messages, or null when all is well.
  *
- * A refusal (4400/4403/4404) is final and says so. A 4401 is retried by the connection
- * — tokens expire — but when it keeps coming back the session is gone, and only the
- * viewer can fix that, so it is reported as an error even while reconnecting.
+ * A refusal (4400/4403/4404) is final and says so. A 4401 is retried once by the
+ * connection — tokens expire — and a second one in a row ends it as fatal: the session
+ * is gone and only the viewer can fix that. The lastCloseCode check covers the retry
+ * in between, so the notice does not flicker to "reconnecting" first.
  */
 export function connectionNotice(s: ConnectionState): ConnectionNotice | null {
   switch (s.fatalCode) {
@@ -60,7 +61,7 @@ export function connectionNotice(s: ConnectionState): ConnectionNotice | null {
       return { kind: "error", text: "This stream does not exist." };
   }
 
-  if (s.lastCloseCode === 4401) {
+  if (s.fatalCode === 4401 || s.lastCloseCode === 4401) {
     return { kind: "error", text: "Your session has expired. Sign in to keep the chat live.", signIn: true };
   }
 

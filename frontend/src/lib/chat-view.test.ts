@@ -39,6 +39,14 @@ describe("connectionNotice", () => {
     expect(expired).toMatchObject({ kind: "error", signIn: true });
   });
 
+  it("keeps saying the session expired once the connection has given up on it", () => {
+    // After the second 4401 in a row the socket stops retrying: it is closed, not
+    // connecting, and the fatal code is what is left to explain it.
+    const notice = connectionNotice({ status: "closed", loaded: true, fatalCode: 4401 });
+    expect(notice).toMatchObject({ kind: "error", signIn: true });
+    expect(notice?.text).toContain("session has expired");
+  });
+
   it("reports a failed snapshot", () => {
     expect(connectionNotice({ ...open, error: "boom" })?.text).toContain("boom");
   });

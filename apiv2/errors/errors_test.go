@@ -3,8 +3,10 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
@@ -44,4 +46,19 @@ func TestFromGorm(t *testing.T) {
 			t.Errorf("message = %q, want the underlying error", msg)
 		}
 	})
+}
+
+// The chat's cooldown is a 429, which has to reach the client as one.
+func TestWithStatusTooManyRequests(t *testing.T) {
+	err := WithStatus(http.StatusTooManyRequests, errors.New("slow down"))
+
+	if got := status.Code(err); got != codes.ResourceExhausted {
+		t.Errorf("code = %v, want %v", got, codes.ResourceExhausted)
+	}
+	if got := runtime.HTTPStatusFromCode(status.Code(err)); got != http.StatusTooManyRequests {
+		t.Errorf("gateway status = %d, want 429", got)
+	}
+	if msg := status.Convert(err).Message(); msg != "slow down" {
+		t.Errorf("message = %q", msg)
+	}
 }

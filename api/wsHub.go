@@ -30,6 +30,7 @@ const (
 type sessionWrapper struct {
 	session         *realtime.Context
 	isAdminOfCourse bool
+	userID          uint // 0 when not signed in
 }
 
 // sessionsFor returns a snapshot of the sessions watching a stream. Callers must go
@@ -62,10 +63,12 @@ var connHandler = func(context *realtime.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	isAdmin := false
+	var userID uint
 	if tumLiveContext.User != nil {
 		isAdmin = tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
+		userID = tumLiveContext.User.ID
 	}
-	sessionData := sessionWrapper{context, isAdmin}
+	sessionData := sessionWrapper{context, isAdmin, userID}
 
 	wsMapLock.Lock()
 	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], &sessionData)

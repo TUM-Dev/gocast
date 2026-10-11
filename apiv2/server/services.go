@@ -190,6 +190,11 @@ var services = []service{
 			// For the course's administrators; the handler checks, since the request
 			// names a stream rather than a course.
 			"listPolls": authenticated,
+			// Writes: only a signed-in user writes. The handlers add what the policy
+			// cannot say, that the stream's course admits the caller and its chat is on.
+			"sendChatMessage":    authenticated,
+			"toggleChatReaction": authenticated,
+			"votePoll":           authenticated,
 		},
 	},
 	{
