@@ -1,5 +1,4 @@
 const path = require("path");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 // Templates under web/template (the error page, the integration approval page) load a
@@ -30,25 +29,6 @@ module.exports = {
                 use: "ts-loader",
                 exclude: /node_modules/,
             },
-            {
-                test: require.resolve("moment"),
-                loader: "expose-loader",
-                options: {
-                    exposes: "moment",
-                },
-            },
-            {
-                test: /\.css$/i,
-                use: [
-                    "handlebars-loader", // handlebars loader expects raw resource string
-                    "extract-loader",
-                    "css-loader",
-                ],
-            },
-            {
-                test: /\.css$/,
-                use: [{ loader: MiniCssExtractPlugin.loader }, { loader: "css-loader", options: { importLoaders: 1 } }],
-            },
         ],
     },
     resolve: {
@@ -61,10 +41,6 @@ module.exports = {
         libraryTarget: "umd",
     },
     plugins: [
-        // For fullcalendar
-        new MiniCssExtractPlugin({
-            filename: "main.css",
-        }),
         new CopyWebpackPlugin({ patterns: vendorPatterns }),
     ],
 };
