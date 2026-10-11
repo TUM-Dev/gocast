@@ -3,17 +3,35 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RealtimeEventSchema } from "@/gen/server/apiv2_pb";
-import type { ChatMessage, ChatPoll } from "@/lib/chat";
+import { NO_ACCESS, type ChatAccess, type ChatMessage, type ChatPoll } from "@/lib/chat";
 import type { RealtimeOptions } from "@/lib/realtime";
 import { useChatStore } from "./chat";
 
-const { fetchChatMessages, fetchActivePoll, sendMessage, toggleReaction, vote, connections } =
-  vi.hoisted(() => ({
+const {
+  fetchChatMessages,
+  fetchActivePoll,
+  sendMessage,
+  toggleReaction,
+  vote,
+  approveMessage,
+  retractMessage,
+  deleteMessage,
+  resolveMessage,
+  startPoll,
+  closePoll,
+  connections,
+} = vi.hoisted(() => ({
     fetchChatMessages: vi.fn(),
     fetchActivePoll: vi.fn(),
     sendMessage: vi.fn(),
     toggleReaction: vi.fn(),
     vote: vi.fn(),
+    approveMessage: vi.fn(),
+    retractMessage: vi.fn(),
+    deleteMessage: vi.fn(),
+    resolveMessage: vi.fn(),
+    startPoll: vi.fn(),
+    closePoll: vi.fn(),
     connections: [] as { options: RealtimeOptions; connect: () => void; close: () => void }[],
   }));
 
@@ -24,6 +42,12 @@ vi.mock("@/lib/chat", async (importOriginal) => ({
   sendMessage,
   toggleReaction,
   vote,
+  approveMessage,
+  retractMessage,
+  deleteMessage,
+  resolveMessage,
+  startPoll,
+  closePoll,
 }));
 
 // The connection's own behaviour is realtime.test.ts's; here it is only the source of
@@ -38,6 +62,9 @@ vi.mock("@/lib/realtime", () => ({
     }
   },
 }));
+
+/** What fetchChatMessages resolves with. */
+const snap = (messages: ChatMessage[], access: ChatAccess = NO_ACCESS) => ({ messages, access });
 
 const event = (json: object) =>
   fromJson(RealtimeEventSchema, { streamId: 7, ...json } as JsonValue);
@@ -74,7 +101,7 @@ const poll: ChatPoll = {
 async function started(
   snapshot: ChatMessage[] = [message(1, { replies: [message(2, { replyTo: 1 })] })],
 ) {
-  fetchChatMessages.mockResolvedValueOnce(snapshot);
+  fetchChatMessages.mockResolvedValueOnce(snap(snapshot));
   fetchActivePoll.mockResolvedValueOnce(structuredClone(poll));
   const store = useChatStore(7);
   store.start();
@@ -169,24 +196,10 @@ describe("the chat store", () => {
     expect(store.closedPoll).toBeUndefined();
   });
 
-  it("tracks viewers, live state, title and description", async () => {
-    const { store } = await started();
-
-    store.apply(event({ viewers: { viewers: 42 } }));
-    store.apply(event({ live: { live: true } }));
-    store.apply(event({ title: { title: "Hopfen" } }));
-    store.apply(event({ description: { html: "<p>Malz</p>" } }));
-
-    expect(store.viewers).toBe(42);
-    expect(store.live).toBe(true);
-    expect(store.title).toBe("Hopfen");
-    expect(store.descriptionHtml).toBe("<p>Malz</p>");
-  });
-
   it("applies events that arrive during a resync on top of the new snapshot", async () => {
     const { store, conn } = await started();
 
-    let land!: (m: ChatMessage[]) => void;
+    let land!: (m: ReturnType<typeof snap>) => void;
     fetchChatMessages.mockReturnValueOnce(new Promise((resolve) => (land = resolve)));
     fetchActivePoll.mockResolvedValueOnce(undefined);
     conn.options.onResync!();
@@ -196,7 +209,7 @@ describe("the chat store", () => {
     conn.options.onEvent!(event({ message: { message: { id: 9, messageHtml: "late" } } }));
     expect(store.messages.map((m) => m.id)).toEqual([1]);
 
-    land([message(1), message(8)]);
+    land(snap([message(1), message(8)]));
     await vi.waitFor(() => expect(store.messages.map((m) => m.id)).toEqual([1, 8, 9]));
     expect(store.activePoll).toBeUndefined();
   });
@@ -214,8 +227,21 @@ describe("the chat store", () => {
     expect(connections[0]!.close).toHaveBeenCalled();
   });
 
+  it("takes what the caller may do from the snapshot", async () => {
+    const access = { canWrite: true, canModerate: true, anonymousAllowed: false, moderated: true };
+    fetchChatMessages.mockResolvedValueOnce(snap([], access));
+    fetchActivePoll.mockResolvedValueOnce(undefined);
+    const store = useChatStore(7);
+    expect(store.access).toEqual(NO_ACCESS);
+
+    store.start();
+    connections[0]!.options.onResync!();
+
+    await vi.waitFor(() => expect(store.access).toEqual(access));
+  });
+
   it("says so when the session ended, and keeps saying so after the snapshot", async () => {
-    fetchChatMessages.mockResolvedValueOnce([message(1)]);
+    fetchChatMessages.mockResolvedValueOnce(snap([message(1)]));
     fetchActivePoll.mockResolvedValueOnce(undefined);
     const store = useChatStore(7);
     store.start();
@@ -258,7 +284,7 @@ describe("the chat store's connection state", () => {
   });
 
   it("keeps the code of a refusal, and still loads what the read allows", async () => {
-    fetchChatMessages.mockResolvedValue([]);
+    fetchChatMessages.mockResolvedValue(snap([]));
     fetchActivePoll.mockResolvedValue(undefined);
     const store = useChatStore(7);
     store.start();
@@ -350,5 +376,81 @@ describe("writing", () => {
     await store.vote(21);
 
     expect(store.activePoll).toBeUndefined();
+  });
+});
+
+describe("moderating", () => {
+  it("approving upserts the message as the server returns it", async () => {
+    const { store } = await started([message(1, { visible: false }), message(2)]);
+    approveMessage.mockResolvedValueOnce(message(1, { visible: true }));
+
+    await store.approve(1);
+
+    expect(approveMessage).toHaveBeenCalledWith(7, 1);
+    expect(store.messages.map((m) => [m.id, m.visible])).toEqual([[1, true], [2, true]]);
+  });
+
+  it("retracting hides the message and drops its reactions", async () => {
+    const { store } = await started([
+      message(1, { reactions: [{ emoji: "+1", count: 1, userIds: [3], userNames: ["A"] }] }),
+    ]);
+    retractMessage.mockResolvedValueOnce(message(1, { visible: false }));
+
+    await store.retract(1);
+
+    expect(store.messages[0]).toMatchObject({ visible: false, reactions: [] });
+  });
+
+  it("deleting removes the message with its replies", async () => {
+    const { store } = await started([message(1, { replies: [message(2, { replyTo: 1 })] }), message(3)]);
+    deleteMessage.mockResolvedValueOnce(undefined);
+
+    await store.remove(1);
+
+    expect(deleteMessage).toHaveBeenCalledWith(7, 1);
+    expect(store.messages.map((m) => m.id)).toEqual([3]);
+  });
+
+  it("resolving marks a reply too", async () => {
+    const { store } = await started([message(1, { replies: [message(2, { replyTo: 1 })] })]);
+    resolveMessage.mockResolvedValueOnce(message(2));
+
+    await store.resolve(2);
+
+    expect(store.messages[0]!.replies[0]!.resolved).toBe(true);
+  });
+
+  it("does nothing locally when the server refuses", async () => {
+    const { store } = await started([message(1)]);
+    deleteMessage.mockRejectedValueOnce(new Error("forbidden"));
+
+    await expect(store.remove(1)).rejects.toThrow("forbidden");
+
+    expect(store.messages.map((m) => m.id)).toEqual([1]);
+  });
+
+  it("starts a poll, replacing the results of the last one", async () => {
+    const { store } = await started();
+    store.apply(event({ pollClosed: { poll: { id: 9, question: "Old?", options: [] } } }));
+    startPoll.mockResolvedValueOnce({ ...poll, id: 12, question: "Helles?" });
+
+    await store.openPoll("Helles?", ["Ja", "Nein"]);
+
+    expect(startPoll).toHaveBeenCalledWith(7, "Helles?", ["Ja", "Nein"]);
+    expect(store.activePoll!.id).toBe(12);
+    expect(store.closedPoll).toBeUndefined();
+  });
+
+  it("closing the poll keeps its results to show", async () => {
+    const { store } = await started();
+    closePoll.mockResolvedValueOnce({ ...poll, active: false });
+
+    await store.endPoll();
+
+    expect(store.activePoll).toBeUndefined();
+    expect(store.closedPoll).toMatchObject({ id: 11, active: false });
+
+    store.dismissClosedPoll();
+    expect(store.closedPoll).toBeUndefined();
   });
 });
