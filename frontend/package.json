@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.15.1",
   "private": true,
-  "description": "Vite single-page frontend for GoCast, migrated page by page from the server-rendered templates in web/template.",
+  "description": "Vite single-page frontend for GoCast, the only frontend; the Go server embeds its build from web/spa.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.14.0",
+    "@fortawesome/fontawesome-free": "^7.3.1",
     "@fullcalendar/core": "^6.1.21",
     "@fullcalendar/timegrid": "^6.1.21",
     "@silvermine/videojs-airplay": "^1.3.0",

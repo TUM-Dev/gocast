@@ -5,7 +5,6 @@ go 1.27.0
 tool go.uber.org/mock/mockgen
 
 require (
-	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002130556-2a3785adffe6
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
@@ -54,13 +53,10 @@ require (
 )
 
 require (
-	dario.cat/mergo v1.0.1 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	// this version works - newer commits may have breaking changes
 	// github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
 	github.com/Azure/go-ntlmssp v0.1.1 // indirect
-	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/antchfx/xpath v1.3.6 // indirect
 	github.com/asticode/go-astikit v0.51.1 // indirect
@@ -90,7 +86,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0 // indirect
-	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -99,8 +94,6 @@ require (
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.23 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
-	github.com/mitchellh/copystructure v1.2.0 // indirect
-	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
@@ -114,7 +107,6 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/russellhaering/goxmldsig v1.4.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect

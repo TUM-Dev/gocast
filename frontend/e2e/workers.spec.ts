@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { apiAs, bearerToken, login } from "./helpers";
+import { REFUSED, apiAs, bearerToken, login } from "./helpers";
 import { users, workers } from "./seed";
 
 /**
@@ -60,7 +60,7 @@ test.describe("the workers page", () => {
 
     const response = await page.goto("/admin/workers");
     expect(response?.status()).toBe(403);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 
   test("is refused to a lecturer, who administers courses but not the server", async ({ page }) => {

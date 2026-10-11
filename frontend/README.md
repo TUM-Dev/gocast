@@ -1,9 +1,8 @@
 # GoCast frontend
 
-The Vite single-page app that is gradually replacing the server-rendered templates in
-`web/template`. Both frontends run side by side: `web/router.go` decides per route
-which one answers, so pages move over one at a time and can be moved back just as
-easily.
+The Vite single-page app, GoCast's only frontend. The Go server embeds its build from
+`web/spa/` and serves the shell for every path listed in `spaRoutes` in
+`web/router.go`; it refuses to start without a build.
 
 Currently migrated: **`/settings`**, **`/login`**, the start page — `/`,
 `/courses/mine`, `/courses/public` and `/course/:year/:term/:slug` — the info pages —
@@ -47,14 +46,6 @@ details differently: the staff list does not, search results do. That is inherit
 the page it replaces, and preserved rather than tidied, because changing what an
 administrator can see is a decision about a privacy control rather than part of a port.
 
-**`/admin/server-stats` shares its v1 data layer with two pages that have not moved.**
-`api/statistics.go`'s `getStats`/`exportStats` and `dao/statistics.go` treat courseID 0
-as "every course", which is how the old server-wide page reused the per-course
-template and DAO queries. `getServerStats`/`exportServerStats` call the same DAO
-methods with that same convention; the v1 handlers, `web/template/admin/admin_tabs/stats.gohtml`
-and `web/ts/stats.ts` stay exactly as they are, because they still serve the
-per-course (`/admin/course/:courseID/stats`) and per-lecture statistics pages.
-
 One thing worth knowing before adding the next page: `apiv2.proto` and `runner/*.proto`
 both declare `package protobuf` and are linked into the same binary, so their type
 names share a namespace. A collision panics at boot rather than failing to compile.
@@ -72,9 +63,9 @@ cd frontend && pnpm install && pnpm run dev
 ```
 
 Then open **http://localhost:5173**, not the Go server's port. Everything the SPA does
-not own — the API, static assets, login, and the pages still rendered from templates —
-is proxied through to Go by `vite.config.ts`. The proxy leaves the request host alone
-so the session cookie survives the hop and you stay logged in across both frontends.
+not own — the API, `/public`, the login POST — is proxied through to Go by
+`vite.config.ts`. The proxy leaves the request host alone so the session cookie
+survives the hop.
 
 To check the production path instead, build and let Go serve it:
 
@@ -108,9 +99,8 @@ Three consequences worth knowing:
   `SetLoginRedirectCookie` before serving the shell, because where to return to has to
   be recorded before the user leaves for an external identity provider, which comes
   back without the original query string.
-- **A failed attempt redirects to `/login?error`** rather than rendering the template
-  inline, which would otherwise replace the SPA mid-flow. The server-rendered page
-  reads the same parameter, so the legacy fallback still shows the error.
+- **A failed attempt redirects to `/login?error`** rather than rendering a page
+  inline, which would otherwise replace the SPA mid-flow.
 - **SAML is a full navigation** to `/saml/out`, never a fetch.
 
 `getLoginOptions` reports whether single sign-on is configured and what to call it, so
@@ -272,73 +262,36 @@ There is deliberately no `/course/:slug` for the current semester, although the 
 would support it: gin panics when two parameters with different names share a
 position, so it could never be registered beside `/course/:year/:term/:slug`.
 
-## Migrating another page
-
-A migration finishes by **deleting the page it replaces**, in the same pull request.
-Running the two versions side by side buys less than it looks like: the build is
-embedded in the binary, so moving a page back is a code change and a deploy either way,
-and the browser tests are what actually establish that the new page works. Keeping the
-old one around instead just leaves two implementations to maintain.
-
-**Build it**
+## Adding a page
 
 1. Build the page here and add its path to the router in `src/router/index.ts`.
-2. Add the same path to `spaRoutes` in `web/router.go`.
+2. Add the same path to `spaRoutes` in `web/router.go` and register it with
+   `registerPage` in `configMainRoute`; `src/router/spa-routes.test.ts` and the boot-time
+   check in `registerPage` catch a path known to only one side.
 3. Keep the route's existing auth middleware. The server still gates the page; the
    client only decides what to offer.
 4. If the page needs something server-side that a client cannot do — reading or writing
-   a cookie it depends on — add a `spaRouteHooks` entry. Data fetching is not that:
-   it belongs in the API. A hook may also answer the request itself by calling
-   `c.Abort()`, which is how `/` still renders the onboarding page on a deployment
-   that has no users yet.
+   a cookie it depends on, or response headers such as the consent page's
+   frame-ancestors — add a `spaRouteHooks` entry. Data fetching is not that: it belongs
+   in the API. A hook may also answer the request itself by calling `c.Abort()`, which
+   is how `/` still redirects to the onboarding page on a deployment that has no users
+   yet.
+5. Cover what fails silently in `e2e/`. Anything that writes needs a test that reads the
+   value back.
 
-**Prove it**
-
-5. Walk the old page and list what it does, including the parts nobody uses often:
-   every control, every role that sees something different, every error state.
-6. Cover the ones that fail *silently* in `e2e/`. Anything that writes needs a test
-   that reads the value back — settings whose Go getter returns the stored string
-   verbatim have to be written unencoded, and the only place that shows is a page
-   outside the SPA.
-
-**Delete it**
-
-7. Remove the template handler and pass `nil` to `registerPage` for the path.
-8. Delete the `.gohtml`. Its partials are resolved at render time, not at boot, so a
-   partial another page still includes fails only when someone loads that page —
-   `grep` each one before removing it. This is the one deletion the compiler cannot
-   check for you.
-9. Delete the DAO methods and v1 endpoints the page used. The compiler catches a DAO
-   method that still has callers; it says nothing about an HTTP route, so check the
-   legacy TypeScript in `web/ts` for anything still calling the endpoint.
-10. Regenerate mocks if a DAO interface changed: `make mocks`.
-
-**Rolling back** is `git revert` of that pull request. Taking the path out of
-`spaRoutes` on its own no longer works once the template is gone, and the server says
-so at boot rather than serving a 404 — as it does when the frontend build is missing
-for a page that has no template left. `web/spa_test.go` covers both.
-
-Pages where parity cannot be established cheaply — the watch page, course
-administration — are the reason `registerPage` still takes a legacy handler at all.
-Serve both for those, and keep the entry in `spaRoutes` as the switch.
+When Go refuses a page request (403, 404), it answers with the shell and the status and
+puts the reason in two meta tags; `src/lib/server-error.ts` reads them and `App.vue`
+shows `ErrorView` instead of the route. Under `/api/` the same refusal is plain text.
 
 ## Styling
 
-Tailwind, with the theme copied verbatim from `web/tailwind.config.js` so that
-migrated and legacy pages resolve identical colours. `src/styles/main.css` carries
-over the `tum-live-*` component classes and the `text-1`…`text-9` contrast ladder the
-templates use. Keep both in sync until the legacy config is deleted; each page
-migration brings its own classes across rather than porting the whole stylesheet up
-front.
+Tailwind 4 through `@tailwindcss/postcss`; `src/styles/main.css` holds the theme, the
+`tum-live-*` component classes and the `text-1`…`text-9` contrast ladder. The inline
+script in `index.html` applies the theme before first paint from the `themeMode`
+localStorage key; `src/stores/theme.ts` handles later changes.
 
-The inline script in `index.html` applies the theme before first paint, sharing the
-`themeMode` localStorage key with `web/assets/init.js` so a choice made on a legacy
-page is honoured here and vice versa.
-
-Font Awesome is loaded from `/static/assets/vendor/fontawesome`, exactly as the
-templates load it — same file, same icons, no bundle weight. That vendor copy is
-produced by `copy-webpack-plugin` in `web/webpack.common.js`, not by this project's own
-build.
+Font Awesome comes from the `@fortawesome/fontawesome-free` package, imported in
+`src/main.ts`, so Vite bundles the CSS and its web fonts.
 
 ## The header
 

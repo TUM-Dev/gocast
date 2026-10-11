@@ -3,7 +3,7 @@ import { ref } from "vue";
 
 export type ThemeMode = "light" | "dark" | "system";
 
-/** Mode list and labels as defined by the Alpine theme store in web/assets/init.js. */
+/** The theme modes the header offers. */
 export const THEME_MODES: { id: ThemeMode; name: string }[] = [
   { id: "light", name: "Light" },
   { id: "dark", name: "Dark" },
@@ -11,9 +11,7 @@ export const THEME_MODES: { id: ThemeMode; name: string }[] = [
 ];
 
 /**
- * Theme selection, sharing the `themeMode` localStorage key with web/assets/init.js so
- * a choice made on a migrated page is honoured by the server-rendered ones and vice
- * versa. The initial class is applied by the inline script in index.html before first
+ * Theme selection, kept in the `themeMode` localStorage key. The initial class is applied by the inline script in index.html before first
  * paint; this store handles later changes.
  */
 export const useThemeStore = defineStore("theme", () => {

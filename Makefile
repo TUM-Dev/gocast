@@ -1,18 +1,10 @@
 .PHONY: all
-all: node_dependencies spa go_dependencies bundle
+all: spa go_dependencies bundle
 
 VERSION := $(shell git rev-parse --short origin/HEAD)
 
-# Installs web/node_modules and, through the package's postinstall, bundles the
-# templates' JS and CSS. devDependencies are not optional here: webpack and the
-# tailwind CLI that postinstall runs both live there.
-.PHONY: node_dependencies
-node_dependencies:
-	cd web; \
-	pnpm install
-
 # Builds the single-page frontend into web/spa, where it is embedded into the binary.
-# Skipping this target leaves every page served by its template handler.
+# The server refuses to start without this build.
 .PHONY: spa
 spa:
 	cd frontend; \
@@ -38,7 +30,6 @@ bundle:
 
 .PHONY: clean
 clean:
-	rm -fr web/node_modules
 	rm -fr frontend/node_modules
 	rm -fr web/spa/assets web/spa/index.html
 
@@ -49,11 +40,6 @@ install:
 .PHONY: mocks
 mocks:
 	go generate ./...
-
-.PHONY: run_web
-run_web:
-	cd web; \
-	pnpm install
 
 .PHONY: run
 run:
@@ -103,7 +89,7 @@ e2e_db:
 #
 # Some of these write, so the fixture is reloaded every run — once per run, not per
 # file, so a test that changes a seeded account breaks later files. The SPA is built
-# first, or the migrated pages fall back to their templates and fail confusingly.
+# first, because the server refuses to start without it.
 #
 # playwright.config.ts starts the server, after the reload: the dump is the 2022
 # schema and the server migrates it on boot, so reloading under a running one takes
@@ -154,7 +140,6 @@ test_e2e_cover: spa e2e_db
 .PHONY: lint
 lint:
 	golangci-lint run
-	cd web; pnpm run lint
 	cd frontend; pnpm run typecheck
 
 .PHONY: protoVoice

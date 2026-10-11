@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { apiAs, bearerToken, login } from "./helpers";
+import { REFUSED, apiAs, bearerToken, login } from "./helpers";
 import { users } from "./seed";
 
 /**
@@ -68,7 +68,7 @@ test.describe("the course statistics page", () => {
 
     const response = await page.goto("/admin/courses/2/stats");
     expect(response?.ok()).toBe(false);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 
   test("is refused by the server to a student of the course", async ({ page }) => {
@@ -76,7 +76,7 @@ test.describe("the course statistics page", () => {
 
     const response = await page.goto(page1);
     expect(response?.ok()).toBe(false);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 });
 

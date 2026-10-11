@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 // The SPA is wired across two places that must agree: the embed and asset mount here,
@@ -41,42 +43,35 @@ func TestRegisterPageServesSPAForMigratedRoutes(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	group := router.Group("/")
-
-	legacyCalled := false
-	legacy := func(c *gin.Context) {
-		legacyCalled = true
-		c.String(http.StatusOK, "legacy template")
-	}
-
-	// A synthetic path, so this does not need updating as real pages migrate.
-	const legacyPath = "/not-migrated"
-	if spaRoutes[legacyPath] {
-		t.Fatalf("%s is unexpectedly listed in spaRoutes", legacyPath)
-	}
-
-	registerPage(group, http.MethodGet, "/settings", legacy)
-	registerPage(group, http.MethodGet, legacyPath, legacy)
+	registerPage(&router.RouterGroup, http.MethodGet, "/settings")
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/settings", nil))
 
-	if legacyCalled {
-		t.Error("/settings is listed in spaRoutes but was served by the template handler")
-	}
 	if rec.Code != http.StatusOK {
 		t.Errorf("serving SPA shell: got status %d, want 200", rec.Code)
 	}
 	if !strings.Contains(rec.Body.String(), "/spa-assets/") {
 		t.Errorf("SPA shell was not returned for /settings, got: %q", truncate(rec.Body.String()))
 	}
+}
 
-	legacyCalled = false
-	rec = httptest.NewRecorder()
-	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, legacyPath, nil))
+// The consent page hands a one-time code to a third party, so it must not be framable.
+func TestIntegrationAuthorizationPageDeniesFraming(t *testing.T) {
+	spaIsBuilt(t)
 
-	if !legacyCalled {
-		t.Errorf("%s is not in spaRoutes but was not served by the template handler", legacyPath)
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	registerPage(&router.RouterGroup, http.MethodGet, "/integration/authorize/:id")
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/integration/authorize/1", nil))
+
+	if got := rec.Header().Get("X-Frame-Options"); got != "DENY" {
+		t.Errorf("X-Frame-Options = %q, want DENY", got)
+	}
+	if got := rec.Header().Get("Content-Security-Policy"); got != "frame-ancestors 'none'" {
+		t.Errorf("Content-Security-Policy = %q, want frame-ancestors 'none'", got)
 	}
 }
 
@@ -91,9 +86,7 @@ func TestLoginRouteKeepsSettingTheRedirectCookie(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	registerPage(&router.RouterGroup, http.MethodGet, "/login", func(c *gin.Context) {
-		t.Error("the template handler ran for a migrated route")
-	})
+	registerPage(&router.RouterGroup, http.MethodGet, "/login")
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/login?return=%2Fw%2Fslug%2F42", nil))
@@ -118,80 +111,14 @@ func TestLoginRouteKeepsSettingTheRedirectCookie(t *testing.T) {
 	}
 }
 
-// Once a template is deleted the SPA build stops being optional for that page.
-func TestPageHandlerRequiresABuildForPagesWithNoTemplate(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	const migrated = "/settings"
-	const notMigrated = "/not-migrated"
-	if !spaRoutes[migrated] {
-		t.Fatalf("%s is expected to be listed in spaRoutes", migrated)
+// A path the client router does not know would render nothing, so registering one that
+// spaRoutes does not list stops the server at boot.
+func TestPageHandlerRefusesAPathOutsideSpaRoutes(t *testing.T) {
+	if _, err := pageHandler("/not-migrated"); err == nil {
+		t.Fatal("expected an error, got none")
 	}
-	if spaRoutes[notMigrated] {
-		t.Fatalf("%s is unexpectedly listed in spaRoutes", notMigrated)
-	}
-
-	legacy := func(c *gin.Context) {}
-
-	tests := []struct {
-		name     string
-		path     string
-		legacy   gin.HandlerFunc
-		spaBuilt bool
-		wantErr  bool
-	}{
-		{
-			name:     "a fully migrated page without a build stops the server",
-			path:     migrated,
-			legacy:   nil,
-			spaBuilt: false,
-			wantErr:  true,
-		},
-		{
-			name:     "a page still holding its template falls back instead",
-			path:     migrated,
-			legacy:   legacy,
-			spaBuilt: false,
-		},
-		{
-			// The rollback that no longer works: nothing is left to serve the path.
-			name:     "a rolled-back page with no template left stops the server",
-			path:     notMigrated,
-			legacy:   nil,
-			spaBuilt: true,
-			wantErr:  true,
-		},
-		{
-			name:     "a migrated page with a build is served the shell",
-			path:     migrated,
-			legacy:   nil,
-			spaBuilt: true,
-		},
-		{
-			name:     "an unmigrated page is served its template",
-			path:     notMigrated,
-			legacy:   legacy,
-			spaBuilt: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			handler, err := pageHandler(tt.path, tt.legacy, tt.spaBuilt)
-
-			if tt.wantErr {
-				if err == nil {
-					t.Fatal("expected an error, got none")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if handler == nil {
-				t.Error("no handler returned")
-			}
-		})
+	if _, err := pageHandler("/settings"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -222,7 +149,7 @@ func TestPageHandlerLetsAHookAnswerTheRequest(t *testing.T) {
 		c.Abort()
 	}
 
-	handler, err := pageHandler(path, nil, true)
+	handler, err := pageHandler(path)
 	if err != nil {
 		t.Fatalf("pageHandler: %v", err)
 	}
@@ -248,7 +175,7 @@ func TestPageHandlerServesTheShellAfterANonAbortingHook(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 
-	handler, err := pageHandler("/login", nil, true)
+	handler, err := pageHandler("/login")
 	if err != nil {
 		t.Fatalf("pageHandler: %v", err)
 	}
@@ -288,17 +215,59 @@ func truncate(s string) string {
 	return s
 }
 
+// A refused request gets the shell with its status, and the message in a meta tag the
+// client renders; under /api/ it is plain text, which scripts can read.
+func TestRenderErrorPage(t *testing.T) {
+	spaIsBuilt(t)
+
+	gin.SetMode(gin.TestMode)
+	tools.SetErrorPageRenderer(serveErrorPage)
+	t.Cleanup(func() { tools.SetErrorPageRenderer(nil) })
+
+	router := gin.New()
+	router.NoRoute(serveNotFound)
+	router.GET("/forbidden", func(c *gin.Context) {
+		tools.RenderErrorPage(c, http.StatusForbidden, `no <entry> "here"`)
+	})
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/forbidden", nil))
+	body := rec.Body.String()
+	if rec.Code != http.StatusForbidden || !strings.Contains(body, "/spa-assets/") {
+		t.Errorf("page error: status %d, body %q", rec.Code, truncate(body))
+	}
+	if !strings.Contains(body, `<meta name="gocast-error-status" content="403">`) ||
+		!strings.Contains(body, `content="no &lt;entry&gt; &#34;here&#34;"`) {
+		t.Errorf("error meta tags missing or unescaped in %q", truncate(body))
+	}
+
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/no/such/page", nil))
+	if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "/spa-assets/") {
+		t.Errorf("unknown page: status %d", rec.Code)
+	}
+
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/no/such/route", nil))
+	if rec.Code != http.StatusNotFound || rec.Body.String() != tools.PageNotFoundErrMsg {
+		t.Errorf("unknown API route: status %d, body %q", rec.Code, rec.Body.String())
+	}
+}
+
 // An unknown watch view gets the shell with a 404 status rather than a 200 the client
 // then contradicts; the four known views, in any case, and the chat pages still get 200.
 func TestUnknownWatchViewAnswers404WithTheShell(t *testing.T) {
 	spaIsBuilt(t)
 
 	gin.SetMode(gin.TestMode)
+	// serveNotFound renders through the error page renderer ConfigGinRouter installs.
+	tools.SetErrorPageRenderer(serveErrorPage)
+	t.Cleanup(func() { tools.SetErrorPageRenderer(nil) })
 	router := gin.New()
 	group := router.Group("/")
-	registerPage(group, http.MethodGet, "/w/:slug/:streamID/:version", nil)
-	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat", nil)
-	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat/popup", nil)
+	registerPage(group, http.MethodGet, "/w/:slug/:streamID/:version")
+	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat")
+	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat/popup")
 
 	for path, want := range map[string]int{
 		"/w/ws/1/COMB":       http.StatusOK,

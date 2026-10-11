@@ -16,12 +16,6 @@ import (
 func (r mainRoutes) shortLinkOrInfoPage(c *gin.Context) {
 	slug := c.Param("shortLink")
 	if _, err := r.InfoPageDao.GetBySlug(slug); err == nil {
-		if !spaAvailable() {
-			// No build to serve the page from; a course short link is at least
-			// something rather than a broken response.
-			r.HighlightPage(c)
-			return
-		}
 		serveSPAShell(c)
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {

@@ -23,17 +23,16 @@ for (const [name, p] of pages) {
   for (const theme of ["light", "dark"]) {
     try {
       await page.goto(BASE + p, { waitUntil: "networkidle", timeout: 25000 });
-      // Dark mode is a `dark` class on <html>, set per template and toggled by Alpine.
+      // Dark mode is a `dark` class on <html>, set by the inline script in index.html and toggled by the theme store.
       await page.evaluate((t) => document.documentElement.classList.toggle("dark", t === "dark"), theme);
       await page.waitForTimeout(500);
       const m = await page.evaluate(() => ({
         doc: document.documentElement.scrollWidth,
         vw: document.documentElement.clientWidth,
-        // The 404 and error templates render with HTTP 200, so the status code does
-        // not give this away: a screenshot of an error page looks like a pass.
-        err: /Error: \d{3}|This page does not exist|You are not allowed/.test(document.body.innerText),
+        // An error page is the SPA shell too, so a screenshot of one looks like a pass.
+        err: !!document.querySelector('meta[name="gocast-error-status"]') || /This page does not exist|You are not allowed/.test(document.body.innerText),
       }));
-      if (m.err) { errors++; console.log(`  !! ${name}/${theme}: ERROR PAGE (served with HTTP 200) -- wrong path, or not logged in?`); }
+      if (m.err) { errors++; console.log(`  !! ${name}/${theme}: ERROR PAGE -- wrong path, or not logged in?`); }
       if (m.doc > m.vw) { overflows++; console.log(`  OVERFLOW ${name}/${theme}: scrollWidth=${m.doc} > viewport=${m.vw}`); }
       await page.screenshot({ path: `${SHOTS}/${label}-${name}-${theme}.png` });
     } catch (e) {

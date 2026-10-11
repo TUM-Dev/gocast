@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { apiAs, bearerToken, login } from "./helpers";
+import { REFUSED, apiAs, bearerToken, login } from "./helpers";
 import { users } from "./seed";
 
 /**
@@ -60,7 +60,7 @@ test.describe("the lecture statistics page", () => {
 
     const response = await page.goto(page7);
     expect(response?.ok()).toBe(false);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 
   test("shows nothing of a lecture reached through the wrong course", async ({ page }) => {
@@ -71,7 +71,7 @@ test.describe("the lecture statistics page", () => {
 
     const response = await page.goto("/admin/courses/1/lectures/7/stats");
     expect(response?.status()).toBe(404);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
     await expect(page.getByText("We couldn't find the stream you were looking for.")).toBeVisible();
     await expect(page.locator("canvas")).toHaveCount(0);
   });

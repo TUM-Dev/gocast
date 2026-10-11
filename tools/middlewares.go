@@ -13,11 +13,13 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-var templateExecutor TemplateExecutor
+// errorPageRenderer answers a browser request with the error page. The web package
+// installs it, because only it holds the SPA shell; see web.serveErrorPage.
+var errorPageRenderer func(c *gin.Context, status int, message string)
 
-// SetTemplateExecutor sets the templates and template executor for the middlewares to execute error pages
-func SetTemplateExecutor(e TemplateExecutor) {
-	templateExecutor = e
+// SetErrorPageRenderer sets how RenderErrorPage answers a request for a page.
+func SetErrorPageRenderer(f func(c *gin.Context, status int, message string)) {
+	errorPageRenderer = f
 }
 
 // JWTClaims are the claims contained in a session
@@ -30,8 +32,7 @@ type JWTClaims struct {
 func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// no context initialisation required for static assets.
-		if strings.HasPrefix(c.Request.RequestURI, "/static") ||
-			strings.HasPrefix(c.Request.RequestURI, "/public") ||
+		if strings.HasPrefix(c.Request.RequestURI, "/public") ||
 			strings.HasPrefix(c.Request.RequestURI, "/favicon") {
 			return
 		}
@@ -79,25 +80,16 @@ func LoggedIn(c *gin.Context) {
 	}
 }
 
-// RenderErrorPage renders the error page with the given error code and message.
-// the gin context is always aborted after this function is called.
+// RenderErrorPage answers with the given status and message, and aborts the context.
+// A page request gets the SPA shell, which renders the error; under /api/ the caller
+// is a script, which gets the message as plain text.
 func RenderErrorPage(c *gin.Context, status int, message string) {
-	err := templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
-		Status:   status,
-		Message:  message,
-		Branding: BrandingCfg,
-	})
-	if err != nil {
-		logger.Error("Error on executing template error.gohtml", "err", err)
+	if errorPageRenderer == nil || strings.HasPrefix(c.Request.URL.Path, "/api/") {
+		c.String(status, message)
+	} else {
+		errorPageRenderer(c, status, message)
 	}
 	c.Abort()
-}
-
-// ErrorPageData is the required data for the error page
-type ErrorPageData struct {
-	Status   int
-	Message  string
-	Branding Branding
 }
 
 const (
@@ -278,7 +270,8 @@ func AdminOfCourse(c *gin.Context) {
 	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
 		return
 	}
-	c.AbortWithStatus(http.StatusForbidden) // user is not admin of course
+	// The SPA renders the refusal from the shell; a bare status left a blank page.
+	RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 }
 
 // RequirePermission aborts with Forbidden unless the caller holds the permission. A

@@ -34,7 +34,7 @@ jobs:
         run: pnpm run build
 
   # Browser tests against a real server: a MariaDB seeded from the starter dump, the
-  # Go binary serving both frontends, and Playwright driving Chromium against it. This
+  # Go binary serving the SPA, and Playwright driving Chromium against it. This
   # is the only job that can see gin choosing between the SPA shell and a template, or
   # the session cookie surviving a login redirect.
   #
@@ -95,14 +95,7 @@ jobs:
             docker run --rm -i --network host mariadb:12 \
               mariadb -h 127.0.0.1 -P 3306 -u root -pexample
 
-      # web/router.go embeds web/node_modules, so this is needed to compile at all, not
-      # just to make the icons show up.
-      - name: Install template assets
-        working-directory: ./web
-        run: pnpm install --frozen-lockfile
-
-      # Without a build, every migrated route falls back to its template and the suite
-      # would test the frontend it is replacing.
+      # The server refuses to start without a build.
       - name: Build the SPA
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile && pnpm run build

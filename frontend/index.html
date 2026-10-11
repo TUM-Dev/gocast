@@ -4,18 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" />
-    <!--
-      Font Awesome, loaded the same way every server-rendered page loads it: from the
-      vendor copy webpack.common.js copies out of web/node_modules (see vendorPatterns
-      in web/webpack.common.js). Sharing the file keeps the icons identical across both
-      frontends and costs no bundle weight.
-    -->
-    <link rel="stylesheet" href="/static/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="manifest" href="/manifest.json" />
     <title>TUM-Live</title>
     <script>
       // Applies the theme before first paint to avoid a flash of the wrong theme.
-      // Mirrors web/assets/init.js and shares its localStorage key, so toggling the
-      // theme on a migrated page carries over to the server-rendered ones.
+      // The key is the one stores/theme.ts reads and writes.
       (function () {
         if (!("themeMode" in localStorage)) {
           localStorage.themeMode = "system";

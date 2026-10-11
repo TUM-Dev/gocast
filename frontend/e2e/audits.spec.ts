@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { apiAs, bearerToken, login } from "./helpers";
+import { REFUSED, apiAs, bearerToken, login } from "./helpers";
 import { audits, users } from "./seed";
 
 /**
@@ -89,7 +89,7 @@ test.describe("the audits page", () => {
 
     const response = await page.goto("/admin/audits");
     expect(response?.status()).toBe(403);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 });
 

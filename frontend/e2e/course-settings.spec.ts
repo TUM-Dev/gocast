@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-import { apiAs, bearerToken, login } from "./helpers";
+import { REFUSED, apiAs, bearerToken, login } from "./helpers";
 import { users } from "./seed";
 
 /**
@@ -73,7 +73,7 @@ test.describe("the course administration page", () => {
     for (const path of ["/admin/courses/2/settings", "/admin/courses/2/participants"]) {
       const response = await page.goto(path);
       expect(response?.ok()).toBe(false);
-      expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+      expect((await response?.text()) ?? "").toContain(REFUSED);
     }
   });
 
@@ -82,7 +82,7 @@ test.describe("the course administration page", () => {
 
     const response = await page.goto(settings1);
     expect(response?.ok()).toBe(false);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 });
 
