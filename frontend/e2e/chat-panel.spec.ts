@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
 
 import { apiAs, login } from "./helpers";
 import { users } from "./seed";
@@ -6,8 +6,9 @@ import { users } from "./seed";
 /**
  * The chat on its own page, `/w/:slug/:streamID/chat`.
  *
- * Messages are written the way the old UI writes them, over the v1 websocket, since
- * nothing in the SPA sends yet. Stream 8 is a recording in the public godev course,
+ * Messages are written through the API; chat-moderation.spec.ts types them into the
+ * panel. `/w/:slug/:streamID/chat/popup`, the address the old player's popup button
+ * opened, shows the same panel. Stream 8 is a recording in the public godev course,
  * which no other spec uses and whose chat is off in the fixture: the spec turns it on
  * for its run and back off at the end. prof1 administers the course, and
  * administrators are not subject to the message cooldown, so repeated runs do not
@@ -28,43 +29,22 @@ test.afterAll(async ({ playwright }) => {
   await prof1.patch(stream, { data: { chat_enabled: false } });
 });
 
-/** Posts through the v1 chat socket from `page`, which has to be signed in already. */
-async function postV1(page: Page, messages: { msg: string; replyTo?: number }[]): Promise<void> {
-  await page.evaluate(
-    (messages) =>
-      new Promise<void>((resolve, reject) => {
-        const scheme = location.protocol === "https:" ? "wss" : "ws";
-        const ws = new WebSocket(`${scheme}://${location.host}/api/pub-sub/ws`);
-        ws.onopen = () => {
-          ws.send(JSON.stringify({ type: "subscribe", channel: "chat/8" }));
-          for (const m of messages) {
-            ws.send(
-              JSON.stringify({
-                type: "message",
-                channel: "chat/8",
-                payload: { type: "message", ...m },
-              }),
-            );
-          }
-          // The socket has no acknowledgement; give the server a moment to write them.
-          setTimeout(() => {
-            ws.close();
-            resolve();
-          }, 1000);
-        };
-        ws.onerror = () => reject(new Error("v1 chat socket failed"));
-      }),
-    messages,
-  );
+/** Writes as an administrator, who is not subject to the message cooldown. */
+async function post(who: APIRequestContext, messages: { text: string }[]): Promise<number[]> {
+  const ids: number[] = [];
+  for (const data of messages) {
+    const response = await who.post("/api/v2/streams/8/chat/messages", { data });
+    expect(response.status()).toBe(200);
+    ids.push((await response.json()).message.id);
+  }
+  return ids;
 }
 
 test.describe("the chat panel", () => {
-  test("lists the messages written before it opened", async ({ page, browser }) => {
+  test("lists the messages written before it opened", async ({ page, playwright }) => {
     const token = `panel-${Date.now()}`;
-    const poster = await browser.newPage();
-    await login(poster, users.prof1);
-    await postV1(poster, [{ msg: `${token} first` }, { msg: `${token} second` }]);
-    await poster.close();
+    const prof1 = await apiAs(playwright, users.prof1);
+    const ids = await post(prof1, [{ text: `${token} first` }, { text: `${token} second` }]);
 
     await login(page, users.studi1, path);
 
@@ -79,6 +59,8 @@ test.describe("the chat panel", () => {
     await expect(page.getByRole("textbox", { name: "Message", exact: true })).toBeEnabled();
     // The panel is the whole page: no application header around it.
     await expect(page.getByRole("banner")).toHaveCount(0);
+
+    for (const id of ids) await prof1.delete(`/api/v2/streams/8/chat/messages/${id}`);
   });
 
   test("counts the people watching live", async ({ page, browser }) => {
@@ -114,10 +96,11 @@ test.describe("the chat panel", () => {
     await expect(page.getByTestId("chat-list")).toHaveCount(0);
   });
 
-  test("does not take over the popup's address", async ({ page }) => {
+  test("the popup address shows the same panel", async ({ page }) => {
     await login(page, users.studi1, "/w/godev/8/chat/popup");
 
-    // Still the server-rendered popup, which has no "Live chat" heading of the SPA's.
-    await expect(page.getByTestId("chat-list")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Live chat" })).toBeVisible();
+    await expect(page.getByTestId("chat-list")).toBeVisible();
+    await expect(page.getByRole("banner")).toHaveCount(0);
   });
 });
