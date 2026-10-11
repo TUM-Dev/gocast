@@ -64,6 +64,8 @@ export interface ChatMessage {
   admin: boolean;
   /** False while awaiting approval, or once retracted. */
   visible: boolean;
+  /** Taken back by an administrator after it was shown; not visible either way. */
+  retracted: boolean;
   resolved: boolean;
   /** The message this one replies to. */
   replyTo?: number;
@@ -128,6 +130,7 @@ export function toChatMessage(m: ChatMessageProto): ChatMessage {
     text: m.messageText,
     admin: m.admin,
     visible: m.visible,
+    retracted: m.retracted,
     resolved: m.resolved,
     replyTo: m.replyTo || undefined,
     addressedTo: [...m.addressedTo],

@@ -96,6 +96,7 @@ func (a *API) ApproveChatMessage(ctx context.Context, req *protobuf.ApproveChatM
 		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("can't approve the message"))
 	}
 	chat.Visible.Bool, chat.Visible.Valid, chat.IsVisible = true, true, true
+	chat.Retracted = false
 
 	// No viewer's view (0): the message goes to everyone, and nobody has reacted to it yet.
 	toAll := visibleReplies(*chat)
@@ -124,6 +125,7 @@ func (a *API) RetractChatMessage(ctx context.Context, req *protobuf.RetractChatM
 		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("can't retract the message"))
 	}
 	chat.Visible.Bool, chat.Visible.Valid, chat.IsVisible = false, true, false
+	chat.Retracted = true
 	chat.Reactions = nil
 
 	a.publish(ctx, stream.ID, realtimehub.MessageRetractedEvent(stream.ID, chat.ID))

@@ -1,4 +1,5 @@
-import { START_LOCATION,
+import {
+  START_LOCATION,
   createRouter,
   createWebHistory,
   type RouteLocationNormalized,
@@ -6,46 +7,10 @@ import { START_LOCATION,
   type RouteRecordRaw,
 } from "vue-router";
 
+import { isChunkLoadError, reloadOnce } from "@/lib/chunk-reload";
 import { singleQueryParam } from "@/lib/route-query";
-import ChatPopupView from "@/views/ChatPopupView.vue";
-import CourseView from "@/views/CourseView.vue";
 import HomeView from "@/views/HomeView.vue";
-import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
-import IntegrationAuthorizationView from "@/views/IntegrationAuthorizationView.vue";
-import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
-import NotFoundView from "@/views/NotFoundView.vue";
-import SearchView from "@/views/SearchView.vue";
-import WatchView from "@/views/WatchView.vue";
-import SetPasswordView from "@/views/SetPasswordView.vue";
-import CourseTokenView from "@/views/CourseTokenView.vue";
-import OnboardingView from "@/views/OnboardingView.vue";
-import AuditsView from "@/views/admin/AuditsView.vue";
-import CourseAdminLayout from "@/components/admin/CourseAdminLayout.vue";
-import CourseImportView from "@/views/admin/CourseImportView.vue";
-import CourseParticipantsView from "@/views/admin/CourseParticipantsView.vue";
-import CourseSettingsView from "@/views/admin/CourseSettingsView.vue";
-import CourseLecturesView from "@/views/admin/CourseLecturesView.vue";
-import CourseStatsView from "@/views/admin/CourseStatsView.vue";
-import CreateCourseView from "@/views/admin/CreateCourseView.vue";
-import InfoPagesView from "@/views/admin/InfoPagesView.vue";
-import IntegrationsView from "@/views/admin/IntegrationsView.vue";
-import LectureHallCreateView from "@/views/admin/LectureHallCreateView.vue";
-import LectureHallsView from "@/views/admin/LectureHallsView.vue";
-import LectureLiveView from "@/views/admin/LectureLiveView.vue";
-import LectureStatsView from "@/views/admin/LectureStatsView.vue";
-import MaintenanceView from "@/views/admin/MaintenanceView.vue";
-import NotificationsView from "@/views/admin/NotificationsView.vue";
-import RunnersView from "@/views/admin/RunnersView.vue";
-import ScheduleView from "@/views/admin/ScheduleView.vue";
-import ServerNotificationsView from "@/views/admin/ServerNotificationsView.vue";
-import ServerStatsView from "@/views/admin/ServerStatsView.vue";
-import TokensView from "@/views/admin/TokensView.vue";
-import UsersView from "@/views/admin/UsersView.vue";
-import WorkersView from "@/views/admin/WorkersView.vue";
-import MyCoursesView from "@/views/MyCoursesView.vue";
-import PublicCoursesView from "@/views/PublicCoursesView.vue";
-import SettingsView from "@/views/SettingsView.vue";
 
 declare module "vue-router" {
   interface RouteMeta {
@@ -81,13 +46,13 @@ const routes: RouteRecordRaw[] = [
     path: "/courses/mine",
     name: "my-courses",
     meta: { sidenav: true, footer: true },
-    component: MyCoursesView,
+    component: () => import("@/views/MyCoursesView.vue"),
   },
   {
     path: "/courses/public",
     name: "public-courses",
     meta: { sidenav: true, footer: true },
-    component: PublicCoursesView,
+    component: () => import("@/views/PublicCoursesView.vue"),
   },
   {
     // The shape `/course/:year/:term/:slug` in web/router.go already redirects to, so
@@ -100,7 +65,7 @@ const routes: RouteRecordRaw[] = [
     path: "/course/:year/:term/:slug",
     name: "course",
     meta: { sidenav: true, footer: true },
-    component: CourseView,
+    component: () => import("@/views/CourseView.vue"),
     props: true,
   },
   {
@@ -112,14 +77,14 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/settings",
     name: "settings",
-    component: SettingsView,
+    component: () => import("@/views/SettingsView.vue"),
   },
   {
     // Visitors search public courses, a signed-in user finds more; the shell loads
     // the user as it does for the start page.
     path: "/search",
     name: "search",
-    component: SearchView,
+    component: () => import("@/views/SearchView.vue"),
     meta: { footer: true },
   },
   // The three built-in pages keep their own routes rather than falling under
@@ -129,7 +94,7 @@ const routes: RouteRecordRaw[] = [
     (name): RouteRecordRaw => ({
       path: `/${name}`,
       name,
-      component: InfoPageView,
+      component: () => import("@/views/InfoPageView.vue"),
       props: { name },
       meta: { anonymous: true, footer: true },
     }),
@@ -140,7 +105,7 @@ const routes: RouteRecordRaw[] = [
     // more specific claims; see InfoPageDynamicView for what happens next.
     path: "/:slug",
     name: "info-page",
-    component: InfoPageDynamicView,
+    component: () => import("@/views/InfoPageDynamicView.vue"),
     meta: { anonymous: true, footer: true },
   },
   {
@@ -149,108 +114,108 @@ const routes: RouteRecordRaw[] = [
     // caller is refused the shell rather than reaching an empty page.
     path: "/admin/integrations",
     name: "admin-integrations",
-    component: IntegrationsView,
+    component: () => import("@/views/admin/IntegrationsView.vue"),
   },
   {
     path: "/admin/runners",
     name: "admin-runners",
-    component: RunnersView,
+    component: () => import("@/views/admin/RunnersView.vue"),
   },
   {
     path: "/admin/users",
     name: "admin-users",
-    component: UsersView,
+    component: () => import("@/views/admin/UsersView.vue"),
   },
   {
     path: "/admin/info-pages",
     name: "admin-info-pages",
-    component: InfoPagesView,
+    component: () => import("@/views/admin/InfoPagesView.vue"),
   },
   {
     path: "/admin/workers",
     name: "admin-workers",
-    component: WorkersView,
+    component: () => import("@/views/admin/WorkersView.vue"),
   },
   {
     path: "/admin/maintenance",
     name: "admin-maintenance",
-    component: MaintenanceView,
+    component: () => import("@/views/admin/MaintenanceView.vue"),
   },
   {
     path: "/admin/course-import",
     name: "admin-course-import",
-    component: CourseImportView,
+    component: () => import("@/views/admin/CourseImportView.vue"),
   },
   {
     path: "/admin/token",
     name: "admin-token",
-    component: TokensView,
+    component: () => import("@/views/admin/TokensView.vue"),
   },
   {
     path: "/admin/server-notifications",
     name: "admin-server-notifications",
-    component: ServerNotificationsView,
+    component: () => import("@/views/admin/ServerNotificationsView.vue"),
   },
   {
     path: "/admin/notifications",
     name: "admin-notifications",
-    component: NotificationsView,
+    component: () => import("@/views/admin/NotificationsView.vue"),
   },
   {
     path: "/admin/audits",
     name: "admin-audits",
-    component: AuditsView,
+    component: () => import("@/views/admin/AuditsView.vue"),
   },
   {
     path: "/admin/server-stats",
     name: "admin-server-stats",
-    component: ServerStatsView,
+    component: () => import("@/views/admin/ServerStatsView.vue"),
   },
   {
     path: "/admin/lecture-halls",
     name: "admin-lecture-halls",
-    component: LectureHallsView,
+    component: () => import("@/views/admin/LectureHallsView.vue"),
   },
   {
     path: "/admin/lecture-halls/new",
     name: "admin-lecture-halls-new",
-    component: LectureHallCreateView,
+    component: () => import("@/views/admin/LectureHallCreateView.vue"),
   },
   {
     // A course's administration page; each tab is a child route (rule 4 in
     // web/router.go). The parent path is not in spaRoutes, so Go does not serve it;
     // the redirect only catches an in-app navigation to it.
     path: "/admin/courses/:courseID",
-    component: CourseAdminLayout,
+    component: () => import("@/components/admin/CourseAdminLayout.vue"),
     children: [
       { path: "", redirect: { name: "admin-course-lectures" } },
-      { path: "lectures", name: "admin-course-lectures", component: CourseLecturesView },
-      { path: "settings", name: "admin-course-settings", component: CourseSettingsView },
-      { path: "stats", name: "admin-course-stats", component: CourseStatsView },
-      { path: "participants", name: "admin-course-participants", component: CourseParticipantsView },
+      { path: "lectures", name: "admin-course-lectures", component: () => import("@/views/admin/CourseLecturesView.vue") },
+      { path: "settings", name: "admin-course-settings", component: () => import("@/views/admin/CourseSettingsView.vue") },
+      { path: "stats", name: "admin-course-stats", component: () => import("@/views/admin/CourseStatsView.vue") },
+      { path: "participants", name: "admin-course-participants", component: () => import("@/views/admin/CourseParticipantsView.vue") },
     ],
   },
   {
     path: "/admin/courses/:courseID/lectures/:streamID/stats",
     name: "admin-lecture-stats",
-    component: LectureStatsView,
+    component: () => import("@/views/admin/LectureStatsView.vue"),
   },
   {
     // The lecturer's view of a running lecture; replaces /admin/management/:c/:s. Not in
     // spaRoutes until the watch flip, which also redirects the old URL here.
     path: "/admin/courses/:courseID/lectures/:streamID/live",
     name: "admin-lecture-live",
-    component: LectureLiveView,
+    component: () => import("@/views/admin/LectureLiveView.vue"),
   },
   {
     path: "/admin/create-course",
     name: "admin-create-course",
-    component: CreateCourseView,
+    component: () => import("@/views/admin/CreateCourseView.vue"),
   },
   {
     path: "/admin",
     name: "admin-schedule",
-    component: ScheduleView,
+    component: () => import("@/views/admin/ScheduleView.vue"),
   },
   {
     path: "/login",
@@ -265,7 +230,7 @@ const routes: RouteRecordRaw[] = [
     // path: it is in emails that were already sent.
     path: "/setPassword/:key",
     name: "set-password",
-    component: SetPasswordView,
+    component: () => import("@/views/SetPasswordView.vue"),
     props: true,
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
@@ -274,14 +239,14 @@ const routes: RouteRecordRaw[] = [
     // query string is the credential. Two paths, one view.
     path: "/edit-course",
     name: "course-opt-in",
-    component: CourseTokenView,
+    component: () => import("@/views/CourseTokenView.vue"),
     props: { mode: "opt-in" },
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
   {
     path: "/edit-course/opt-out",
     name: "course-opt-out",
-    component: CourseTokenView,
+    component: () => import("@/views/CourseTokenView.vue"),
     props: { mode: "opt-out" },
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
@@ -290,13 +255,13 @@ const routes: RouteRecordRaw[] = [
     // because a public course's stream is watchable without a session. The version is checked by the view.
     path: "/w/:slug/:streamID",
     name: "watch",
-    component: WatchView,
+    component: () => import("@/views/WatchView.vue"),
     meta: { anonymous: true },
   },
   {
     path: "/w/:slug/:streamID/:version",
     name: "watch-layout",
-    component: WatchView,
+    component: () => import("@/views/WatchView.vue"),
     meta: { anonymous: true },
   },
   {
@@ -305,13 +270,13 @@ const routes: RouteRecordRaw[] = [
     // Anonymous because the chat is readable without a session on a public stream.
     path: "/w/:slug/:streamID/chat/popup",
     name: "stream-chat-popup",
-    component: ChatPopupView,
+    component: () => import("@/views/ChatPopupView.vue"),
     meta: { bare: true, anonymous: true },
   },
   {
     path: "/w/:slug/:streamID/chat",
     name: "stream-chat",
-    component: ChatPopupView,
+    component: () => import("@/views/ChatPopupView.vue"),
     meta: { bare: true, anonymous: true },
   },
   {
@@ -319,14 +284,14 @@ const routes: RouteRecordRaw[] = [
     // serves this page unframeable; the state in the query is the application's.
     path: "/integration/authorize/:id",
     name: "integration-authorize",
-    component: IntegrationAuthorizationView,
+    component: () => import("@/views/IntegrationAuthorizationView.vue"),
     meta: { minimalHeader: true, footer: true },
   },
   {
     // Where "/" sends a fresh deployment; the page refuses once an account exists.
     path: "/onboarding",
     name: "onboarding",
-    component: OnboardingView,
+    component: () => import("@/views/OnboardingView.vue"),
     meta: { minimalHeader: true, footer: true, anonymous: true },
   },
   {
@@ -335,7 +300,7 @@ const routes: RouteRecordRaw[] = [
     // guard below.
     path: "/:pathMatch(.*)*",
     name: "not-found",
-    component: NotFoundView,
+    component: () => import("@/views/NotFoundView.vue"),
     meta: { anonymous: true, footer: true },
   },
 ];
@@ -429,4 +394,10 @@ router.beforeEach((to, from, next) => {
   }
 
   next();
+});
+
+// A stale tab after a deploy asks for a component file that no longer exists. The
+// navigation is dropped by the router, so load the page it was headed for afresh.
+router.onError((err, to) => {
+  if (isChunkLoadError(err)) reloadOnce(to.fullPath);
 });

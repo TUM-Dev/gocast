@@ -70,7 +70,7 @@ func MessageResolvedEvent(streamID, messageID uint, visible bool, authorID uint)
 }
 
 // MessageRetractedEvent says a message is hidden again. It goes to everyone: the
-// viewers who had it drop it, and the holders keep it hidden-marked.
+// viewers who had it drop it, and the holders keep it marked retracted.
 func MessageRetractedEvent(streamID, messageID uint) *protobuf.RealtimeEvent {
 	ev := Event(streamID)
 	ev.Event = &protobuf.RealtimeEvent_MessageRetracted{MessageRetracted: &protobuf.ChatMessageRetractedEvent{MessageId: uint32(messageID)}}

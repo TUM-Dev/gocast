@@ -105,7 +105,15 @@ test("a held message waits for approval, then appears for the other students", a
     // Retracting hides it from the student again, in the open page.
     await message(admin, text).getByRole("button", { name: "Retract" }).click();
     await expect(message(other, text)).toHaveCount(0);
-    await expect(message(admin, text)).toContainText("Awaiting approval");
+    await expect(message(admin, text)).toContainText("Retracted");
+    await expect(message(admin, text)).not.toContainText("Awaiting approval");
+    await expect(admin.getByTestId("awaiting")).toHaveCount(0);
+    await expect(message(author, text)).toContainText("Retracted");
+
+    // A retracted message can be published again.
+    await message(admin, text).getByRole("button", { name: "Publish again" }).click();
+    await expect(message(other, text)).toBeVisible();
+    await expect(message(admin, text)).not.toContainText("Retracted");
   } finally {
     await Promise.all([admin, author, other].map((p) => p.context().close()));
   }

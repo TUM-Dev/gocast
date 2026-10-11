@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -58,8 +59,11 @@ func TestHandleImpersonate(t *testing.T) {
 	student := model.User{Model: gorm.Model{ID: 3}, Role: model.StudentType}
 
 	newAPI := func(t *testing.T) (*API, *mock_dao.MockUsersDao) {
-		users := mock_dao.NewMockUsersDao(gomock.NewController(t))
-		return &API{dao: dao.DaoWrapper{UsersDao: users}, log: slog.Default()}, users
+		ctrl := gomock.NewController(t)
+		users := mock_dao.NewMockUsersDao(ctrl)
+		// No audit entry is expected by default: a refused call must not write one.
+		audits := mock_dao.NewMockAuditDao(ctrl)
+		return &API{dao: dao.DaoWrapper{UsersDao: users, AuditDao: audits}, log: slog.Default()}, users
 	}
 	post := func(user *model.User) *http.Request {
 		req := httptest.NewRequest(http.MethodPost, "/api/v2/users/3/impersonate", nil)
@@ -72,6 +76,7 @@ func TestHandleImpersonate(t *testing.T) {
 	t.Run("an admin gets a session cookie for the other account", func(t *testing.T) {
 		api, users := newAPI(t)
 		users.EXPECT().GetUserByID(gomock.Any(), uint(3)).Return(student, nil)
+		api.dao.AuditDao.(*mock_dao.MockAuditDao).EXPECT().Create(gomock.Any()).Return(nil)
 
 		rec := serveImpersonate(api, post(admin))
 
@@ -98,6 +103,25 @@ func TestHandleImpersonate(t *testing.T) {
 		}
 		if rec.Header().Get("Cache-Control") != "no-store" {
 			t.Error("the response must not be cached")
+		}
+	})
+
+	t.Run("an impersonation is audited with the admin and the account", func(t *testing.T) {
+		users := mock_dao.NewMockUsersDao(gomock.NewController(t))
+		audits := mock_dao.NewMockAuditDao(gomock.NewController(t))
+		api := &API{dao: dao.DaoWrapper{UsersDao: users, AuditDao: audits}, log: slog.Default()}
+		users.EXPECT().GetUserByID(gomock.Any(), uint(3)).Return(student, nil)
+		var got *model.Audit
+		audits.EXPECT().Create(gomock.Any()).DoAndReturn(func(a *model.Audit) error { got = a; return nil })
+
+		if rec := serveImpersonate(api, post(admin)); rec.Code != http.StatusNoContent {
+			t.Fatalf("got %d: %s", rec.Code, rec.Body)
+		}
+		if got == nil || got.Type != model.AuditImpersonation || got.User == nil || got.User.ID != 1 {
+			t.Fatalf("audit = %+v, want an impersonation by user 1", got)
+		}
+		if !strings.Contains(got.Message, "(1)") || !strings.Contains(got.Message, "(3)") {
+			t.Errorf("message = %q, want both account ids", got.Message)
 		}
 	})
 
