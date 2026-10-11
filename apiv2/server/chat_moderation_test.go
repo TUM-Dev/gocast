@@ -127,8 +127,8 @@ func TestChatModerationOfAMessage(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ApproveChatMessage: %v", err)
 		}
-		if !resp.Message.Visible {
-			t.Errorf("response = %v, want visible", resp.Message)
+		if !resp.Message.Visible || resp.Message.Retracted {
+			t.Errorf("response = %v, want visible and no longer retracted", resp.Message)
 		}
 		ev := f.next(t)
 		got := ev.GetMessage().GetMessage()
@@ -152,8 +152,8 @@ func TestChatModerationOfAMessage(t *testing.T) {
 		if err != nil {
 			t.Fatalf("RetractChatMessage: %v", err)
 		}
-		if resp.Message.Visible || len(resp.Message.Reactions) != 0 {
-			t.Errorf("response = %v, want hidden, no reactions", resp.Message)
+		if resp.Message.Visible || !resp.Message.Retracted || len(resp.Message.Reactions) != 0 {
+			t.Errorf("response = %v, want hidden, retracted, no reactions", resp.Message)
 		}
 		ev := f.next(t)
 		if ev.Audience != protobuf.RealtimeEvent_AUDIENCE_ALL || ev.GetMessageRetracted().GetMessageId() != 30 {

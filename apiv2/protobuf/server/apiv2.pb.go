@@ -16744,7 +16744,8 @@ type ChatMessage struct {
 	MessageText string `protobuf:"bytes,6,opt,name=message_text,json=messageText,proto3" json:"message_text,omitempty"`
 	// Written by one of the course's administrators.
 	Admin bool `protobuf:"varint,7,opt,name=admin,proto3" json:"admin,omitempty"`
-	// False while the message awaits approval in a moderated chat, or once retracted.
+	// False while the message awaits approval in a moderated chat, or once retracted
+	// (see retracted).
 	Visible  bool `protobuf:"varint,8,opt,name=visible,proto3" json:"visible,omitempty"`
 	Resolved bool `protobuf:"varint,9,opt,name=resolved,proto3" json:"resolved,omitempty"`
 	// The message this one replies to; 0 when it is not a reply.
@@ -16753,7 +16754,10 @@ type ChatMessage struct {
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	Reactions   []*ChatReactionSummary `protobuf:"bytes,13,rep,name=reactions,proto3" json:"reactions,omitempty"`
 	// Only on top-level messages: replies cannot be replied to.
-	Replies       []*ChatMessage `protobuf:"bytes,14,rep,name=replies,proto3" json:"replies,omitempty"`
+	Replies []*ChatMessage `protobuf:"bytes,14,rep,name=replies,proto3" json:"replies,omitempty"`
+	// An administrator took the message back after it was shown. Not visible either way;
+	// this tells it from one still awaiting approval.
+	Retracted     bool `protobuf:"varint,15,opt,name=retracted,proto3" json:"retracted,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16884,6 +16888,13 @@ func (x *ChatMessage) GetReplies() []*ChatMessage {
 		return x.Replies
 	}
 	return nil
+}
+
+func (x *ChatMessage) GetRetracted() bool {
+	if x != nil {
+		return x.Retracted
+	}
+	return false
 }
 
 type ChatPollOption struct {
@@ -17502,7 +17513,7 @@ func (x *ChatMessageResolvedEvent) GetMessageId() uint32 {
 	return 0
 }
 
-// The message is hidden again and its reactions are gone.
+// The message is hidden again, marked retracted, and its reactions are gone.
 type ChatMessageRetractedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MessageId     uint32                 `protobuf:"varint,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
@@ -20652,7 +20663,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x05count\x18\x02 \x01(\rR\x05count\x12\x19\n" +
 	"\buser_ids\x18\x03 \x03(\rR\auserIds\x12\x1d\n" +
 	"\n" +
-	"user_names\x18\x04 \x03(\tR\tuserNames\"\xe2\x03\n" +
+	"user_names\x18\x04 \x03(\tR\tuserNames\"\x80\x04\n" +
 	"\vChatMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\rR\x06userId\x12\x1b\n" +
@@ -20669,7 +20680,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12;\n" +
 	"\treactions\x18\r \x03(\v2\x1d.protobuf.ChatReactionSummaryR\treactions\x12/\n" +
-	"\areplies\x18\x0e \x03(\v2\x15.protobuf.ChatMessageR\areplies\"N\n" +
+	"\areplies\x18\x0e \x03(\v2\x15.protobuf.ChatMessageR\areplies\x12\x1c\n" +
+	"\tretracted\x18\x0f \x01(\bR\tretracted\"N\n" +
 	"\x0eChatPollOption\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x16\n" +
 	"\x06answer\x18\x02 \x01(\tR\x06answer\x12\x14\n" +

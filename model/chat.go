@@ -65,6 +65,11 @@ type Chat struct {
 	ReplyTo sql.NullInt64 `json:"replyTo"`
 
 	Resolved bool `gorm:"not null;default:false" json:"resolved"`
+
+	// Retracted tells a message an administrator took back from one that never
+	// passed moderation: both are not Visible, but only the first was ever shown.
+	// Rows retracted before this column existed read as awaiting approval.
+	Retracted bool `gorm:"not null;default:false" json:"retracted"`
 }
 
 // getColors returns all colors chat names are mapped to

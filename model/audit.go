@@ -18,6 +18,7 @@ const (
 	AuditStreamEdit
 	AuditStreamDelete
 	AuditCameraMoved
+	AuditImpersonation
 )
 
 // String returns a string representation of the AuditType
@@ -33,6 +34,7 @@ func (t AuditType) String() string {
 		"Stream Edited",
 		"Stream Deleted",
 		"Camera Moved",
+		"Impersonation",
 	}[t-1]
 }
 
@@ -48,6 +50,7 @@ func GetAllAuditTypes() []AuditType {
 		AuditStreamEdit,
 		AuditStreamDelete,
 		AuditCameraMoved,
+		AuditImpersonation,
 	}
 }
 

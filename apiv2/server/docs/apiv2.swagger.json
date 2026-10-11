@@ -6197,7 +6197,7 @@
         },
         "visible": {
           "type": "boolean",
-          "description": "False while the message awaits approval in a moderated chat, or once retracted."
+          "description": "False while the message awaits approval in a moderated chat, or once retracted\n(see retracted)."
         },
         "resolved": {
           "type": "boolean"
@@ -6232,6 +6232,10 @@
             "$ref": "#/definitions/protobufChatMessage"
           },
           "description": "Only on top-level messages: replies cannot be replied to."
+        },
+        "retracted": {
+          "type": "boolean",
+          "description": "An administrator took the message back after it was shown. Not visible either way;\nthis tells it from one still awaiting approval."
         }
       }
     },
