@@ -1,0 +1,70 @@
+/*
+ * Styles for the parts of the player that video.js' own stylesheet does not have: the
+ * hotkey overlay icon (ported from the old player's web/assets/css/main.css) and the
+ * seekbar preview. Loaded together with video.js' CSS, after it, so these win ties.
+ */
+
+/* The icon that flashes over the picture when a hotkey acts */
+.video-js .vjs-overlay-icon-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+}
+
+.video-js .vjs-overlay-icon-container .vjs-overlay-icon-wrapper {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  width: 2em;
+  height: 2em;
+  border-radius: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+}
+
+@keyframes vjs-overlay-icon-frames {
+  from {
+    opacity: 0;
+    transform: scale(1);
+  }
+  10% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+@keyframes vjs-overlay-icon-frames-reduced-motion {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+.video-js .vjs-overlay-icon-container.vjs-overlay-icon-animate .vjs-overlay-icon-wrapper {
+  animation: ease-in 0.6s vjs-overlay-icon-frames 0s 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-js .vjs-overlay-icon-container.vjs-overlay-icon-animate .vjs-overlay-icon-wrapper {
+    animation-name: vjs-overlay-icon-frames-reduced-motion;
+  }
+}
+
+/* videojs-sprite-thumbnails draws the frame as the time tooltip's background, so the tooltip
+   needs the room for it, and the time must stay readable over the pointer's frame. */
+.video-js .vjs-time-tooltip.vjs-sprite-thumb {
+  padding: 70px 8px 8px 8px !important;
+  border: 2px solid white;
+  border-radius: 2px;
+}
