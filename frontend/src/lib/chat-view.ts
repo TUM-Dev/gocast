@@ -133,12 +133,13 @@ export function shownMessages(
     .map((m) => ({ ...m, replies: m.replies.filter((r) => isShown(r, canModerate, userId)) }));
 }
 
-/** How many messages wait for an administrator, replies included. */
+/**
+ * How many messages wait for an administrator, replies included. A retracted message
+ * does not: an administrator took it back, nobody is waiting on it.
+ */
 export function countAwaitingApproval(messages: ChatMessage[]): number {
-  return messages.reduce(
-    (n, m) => n + (m.visible ? 0 : 1) + m.replies.filter((r) => !r.visible).length,
-    0,
-  );
+  const waits = (m: ChatMessage) => !m.visible && !m.retracted;
+  return messages.reduce((n, m) => n + (waits(m) ? 1 : 0) + m.replies.filter(waits).length, 0);
 }
 
 /** The longest message the server takes, in bytes once trimmed. */

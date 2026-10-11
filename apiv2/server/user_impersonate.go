@@ -2,6 +2,7 @@ package apiv2
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -42,7 +43,7 @@ func impersonateRouteOf(r *http.Request) (uint, bool) {
 //
 // Who may: whoever holds PermManageUsers, as in v1. Nothing is remembered about the
 // original account, so, as in v1, there is no way back but to sign in again; the SPA
-// says so before asking. v1 wrote no audit entry either; this logs the pair instead.
+// says so before asking. v1 wrote no audit entry; this writes one (AuditImpersonation) naming both accounts.
 func (a *API) handleImpersonate(c *gin.Context, targetID uint) {
 	ctx := incomingContext(c.Request)
 
@@ -68,6 +69,11 @@ func (a *API) handleImpersonate(c *gin.Context, targetID uint) {
 	}
 
 	a.log.Info("impersonation", "admin", caller.ID, "as", target.ID)
+	// The actor is the audit entry's user (a.audit reads it from ctx, which is the
+	// caller); the target is named in the message. Written before the session changes,
+	// so a signed-in impersonation never goes unrecorded.
+	a.audit(ctx, model.AuditImpersonation, fmt.Sprintf("%s (%d) signed in as %s (%d)",
+		caller.GetLoginString(), caller.ID, target.GetLoginString(), target.ID))
 	tools.StartSession(c, &tools.SessionData{Userid: target.ID})
 	// StartSession only logs when it cannot sign the cookie; answering success with no
 	// cookie would leave the admin believing they are someone else.

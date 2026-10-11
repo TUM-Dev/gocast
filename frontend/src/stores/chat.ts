@@ -114,6 +114,7 @@ export function useChatStore(streamId: number) {
       const m = findMessage(id);
       if (m) {
         m.visible = false;
+        m.retracted = true;
         m.reactions = [];
       }
     }

@@ -78,6 +78,7 @@ function message(id: number, extra: Partial<ChatMessage> = {}): ChatMessage {
     text: `message ${id}`,
     admin: false,
     visible: true,
+    retracted: false,
     resolved: false,
     addressedTo: [],
     createdAt: new Date(0),
@@ -167,7 +168,7 @@ describe("the chat store", () => {
     expect(store.messages[1]!.replies[0]!.reactions[0]!.emoji).toBe("tada");
 
     store.apply(event({ messageRetracted: { messageId: 1 } }));
-    expect(store.messages[0]).toMatchObject({ visible: false, reactions: [] });
+    expect(store.messages[0]).toMatchObject({ visible: false, retracted: true, reactions: [] });
 
     store.apply(event({ messageDeleted: { messageId: 6 } }));
     expect(store.messages[1]!.replies).toEqual([]);
@@ -394,11 +395,11 @@ describe("moderating", () => {
     const { store } = await started([
       message(1, { reactions: [{ emoji: "+1", count: 1, userIds: [3], userNames: ["A"] }] }),
     ]);
-    retractMessage.mockResolvedValueOnce(message(1, { visible: false }));
+    retractMessage.mockResolvedValueOnce(message(1, { visible: false, retracted: true }));
 
     await store.retract(1);
 
-    expect(store.messages[0]).toMatchObject({ visible: false, reactions: [] });
+    expect(store.messages[0]).toMatchObject({ visible: false, retracted: true, reactions: [] });
   });
 
   it("deleting removes the message with its replies", async () => {

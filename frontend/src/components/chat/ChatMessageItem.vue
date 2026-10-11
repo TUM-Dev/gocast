@@ -70,7 +70,9 @@ async function closePicker(): Promise<void> {
     <!-- `html` is sanitised by the server, links included; `text` is never rendered as HTML. -->
     <!-- eslint-disable-next-line vue/no-v-html -->
     <p class="text-3 break-words text-sm" :class="{ 'opacity-60': !message.visible }" v-html="message.html" />
-    <p v-if="!message.visible" class="text-5 text-xs italic">Awaiting approval</p>
+    <p v-if="!message.visible" class="text-5 text-xs italic">
+      {{ message.retracted ? "Retracted" : "Awaiting approval" }}
+    </p>
 
     <ul v-if="message.reactions.length > 0" class="mt-1 flex flex-wrap gap-1" aria-label="Reactions">
       <li v-for="reaction in message.reactions" :key="reaction.emoji">
@@ -153,7 +155,7 @@ async function closePicker(): Promise<void> {
           class="font-semibold text-green-700 hover:underline dark:text-green-400"
           @click="ctx.approve(message)"
         >
-          Approve
+          {{ message.retracted ? "Publish again" : "Approve" }}
         </button>
         <button v-else type="button" class="text-5 hover:underline" @click="ctx.retract(message)">
           Retract

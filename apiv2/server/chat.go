@@ -224,6 +224,7 @@ func chatMessageToProto(chat *model.Chat, viewerID uint) *protobuf.ChatMessage {
 		Admin:       chat.Admin,
 		Visible:     chat.Visible.Bool,
 		Resolved:    chat.Resolved,
+		Retracted:   chat.Retracted,
 		ReplyTo:     replyTo,
 		AddressedTo: addressedTo,
 		CreatedAt:   timestamppb.New(chat.CreatedAt),

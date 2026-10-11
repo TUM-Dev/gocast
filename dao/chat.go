@@ -162,14 +162,15 @@ func (d chatDao) GetPolls(streamID uint) (polls []model.Poll, err error) {
 	return polls, err
 }
 
-// ApproveChat sets the attribute 'visible' to true
+// ApproveChat publishes a message, whether it awaited approval or was retracted.
 func (d chatDao) ApproveChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true, "retracted": false}).Error
 }
 
-// RetractChat sets the attribute 'visible' to false
+// RetractChat hides a message again and marks it as taken back, which a map is needed
+// for: Updates with a struct would skip the zero value.
 func (d chatDao) RetractChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": false}).Error
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": false, "retracted": true}).Error
 }
 
 // DeleteChat removes a chat with the given id from the database.
