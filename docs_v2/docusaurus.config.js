@@ -17,6 +17,10 @@ const config = {
   onBrokenMarkdownLinks: "warn",
   favicon: "img/favicon.ico",
 
+  // Renders ```mermaid code blocks (used for the architecture diagram).
+  markdown: { mermaid: true },
+  themes: ["@docusaurus/theme-mermaid"],
+
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "TUM-Dev", // Usually your GitHub org/user name.
