@@ -3,12 +3,10 @@ package api
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"testing"
 	"time"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/dgraph-io/ristretto/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/matthiasreumann/gomino"
@@ -335,12 +333,6 @@ func TestCoursesCRUD(t *testing.T) {
 
 	t.Run("POST/api/createCourse", func(t *testing.T) {
 		url := "/api/createCourse"
-
-		templateExecutor := tools.ReleaseTemplateExecutor{
-			Template: template.Must(template.New("base").Funcs(sprig.FuncMap()).
-				ParseFiles("../web/template/error.gohtml")),
-		}
-		tools.SetTemplateExecutor(templateExecutor)
 
 		request := createCourseRequest{
 			Access:       "enrolled",
@@ -2543,10 +2535,6 @@ func TestGetTranscodingProgress(t *testing.T) {
 // also fails the case if a handler goes on to change the stream.
 func TestForeignStreamRefused(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	tools.SetTemplateExecutor(tools.ReleaseTemplateExecutor{
-		Template: template.Must(template.New("base").Funcs(sprig.FuncMap()).
-			ParseFiles("../web/template/error.gohtml")),
-	})
 
 	foreign := testutils.StreamGBSLive
 	course := testutils.CourseFPV.ID

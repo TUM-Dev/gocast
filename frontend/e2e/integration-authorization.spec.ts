@@ -22,6 +22,10 @@ test("authorizes an application, cancels, and revokes access in course settings"
   const state = randomBytes(32).toString("base64url");
   const authorization = `/integration/authorize/${id}?state=${state}`;
   await login(page, users.prof1, authorization);
+  // Approving hands a code to a third party: the page must not be frameable.
+  const shell = await page.request.get(authorization);
+  expect(shell.headers()["x-frame-options"]).toBe("DENY");
+  expect(shell.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
   await page.getByLabel("Course", { exact: true }).selectOption("1");
   await page
     .getByRole("button", { name: "Authorize access", exact: true })
@@ -61,5 +65,12 @@ test("authorizes an application, cancels, and revokes access in course settings"
   expect(
     (await page.request.get("/api/v2/courses/1/integrations")).status(),
   ).toBe(404);
+  // A session cookie alone, which a foreign page can make the browser send, is not
+  // enough to approve.
+  const cookieOnly = await page.request.post(
+    `/api/v2/integration-authorizations/${id}/decision`,
+    { data: { decision: "INTEGRATION_AUTHORIZATION_DECISION_CANCEL", state } },
+  );
+  expect(cookieOnly.status()).toBe(403);
   await admin.dispose();
 });

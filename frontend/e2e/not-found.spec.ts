@@ -5,8 +5,8 @@ import { users } from "./seed";
 
 /**
  * The 404 page. Go answers a path nothing owns with the SPA shell and that status;
- * the client renders the not-found page on that first load, but still hands an
- * in-app navigation to a page Go renders back to it.
+ * the client renders the not-found page on that first load. Under /api/ there is no
+ * page to render, so the answer is plain text.
  */
 
 test.describe("a path nothing owns", () => {
@@ -28,7 +28,7 @@ test.describe("a path nothing owns", () => {
     await expect(page.getByRole("heading", { name: "This page does not exist." })).toBeVisible();
   });
 
-  test("under /api/ keeps the plain error page", async ({ playwright }) => {
+  test("under /api/ is plain text, not the shell", async ({ playwright }) => {
     const anonymous = await apiAs(playwright);
     const response = await anonymous.get("/api/no/such/route");
 

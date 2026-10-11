@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { apiAs, bearerToken, login } from "./helpers";
+import { REFUSED, apiAs, bearerToken, login } from "./helpers";
 import { serverNotifications, users } from "./seed";
 
 /**
@@ -44,7 +44,7 @@ test.describe("the server notifications admin page", () => {
 
     const response = await page.goto("/admin/server-notifications");
     expect(response?.status()).toBe(403);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 });
 

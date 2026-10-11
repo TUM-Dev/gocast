@@ -16,49 +16,39 @@ Five Go modules, joined by `go.work`:
 | `vod-service/` | Video-on-demand serving |
 
 Inside the main module: `model/` (GORM models), `dao/` (data access), `api/` (the REST
-API, v1), `apiv2/` (Protobuf/Connect API), `web/` (server-rendered pages), `tools/`
+API, v1), `apiv2/` (Protobuf/Connect API), `web/` (Go side of the SPA: routing, session pages, branding files), `tools/`
 (shared helpers), `mock_dao/` + `mock_tools/` (generated). `ingest/`, `rtmp-proxy/` and
 `voice-service/` are supporting services; `docs_v2/` is the Docusaurus site.
 
-## The two frontends — read this before touching UI
+## The frontend
 
-The app is **mid-migration from server-rendered templates to a Vue SPA**, page by page.
-Both are live at once, and which one serves a given URL is a deliberate choice:
+The only frontend is the **Vue 3 + Vite SPA in `frontend/`** (Pinia, vue-router). It builds
+into `web/spa/`, which is embedded into the Go binary. There are no server-rendered
+pages: Go answers a page request with the SPA shell, and `web/` is just routing, the
+session/SAML handlers and the default branding files.
 
-- **`web/`** — Go templates (`web/template/*.gohtml`) with Alpine.js and TypeScript in
-  `web/ts/`, bundled by webpack. The legacy side, down to the error page and the
-  integration approval page; `web/ts/` is only the small `global` bundle those load.
-- **`frontend/`** — Vue 3 + Vite SPA, with Pinia and vue-router. Builds into `web/spa/`,
-  which is embedded into the Go binary.
+`spaRoutes` in [`web/router.go`](web/router.go) lists the paths the shell is served for.
+Adding a page means adding its path **both** there and in `frontend/src/router/index.ts`
+— the shell renders nothing if the client router doesn't know the route.
+`web/spa_test.go` and `spa-routes.test.ts` cover the contract.
 
-`spaRoutes` in [`web/router.go`](web/router.go) is the source of truth for which paths
-the SPA owns. Moving a page across means adding its path **both** there and in
-`frontend/src/router/index.ts` — the shell renders nothing if the client router doesn't
-know the route. `web/spa_test.go` covers the Go half of that contract.
+**The SPA build is mandatory.** The server panics at startup when `web/spa/index.html`
+is missing, and the Docker build runs the Vite build. Run `make spa` (or
+`pnpm --dir frontend run build`) before `go run`, `go build` for shipping, or `go test
+./web`, which skips its router tests without a build.
 
-Consequence worth internalising: **if you don't build the SPA, every migrated route
-silently falls back to its old template.** You will be looking at the frontend being
-replaced and think it works.
+Errors on page requests (403, 404, ...) are the shell with that status plus meta tags
+the client renders (`tools.RenderErrorPage` → `web.serveErrorPage`); under `/api/` they
+are plain text.
 
 ## Build and test
 
 ```bash
 make test                            # go test -race ./... + frontend unit tests
-make lint                            # golangci-lint + web eslint + frontend typecheck
+make lint                            # golangci-lint + frontend typecheck
 pnpm --dir frontend test              # vitest
 pnpm --dir frontend run typecheck     # vue-tsc
-pnpm --dir web run lint               # eslint (flat config; lints web/ts only, on purpose)
 ```
-
-The Go server compiles without ever running `pnpm install`, but don't ship a binary
-built that way: `web/router.go`'s `//go:embed assets/*` only requires the `assets`
-directory to exist, not its generated `ts-dist`/`css-dist`/`vendor` subfolders, so a
-binary built without them boots fine and serves 404s for every bundled script,
-stylesheet and vendored library (video.js, katex, flatpickr, ...). Run `pnpm install`
-(and the webpack/vite builds it triggers) in `web/` first. `web/.npmrc` pins
-`node-linker=hoisted` because `webpack.common.js`'s `copy-webpack-plugin` step, which
-copies those vendored files into `assets/vendor`, doesn't follow symlinks — pnpm's
-default isolated layout would make the copy silently resolve to nothing.
 
 For running the app, browser testing, and visual regression, use the
 **`local-testing` skill** (`.claude/skills/local-testing/`). It has the database
@@ -84,7 +74,7 @@ New API work belongs in `apiv2/` (Protobuf/Connect), not `api/`.
 ## v1 is being deleted — spend the effort on v2
 
 The migration's endpoint is v2 replacing v1, so refactoring v1 is work that gets
-thrown away. Keep edits to the legacy v1 API (`api/`, and the `web/` gohtml handlers)
+thrown away. Keep edits to the legacy v1 API (`api/`)
 to the minimum the task needs: fix bugs, and do what a v2 change forces — no
 opportunistic cleanup. The higher bar applies on the v2 side instead: interceptors,
 declarative authorization, tests.
@@ -122,12 +112,11 @@ contents. Treat its users, courses and lectures as an API.
 
 ## Traps
 
-- **Tailwind 4 utilities are unlayered on purpose.** `web/assets/css/{main,home}.css`
-  compose the Tailwind entry by hand instead of `@import "tailwindcss"`, because
-  layered utilities lose to unlayered vendor CSS (video.js, fullcalendar, flatpickr,
-  nouislider) regardless of specificity or order. Restoring the plain import silently
-  breaks layout wherever a utility meets a vendor stylesheet. See the `local-testing`
-  skill.
+- **Tailwind 4 utilities are unlayered on purpose.** `frontend/src/styles/main.css`
+  composes the Tailwind entry by hand instead of `@import "tailwindcss"`, because
+  layered utilities lose to unlayered vendor CSS (video.js, fullcalendar) regardless of
+  specificity or order. Restoring the plain import silently breaks layout wherever a
+  utility meets a vendor stylesheet. See the `local-testing` skill.
 - **`go run cmd/tumlive/main.go` leaves a process `pkill -f` won't match** — it runs a
   compiled binary from a temp path. Kill it by port.
 - The `ldap:` block in `config.yaml` stays commented out in development: with

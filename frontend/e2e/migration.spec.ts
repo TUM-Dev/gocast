@@ -33,24 +33,9 @@ test.describe("route ownership", () => {
     }
   });
 
-  test("paths that have not moved are still rendered by Go", async ({ page }) => {
-    await login(page, users.studi1, "/settings");
-
-    // The integration approval page is one of the few left; a stream that is not found
-    // is answered by the error template too.
-    const response = await page.goto("/integration/authorize/999999");
-    const body = (await response?.text()) ?? "";
-    expect(body).not.toContain("/spa-assets/");
-  });
-
-  test("the SPA hands an unknown path back to the server", async ({ page }) => {
-    await login(page, users.studi1, "/settings");
-
-    // Client-side navigation to a path the SPA router does not own must become a real
-    // navigation, or the user lands on a blank shell. Not /semester/:year/:term, which
-    // redirects into the start page and so now lands on the shell after all.
-    await page.evaluate(() => window.history.pushState({}, "", "/settings"));
-    const response = await page.goto("/integration/authorize/999999");
+  test("paths only Go answers are not the shell", async ({ page }) => {
+    const response = await page.goto("/healthcheck");
+    expect(response?.status()).toBe(200);
     expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
   });
 });

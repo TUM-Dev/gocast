@@ -9,6 +9,13 @@ import { password, users, type SeedUser } from "./seed";
 export { password };
 
 /** The cookie the Go server sets on a successful login. */
+/**
+ * What a refused page request carries: Go answers with the shell and the status, and
+ * names the reason in this meta tag (web.serveErrorPage), so the page's own content is
+ * never sent.
+ */
+export const REFUSED = 'name="gocast-error-status"';
+
 export const SESSION_COOKIE = "jwt";
 
 /** Where auth.setup.ts leaves a user's signed-in session for the run. */

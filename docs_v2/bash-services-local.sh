@@ -75,9 +75,9 @@ STORAGE_PATH="$MASS" SEGMENT_PATH="$LIVE" go run runner/cmd/runner/main.go &
 sleep 2
 echo "runner started"
 
-cd web
+cd frontend
 pnpm install
-pnpm run build-dev &
+pnpm run build
 cd ..
 
 mediamtx ./ingest/mediamtx.yml &

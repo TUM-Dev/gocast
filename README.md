@@ -96,12 +96,12 @@ docker run --detach \
 - Go to File -> Settings -> Go -> Go Modules and enable go modules integration.
 - Install **pnpm** (`npm install -g pnpm`, or see [pnpm.io/installation](https://pnpm.io/installation)).
   It is not bundled with node; each `package.json` pins the version under `packageManager`.
-- Run `pnpm install` in the `./web` directory to install the required node modules
+- Build the frontend once with `make spa`; the server refuses to start without it
 - Run `go get ./...` to install the required go modules
 - If you want to customize the configuration (for example mariadb username and password), copy the `config.yaml` file over to `$HOME/.TUM-Live/config.yaml` and make your changes there to prevent accidentally committing them.
 - Start the app by building and running `./cmd/tumlive/tumlive.go`
 - Head over to `http://localhost:8081` in your browser of choice and confirm that the page has loaded without any problems.
-- To keep automatically rebuilding the frontend code during development, run the command `pnpm run build-dev` in `./web` (and keep it running).
+- For hot reloading, run `pnpm run dev` in `./frontend` and open http://localhost:5173
 - Voilà! Happy coding! :sparkles:
 
 ### Enable pre-commit hooks

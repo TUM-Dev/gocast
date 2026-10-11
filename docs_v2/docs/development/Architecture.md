@@ -17,7 +17,7 @@ flowchart LR
 
     subgraph core [Main server]
         tumlive["tum-live<br/>Go server: web, REST v1, Connect v2, gRPC"]
-        spa["Vue SPA + Go templates<br/>embedded in the binary"]
+        spa["Vue SPA<br/>embedded in the binary"]
     end
 
     subgraph media [Media pipeline]
@@ -53,7 +53,7 @@ flowchart LR
 | Component | Role |
 |---|---|
 | `tum-live` | Web app, REST v1 (`api/`), Protobuf/Connect v2 (`apiv2/`), gRPC endpoint for runners. Owns the database. |
-| `frontend/` + `web/` | Two UIs served by the same binary: the Vue SPA and the legacy Go templates. `spaRoutes` in `web/router.go` decides which one answers a path. |
+| `frontend/` + `web/` | The Vue SPA (`frontend/`), embedded into the binary from `web/spa/`. `spaRoutes` in `web/router.go` lists the paths Go answers with the SPA shell. |
 | `ingest` | Receives RTMP streams from lecture hall SMPs and self-streamers. |
 | `runner` | Captures streams, transcodes them to HLS and creates VoDs. Replaces the older `worker`. |
 | `vod-service` | Accepts uploaded files and packages them to HLS without re-encoding. |

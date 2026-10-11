@@ -11,6 +11,7 @@ import ChatPopupView from "@/views/ChatPopupView.vue";
 import CourseView from "@/views/CourseView.vue";
 import HomeView from "@/views/HomeView.vue";
 import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
+import IntegrationAuthorizationView from "@/views/IntegrationAuthorizationView.vue";
 import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
@@ -314,6 +315,14 @@ const routes: RouteRecordRaw[] = [
     meta: { bare: true, anonymous: true },
   },
   {
+    // An application asking to connect to a course. Go keeps the sign-in redirect and
+    // serves this page unframeable; the state in the query is the application's.
+    path: "/integration/authorize/:id",
+    name: "integration-authorize",
+    component: IntegrationAuthorizationView,
+    meta: { minimalHeader: true, footer: true },
+  },
+  {
     // Where "/" sends a fresh deployment; the page refuses once an account exists.
     path: "/onboarding",
     name: "onboarding",
@@ -322,8 +331,8 @@ const routes: RouteRecordRaw[] = [
   },
   {
     // Everything nothing above claims. On a first load that is Go's 404, which serves
-    // the shell with that status; an in-app navigation here is a page Go still
-    // renders and is handed back to it in the guard below.
+    // the shell with that status; an in-app navigation here is handed back to Go in the
+    // guard below.
     path: "/:pathMatch(.*)*",
     name: "not-found",
     component: NotFoundView,
@@ -409,7 +418,11 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  /** Unclaimed paths belong to pages Go still renders, so hand them back. */
+  /**
+   * Unclaimed paths in an in-app navigation may be ones only Go answers (/logout, the
+   * redirects of renamed URLs, /healthcheck), so hand them back; Go's own 404 for the
+   * rest arrives as a first load.
+   */
   if (to.name === "not-found" && !isInitialNavigation()) {
     window.location.assign(to.fullPath);
     return;

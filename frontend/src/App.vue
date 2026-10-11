@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, onMounted, ref } from "vue";
+import { START_LOCATION, useRoute, useRouter } from "vue-router";
 
 import AppFooter from "@/components/AppFooter.vue";
 import AppHeader from "@/components/AppHeader.vue";
+import { readServerError } from "@/lib/server-error";
 import { isEmbedQuery } from "@/lib/watch-admin-embed";
 import { useAuthStore } from "@/stores/auth";
 import { useSidenavStore } from "@/stores/sidenav";
+import ErrorView from "@/views/ErrorView.vue";
 
 const auth = useAuthStore();
 const sidenav = useSidenavStore();
@@ -16,6 +18,13 @@ const router = useRouter();
 // The popup chat, and the embedded player Artemis frames (`?video_only`), are windows of
 // their own: no header, no footer.
 const bare = computed(() => !!route.meta.bare || (isEmbedQuery(route.query) && route.name === "watch") || (isEmbedQuery(route.query) && route.name === "watch-layout"));
+
+// Set when Go refused this page load (403, 404, ...): the error is shown instead of the
+// route, until the user navigates anywhere else in the app.
+const serverError = ref(readServerError());
+router.afterEach((_to, from) => {
+  if (from !== START_LOCATION) serverError.value = null;
+});
 
 // The header renders on every page and needs to know who is signed in, so the user is
 // loaded here rather than by each view. The store only fetches once.
@@ -36,7 +45,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Layout copied from the body and #content wrapper of the server-rendered pages. -->
   <div class="tum-live-bg flex h-screen flex-col items-stretch">
     <AppHeader
       v-if="!bare"
@@ -45,7 +53,8 @@ onMounted(async () => {
       @toggle-sidenav="sidenav.toggle()"
     />
     <main id="content" class="flex h-full grow justify-center overflow-y-scroll">
-      <RouterView />
+      <ErrorView v-if="serverError" :status="serverError.status" :message="serverError.message" />
+      <RouterView v-else />
     </main>
     <!--
       Where the page has the start page's sidebar, the mobile footer is rendered

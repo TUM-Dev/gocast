@@ -797,6 +797,8 @@ const (
 	CourseService_GetCourseAdmin_FullMethodName                  = "/protobuf.CourseService/getCourseAdmin"
 	CourseService_ListCourseIntegrationGrants_FullMethodName     = "/protobuf.CourseService/listCourseIntegrationGrants"
 	CourseService_RevokeCourseIntegrationGrant_FullMethodName    = "/protobuf.CourseService/revokeCourseIntegrationGrant"
+	CourseService_GetIntegrationAuthorization_FullMethodName     = "/protobuf.CourseService/getIntegrationAuthorization"
+	CourseService_DecideIntegrationAuthorization_FullMethodName  = "/protobuf.CourseService/decideIntegrationAuthorization"
 	CourseService_UpdateCourseSettings_FullMethodName            = "/protobuf.CourseService/updateCourseSettings"
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
 	CourseService_DeleteCourse_FullMethodName                    = "/protobuf.CourseService/deleteCourse"
@@ -870,6 +872,8 @@ type CourseServiceClient interface {
 	GetCourseAdmin(ctx context.Context, in *GetCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	ListCourseIntegrationGrants(ctx context.Context, in *ListCourseIntegrationGrantsRequest, opts ...grpc.CallOption) (*ListCourseIntegrationGrantsResponse, error)
 	RevokeCourseIntegrationGrant(ctx context.Context, in *RevokeCourseIntegrationGrantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetIntegrationAuthorization(ctx context.Context, in *GetIntegrationAuthorizationRequest, opts ...grpc.CallOption) (*IntegrationAuthorization, error)
+	DecideIntegrationAuthorization(ctx context.Context, in *DecideIntegrationAuthorizationRequest, opts ...grpc.CallOption) (*DecideIntegrationAuthorizationResponse, error)
 	UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -1200,6 +1204,26 @@ func (c *courseServiceClient) RevokeCourseIntegrationGrant(ctx context.Context, 
 	return out, nil
 }
 
+func (c *courseServiceClient) GetIntegrationAuthorization(ctx context.Context, in *GetIntegrationAuthorizationRequest, opts ...grpc.CallOption) (*IntegrationAuthorization, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationAuthorization)
+	err := c.cc.Invoke(ctx, CourseService_GetIntegrationAuthorization_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) DecideIntegrationAuthorization(ctx context.Context, in *DecideIntegrationAuthorizationRequest, opts ...grpc.CallOption) (*DecideIntegrationAuthorizationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DecideIntegrationAuthorizationResponse)
+	err := c.cc.Invoke(ctx, CourseService_DecideIntegrationAuthorization_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CourseAdmin)
@@ -1442,6 +1466,8 @@ type CourseServiceServer interface {
 	GetCourseAdmin(context.Context, *GetCourseAdminRequest) (*CourseAdmin, error)
 	ListCourseIntegrationGrants(context.Context, *ListCourseIntegrationGrantsRequest) (*ListCourseIntegrationGrantsResponse, error)
 	RevokeCourseIntegrationGrant(context.Context, *RevokeCourseIntegrationGrantRequest) (*emptypb.Empty, error)
+	GetIntegrationAuthorization(context.Context, *GetIntegrationAuthorizationRequest) (*IntegrationAuthorization, error)
+	DecideIntegrationAuthorization(context.Context, *DecideIntegrationAuthorizationRequest) (*DecideIntegrationAuthorizationResponse, error)
 	UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error)
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error)
@@ -1561,6 +1587,12 @@ func (UnimplementedCourseServiceServer) ListCourseIntegrationGrants(context.Cont
 }
 func (UnimplementedCourseServiceServer) RevokeCourseIntegrationGrant(context.Context, *RevokeCourseIntegrationGrantRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeCourseIntegrationGrant not implemented")
+}
+func (UnimplementedCourseServiceServer) GetIntegrationAuthorization(context.Context, *GetIntegrationAuthorizationRequest) (*IntegrationAuthorization, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIntegrationAuthorization not implemented")
+}
+func (UnimplementedCourseServiceServer) DecideIntegrationAuthorization(context.Context, *DecideIntegrationAuthorizationRequest) (*DecideIntegrationAuthorizationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DecideIntegrationAuthorization not implemented")
 }
 func (UnimplementedCourseServiceServer) UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateCourseSettings not implemented")
@@ -2180,6 +2212,42 @@ func _CourseService_RevokeCourseIntegrationGrant_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_GetIntegrationAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIntegrationAuthorizationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetIntegrationAuthorization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetIntegrationAuthorization_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetIntegrationAuthorization(ctx, req.(*GetIntegrationAuthorizationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_DecideIntegrationAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecideIntegrationAuthorizationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).DecideIntegrationAuthorization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_DecideIntegrationAuthorization_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).DecideIntegrationAuthorization(ctx, req.(*DecideIntegrationAuthorizationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_UpdateCourseSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateCourseSettingsRequest)
 	if err := dec(in); err != nil {
@@ -2648,6 +2716,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "revokeCourseIntegrationGrant",
 			Handler:    _CourseService_RevokeCourseIntegrationGrant_Handler,
+		},
+		{
+			MethodName: "getIntegrationAuthorization",
+			Handler:    _CourseService_GetIntegrationAuthorization_Handler,
+		},
+		{
+			MethodName: "decideIntegrationAuthorization",
+			Handler:    _CourseService_DecideIntegrationAuthorization_Handler,
 		},
 		{
 			MethodName: "updateCourseSettings",

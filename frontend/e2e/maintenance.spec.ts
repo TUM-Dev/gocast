@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { apiAs, bearerToken, login } from "./helpers";
+import { REFUSED, apiAs, bearerToken, login } from "./helpers";
 import { emailFailures, transcodingFailures, users } from "./seed";
 
 /**
@@ -39,7 +39,7 @@ test.describe("the maintenance page", () => {
 
     const response = await page.goto("/admin/maintenance");
     expect(response?.status()).toBe(403);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 
   test.describe("thumbnails", () => {

@@ -116,9 +116,13 @@ var services = []service{
 			// ----- Course administration -----
 			// The course page, for its administrators. The handlers also refuse
 			// course 0, which the statistics queries read as every course.
-			"getCourseAdmin":                  requiresCourseAdmin(),
-			"listCourseIntegrationGrants":     requiresCourseAdmin(),
-			"revokeCourseIntegrationGrant":    requiresCourseAdmin(),
+			"getCourseAdmin":               requiresCourseAdmin(),
+			"listCourseIntegrationGrants":  requiresCourseAdmin(),
+			"revokeCourseIntegrationGrant": requiresCourseAdmin(),
+			// Not course-scoped: the user picks the course on the consent page, and the
+			// handler checks they own it or are an explicit administrator of it.
+			"getIntegrationAuthorization":     authenticated,
+			"decideIntegrationAuthorization":  authenticated,
 			"updateCourseSettings":            requiresCourseAdmin(),
 			"copyCourse":                      requiresCourseAdmin(),
 			"deleteCourse":                    requiresCourseAdmin(),

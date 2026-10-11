@@ -20,9 +20,6 @@ jobs:
       # shim collides with the one already on the runner.
       - name: Set up pnpm
         run: npm install -g corepack@latest --force && corepack enable pnpm
-      - name: Install modules
-        working-directory: ./web
-        run: pnpm install --frozen-lockfile
       # web/spa_test.go skips when no SPA build is present, so build it here or the
       # router wiring goes untested.
       - name: Build SPA

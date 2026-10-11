@@ -1,6 +1,6 @@
 ---
 name: local-testing
-description: Run GoCast's checks and bring the stack up locally to verify a change in a real browser — Go tests, frontend unit tests, lint, Playwright e2e, and screenshot-based visual regression against a baseline branch. Use when asked to test, run, or visually verify GoCast, when a change touches CSS, Tailwind config or templates, or when a dependency bump needs proving beyond CI.
+description: Run GoCast's checks and bring the stack up locally to verify a change in a real browser — Go tests, frontend unit tests, lint, Playwright e2e, and screenshot-based visual regression against a baseline branch. Use when asked to test, run, or visually verify GoCast, when a change touches CSS or the Tailwind config, or when a dependency bump needs proving beyond CI.
 ---
 
 # Testing GoCast locally
@@ -17,18 +17,12 @@ Run these first; they need no database and catch most things.
 go test -race ./...                  # or: make test  (also runs frontend unit tests)
 pnpm --dir frontend test           # 166 vitest tests, ~2s
 pnpm --dir frontend run typecheck  # vue-tsc
-pnpm --dir web run lint            # eslint, flat config
-make lint                            # golangci-lint + the two above
+make lint                            # golangci-lint + typecheck
 ```
-
-`pnpm --dir web run lint` lints `ts/` only — deliberately. `eslint .` also walks
-`spa/assets`, and running prettier over the minified Vite bundle there pegs a core
-indefinitely. Keep the script's path argument; don't "fix" it back to `.`.
 
 ## Bringing up the stack
 
-Four steps, in order. Steps 2 and 3 are not optional — skipping them silently
-changes what you are looking at.
+Four steps, in order. Step 2 is not optional.
 
 **1. Database.** The starter dump is the fixture every browser test asserts on.
 
@@ -47,14 +41,10 @@ lectures off `NOW()`, the server reads them back as local time, and the browser 
 "today" in its own — all three have to agree or the "today" fixtures land on the wrong
 day. Don't seed by piping the dump in directly.
 
-**2. Assets.** The Go build *compiles* without these, but serves 404s for every
-bundled script, stylesheet and vendored library (video.js, katex, flatpickr, ...) —
-`web/router.go`'s `//go:embed assets/*` doesn't require the generated subfolders to
-exist. Without the SPA build, every migrated route also silently falls back to its old
-template — you would be testing the frontend being replaced.
+**2. SPA build.** The server panics at startup without `web/spa/index.html`, and a stale
+build means you are testing yesterday's frontend.
 
 ```bash
-pnpm --dir web install --frozen-lockfile && pnpm --dir web run build && pnpm --dir web run tailwind-compile
 pnpm --dir frontend install --frozen-lockfile && pnpm --dir frontend run build
 ```
 
@@ -75,11 +65,11 @@ all with password `password`. The login field is the users table's `email` colum
 `name`. Roles: 1 admin, 2 lecturer, 4 student.
 
 Useful URLs: `/`, `/course/2022/S/brauereiwesen`, `/w/brauereiwesen/2`, `/admin`,
-`/admin/course/1`. Courses in the fixture are
+`/admin/courses/1/lectures`. Courses in the fixture are
 `brauereiwesen`, `games101`, `godev` (2021/W), `bierkunde`, `geheim`.
 
 **There is no `/schedule` route** — `/admin` *is* the schedule page. `/schedule`
-renders the 404 template, whose animated GIF also makes it diff against itself.
+renders the SPA's 404 page.
 
 ## Driving it in a browser
 
@@ -94,9 +84,8 @@ node .claude/skills/local-testing/scripts/matched-rules.mjs <path> <selector> <p
 
 `capture.mjs` logs in, screenshots 14 pages in light and dark into `.shots/`, and
 reports two things a screenshot alone won't tell you: horizontal overflow
-(`scrollWidth > clientWidth`) and **error pages**. The 404 and permission templates
-render with HTTP 200, so a screenshot of one looks exactly like a pass. Trust no diff
-from a run that reported either.
+(`scrollWidth > clientWidth`) and **error pages**, which look like any other page in a
+screenshot. Trust no diff from a run that reported either.
 
 Playwright is a dependency of `frontend/` and the package is `@playwright/test` — not
 `playwright`, which fails with `ERR_MODULE_NOT_FOUND` even though the browsers are
@@ -108,8 +97,7 @@ This is the part CI cannot do, and it is how every bug below was found. Comparin
 change against *itself* proves nothing; compare it against `dev`.
 
 ```bash
-git switch dev && pnpm --dir web install --frozen-lockfile && pnpm --dir web run build \
-  && pnpm --dir web run tailwind-compile && pnpm --dir frontend install --frozen-lockfile \
+git switch dev && pnpm --dir frontend install --frozen-lockfile \
   && pnpm --dir frontend run build
 # restart the server, then:
 node .claude/skills/local-testing/scripts/capture.mjs base
@@ -127,7 +115,7 @@ Read the output like this:
   before dismissing it, and check whether the project's *own* configured colours
   moved: if they did, it is not just rounding.
 
-Restart the Go server after rebuilding assets — templates are embedded in the binary.
+Restart the Go server after rebuilding: the build is embedded in the binary.
 
 ## Debugging a layout difference
 
@@ -150,24 +138,24 @@ These are real regressions that shipped green through every job.
 
 **Cascade layers beat specificity and order.** `@import "tailwindcss"` puts every
 utility in `@layer utilities`, and a layered rule loses to an unlayered one no matter
-what. Every vendor stylesheet this app links — video.js, videojs-seek-buttons,
-silvermine-airplay, fullcalendar, flatpickr, nouislider — is unlayered, so *any*
+what. Every vendor stylesheet this app links — video.js, silvermine-airplay,
+fullcalendar — is unlayered, so *any*
 utility on an element they also style loses. It surfaced as video.js sizing its player
 1920px wide over `w-full`, but the quiet cases are everywhere the two meet. Hence the
-hand-composed entry in `web/assets/css/{main,home}.css`: theme and preflight layered,
+hand-composed entry in `frontend/src/styles/main.css`: theme and preflight layered,
 utilities not. **If you ever restore a plain `@import "tailwindcss"`, re-run the visual
 diff** — this breakage is invisible to lint, tests and typecheck.
 
 **A class that does nothing is not a class that does nothing forever.**
-`min-w-screen` was never a Tailwind 3 utility, so four admin templates rendered as
+`min-w-screen` was never a Tailwind 3 utility, so four admin pages rendered as
 though it were absent for years. Tailwind 4 defines it, and those pages jumped 320px
 past the viewport. When a major version lands, the risk is not only renamed classes —
-it is dead ones coming alive. Grep templates for classes that produce no CSS in the
+it is dead ones coming alive. Grep the views for classes that produce no CSS in the
 *old* version.
 
 **Default tokens move between majors.** Tailwind 4's default sans stack drops
 `ui-sans-serif` and `system-ui`, which on Linux picks a different face and reflows
-text everywhere. The v3 stack is pinned in both `tailwind.config.js` files with a
+text everywhere. The v3 stack is pinned in `frontend/tailwind.config.js` with a
 comment; deleting it is a deliberate visual decision, not a cleanup.
 
 **Utility scales get reused at new values.** v4 kept the names `shadow-sm`,

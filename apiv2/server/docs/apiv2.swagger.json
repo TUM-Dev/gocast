@@ -3685,6 +3685,86 @@
         ]
       }
     },
+    "/integration-authorizations/{integrationId}": {
+      "get": {
+        "summary": "Describe an application's authorization request.",
+        "description": "What the consent page shows: the application, the signed-in user and the courses they may connect it to. The state must be 32 random bytes in URL-safe base64 without padding.",
+        "operationId": "CourseService_getIntegrationAuthorization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufIntegrationAuthorization"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "integrationId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Integrations"
+        ]
+      }
+    },
+    "/integration-authorizations/{integrationId}/decision": {
+      "post": {
+        "summary": "Approve or cancel an application's authorization request.",
+        "description": "Answers with the application's registered return URL, carrying the state and either a one-time code or error=access_denied; the caller navigates there. Approving needs ownership of the course or an explicit course administrator role. Refused unless the caller presents a bearer token, so a cookie alone, which a foreign page can make the browser send, does not suffice.",
+        "operationId": "CourseService_decideIntegrationAuthorization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufDecideIntegrationAuthorizationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "integrationId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicedecideIntegrationAuthorizationBody"
+            }
+          }
+        ],
+        "tags": [
+          "Integrations"
+        ]
+      }
+    },
     "/login-options": {
       "get": {
         "summary": "Get available login methods.",
@@ -5561,6 +5641,22 @@
         }
       }
     },
+    "CourseServicedecideIntegrationAuthorizationBody": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string"
+        },
+        "decision": {
+          "$ref": "#/definitions/protobufIntegrationAuthorizationDecision"
+        },
+        "courseId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Required to approve, ignored to cancel."
+        }
+      }
+    },
     "CourseServicedeleteLecturesBody": {
       "type": "object",
       "properties": {
@@ -5925,6 +6021,25 @@
         }
       },
       "description": "AuditEntry is one row of the server-wide audit log."
+    },
+    "protobufAuthorizableCourse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "teachingTerm": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
     },
     "protobufBookmark": {
       "type": "object",
@@ -7127,6 +7242,14 @@
         }
       }
     },
+    "protobufDecideIntegrationAuthorizationResponse": {
+      "type": "object",
+      "properties": {
+        "redirectUrl": {
+          "type": "string"
+        }
+      }
+    },
     "protobufDownload": {
       "type": "object",
       "properties": {
@@ -7502,6 +7625,34 @@
         }
       },
       "description": "InfoPageSummary is what a visitor is told exists, before asking for one by slug."
+    },
+    "protobufIntegrationAuthorization": {
+      "type": "object",
+      "properties": {
+        "integrationName": {
+          "type": "string"
+        },
+        "userName": {
+          "type": "string",
+          "description": "The signed-in user's preferred name, shown so they notice a wrong account."
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAuthorizableCourse"
+          }
+        }
+      }
+    },
+    "protobufIntegrationAuthorizationDecision": {
+      "type": "string",
+      "enum": [
+        "INTEGRATION_AUTHORIZATION_DECISION_UNSPECIFIED",
+        "INTEGRATION_AUTHORIZATION_DECISION_APPROVE",
+        "INTEGRATION_AUTHORIZATION_DECISION_CANCEL"
+      ],
+      "default": "INTEGRATION_AUTHORIZATION_DECISION_UNSPECIFIED"
     },
     "protobufIntegrationSummary": {
       "type": "object",

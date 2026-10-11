@@ -50,11 +50,11 @@ export const PAGES = [
   ["course", "/course/2022/S/brauereiwesen"],
   ["watch", "/w/brauereiwesen/2"],
   ["admin-schedule", "/admin"],
-  ["admin-course", "/admin/course/1"],
+  ["admin-course", "/admin/courses/1/lectures"],
   ["admin-create-course", "/admin/create-course"],
   ["admin-course-import", "/admin/course-import"],
   ["admin-users", "/admin/users"],
-  ["admin-lecture-halls", "/admin/lectureHalls"],
+  ["admin-lecture-halls", "/admin/lecture-halls"],
 ];
 
 export const SHOTS = path.join(repoRoot(), ".shots");

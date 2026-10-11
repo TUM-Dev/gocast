@@ -4,8 +4,6 @@
 **/node_modules
 
 # Build output, rebuilt inside the image.
-web/assets/ts-dist
-web/assets/css-dist
 web/spa/assets
 web/spa/index.html
 docs_v2/build

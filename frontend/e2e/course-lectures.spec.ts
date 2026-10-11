@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-import { apiAs, login } from "./helpers";
+import { REFUSED, apiAs, login } from "./helpers";
 import { recordings, schedule, users } from "./seed";
 
 /**
@@ -124,7 +124,7 @@ test.describe("the course lectures page", () => {
 
     const response = await page.goto("/admin/courses/2/lectures");
     expect(response?.ok()).toBe(false);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 
   test("is refused by the server to a student of the course", async ({ page }) => {
@@ -132,7 +132,7 @@ test.describe("the course lectures page", () => {
 
     const response = await page.goto(page1);
     expect(response?.ok()).toBe(false);
-    expect((await response?.text()) ?? "").not.toContain("/spa-assets/");
+    expect((await response?.text()) ?? "").toContain(REFUSED);
   });
 });
 

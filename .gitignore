@@ -100,13 +100,7 @@ fabric.properties
 # database migration tool:
 migrate.linux-amd64
 
-# node modules
-web/node_modules
-
 # out
-web/assets/ts-dist
-web/assets/css-dist
-web/assets/vendor
 edge-service/edge
 
 # secrets

@@ -63,10 +63,6 @@ services:
         - action: rebuild
           path: ./web
           ignore:
-            - web/node_modules
-            - web/assets/ts-dist
-            - web/assets/css-dist
-            - web/assets/vendor
             - web/spa/assets
             - web/spa/index.html
         - action: rebuild
