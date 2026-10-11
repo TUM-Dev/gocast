@@ -71,9 +71,6 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.POST("/updateLectureSeriesTime/:streamID", routes.updateLectureSeriesTime)
 			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 
-			courses.POST("/addUnit", routes.addUnit)
-			courses.POST("/deleteUnit/:unitID", routes.deleteUnit)
-
 			stream := courses.Group("/stream/:streamID")
 			{
 				stream.Use(tools.InitStream(daoWrapper))
@@ -711,79 +708,6 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 	}
 
 	c.JSON(http.StatusOK, lectureHallData)
-}
-
-func (r coursesRoutes) deleteUnit(c *gin.Context) {
-	unit, err := r.StreamsDao.GetUnitByID(c.Param("unitID"))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find unit",
-			Err:           err,
-		})
-		return
-	}
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(unit.StreamID)))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find unit",
-			Err:           err,
-		})
-		return
-	}
-	if refuseForeignStream(c, stream) {
-		return
-	}
-	r.StreamsDao.DeleteUnit(unit.Model.ID)
-}
-
-func (r coursesRoutes) addUnit(c *gin.Context) {
-	var req addUnitRequest
-	if err := c.BindJSON(&req); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid body",
-			Err:           err,
-		})
-		return
-	}
-
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "stream not found",
-			Err:           err,
-		})
-		return
-	}
-	if refuseForeignStream(c, stream) {
-		return
-	}
-	stream.Units = append(stream.Units, model.StreamUnit{
-		UnitName:        req.Title,
-		UnitDescription: req.Description,
-		UnitStart:       req.From,
-		UnitEnd:         req.To,
-		StreamID:        stream.Model.ID,
-	})
-	if err = r.StreamsDao.UpdateStreamFullAssoc(&stream); err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not update stream full assoc",
-			Err:           err,
-		})
-		return
-	}
-}
-
-type addUnitRequest struct {
-	LectureID   uint   `json:"lectureID"`
-	From        uint   `json:"from"`
-	To          uint   `json:"to"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
 }
 
 func (r coursesRoutes) updateDescription(c *gin.Context) {
