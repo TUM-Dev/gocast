@@ -105,6 +105,13 @@ describe("WatchView", () => {
     expect(w.text()).toContain("This page does not exist");
   });
 
+  it("accepts a known version in any case, as the server does", async () => {
+    fetchStreamWatch.mockResolvedValue(watchData());
+    const w = await open("/w/c/7/pres");
+    expect(fetchStreamWatch).toHaveBeenCalled();
+    expect(w.text()).not.toContain("This page does not exist");
+  });
+
   it("falls back to the default layout and resumes from progress", async () => {
     fetchStreamWatch.mockResolvedValue(watchData({ progress: { progress: 0.5 } }));
     const w = await open("/w/c/7");
