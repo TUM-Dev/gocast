@@ -7,12 +7,12 @@ import {
   RECORDING_VERSIONS,
   SUBTITLE_LANGUAGES,
   downloadsOf,
-  fileUrl,
   recordingUploadErrorMessage,
   requestLectureSubtitles,
   subtitleErrorMessage,
   uploadLectureRecording,
 } from "@/lib/lecture-content";
+import { streamFileUrl } from "@/lib/stream-files";
 
 /**
  * The recording: its versions, the files to download, uploading or replacing a
@@ -97,7 +97,7 @@ async function upload(type: MediaType, label: string, event: Event): Promise<voi
           <a
             v-for="file in downloads"
             :key="file.id"
-            :href="fileUrl(file.id, 'download')"
+            :href="streamFileUrl(lecture.id, file.id, { download: true })"
             class="break-all underline hover:text-1"
             download
           >

@@ -5,11 +5,11 @@ import {
   attachmentsOf,
   contentErrorMessage,
   deleteLectureAttachment,
-  fileUrl,
   uploadLectureAttachment,
   uploadProblem,
   type LectureFile,
 } from "@/lib/lecture-content";
+import { streamFileUrl } from "@/lib/stream-files";
 
 /**
  * The files students can download from the lecture's page. Uploaded as soon as they
@@ -96,7 +96,11 @@ const inputId = computed(() => `lecture-${props.lectureId}-attachment-file`);
     <ul v-if="attachments.length" class="flex flex-col gap-1" aria-label="Attachments">
       <li v-for="file in attachments" :key="file.id" class="flex items-center gap-2">
         <i class="fas fa-paperclip text-5"></i>
-        <a :href="fileUrl(file.id, 'download')" class="text-3 min-w-0 grow break-all hover:underline" download>
+        <a
+          :href="streamFileUrl(lectureId, file.id, { download: true })"
+          class="text-3 min-w-0 grow break-all hover:underline"
+          download
+        >
           {{ file.friendlyName }}
         </a>
         <button

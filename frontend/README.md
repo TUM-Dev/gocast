@@ -42,9 +42,7 @@ table. Pages that have not migrated are plain `<a>` links, so they navigate to G
 courses you administer, grouped by semester. That needs an endpoint v2 does not have,
 so the Courses group links to the server-rendered schedule, which still has the tree.
 
-**Two things on the users page are deliberately not v2.** Impersonation still posts to
-`/api/users/impersonate`, because it creates a session and the SPA does not manage
-session cookies — the same reason login posts to Go. And the two listings mask contact
+**One thing on the users page is deliberately inherited.** The two listings mask contact
 details differently: the staff list does not, search results do. That is inherited from
 the page it replaces, and preserved rather than tidied, because changing what an
 administrator can see is a decision about a privacy control rather than part of a port.

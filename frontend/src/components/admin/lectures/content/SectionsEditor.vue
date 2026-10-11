@@ -8,13 +8,13 @@ import {
   createLectureSections,
   deleteLectureSection,
   emptySectionForm,
-  fileUrl,
   formatSectionStart,
   sectionChanged,
   sectionForm,
   updateLectureSection,
   type SectionForm,
 } from "@/lib/lecture-content";
+import { streamFileUrl } from "@/lib/stream-files";
 
 /**
  * A lecture's chapters: add one, change one, delete one. Each is saved at once, as
@@ -184,7 +184,7 @@ const timeInput = "tum-live-input w-16 min-w-0 shrink px-1 py-1 text-center";
         <div v-else class="flex flex-wrap items-center gap-2 p-1.5">
           <img
             v-if="s.fileId"
-            :src="fileUrl(s.fileId, 'serve')"
+            :src="streamFileUrl(lectureId, s.fileId)"
             alt=""
             loading="lazy"
             class="h-9 w-16 shrink-0 rounded object-cover"

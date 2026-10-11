@@ -76,12 +76,12 @@ export function courseUrl(course: Course): string {
 }
 
 /**
- * The calendar feed, which only the v1 API serves. A plain link: the browser
- * authenticates it with the session cookie, as it did before the migration.
+ * The calendar feed. A plain link, public like the course page's own: a calendar app
+ * subscribing to it cannot sign in.
  */
 export function calendarUrl(course: Course): string {
   const { year, term } = course.semester;
-  return `/api/download_ics/${year}/${term}/${encodeURIComponent(course.slug)}/events.ics`;
+  return `/api/v2/courses/${year}/${term}/${encodeURIComponent(course.slug)}/events.ics`;
 }
 
 function parseLectureHall(message: LectureHallMessage): LectureHall {

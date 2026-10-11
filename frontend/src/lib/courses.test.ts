@@ -172,6 +172,6 @@ describe("urls", () => {
   });
 
   it("points the calendar feed at the v1 endpoint that still serves it", () => {
-    expect(calendarUrl(course)).toBe("/api/download_ics/2026/W/eidi/events.ics");
+    expect(calendarUrl(course)).toBe("/api/v2/courses/2026/W/eidi/events.ics");
   });
 });

@@ -166,7 +166,7 @@ describe("what the caller may do", () => {
     const wrapper = await render(false);
 
     expect(wrapper.get('a[download]').attributes("href")).toBe(
-      "/api/download_ics/2026/W/eidi/events.ics",
+      "/api/v2/courses/2026/W/eidi/events.ics",
     );
   });
 

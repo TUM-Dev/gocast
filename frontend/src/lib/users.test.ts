@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
-import { Role, roleLabel, searchUsers, searchable, updateUserRole } from "./users";
+import { Role, impersonate, roleLabel, searchUsers, searchable, updateUserRole } from "./users";
 
 /**
  * The parts of the users page that are decisions rather than plumbing: when a search
@@ -76,6 +76,34 @@ describe("searchUsers", () => {
     respondWith({});
 
     await expect(searchUsers("nobody")).resolves.toEqual([]);
+  });
+});
+
+describe("impersonate", () => {
+  function respondTo(status: number, body: BodyInit | null): void {
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).endsWith("/auth/token")
+          ? new Response(JSON.stringify({ access_token: "t", expires_in: 900 }), { status: 200 })
+          : new Response(body, { status }),
+      ),
+    );
+  }
+
+  it("posts to the user's v2 endpoint", async () => {
+    respondTo(204, null);
+
+    await expect(impersonate(7)).resolves.toBeUndefined();
+
+    const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
+    expect(url).toBe("/api/v2/users/7/impersonate");
+    expect(init.method).toBe("POST");
+  });
+
+  it("fails when the server refuses", async () => {
+    respondTo(403, JSON.stringify({ code: 7, message: "no" }));
+
+    await expect(impersonate(7)).rejects.toThrow();
   });
 });
 

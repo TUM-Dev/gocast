@@ -10,10 +10,9 @@
 //   - GET /api/stream/live: API users authenticating with an admin token (scripts,
 //     monitoring); the token middleware is not part of apiv2.
 //   - GET /api/schedule.ics: calendar clients subscribed to the lecture hall feed by URL.
-//   - GET /api/download/:id, GET /api/download_ics/:year/:term/:slug/events.ics and
-//     POST /api/users/impersonate: still called by the SPA; they go once apiv2
-//     replaces them. The calendar URL is also in users' calendar apps, so it needs a
-//     redirect or an alias when it goes.
+//
+// The old course calendar URL (/api/download_ics/...) is still answered, but by apiv2:
+// see RegisterLegacyCalendar, wired in cmd/tumlive.
 //
 // Do not add routes here: new API work belongs in apiv2.
 package api
@@ -36,9 +35,6 @@ func ConfigGinRouter(
 	router.Use(tools.ErrorHandler)
 
 	configGinStreamRestRouter(router, daoWrapper)
-	configGinUsersRouter(router, daoWrapper)
-	configGinDownloadRouter(router, daoWrapper)
-	configGinDownloadICSRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)
