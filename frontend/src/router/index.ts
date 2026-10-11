@@ -222,7 +222,7 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/courses/:courseID",
     component: CourseAdminLayout,
     children: [
-      { path: "", redirect: { name: "admin-course-settings" } },
+      { path: "", redirect: { name: "admin-course-lectures" } },
       { path: "lectures", name: "admin-course-lectures", component: CourseLecturesView },
       { path: "settings", name: "admin-course-settings", component: CourseSettingsView },
       { path: "stats", name: "admin-course-stats", component: CourseStatsView },

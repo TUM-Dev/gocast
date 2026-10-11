@@ -249,7 +249,7 @@ test.describe("the sidebar's course tree", () => {
       ["Praktikum: Golang", 3],
       ["Fortgeschrittene Bierkunde", 4],
     ] as const) {
-      await expect(nav.getByRole("link", { name })).toHaveAttribute("href", `/admin/courses/${id}/settings`);
+      await expect(nav.getByRole("link", { name })).toHaveAttribute("href", `/admin/courses/${id}/lectures`);
     }
     await expect(nav.getByRole("link", { name: "Spieleentwicklung für Dummies" })).toHaveCount(0);
   });
