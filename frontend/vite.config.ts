@@ -20,6 +20,13 @@ export default defineConfig(({ command }) => ({
     // delete the marker and .gitignore. Stale hashed assets are cleared by the
     // `prebuild` script instead.
     emptyOutDir: false,
+    // The only chunk above Vite's default 500 kB is video.js (~700 kB), which is one
+    // third-party library, cannot be split usefully (the streaming stack is just a
+    // sixth of it) and is imported dynamically by VideoPlayer, so it only loads on
+    // pages that play video. The limit sits just above it so that any *app* chunk
+    // growing past 500 kB, such as a route component pulled back into the entry,
+    // still warns.
+    chunkSizeWarningLimit: 750,
   },
   server: {
     port: 5173,
