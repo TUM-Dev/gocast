@@ -1,30 +1,30 @@
-package api
+// Package livestate is the glue between whatever knows a stream's state (the runner
+// manager, the stats cron) and the realtime hub the SPA's socket listens on.
+package livestate
 
 import (
 	"context"
+	"log/slog"
+	"os"
 	"time"
 
-	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 )
 
-// The v1 producers of live state, title and description publish to the v2 hub, so the
-// SPA's socket hears about changes made through v1. Deleted with api/.
-var realtimeHub realtimehub.Hub
+// hub is the realtime hub live-state changes are published to. It stays nil until
+// SetRealtimeHub runs, which keeps tests that never start a hub working.
+var hub realtimehub.Hub
 
 // SetRealtimeHub is called once at startup, before anything is served.
-func SetRealtimeHub(hub realtimehub.Hub) {
-	realtimeHub = hub
+func SetRealtimeHub(h realtimehub.Hub) {
+	hub = h
 }
 
-// publishV2 is a no-op until SetRealtimeHub runs, which keeps v1's tests hub-free.
-func publishV2(streamID uint, event *protobuf.RealtimeEvent) {
-	if realtimeHub != nil {
-		realtimeHub.Publish(context.Background(), streamID, event)
-	}
-}
+var logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	Level: slog.LevelDebug,
+})).With("service", "livestate")
 
 // ViewerCounter is what live statistics need from the v2 hub; realtimehub.Hub
 // satisfies it.
@@ -34,12 +34,14 @@ type ViewerCounter interface {
 
 // NotifyViewersLiveState tells the stream's viewers it went live or stopped.
 func NotifyViewersLiveState(streamID uint, live bool) {
-	publishV2(streamID, realtimehub.LiveEvent(streamID, live))
+	if hub != nil {
+		hub.Publish(context.Background(), streamID, realtimehub.LiveEvent(streamID, live))
+	}
 }
 
 // CollectStats records the viewer count of every live stream once per tick. Only live
 // streams get a row; the count is the v2 hub's.
-func CollectStats(daoWrapper dao.DaoWrapper, v2 ViewerCounter) func() {
+func CollectStats(daoWrapper dao.DaoWrapper, viewers ViewerCounter) func() {
 	return func() {
 		live, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
 		if err != nil {
@@ -47,7 +49,7 @@ func CollectStats(daoWrapper dao.DaoWrapper, v2 ViewerCounter) func() {
 			return
 		}
 		for _, s := range live {
-			viewers := v2.Viewers(s.ID)
+			viewers := viewers.Viewers(s.ID)
 			if viewers == 0 {
 				continue
 			}

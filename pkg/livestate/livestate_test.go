@@ -1,4 +1,4 @@
-package api
+package livestate
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func (f fakeViewers) Viewers(id uint) int { return f[id] }
 
 func TestCollectStats(t *testing.T) {
 	// collect runs one tick and returns the rows it wrote, by stream.
-	collect := func(t *testing.T, live []model.Stream, v2 ViewerCounter) map[uint]model.Stat {
+	collect := func(t *testing.T, live []model.Stream, viewers ViewerCounter) map[uint]model.Stat {
 		ctrl := gomock.NewController(t)
 		streams := mock_dao.NewMockStreamsDao(ctrl)
 		streams.EXPECT().GetCurrentLive(gomock.Any()).Return(live, nil).AnyTimes()
@@ -27,7 +27,7 @@ func TestCollectStats(t *testing.T) {
 			return nil
 		}).AnyTimes()
 
-		CollectStats(dao.DaoWrapper{StreamsDao: streams, StatisticsDao: stats}, v2)()
+		CollectStats(dao.DaoWrapper{StreamsDao: streams, StatisticsDao: stats}, viewers)()
 		return got
 	}
 	live := func(ids ...uint) []model.Stream {

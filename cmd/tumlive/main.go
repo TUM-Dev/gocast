@@ -29,8 +29,13 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/camera"
+	"github.com/TUM-Dev/gocast/pkg/livestate"
 	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
+	"github.com/TUM-Dev/gocast/pkg/search"
+	"github.com/TUM-Dev/gocast/pkg/sectionimages"
+	"github.com/TUM-Dev/gocast/pkg/voicegrpc"
+	"github.com/TUM-Dev/gocast/pkg/workergrpc"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
@@ -155,18 +160,18 @@ func run(ctx context.Context) error {
 	// still live in api/ (the runner's live flips, v1's title and description edits)
 	// publish to it.
 	hub := realtimehub.NewMemory()
-	api.SetRealtimeHub(hub)
+	livestate.SetRealtimeHub(hub)
 
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
 		runner_manager.WithCamService(camService),
-		runner_manager.WithLiveStateNotifier(api.NotifyViewersLiveState),
+		runner_manager.WithLiveStateNotifier(livestate.NotifyViewersLiveState),
 	}
 	var subtitleClient pb.SubtitleGeneratorClient
 	// What apiv2 requests subtitles through; nil without a voice service.
 	var apiv2Subtitles pb.SubtitleGeneratorClient
 	if tools.Cfg.VoiceService.Host != "" {
-		api.RunVoiceServiceReceiver(tools.Cfg.VoiceService.AuthToken)
+		voicegrpc.RunVoiceServiceReceiver(tools.Cfg.VoiceService.AuthToken)
 		c, err := grpc.NewClient(fmt.Sprintf("%s:%s", tools.Cfg.VoiceService.Host, tools.Cfg.VoiceService.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			logger.Error("failed to connect to voice service", "err", err)
@@ -182,7 +187,7 @@ func run(ctx context.Context) error {
 		logger.Error("Failed to start runner manager", "err", err)
 	}
 
-	api.ServeWorkerGRPC(subtitleClient, tools.Cfg.VoiceService.AuthToken)
+	workergrpc.ServeWorkerGRPC(subtitleClient, tools.Cfg.VoiceService.AuthToken)
 
 	// init meili search index settings
 	go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()
@@ -256,13 +261,13 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithTUMOnline(tum.Catalog{Dao: dao.NewDaoWrapper()}),
 		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
-		apiv2.WithSectionImages(api.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
+		apiv2.WithSectionImages(sectionimages.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
 		apiv2.WithRealtimeHub(hub),
 		// Ending a stream goes through the manager, which tells the viewers it is over.
 		apiv2.WithStreamEnder(manager),
 		apiv2.WithSubtitleSearch(tools.NewMeiliSearchFunctions()),
-		// The same Meilisearch and filters v1's search uses, so both find the same.
-		apiv2.WithSearch(api.SearchCatalog{Dao: dao.NewDaoWrapper(), Meili: tools.NewMeiliSearchFunctions()}),
+		// The Meilisearch filters and post-filtering in pkg/search decide who may find what.
+		apiv2.WithSearch(search.SearchCatalog{Dao: dao.NewDaoWrapper(), Meili: tools.NewMeiliSearchFunctions()}),
 	}
 	if subtitles != nil {
 		api2Opts = append(api2Opts, apiv2.WithSubtitleGenerator(subtitles, tools.Cfg.VoiceService.AuthToken))
@@ -333,9 +338,9 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager, hub realtimehub.Hu
 	// Fetch students every 12 hours
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
 	// Collect livestream stats (viewers) every minute
-	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper, hub), "0-59 * * * *")
+	_ = tools.Cron.AddFunc("collectStats", livestate.CollectStats(daoWrapper, hub), "0-59 * * * *")
 	// Look for due streams and notify workers about them
-	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
+	_ = tools.Cron.AddFunc("triggerDueStreams", workergrpc.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	_ = tools.Cron.AddFunc("triggerDueStreamsRunner", func() {
 		err := m.TriggerDueStreams()
 		if err != nil {
@@ -347,7 +352,7 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager, hub realtimehub.Hu
 	// export data to meili search
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
 	// fetch live stream previews
-	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "*/1 * * * *")
+	_ = tools.Cron.AddFunc("fetchLivePreviews", workergrpc.FetchLivePreviews(daoWrapper), "*/1 * * * *")
 	// reap streams stuck in live state due to runner crash or lost notifications
 	_ = tools.Cron.AddFunc("reapStaleStreams", m.ReapStaleStreams, "1/30 * * * *")
 	// apply correct live lights
