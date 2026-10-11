@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -106,6 +107,22 @@ var spaRouteHooks = map[string]gin.HandlerFunc{
 	// Approving hands a one-time code to a third party, so the page must not be
 	// clickable through a frame; see denyFraming.
 	"/integration/authorize/:id": denyFraming,
+	// The shell would answer 200 for a view the client then renders as not-found; the
+	// status is what crawlers, link checkers and curl read.
+	"/w/:slug/:streamID/:version": notFoundForUnknownWatchView,
+}
+
+// watchViews are the `:version` segments the watch page knows, the same four as
+// LAYOUT_SEGMENTS in frontend/src/lib/watch.ts.
+var watchViews = map[string]bool{"COMB": true, "PRES": true, "CAM": true, "SPLIT": true}
+
+// notFoundForUnknownWatchView answers 404 (with the SPA shell, like any unowned path)
+// for a view the watch page does not have. Matched case-insensitively because the
+// client uppercases the segment before looking it up, so /w/x/1/pres plays.
+func notFoundForUnknownWatchView(c *gin.Context) {
+	if !watchViews[strings.ToUpper(c.Param("version"))] {
+		serveNotFound(c)
+	}
 }
 
 // denyFraming forbids embedding the response in another page, so a framing page cannot
@@ -394,8 +411,8 @@ func configMainRoute(router *gin.Engine) {
 	// InitStream runs before the shell so a private stream answers with the login
 	// redirect or 403 rather than an app that then fails to load. `?video_only=1`
 	// (Artemis embeds it) is the same URL: the client decides.
-	// `/:version` accepts anything here; the client router only knows COMB, PRES, CAM
-	// and SPLIT and renders its not-found page for the rest.
+	// `/:version` accepts anything at the router; notFoundForUnknownWatchView answers
+	// 404 for all but COMB, PRES, CAM and SPLIT.
 	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID")
 	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID/:version")
 	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID/chat/popup")

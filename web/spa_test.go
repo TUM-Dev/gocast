@@ -253,3 +253,41 @@ func TestRenderErrorPage(t *testing.T) {
 		t.Errorf("unknown API route: status %d, body %q", rec.Code, rec.Body.String())
 	}
 }
+
+// An unknown watch view gets the shell with a 404 status rather than a 200 the client
+// then contradicts; the four known views, in any case, and the chat pages still get 200.
+func TestUnknownWatchViewAnswers404WithTheShell(t *testing.T) {
+	spaIsBuilt(t)
+
+	gin.SetMode(gin.TestMode)
+	// serveNotFound renders through the error page renderer ConfigGinRouter installs.
+	tools.SetErrorPageRenderer(serveErrorPage)
+	t.Cleanup(func() { tools.SetErrorPageRenderer(nil) })
+	router := gin.New()
+	group := router.Group("/")
+	registerPage(group, http.MethodGet, "/w/:slug/:streamID/:version")
+	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat")
+	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat/popup")
+
+	for path, want := range map[string]int{
+		"/w/ws/1/COMB":       http.StatusOK,
+		"/w/ws/1/PRES":       http.StatusOK,
+		"/w/ws/1/CAM":        http.StatusOK,
+		"/w/ws/1/SPLIT":      http.StatusOK,
+		"/w/ws/1/pres":       http.StatusOK,
+		"/w/ws/1/Split":      http.StatusOK,
+		"/w/ws/1/chat":       http.StatusOK,
+		"/w/ws/1/chat/popup": http.StatusOK,
+		"/w/ws/1/NOPE":       http.StatusNotFound,
+		"/w/ws/1/COMBINED":   http.StatusNotFound,
+	} {
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != want {
+			t.Errorf("%s: status %d, want %d", path, rec.Code, want)
+		}
+		if !strings.Contains(rec.Body.String(), "/spa-assets/") {
+			t.Errorf("%s: the SPA shell was not served, got: %q", path, truncate(rec.Body.String()))
+		}
+	}
+}

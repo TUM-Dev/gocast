@@ -28,7 +28,9 @@ const valid = computed(
     !!slug.value &&
     Number.isInteger(streamId.value) &&
     streamId.value > 0 &&
-    (version.value === undefined || ["COMB", "PRES", "CAM", "SPLIT"].includes(version.value)),
+    // Any case, as the server's 404 check and parseLayoutSegment accept it.
+    (version.value === undefined ||
+      ["COMB", "PRES", "CAM", "SPLIT"].includes(version.value.toUpperCase())),
 );
 // Artemis frames the player alone: the same URL with `?video_only=1`.
 const embed = computed(() => isEmbedQuery(route.query));
