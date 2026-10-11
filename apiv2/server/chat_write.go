@@ -10,7 +10,6 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/TUM-Dev/gocast/api"
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
@@ -103,7 +102,6 @@ func (a *API) SendChatMessage(ctx context.Context, req *protobuf.SendChatMessage
 	// The event goes to every viewer, so it carries no viewer's view: viewer 0 keeps
 	// an anonymous author's id out of it. The response is the author's own.
 	a.publish(ctx, stream.ID, realtimehub.MessageEvent(stream.ID, chatMessageToProto(&chat, 0), awaitsApproval, user.ID))
-	api.MirrorChatMessage(stream.ID, chat, awaitsApproval, user.ID)
 
 	return &protobuf.SendChatMessageResponse{Message: chatMessageToProto(&chat, user.ID)}, nil
 }
@@ -170,9 +168,6 @@ func (a *API) ToggleChatReaction(ctx context.Context, req *protobuf.ToggleChatRe
 	summary := chatReactionsToProto(reactions)
 	adminsOnly := !chat.Visible.Bool
 	a.publish(ctx, stream.ID, realtimehub.ReactionsEvent(stream.ID, chat.ID, summary, adminsOnly))
-	if !adminsOnly {
-		api.MirrorChatReactions(stream.ID, chat.ID, reactions)
-	}
 
 	return &protobuf.ToggleChatReactionResponse{Reactions: summary}, nil
 }
@@ -219,7 +214,6 @@ func (a *API) VotePoll(ctx context.Context, req *protobuf.VoteChatPollRequest) (
 		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("can't vote"))
 	}
 	a.publish(ctx, stream.ID, realtimehub.PollVoteEvent(stream.ID, uint(req.PollOptionId), votes))
-	api.MirrorPollVote(stream.ID, uint(req.PollOptionId), votes)
 
 	out, err := a.chatPollToProto(poll, user.CanAdminister(course))
 	if err != nil {

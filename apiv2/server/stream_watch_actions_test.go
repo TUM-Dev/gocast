@@ -641,4 +641,3 @@ func TestUpdateLecturePublishesTimeChanges(t *testing.T) {
 		}
 	})
 }
-

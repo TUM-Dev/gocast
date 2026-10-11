@@ -11,7 +11,6 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools/realtime"
 )
 
 var templateExecutor TemplateExecutor
@@ -241,62 +240,6 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		tumLiveContext.Course = &course
 		tumLiveContext.Stream = &stream
 		c.Set("TUMLiveContext", tumLiveContext)
-	}
-}
-
-func InitStreamRealtime() realtime.SubscriptionMiddleware {
-	return func(context *realtime.Context) *realtime.Error {
-		var c *gin.Context
-		if ctx, ok := context.Client.Get("ctx"); ok {
-			c = ctx.(*gin.Context)
-		} else {
-			return realtime.NewError(http.StatusBadRequest, "daoWrapper should exist but doesn't")
-		}
-
-		var wrapper dao.DaoWrapper
-		if daoRes, ok := context.Client.Get("dao"); ok {
-			wrapper = daoRes.(dao.DaoWrapper)
-		} else {
-			return realtime.NewError(http.StatusBadRequest, "daoWrapper should exist but doesn't")
-		}
-
-		foundContext, exists := c.Get("TUMLiveContext")
-		if !exists {
-			return realtime.NewError(http.StatusBadRequest, "context should exist but doesn't")
-		}
-		tumLiveContext := foundContext.(TUMLiveContext)
-
-		// Get stream based on context:
-		var stream model.Stream
-		if context.Param("streamID") != "" {
-			foundStream, err := wrapper.StreamsDao.GetStreamByID(c, context.Param("streamID"))
-			if err != nil {
-				return realtime.NewError(http.StatusNotFound, "stream not found")
-			}
-			stream = foundStream
-		} else {
-			return realtime.NewError(http.StatusNotFound, "stream not found")
-		}
-
-		course, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
-		if err != nil {
-			logger.Error("could not retrieve course", "err", err)
-			return realtime.NewError(http.StatusInternalServerError, "could not retrieve course")
-		}
-		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
-			return realtime.NewError(http.StatusForbidden, "forbidden to see course")
-		}
-		if !course.IsPublic() && !course.IsHidden() {
-			if tumLiveContext.User == nil {
-				return realtime.NewError(http.StatusForbidden, "course only visible for logged in users")
-			} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
-				return realtime.NewError(http.StatusForbidden, "forbidden to see course")
-			}
-		}
-		tumLiveContext.Course = &course
-		tumLiveContext.Stream = &stream
-		context.Set("TUMLiveContext", tumLiveContext)
-		return nil
 	}
 }
 
