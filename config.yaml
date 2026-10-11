@@ -86,12 +86,6 @@ jwtkey: # This is an example key, delete and restart to generate a proper one
 #  rootURLs:
 #   - https://live.rbg.tum.de/shib
 #   - https://localhost/shib
-lrz:
-  email: erika.mustermann@example.com
-  name: Erika Mustermann
-  phone: "0123456789"
-  subdir: RBG
-  uploadurl: https://example.lrz.de/upload
 mail:
   sender: noreply@example.org
   server: mailrelay.example.org

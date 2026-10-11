@@ -107,13 +107,6 @@ func initConfig() {
 }
 
 type Config struct {
-	Lrz struct {
-		Name      string `yaml:"name"`
-		Email     string `yaml:"email"`
-		Phone     string `yaml:"phone"`
-		UploadURL string `yaml:"uploadUrl"`
-		SubDir    string `yaml:"subDir"`
-	} `yaml:"lrz"`
 	Mail MailConfig `yaml:"mail"`
 	Db   struct {
 		User     string `yaml:"user"`
