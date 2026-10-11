@@ -262,8 +262,9 @@ test.describe("the watch page of a recording with subtitles", () => {
   test("offers the subtitles in the player and serves them", async ({ page }) => {
     await page.goto("/w/brauereiwesen/1");
     await expect(page.getByTestId("watch-player")).toBeVisible();
-    // video.js builds the captions button only for a player that has text tracks.
-    await expect(page.locator(".vjs-subs-caps-button")).toBeAttached();
+    // video.js builds the captions button only for a player that has text tracks. The
+    // class is on both the menu wrapper and its inner button, so take the wrapper.
+    await expect(page.locator(".vjs-control-bar > .vjs-subs-caps-button")).toBeAttached();
 
     const res = await page.request.get("/api/v2/streams/brauereiwesen/1/subtitles/en");
     expect(res.status()).toBe(200);
