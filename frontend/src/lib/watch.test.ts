@@ -124,6 +124,13 @@ describe("misc", () => {
     expect(sidebarTabs(mk({ stream: { liveNow: true } }))).toEqual([]);
   });
 
+  it("offers the search with the transcript: a recording that has subtitles, whatever the search service's state", () => {
+    // Meilisearch being down is the panel's "not available", not a reason to hide the tab.
+    expect(sidebarTabs(mk({ subtitleLanguages: ["en"] }))).toContain("search");
+    expect(sidebarTabs(mk())).not.toContain("search");
+    expect(sidebarTabs(mk({ stream: { recording: false }, subtitleLanguages: ["en"] }))).not.toContain("search");
+  });
+
   it("titles the tab", () => {
     expect(watchDocumentTitle(mk(), "B")).toBe("B | Course: Intro");
     expect(watchDocumentTitle(undefined, "B")).toBe("B");

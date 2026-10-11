@@ -40,9 +40,21 @@ export function syncPlayers(primary: PlayerController, follower: PlayerControlle
     }),
   );
 
+  // One soundtrack: whatever turns the follower's sound on (a stored setting, a source
+  // that reloads) is undone. The shared controls act on the primary only.
+  off.push(
+    follower.on("volumechange", () => {
+      if (!follower.isMuted()) follower.setMuted(true);
+    }),
+  );
+
   off.push(
     primary.on("play", () => {
-      follower.play().catch(() => {
+      follower.play().catch((error: unknown) => {
+        // Not a refusal: a pause (the primary stalling right after a seek) interrupted
+        // the play on purpose, and "playing" resumes the follower. Pausing the primary
+        // here is what made every seek on the seekbar end up paused.
+        if ((error as { name?: string } | null)?.name === "AbortError") return;
         // Autoplay refused for the follower: better two paused pictures than two that disagree.
         primary.pause();
         follower.pause();

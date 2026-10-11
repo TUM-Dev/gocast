@@ -964,6 +964,43 @@ INSERT INTO `streams` VALUES (1,'2022-04-18 13:45:58.657','2022-04-18 13:46:46.5
 UNLOCK TABLES;
 
 --
+-- Table structure for table `subtitles`
+--
+
+DROP TABLE IF EXISTS `subtitles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `subtitles` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `deleted_at` datetime(3) DEFAULT NULL,
+  `stream_id` bigint(20) unsigned NOT NULL,
+  `content` longtext NOT NULL,
+  `language` varchar(191) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_subtitles_deleted_at` (`deleted_at`),
+  KEY `idx_subtitles_stream_id_language` (`stream_id`,`language`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `subtitles`
+--
+-- Short WebVTT for stream 1 (VL 1: Was ist Bier?, a public recording of brauereiwesen),
+-- served as-is by getSubtitles. The browser tests rely on the Transcript and Search tabs
+-- showing for this lecture, on its two languages, and on the cue text below.
+--
+
+LOCK TABLES `subtitles` WRITE;
+/*!40000 ALTER TABLE `subtitles` DISABLE KEYS */;
+INSERT INTO `subtitles` VALUES
+  (1,NOW(),NOW(),NULL,1,'WEBVTT\n\n00:00:00.000 --> 00:00:04.000\nWillkommen zur Vorlesung über das Brauereiwesen.\n\n00:00:04.000 --> 00:00:09.000\nHeute geht es um die Zutaten des Bieres.\n\n00:00:09.000 --> 00:00:14.000\nWasser, Malz, Hopfen und Hefe.\n','de'),
+  (2,NOW(),NOW(),NULL,1,'WEBVTT\n\n00:00:00.000 --> 00:00:04.000\nWelcome to the lecture on brewing.\n\n00:00:04.000 --> 00:00:09.000\nToday is about the ingredients of beer.\n\n00:00:09.000 --> 00:00:14.000\nWater, malt, hops and yeast.\n','en');
+/*!40000 ALTER TABLE `subtitles` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `tokens`
 --
 

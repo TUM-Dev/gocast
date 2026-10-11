@@ -42,7 +42,7 @@ watch(
         aria-modal="true"
         :aria-label="title"
         tabindex="-1"
-        class="max-h-full w-full max-w-md overflow-y-auto rounded-lg border bg-white shadow-lg outline-none dark:border-gray-800 dark:bg-secondary-light"
+        class="text-3 max-h-full w-full max-w-md overflow-y-auto rounded-lg border bg-white shadow-lg outline-none dark:border-gray-800 dark:bg-secondary-light"
       >
         <div class="flex items-center justify-between px-4 pb-2 pt-4">
           <h2 class="text-3 text-base font-semibold">{{ title }}</h2>

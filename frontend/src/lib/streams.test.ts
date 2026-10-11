@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
-import { fetchProgress, formatDuration, minutesUntilStart, thumbnailUrl } from "./streams";
+import { fetchProgress, formatDuration, minutesUntilStart, setWatched, thumbnailUrl } from "./streams";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -59,6 +59,30 @@ describe("fetchProgress", () => {
 
     expect(progress.size).toBe(0);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("setWatched", () => {
+  const patched = () => JSON.parse(String(fetchMock.mock.calls[1][1].body)) as Record<string, unknown>;
+
+  it("sends an explicit false to unmark, with the progress reset", async () => {
+    respondWith({ streamId: 7, progress: 0, watched: false });
+
+    const result = await setWatched(7, false);
+
+    // Written as JSON false rather than left out: absent would mean "leave it alone".
+    expect(patched()).toMatchObject({ streamId: 7, watched: false });
+    expect(patched().progress ?? 0).toBe(0);
+    expect(result).toEqual({ streamId: 7, progress: 0, watched: false });
+  });
+
+  it("sends true with full progress to mark", async () => {
+    respondWith({ streamId: 7, progress: 1, watched: true });
+
+    const result = await setWatched(7, true);
+
+    expect(patched()).toMatchObject({ streamId: 7, watched: true, progress: 1 });
+    expect(result.watched).toBe(true);
   });
 });
 

@@ -3,14 +3,15 @@ import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 
 import LiveStreamCard from "@/components/start-page/LiveStreamCard.vue";
+import ProgressLoadNotice from "@/components/start-page/ProgressLoadNotice.vue";
 import StartPageLayout from "@/components/start-page/StartPageLayout.vue";
 import VodCard from "@/components/start-page/VodCard.vue";
 import { ApiError } from "@/lib/api";
 import { calendarUrl, fetchCourse, type Course } from "@/lib/courses";
 import { groupLectures } from "@/lib/lecture-groups";
 import { useLectureViewPrefs } from "@/lib/lecture-view-prefs";
+import { useWatchProgress } from "@/lib/use-watch-progress";
 import {
-  fetchProgress,
   isMappedRoom,
   isToday,
   minutesUntilStart,
@@ -18,7 +19,6 @@ import {
   setWatched,
   watchUrl,
   type Stream,
-  type StreamProgress,
 } from "@/lib/streams";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 import { useCourseStore } from "@/stores/courses";
@@ -38,7 +38,14 @@ const router = useRouter();
 const prefs = useLectureViewPrefs();
 
 const course = ref<Course | null>(null);
-const progress = ref<Map<number, StreamProgress>>(new Map());
+const {
+  progress,
+  failed: progressFailed,
+  loading: progressLoading,
+  load: loadProgress,
+  retry: retryProgress,
+  reset: resetProgress,
+} = useWatchProgress();
 const showAllPlanned = ref(false);
 
 /** Course administrators aside, a global admin reaches every course's admin page. */
@@ -89,16 +96,16 @@ async function load(): Promise<void> {
   }
 
   if (!auth.user || recordings.value.length === 0) return;
-  progress.value = await fetchProgress(recordings.value.map((s) => s.id)).catch(
-    () => new Map<number, StreamProgress>(),
-  );
+  // Not awaited: the page is usable before the marks arrive, and a failure is shown
+  // by the notice rather than thrown.
+  loadProgress(recordings.value.map((s) => s.id)).catch(() => {});
 }
 
 watch(
   () => [props.slug, props.year, props.term],
   () => {
     course.value = null;
-    progress.value = new Map();
+    resetProgress();
     showAllPlanned.value = false;
     load().catch(() => {});
   },
@@ -125,6 +132,8 @@ const isTodayLecture = (lecture: Stream) => isToday(lecture);
 <template>
   <StartPageLayout>
     <article v-if="course" class="tum-live-course-view">
+      <ProgressLoadNotice v-if="progressFailed" :loading="progressLoading" @retry="retryProgress" />
+
       <header>
         <div>
           <p class="year">{{ course.semester.term }}{{ course.semester.year }}</p>

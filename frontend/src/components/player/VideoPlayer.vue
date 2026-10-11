@@ -162,7 +162,12 @@ async function create(): Promise<void> {
   };
   if (props.live) options.liveui = true;
   if (props.playbackRates) options.playbackRates = menuRates(props.playbackRates, videojs.browser.IS_SAFARI);
-  if (skip) options.controlBar = { skipButtons: { forward: skip, backward: skip } };
+  const controlBar: Record<string, unknown> = {};
+  if (skip) controlBar.skipButtons = { forward: skip, backward: skip };
+  // Firefox overlays its own Picture-in-Picture toggle on every large video, and a page
+  // cannot hide it (it ignores disablePictureInPicture), so drop ours there to avoid two.
+  if (videojs.browser.IS_FIREFOX) controlBar.pictureInPictureToggle = false;
+  if (Object.keys(controlBar).length) options.controlBar = controlBar;
   // iOS plays text in its own renderer; the tracks added below feed that one.
   if (props.subtitles) options.html5 = { nativeTextTracks: videojs.browser.IS_IOS };
 
@@ -227,7 +232,6 @@ async function create(): Promise<void> {
     cleanups.push(attachHotkeys(p, { scope: props.hotkeys, seekSeconds: skip || 10, extra: extraHotkeys }));
     cleanups.push(labelControlsWithHotkeys(p, extras.controlBar, skip));
   }
-  setSubtitles(props.subtitles);
 
   // Plugins that weigh something are fetched only when asked for.
   const sprite = spriteOptions(props.sprites, { mobile: isMobileViewport(), clip: props.clip });
@@ -257,6 +261,8 @@ async function create(): Promise<void> {
   if (pending.length) await Promise.all(pending);
   if (player !== created) return;
   load();
+  // After the source: video.js has no tech to add text tracks to before it (tracks.ts).
+  setSubtitles(props.subtitles);
 }
 
 function setClip(clip: Clip | undefined): void {

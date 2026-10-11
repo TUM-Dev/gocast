@@ -130,3 +130,71 @@ describe("WatchSidebar", () => {
     w.unmount();
   });
 });
+
+describe("WatchSidebar after the transcript has been opened", () => {
+  const VTT = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nHello\n";
+
+  const visiblePanels = (w: ReturnType<typeof mountSidebar>) =>
+    w.findAll("[role=tabpanel]").filter((p) => p.isVisible()).map((p) => p.attributes("id"));
+
+  async function expectEveryTabReachable(w: ReturnType<typeof mountSidebar>) {
+    for (const name of ["Chat", "Bookmarks", "Sections", "Transcript", "Search", "Chat"]) {
+      const tab = w.findAll("[role=tab]").find((t) => t.text() === name)!;
+      await tab.trigger("click");
+      await flushPromises();
+      expect(visiblePanels(w)).toEqual([`watch-panel-${name.toLowerCase()}`]);
+      expect(w.find("[role=tab][aria-selected=true]").text()).toBe(name);
+    }
+  }
+
+  it("still switches to every other tab", async () => {
+    routeFetch([
+      { path: /\/subtitles\/en$/, text: VTT },
+      { path: "/bookmarks", body: {} },
+      { path: /\/sections$/, body: {} },
+    ]);
+    const w = mountSidebar({ subtitleLanguages: ["en"] });
+    await expectEveryTabReachable(w);
+    w.unmount();
+  });
+
+  it("still switches when the subtitle fetch fails", async () => {
+    routeFetch([
+      { path: /\/subtitles\/en$/, status: 500 },
+      { path: "/bookmarks", body: {} },
+      { path: /\/sections$/, body: {} },
+    ]);
+    const w = mountSidebar({ subtitleLanguages: ["en"] });
+    await expectEveryTabReachable(w);
+    expect(w.find("#watch-panel-transcript [role=alert]").exists()).toBe(true);
+    w.unmount();
+  });
+
+  it("opens on the remembered transcript tab and leaves it again", async () => {
+    localStorage.setItem("watch.sidebarTab", "transcript");
+    routeFetch([{ path: /\/subtitles\/en$/, status: 500 }, { path: "/bookmarks", body: {} }]);
+    const w = mountSidebar({ subtitleLanguages: ["en"] });
+    await flushPromises();
+    expect(visiblePanels(w)).toEqual(["watch-panel-transcript"]);
+    await w.findAll("[role=tab]")[0].trigger("click");
+    await flushPromises();
+    expect(visiblePanels(w)).toEqual(["watch-panel-chat"]);
+    w.unmount();
+  });
+
+  it("keeps the tab strip from being squeezed out by a tall panel", () => {
+    // A transcript taller than the sidebar made the flex column shrink the strip (an
+    // overflow container's minimum height is 0) until the other tabs were unreachable.
+    const w = mountSidebar({ subtitleLanguages: ["en"] });
+    expect(w.find("[role=tablist]").classes()).toContain("shrink-0");
+    w.unmount();
+  });
+
+  it("drops a remembered transcript tab once the subtitles are gone", async () => {
+    localStorage.setItem("watch.sidebarTab", "transcript");
+    const w = mountSidebar({ subtitleLanguages: ["en"] });
+    await w.setProps({ subtitleLanguages: [] });
+    expect(visiblePanels(w)).toEqual(["watch-panel-chat"]);
+    w.unmount();
+  });
+});

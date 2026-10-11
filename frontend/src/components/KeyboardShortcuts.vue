@@ -16,26 +16,33 @@ const SHORTCUTS: { action: string; keys: string }[] = [
 </script>
 
 <template>
-  <div
-    v-show="open"
-    class="tum-live-popup-container"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Keyboard shortcuts"
-    @keydown.escape.window="emit('close')"
-  >
-    <div class="tum-live-popup tum-live-bg" @click.self="emit('close')">
-      <h2>
-        Keyboard Shortcuts
-        <button type="button" class="tum-live-icon-button p-1" title="Close" @click="emit('close')">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </h2>
-      <ul>
-        <li v-for="shortcut in SHORTCUTS" :key="shortcut.action">
-          <strong>{{ shortcut.action }}</strong> <b>{{ shortcut.keys }}</b>
-        </li>
-      </ul>
+  <!--
+    To <body> and above video.js: inside the watch page's action bar the popup shared a
+    stacking context with the player, whose positioned controls painted over it (it had
+    no z-index at all).
+  -->
+  <Teleport to="body">
+    <div
+      v-show="open"
+      class="tum-live-popup-container z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard shortcuts"
+      @keydown.escape.window="emit('close')"
+    >
+      <div class="tum-live-popup tum-live-bg" @click.self="emit('close')">
+        <h2>
+          Keyboard Shortcuts
+          <button type="button" class="tum-live-icon-button p-1" title="Close" @click="emit('close')">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </h2>
+        <ul>
+          <li v-for="shortcut in SHORTCUTS" :key="shortcut.action">
+            <strong>{{ shortcut.action }}</strong> <b>{{ shortcut.keys }}</b>
+          </li>
+        </ul>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>

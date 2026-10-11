@@ -5879,7 +5879,8 @@
           "format": "float"
         },
         "watched": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Absent: a plain progress report, which leaves the watched flag alone. true marks the\nstream watched, false clears the mark (\"unmark as watched\"). Optional so that the two\ncannot be confused: a report that merely carries false must not undo a mark."
         }
       }
     },

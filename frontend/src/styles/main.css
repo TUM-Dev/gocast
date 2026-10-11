@@ -239,8 +239,9 @@
     @apply fixed left-0 top-0 flex h-full w-full items-center justify-center bg-black/50;
   }
 
+  /* text-3: popups are teleported to <body>, which sets no text colour of its own. */
   .tum-live-popup {
-    @apply relative h-[70%] max-h-[600px] w-[70%] max-w-[800px] overflow-auto rounded-md p-5;
+    @apply text-3 relative h-[70%] max-h-[600px] w-[70%] max-w-[800px] overflow-auto rounded-md p-5;
   }
 
   .tum-live-popup h2 {

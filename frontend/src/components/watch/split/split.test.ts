@@ -9,6 +9,7 @@ function fakeController(init: { time?: number; paused?: boolean; rate?: number }
   const handlers = new Map<PlayerEvent, Set<() => void>>();
   const state = { time: init.time ?? 0, paused: init.paused ?? true, rate: init.rate ?? 1, muted: false };
   const api = {
+    isMuted: () => state.muted,
     play: vi.fn(async () => {
       state.paused = false;
     }),
@@ -75,6 +76,19 @@ describe("syncPlayers", () => {
     expect(b.raw.pause).toHaveBeenCalled();
   });
 
+  it("does not pause the primary when a pause interrupted the follower's play (a seek that stalls)", async () => {
+    const a = fakeController({ paused: false });
+    const b = fakeController();
+    const aborted = new Error("The play() request was interrupted by a call to pause()");
+    aborted.name = "AbortError";
+    b.raw.play.mockRejectedValue(aborted);
+    syncPlayers(a.api, b.api);
+    a.fire("play");
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(a.raw.pause).not.toHaveBeenCalled();
+  });
+
   it("holds the follower while the primary stalls and resumes it after", () => {
     const a = fakeController({ paused: false });
     const b = fakeController({ paused: false });
@@ -114,6 +128,93 @@ describe("syncPlayers", () => {
     expect(b.raw.seek).not.toHaveBeenCalled();
     stop();
     expect(a.count() + b.count()).toBe(0);
+  });
+});
+
+describe("seeking the pair", () => {
+  it("carries every seek of the primary to the follower, including quick successive ones", () => {
+    let clock = 0;
+    const a = fakeController({ time: 5, paused: false });
+    const b = fakeController({ time: 5, paused: false });
+    syncPlayers(a.api, b.api, { now: () => clock });
+    // The seekbar: a click, then a drag that ends moments later.
+    for (const t of [30, 31, 80]) {
+      a.state.time = t;
+      a.fire("seeked");
+      clock += 10;
+      expect(b.state.time).toBe(t);
+    }
+  });
+
+  it("follows a seek made through the controller (hotkeys, seek()) the same way", () => {
+    const a = fakeController({ time: 0, paused: true });
+    const b = fakeController({ time: 0, paused: true });
+    syncPlayers(a.api, b.api);
+    // seek() moves the primary; the player then reports it.
+    a.api.seek(120);
+    a.fire("seeked");
+    expect(b.raw.seek).toHaveBeenLastCalledWith(120);
+    expect(b.state.paused).toBe(true);
+  });
+
+  it("keeps a playing follower playing across a seek, holding it only while the primary buffers", () => {
+    const a = fakeController({ time: 0, paused: false });
+    const b = fakeController({ time: 0, paused: false });
+    syncPlayers(a.api, b.api);
+    a.state.time = 50;
+    a.fire("seeking");
+    a.fire("waiting");
+    expect(b.state.paused).toBe(true);
+    a.fire("seeked");
+    a.fire("playing");
+    expect(b.state.time).toBe(50);
+    expect(b.state.paused).toBe(false);
+  });
+
+  it("passes clip time through unchanged: both players have the same clip", () => {
+    // The clip's clock starts at 0 on both; the follower is seeked on that clock too.
+    const a = fakeController({ time: 0 });
+    const b = fakeController({ time: 0 });
+    syncPlayers(a.api, b.api);
+    a.state.time = 12.5;
+    a.fire("seeked");
+    expect(b.raw.seek).toHaveBeenLastCalledWith(12.5);
+  });
+
+  it("pulls a follower that fell behind a seek back even right after the last correction", () => {
+    let clock = 1000;
+    const a = fakeController({ time: 10, paused: false });
+    const b = fakeController({ time: 10, paused: false });
+    syncPlayers(a.api, b.api, { now: () => clock });
+    a.state.time = 60;
+    a.fire("seeked");
+    b.state.time = 10; // the follower's seek was lost (it had no metadata yet)
+    clock += CORRECTION_INTERVAL_MS + 1;
+    a.fire("timeupdate");
+    expect(b.state.time).toBe(60);
+  });
+});
+
+describe("the follower's sound", () => {
+  it("is muted once it has metadata and stays muted when something unmutes it", () => {
+    const a = fakeController();
+    const b = fakeController();
+    syncPlayers(a.api, b.api);
+    b.fire("loadedmetadata");
+    expect(b.state.muted).toBe(true);
+    b.state.muted = false; // a stored setting, a source reload
+    b.fire("volumechange");
+    expect(b.state.muted).toBe(true);
+  });
+
+  it("is untouched by the primary's volume changes", () => {
+    const a = fakeController();
+    const b = fakeController();
+    syncPlayers(a.api, b.api);
+    b.fire("loadedmetadata");
+    a.state.muted = false;
+    a.fire("volumechange");
+    expect(b.state.muted).toBe(true);
   });
 });
 

@@ -13,6 +13,10 @@ import { users } from "./seed";
  * the same course, 7 the live lecture of the signed-in-only games101 (prof2
  * administers it), 9 a recording in the enrolled-only bierkunde, and 17 the lecture of
  * bierkunde that starts within the half hour.
+ *
+ * Signed-in visits to stream 1 use studi3, never studi1: studi1's progress on that
+ * stream is seeded for visibility-course-page.spec.ts to assert on (see `watched`), and
+ * a spec that opens a recording as studi1 is one more way to disturb it.
  */
 
 test.describe("the watch page", () => {
@@ -32,15 +36,15 @@ test.describe("the watch page", () => {
   });
 
   test("switches the layout from the view menu", async ({ page }) => {
-    await login(page, users.studi1, "/w/brauereiwesen/1");
+    await login(page, users.studi3, "/w/brauereiwesen/1");
     await expect(page.getByTestId("watch-player")).toBeVisible();
 
-    await page.getByRole("button", { name: "Change view" }).click();
+    await page.getByRole("button", { name: /^Change view, current: / }).click();
     await page.getByRole("menuitemradio", { name: "Presentation only" }).click();
     await expect(page).toHaveURL(/\/w\/brauereiwesen\/1\/PRES$/);
     await expect(page.getByTestId("watch-player")).toBeVisible();
 
-    await page.getByRole("button", { name: "Change view" }).click();
+    await page.getByRole("button", { name: /^Change view, current: / }).click();
     await page.getByRole("menuitemradio", { name: "Split view" }).click();
     await expect(page).toHaveURL(/\/w\/brauereiwesen\/1\/SPLIT$/);
     await expect(page.getByTestId("split-view")).toBeVisible();
@@ -69,7 +73,7 @@ test.describe("the watch page", () => {
   });
 
   test("opens the add-bookmark form on the B key for a signed-in viewer", async ({ page }) => {
-    await login(page, users.studi1, "/w/brauereiwesen/1");
+    await login(page, users.studi3, "/w/brauereiwesen/1");
     await expect(page.getByTestId("watch-player")).toBeVisible();
     await page.getByTestId("watch-player").hover();
 
@@ -250,5 +254,85 @@ test.describe("the live management page", () => {
     const hop = await page.request.get("/admin/management/2/7", { maxRedirects: 0 });
 
     expect(hop.status()).not.toBe(301);
+  });
+});
+
+/**
+ * Stream 1 has German and English subtitles in the fixture (tum-live-starter.sql), so
+ * its sidebar offers the Transcript and Search tabs. Meilisearch is not part of the dev
+ * or CI stack, so search is only asserted to say it is unavailable, never on hits.
+ */
+test.describe("the watch page of a recording with subtitles", () => {
+  test("offers the subtitles in the player and serves them", async ({ page }) => {
+    await page.goto("/w/brauereiwesen/1");
+    await expect(page.getByTestId("watch-player")).toBeVisible();
+    // video.js builds the captions button only for a player that has text tracks. The
+    // class is on both the menu wrapper and its inner button, so take the wrapper.
+    await expect(page.locator(".vjs-control-bar > .vjs-subs-caps-button")).toBeAttached();
+
+    const res = await page.request.get("/api/v2/streams/brauereiwesen/1/subtitles/en");
+    expect(res.status()).toBe(200);
+    expect(await res.text()).toContain("Welcome to the lecture on brewing.");
+  });
+
+  test("lists the transcript and keeps the other tabs reachable afterwards", async ({ page }) => {
+    await login(page, users.studi3, "/w/brauereiwesen/1");
+    await page.getByTestId("open-sidebar").click();
+    await expect(page.getByRole("tab", { name: "Search" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Transcript" }).click();
+    await expect(page.getByRole("button", { name: /Welcome to the lecture on brewing\./ }).or(
+      page.getByRole("button", { name: /Willkommen zur Vorlesung/ }),
+    )).toBeVisible();
+
+    // The tab strip once got squeezed out of the sidebar by a tall transcript; it must
+    // still be on screen and every tab must still switch panels.
+    await expect(page.getByRole("tab", { name: "Bookmarks" })).toBeInViewport();
+    await page.getByRole("tab", { name: "Bookmarks" }).click();
+    await expect(page.getByRole("tab", { name: "Bookmarks", selected: true })).toBeVisible();
+    await expect(page.getByRole("tabpanel", { name: "Bookmarks" })).toBeVisible();
+    await expect(page.getByRole("tabpanel", { name: "Transcript" })).toBeHidden();
+    await page.getByRole("tab", { name: "Sections" }).click();
+    await expect(page.getByRole("tabpanel", { name: "Sections" })).toBeVisible();
+  });
+
+  test("says search is unavailable when there is no search service", async ({ page }) => {
+    await page.goto("/w/brauereiwesen/1");
+    await page.getByTestId("open-sidebar").click();
+    await page.getByRole("tab", { name: "Search" }).click();
+
+    await page.getByPlaceholder("Search in lecture").fill("Hopfen");
+    await expect(page.getByRole("status").filter({ hasText: /not available/i })).toBeVisible();
+  });
+
+  test("a recording without subtitles has neither tab", async ({ page }) => {
+    // Stream 11 is a private recording in the same course; it has no subtitle rows.
+    await login(page, users.prof1, "/w/brauereiwesen/11");
+    await page.getByTestId("open-sidebar").click();
+    await expect(page.getByRole("tab", { name: "Sections" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Transcript" })).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "Search" })).toHaveCount(0);
+  });
+
+  test("keeps the action bar menus inside a phone screen", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page, users.studi3, "/w/brauereiwesen/1");
+    await expect(page.getByTestId("watch-action-bar")).toBeVisible();
+
+    for (const name of ["Change view", "Attachments and downloads"]) {
+      const button = page.getByRole("button", { name });
+      if ((await button.count()) === 0) continue;
+      await button.click();
+      const box = await page.getByRole("menu", { name }).boundingBox();
+      expect(box, name).not.toBeNull();
+      expect(box!.x, `${name} left edge`).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width, `${name} right edge`).toBeLessThanOrEqual(390);
+      await page.keyboard.press("Escape");
+    }
+    // The view button carries the current view's name now; it must still fit the phone.
+    const view = page.getByRole("button", { name: /^Change view, current: / });
+    await expect(view).toBeVisible();
+    const box = await view.boundingBox();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   });
 });

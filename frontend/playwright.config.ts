@@ -38,6 +38,9 @@ export default defineConfig({
    *   own file.
    * - settings.spec.ts flips studi2's settings relative to whatever is stored; nothing
    *   else reads them.
+   * - Progress is per user and stream, and visibility-course-page.spec.ts asserts on
+   *   studi1's seeded progress in brauereiwesen (`watched` in e2e/seed.ts): no other
+   *   spec may open streams 1 or 2 as studi1. watch.spec.ts uses studi3 for stream 1.
    * - The audit log is the exception, since every write above appends to it:
    *   audits.spec.ts runs in a project of its own, before the rest (see `projects`).
    *

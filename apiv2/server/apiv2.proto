@@ -2055,7 +2055,10 @@ message GetProgressBatchRequest {
 message UpdateProgressRequest {
   uint32 stream_id = 1;
   float progress = 2;
-  bool watched = 3;
+  // Absent: a plain progress report, which leaves the watched flag alone. true marks the
+  // stream watched, false clears the mark ("unmark as watched"). Optional so that the two
+  // cannot be confused: a report that merely carries false must not undo a mark.
+  optional bool watched = 3;
 }
 
 ///////////////////////////////
