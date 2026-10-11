@@ -4,13 +4,22 @@ import { ref } from "vue";
 import {
   fetchActivePoll,
   fetchChatMessages,
+  sendMessage as postMessage,
+  toggleReaction as postReaction,
+  vote as postVote,
   toChatMessage,
   toChatPoll,
   toChatReaction,
   type ChatMessage,
   type ChatPoll,
+  type NewChatMessage,
 } from "@/lib/chat";
-import { RealtimeConnection, type RealtimeEvent, type RealtimeStatus } from "@/lib/realtime";
+import {
+  CLOSE_UNAUTHORIZED,
+  RealtimeConnection,
+  type RealtimeEvent,
+  type RealtimeStatus,
+} from "@/lib/realtime";
 
 /**
  * One stream's chat, kept current by the realtime socket.
@@ -36,10 +45,16 @@ export function useChatStore(streamId: number) {
     const status = ref<RealtimeStatus>("closed");
     const loaded = ref(false);
     const error = ref<string | undefined>(undefined);
-    /** The close code of a refusal that will not be retried: 4400, 4403 or 4404. */
+    /** The close code of a refusal that will not be retried: 4400, 4403, 4404, or a 4401 refused twice in a row. */
     const fatalCode = ref<number | undefined>(undefined);
     /** The close code of the last time the server hung up, until a connection holds. */
     const lastCloseCode = ref<number | undefined>(undefined);
+    /**
+     * The socket was refused because the session ended. The chat as last loaded stays
+     * readable, but nothing live arrives and nothing can be written until the user
+     * signs in again.
+     */
+    const sessionExpired = ref(false);
 
     let connection: RealtimeConnection | null = null;
     /** Events received while a snapshot is in flight, applied once it lands. */
@@ -68,9 +83,12 @@ export function useChatStore(streamId: number) {
         siblings.push(incoming);
         return;
       }
-      // An approval re-sends the message; keep any replies it arrived without.
-      const replies = incoming.replies.length > 0 ? incoming.replies : siblings[i]!.replies;
-      siblings[i] = { ...incoming, replies };
+      // An approval re-sends the message; keep any replies it arrived without. The
+      // event for an anonymous message leaves out its author, whom the response to
+      // sending it named to the author alone: keep that too.
+      const known = siblings[i]!;
+      const replies = incoming.replies.length > 0 ? incoming.replies : known.replies;
+      siblings[i] = { ...incoming, userId: incoming.userId ?? known.userId, replies };
     }
 
     function removeMessage(id: number): void {
@@ -169,7 +187,9 @@ export function useChatStore(streamId: number) {
         messages.value = m;
         activePoll.value = poll;
         loaded.value = true;
-        error.value = undefined;
+        // A snapshot that loads after the session ended must not hide the reason
+        // nothing live is arriving.
+        if (!sessionExpired.value) error.value = undefined;
       } catch (err) {
         if (mine !== generation) return;
         error.value = err instanceof Error ? err.message : String(err);
@@ -194,12 +214,40 @@ export function useChatStore(streamId: number) {
         onClose: (code) => (lastCloseCode.value = code),
         onFatal: (code, reason) => {
           fatalCode.value = code;
-          error.value = reason || "the chat is not available";
+          sessionExpired.value = code === CLOSE_UNAUTHORIZED;
+          error.value = sessionExpired.value
+            ? "your session has expired"
+            : reason || "the chat is not available";
           // Still worth showing what the chat holds; the read decides for itself.
           void snapshot();
         },
       });
       connection.connect();
+    }
+
+    /**
+     * Writes a message. The socket pushes it back to every viewer, this one included;
+     * adding the response now as well makes it appear without waiting, and the upsert
+     * makes the second arrival a no-op. Rejects with ChatCooldownError on a 429.
+     */
+    async function sendMessage(input: NewChatMessage): Promise<ChatMessage> {
+      const sent = await postMessage(streamId, input);
+      upsertMessage(sent);
+      return sent;
+    }
+
+    /** Reacts with an emoji, or takes the reaction back. */
+    async function toggleReaction(messageId: number, emoji: string): Promise<void> {
+      const reactions = await postReaction(streamId, messageId, emoji);
+      const m = findMessage(messageId);
+      if (m) m.reactions = reactions;
+    }
+
+    /** Votes in the running poll. */
+    async function vote(pollOptionId: number): Promise<void> {
+      const voted = await postVote(streamId, pollOptionId);
+      // Only if it is still the running poll: it may have closed meanwhile.
+      if (activePoll.value?.id === voted.id) activePoll.value = voted;
     }
 
     function stop(): void {
@@ -220,6 +268,10 @@ export function useChatStore(streamId: number) {
       error,
       fatalCode,
       lastCloseCode,
+      sessionExpired,
+      sendMessage,
+      toggleReaction,
+      vote,
       apply,
       snapshot,
       start,

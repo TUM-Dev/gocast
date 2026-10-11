@@ -5285,10 +5285,13 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ChatService_ListChatMessages_FullMethodName = "/protobuf.ChatService/listChatMessages"
-	ChatService_GetActivePoll_FullMethodName    = "/protobuf.ChatService/getActivePoll"
-	ChatService_ListPolls_FullMethodName        = "/protobuf.ChatService/listPolls"
-	ChatService_ListChatUsers_FullMethodName    = "/protobuf.ChatService/listChatUsers"
+	ChatService_ListChatMessages_FullMethodName   = "/protobuf.ChatService/listChatMessages"
+	ChatService_GetActivePoll_FullMethodName      = "/protobuf.ChatService/getActivePoll"
+	ChatService_ListPolls_FullMethodName          = "/protobuf.ChatService/listPolls"
+	ChatService_ListChatUsers_FullMethodName      = "/protobuf.ChatService/listChatUsers"
+	ChatService_SendChatMessage_FullMethodName    = "/protobuf.ChatService/sendChatMessage"
+	ChatService_ToggleChatReaction_FullMethodName = "/protobuf.ChatService/toggleChatReaction"
+	ChatService_VotePoll_FullMethodName           = "/protobuf.ChatService/votePoll"
 )
 
 // ChatServiceClient is the client API for ChatService service.
@@ -5299,6 +5302,9 @@ type ChatServiceClient interface {
 	GetActivePoll(ctx context.Context, in *GetActiveChatPollRequest, opts ...grpc.CallOption) (*GetActiveChatPollResponse, error)
 	ListPolls(ctx context.Context, in *ListChatPollsRequest, opts ...grpc.CallOption) (*ListChatPollsResponse, error)
 	ListChatUsers(ctx context.Context, in *ListChatUsersRequest, opts ...grpc.CallOption) (*ListChatUsersResponse, error)
+	SendChatMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*SendChatMessageResponse, error)
+	ToggleChatReaction(ctx context.Context, in *ToggleChatReactionRequest, opts ...grpc.CallOption) (*ToggleChatReactionResponse, error)
+	VotePoll(ctx context.Context, in *VoteChatPollRequest, opts ...grpc.CallOption) (*VoteChatPollResponse, error)
 }
 
 type chatServiceClient struct {
@@ -5349,6 +5355,36 @@ func (c *chatServiceClient) ListChatUsers(ctx context.Context, in *ListChatUsers
 	return out, nil
 }
 
+func (c *chatServiceClient) SendChatMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*SendChatMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendChatMessageResponse)
+	err := c.cc.Invoke(ctx, ChatService_SendChatMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) ToggleChatReaction(ctx context.Context, in *ToggleChatReactionRequest, opts ...grpc.CallOption) (*ToggleChatReactionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ToggleChatReactionResponse)
+	err := c.cc.Invoke(ctx, ChatService_ToggleChatReaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) VotePoll(ctx context.Context, in *VoteChatPollRequest, opts ...grpc.CallOption) (*VoteChatPollResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VoteChatPollResponse)
+	err := c.cc.Invoke(ctx, ChatService_VotePoll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility.
@@ -5357,6 +5393,9 @@ type ChatServiceServer interface {
 	GetActivePoll(context.Context, *GetActiveChatPollRequest) (*GetActiveChatPollResponse, error)
 	ListPolls(context.Context, *ListChatPollsRequest) (*ListChatPollsResponse, error)
 	ListChatUsers(context.Context, *ListChatUsersRequest) (*ListChatUsersResponse, error)
+	SendChatMessage(context.Context, *SendChatMessageRequest) (*SendChatMessageResponse, error)
+	ToggleChatReaction(context.Context, *ToggleChatReactionRequest) (*ToggleChatReactionResponse, error)
+	VotePoll(context.Context, *VoteChatPollRequest) (*VoteChatPollResponse, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -5378,6 +5417,15 @@ func (UnimplementedChatServiceServer) ListPolls(context.Context, *ListChatPollsR
 }
 func (UnimplementedChatServiceServer) ListChatUsers(context.Context, *ListChatUsersRequest) (*ListChatUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListChatUsers not implemented")
+}
+func (UnimplementedChatServiceServer) SendChatMessage(context.Context, *SendChatMessageRequest) (*SendChatMessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendChatMessage not implemented")
+}
+func (UnimplementedChatServiceServer) ToggleChatReaction(context.Context, *ToggleChatReactionRequest) (*ToggleChatReactionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ToggleChatReaction not implemented")
+}
+func (UnimplementedChatServiceServer) VotePoll(context.Context, *VoteChatPollRequest) (*VoteChatPollResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VotePoll not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 func (UnimplementedChatServiceServer) testEmbeddedByValue()                     {}
@@ -5472,6 +5520,60 @@ func _ChatService_ListChatUsers_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_SendChatMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendChatMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).SendChatMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_SendChatMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).SendChatMessage(ctx, req.(*SendChatMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_ToggleChatReaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ToggleChatReactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ToggleChatReaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ToggleChatReaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ToggleChatReaction(ctx, req.(*ToggleChatReactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_VotePoll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VoteChatPollRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).VotePoll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_VotePoll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).VotePoll(ctx, req.(*VoteChatPollRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -5494,6 +5596,18 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "listChatUsers",
 			Handler:    _ChatService_ListChatUsers_Handler,
+		},
+		{
+			MethodName: "sendChatMessage",
+			Handler:    _ChatService_SendChatMessage_Handler,
+		},
+		{
+			MethodName: "toggleChatReaction",
+			Handler:    _ChatService_ToggleChatReaction_Handler,
+		},
+		{
+			MethodName: "votePoll",
+			Handler:    _ChatService_VotePoll_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,7 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
-import { fetchActivePoll, fetchChatMessages, fetchChatUsers, fetchPolls } from "./chat";
+import {
+  ChatCooldownError,
+  fetchActivePoll,
+  fetchChatMessages,
+  fetchChatUsers,
+  fetchPolls,
+  sendMessage,
+  toggleReaction,
+  vote,
+} from "./chat";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -128,5 +137,118 @@ describe("fetchChatUsers", () => {
 
     expect(await fetchChatUsers(7)).toEqual([{ id: 3, name: "Studi" }]);
     expect(new URL(lastCall()[0], "http://x").pathname).toBe("/api/v2/streams/7/chat/users");
+  });
+});
+
+/** The body of the last request, parsed. */
+const lastBody = () => JSON.parse(String(lastCall()[1].body));
+
+describe("sendMessage", () => {
+  it("posts the message and returns it as stored", async () => {
+    respondWith({
+      message: {
+        id: 40,
+        userId: 3,
+        userName: "Anonymous",
+        messageHtml: "hi &lt;b&gt;",
+        messageText: "hi <b>",
+        visible: true,
+        replyTo: 30,
+        createdAt: "2026-10-11T10:00:00Z",
+      },
+    });
+
+    const msg = await sendMessage(7, { text: "hi <b>", replyTo: 30, anonymous: true, addressedTo: [9] });
+
+    const [url, init] = lastCall();
+    expect(new URL(url, "http://x").pathname).toBe("/api/v2/streams/7/chat/messages");
+    expect(init.method).toBe("POST");
+    expect(authHeader()).toBe("Bearer t");
+    expect(lastBody()).toMatchObject({
+      streamId: 7,
+      text: "hi <b>",
+      replyTo: 30,
+      anonymous: true,
+      addressedTo: [9],
+    });
+    expect(msg).toMatchObject({ id: 40, userId: 3, html: "hi &lt;b&gt;", text: "hi <b>", replyTo: 30 });
+  });
+
+  it("leaves reply_to out when the message is not a reply", async () => {
+    respondWith({ message: { id: 41 } });
+
+    await sendMessage(7, { text: "hi" });
+
+    expect(lastBody()).not.toHaveProperty("replyTo");
+  });
+
+  it("turns the cooldown's 429 into a ChatCooldownError", async () => {
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).endsWith("/auth/token")
+          ? new Response(JSON.stringify({ access_token: "t" }), { status: 200 })
+          : new Response(JSON.stringify({ code: 8, message: "too fast" }), { status: 429 }),
+      ),
+    );
+
+    await expect(sendMessage(7, { text: "hi" })).rejects.toBeInstanceOf(ChatCooldownError);
+  });
+
+  it("leaves other failures as they are", async () => {
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).endsWith("/auth/token")
+          ? new Response(JSON.stringify({ access_token: "t" }), { status: 200 })
+          : new Response(JSON.stringify({ code: 3, message: "message too long" }), { status: 400 }),
+      ),
+    );
+
+    const err = await sendMessage(7, { text: "hi" }).catch((e: unknown) => e);
+
+    expect(err).not.toBeInstanceOf(ChatCooldownError);
+    expect(err).toMatchObject({ status: 400, message: "message too long" });
+  });
+});
+
+describe("toggleReaction", () => {
+  it("posts the emoji to the message and returns its reactions", async () => {
+    respondWith({ reactions: [{ emoji: "tada", count: 1, userIds: [3], userNames: ["A"] }] });
+
+    const reactions = await toggleReaction(7, 30, "tada");
+
+    const [url, init] = lastCall();
+    expect(new URL(url, "http://x").pathname).toBe("/api/v2/streams/7/chat/messages/30/reactions");
+    expect(init.method).toBe("POST");
+    expect(lastBody()).toMatchObject({ streamId: 7, messageId: 30, emoji: "tada" });
+    expect(reactions).toEqual([{ emoji: "tada", count: 1, userIds: [3], userNames: ["A"] }]);
+  });
+
+  it("returns no reactions once the last one is taken back", async () => {
+    respondWith({});
+
+    expect(await toggleReaction(7, 30, "tada")).toEqual([]);
+  });
+});
+
+describe("vote", () => {
+  it("posts the option and returns the poll with the caller's vote", async () => {
+    respondWith({
+      poll: {
+        id: 60,
+        question: "Q?",
+        active: true,
+        options: [{ id: 601, answer: "yes" }, { id: 602, answer: "no" }],
+        votedOptionId: 601,
+      },
+    });
+
+    const poll = await vote(7, 601);
+
+    const [url, init] = lastCall();
+    expect(new URL(url, "http://x").pathname).toBe("/api/v2/streams/7/chat/polls/votes");
+    expect(init.method).toBe("POST");
+    expect(lastBody()).toMatchObject({ streamId: 7, pollOptionId: 601 });
+    expect(poll).toMatchObject({ id: 60, votedOptionId: 601 });
+    expect(poll.options.map((o) => o.id)).toEqual([601, 602]);
   });
 });

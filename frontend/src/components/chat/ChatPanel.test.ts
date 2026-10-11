@@ -21,6 +21,7 @@ vi.mock("@/lib/chat", async (importOriginal) => ({
 
 // The socket is driven by hand: the panel only sees what the store makes of it.
 vi.mock("@/lib/realtime", () => ({
+  CLOSE_UNAUTHORIZED: 4401,
   RealtimeConnection: class {
     connect = vi.fn();
     close = vi.fn();

@@ -187,6 +187,39 @@ describe("RealtimeConnection", () => {
     expect(options.onFatal).not.toHaveBeenCalled();
   });
 
+  it("gives up on a token refused twice in a row: the session is gone", async () => {
+    const { options } = connect();
+    await settle();
+
+    latest().drop(4401, "token is expired");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(FakeSocket.instances).toHaveLength(2);
+    expect(options.getToken).toHaveBeenCalledTimes(2); // re-minted for the retry
+
+    latest().drop(4401, "token is expired");
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    expect(FakeSocket.instances).toHaveLength(2);
+    expect(options.onFatal).toHaveBeenCalledWith(4401, "token is expired");
+    expect(options.onStatus).toHaveBeenLastCalledWith("closed");
+  });
+
+  it("counts only refusals in a row: a subscription in between starts afresh", async () => {
+    const { options } = connect();
+    await settle();
+
+    latest().drop(4401, "expired");
+    await vi.advanceTimersByTimeAsync(1000);
+    latest().receive({ viewers: {} }); // the retry worked
+    latest().drop(1006);
+    await vi.advanceTimersByTimeAsync(1000);
+    latest().drop(4401, "expired"); // the first of a new run
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(FakeSocket.instances).toHaveLength(4);
+    expect(options.onFatal).not.toHaveBeenCalled();
+  });
+
   it("stays closed after close()", async () => {
     const { conn } = connect();
     await settle();

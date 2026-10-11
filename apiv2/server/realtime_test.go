@@ -159,6 +159,39 @@ func TestRealtimeSocket(t *testing.T) {
 		}
 	})
 
+	t.Run("falls back to the first frame when the session cookie does not verify", func(t *testing.T) {
+		// The browser keeps sending an expired cookie and the SPA cannot clear it, so
+		// the cookie winning would refuse a client that has a fresh token to present.
+		srv, _ := realtimeServer(t, "public")
+		url := "ws" + strings.TrimPrefix(srv.URL, "http") + "/api/v2/realtime?stream=7"
+		conn, _, err := websocket.DefaultDialer.Dial(url, http.Header{"Cookie": {"jwt=expired-or-garbage"}})
+		if err != nil {
+			t.Fatalf("dial: %v", err)
+		}
+		t.Cleanup(func() { conn.Close() })
+		if err := conn.WriteMessage(websocket.TextMessage, []byte(`{}`)); err != nil {
+			t.Fatal(err)
+		}
+
+		if got := readEvent(t, conn).GetViewers().GetViewers(); got != 1 {
+			t.Fatalf("first frame's viewers = %d, want 1", got)
+		}
+	})
+
+	t.Run("still refuses a bad token in the first frame behind a bad cookie", func(t *testing.T) {
+		srv, _ := realtimeServer(t, "public")
+		url := "ws" + strings.TrimPrefix(srv.URL, "http") + "/api/v2/realtime?stream=7"
+		conn, _, err := websocket.DefaultDialer.Dial(url, http.Header{"Cookie": {"jwt=expired-or-garbage"}})
+		if err != nil {
+			t.Fatalf("dial: %v", err)
+		}
+		t.Cleanup(func() { conn.Close() })
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`{"token":"not-a-jwt"}`))
+		if code := closeCode(t, conn); code != 4401 {
+			t.Errorf("close code = %d, want 4401", code)
+		}
+	})
+
 	t.Run("refuses a first frame that is not a credentials frame", func(t *testing.T) {
 		srv, _ := realtimeServer(t, "public")
 		conn := dialRealtime(t, srv, "stream=7")

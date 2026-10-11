@@ -4376,6 +4376,93 @@
         "tags": [
           "Chat"
         ]
+      },
+      "post": {
+        "summary": "Write a message in a stream's chat.",
+        "description": "Answers 429 while the caller is cooling down: more than five messages in two minutes, course administrators excepted. In a moderated chat the message waits for approval and only its author and the course's administrators see it. The message is also pushed over the realtime socket.",
+        "operationId": "ChatService_sendChatMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufSendChatMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServicesendChatMessageBody"
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/messages/{messageId}/reactions": {
+      "post": {
+        "summary": "React to a message, or take the reaction back.",
+        "description": "Reacting twice with the same emoji removes the reaction.",
+        "operationId": "ChatService_toggleChatReaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufToggleChatReactionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServicetoggleChatReactionBody"
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
       }
     },
     "/streams/{streamId}/chat/polls": {
@@ -4437,6 +4524,47 @@
             "required": true,
             "type": "integer",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/polls/votes": {
+      "post": {
+        "summary": "Vote in a stream's running poll.",
+        "description": "One vote per poll and user, final. 404 when the option is not part of the running poll, which includes a poll that has closed.",
+        "operationId": "ChatService_votePoll",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufVoteChatPollResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServicevotePollBody"
+            }
           }
         ],
         "tags": [
@@ -4804,6 +4932,50 @@
       "type": "object",
       "properties": {
         "role": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "ChatServicesendChatMessageBody": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "At most 1000 bytes once trimmed, and not empty."
+        },
+        "replyTo": {
+          "type": "integer",
+          "format": "int64",
+          "description": "A top-level message of the same stream; replies cannot be replied to."
+        },
+        "anonymous": {
+          "type": "boolean",
+          "description": "Hides the author's name from the other viewers. Refused with 400 where the\ncourse does not allow anonymous messages, rather than posting under the name."
+        },
+        "addressedTo": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "description": "Users to @-mention, at most 20."
+        }
+      }
+    },
+    "ChatServicetoggleChatReactionBody": {
+      "type": "object",
+      "properties": {
+        "emoji": {
+          "type": "string",
+          "description": "One of +1, -1, smile, tada, confused, heart, eyes."
+        }
+      }
+    },
+    "ChatServicevotePollBody": {
+      "type": "object",
+      "properties": {
+        "pollOptionId": {
           "type": "integer",
           "format": "int64"
         }
@@ -7709,6 +7881,15 @@
         }
       }
     },
+    "protobufSendChatMessageResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/protobufChatMessage",
+          "description": "As stored. Also pushed to the stream's viewers as a ChatMessageEvent."
+        }
+      }
+    },
     "protobufServerNotification": {
       "type": "object",
       "properties": {
@@ -7975,6 +8156,19 @@
         },
         "watched": {
           "type": "boolean"
+        }
+      }
+    },
+    "protobufToggleChatReactionResponse": {
+      "type": "object",
+      "properties": {
+        "reactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufChatReactionSummary"
+          },
+          "description": "The message's reactions after the toggle, as pushed in the ChatReactionsEvent."
         }
       }
     },
@@ -8264,6 +8458,15 @@
         },
         "markedFinished": {
           "type": "boolean"
+        }
+      }
+    },
+    "protobufVoteChatPollResponse": {
+      "type": "object",
+      "properties": {
+        "poll": {
+          "$ref": "#/definitions/protobufChatPoll",
+          "description": "The poll with the caller's vote; vote counts as in getActivePoll."
         }
       }
     },

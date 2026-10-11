@@ -94,7 +94,7 @@ func (a *API) serveRealtime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	md, err := realtimeCredentials(conn, r)
+	md, err := a.realtimeCredentials(conn, r)
 	if err != nil {
 		closeRealtime(conn, closeCodeBase+http.StatusUnauthorized, err.Error())
 		return
@@ -132,17 +132,23 @@ func (a *API) serveRealtime(w http.ResponseWriter, r *http.Request) {
 }
 
 // realtimeCredentials returns what to authenticate the socket with, in the metadata
-// shape resolveCurrent reads. The session cookie is used when present; otherwise the
-// client's first frame must arrive within realtimeAuthTimeout and carry a bearer
-// token, or no token for an anonymous viewer. A first frame sent despite a cookie is
-// read and ignored with the rest.
-func realtimeCredentials(conn *websocket.Conn, r *http.Request) (metadata.MD, error) {
+// shape resolveCurrent reads. A session cookie that still verifies is used as is.
+// Otherwise the client's first frame must arrive within realtimeAuthTimeout and carry
+// a bearer token, or no token for an anonymous viewer. A first frame sent despite a
+// good cookie is read and ignored with the rest.
+//
+// A cookie that is present but expired or invalid counts as no cookie. The browser
+// keeps sending it, and the SPA cannot clear an HttpOnly cookie, so refusing it with
+// 4401 would lock a client out that holds a fresh token for the first frame.
+func (a *API) realtimeCredentials(conn *websocket.Conn, r *http.Request) (metadata.MD, error) {
 	md := metadata.MD{}
 
 	cookies := r.Header.Get("Cookie")
-	if _, err := extractTokenFromCookie(cookies); err == nil {
-		md.Set("grpcgateway-cookie", cookies)
-		return md, nil
+	if token, err := extractTokenFromCookie(cookies); err == nil {
+		if _, err := a.parseJWT(token); err == nil {
+			md.Set("grpcgateway-cookie", cookies)
+			return md, nil
+		}
 	}
 
 	conn.SetReadLimit(realtimeMaxClientFrame)

@@ -7,21 +7,29 @@ import type { ChatMessage, ChatPoll } from "@/lib/chat";
 import type { RealtimeOptions } from "@/lib/realtime";
 import { useChatStore } from "./chat";
 
-const { fetchChatMessages, fetchActivePoll, connections } = vi.hoisted(() => ({
-  fetchChatMessages: vi.fn(),
-  fetchActivePoll: vi.fn(),
-  connections: [] as { options: RealtimeOptions; connect: () => void; close: () => void }[],
-}));
+const { fetchChatMessages, fetchActivePoll, sendMessage, toggleReaction, vote, connections } =
+  vi.hoisted(() => ({
+    fetchChatMessages: vi.fn(),
+    fetchActivePoll: vi.fn(),
+    sendMessage: vi.fn(),
+    toggleReaction: vi.fn(),
+    vote: vi.fn(),
+    connections: [] as { options: RealtimeOptions; connect: () => void; close: () => void }[],
+  }));
 
 vi.mock("@/lib/chat", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/chat")>()),
   fetchChatMessages,
   fetchActivePoll,
+  sendMessage,
+  toggleReaction,
+  vote,
 }));
 
 // The connection's own behaviour is realtime.test.ts's; here it is only the source of
 // events and resyncs, driven by hand.
 vi.mock("@/lib/realtime", () => ({
+  CLOSE_UNAUTHORIZED: 4401,
   RealtimeConnection: class {
     connect = vi.fn();
     close = vi.fn();
@@ -206,6 +214,32 @@ describe("the chat store", () => {
     expect(connections[0]!.close).toHaveBeenCalled();
   });
 
+  it("says so when the session ended, and keeps saying so after the snapshot", async () => {
+    fetchChatMessages.mockResolvedValueOnce([message(1)]);
+    fetchActivePoll.mockResolvedValueOnce(undefined);
+    const store = useChatStore(7);
+    store.start();
+
+    connections[0]!.options.onFatal!(4401, "token is expired");
+
+    await vi.waitFor(() => expect(store.loaded).toBe(true));
+    expect(store.sessionExpired).toBe(true);
+    expect(store.error).toBe("your session has expired");
+    expect(store.messages.map((m) => m.id)).toEqual([1]); // still readable
+  });
+
+  it("does not call a refused stream an expired session", async () => {
+    fetchChatMessages.mockRejectedValueOnce(new Error("not allowed"));
+    fetchActivePoll.mockResolvedValueOnce(undefined);
+    const store = useChatStore(7);
+    store.start();
+
+    connections[0]!.options.onFatal!(4403, "User is not eligible");
+
+    await vi.waitFor(() => expect(store.error).toBe("not allowed"));
+    expect(store.sessionExpired).toBe(false);
+  });
+
   it("is one store per stream", () => {
     expect(useChatStore(7)).toBe(useChatStore(7));
     expect(useChatStore(7)).not.toBe(useChatStore(8));
@@ -233,5 +267,88 @@ describe("the chat store's connection state", () => {
 
     expect(store.fatalCode).toBe(4404);
     expect(store.error).toBe("stream not found");
+  });
+});
+
+describe("writing", () => {
+  it("shows a sent message at once and dedupes the pushed copy by id", async () => {
+    const { store } = await started();
+    sendMessage.mockResolvedValueOnce(message(5, { text: "mine", userId: 3, userName: "Anonymous" }));
+
+    const sent = await store.sendMessage({ text: "mine" });
+
+    expect(sendMessage).toHaveBeenCalledWith(7, { text: "mine" });
+    expect(sent.id).toBe(5);
+    expect(store.messages.map((m) => m.id)).toEqual([1, 5]);
+
+    // The hub pushes the same message back, without the anonymous author's id.
+    store.apply(event({ message: { message: { id: 5, userName: "Anonymous", messageHtml: "mine" } } }));
+    expect(store.messages.map((m) => m.id)).toEqual([1, 5]);
+    expect(store.messages[1]!.userId).toBe(3);
+  });
+
+  it("does not duplicate a message the socket delivered first", async () => {
+    const { store } = await started();
+    store.apply(event({ message: { message: { id: 5, messageHtml: "mine" } } }));
+    sendMessage.mockResolvedValueOnce(message(5, { text: "mine" }));
+
+    await store.sendMessage({ text: "mine" });
+
+    expect(store.messages.map((m) => m.id)).toEqual([1, 5]);
+  });
+
+  it("nests a sent reply under its parent", async () => {
+    const { store } = await started();
+    sendMessage.mockResolvedValueOnce(message(6, { replyTo: 1 }));
+
+    await store.sendMessage({ text: "re", replyTo: 1 });
+
+    expect(store.messages[0]!.replies.map((r) => r.id)).toEqual([2, 6]);
+  });
+
+  it("passes a failed send on and changes nothing", async () => {
+    const { store } = await started();
+    sendMessage.mockRejectedValueOnce(new Error("too fast"));
+
+    await expect(store.sendMessage({ text: "x" })).rejects.toThrow("too fast");
+
+    expect(store.messages.map((m) => m.id)).toEqual([1]);
+    expect(store.error).toBeUndefined();
+  });
+
+  it("replaces a message's reactions with the answer", async () => {
+    const { store } = await started();
+    toggleReaction.mockResolvedValueOnce([{ emoji: "tada", count: 1, userIds: [3], userNames: ["A"] }]);
+
+    await store.toggleReaction(1, "tada");
+
+    expect(toggleReaction).toHaveBeenCalledWith(7, 1, "tada");
+    expect(store.messages[0]!.reactions.map((r) => r.emoji)).toEqual(["tada"]);
+
+    toggleReaction.mockResolvedValueOnce([]);
+    await store.toggleReaction(1, "tada");
+    expect(store.messages[0]!.reactions).toEqual([]);
+  });
+
+  it("marks the caller's vote on the running poll", async () => {
+    const { store } = await started();
+    vote.mockResolvedValueOnce({ ...structuredClone(poll), votedOptionId: 21 });
+
+    await store.vote(21);
+
+    expect(vote).toHaveBeenCalledWith(7, 21);
+    expect(store.activePoll?.votedOptionId).toBe(21);
+  });
+
+  it("ignores a vote's answer for a poll that has closed meanwhile", async () => {
+    const { store } = await started();
+    vote.mockImplementationOnce(async () => {
+      store.apply(event({ pollClosed: { poll: { id: 11, question: "Weißbier?", active: false } } }));
+      return { ...structuredClone(poll), votedOptionId: 21 };
+    });
+
+    await store.vote(21);
+
+    expect(store.activePoll).toBeUndefined();
   });
 });
