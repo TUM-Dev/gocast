@@ -179,4 +179,3 @@ func (a *API) sendStreamFile(c *gin.Context, file model.File, download bool) {
 	// ServeContent answers Range, If-Range and If-Modified-Since from the reader.
 	http.ServeContent(c.Writer, c.Request, name, info.ModTime().Truncate(time.Second), f)
 }
-
