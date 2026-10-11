@@ -72,7 +72,10 @@ test.describe("the player's skin", () => {
     await openPlayer(page);
     const light = await accent(page);
 
+    // index.html applies the system theme before first paint; a live change of the
+    // system setting is only followed once the theme store exists, so reload.
     await page.emulateMedia({ colorScheme: "dark" });
+    await page.reload();
     await expect(page.locator("html")).toHaveClass(/\bdark\b/);
     await expect.poll(() => accent(page)).not.toBe(light);
   });
