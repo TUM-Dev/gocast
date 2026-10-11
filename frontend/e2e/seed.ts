@@ -358,3 +358,13 @@ export const dynamicInfoPage = { slug: "accessibility", title: "Accessibility", 
 export const tokens = {
   seeded: { id: 1, owner: users.admin.username, scope: "admin" },
 } as const;
+
+/**
+ * The course short links in the dump (`/<link>`), one per visibility that gates a
+ * lecture. Each course has a live or upcoming lecture, which is where the link goes.
+ */
+export const shortLinks = {
+  brauereiwesen: "brauer",
+  games101: "games",
+  bierkunde: "bier",
+} as const satisfies Partial<Record<CourseKey, string>>;
