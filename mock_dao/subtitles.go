@@ -112,3 +112,18 @@ func (mr *MockSubtitlesDaoMockRecorder) GetByStreamIDandLang(arg0, arg1, arg2 an
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamIDandLang", reflect.TypeOf((*MockSubtitlesDao)(nil).GetByStreamIDandLang), arg0, arg1, arg2)
 }
+
+// GetLanguagesByStreamID mocks base method.
+func (m *MockSubtitlesDao) GetLanguagesByStreamID(arg0 context.Context, arg1 uint) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLanguagesByStreamID", arg0, arg1)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLanguagesByStreamID indicates an expected call of GetLanguagesByStreamID.
+func (mr *MockSubtitlesDaoMockRecorder) GetLanguagesByStreamID(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLanguagesByStreamID", reflect.TypeOf((*MockSubtitlesDao)(nil).GetLanguagesByStreamID), arg0, arg1)
+}

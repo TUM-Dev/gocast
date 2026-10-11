@@ -13,6 +13,10 @@ import (
 
 const maxChunksPerVideo = 150
 
+// SeekHeatmapChunks is into how many equal slices a recording's seeks are counted;
+// chunk indexes run from 0 to SeekHeatmapChunks - 1.
+const SeekHeatmapChunks = maxChunksPerVideo
+
 // ErrPositionOutOfRange is returned when a reported seek position exceeds the stream duration.
 var ErrPositionOutOfRange = errors.New("position is bigger than stream duration")
 
@@ -40,7 +44,9 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 	}
 
 	chunkTimeRange := float64(stream.Duration.Int32) / maxChunksPerVideo
-	chunk := uint(pos / chunkTimeRange)
+	// A seek to the very end is exactly the duration, which would land one past the
+	// last chunk.
+	chunk := min(uint(pos/chunkTimeRange), maxChunksPerVideo-1)
 
 	return DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "chunk_index"}, {Name: "stream_id"}},
