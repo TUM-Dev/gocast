@@ -14,7 +14,7 @@ const state = vi.hoisted(() => ({
   handlers: {} as Record<string, () => void>,
 }));
 vi.mock("vue-router", () => ({ useRoute: () => state.route }));
-vi.mock("@/lib/watch-admin", () => ({ fetchStreamWatch: state.fetch }));
+vi.mock("@/lib/watch", () => ({ fetchStreamWatch: state.fetch }));
 vi.mock("@/lib/realtime", () => ({
   RealtimeConnection: class {
     on() {}

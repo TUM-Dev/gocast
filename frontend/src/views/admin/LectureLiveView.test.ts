@@ -7,7 +7,6 @@ import { defineComponent, h } from "vue";
 
 import { RealtimeEventSchema, StreamWatchSchema, WatchViewKind, type RealtimeEvent } from "@/gen/server/apiv2_pb";
 import { ApiError } from "@/lib/api";
-import { LIVE_EVENT_SOURCE } from "@/lib/watch-admin-live";
 import LectureLiveView from "./LectureLiveView.vue";
 
 const m = vi.hoisted(() => ({
@@ -15,12 +14,21 @@ const m = vi.hoisted(() => ({
   reactions: vi.fn(),
   courseLoad: vi.fn(),
   seekToLive: vi.fn(),
+  push: (() => {}) as (e: RealtimeEvent) => void,
 }));
 vi.mock("vue-router", () => ({ useRoute: () => ({ params: { courseID: "3", streamID: "7" } }) }));
-vi.mock("@/lib/watch-admin", async (orig) => ({
-  ...(await orig<typeof import("@/lib/watch-admin")>()),
-  fetchStreamWatch: m.fetchWatch,
+vi.mock("@/lib/watch", async (orig) => ({ ...(await orig<typeof import("@/lib/watch")>()), fetchStreamWatch: m.fetchWatch }));
+vi.mock("@/lib/watch-actions", async (orig) => ({
+  ...(await orig<typeof import("@/lib/watch-actions")>()),
   fetchAllowedReactions: m.reactions,
+}));
+vi.mock("@/stores/streamRealtime", () => ({
+  useStreamRealtime: () => ({
+    subscribe: (s: { onEvent: (e: RealtimeEvent) => void }) => {
+      m.push = s.onEvent;
+      return () => {};
+    },
+  }),
 }));
 vi.mock("@/stores/auth", () => ({
   useAuthStore: () => ({ load: () => Promise.resolve({ id: 1 }) }),
@@ -59,14 +67,8 @@ function watchData(live = true, over: Record<string, unknown> = {}) {
   });
 }
 
-let push: (e: RealtimeEvent) => void;
-const mountIt = () => {
-  const source = (h: (e: RealtimeEvent) => void) => {
-    push = h;
-    return () => {};
-  };
-  return mount(LectureLiveView, { global: { stubs, provide: { [LIVE_EVENT_SOURCE as symbol]: source } } });
-};
+const push = (e: RealtimeEvent) => m.push(e);
+const mountIt = () => mount(LectureLiveView, { global: { stubs } });
 
 beforeEach(() => {
   setActivePinia(createPinia());

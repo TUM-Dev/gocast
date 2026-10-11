@@ -16,11 +16,22 @@ const { fetchStreamWatch, holder } = vi.hoisted(() => ({
 
 vi.mock("@/lib/watch", async (orig) => ({ ...(await orig<typeof import("@/lib/watch")>()), fetchStreamWatch }));
 vi.mock("@/lib/config", () => ({ fetchConfig: () => Promise.resolve({ title: "TUM-Live" }) }));
-vi.mock("@/stores/chat", async () => {
+vi.mock("@/stores/streamRealtime", async () => {
   const { reactive } = await import("vue");
-  holder.chat = reactive({ start: () => {}, stop: () => {}, live: undefined, title: undefined, descriptionHtml: undefined, viewers: 0 });
-  return { useChatStore: () => holder.chat };
+  holder.chat = reactive({ subscribe: () => () => {}, live: undefined, title: undefined, descriptionHtml: undefined, viewers: 0 });
+  return { useStreamRealtime: () => holder.chat };
 });
+// The regions below have their own tests; here they only need to not call the API.
+vi.mock("@/components/watch/panels/WatchSidebar.vue", () => ({ default: { template: "<div data-testid='sidebar' />" } }));
+vi.mock("@/components/watch/actions/WatchActionBar.vue", () => ({ default: { template: "<div data-testid='action-bar' />" } }));
+vi.mock("@/components/watch/seekbar/SeekbarOverlay.vue", () => ({ default: { template: "<div />" } }));
+vi.mock("@/components/watch/admin/WatchAdminStrip.vue", () => ({ default: { template: "<div data-testid='admin-strip' />" } }));
+vi.mock("@/components/watch/split/SplitView.vue", () => ({ default: { template: "<div data-testid='split' />" } }));
+vi.mock("@/lib/watch-actions", async (orig) => ({
+  ...(await orig<typeof import("@/lib/watch-actions")>()),
+  fetchSections: () => Promise.resolve([]),
+  fetchSeekHeatmap: () => Promise.resolve([]),
+}));
 vi.mock("@/components/chat/ChatPanel.vue", () => ({ default: { template: "<div data-testid='chat' />" } }));
 vi.mock("@/components/watch/WatchPlayer.vue", () => ({
   default: { props: ["view", "live", "startTime", "clip"], template: "<div data-testid='player' :data-src='view.playlistUrl' :data-live='live' :data-start='startTime' />" },
