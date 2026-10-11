@@ -10,10 +10,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/TUM-Dev/gocast/api"
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/workergrpc"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
@@ -90,7 +90,7 @@ func (a *API) GenerateMaintenanceThumbnails(ctx context.Context, req *emptypb.Em
 					if file.Type != model.FILETYPE_VOD {
 						continue
 					}
-					if err := api.RegenerateThumbs(daoWrapper, file, &stream, &course); err != nil {
+					if err := workergrpc.RegenerateThumbs(daoWrapper, file, &stream, &course); err != nil {
 						a.log.Error("maintenance: can't regenerate thumbnail",
 							"streamID", stream.ID, "file", file.Path, "err", err)
 						continue

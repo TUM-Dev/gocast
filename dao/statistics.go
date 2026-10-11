@@ -24,7 +24,6 @@ type StatisticsDao interface {
 	GetCourseStatsWeekdays(courseID uint) ([]Stat, error)
 	GetCourseStatsHourly(courseID uint) ([]Stat, error)
 	GetLectureStatsWeekdays(courseID uint, streamID uint) ([]Stat, error)
-	GetLectureStatsHourly(courseID uint, streamID uint) ([]Stat, error)
 	GetLectureStats(courseID uint, lectureID uint) ([]Stat, error)
 	GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error)
 	GetStreamNumLiveViews(streamID uint) (int, error)
@@ -145,18 +144,6 @@ func (d statisticsDao) GetLectureStatsWeekdays(courseID uint, streamID uint) ([]
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0 AND stats.stream_id = ?
 		GROUP BY DAYOFWEEK(stats.time);`,
-		courseID, courseID, streamID).Scan(&res).Error
-	return res, err
-}
-
-// GetLectureStatsHourly returns the hours with most vod viewing activity of a lecture
-func (d statisticsDao) GetLectureStatsHourly(courseID uint, streamID uint) ([]Stat, error) {
-	var res []Stat
-	err := DB.Raw(`SELECT HOUR(stats.time) AS x, SUM(stats.viewers) as y
-		FROM stats
-			JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? or ? = 0) AND stats.live = 0 AND stats.stream_id = ?
-		GROUP BY HOUR(stats.time);`,
 		courseID, courseID, streamID).Scan(&res).Error
 	return res, err
 }

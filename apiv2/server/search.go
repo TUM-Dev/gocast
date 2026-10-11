@@ -8,16 +8,16 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/TUM-Dev/gocast/api"
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/search"
 )
 
-// Search is what the search RPC runs on; api.SearchCatalog in production, which
+// Search is what the search RPC runs on; search.SearchCatalog in production, which
 // carries v1's filters so both APIs find the same things.
 type Search interface {
-	Search(ctx context.Context, user *model.User, query string, limit int64, scope api.SearchScope) (api.SearchHits, error)
+	Search(ctx context.Context, user *model.User, query string, limit int64, scope search.SearchScope) (search.SearchHits, error)
 }
 
 // WithSearch gives the API its search. Without one, searching answers 503.
@@ -52,25 +52,25 @@ func (a *API) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobu
 		limit = searchMaxLimit
 	}
 
-	scope := api.SearchScope{CoursesOnly: req.GetCoursesOnly()}
-	if scope.Semesters, err = api.ParseSemesterKeys(req.GetSemesters()); err != nil {
+	scope := search.SearchScope{CoursesOnly: req.GetCoursesOnly()}
+	if scope.Semesters, err = search.ParseSemesterKeys(req.GetSemesters()); err != nil {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("semesters are written like 2022S"))
 	}
 	if (req.GetFirstSemester() == "") != (req.GetLastSemester() == "") {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("first_semester and last_semester go together"))
 	}
 	if req.GetFirstSemester() != "" {
-		bounds, err := api.ParseSemesterKeys([]string{req.GetFirstSemester(), req.GetLastSemester()})
+		bounds, err := search.ParseSemesterKeys([]string{req.GetFirstSemester(), req.GetLastSemester()})
 		if err != nil {
 			return nil, e.WithStatus(http.StatusBadRequest, errors.New("semesters are written like 2022S"))
 		}
 		scope.FirstSemester, scope.LastSemester = &bounds[0], &bounds[1]
 	}
-	if len(req.GetCourses()) > api.FilterMaxCoursesCount {
+	if len(req.GetCourses()) > search.FilterMaxCoursesCount {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("at most three courses can be searched at once"))
 	}
-	courses, err := api.ParseCourseKeys(ctx, a.dao, req.GetCourses())
-	if errors.Is(err, api.ErrUnknownCourse) {
+	courses, err := search.ParseCourseKeys(ctx, a.dao, req.GetCourses())
+	if errors.Is(err, search.ErrUnknownCourse) {
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("no such course"))
 	}
 	if err != nil {
@@ -86,7 +86,7 @@ func (a *API) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobu
 	scope.Courses = courses
 
 	hits, err := a.search.Search(ctx, user, query, limit, scope)
-	if errors.Is(err, api.ErrSearchUnavailable) {
+	if errors.Is(err, search.ErrSearchUnavailable) {
 		return nil, e.WithStatus(http.StatusServiceUnavailable, err)
 	}
 	if err != nil {

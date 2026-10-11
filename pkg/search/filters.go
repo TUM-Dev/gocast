@@ -1,155 +1,23 @@
-package api
+package search
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/meilisearch/meilisearch-go"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 )
 
-func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, meiliSearchInstance tools.MeiliSearchInterface) {
-	routes := searchRoutes{daoWrapper, meiliSearchInstance}
-
-	searchGroup := router.Group("/api/search")
-	searchGroup.GET("", routes.search)
-
-	searchGroup.GET("/courses", routes.searchCourses)
-}
-
-type searchRoutes struct {
-	dao.DaoWrapper
-	m tools.MeiliSearchInterface
-}
-
-const (
-	FilterMaxCoursesCount = 3
-	DefaultLimit          = 10
-)
-
-type MeiliSearchMap map[string]any
-
-/*
-Expected format for URL Parameters:
-q=...&limit=... with q is the search query and limit is the maximum number of results
-
-If you want to search in only one semester you can add the following parameters:
-semester=... or firstSemester=...&lastSemester=... with semester being the semester in the format <year><teachingTerm>
-If you want to search in multiple semesters you can add the following parameters:
-semester=..., ... with semester being a comma separated list of semesters in the format <year><teachingTerm>
-
-If you want to search in only one course you can add the following parameters:
-course=... with course being the course in the format <slug><year><teachingTerm>
-If you want to search in multiple courses you can add the following parameters:
-course=..., ... with course being a comma separated list of courses in the format <slug><year><teachingTerm>
-*/
-func (r searchRoutes) searchCourses(c *gin.Context) {
-	user, query, limit := getDefaultParameters(c)
-
-	res, err := semesterSearchHelper(c, r.m, query, int64(limit), user, true)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	if res == nil {
-		logger.Warn("meilisearch did not return any search result")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
-	c.JSON(http.StatusOK, responseToMap(res))
-}
-
-func (r searchRoutes) search(c *gin.Context) {
-	user, query, limit := getDefaultParameters(c)
-
-	var res *meilisearch.MultiSearchResponse
-	if courseParam := c.Query("course"); courseParam != "" {
-		courses, errorCode := parseCourses(c, r.DaoWrapper, courseParam)
-		if errorCode == 2 {
-			// logger warning already done in parseCourses
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		} else if errorCode != 0 || len(courses) > FilterMaxCoursesCount {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-		for _, course := range courses {
-			if !user.IsEligibleToWatchCourse(course) {
-				c.AbortWithStatus(http.StatusBadRequest)
-				return
-			}
-		}
-		res = r.m.Search(query, int64(limit), 3, "", meiliStreamFilter(c, user, model.Semester{}, courses), meiliSubtitleFilter(user, courses))
-		if res == nil {
-			logger.Warn("meilisearch did not return any search result")
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, true)
-		c.JSON(http.StatusOK, responseToMap(res))
-		return
-	}
-
-	res, err := semesterSearchHelper(c, r.m, query, int64(limit), user, false)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	if res == nil {
-		logger.Warn("meilisearch did not return any search result")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	checkAndFillResponse(c, user, int64(limit), r.DaoWrapper, res, false)
-	c.JSON(http.StatusOK, responseToMap(res))
-}
-
-func semesterSearchHelper(c *gin.Context, m tools.MeiliSearchInterface, query string, limit int64, user *model.User, courseSearchOnly bool) (*meilisearch.MultiSearchResponse, error) {
-	var res *meilisearch.MultiSearchResponse
-	firstSemesterParam := c.Query("firstSemester")
-	lastSemesterParam := c.Query("lastSemester")
-	semestersParam := c.Query("semester")
-	if firstSemesterParam != "" && lastSemesterParam != "" || semestersParam != "" {
-		var firstSemester, lastSemester model.Semester
-		semesters1, err1 := parseSemesters(firstSemesterParam)
-		semesters2, err2 := parseSemesters(lastSemesterParam)
-		semesters, err3 := parseSemesters(semestersParam)
-		if (err1 != nil || err2 != nil || len(semesters1) != 1 || len(semesters2) != 1) && err3 != nil {
-			return nil, errors.New("wrong parameters")
-		}
-		if len(semesters1) > 0 && len(semesters2) > 0 {
-			firstSemester = semesters1[0]
-			lastSemester = semesters2[0]
-		}
-
-		isSingleSemesterSearch, singleSemester := determineSingleSemester(firstSemester, lastSemester, semesters)
-		if !courseSearchOnly && isSingleSemesterSearch {
-			// single semester search
-			res = m.Search(query, limit, 6, meiliCourseFilter(c, user, singleSemester, singleSemester, nil), meiliStreamFilter(c, user, singleSemester, nil), "")
-		} else {
-			// multiple semester or course only search
-			res = m.Search(query, limit, 4, meiliCourseFilter(c, user, firstSemester, lastSemester, semesters), "", "")
-		}
-		return res, nil
-	}
-
-	sem1 := model.Semester{TeachingTerm: "S"}
-	sem2 := model.Semester{TeachingTerm: "W", Year: 3000}
-	return m.Search(query, limit, 4, meiliCourseFilter(c, user, sem1, sem2, nil), "", ""), nil
-}
+// FilterMaxCoursesCount caps how many courses one search may be limited to.
+const FilterMaxCoursesCount = 3
 
 type SearchCourseDTO struct {
 	Name         string `json:"name"`
@@ -353,7 +221,7 @@ func meiliSubtitleFilter(user *model.User, courses []model.Course) string {
 // meiliStreamFilter returns a filter conforming to MeiliSearch filter format that can be used for filtering streams
 //
 // Checking eligibility to search for courses and validation of model.Semester format is the caller's responsibility
-func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester, courses []model.Course) string {
+func meiliStreamFilter(user *model.User, semester model.Semester, courses []model.Course) string {
 	if courses != nil {
 		administeredCourses := make([]model.Course, 0)
 		nonAdministeredCourses := make([]model.Course, 0)
@@ -401,7 +269,7 @@ func meiliStreamFilter(c *gin.Context, user *model.User, semester model.Semester
 // # Validation of model.Semester format is the caller's responsibility
 //
 // ignores either semesters or firstSemester/lastSemester, depending on semesters == nil
-func meiliCourseFilter(c *gin.Context, user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
+func meiliCourseFilter(user *model.User, firstSemester model.Semester, lastSemester model.Semester, semesters []model.Semester) string {
 	semesterFilter := meiliSemesterFilter(firstSemester, lastSemester, semesters)
 	if user.Can(model.PermViewAllCourses) {
 		return semesterFilter
@@ -478,29 +346,6 @@ func meiliSemesterFilter(firstSemester model.Semester, lastSemester model.Semest
 	}
 	filter := "(" + strings.Join(semesterStringsSlice, " OR ") + ")"
 	return filter
-}
-
-// Utility functions
-
-func getDefaultParameters(c *gin.Context) (*model.User, string, uint64) {
-	user := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	query := c.Query("q")
-	limit, err := strconv.ParseUint(c.Query("limit"), 10, 16)
-	if err != nil || limit > math.MaxInt64 { // second condition should never evaluate to true (maximum bitSize for ParseUint is 16)
-		limit = DefaultLimit
-	}
-	return user, query, limit
-}
-
-func responseToMap(res *meilisearch.MultiSearchResponse) MeiliSearchMap {
-	msm := make(MeiliSearchMap)
-	if res == nil {
-		return msm
-	}
-	for _, r := range res.Results {
-		msm[r.IndexUID] = r.Hits
-	}
-	return msm
 }
 
 // parseSemesters parses the URL Parameter semester and returns a slice containing every semester in the parameter or an error code
@@ -594,88 +439,6 @@ func determineSingleSemester(firstSemester model.Semester, lastSemester model.Se
 		return true, semesters[0]
 	}
 	return false, model.Semester{}
-}
-
-// ToSearchCourseDTO converts Courses to slice of SearchCourseDTO
-func ToSearchCourseDTO(cs ...model.Course) []SearchCourseDTO {
-	res := make([]SearchCourseDTO, len(cs))
-	for i, c := range cs {
-		res[i] = SearchCourseDTO{
-			Name:         c.Name,
-			Slug:         c.Slug,
-			Year:         c.Year,
-			TeachingTerm: c.TeachingTerm,
-		}
-	}
-	return res
-}
-
-// ToSearchStreamDTO converts Streams to slice of SearchStreamDTO
-//
-// Ignores any errors and sets affected fields to zero value
-func ToSearchStreamDTO(wrapper dao.DaoWrapper, streams ...model.Stream) []SearchStreamDTO {
-	res := make([]SearchStreamDTO, len(streams))
-	for i, s := range streams {
-		var courseName, teachingTerm, slug string
-		var year int
-		c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
-		if err == nil {
-			courseName = c.Name
-			teachingTerm = c.TeachingTerm
-			slug = c.Slug
-			year = c.Year
-		}
-		res[i] = SearchStreamDTO{
-			ID:           s.ID,
-			Name:         s.Name,
-			Description:  s.Description,
-			CourseName:   courseName,
-			Year:         year,
-			TeachingTerm: teachingTerm,
-			CourseSlug:   slug,
-		}
-	}
-	return res
-}
-
-// ToSearchSubtitleDTO converts MeiliSubtitles to slice of SearchSubtitlesDTO
-//
-// Ignores any errors and sets affected fields to zero value
-func ToSearchSubtitleDTO(wrapper dao.DaoWrapper, subtitles ...tools.MeiliSubtitles) []SearchSubtitlesDTO {
-	res := make([]SearchSubtitlesDTO, len(subtitles))
-	for i, subtitle := range subtitles {
-		var streamName, courseName, slug, teachingTerm string
-		var year int
-		var startTime, endTime time.Time
-		s, err := wrapper.GetStreamByID(context.Background(), strconv.FormatUint(uint64(subtitle.StreamID), 10))
-		if err == nil {
-			c, err := wrapper.GetCourseById(context.Background(), s.CourseID)
-			if err == nil {
-				streamName = s.Name
-				startTime = s.Start
-				endTime = s.End
-				courseName = c.Name
-				teachingTerm = c.TeachingTerm
-				slug = c.Slug
-				year = c.Year
-			}
-		}
-		res[i] = SearchSubtitlesDTO{
-			StreamID:           subtitle.StreamID,
-			Timestamp:          subtitle.Timestamp,
-			TextPrev:           subtitle.TextPrev,
-			Text:               subtitle.Text,
-			TextNext:           subtitle.TextNext,
-			StreamName:         streamName,
-			StreamStartTime:    startTime,
-			StreamEndTime:      endTime,
-			CourseName:         courseName,
-			CourseSlug:         slug,
-			CourseYear:         year,
-			CourseTeachingTerm: teachingTerm,
-		}
-	}
-	return res
 }
 
 func dtoToHit(v any) (meilisearch.Hit, error) {

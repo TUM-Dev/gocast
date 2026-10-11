@@ -6,8 +6,8 @@ import { users } from "./seed";
 /**
  * Creating a course.
  *
- * This file writes: it creates a course and deletes it again afterwards through v1
- * (there is no v2 delete yet). The deletion is soft, and GetAvailableSemesters counts
+ * This file writes: it creates a course and deletes it again afterwards through v2
+ * (DELETE /api/v2/courses/:id). The deletion is soft, and GetAvailableSemesters counts
  * deleted courses too, so the course goes in year 1234 -- the test semester that
  * dao/courses.go already leaves out of every public semester list. The dump's course 1 is brauereiwesen in the
  * summer semester of 2022, which a new course can therefore not be called.
@@ -21,8 +21,11 @@ const createdIds: number[] = [];
 
 test.afterAll(async ({ playwright }) => {
   const context = await apiAs(playwright, users.admin);
+  const token = await bearerToken(context);
   for (const id of createdIds) {
-    const response = await context.delete(`/api/course/${id}/`);
+    const response = await context.delete(`/api/v2/courses/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(response.ok(), `could not delete course ${id} after the test`).toBe(true);
   }
 });

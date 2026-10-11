@@ -443,21 +443,6 @@ func (mr *MockStreamsDaoMockRecorder) GetStreamByTumOnlineID(ctx, id any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamByTumOnlineID", reflect.TypeOf((*MockStreamsDao)(nil).GetStreamByTumOnlineID), ctx, id)
 }
 
-// GetStreamsByIds mocks base method.
-func (m *MockStreamsDao) GetStreamsByIds(ids []uint) ([]model.Stream, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStreamsByIds", ids)
-	ret0, _ := ret[0].([]model.Stream)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetStreamsByIds indicates an expected call of GetStreamsByIds.
-func (mr *MockStreamsDaoMockRecorder) GetStreamsByIds(ids any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamsByIds", reflect.TypeOf((*MockStreamsDao)(nil).GetStreamsByIds), ids)
-}
-
 // GetStreamsWithWatchState mocks base method.
 func (m *MockStreamsDao) GetStreamsWithWatchState(courseID, userID uint) ([]model.Stream, error) {
 	m.ctrl.T.Helper()

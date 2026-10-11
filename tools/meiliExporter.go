@@ -1,12 +1,9 @@
 package tools
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/TUM-Dev/gocast/model"
 
 	"github.com/asticode/go-astisub"
 	"github.com/meilisearch/meilisearch-go"
@@ -197,48 +194,4 @@ func (m *MeiliExporter) SetIndexSettings() {
 	if err != nil {
 		logger.Warn("could not set settings for meili index COURSES", "err", err)
 	}
-}
-
-// ToMeiliCourses converts slice of model.Course to slice of MeiliCourse
-func ToMeiliCourses(cs []model.Course) []MeiliCourse {
-	res := make([]MeiliCourse, len(cs))
-	for i, c := range cs {
-		res[i] = MeiliCourse{
-			ID:           c.ID,
-			Name:         c.Name,
-			Slug:         c.Slug,
-			Year:         c.Year,
-			TeachingTerm: c.TeachingTerm,
-			Visibility:   c.Visibility,
-		}
-	}
-	return res
-}
-
-// ToMeiliStreams converts slice of model.Stream to slice of MeiliStream
-func ToMeiliStreams(streams []model.Stream, daoWrapper dao.DaoWrapper) ([]MeiliStream, error) {
-	res := make([]MeiliStream, len(streams))
-	for i, s := range streams {
-		c, err := daoWrapper.GetCourseById(context.Background(), s.CourseID)
-		if err != nil {
-			return nil, err
-		}
-		var private uint
-		if s.Private {
-			private = 1
-		}
-
-		res[i] = MeiliStream{
-			ID:           s.ID,
-			Name:         s.Name,
-			Description:  s.Description,
-			CourseName:   c.Name,
-			Year:         c.Year,
-			TeachingTerm: c.TeachingTerm,
-			CourseID:     s.CourseID,
-			Private:      private,
-			Visibility:   c.Visibility,
-		}
-	}
-	return res, nil
 }

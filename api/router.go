@@ -1,3 +1,21 @@
+// Package api is what is left of the v1 REST API. The SPA and every other first-party
+// caller moved to apiv2 (Protobuf/Connect), and the shared code that used to live here
+// (worker and voice gRPC, search, live state, section images) moved to pkg/. These
+// routes remain because something that cannot speak apiv2 calls them:
+//
+//   - POST /api/selfstream/onPublish: the mediamtx ingest server's authHTTPAddress
+//     webhook (ingest/mediamtx.yml), asked to approve every RTMP publish.
+//   - POST /api/token/proxy/:token: rtmp-proxy/publish.sh, which swaps a lecturer's
+//     token for the stream key of their next stream.
+//   - GET /api/stream/live: API users authenticating with an admin token (scripts,
+//     monitoring); the token middleware is not part of apiv2.
+//   - GET /api/schedule.ics: calendar clients subscribed to the lecture hall feed by URL.
+//   - GET /api/download/:id, GET /api/download_ics/:year/:term/:slug/events.ics and
+//     POST /api/users/impersonate: still called by the SPA; they go once apiv2
+//     replaces them. The calendar URL is also in users' calendar apps, so it needs a
+//     redirect or an alias when it goes.
+//
+// Do not add routes here: new API work belongs in apiv2.
 package api
 
 import (
@@ -8,7 +26,7 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// ConfigGinRouter for non ws endpoints
+// ConfigGinRouter registers the remaining v1 routes.
 func ConfigGinRouter(
 	router *gin.Engine,
 	manager *runner_manager.Manager,
@@ -17,15 +35,11 @@ func ConfigGinRouter(
 
 	router.Use(tools.ErrorHandler)
 
-	configGinStreamRestRouter(router, daoWrapper, manager)
+	configGinStreamRestRouter(router, daoWrapper)
 	configGinUsersRouter(router, daoWrapper)
-	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
-	configNotificationsRouter(router, daoWrapper)
-	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
-	configSemestersRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)
 }
