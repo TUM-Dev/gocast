@@ -34,6 +34,7 @@ var services = []service{
 			"getInfoPage":            public,
 			"listInfoPages":          public,
 			"getNotifications":       authenticated,
+			"getIntegration":         integrationOnly,
 		},
 	},
 	{
@@ -44,6 +45,11 @@ var services = []service{
 			// Drive the login page itself.
 			"getLoginOptions": public,
 			"resetPassword":   public,
+			// The mailed key is the credential; the page shows nothing without it.
+			"checkPasswordResetKey": public,
+			"setPasswordByResetKey": public,
+			// Refused by the handler as soon as any user exists.
+			"createFirstUser": public,
 
 			// The rest act on one particular account.
 			"getUser":            authenticated,
@@ -58,8 +64,14 @@ var services = []service{
 		policies: map[string]accessPolicy{
 			// Browsing; the handlers filter by visibility.
 			"getPublicCourses": public,
-			"getCourseBySlug":  public,
-			"getLiveCourses":   public,
+			// Anonymous callers find public courses; the handler narrows by the caller.
+			"search": public,
+			// The course token mailed to a lecturer is the credential.
+			"getCourseByToken":    public,
+			"optInCourseByToken":  public,
+			"optOutCourseByToken": public,
+			"getCourseBySlug":     public,
+			"getLiveCourses":      public,
 
 			// Tied to one account's enrolments and pins.
 			"getUserCourses":   authenticated,
@@ -105,6 +117,8 @@ var services = []service{
 			// The course page, for its administrators. The handlers also refuse
 			// course 0, which the statistics queries read as every course.
 			"getCourseAdmin":                  requiresCourseAdmin(),
+			"listCourseIntegrationGrants":     requiresCourseAdmin(),
+			"revokeCourseIntegrationGrant":    requiresCourseAdmin(),
 			"updateCourseSettings":            requiresCourseAdmin(),
 			"copyCourse":                      requiresCourseAdmin(),
 			"deleteCourse":                    requiresCourseAdmin(),

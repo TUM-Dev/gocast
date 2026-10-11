@@ -342,6 +342,15 @@ export const initPlayer = function (
     });
     const handleHoldMouseDown = (event: MouseEvent) => {
         if (event.button !== 0) return;
+        // Only a hold on the video itself means "fast forward". The listener sits on the whole
+        // player, so without this, dragging the volume or seek slider (or holding any button or
+        // menu) also switched to 2x until the mouse was released.
+        if (
+            event.target instanceof Element &&
+            event.target.closest(".vjs-control-bar, .vjs-control, .vjs-menu, .vjs-modal-dialog")
+        ) {
+            return;
+        }
         if (fastForwardTimeout !== null) {
             window.clearTimeout(fastForwardTimeout);
         }

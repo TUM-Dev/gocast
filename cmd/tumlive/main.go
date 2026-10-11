@@ -122,6 +122,8 @@ func run(ctx context.Context) error {
 		&model.Runner{},
 		&model.StreamRunnerJob{},
 		&model.Integration{},
+		&model.IntegrationGrant{},
+		&model.IntegrationAuthorizationCode{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)
@@ -257,6 +259,8 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
 		apiv2.WithSectionImages(api.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
 		apiv2.WithRealtimeHub(hub),
+		// The same Meilisearch and filters v1's search uses, so both find the same.
+		apiv2.WithSearch(api.SearchCatalog{Dao: dao.NewDaoWrapper(), Meili: tools.NewMeiliSearchFunctions()}),
 	}
 	if subtitles != nil {
 		api2Opts = append(api2Opts, apiv2.WithSubtitleGenerator(subtitles, tools.Cfg.VoiceService.AuthToken))

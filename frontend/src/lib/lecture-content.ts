@@ -13,6 +13,7 @@ import {
 } from "@/gen/server/apiv2_pb";
 import { ApiError, apiDelete, apiGetMessage, apiPost, apiPut, apiUpload } from "./api";
 import { FILE_TYPE_ATTACHMENT, type CourseLecture, type LectureSection } from "./course-lectures";
+import type { MediaType } from "./create-lecture";
 
 /* model.FileType, as far as the card tells the kinds apart. */
 export const FILE_TYPE_VOD = 1;
@@ -215,6 +216,37 @@ export const SUBTITLE_LANGUAGES = [
 
 export async function requestLectureSubtitles(courseId: number, streamId: number, language: string): Promise<void> {
   await apiPost(`${lecturePath(courseId, streamId)}/subtitles`, { language });
+}
+
+/* The recording itself. */
+
+/** A version of the recording that can be uploaded, in the order v1 offered them. */
+export const RECORDING_VERSIONS: { type: MediaType; label: string }[] = [
+  { type: "COMB", label: "Combined video" },
+  { type: "PRES", label: "Presentation video" },
+  { type: "CAM", label: "Camera video" },
+];
+
+/** Hands a recording to a worker, which transcodes it into that version. */
+export async function uploadLectureRecording(
+  courseId: number,
+  streamId: number,
+  type: MediaType,
+  file: File,
+): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  await apiUpload(`${lecturePath(courseId, streamId)}/media?type=${type}`, form);
+}
+
+export function recordingUploadErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    // No worker alive, or the chosen one did not answer.
+    if (err.status === 503) return "No worker is available to receive the upload right now. Please try again later.";
+    // The worker that is streaming it would throw the result away.
+    if (err.status === 409) return "The recording cannot be replaced while the lecture is live.";
+  }
+  return contentErrorMessage(err);
 }
 
 /* Transcoding progress. */

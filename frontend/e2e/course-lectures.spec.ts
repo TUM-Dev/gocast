@@ -28,6 +28,22 @@ test.describe("the course lectures page", () => {
     expect((await response?.text()) ?? "").toContain("/spa-assets/");
   });
 
+  test("is where the old server-rendered course page now sends its visitors", async ({ page }) => {
+    await login(page, users.prof1);
+
+    await page.goto("/admin/course/1");
+    await expect(page).toHaveURL(page1);
+  });
+
+  test("keeps the old course page's URL from revealing anything to a student", async ({ page }) => {
+    await login(page, users.studi1);
+
+    // The redirect itself is public; its destination is what checks the course.
+    const response = await page.goto("/admin/course/1");
+    expect(response?.status()).toBe(403);
+    await expect(page).toHaveURL(page1);
+  });
+
   test("lists the course's lectures with their state", async ({ page }) => {
     await login(page, users.prof1, page1);
 

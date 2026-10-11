@@ -205,6 +205,31 @@ test.describe("a lecture's subtitles", () => {
   });
 });
 
+test.describe("a lecture's recording", () => {
+  test("says so when no worker is there to take an upload", async ({ page }) => {
+    // The dev stack has no worker, so the upload is refused before the file matters.
+    const path = test.info().outputPath("e2e-ui-recording.mp4");
+    writeFileSync(path, Buffer.from("not really a video"));
+    const card = await openLecture(page);
+    const recording = card.getByRole("region", { name: "Recording" });
+
+    await recording.getByLabel("Combined video (replace)").setInputFiles(path);
+    await expect(recording.getByRole("alert")).toHaveText(
+      "No worker is available to receive the upload right now. Please try again later.",
+    );
+  });
+
+  test("refuses a file that is not a video without sending it", async ({ page }) => {
+    const path = test.info().outputPath("e2e-ui-recording.txt");
+    writeFileSync(path, Buffer.from("plain text"));
+    const card = await openLecture(page);
+    const recording = card.getByRole("region", { name: "Recording" });
+
+    await recording.getByLabel("Presentation video (replace)").setInputFiles(path);
+    await expect(recording.getByRole("alert")).toHaveText("The recording must be an MP4 video.");
+  });
+});
+
 test.describe("the lecture content", () => {
   test("is not shown to a student", async ({ page }) => {
     await login(page, users.studi1);

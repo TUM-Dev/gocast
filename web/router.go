@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
@@ -54,6 +55,11 @@ const spaShellPath = "spa/index.html"
 var spaRoutes = map[string]bool{
 	"/settings":                             true,
 	"/login":                                true,
+	"/search":                               true,
+	"/setPassword/:key":                     true,
+	"/edit-course":                          true,
+	"/edit-course/opt-out":                  true,
+	"/onboarding":                           true,
 	"/":                                     true,
 	"/courses/mine":                         true,
 	"/courses/public":                       true,
@@ -99,12 +105,8 @@ var templatePaths = []string{
 	"template/*.gohtml",
 	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
-	"template/admin/admin_tabs/*.gohtml",
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
-	"template/partial/course/manage/*.gohtml",
-	"template/partial/course/manage/*.gohtml",
-	"template/partial/course/manage/create-lecture-form-slides/*.gohtml",
 }
 
 func ConfigGinRouter(router *gin.Engine) {
@@ -233,7 +235,7 @@ func pageHandler(path string, legacy gin.HandlerFunc, spaBuilt bool) (gin.Handle
 	return func(c *gin.Context) {
 		hook(c)
 		// A hook may answer the request instead of preparing for the shell: the
-		// fresh-installation check on "/" renders the onboarding page and aborts.
+		// fresh-installation check on "/" redirects to the onboarding page and aborts.
 		// Writing the shell after that would append it to a finished response.
 		if c.IsAborted() {
 			return
@@ -301,8 +303,8 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(&router.RouterGroup, http.MethodGet, "/imprint", nil)
 	registerPage(&router.RouterGroup, http.MethodGet, "/about", nil)
 
-	// search
-	router.GET("/search", routes.SearchPage)
+	// Public: anonymous callers search public courses; the page itself asks v2.
+	registerPage(&router.RouterGroup, http.MethodGet, "/search", nil)
 
 	// admins
 	//
@@ -347,19 +349,21 @@ func configMainRoute(router *gin.Engine) {
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
 	courseAdminGroup.Use(tools.AdminOfCourse)
-	courseAdminGroup.GET("/admin/course/:courseID", routes.EditCoursePage)
 	// The first page on rule 2's plural path. The edit-course page's statistics tab
 	// shows the same thing; that tab becomes this route when the page migrates.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/stats", nil)
 	// The settings, external-participants and lectures tabs of the same page, as
-	// rule 4 child routes. The lectures tab leaves out the lecture content (videos,
-	// attachments, sections) still only on /admin/course/:courseID above.
+	// rule 4 child routes.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/settings", nil)
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/participants", nil)
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/lectures", nil)
-	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
 
 	// Outside the course group, like the redirects above: the destination checks.
+	// The server-rendered course page opened on its lectures tab; a fragment such as
+	// #lecture-li-7 never reaches the server, so it is lost here.
+	router.GET("/admin/course/:courseID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
+	})
 	router.GET("/admin/course/:courseID/stats", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/stats")
 	})
@@ -379,9 +383,11 @@ func configMainRoute(router *gin.Engine) {
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
 	registerPage(&router.RouterGroup, http.MethodGet, "/login", nil)
+	// Public: the page itself finds out from getFrontendConfig whether it still applies.
+	registerPage(&router.RouterGroup, http.MethodGet, "/onboarding", nil)
 	router.GET("/logout", routes.LogoutPage)
-	router.GET("/setPassword/:key", routes.CreatePasswordPage)
-	router.POST("/setPassword/:key", routes.CreatePasswordPage)
+	// The key in the link is the credential; the page asks v2 whether it is still good.
+	registerPage(&router.RouterGroup, http.MethodGet, "/setPassword/:key", nil)
 
 	// home & course pages
 	newStartPage(router, &routes)
@@ -397,11 +403,14 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/jwtPubKey", routes.JWTPubKey)
 
 	router.GET("/:shortLink", routes.shortLinkOrInfoPage)
-	router.GET("/edit-course", routes.editCourseByTokenPage)
-	router.GET("/edit-course/opt-out", routes.optOutPage)
+	// The course token in the mailed link is the credential; both pages ask v2 for it.
+	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course", nil)
+	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course/opt-out", nil)
 
 	loggedIn := router.Group("/")
 	loggedIn.Use(tools.LoggedIn)
+	loggedIn.GET("/integration/authorize/:id", routes.integrationAuthorizationPage)
+	loggedIn.POST("/integration/authorize/:id", routes.authorizeIntegration)
 	// The auth middleware stays on the route even when the SPA serves it, so an
 	// anonymous visitor is redirected to /login by the server rather than after the
 	// shell has loaded and failed a request.
@@ -412,21 +421,39 @@ func configMainRoute(router *gin.Engine) {
 		c.Redirect(http.StatusFound, "/")
 	})
 
-	router.NoRoute(func(c *gin.Context) {
+	router.NoRoute(serveNotFound)
+}
+
+// serveNotFound is the 404 for a path nothing owns. A page gets the SPA shell with
+// that status and the client renders the not-found page; a request under /api/ keeps
+// the error template, which v1's clients and the browser tests read as text.
+func serveNotFound(c *gin.Context) {
+	if !spaAvailable() || strings.HasPrefix(c.Request.URL.Path, "/api/") {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
-	})
+		return
+	}
+	shell, err := readSPAShell()
+	if err != nil {
+		logger.Error("can't read SPA shell", "err", err)
+		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusNotFound, "text/html; charset=utf-8", shell)
+	c.Abort()
 }
 
 type mainRoutes struct {
 	dao.DaoWrapper
 }
 
-// onboardingIfFresh answers "/" itself while the deployment has no users, offering to
-// create the first account instead of a start page nobody can sign in to.
+// onboardingIfFresh sends "/" to the onboarding page while the deployment has no
+// users, where the first account is created, instead of a start page nobody can sign
+// in to.
 //
 // This stays server-side because the shell would otherwise render the start page for
-// a moment before finding out. GetFrontendConfig reports the same flag, so the
-// onboarding page can move to the client once it is migrated too.
+// a moment before finding out. The onboarding page itself asks GetFrontendConfig,
+// which reports the same flag, so it can refuse once an account exists.
 func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 	isFresh, err := IsFreshInstallation(c, r.UsersDao)
 	if err != nil {
@@ -438,20 +465,8 @@ func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
 		return
 	}
 
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData()); err != nil {
-		logger.Error("Could not execute template: 'onboarding.gohtml'", "err", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-		return
-	}
+	c.Redirect(http.StatusFound, "/onboarding")
 	c.Abort()
-}
-
-func (r mainRoutes) SearchPage(c *gin.Context) {
-	indexData := NewIndexDataWithContext(c)
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "search-page.gohtml", indexData); err != nil {
-		logger.Error("Could not execute template: 'search-page.gohtml'", "err", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
-	}
 }
 
 func (r mainRoutes) semesterRedirect(c *gin.Context) {

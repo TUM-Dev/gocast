@@ -25,6 +25,9 @@ type accessPolicy struct {
 	// courseScoped requires the caller to administer the course named by the
 	// request's `course_id`. A lecturer needs no permission beyond that grant.
 	courseScoped bool
+
+	// integration requires an external application identity, never a User.
+	integration bool
 }
 
 var (
@@ -33,6 +36,8 @@ var (
 
 	// authenticated is for RPCs that act on behalf of a specific user.
 	authenticated = accessPolicy{}
+
+	integrationOnly = accessPolicy{integration: true}
 )
 
 // requires builds a policy demanding a capability.
@@ -85,6 +90,17 @@ func (a *API) authorize(
 	}
 
 	if policy.anonymous {
+		return handler(ctx, req)
+	}
+
+	if policy.integration {
+		integration, err := a.getCurrentIntegration(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if integration == nil {
+			return nil, e.WithStatus(http.StatusUnauthorized, errors.New("invalid integration credentials"))
+		}
 		return handler(ctx, req)
 	}
 

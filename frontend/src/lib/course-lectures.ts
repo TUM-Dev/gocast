@@ -59,7 +59,8 @@ export interface CourseLecture {
   videoSections: LectureSection[];
 }
 
-function toLecture(l: CourseLectureAdmin): CourseLecture {
+/** A lecture as the list and createLectures answer it. */
+export function toLecture(l: CourseLectureAdmin): CourseLecture {
   return {
     id: l.id,
     courseId: l.courseId,

@@ -19,6 +19,7 @@ import {
   InviteCourseParticipantsResponseSchema,
   ListAdministeredCoursesResponseSchema,
   ListCourseAdminsResponseSchema,
+  ListCourseIntegrationGrantsResponseSchema,
   ListCourseLectureHallSettingsResponseSchema,
   ListCourseParticipantsResponseSchema,
   SearchUsersForCourseResponseSchema,
@@ -133,6 +134,22 @@ export async function copyCourse(courseId: number, target: Semester): Promise<Co
 
 export async function deleteCourse(courseId: number): Promise<void> {
   await apiDelete(`/courses/${courseId}`);
+}
+
+// ----- Authorized applications -----
+
+export interface CourseIntegrationGrant {
+  id: number;
+  name: string;
+}
+
+export async function fetchCourseIntegrationGrants(courseId: number): Promise<CourseIntegrationGrant[]> {
+  const res = await apiGetMessage(ListCourseIntegrationGrantsResponseSchema, `/courses/${courseId}/integrations`);
+  return res.grants.map((g) => ({ id: g.id, name: g.name }));
+}
+
+export async function revokeCourseIntegrationGrant(courseId: number, grantId: number): Promise<void> {
+  await apiDelete(`/courses/${courseId}/integrations/${grantId}`);
 }
 
 // ----- Administrators -----

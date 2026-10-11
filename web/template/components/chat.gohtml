@@ -115,8 +115,8 @@
                                             </button>
 
                                             <div x-data="interaction.emojiPickerContext(m.ID)"
-                                                 class="absolute ease-out duration-100 bg-white dark:bg-secondary border-2 border-solid border-gray-200 dark:border-black rounded left-[-10px] top-[-36px] text-left overflow-hidden whitespace-nowrap p-1 flex flex-row"
-                                                 :class="m.ShowEmojiPicker.value ? 'scale-100 opacity-1 translate-x-0 translate-y-0' : 'scale-0 opacity-0 translate-x-[-42px] translate-y-[42px]'">
+                                                    class="absolute ease-out duration-100 bg-white dark:bg-secondary border-2 border-solid border-gray-200 dark:border-black rounded left-[-10px] top-[-36px] text-left overflow-hidden whitespace-nowrap p-1 flex flex-row"
+                                                    :class="m.ShowEmojiPicker.value ? 'scale-100 opacity-100 translate-x-0 translate-y-0' : 'scale-0 opacity-0 translate-x-[-42px] translate-y-[42px]'">
                                                 <template x-for="emoji in emojiSuggestions">
                                                     <button type="button" x-text="emoji.emoji"
                                                             :title="`:${emoji.short_names[0]}:`"

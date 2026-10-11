@@ -76,6 +76,14 @@ func TestCourseAdminRefusesCourseZero(t *testing.T) {
 			_, err := api.GetCourseAdmin(ctx, &protobuf.GetCourseAdminRequest{})
 			return err
 		},
+		"listCourseIntegrationGrants": func() error {
+			_, err := api.ListCourseIntegrationGrants(ctx, &protobuf.ListCourseIntegrationGrantsRequest{})
+			return err
+		},
+		"revokeCourseIntegrationGrant": func() error {
+			_, err := api.RevokeCourseIntegrationGrant(ctx, &protobuf.RevokeCourseIntegrationGrantRequest{GrantId: 7})
+			return err
+		},
 		"updateCourseSettings": func() error {
 			v := "public"
 			_, err := api.UpdateCourseSettings(ctx, &protobuf.UpdateCourseSettingsRequest{Visibility: &v})

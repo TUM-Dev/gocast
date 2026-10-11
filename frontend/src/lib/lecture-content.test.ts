@@ -18,6 +18,7 @@ import {
   requestLectureSubtitles,
   sectionChanged,
   shouldPollProgress,
+  recordingUploadErrorMessage,
   subtitleErrorMessage,
   updateLectureSection,
   uploadLectureAttachment,
@@ -285,5 +286,20 @@ describe("error messages", () => {
     );
     expect(contentErrorMessage(new ApiError(404, "no such attachment"))).toMatch(/no longer exists/);
     expect(contentErrorMessage(new Error("x"))).toBe("Something went wrong. Please try again.");
+  });
+});
+
+describe("recordingUploadErrorMessage", () => {
+  it("names the missing worker and a live lecture, and falls back otherwise", () => {
+    expect(recordingUploadErrorMessage(new ApiError(503, "no worker available"))).toBe(
+      "No worker is available to receive the upload right now. Please try again later.",
+    );
+    expect(recordingUploadErrorMessage(new ApiError(409, "the lecture is live"))).toBe(
+      "The recording cannot be replaced while the lecture is live.",
+    );
+    expect(recordingUploadErrorMessage(new ApiError(404, "not found"))).toBe(
+      "It no longer exists, or you do not administer this course. Reload the page.",
+    );
+    expect(recordingUploadErrorMessage(new Error("boom"))).toBe("Something went wrong. Please try again.");
   });
 });

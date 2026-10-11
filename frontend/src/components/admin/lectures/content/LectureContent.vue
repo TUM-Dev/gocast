@@ -19,7 +19,7 @@ const emit = defineEmits<{ changed: [] }>();
 </script>
 
 <template>
-  <RecordingPanel :course-id="courseId" :lecture="lecture" />
+  <RecordingPanel :course-id="courseId" :lecture="lecture" @changed="emit('changed')" />
   <SectionsEditor
     :course-id="courseId"
     :lecture-id="lecture.id"

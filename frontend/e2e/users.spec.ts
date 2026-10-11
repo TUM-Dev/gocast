@@ -213,7 +213,7 @@ test.describe("changing what an account may do", () => {
    * Creates an account through the form and returns once it is on screen.
    *
    * These tests act on accounts they made themselves: the fixture reloads once per
-   * run, not per file, and visibility.spec.ts asserts against the seeded ones.
+   * run, not per file, and the visibility specs assert against the seeded ones.
    */
   async function createAccount(page: Page, name: string, email: string): Promise<void> {
     await page.getByRole("button", { name: "Add user" }).click();

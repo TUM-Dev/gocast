@@ -2,5 +2,4 @@
 // SPA now serves — what remains here is the shared shell those pages still use.
 export * from "../views/home";
 export * from "../components/header";
-export * from "../search";
 export * from "../utilities/date";

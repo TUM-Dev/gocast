@@ -196,7 +196,7 @@ func TestPageHandlerRequiresABuildForPagesWithNoTemplate(t *testing.T) {
 }
 
 // A hook may answer the request instead of preparing for the shell: the start page's
-// fresh-installation check renders the onboarding page and aborts. Appending the shell
+// fresh-installation check redirects to the onboarding page and aborts. Appending the shell
 // to that would send both.
 func TestPageHandlerLetsAHookAnswerTheRequest(t *testing.T) {
 	spaIsBuilt(t)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 
 import LiveStreamCard from "@/components/start-page/LiveStreamCard.vue";
 import StartPageLayout from "@/components/start-page/StartPageLayout.vue";
@@ -152,15 +152,15 @@ const isTodayLecture = (lecture: Stream) => isToday(lecture);
             .ics
           </a>
 
-          <a
+          <RouterLink
             v-if="canAdminister"
-            :href="`/admin/course/${course.id}`"
+            :to="`/admin/courses/${course.id}/lectures`"
             class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
             title="Go to admin page"
           >
             <i class="fa-solid fa-hammer mr-2"></i>
             Admin
-          </a>
+          </RouterLink>
         </section>
       </header>
 

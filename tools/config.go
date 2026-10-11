@@ -95,6 +95,10 @@ func initConfig() {
 	if os.Getenv("DBHOST") != "" {
 		Cfg.Db.Host = os.Getenv("DBHOST")
 	}
+	// Same for meilisearch, which inside docker-compose is a service name, not localhost.
+	if host := os.Getenv("MEILIHOST"); host != "" && Cfg.Meili != nil {
+		Cfg.Meili.Host = host
+	}
 	if len(Cfg.AllowedReactions) > 0 {
 		logger.Debug("Allowed reactions", "reactions", Cfg.AllowedReactions)
 	} else {

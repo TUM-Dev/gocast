@@ -173,14 +173,14 @@ describe("what the caller may do", () => {
   it("hides the admin link from a caller who administers neither", async () => {
     const wrapper = await render();
 
-    expect(wrapper.find('a[href="/admin/course/1"]').exists()).toBe(false);
+    expect(wrapper.find('a[href="/admin/courses/1/lectures"]').exists()).toBe(false);
   });
 
   it("shows it to an administrator of this course", async () => {
     fetchCourse.mockResolvedValue(makeCourse([], { isAdmin: true }));
     const wrapper = await render();
 
-    expect(wrapper.find('a[href="/admin/course/1"]').exists()).toBe(true);
+    expect(wrapper.find('a[href="/admin/courses/1/lectures"]').exists()).toBe(true);
   });
 
   it("shows it to a global administrator of any course", async () => {
@@ -192,7 +192,7 @@ describe("what the caller may do", () => {
     });
     await flushPromises();
 
-    expect(wrapper.find('a[href="/admin/course/1"]').exists()).toBe(true);
+    expect(wrapper.find('a[href="/admin/courses/1/lectures"]').exists()).toBe(true);
   });
 });
 

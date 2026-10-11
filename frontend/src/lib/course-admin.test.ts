@@ -8,12 +8,14 @@ import {
   deleteCourse,
   fetchAdministeredCourses,
   fetchCourseAdmin,
+  fetchCourseIntegrationGrants,
   fetchLectureHallSettings,
   groupBySemester,
   inviteCourseParticipants,
   parseInviteBatch,
   publicCoursePath,
   removeCourseAdmin,
+  revokeCourseIntegrationGrant,
   searchUsersForCourse,
   updateCourseSettings,
   updateLectureHallSettings,
@@ -123,6 +125,17 @@ describe("copy and delete", () => {
 
     await deleteCourse(4);
     expect(lastCall()).toMatchObject({ url: "/api/v2/courses/4", method: "DELETE" });
+  });
+});
+
+describe("authorized applications", () => {
+  it("lists applications and revokes the grant in its course", async () => {
+    respondWith({ grants: [{ id: 7, name: "Course portal" }] });
+    expect(await fetchCourseIntegrationGrants(1)).toEqual([{ id: 7, name: "Course portal" }]);
+    expect(lastCall().url).toBe("/api/v2/courses/1/integrations");
+    respondWith({});
+    await revokeCourseIntegrationGrant(1, 7);
+    expect(lastCall()).toMatchObject({ url: "/api/v2/courses/1/integrations/7", method: "DELETE" });
   });
 });
 

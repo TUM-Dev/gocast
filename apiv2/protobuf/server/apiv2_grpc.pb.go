@@ -28,6 +28,7 @@ const (
 	MetaService_GetServerNotifications_FullMethodName = "/protobuf.MetaService/getServerNotifications"
 	MetaService_GetInfoPage_FullMethodName            = "/protobuf.MetaService/getInfoPage"
 	MetaService_ListInfoPages_FullMethodName          = "/protobuf.MetaService/listInfoPages"
+	MetaService_GetIntegration_FullMethodName         = "/protobuf.MetaService/getIntegration"
 )
 
 // MetaServiceClient is the client API for MetaService service.
@@ -43,6 +44,7 @@ type MetaServiceClient interface {
 	GetServerNotifications(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServerNotificationsResponse, error)
 	GetInfoPage(ctx context.Context, in *GetInfoPageRequest, opts ...grpc.CallOption) (*GetInfoPageResponse, error)
 	ListInfoPages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListInfoPagesResponse, error)
+	GetIntegration(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetIntegrationResponse, error)
 }
 
 type metaServiceClient struct {
@@ -123,6 +125,16 @@ func (c *metaServiceClient) ListInfoPages(ctx context.Context, in *emptypb.Empty
 	return out, nil
 }
 
+func (c *metaServiceClient) GetIntegration(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetIntegrationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIntegrationResponse)
+	err := c.cc.Invoke(ctx, MetaService_GetIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetaServiceServer is the server API for MetaService service.
 // All implementations must embed UnimplementedMetaServiceServer
 // for forward compatibility.
@@ -136,6 +148,7 @@ type MetaServiceServer interface {
 	GetServerNotifications(context.Context, *emptypb.Empty) (*GetServerNotificationsResponse, error)
 	GetInfoPage(context.Context, *GetInfoPageRequest) (*GetInfoPageResponse, error)
 	ListInfoPages(context.Context, *emptypb.Empty) (*ListInfoPagesResponse, error)
+	GetIntegration(context.Context, *emptypb.Empty) (*GetIntegrationResponse, error)
 	mustEmbedUnimplementedMetaServiceServer()
 }
 
@@ -166,6 +179,9 @@ func (UnimplementedMetaServiceServer) GetInfoPage(context.Context, *GetInfoPageR
 }
 func (UnimplementedMetaServiceServer) ListInfoPages(context.Context, *emptypb.Empty) (*ListInfoPagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListInfoPages not implemented")
+}
+func (UnimplementedMetaServiceServer) GetIntegration(context.Context, *emptypb.Empty) (*GetIntegrationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIntegration not implemented")
 }
 func (UnimplementedMetaServiceServer) mustEmbedUnimplementedMetaServiceServer() {}
 func (UnimplementedMetaServiceServer) testEmbeddedByValue()                     {}
@@ -314,6 +330,24 @@ func _MetaService_ListInfoPages_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetaService_GetIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).GetIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetaService_GetIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).GetIntegration(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetaService_ServiceDesc is the grpc.ServiceDesc for MetaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -349,17 +383,24 @@ var MetaService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "listInfoPages",
 			Handler:    _MetaService_ListInfoPages_Handler,
 		},
+		{
+			MethodName: "getIntegration",
+			Handler:    _MetaService_GetIntegration_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "server/apiv2.proto",
 }
 
 const (
-	UserService_GetUser_FullMethodName            = "/protobuf.UserService/getUser"
-	UserService_UpdateUserSettings_FullMethodName = "/protobuf.UserService/updateUserSettings"
-	UserService_ExportPersonalData_FullMethodName = "/protobuf.UserService/exportPersonalData"
-	UserService_ResetPassword_FullMethodName      = "/protobuf.UserService/resetPassword"
-	UserService_GetLoginOptions_FullMethodName    = "/protobuf.UserService/getLoginOptions"
+	UserService_GetUser_FullMethodName               = "/protobuf.UserService/getUser"
+	UserService_UpdateUserSettings_FullMethodName    = "/protobuf.UserService/updateUserSettings"
+	UserService_ExportPersonalData_FullMethodName    = "/protobuf.UserService/exportPersonalData"
+	UserService_ResetPassword_FullMethodName         = "/protobuf.UserService/resetPassword"
+	UserService_CheckPasswordResetKey_FullMethodName = "/protobuf.UserService/checkPasswordResetKey"
+	UserService_SetPasswordByResetKey_FullMethodName = "/protobuf.UserService/setPasswordByResetKey"
+	UserService_CreateFirstUser_FullMethodName       = "/protobuf.UserService/createFirstUser"
+	UserService_GetLoginOptions_FullMethodName       = "/protobuf.UserService/getLoginOptions"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -373,6 +414,9 @@ type UserServiceClient interface {
 	UpdateUserSettings(ctx context.Context, in *UpdateUserSettingsRequest, opts ...grpc.CallOption) (*UpdateUserSettingsResponse, error)
 	ExportPersonalData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExportPersonalDataResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
+	CheckPasswordResetKey(ctx context.Context, in *PasswordResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SetPasswordByResetKey(ctx context.Context, in *SetPasswordByResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateFirstUser(ctx context.Context, in *CreateFirstUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetLoginOptions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLoginOptionsResponse, error)
 }
 
@@ -424,6 +468,36 @@ func (c *userServiceClient) ResetPassword(ctx context.Context, in *ResetPassword
 	return out, nil
 }
 
+func (c *userServiceClient) CheckPasswordResetKey(ctx context.Context, in *PasswordResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_CheckPasswordResetKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) SetPasswordByResetKey(ctx context.Context, in *SetPasswordByResetKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_SetPasswordByResetKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) CreateFirstUser(ctx context.Context, in *CreateFirstUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_CreateFirstUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) GetLoginOptions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLoginOptionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetLoginOptionsResponse)
@@ -445,6 +519,9 @@ type UserServiceServer interface {
 	UpdateUserSettings(context.Context, *UpdateUserSettingsRequest) (*UpdateUserSettingsResponse, error)
 	ExportPersonalData(context.Context, *emptypb.Empty) (*ExportPersonalDataResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
+	CheckPasswordResetKey(context.Context, *PasswordResetKeyRequest) (*emptypb.Empty, error)
+	SetPasswordByResetKey(context.Context, *SetPasswordByResetKeyRequest) (*emptypb.Empty, error)
+	CreateFirstUser(context.Context, *CreateFirstUserRequest) (*emptypb.Empty, error)
 	GetLoginOptions(context.Context, *emptypb.Empty) (*GetLoginOptionsResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -467,6 +544,15 @@ func (UnimplementedUserServiceServer) ExportPersonalData(context.Context, *empty
 }
 func (UnimplementedUserServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetPassword not implemented")
+}
+func (UnimplementedUserServiceServer) CheckPasswordResetKey(context.Context, *PasswordResetKeyRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckPasswordResetKey not implemented")
+}
+func (UnimplementedUserServiceServer) SetPasswordByResetKey(context.Context, *SetPasswordByResetKeyRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetPasswordByResetKey not implemented")
+}
+func (UnimplementedUserServiceServer) CreateFirstUser(context.Context, *CreateFirstUserRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateFirstUser not implemented")
 }
 func (UnimplementedUserServiceServer) GetLoginOptions(context.Context, *emptypb.Empty) (*GetLoginOptionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLoginOptions not implemented")
@@ -564,6 +650,60 @@ func _UserService_ResetPassword_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CheckPasswordResetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PasswordResetKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckPasswordResetKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CheckPasswordResetKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckPasswordResetKey(ctx, req.(*PasswordResetKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_SetPasswordByResetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPasswordByResetKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SetPasswordByResetKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_SetPasswordByResetKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).SetPasswordByResetKey(ctx, req.(*SetPasswordByResetKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_CreateFirstUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateFirstUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CreateFirstUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CreateFirstUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CreateFirstUser(ctx, req.(*CreateFirstUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_GetLoginOptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -606,6 +746,18 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_ResetPassword_Handler,
 		},
 		{
+			MethodName: "checkPasswordResetKey",
+			Handler:    _UserService_CheckPasswordResetKey_Handler,
+		},
+		{
+			MethodName: "setPasswordByResetKey",
+			Handler:    _UserService_SetPasswordByResetKey_Handler,
+		},
+		{
+			MethodName: "createFirstUser",
+			Handler:    _UserService_CreateFirstUser_Handler,
+		},
+		{
 			MethodName: "getLoginOptions",
 			Handler:    _UserService_GetLoginOptions_Handler,
 		},
@@ -617,6 +769,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 const (
 	CourseService_GetPublicCourses_FullMethodName                = "/protobuf.CourseService/getPublicCourses"
 	CourseService_GetCourseBySlug_FullMethodName                 = "/protobuf.CourseService/getCourseBySlug"
+	CourseService_Search_FullMethodName                          = "/protobuf.CourseService/search"
+	CourseService_GetCourseByToken_FullMethodName                = "/protobuf.CourseService/getCourseByToken"
+	CourseService_OptInCourseByToken_FullMethodName              = "/protobuf.CourseService/optInCourseByToken"
+	CourseService_OptOutCourseByToken_FullMethodName             = "/protobuf.CourseService/optOutCourseByToken"
 	CourseService_GetUserCourses_FullMethodName                  = "/protobuf.CourseService/getUserCourses"
 	CourseService_GetPinnedCourses_FullMethodName                = "/protobuf.CourseService/getPinnedCourses"
 	CourseService_GetLiveCourses_FullMethodName                  = "/protobuf.CourseService/getLiveCourses"
@@ -639,6 +795,8 @@ const (
 	CourseService_CopyLecture_FullMethodName                     = "/protobuf.CourseService/copyLecture"
 	CourseService_CreateLectures_FullMethodName                  = "/protobuf.CourseService/createLectures"
 	CourseService_GetCourseAdmin_FullMethodName                  = "/protobuf.CourseService/getCourseAdmin"
+	CourseService_ListCourseIntegrationGrants_FullMethodName     = "/protobuf.CourseService/listCourseIntegrationGrants"
+	CourseService_RevokeCourseIntegrationGrant_FullMethodName    = "/protobuf.CourseService/revokeCourseIntegrationGrant"
 	CourseService_UpdateCourseSettings_FullMethodName            = "/protobuf.CourseService/updateCourseSettings"
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
 	CourseService_DeleteCourse_FullMethodName                    = "/protobuf.CourseService/deleteCourse"
@@ -668,6 +826,10 @@ const (
 type CourseServiceClient interface {
 	GetPublicCourses(ctx context.Context, in *GetPublicCoursesRequest, opts ...grpc.CallOption) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(ctx context.Context, in *GetCourseBySlugRequest, opts ...grpc.CallOption) (*GetCourseBySlugResponse, error)
+	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
+	GetCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*CourseByToken, error)
+	OptInCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	OptOutCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUserCourses(ctx context.Context, in *GetUserCoursesRequest, opts ...grpc.CallOption) (*GetUserCoursesResponse, error)
 	GetPinnedCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPinnedCoursesResponse, error)
 	GetLiveCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLiveCoursesResponse, error)
@@ -706,6 +868,8 @@ type CourseServiceClient interface {
 	// worker is alive or the one chosen cannot be reached.
 	CreateLectures(ctx context.Context, in *CreateLecturesRequest, opts ...grpc.CallOption) (*CreateLecturesResponse, error)
 	GetCourseAdmin(ctx context.Context, in *GetCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
+	ListCourseIntegrationGrants(ctx context.Context, in *ListCourseIntegrationGrantsRequest, opts ...grpc.CallOption) (*ListCourseIntegrationGrantsResponse, error)
+	RevokeCourseIntegrationGrant(ctx context.Context, in *RevokeCourseIntegrationGrantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -750,6 +914,46 @@ func (c *courseServiceClient) GetCourseBySlug(ctx context.Context, in *GetCourse
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCourseBySlugResponse)
 	err := c.cc.Invoke(ctx, CourseService_GetCourseBySlug_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchResponse)
+	err := c.cc.Invoke(ctx, CourseService_Search_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) GetCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*CourseByToken, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseByToken)
+	err := c.cc.Invoke(ctx, CourseService_GetCourseByToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) OptInCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_OptInCourseByToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) OptOutCourseByToken(ctx context.Context, in *CourseTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_OptOutCourseByToken_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -976,6 +1180,26 @@ func (c *courseServiceClient) GetCourseAdmin(ctx context.Context, in *GetCourseA
 	return out, nil
 }
 
+func (c *courseServiceClient) ListCourseIntegrationGrants(ctx context.Context, in *ListCourseIntegrationGrantsRequest, opts ...grpc.CallOption) (*ListCourseIntegrationGrantsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCourseIntegrationGrantsResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListCourseIntegrationGrants_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) RevokeCourseIntegrationGrant(ctx context.Context, in *RevokeCourseIntegrationGrantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_RevokeCourseIntegrationGrant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CourseAdmin)
@@ -1174,6 +1398,10 @@ func (c *courseServiceClient) GetLectureTranscodingProgress(ctx context.Context,
 type CourseServiceServer interface {
 	GetPublicCourses(context.Context, *GetPublicCoursesRequest) (*GetPublicCoursesResponse, error)
 	GetCourseBySlug(context.Context, *GetCourseBySlugRequest) (*GetCourseBySlugResponse, error)
+	Search(context.Context, *SearchRequest) (*SearchResponse, error)
+	GetCourseByToken(context.Context, *CourseTokenRequest) (*CourseByToken, error)
+	OptInCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error)
+	OptOutCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error)
 	GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error)
 	GetPinnedCourses(context.Context, *emptypb.Empty) (*GetPinnedCoursesResponse, error)
 	GetLiveCourses(context.Context, *emptypb.Empty) (*GetLiveCoursesResponse, error)
@@ -1212,6 +1440,8 @@ type CourseServiceServer interface {
 	// worker is alive or the one chosen cannot be reached.
 	CreateLectures(context.Context, *CreateLecturesRequest) (*CreateLecturesResponse, error)
 	GetCourseAdmin(context.Context, *GetCourseAdminRequest) (*CourseAdmin, error)
+	ListCourseIntegrationGrants(context.Context, *ListCourseIntegrationGrantsRequest) (*ListCourseIntegrationGrantsResponse, error)
+	RevokeCourseIntegrationGrant(context.Context, *RevokeCourseIntegrationGrantRequest) (*emptypb.Empty, error)
 	UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error)
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error)
@@ -1247,6 +1477,18 @@ func (UnimplementedCourseServiceServer) GetPublicCourses(context.Context, *GetPu
 }
 func (UnimplementedCourseServiceServer) GetCourseBySlug(context.Context, *GetCourseBySlugRequest) (*GetCourseBySlugResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseBySlug not implemented")
+}
+func (UnimplementedCourseServiceServer) Search(context.Context, *SearchRequest) (*SearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Search not implemented")
+}
+func (UnimplementedCourseServiceServer) GetCourseByToken(context.Context, *CourseTokenRequest) (*CourseByToken, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCourseByToken not implemented")
+}
+func (UnimplementedCourseServiceServer) OptInCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method OptInCourseByToken not implemented")
+}
+func (UnimplementedCourseServiceServer) OptOutCourseByToken(context.Context, *CourseTokenRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method OptOutCourseByToken not implemented")
 }
 func (UnimplementedCourseServiceServer) GetUserCourses(context.Context, *GetUserCoursesRequest) (*GetUserCoursesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserCourses not implemented")
@@ -1313,6 +1555,12 @@ func (UnimplementedCourseServiceServer) CreateLectures(context.Context, *CreateL
 }
 func (UnimplementedCourseServiceServer) GetCourseAdmin(context.Context, *GetCourseAdminRequest) (*CourseAdmin, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseAdmin not implemented")
+}
+func (UnimplementedCourseServiceServer) ListCourseIntegrationGrants(context.Context, *ListCourseIntegrationGrantsRequest) (*ListCourseIntegrationGrantsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCourseIntegrationGrants not implemented")
+}
+func (UnimplementedCourseServiceServer) RevokeCourseIntegrationGrant(context.Context, *RevokeCourseIntegrationGrantRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeCourseIntegrationGrant not implemented")
 }
 func (UnimplementedCourseServiceServer) UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateCourseSettings not implemented")
@@ -1424,6 +1672,78 @@ func _CourseService_GetCourseBySlug_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CourseServiceServer).GetCourseBySlug(ctx, req.(*GetCourseBySlugRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).Search(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_Search_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).Search(ctx, req.(*SearchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_GetCourseByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetCourseByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetCourseByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetCourseByToken(ctx, req.(*CourseTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_OptInCourseByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).OptInCourseByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_OptInCourseByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).OptInCourseByToken(ctx, req.(*CourseTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_OptOutCourseByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CourseTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).OptOutCourseByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_OptOutCourseByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).OptOutCourseByToken(ctx, req.(*CourseTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1824,6 +2144,42 @@ func _CourseService_GetCourseAdmin_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_ListCourseIntegrationGrants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseIntegrationGrantsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListCourseIntegrationGrants(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListCourseIntegrationGrants_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListCourseIntegrationGrants(ctx, req.(*ListCourseIntegrationGrantsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_RevokeCourseIntegrationGrant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeCourseIntegrationGrantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).RevokeCourseIntegrationGrant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_RevokeCourseIntegrationGrant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).RevokeCourseIntegrationGrant(ctx, req.(*RevokeCourseIntegrationGrantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_UpdateCourseSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateCourseSettingsRequest)
 	if err := dec(in); err != nil {
@@ -2182,6 +2538,22 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CourseService_GetCourseBySlug_Handler,
 		},
 		{
+			MethodName: "search",
+			Handler:    _CourseService_Search_Handler,
+		},
+		{
+			MethodName: "getCourseByToken",
+			Handler:    _CourseService_GetCourseByToken_Handler,
+		},
+		{
+			MethodName: "optInCourseByToken",
+			Handler:    _CourseService_OptInCourseByToken_Handler,
+		},
+		{
+			MethodName: "optOutCourseByToken",
+			Handler:    _CourseService_OptOutCourseByToken_Handler,
+		},
+		{
 			MethodName: "getUserCourses",
 			Handler:    _CourseService_GetUserCourses_Handler,
 		},
@@ -2268,6 +2640,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getCourseAdmin",
 			Handler:    _CourseService_GetCourseAdmin_Handler,
+		},
+		{
+			MethodName: "listCourseIntegrationGrants",
+			Handler:    _CourseService_ListCourseIntegrationGrants_Handler,
+		},
+		{
+			MethodName: "revokeCourseIntegrationGrant",
+			Handler:    _CourseService_RevokeCourseIntegrationGrant_Handler,
 		},
 		{
 			MethodName: "updateCourseSettings",

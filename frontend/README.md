@@ -213,13 +213,15 @@ stays ahead of the clock — after 23:45 that test skips itself rather than fail
   case is there because it once broke outright: the page loads the semester list before
   anything else, and asking for that with a bearer token failed for a visitor with no
   session, leaving the whole page blank. Every unit test still passed.
-- **`visibility.spec.ts`** — the matrix: for each of the six users and for an anonymous
-  visitor, which courses are listed, which are theirs, which they may open by URL,
-  which live lectures they are shown, which lectures a course page lists, whether a
-  private one is among them, and who is offered the admin link. Asserted against the
-  rendered page, because a listing the server filters correctly and the page then
-  renders from the wrong array is exactly as wrong — and neither the Go tests nor the
-  component tests would notice.
+- **`visibility-start-page.spec.ts`** and **`visibility-course-page.spec.ts`** — the
+  matrix: for each of the six users and for an anonymous visitor, which courses are
+  listed, which are theirs, which live lectures they are shown (the start page half);
+  which they may open by URL, which lectures a course page lists, whether a private one
+  is among them, and who is offered the admin link (the course page half). Asserted
+  against the rendered page, because a listing the server filters correctly and the
+  page then renders from the wrong array is exactly as wrong — and neither the Go tests
+  nor the component tests would notice. Two files so they run on two workers: as one
+  they were the suite's critical path. `visibility.ts` holds what both use.
 
   The case worth knowing is `hidden`, where being listed and being reachable come
   apart: the hidden course is in nobody's public listing, its live lecture reaches only
@@ -236,10 +238,11 @@ Two things to know before adding to them:
   starting value would pass once and then fail on the state its predecessor left
   behind. `runners.spec.ts` goes further and deletes a runner that nothing can
   recreate — runners register themselves over gRPC. `make test_e2e` reloads the dump
-  first for exactly this reason. For the same reason the suite runs with one worker.
-  The reload is once per run and not once per file, so a test that changes a seeded
-  account breaks the later files that assert on it — `users.spec.ts` creates the
-  accounts it deletes and promotes rather than borrowing the seeded ones.
+  first for exactly this reason. The reload is once per run and not once per file, and
+  the files run in parallel, so a test that changes a seeded row breaks whichever file
+  is asserting on it at that moment — `users.spec.ts` creates the accounts it deletes
+  and promotes rather than borrowing the seeded ones. `playwright.config.ts` spells
+  out the rules a writing test has to follow.
 - **The visibility tests only read**, so they neither depend on nor disturb that. Add
   new expectations to `e2e/seed.ts`, not to the spec.
 - **Add cases to the dump, not to the tests.** A rule with no data behind it cannot be

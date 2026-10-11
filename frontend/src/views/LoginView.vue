@@ -19,6 +19,10 @@ const resetError = ref("");
  * stored redirect, neither of which the client can do.
  */
 const loginFailed = ref(route.query.error !== undefined);
+/** Sent here by the set-password page once it is done. */
+const passwordSet = route.query.passwordSet !== undefined;
+/** Sent here by the onboarding page once the first administrator exists. */
+const onboarded = route.query.onboarded !== undefined;
 
 onMounted(async () => {
   try {
@@ -50,6 +54,9 @@ async function submitReset(): Promise<void> {
     <header>
       <h1 class="text-3 font-bold">Login</h1>
     </header>
+
+      <p v-if="passwordSet" class="text-success text-sm" role="status">Your password is set. You can sign in with it now.</p>
+      <p v-if="onboarded" class="text-success text-sm" role="status">Your administrator account is ready. Sign in with it.</p>
 
     <template v-if="options">
       <article v-if="options.useSaml" class="w-full text-center">

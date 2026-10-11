@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import { groupBySemester } from "@/lib/course-admin";
@@ -18,6 +18,10 @@ import { useCourseAdminStore } from "@/stores/course-admin";
  * Below the course links sits the tree of every course the user administers, by
  * semester, as the template's sidebar had it. Only someone with the lecture
  * permission is asked for it: listAdministeredCourses refuses anyone else.
+ *
+ * On a phone the sidebar is folded away behind a button: open, it takes the full
+ * width above the page rather than a column beside it, which left a lecture card
+ * about 170px wide.
  */
 interface AdminLink {
   label: string;
@@ -105,14 +109,32 @@ watch(
 const route = useRoute();
 const openCourseId = computed(() => Number(route.params.courseID) || 0);
 
+/** The sidebar on a phone; following a link closes it, as a menu would. */
+const menuOpen = ref(false);
+watch(() => route.fullPath, () => (menuOpen.value = false));
+
 const semesterGroups = computed(() =>
   can(auth.user, "lecture") ? groupBySemester(courseAdmin.administered) : [],
 );
 </script>
 
 <template>
-  <div class="flex w-full grow">
-    <nav class="tum-live-side-navigation md:block md:w-56 lg:w-72" aria-label="Administration">
+  <div class="flex w-full grow flex-col md:flex-row">
+    <button
+      type="button"
+      class="tum-live-button-secondary tum-live-button mx-4 mt-4 self-start px-3 py-1 text-sm md:hidden"
+      :aria-expanded="menuOpen"
+      aria-controls="admin-navigation"
+      @click="menuOpen = !menuOpen"
+    >
+      <i class="fas fa-bars mr-2" aria-hidden="true"></i>Administration menu
+    </button>
+    <nav
+      id="admin-navigation"
+      class="tum-live-side-navigation md:w-56 lg:w-72"
+      :class="menuOpen ? 'block' : 'hidden md:block'"
+      aria-label="Administration"
+    >
       <section v-if="administrationLinks.length" class="tum-live-side-navigation-group">
         <header class="text-2 text-xs uppercase tracking-wide">Administration</header>
         <template v-for="link in administrationLinks" :key="link.path">
