@@ -21,7 +21,9 @@ test.describe("the removed lecture units page", () => {
       await login(page, users.studi1, "/settings");
 
       await page.goto(path);
-      await expect(page).not.toHaveURL(/\/admin\/courses\/2\/lectures/);
+      // Refused in place (the middleware answers on the requested URL), so assert only
+      // that the redirect did not happen: the nested path itself contains "/lectures".
+      await expect(page).not.toHaveURL(/\/admin\/courses\/2\/lectures$/);
     });
   }
 });
