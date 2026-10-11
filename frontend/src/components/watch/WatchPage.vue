@@ -39,6 +39,7 @@ import { fetchSeekHeatmap, fetchSections, type SeekbarSection } from "@/lib/watc
 import { splitTime, type WatchBookmark } from "@/lib/watch-panels";
 import { createPanelPlayer } from "@/lib/watch-wiring";
 import { watchContextKey, type WatchContext, type WatchController } from "@/lib/watch-context";
+import { expectsRecording, pollForRecording, type RecordingPoller } from "@/lib/watch-recording-poll";
 import { createWatchedMarker, markWatched } from "@/lib/watch-progress";
 import { useAuthStore } from "@/stores/auth";
 import { useStreamRealtime } from "@/stores/streamRealtime";
@@ -116,6 +117,7 @@ onBeforeUnmount(() => {
 // A flip of the live state is the old page's reload: fetch the page data again, which
 // brings the new playlist, or the recording, or the ended state. The server may not
 // have caught up when the event arrives, so one retry follows.
+const sawEnd = ref(false);
 let retry: ReturnType<typeof setTimeout> | undefined;
 onBeforeUnmount(() => clearTimeout(retry));
 watch(
@@ -123,6 +125,7 @@ watch(
   async (live) => {
     const current = store.watch?.stream;
     if (live === undefined || !current || live === current.liveNow) return;
+    if (!live) sawEnd.value = true;
     await load(true);
     if (store.watch?.stream?.liveNow !== live) retry = setTimeout(() => void load(true), 3000);
   },
@@ -142,6 +145,34 @@ function setLayout(next: Layout): void {
   if (!segment) return;
   void router.push({ path: `/w/${props.slug}/${props.streamId}/${segment}`, query: route.query });
 }
+
+// ------------------------------------------------------------ processing recording
+
+// A stream that just ended has no recording until the worker has transcoded it. The
+// page asks again on a backoff and swaps the recording in; the player remounts through
+// `playerKey` when the phase becomes "vod", so no reload is needed.
+const gaveUp = ref(false);
+const processing = computed(
+  () => !gaveUp.value && phase.value === "ended" && !!data.value && expectsRecording(data.value, new Date(), sawEnd.value),
+);
+let poller: RecordingPoller | undefined;
+watch(
+  processing,
+  (on) => {
+    poller?.stop();
+    poller = on
+      ? pollForRecording(
+          async () => {
+            await load(true);
+            return phase.value !== "ended";
+          },
+          { onGiveUp: () => (gaveUp.value = true) },
+        )
+      : undefined;
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => poller?.stop());
 
 // ------------------------------------------------------------ player options
 
@@ -278,7 +309,11 @@ provide(watchContextKey, context);
         data-testid="ended"
       >
         <p class="text-xl font-semibold">This stream has ended.</p>
-        <p class="text-sm text-gray-300">There is no recording of it (yet).</p>
+        <p v-if="processing" class="text-sm text-gray-300" role="status" data-testid="processing">
+          <i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>Recording is being processed. It will
+          appear here as soon as it is ready.
+        </p>
+        <p v-else class="text-sm text-gray-300">There is no recording of it (yet).</p>
       </div>
 
       <SplitView
