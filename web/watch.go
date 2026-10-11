@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"math"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -74,11 +73,6 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		}
 	} else if tumLiveContext.User != nil {
 		data.Version = c.Param("version")
-		if strings.HasPrefix(data.Version, "unit-") {
-			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(tumLiveContext.Stream.Units) {
-				data.Unit = &tumLiveContext.Stream.Units[unitID]
-			}
-		}
 	}
 
 	if tumLiveContext.Stream.LectureHallID != 0 {
@@ -126,11 +120,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 
 	data.CutOffLength = api.CutOffLength
-	if strings.HasPrefix(data.Version, "unit-") {
-		data.Description = data.Unit.GetDescriptionHTML()
-	} else {
-		data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
-	}
+	data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
 	if c.Query("video_only") == "1" {
 		if err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data); err != nil {
 			logger.Error("couldn't render template", "err", err)
@@ -150,7 +140,6 @@ type WatchPageData struct {
 	IsHighlightPage bool
 	AlertsEnabled   bool // whether the alert config is set
 	Version         string
-	Unit            *model.StreamUnit
 	Presets         []model.CameraPreset
 	Progress        model.StreamProgress
 	IndexData       IndexData

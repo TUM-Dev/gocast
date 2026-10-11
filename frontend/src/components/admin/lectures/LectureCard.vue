@@ -126,14 +126,6 @@ const watchLink = computed(() =>
           </li>
         </ul>
         <div class="flex gap-2">
-          <!-- Units are ranges of the recording, so there is nothing to cut before one exists. -->
-          <RouterLink
-            v-if="lecture.vodVersions.length"
-            :to="`/admin/courses/${courseId}/lectures/${lecture.id}/units`"
-            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
-          >
-            Units
-          </RouterLink>
           <button
             type="button"
             class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"

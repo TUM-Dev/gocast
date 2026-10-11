@@ -225,9 +225,7 @@ func (d CoursesDaoImpl) GetCourseBySlugYearAndTerm(ctx context.Context, slug str
 		return cachedCourses.(model.Course), nil
 	}
 	var course model.Course
-	err := DB.Preload("Streams.VideoSections").Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
-		return db.Order("unit_start desc")
-	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
+	err := DB.Preload("Streams.VideoSections").Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start desc")
 	}).Preload("Admins").Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {

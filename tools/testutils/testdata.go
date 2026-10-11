@@ -122,16 +122,6 @@ var (
 		LiveNow:          true,
 		LectureHallID:    LectureHall.ID,
 		Files:            []model.File{Attachment, AttachmentInvalidPath},
-		Units: []model.StreamUnit{
-			{
-				Model:           gorm.Model{ID: 1},
-				UnitName:        "Unit 1",
-				UnitDescription: "First unit",
-				UnitStart:       0,
-				UnitEnd:         1111,
-				StreamID:        1969,
-			},
-		},
 		VideoSections: []model.VideoSection{
 			{
 				Description:  "Introduction",
@@ -557,16 +547,6 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 		EXPECT().
 		UpdateStreamFullAssoc(gomock.Any()).
 		Return(nil).
-		AnyTimes()
-	streamsMock.
-		EXPECT().
-		GetUnitByID(fmt.Sprintf("%d", StreamFPVLive.Units[0].ID)).
-		Return(StreamFPVLive.Units[0], nil).
-		AnyTimes()
-	streamsMock.
-		EXPECT().
-		DeleteUnit(StreamFPVLive.Units[0].ID).
-		Return().
 		AnyTimes()
 	streamsMock.
 		EXPECT().

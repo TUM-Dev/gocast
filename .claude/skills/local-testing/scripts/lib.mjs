@@ -55,7 +55,6 @@ export const PAGES = [
   ["admin-course-import", "/admin/course-import"],
   ["admin-users", "/admin/users"],
   ["admin-lecture-halls", "/admin/lectureHalls"],
-  ["lecture-units", "/admin/units/1/1"],
 ];
 
 export const SHOTS = path.join(repoRoot(), ".shots");

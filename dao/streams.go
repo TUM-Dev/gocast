@@ -28,10 +28,6 @@ type StreamsDao interface {
 	GetDueStreamsForRunners() ([]model.Stream, error)
 	GetDuePremieresForWorkers() []model.Stream
 	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
-	GetUnitByID(id string) (model.StreamUnit, error)
-	// CreateUnit inserts one unit, filling in its ID. Unlike UpdateStreamFullAssoc it
-	// rewrites nothing else of the stream.
-	CreateUnit(unit *model.StreamUnit) error
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
 	GetStreamsByIds(ids []uint) ([]model.Stream, error)
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
@@ -74,7 +70,6 @@ type StreamsDao interface {
 	ToggleVisibility(streamId uint, private bool) error
 
 	DeleteStream(streamID string)
-	DeleteUnit(id uint)
 	DeleteStreamsWithTumID(ids []uint)
 	UpdateLectureSeries(model.Stream) error
 	UpdateLectureSeriesTime(model.Stream) error
@@ -192,17 +187,6 @@ func (d streamsDao) GetStreamByKey(ctx context.Context, key string) (stream mode
 	return res, err
 }
 
-func (d streamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
-	var unit model.StreamUnit
-	err := DB.First(&unit, "id = ?", id).Error
-	return unit, err
-}
-
-func (d streamsDao) CreateUnit(unit *model.StreamUnit) error {
-	defer Cache.Clear()
-	return DB.Create(unit).Error
-}
-
 func (d streamsDao) GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error) {
 	var res model.Stream
 	err = DB.Preload("Chats").First(&res, "tum_online_event_id = ?", id).Error
@@ -230,9 +214,7 @@ func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.
 		}).
 		Preload("Files").
 		Preload("Silences").
-		Preload("Units", func(db *gorm.DB) *gorm.DB {
-			return db.Order("unit_start asc")
-		}).First(&res, "id = ?", id).Error
+		First(&res, "id = ?", id).Error
 	if err != nil {
 		return res, err
 	}
@@ -804,7 +786,6 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		Recording:        vod.Recording,
 		Chats:            vod.Chats,
 		Stats:            vod.Stats,
-		Units:            vod.Units,
 		VodViews:         vod.VodViews,
 		StartOffset:      vod.StartOffset,
 		EndOffset:        vod.EndOffset,
@@ -826,11 +807,6 @@ func (d streamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion,
 func (d streamsDao) DeleteStream(streamID string) {
 	DB.Where("id = ?", streamID).Delete(&model.Stream{})
 	Cache.Clear()
-}
-
-func (d streamsDao) DeleteUnit(id uint) {
-	defer Cache.Clear()
-	DB.Delete(&model.StreamUnit{}, id)
 }
 
 func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {
