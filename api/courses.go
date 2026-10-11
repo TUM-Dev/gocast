@@ -117,7 +117,6 @@ func refuseForeignStream(c *gin.Context, stream model.Stream) bool {
 
 const (
 	WorkerHTTPPort = "8060"
-	CutOffLength   = 256
 )
 
 type createVODReq struct {

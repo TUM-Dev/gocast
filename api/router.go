@@ -23,12 +23,9 @@ func ConfigGinRouter(
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router, daoWrapper)
-	configProgressRouter(router, daoWrapper)
-	configSeekStatsRouter(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper, tools.NewMeiliSearchFunctions())
-	configGinBookmarksRouter(router, daoWrapper)
 	configSemestersRouter(router, daoWrapper)
 	configSelfstreamRouter(router, daoWrapper, manager)
 }

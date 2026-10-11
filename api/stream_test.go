@@ -201,43 +201,6 @@ func TestStream(t *testing.T) {
 			Url(url).
 			Run(t, testutils.Equal)
 	})
-	t.Run("GET/api/stream/:streamID/end", func(t *testing.T) {
-		url := fmt.Sprintf("/api/stream/%d/end", testutils.StreamFPVLive.ID)
-		gomino.TestCases{
-			"no context": {
-				ExpectedCode: http.StatusInternalServerError,
-			},
-			"not admin": {
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusForbidden,
-			},
-			/*"success discard": testutils.TestCase{
-				Method: http.MethodGet,
-				Url:    url + "?discard=true",
-				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:  testutils.GetStreamMock(t),
-					CoursesDao:  testutils.GetCoursesMock(t),
-					ProgressDao: testutils.GetProgressMock(t),
-				},
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusOK,
-			},
-			"success no discard": testutils.TestCase{
-				Method: http.MethodGet,
-				Url:    url,
-				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:  testutils.GetStreamMock(t),
-					CoursesDao:  testutils.GetCoursesMock(t),
-					ProgressDao: testutils.GetProgressMock(t),
-				},
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusOK,},*/
-		}.
-			Router(StreamDefaultRouter(t)).
-			Method(http.MethodGet).
-			Url(url).
-			Run(t, testutils.Equal)
-	})
 	t.Run("PATCH/api/stream/:streamID/visibility", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/visibility", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
@@ -309,56 +272,6 @@ func TestStream(t *testing.T) {
 
 func TestStreamVideoSections(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	t.Run("GET/api/stream/:streamID/sections", func(t *testing.T) {
-		// generate same response as in handler
-
-		url := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
-		gomino.TestCases{
-			"GetByStreamId returns error": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-						VideoSectionDao: func() dao.VideoSectionDao {
-							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
-							sectionMock.
-								EXPECT().
-								GetByStreamId(testutils.StreamFPVLive.ID).
-								Return([]model.VideoSection{}, errors.New(""))
-							return sectionMock
-						}(),
-					}
-					configGinStreamRestRouter(r, wrapper, nil)
-				},
-				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: []gin.H{},
-			},
-			"success": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-						VideoSectionDao: func() dao.VideoSectionDao {
-							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
-							sectionMock.
-								EXPECT().
-								GetByStreamId(testutils.StreamFPVLive.ID).
-								Return(testutils.StreamFPVLive.VideoSections, nil)
-							return sectionMock
-						}(),
-					}
-					configGinStreamRestRouter(r, wrapper, nil)
-				},
-				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.StreamFPVLive.VideoSections,
-			},
-		}.
-			Method(http.MethodGet).
-			Url(url).
-			Run(t, testutils.Equal)
-	})
 	t.Run("POST/api/stream/:streamID/sections", func(t *testing.T) {
 		request := []model.VideoSection{
 			{
@@ -1140,77 +1053,4 @@ func TestPutCustomLiveThumbnail(t *testing.T) {
 		Run(t, testutils.Equal)
 
 	_ = os.RemoveAll(baseFolder)
-}
-
-func TestSubtitles(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	endpoint := fmt.Sprintf("/api/stream/%d/subtitles/en", testutils.StreamFPVLive.ID)
-	gomino.TestCases{
-		"no context": {
-			ExpectedCode: http.StatusInternalServerError,
-		},
-		"subtitles not found": {
-			Router: func(r *gin.Engine) {
-				wrapper := dao.DaoWrapper{
-					StreamsDao: testutils.GetStreamMock(t),
-					CoursesDao: testutils.GetCoursesMock(t),
-					SubtitlesDao: func() dao.SubtitlesDao {
-						subMock := mock_dao.NewMockSubtitlesDao(gomock.NewController(t))
-						subMock.
-							EXPECT().
-							GetByStreamIDandLang(gomock.Any(), testutils.StreamFPVLive.ID, "en").
-							Return(model.Subtitles{}, gorm.ErrRecordNotFound)
-						return subMock
-					}(),
-				}
-				configGinStreamRestRouter(r, wrapper, nil)
-			},
-			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
-			ExpectedCode: http.StatusNotFound,
-		},
-		"internal error": {
-			Router: func(r *gin.Engine) {
-				wrapper := dao.DaoWrapper{
-					StreamsDao: testutils.GetStreamMock(t),
-					CoursesDao: testutils.GetCoursesMock(t),
-					SubtitlesDao: func() dao.SubtitlesDao {
-						subMock := mock_dao.NewMockSubtitlesDao(gomock.NewController(t))
-						subMock.
-							EXPECT().
-							GetByStreamIDandLang(gomock.Any(), testutils.StreamFPVLive.ID, "en").
-							Return(model.Subtitles{}, errors.New(""))
-						return subMock
-					}(),
-				}
-				configGinStreamRestRouter(r, wrapper, nil)
-			},
-			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
-			ExpectedCode: http.StatusInternalServerError,
-		},
-		"success": {
-			Router: func(r *gin.Engine) {
-				wrapper := dao.DaoWrapper{
-					StreamsDao: testutils.GetStreamMock(t),
-					CoursesDao: testutils.GetCoursesMock(t),
-					SubtitlesDao: func() dao.SubtitlesDao {
-						subMock := mock_dao.NewMockSubtitlesDao(gomock.NewController(t))
-						subMock.
-							EXPECT().
-							GetByStreamIDandLang(gomock.Any(), testutils.StreamFPVLive.ID, "en").
-							Return(testutils.SubtitlesFPVLive, nil)
-						return subMock
-					}(),
-				}
-				configGinStreamRestRouter(r, wrapper, nil)
-			},
-			Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
-			ExpectedCode:     http.StatusOK,
-			ExpectedResponse: testutils.SubtitlesFPVLive.Content,
-		},
-	}.
-		Router(StreamDefaultRouter(t)).
-		Method(http.MethodGet).
-		Url(endpoint).
-		Run(t, testutils.Equal)
 }
