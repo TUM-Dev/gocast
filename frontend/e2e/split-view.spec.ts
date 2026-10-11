@@ -145,10 +145,15 @@ test.describe("the split view's playback", () => {
   });
 
   test("seeks both videos from a hotkey", async ({ page }) => {
+    // The fixture streams are 10 s long and a skip is longer than what is left at the
+    // start, so go past the middle first and skip back: that always lands inside them.
     await page.mouse.move(300, 300);
+    const bar = (await page.getByTestId("split-presentation").locator(".vjs-progress-holder").boundingBox())!;
+    await page.mouse.click(bar.x + bar.width * 0.6, bar.y + 1);
+    await expectTogether(page, 6);
     const before = (await playback(page, "presentation")).time;
-    await page.keyboard.press("ArrowRight");
-    await expect.poll(async () => (await playback(page, "presentation")).time).toBeGreaterThan(before + 2);
+    await page.keyboard.press("ArrowLeft");
+    await expect.poll(async () => (await playback(page, "presentation")).time).toBeLessThan(before - 2);
     const target = (await playback(page, "presentation")).time;
     await expectTogether(page, target);
   });
