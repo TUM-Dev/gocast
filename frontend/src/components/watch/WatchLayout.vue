@@ -21,8 +21,13 @@ defineProps<{ sidebarOpen: boolean }>();
 <template>
   <div class="flex w-full max-w-[1800px] flex-col gap-4 lg:flex-row lg:items-start lg:p-4" data-testid="watch-layout">
     <div class="flex min-w-0 grow flex-col">
-      <div class="sticky top-0 z-30 lg:static" data-testid="region-player">
-        <slot name="player" />
+      <!-- On a wide screen a full-width 16:9 picture is taller than the window and
+           pushes the title below the fold, so it is capped at what fits, centred on black
+           like a theatre mode. The phone's picture is as wide as the screen. -->
+      <div class="sticky top-0 z-30 lg:static lg:bg-black" data-testid="region-player">
+        <div class="mx-auto lg:max-w-[calc((100vh-9rem)*16/9)]">
+          <slot name="player" />
+        </div>
       </div>
       <div v-if="$slots['admin-strip']" data-testid="region-admin-strip">
         <slot name="admin-strip" />
