@@ -15,6 +15,8 @@ export interface FrontendConfig {
   versionTag: string;
   /** Optional; the footer links to it only when the deployment sets one. */
   wikiUrl: string;
+  /** The deployment's public address, for absolute links (canonical URLs); may be empty. */
+  canonicalUrl: string;
   /** True while the deployment has no users, when the first account is still to be made. */
   isFreshInstallation: boolean;
 }
@@ -50,6 +52,7 @@ async function request(): Promise<FrontendConfig> {
     description: res.branding?.description ?? "",
     versionTag: res.versionTag,
     wikiUrl: res.wikiUrl,
+    canonicalUrl: res.canonicalUrl,
     isFreshInstallation: res.isFreshInstallation,
   };
 }

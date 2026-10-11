@@ -17,6 +17,8 @@ import WatchPlaceholder from "@/components/watch/WatchPlaceholder.vue";
 import WatchPlayer from "@/components/watch/WatchPlayer.vue";
 import WatchWaitingRoom from "@/components/watch/WatchWaitingRoom.vue";
 import { WatchViewKind } from "@/gen/server/apiv2_pb";
+import { canonicalUrl, useCanonicalLink } from "@/lib/canonical-link";
+import { singleRouteParam } from "@/lib/route-query";
 import { fetchConfig } from "@/lib/config";
 import { parseNumberParam } from "@/lib/player/start-time";
 import {
@@ -249,9 +251,21 @@ function setSplitController(el: unknown): void {
 
 const previousTitle = document.title;
 const brand = ref("TUM-Live");
+const canonicalBase = ref<string | undefined>(undefined);
 void fetchConfig()
-  .then((config) => (brand.value = config.title || brand.value))
+  .then((config) => {
+    brand.value = config.title || brand.value;
+    canonicalBase.value = config.canonicalUrl;
+  })
   .catch(() => undefined);
+
+// The old template's link: the deployment's address + /w/<slug>/<id>[/<view>], with the
+// view as requested in the address and without the query (?t=, ?rate=).
+useCanonicalLink(() =>
+  canonicalBase.value === undefined || !data.value
+    ? undefined
+    : canonicalUrl(canonicalBase.value, "w", props.slug, props.streamId, singleRouteParam(route.params, "version")),
+);
 watch(
   [data, brand, title],
   () => {

@@ -60,6 +60,14 @@ test.describe("the watch page", () => {
     await expect(page.getByTestId("watch-player")).toBeVisible();
   });
 
+  test("names the page as its canonical link, without the query", async ({ page }) => {
+    await page.goto("/w/brauereiwesen/1/PRES?t=30&rate=2");
+
+    await expect(page.getByTestId("watch-player")).toBeVisible();
+    // The host is the deployment's configured address, so only the path is asserted.
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/w\/brauereiwesen\/1\/PRES$/);
+  });
+
   test("shows the waiting room for a lecture that has not started", async ({ page }) => {
     await login(page, users.studi1, "/w/bierkunde/17");
 
