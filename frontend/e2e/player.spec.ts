@@ -103,6 +103,21 @@ test.describe("dialogs over the player", () => {
     await expect.poll(() => coversPlayer(page, '[aria-label="Keyboard shortcuts"][role="dialog"]')).toBe(true);
   });
 
+  test("the keyboard shortcuts dialog is readable in the dark theme", async ({ page }) => {
+    // Teleported to <body>, which sets no text colour: the popup must bring its own.
+    await page.emulateMedia({ colorScheme: "dark" });
+    await openPlayer(page);
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+    await page.getByRole("button", { name: "Keyboard shortcuts" }).click();
+
+    const action = page.getByRole("dialog", { name: "Keyboard shortcuts" }).locator("li strong").first();
+    await expect(action).toBeVisible();
+    const color = await action.evaluate((el) => getComputedStyle(el).color);
+    const [r, g, b] = color.match(/\d+/g)!.map(Number);
+    // Light text on the dark popup, not the browser's default black.
+    expect(r + g + b).toBeGreaterThan(3 * 150);
+  });
+
   test("the share dialog sits above the player, under <body>", async ({ page }) => {
     await openPlayer(page);
     await page.getByRole("button", { name: "Share", exact: true }).click();
