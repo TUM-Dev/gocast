@@ -10,20 +10,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// AdminPage serves all administration pages. todo: refactor into multiple methods
-func (r mainRoutes) LectureCutPage(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", tumLiveContext); err != nil {
-		logger.Error("Error executing template lecture-cut.gohtml", "err", err)
-	}
-}
-
 func (r mainRoutes) LectureUnitsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {

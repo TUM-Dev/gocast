@@ -367,6 +367,14 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/admin/course/:courseID/stats", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/stats")
 	})
+	// The lecture cut editor was dropped (it may return later), so old bookmarks and
+	// emailed links go to the course's lectures tab. This must
+	// stay behind courseAdminGroup's middleware so the redirect doesn't reveal anything
+	// to people who couldn't open the page before. Stored cuts (StartOffset/EndOffset)
+	// still apply on playback.
+	courseAdminGroup.GET("/admin/cut/:courseID/:streamID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
+	})
 	router.GET("/admin/stats/:courseID/:streamID", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
 			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/stats")
@@ -375,7 +383,6 @@ func configMainRoute(router *gin.Engine) {
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))
 	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
-	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
 	// Rule 3's nested path; the old one redirects below.
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats", nil)
 	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
