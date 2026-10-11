@@ -28,6 +28,7 @@ type Memory struct {
 
 	buffer          int
 	viewersInterval time.Duration
+	extraViewers    func(streamID uint) int
 }
 
 type subscriber struct {
@@ -53,6 +54,13 @@ func WithBuffer(n int) MemoryOption {
 // WithViewersInterval sets the shortest gap between two ViewersEvents per stream.
 func WithViewersInterval(d time.Duration) MemoryOption {
 	return func(m *Memory) { m.viewersInterval = d }
+}
+
+// WithExtraViewers adds viewers the hub does not hold itself, such as v1 sockets, to
+// the count a ViewersEvent carries. Viewers() stays the hub's own subscribers, so
+// callers that add their own v1 count do not count it twice.
+func WithExtraViewers(f func(streamID uint) int) MemoryOption {
+	return func(m *Memory) { m.extraViewers = f }
 }
 
 // NewMemory returns an empty in-process hub.
@@ -189,5 +197,8 @@ func (m *Memory) sendViewers(streamID uint) {
 	}
 	m.mu.Unlock()
 
+	if m.extraViewers != nil {
+		count += m.extraViewers(streamID) // outside the lock: it takes the caller's own
+	}
 	m.Publish(context.Background(), streamID, ViewersEvent(streamID, count))
 }

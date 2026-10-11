@@ -24,3 +24,27 @@ func publishV2(streamID uint, event *protobuf.RealtimeEvent) {
 		realtimeHub.Publish(context.Background(), streamID, event)
 	}
 }
+
+// ViewerCounter is what live statistics need from the v2 hub; realtimehub.Hub
+// satisfies it.
+type ViewerCounter interface {
+	Viewers(streamID uint) int
+}
+
+// viewerCount is the stream's total audience: v1 sockets plus v2 sockets. Adding is
+// not double counting because a client holds one kind only: the old templates open
+// just the v1 socket and the SPA just the v2 one, and each page is served by exactly
+// one of them. v2 may be nil (tests, or before startup wiring).
+func viewerCount(streamID uint, v2 ViewerCounter) int {
+	n := len(sessionsFor(streamID))
+	if v2 != nil {
+		n += v2.Viewers(streamID)
+	}
+	return n
+}
+
+// V1Viewers is the number of v1 sockets on the stream. The v2 hub adds it to the
+// count in its ViewersEvent so the SPA shows the true total.
+func V1Viewers(streamID uint) int {
+	return len(sessionsFor(streamID))
+}

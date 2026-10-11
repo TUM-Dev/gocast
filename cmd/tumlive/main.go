@@ -155,7 +155,9 @@ func run(ctx context.Context) error {
 
 	// One hub for the process: the v2 realtime socket reads it, and v1's producers
 	// publish to it beside their own sockets until api/ is gone.
-	hub := realtimehub.NewMemory()
+	// Its ViewersEvent adds the v1 sockets, so the SPA's panel shows the same total
+	// the statistics record.
+	hub := realtimehub.NewMemory(realtimehub.WithExtraViewers(api.V1Viewers))
 	api.SetRealtimeHub(hub)
 
 	opts := []runner_manager.Option{
@@ -191,7 +193,7 @@ func run(ctx context.Context) error {
 	mailer := tools.NewMailer(dao.NewDaoWrapper(), tools.Cfg.Mail.MaxMailsPerMinute)
 	go mailer.Run()
 
-	initCron(logger, m)
+	initCron(logger, m, hub)
 	return serveHttp(ctx, m, camService, apiv2Subtitles, hub)
 }
 
@@ -332,13 +334,13 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	return err
 }
 
-func initCron(logger *slog.Logger, m *runner_manager.Manager) {
+func initCron(logger *slog.Logger, m *runner_manager.Manager, hub realtimehub.Hub) {
 	daoWrapper := dao.NewDaoWrapper()
 	tools.InitCronService()
 	// Fetch students every 12 hours
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
 	// Collect livestream stats (viewers) every minute
-	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")
+	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper, hub), "0-59 * * * *")
 	// Look for due streams and notify workers about them
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	_ = tools.Cron.AddFunc("triggerDueStreamsRunner", func() {
