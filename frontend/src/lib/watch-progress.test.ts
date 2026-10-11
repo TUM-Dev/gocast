@@ -37,8 +37,10 @@ describe("progress reporter", () => {
 
   it("reports every interval while playing and at once on pause", () => {
     const save = vi.fn().mockResolvedValue(undefined);
-    const r = createProgressReporter({ fraction: () => 0.25, save });
+    let f = 0.25;
+    const r = createProgressReporter({ fraction: () => f, save });
     r.onPlay();
+    f = 0.3;
     vi.advanceTimersByTime(20_000);
     expect(save).toHaveBeenCalledTimes(2);
     r.onPause();
@@ -55,6 +57,11 @@ describe("progress reporter", () => {
     vi.advanceTimersByTime(10_000);
     expect(save).not.toHaveBeenCalled();
     f = 0.5;
+    r.onPlay();
+    f = 0.6;
+    r.onPause();
+    expect(save).toHaveBeenCalledTimes(1);
+    save.mockClear();
     r.onEnded();
     vi.advanceTimersByTime(30_000);
     expect(save).not.toHaveBeenCalled();
@@ -62,8 +69,10 @@ describe("progress reporter", () => {
 
   it("doubles the interval after a failure", async () => {
     const save = vi.fn().mockRejectedValue(new Error("x"));
-    const r = createProgressReporter({ fraction: () => 0.5, save });
+    let f = 0.5;
+    const r = createProgressReporter({ fraction: () => f, save });
     r.onPlay();
+    f = 0.6;
     await vi.advanceTimersByTimeAsync(10_000);
     expect(save).toHaveBeenCalledTimes(1);
     // The next report was already scheduled when the first failed; the one after waits 20 s.
@@ -74,5 +83,41 @@ describe("progress reporter", () => {
     await vi.advanceTimersByTimeAsync(10_000);
     expect(save).toHaveBeenCalledTimes(3);
     r.dispose();
+  });
+
+  it("reports nothing for a lecture that is only opened, or restarted at 0:00", () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const r = createProgressReporter({ fraction: () => 0, save });
+    // A finished lecture restarts at 0:00 and the viewer plays and pauses without moving,
+    // or leaves: neither may overwrite the saved progress with ~0.
+    r.onPause();
+    r.onPlay();
+    r.onPause();
+    r.dispose();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it("waits for the position to move by minAdvance, then reports", () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    let f = 0;
+    const r = createProgressReporter({ fraction: () => f, save, minAdvance: () => 0.01 });
+    r.onPlay();
+    f = 0.005;
+    r.onPause();
+    expect(save).not.toHaveBeenCalled();
+    r.onPlay();
+    f = 0.02;
+    r.onPause();
+    expect(save).toHaveBeenCalledExactlyOnceWith(0.02);
+  });
+
+  it("counts a seek during playback as having engaged", () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    let f = 0;
+    const r = createProgressReporter({ fraction: () => f, save, minAdvance: () => 0.01 });
+    r.onPlay();
+    f = 0.7;
+    r.onPause();
+    expect(save).toHaveBeenCalledExactlyOnceWith(0.7);
   });
 });

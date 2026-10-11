@@ -206,16 +206,45 @@ defineExpose({
 });
 
 // Width of each side on a wide screen; 0 hides it. The gutter takes its own 10px.
-const presWidth = computed(() => `${100 - cam.value}%`);
-const camWidth = computed(() => `${cam.value}%`);
+const presShare = computed(() => (100 - cam.value) / 100);
+const camShare = computed(() => cam.value / 100);
+
+// --- the shared control bar --------------------------------------------------------
+// The presentation's own control bar is the pair's: the stylesheet below widens it to
+// the whole row (as the old page did), so its play button, seekbar, volume, speed and
+// captions act on the primary and, through syncPlayers, on the camera. Two things
+// video.js would otherwise do for the presentation alone are taken over here.
+const presPane = ref<HTMLElement | null>(null);
+
+// Fullscreen (the button, or a double click on the picture) is the pair's, not the
+// presentation's: video.js would fullscreen only the player the bar belongs to.
+function onFullscreenControl(e: MouseEvent): void {
+  const target = e.target as HTMLElement | null;
+  if (!target?.closest) return;
+  const hit = e.type === "dblclick" ? target.closest(".vjs-tech, .vjs-poster, .vjs-text-track-display") : target.closest(".vjs-fullscreen-control");
+  if (!hit || !root.value?.contains(hit)) return;
+  e.stopPropagation();
+  e.preventDefault();
+  void toggleFullscreen();
+}
+
+// The camera cannot take the pointer (see below), so movement over it never reaches the
+// presentation's player, which would hide the control bar after a moment while the
+// viewer is still reaching for it. Tell the player about it.
+function forwardActivity(e: MouseEvent): void {
+  if (presPane.value?.contains(e.target as Node)) return;
+  presPane.value?.querySelector(".video-js")?.dispatchEvent(new MouseEvent("mousemove", { clientX: e.clientX, clientY: e.clientY }));
+}
 </script>
 
 <template>
   <div
     ref="root"
-    class="group relative flex flex-col gap-2 bg-black md:gap-0"
-    :class="fullscreen ? 'h-screen w-screen justify-center' : ''"
+    class="split-root group relative flex flex-col gap-2 bg-black md:gap-0"
+    :class="fullscreen ? 'split-fullscreen h-screen w-screen justify-center' : ''"
     data-testid="split-view"
+    @click.capture="onFullscreenControl"
+    @dblclick.capture="onFullscreenControl"
   >
     <div class="absolute right-2 top-2 z-20 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
       <div class="relative hidden md:block">
@@ -254,22 +283,20 @@ const camWidth = computed(() => `${cam.value}%`);
           </li>
         </ul>
       </div>
-      <button
-        type="button"
-        class="rounded bg-black/60 px-2 py-1 text-sm text-white hover:bg-black/80"
-        :title="fullscreen ? 'Exit fullscreen' : 'Fullscreen'"
-        @click="toggleFullscreen"
-      >
-        <i class="fas" :class="fullscreen ? 'fa-compress' : 'fa-expand'" aria-hidden="true"></i>
-        <span class="sr-only">{{ fullscreen ? "Exit fullscreen" : "Fullscreen" }}</span>
-      </button>
     </div>
 
-    <div ref="row" class="flex flex-col gap-2 md:flex-row md:gap-0">
+    <div
+      ref="row"
+      class="split-row flex flex-col gap-2 md:flex-row md:gap-0"
+      :style="{ '--g': presentation && camera ? '0.625rem' : '0px' }"
+      @mousemove="forwardActivity"
+    >
       <div
         v-if="presentation"
-        class="min-w-0 overflow-hidden md:[flex:0_0_var(--w)]"
-        :style="{ '--w': presWidth }"
+        ref="presPane"
+        class="split-primary min-w-0"
+        :class="cam === 100 ? 'split-primary-hidden' : ''"
+        :style="{ '--r': presShare }"
         :aria-hidden="cam === 100 ? 'true' : undefined"
         data-testid="split-presentation"
       >
@@ -321,8 +348,8 @@ const camWidth = computed(() => `${cam.value}%`);
       -->
       <div
         v-if="camera"
-        class="split-follower pointer-events-none min-w-0 overflow-hidden md:[flex:0_0_var(--w)]"
-        :style="{ '--w': camWidth }"
+        class="split-follower pointer-events-none min-w-0 overflow-hidden"
+        :style="{ '--r': camShare }"
         :aria-hidden="cam === 0 ? 'true' : undefined"
         data-testid="split-camera"
       >
@@ -337,5 +364,66 @@ const camWidth = computed(() => `${cam.value}%`);
 .split-follower :deep(.vjs-big-play-button),
 .split-follower :deep(.vjs-loading-spinner) {
   display: none !important;
+}
+
+/*
+ * The presentation's control bar spans the whole row, not just its own pane: 100cqw is
+ * the width of .split-root, a size container. The pane and the player's host must not
+ * clip it, and it must sit above the camera, which comes later in the DOM.
+ */
+.split-root {
+  container-type: inline-size;
+}
+.split-primary :deep([data-testid="video-player"]) {
+  overflow: visible;
+}
+.split-primary :deep(.vjs-control-bar) {
+  width: 100cqw;
+  max-width: none;
+  z-index: 5;
+}
+/* With the presentation at 0% only its control bar is left to show. */
+.split-primary-hidden :deep(.vjs-tech),
+.split-primary-hidden :deep(.vjs-poster),
+.split-primary-hidden :deep(.vjs-big-play-button),
+.split-primary-hidden :deep(.vjs-text-track-display),
+.split-primary-hidden :deep(.vjs-loading-spinner) {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  /*
+   * Side by side. The two shares split what the gutter leaves, so the row adds up to
+   * 100% instead of overflowing by the gutter's width. The row has the picture's 16:9
+   * shape and the players fill it (video.js' fluid mode would give each its own height
+   * from its own width and leave the control bar at the bottom of the shorter one), so
+   * the bar sits at the bottom of the pair and each picture is centred in its side.
+   */
+  .split-row {
+    aspect-ratio: 16 / 9;
+  }
+  .split-fullscreen .split-row {
+    aspect-ratio: auto;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .split-primary,
+  .split-follower {
+    flex: 0 0 calc((100% - var(--g)) * var(--r));
+    height: 100%;
+  }
+  .split-primary > :deep(div),
+  .split-follower > :deep(div),
+  .split-primary :deep([data-testid="video-player"]),
+  .split-follower :deep([data-testid="video-player"]),
+  .split-primary :deep(.video-js),
+  .split-follower :deep(.video-js) {
+    height: 100%;
+  }
+  .split-primary :deep(.video-js.vjs-fluid),
+  .split-follower :deep(.video-js.vjs-fluid) {
+    height: 100% !important;
+    padding-top: 0 !important;
+  }
 }
 </style>

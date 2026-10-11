@@ -45,6 +45,9 @@ export function createWatchedMarker(mark: () => Promise<void>): { fire(): void }
   };
 }
 
+/** Playback must move this far (seconds) from where it started before progress is saved. */
+const MIN_ADVANCE_SECONDS = 3;
+
 export interface ProgressReporter {
   onPlay(): void;
   onPause(): void;
@@ -58,12 +61,19 @@ export interface ProgressReporterOptions {
   save(progress: number): Promise<void>;
   /** Milliseconds between reports while playing; the old player's 10 s. */
   intervalMs?: number;
+  /**
+   * How far (as a fraction) the position must move from where playback started before
+   * anything is reported. Opening a lecture must not save a position: a finished one
+   * restarts at 0:00, and reporting that would overwrite the viewer's progress with ~0.
+   */
+  minAdvance?: () => number;
 }
 
 /**
  * Reports watch progress the way the old player did (TUMLiveVjs.ts watchProgress):
  * every 10 s while playing, immediately on pause (which is also what a seek-and-stop or
- * leaving by pausing produces), nothing once ended. A failed report doubles the interval
+ * leaving by pausing produces), nothing once ended. Nothing at all is reported until the
+ * position has moved from where playback started (see `minAdvance`). A failed report doubles the interval
  * -- binary exponential backoff, so a struggling server is not hammered by every viewer.
  * It deliberately stays doubled after later successes, as before.
  *
@@ -74,9 +84,22 @@ export function createProgressReporter(options: ProgressReporterOptions): Progre
   let interval = options.intervalMs ?? 10_000;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
-  const report = () => {
+  // Where the position was when playback first started; reports wait until it moves.
+  let baseline: number | undefined;
+  let engaged = false;
+
+  const current = () => {
     const progress = options.fraction();
-    if (progress === undefined || !Number.isFinite(progress)) return;
+    return progress === undefined || !Number.isFinite(progress) ? undefined : progress;
+  };
+  const report = () => {
+    const progress = current();
+    if (progress === undefined) return;
+    if (!engaged) {
+      if (baseline === undefined) baseline = progress;
+      if (Math.abs(progress - baseline) <= 0 || Math.abs(progress - baseline) < (options.minAdvance?.() ?? 0)) return;
+      engaged = true;
+    }
     options.save(Math.min(1, Math.max(0, progress))).catch(() => {
       interval *= 2;
     });
@@ -94,6 +117,7 @@ export function createProgressReporter(options: ProgressReporterOptions): Progre
 
   return {
     onPlay() {
+      if (!engaged && baseline === undefined) baseline = current();
       stop();
       schedule();
     },
@@ -124,13 +148,15 @@ export function attachProgressReporting(
   player: ReportablePlayer,
   options: { streamId: number; recordingDuration?: number; clipStart?: number; onEnded?: () => void },
 ): () => void {
+  const total = () => options.recordingDuration ?? player.getDuration() + (options.clipStart ?? 0);
   const reporter = createProgressReporter({
     fraction() {
-      const total = options.recordingDuration ?? player.getDuration() + (options.clipStart ?? 0);
-      if (!Number.isFinite(total) || total <= 0) return undefined;
-      return player.toRecordingTime(player.getCurrentTime()) / total;
+      const t = total();
+      if (!Number.isFinite(t) || t <= 0) return undefined;
+      return player.toRecordingTime(player.getCurrentTime()) / t;
     },
     save: (progress) => saveProgress(options.streamId, progress),
+    minAdvance: () => MIN_ADVANCE_SECONDS / total(),
   });
   const offs = [
     player.on("play", reporter.onPlay),
