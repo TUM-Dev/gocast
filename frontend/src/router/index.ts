@@ -15,6 +15,7 @@ import InfoPageView from "@/views/InfoPageView.vue";
 import LoginView from "@/views/LoginView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import SearchView from "@/views/SearchView.vue";
+import WatchView from "@/views/WatchView.vue";
 import SetPasswordView from "@/views/SetPasswordView.vue";
 import CourseTokenView from "@/views/CourseTokenView.vue";
 import OnboardingView from "@/views/OnboardingView.vue";
@@ -274,6 +275,21 @@ const routes: RouteRecordRaw[] = [
     component: CourseTokenView,
     props: { mode: "opt-out" },
     meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // The watch page. `:version` is the layout (COMB, PRES, CAM or SPLIT). Anonymous
+    // because a public course's stream is watchable without a session. Not in
+    // spaRoutes (web/router.go) until the watch family flips as a whole.
+    path: "/w/:slug/:streamID",
+    name: "watch",
+    component: WatchView,
+    meta: { anonymous: true },
+  },
+  {
+    path: "/w/:slug/:streamID/:version(COMB|PRES|CAM|SPLIT)",
+    name: "watch-layout",
+    component: WatchView,
+    meta: { anonymous: true },
   },
   {
     // The chat on a page of its own. Deliberately not the popup's current URL
