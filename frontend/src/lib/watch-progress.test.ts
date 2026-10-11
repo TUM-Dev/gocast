@@ -1,6 +1,35 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createProgressReporter } from "./watch-progress";
+import { apiPatchMessage } from "./api";
+import { createProgressReporter, createWatchedMarker, markWatched } from "./watch-progress";
+
+vi.mock("./api", () => ({ apiPatchMessage: vi.fn().mockResolvedValue({}) }));
+
+describe("marking a lecture watched", () => {
+  it("sends full progress with the watched flag", async () => {
+    await markWatched(7);
+    const [, , path, body] = vi.mocked(apiPatchMessage).mock.calls.at(-1)!;
+    expect(path).toBe("/progress/7");
+    expect(body).toMatchObject({ streamId: 7, progress: 1, watched: true });
+  });
+
+  it("fires once per marker, and again only after a failure", async () => {
+    const mark = vi.fn().mockResolvedValueOnce(undefined);
+    const m = createWatchedMarker(mark);
+    m.fire();
+    m.fire();
+    await Promise.resolve();
+    expect(mark).toHaveBeenCalledTimes(1);
+
+    const failing = vi.fn().mockRejectedValueOnce(new Error("x")).mockResolvedValue(undefined);
+    const f = createWatchedMarker(failing);
+    f.fire();
+    await new Promise((r) => setTimeout(r));
+    f.fire();
+    f.fire();
+    expect(failing).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe("progress reporter", () => {
   beforeEach(() => vi.useFakeTimers());

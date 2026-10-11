@@ -56,6 +56,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** The controller, once the player component exists; null when it goes away. */
   controller: [controller: WatchController | null];
+  /** Playback reached the end of the recording (or of its clip). */
+  ended: [];
 }>();
 
 const inner = ref<InstanceType<typeof VideoPlayer> | null>(null);
@@ -96,7 +98,14 @@ function startReporting(c: WatchController): void {
     },
     save: (progress) => saveProgress(props.streamId, progress),
   });
-  const offs = [c.on("play", reporter.onPlay), c.on("pause", reporter.onPause), c.on("ended", reporter.onEnded)];
+  const offs = [
+    c.on("play", reporter.onPlay),
+    c.on("pause", reporter.onPause),
+    c.on("ended", () => {
+      reporter.onEnded();
+      emit("ended");
+    }),
+  ];
   stopReporting = () => {
     offs.forEach((off) => off());
     reporter.dispose();

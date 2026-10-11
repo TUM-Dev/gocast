@@ -39,6 +39,7 @@ import { fetchSeekHeatmap, fetchSections, type SeekbarSection } from "@/lib/watc
 import { splitTime, type WatchBookmark } from "@/lib/watch-panels";
 import { createPanelPlayer } from "@/lib/watch-wiring";
 import { watchContextKey, type WatchContext, type WatchController } from "@/lib/watch-context";
+import { createWatchedMarker, markWatched } from "@/lib/watch-progress";
 import { useAuthStore } from "@/stores/auth";
 import { useStreamRealtime } from "@/stores/streamRealtime";
 import { useWatchStore } from "@/stores/watch";
@@ -161,6 +162,10 @@ const skipSeconds = computed(() => skipSecondsFor(auth.user));
 const playerKey = computed(() => `${layout.value}:${phase.value}`);
 
 const controller = shallowRef<WatchController | null>(null);
+
+// Reaching the end marks the lecture watched. Once per page view, not per player: a
+// layout change remounts the player, and replaying must not report again.
+const watchedMarker = createWatchedMarker(() => markWatched(props.streamId));
 
 // ------------------------------------------------------------ live values
 
@@ -311,6 +316,7 @@ provide(watchContextKey, context);
         :report-progress="phase === 'vod' && data.viewer?.signedIn === true"
         :recording-duration="data.stream?.duration"
         @controller="controller = $event"
+        @ended="watchedMarker.fire()"
       >
         <template #seekbar="{ container }">
           <SeekbarOverlay

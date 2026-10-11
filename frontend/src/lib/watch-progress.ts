@@ -13,6 +13,38 @@ export async function saveProgress(streamId: number, progress: number): Promise<
   );
 }
 
+/**
+ * Marks the lecture watched (what the course page's eye icon reads). The plain progress
+ * saves above never touch the flag (the DAO only writes `watched` when it is true), so
+ * a late pause report cannot undo this.
+ */
+export async function markWatched(streamId: number): Promise<void> {
+  await apiPatchMessage(
+    UpdateProgressRequestSchema,
+    StreamProgressSchema,
+    `/progress/${streamId}`,
+    create(UpdateProgressRequestSchema, { streamId, progress: 1, watched: true }),
+  );
+}
+
+/**
+ * Calls `mark` the first time `fire` runs and never again for this marker: a viewer who
+ * scrubs back and reaches the end twice is still one page view. A failed attempt is
+ * forgotten, so the next end gets another try.
+ */
+export function createWatchedMarker(mark: () => Promise<void>): { fire(): void } {
+  let done = false;
+  return {
+    fire() {
+      if (done) return;
+      done = true;
+      mark().catch(() => {
+        done = false;
+      });
+    },
+  };
+}
+
 export interface ProgressReporter {
   onPlay(): void;
   onPause(): void;
