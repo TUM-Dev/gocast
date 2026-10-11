@@ -54,8 +54,8 @@ describe("SplitView", () => {
     expect(items).toHaveLength(5);
     await items[3]!.trigger("click");
     expect(localStorage.getItem(RATIO_KEY)).toBe("75");
-    expect(w.find("[data-testid=split-camera]").attributes("style")).toContain("75%");
-    expect(w.find("[data-testid=split-presentation]").attributes("style")).toContain("25%");
+    expect(w.find("[data-testid=split-camera]").attributes("style")).toContain("--r: 0.75");
+    expect(w.find("[data-testid=split-presentation]").attributes("style")).toContain("--r: 0.25");
     expect(w.find("[data-testid=split-menu]").exists()).toBe(false);
   });
 
