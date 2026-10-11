@@ -1,23 +1,13 @@
 <script setup lang="ts">
+import { HOTKEY_HELP } from "@/lib/player/hotkeys";
+
 defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 
-// Copied from the shortcuts popup in home.gohtml; the bindings themselves live in the
-// watch page's hotkey handling, which has not been migrated.
+// The rows come from the player's own bindings (lib/player/hotkeys.ts), so the popup
+// cannot drift from what the keys do. Escape is the popup's, not the player's.
 const SHORTCUTS: { action: string; keys: string }[] = [
-  { action: "Toggle play/pause", keys: "K / k / SPACEBAR" },
-  { action: "Mute/Unmute", keys: "M / m" },
-  { action: "Open/Exit toggle fullscreen", keys: "F / f" },
-  { action: "Seek forward", keys: "L / l / ArrowRight / Right" },
-  { action: "Seek backwards", keys: "J / j / ArrowLeft / Left" },
-  { action: "Volume up", keys: "ArrowUp / Up" },
-  { action: "Volume down", keys: "ArrowDown / Down" },
-  { action: "Increase playback rate", keys: "<" },
-  { action: "Decrease playback rate", keys: ">" },
-  {
-    action: "Seek to specific point in the video (7 advances to 70% of duration)",
-    keys: "0…9",
-  },
+  ...HOTKEY_HELP,
   { action: "Skip silence", keys: "S / s" },
   { action: "Close any kind of popup", keys: "ESCAPE" },
 ];
