@@ -78,6 +78,8 @@ describe("SplitView", () => {
 
 describe("SplitView progress and ending", () => {
   const handlers = new Map<string, () => void>();
+  // Opening must not report, only playback that moved: the tests advance this.
+  let position = 50;
   const progress = patch;
   const Live = defineComponent({
     props: ["src"],
@@ -86,7 +88,7 @@ describe("SplitView progress and ending", () => {
         if (props.src === "/pres.m3u8") handlers.set(event, fn);
         return () => handlers.delete(event);
       };
-      expose({ on, seek: vi.fn(), currentTime: 50, getCurrentTime: () => 50, getDuration: () => 100, duration: 100, toRecordingTime: (t: number) => t + 100 });
+      expose({ on, seek: vi.fn(), currentTime: 50, getCurrentTime: () => position, getDuration: () => 100, duration: 100, toRecordingTime: (t: number) => t + 100 });
       return () => h("div");
     },
   });
@@ -100,6 +102,7 @@ describe("SplitView progress and ending", () => {
     vi.useFakeTimers();
     handlers.clear();
     progress.mockClear();
+    position = 50;
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -107,6 +110,9 @@ describe("SplitView progress and ending", () => {
 
   it("reports the presentation's position as a fraction of the recording, on pause", async () => {
     mountReporting();
+    position = 20;
+    handlers.get("play")!();
+    position = 50;
     handlers.get("pause")!();
     await vi.advanceTimersByTimeAsync(0);
     expect(progress).toHaveBeenCalledTimes(1);
@@ -114,6 +120,14 @@ describe("SplitView progress and ending", () => {
     const [, , path, body] = progress.mock.calls[0];
     expect(path).toBe("/progress/9");
     expect(body).toMatchObject({ streamId: 9, progress: 0.375, watched: false });
+  });
+
+  it("does not report a pause without playback having moved", async () => {
+    mountReporting();
+    handlers.get("play")!();
+    handlers.get("pause")!();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(progress).not.toHaveBeenCalled();
   });
 
   it("emits ended and stops reporting when the primary ends", async () => {
