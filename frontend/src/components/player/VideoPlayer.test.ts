@@ -16,6 +16,7 @@ const state = vi.hoisted(() => ({
   fake: undefined as unknown as ReturnType<typeof import("@/test/fake-player").fakePlayer>,
   safari: false,
   ios: false,
+  firefox: false,
   spriteThumbnails: vi.fn(),
   addRemoteTextTrack: vi.fn(() => ({ track: {} })),
   removeRemoteTextTrack: vi.fn(),
@@ -63,6 +64,9 @@ vi.mock("video.js", () => {
         get IS_IOS() {
           return state.ios;
         },
+        get IS_FIREFOX() {
+          return state.firefox;
+        },
       },
     }),
   };
@@ -73,6 +77,7 @@ beforeEach(() => {
   state.fake = fakePlayer({ duration: NaN });
   state.safari = false;
   state.ios = false;
+  state.firefox = false;
   state.levels = [];
   for (const fn of [state.src, state.dispose, state.spriteThumbnails, state.addRemoteTextTrack, state.removeRemoteTextTrack]) {
     fn.mockClear();
@@ -184,6 +189,16 @@ describe("VideoPlayer options", () => {
   it("adds skip buttons with the given distance", async () => {
     await mountPlayer({ skipSeconds: 15 });
     expect(state.options).toMatchObject({ controlBar: { skipButtons: { forward: 15, backward: 15 } } });
+  });
+
+  it("leaves out its picture-in-picture button on Firefox, which overlays its own", async () => {
+    await mountPlayer({});
+    expect((state.options as { controlBar?: Record<string, unknown> }).controlBar?.pictureInPictureToggle).toBeUndefined();
+    state.firefox = true;
+    await mountPlayer({ skipSeconds: 10 });
+    expect(state.options).toMatchObject({
+      controlBar: { pictureInPictureToggle: false, skipButtons: { forward: 10, backward: 10 } },
+    });
   });
 
   it("turns on the live UI", async () => {
