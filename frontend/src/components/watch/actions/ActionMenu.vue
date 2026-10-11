@@ -11,8 +11,12 @@ import { useClickOutside } from "@/lib/useClickOutside";
  * the start (the download and view buttons sit there). So the list is measured when it
  * opens and nudged back inside the viewport; if there is no room above (a bar scrolled
  * to the top of a short window) it opens below instead.
+ *
+ * `text` is an optional visible caption beside the icon, for a button that should read as
+ * a switch rather than a bare icon (the view menu). The caption is part of the accessible
+ * name via `buttonLabel`, which defaults to `label`; the menu itself keeps `label`.
  */
-defineProps<{ label: string; icon: string }>();
+defineProps<{ label: string; icon: string; text?: string; buttonLabel?: string }>();
 
 const open = ref(false);
 const root = ref<HTMLElement | null>(null);
@@ -42,14 +46,18 @@ watch(open, async (isOpen) => {
   <div ref="root" class="relative inline-block" @keydown.escape="open = false">
     <button
       type="button"
-      class="text-4 hover:text-1 flex h-8 w-8 items-center justify-center rounded"
-      :title="label"
-      :aria-label="label"
+      class="text-4 hover:text-1 flex h-8 items-center justify-center rounded"
+      :class="text ? 'min-w-0 gap-1.5 px-2' : 'w-8'"
+      :title="buttonLabel ?? label"
+      :aria-label="buttonLabel ?? label"
       aria-haspopup="menu"
       :aria-expanded="open"
       @click="open = !open"
     >
       <i class="fa-solid text-lg" :class="icon"></i>
+      <!-- Truncates on a phone, where the bar is already tight; the full name is in the title. -->
+      <span v-if="text" class="max-w-[8rem] truncate text-sm sm:max-w-none" aria-hidden="true">{{ text }}</span>
+      <i v-if="text" class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
     </button>
     <div
       v-if="open"

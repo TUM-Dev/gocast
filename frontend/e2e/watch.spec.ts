@@ -39,12 +39,12 @@ test.describe("the watch page", () => {
     await login(page, users.studi3, "/w/brauereiwesen/1");
     await expect(page.getByTestId("watch-player")).toBeVisible();
 
-    await page.getByRole("button", { name: "Change view" }).click();
+    await page.getByRole("button", { name: /^Change view, current: / }).click();
     await page.getByRole("menuitemradio", { name: "Presentation only" }).click();
     await expect(page).toHaveURL(/\/w\/brauereiwesen\/1\/PRES$/);
     await expect(page.getByTestId("watch-player")).toBeVisible();
 
-    await page.getByRole("button", { name: "Change view" }).click();
+    await page.getByRole("button", { name: /^Change view, current: / }).click();
     await page.getByRole("menuitemradio", { name: "Split view" }).click();
     await expect(page).toHaveURL(/\/w\/brauereiwesen\/1\/SPLIT$/);
     await expect(page.getByTestId("split-view")).toBeVisible();
@@ -329,6 +329,10 @@ test.describe("the watch page of a recording with subtitles", () => {
       expect(box!.x + box!.width, `${name} right edge`).toBeLessThanOrEqual(390);
       await page.keyboard.press("Escape");
     }
-    await expect(page.getByRole("button", { name: "Change view" })).toBeVisible();
+    // The view button carries the current view's name now; it must still fit the phone.
+    const view = page.getByRole("button", { name: /^Change view, current: / });
+    await expect(view).toBeVisible();
+    const box = await view.boundingBox();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   });
 });
