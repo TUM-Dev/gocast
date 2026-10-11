@@ -82,6 +82,7 @@ function message(id: number, extra: Partial<ChatMessage> = {}): ChatMessage {
     text: `message ${id}`,
     admin: false,
     visible: true,
+    retracted: false,
     resolved: false,
     addressedTo: [],
     createdAt: new Date(2026, 9, 11, 14, 5),
@@ -480,14 +481,19 @@ describe("ChatPanel for a course administrator", () => {
   });
 
   it("retracts an approved message", async () => {
-    retractMessage.mockResolvedValue(message(1, { visible: false }));
+    retractMessage.mockResolvedValue(message(1, { visible: false, retracted: true }));
     const { wrapper } = await mountAdmin([message(1)]);
 
     await action(wrapper, 1, "Retract").trigger("click");
     await flushPromises();
 
     expect(retractMessage).toHaveBeenCalledWith(7, 1);
-    expect(wrapper.get('[data-message-id="1"]').text()).toContain("Awaiting approval");
+    const text = wrapper.get('[data-message-id="1"]').text();
+    expect(text).toContain("Retracted");
+    expect(text).not.toContain("Awaiting approval");
+    // A retracted message is not waiting: it neither counts nor reads as held.
+    expect(wrapper.find('[data-testid="awaiting"]').exists()).toBe(false);
+    expect(action(wrapper, 1, "Publish again")).toBeDefined();
   });
 
   it("resolves a message", async () => {

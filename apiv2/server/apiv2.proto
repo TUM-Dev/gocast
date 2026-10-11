@@ -3967,7 +3967,8 @@ message ChatMessage {
   string message_text = 6;
   // Written by one of the course's administrators.
   bool admin = 7;
-  // False while the message awaits approval in a moderated chat, or once retracted.
+  // False while the message awaits approval in a moderated chat, or once retracted
+  // (see retracted).
   bool visible = 8;
   bool resolved = 9;
   // The message this one replies to; 0 when it is not a reply.
@@ -3977,6 +3978,9 @@ message ChatMessage {
   repeated ChatReactionSummary reactions = 13;
   // Only on top-level messages: replies cannot be replied to.
   repeated ChatMessage replies = 14;
+  // An administrator took the message back after it was shown. Not visible either way;
+  // this tells it from one still awaiting approval.
+  bool retracted = 15;
 }
 
 message ChatPollOption {
@@ -4053,7 +4057,7 @@ message ChatMessageResolvedEvent {
   uint32 message_id = 1;
 }
 
-// The message is hidden again and its reactions are gone.
+// The message is hidden again, marked retracted, and its reactions are gone.
 message ChatMessageRetractedEvent {
   uint32 message_id = 1;
 }
