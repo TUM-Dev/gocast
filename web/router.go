@@ -88,7 +88,11 @@ var spaRoutes = map[string]bool{
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
 	"/admin/create-course":                              true,
 	"/admin":                                            true,
+	"/w/:slug/:streamID":                                true,
+	"/w/:slug/:streamID/:version":                       true,
 	"/w/:slug/:streamID/chat":                           true,
+	"/w/:slug/:streamID/chat/popup":                     true,
+	"/admin/courses/:courseID/lectures/:streamID/live":  true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -107,7 +111,6 @@ var templatePaths = []string{
 	"template/components/*.gohtml",
 	"template/admin/*.gohtml",
 	"template/partial/*.gohtml",
-	"template/partial/stream/*.gohtml",
 }
 
 func ConfigGinRouter(router *gin.Engine) {
@@ -395,7 +398,14 @@ func configMainRoute(router *gin.Engine) {
 	withStream.Use(tools.InitStream(daoWrapper))
 	// Rule 3's nested path; the old one redirects below.
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats", nil)
-	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
+	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/live", nil)
+	// The old management URL, which lecturers have bookmarked and the old watch page
+	// linked to. Behind the same middleware as the page, so it reveals nothing the page
+	// would not.
+	withStream.GET("/admin/management/:courseID/:streamID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
+			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/live")
+	})
 
 	// login/logout/password-mgmt
 	router.POST("/login", routes.LoginHandler)
@@ -411,10 +421,14 @@ func configMainRoute(router *gin.Engine) {
 
 	// watch
 	streamGroup.Use(tools.InitStream(daoWrapper))
-	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
-	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
-	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopOutChat)
-	// The SPA's chat, beside the popup until step 5 of the chat migration replaces it.
+	// InitStream runs before the shell so a private stream answers with the login
+	// redirect or 403 rather than an app that then fails to load. `?video_only=1`
+	// (Artemis embeds it) is the same URL: the client decides.
+	// `/:version` accepts anything here; the client router only knows COMB, PRES, CAM
+	// and SPLIT and renders its not-found page for the rest.
+	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID", nil)
+	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID/:version", nil)
+	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID/chat/popup", nil)
 	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID/chat", nil)
 
 	// misc
@@ -514,11 +528,6 @@ type CacheMetrics struct {
 	Hits      uint64 `json:"hits"`
 	Misses    uint64 `json:"misses"`
 	KeysAdded uint64 `json:"keysAdded"`
-}
-
-type ChatData struct {
-	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
-	IndexData       IndexData
 }
 
 type staticFile struct {
