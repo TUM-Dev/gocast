@@ -12,7 +12,7 @@ import (
 var Progress = NewProgressDao()
 
 type ProgressDao interface {
-	SaveProgresses(progresses []model.StreamProgress) error
+	SaveProgress(progress model.StreamProgress, watched *bool) error
 	GetProgressesForUser(userID uint) ([]model.StreamProgress, error)
 	LoadProgress(userID uint, streamIDs []uint) (streamProgress []model.StreamProgress, err error)
 }
@@ -30,41 +30,25 @@ func (d progressDao) GetProgressesForUser(userID uint) (r []model.StreamProgress
 	return r, DB.Where("user_id = ?", userID).Find(&r).Error
 }
 
-func filterProgress(progresses []model.StreamProgress, watched bool) []model.StreamProgress {
-	var result []model.StreamProgress
-	for _, progress := range progresses {
-		if progress.Watched == watched {
-			result = append(result, progress)
-		}
-	}
-	return result
-}
-
-// SaveProgresses saves a slice of stream progresses. If a progress already exists, it will be updated.
-// We need two different methods for that because else the watched state will be overwritten.
-func (d progressDao) SaveProgresses(progresses []model.StreamProgress) error {
-	noWatched := filterProgress(progresses, false)
-	watched := filterProgress(progresses, true)
-	var err error
-	if len(noWatched) > 0 {
-		err = DB.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
-			DoUpdates: clause.AssignmentColumns([]string{"progress"}),          // column needed to be updated
-		}).Create(noWatched).Error
-	}
-	var err2 error
-
-	if len(watched) > 0 {
-		err2 = DB.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}},   // key column
-			DoUpdates: clause.AssignmentColumns([]string{"progress", "watched"}), // column needed to be updated
-		}).Create(watched).Error
+// SaveProgress stores a user's position in a stream, creating the row if needed.
+//
+// watched is a pointer because a plain progress report must leave the flag alone while
+// an explicit false must clear it ("unmark as watched"); a bool cannot tell the two apart.
+// The values are assigned explicitly rather than taken from the inserted row, because
+// GORM leaves a zero value with a column default out of the INSERT.
+func (d progressDao) SaveProgress(progress model.StreamProgress, watched *bool) error {
+	updates := map[string]any{"progress": progress.Progress}
+	if watched != nil {
+		progress.Watched = *watched
+		updates["watched"] = *watched
+	} else {
+		progress.Watched = false // only the value of a new row; an existing row keeps its flag
 	}
 
-	if err != nil {
-		return err
-	}
-	return err2
+	return DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
+		DoUpdates: clause.Assignments(updates),
+	}).Create(&progress).Error
 }
 
 // LoadProgress retrieves the current StreamProgress from the database for a given user and stream.

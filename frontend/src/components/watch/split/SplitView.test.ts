@@ -113,7 +113,9 @@ describe("SplitView progress and ending", () => {
     // (50 s into the clip + 100 s of cut) of 400 s.
     const [, , path, body] = progress.mock.calls[0];
     expect(path).toBe("/progress/9");
-    expect(body).toMatchObject({ streamId: 9, progress: 0.375, watched: false });
+    expect(body).toMatchObject({ streamId: 9, progress: 0.375 });
+    // Absent, not false: an explicit false would unmark the lecture.
+    expect((body as { watched?: boolean }).watched).toBeUndefined();
   });
 
   it("emits ended and stops reporting when the primary ends", async () => {

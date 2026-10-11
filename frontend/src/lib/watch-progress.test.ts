@@ -1,9 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiPatchMessage } from "./api";
-import { createProgressReporter, createWatchedMarker, markWatched } from "./watch-progress";
+import { createProgressReporter, createWatchedMarker, markWatched, saveProgress } from "./watch-progress";
 
 vi.mock("./api", () => ({ apiPatchMessage: vi.fn().mockResolvedValue({}) }));
+
+describe("saving progress", () => {
+  it("leaves the watched flag out, so it cannot unmark a lecture", async () => {
+    await saveProgress(7, 0.4);
+    const [, , path, body] = vi.mocked(apiPatchMessage).mock.calls.at(-1)!;
+    expect(path).toBe("/progress/7");
+    expect(body).toMatchObject({ streamId: 7, progress: 0.4 });
+    // Absent (undefined), not false: the server treats an explicit false as "unmark".
+    expect((body as { watched?: boolean }).watched).toBeUndefined();
+  });
+});
 
 describe("marking a lecture watched", () => {
   it("sends full progress with the watched flag", async () => {

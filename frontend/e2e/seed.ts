@@ -230,6 +230,13 @@ export const watched = {
 } as const;
 
 /**
+ * A lecture for the mark/unmark round trip (watched-marks.spec.ts). studi3 has no
+ * progress row in it and nothing else reads or writes one: the other specs that use
+ * studi3 look at bierkunde, and the ones that use this lecture are signed in as studi1.
+ */
+export const markable = { user: "studi3", course: "godev", lecture: "VL 1: Intro to Go", streamId: 8 } as const;
+
+/**
  * studi3 has pinned two courses, and may only see one of them: a pin outlives the
  * access that created it, so the pinned listing has to drop the other.
  */
