@@ -1,11 +1,16 @@
-alerts:
-  matrix:
-    username: "rbgbot"
-    password: "password"
-    homeserver: "matrix.org"
-    # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
-    logRoomID: "!id:matrix.org"
-    alertRoomID: "!id:matrix.org"
+# Left out in development on purpose: these point at the real matrix.org homeserver,
+# so a local server with the block active tries to log in there as "rbgbot". Without it
+# alerts are disabled and reportStreamIssue answers 503 ("problem reports are not set
+# up"), which is the designed behaviour for a deployment with no alert channel. Fill in
+# your own homeserver and bot account to try problem reports locally.
+#alerts:
+#  matrix:
+#    username: "rbgbot"
+#    password: "password"
+#    homeserver: "matrix.org"
+#    # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
+#    logRoomID: "!id:matrix.org"
+#    alertRoomID: "!id:matrix.org"
 
 auths:
   camauth: user:password
