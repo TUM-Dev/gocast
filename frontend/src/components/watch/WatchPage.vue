@@ -17,7 +17,10 @@ import WatchPlaceholder from "@/components/watch/WatchPlaceholder.vue";
 import WatchPlayer from "@/components/watch/WatchPlayer.vue";
 import WatchWaitingRoom from "@/components/watch/WatchWaitingRoom.vue";
 import { WatchViewKind } from "@/gen/server/apiv2_pb";
+import { canonicalUrl, useCanonicalLink } from "@/lib/canonical-link";
+import { singleRouteParam } from "@/lib/route-query";
 import { fetchConfig } from "@/lib/config";
+import { bookmarkHotkey } from "@/lib/player/hotkeys";
 import { parseNumberParam } from "@/lib/player/start-time";
 import {
   WatchLayout as Layout,
@@ -39,6 +42,8 @@ import { fetchSeekHeatmap, fetchSections, type SeekbarSection } from "@/lib/watc
 import { splitTime, type WatchBookmark } from "@/lib/watch-panels";
 import { createPanelPlayer } from "@/lib/watch-wiring";
 import { watchContextKey, type WatchContext, type WatchController } from "@/lib/watch-context";
+import { expectsRecording, pollForRecording, type RecordingPoller } from "@/lib/watch-recording-poll";
+import { createWatchedMarker, markWatched } from "@/lib/watch-progress";
 import { useAuthStore } from "@/stores/auth";
 import { useStreamRealtime } from "@/stores/streamRealtime";
 import { useWatchStore } from "@/stores/watch";
@@ -115,6 +120,7 @@ onBeforeUnmount(() => {
 // A flip of the live state is the old page's reload: fetch the page data again, which
 // brings the new playlist, or the recording, or the ended state. The server may not
 // have caught up when the event arrives, so one retry follows.
+const sawEnd = ref(false);
 let retry: ReturnType<typeof setTimeout> | undefined;
 onBeforeUnmount(() => clearTimeout(retry));
 watch(
@@ -122,6 +128,7 @@ watch(
   async (live) => {
     const current = store.watch?.stream;
     if (live === undefined || !current || live === current.liveNow) return;
+    if (!live) sawEnd.value = true;
     await load(true);
     if (store.watch?.stream?.liveNow !== live) retry = setTimeout(() => void load(true), 3000);
   },
@@ -142,6 +149,34 @@ function setLayout(next: Layout): void {
   void router.push({ path: `/w/${props.slug}/${props.streamId}/${segment}`, query: route.query });
 }
 
+// ------------------------------------------------------------ processing recording
+
+// A stream that just ended has no recording until the worker has transcoded it. The
+// page asks again on a backoff and swaps the recording in; the player remounts through
+// `playerKey` when the phase becomes "vod", so no reload is needed.
+const gaveUp = ref(false);
+const processing = computed(
+  () => !gaveUp.value && phase.value === "ended" && !!data.value && expectsRecording(data.value, new Date(), sawEnd.value),
+);
+let poller: RecordingPoller | undefined;
+watch(
+  processing,
+  (on) => {
+    poller?.stop();
+    poller = on
+      ? pollForRecording(
+          async () => {
+            await load(true);
+            return phase.value !== "ended";
+          },
+          { onGiveUp: () => (gaveUp.value = true) },
+        )
+      : undefined;
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => poller?.stop());
+
 // ------------------------------------------------------------ player options
 
 const startTime = computed(() =>
@@ -161,6 +196,10 @@ const skipSeconds = computed(() => skipSecondsFor(auth.user));
 const playerKey = computed(() => `${layout.value}:${phase.value}`);
 
 const controller = shallowRef<WatchController | null>(null);
+
+// Reaching the end marks the lecture watched. Once per page view, not per player: a
+// layout change remounts the player, and replaying must not report again.
+const watchedMarker = createWatchedMarker(() => markWatched(props.streamId));
 
 // ------------------------------------------------------------ live values
 
@@ -205,6 +244,17 @@ const sprites = computed(() => {
   return presentation ? spriteSource(props.streamId, presentation) : undefined;
 });
 
+// "B" adds a bookmark: for a signed-in viewer of a recording, the viewers who have the
+// bookmarks tab (and a position worth keeping, which a live stream lacks).
+const sidebarPanel = ref<InstanceType<typeof WatchSidebar> | null>(null);
+function addBookmarkHere(): void {
+  store.openSidebar("bookmarks");
+  void sidebarPanel.value?.addBookmark();
+}
+const extraHotkeys = computed(() =>
+  phase.value === "vod" && data.value?.viewer?.signedIn === true ? bookmarkHotkey(addBookmarkHere) : undefined,
+);
+
 function setSplitController(el: unknown): void {
   if (el) controller.value = el as WatchController;
 }
@@ -213,9 +263,21 @@ function setSplitController(el: unknown): void {
 
 const previousTitle = document.title;
 const brand = ref("TUM-Live");
+const canonicalBase = ref<string | undefined>(undefined);
 void fetchConfig()
-  .then((config) => (brand.value = config.title || brand.value))
+  .then((config) => {
+    brand.value = config.title || brand.value;
+    canonicalBase.value = config.canonicalUrl;
+  })
   .catch(() => undefined);
+
+// The old template's link: the deployment's address + /w/<slug>/<id>[/<view>], with the
+// view as requested in the address and without the query (?t=, ?rate=).
+useCanonicalLink(() =>
+  canonicalBase.value === undefined || !data.value
+    ? undefined
+    : canonicalUrl(canonicalBase.value, "w", props.slug, props.streamId, singleRouteParam(route.params, "version")),
+);
 watch(
   [data, brand, title],
   () => {
@@ -273,7 +335,11 @@ provide(watchContextKey, context);
         data-testid="ended"
       >
         <p class="text-xl font-semibold">This stream has ended.</p>
-        <p class="text-sm text-gray-300">There is no recording of it (yet).</p>
+        <p v-if="processing" class="text-sm text-gray-300" role="status" data-testid="processing">
+          <i class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>Recording is being processed. It will
+          appear here as soon as it is ready.
+        </p>
+        <p v-else class="text-sm text-gray-300">There is no recording of it (yet).</p>
       </div>
 
       <SplitView
@@ -292,7 +358,12 @@ provide(watchContextKey, context);
         persist
         hold-to-fast
         hotkeys="page"
+        :extra-hotkeys="extraHotkeys"
         airplay
+        :stream-id="streamId"
+        :report-progress="phase === 'vod' && data.viewer?.signedIn === true"
+        :recording-duration="data.stream?.duration"
+        @ended="watchedMarker.fire()"
       />
 
       <WatchPlayer
@@ -310,7 +381,9 @@ provide(watchContextKey, context);
         :silences="data.silences"
         :report-progress="phase === 'vod' && data.viewer?.signedIn === true"
         :recording-duration="data.stream?.duration"
+        :extra-hotkeys="extraHotkeys"
         @controller="controller = $event"
+        @ended="watchedMarker.fire()"
       >
         <template #seekbar="{ container }">
           <SeekbarOverlay
@@ -390,6 +463,7 @@ provide(watchContextKey, context);
         </div>
         <div class="min-h-0 grow">
           <WatchSidebar
+            ref="sidebarPanel"
             :stream-id="streamId"
             :slug="slug"
             :player="panelPlayer.player"

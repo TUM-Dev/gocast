@@ -9,6 +9,7 @@ import type { Hotkey } from "@/lib/player/hotkeys";
 import type { QualityPreference } from "@/lib/player/quality";
 import type { SpriteSource } from "@/lib/player/sprites";
 import type { SubtitleTrack } from "@/lib/player/tracks";
+import { attachProgressReporting } from "@/lib/watch-progress";
 import { deferredController } from "./controller";
 import { RATIO_PRESETS, clampRatio, loadRatio, presetFor, saveRatio } from "./ratio";
 import { syncPlayers } from "./sync";
@@ -48,6 +49,14 @@ const props = withDefaults(
     subtitles?: SubtitleTrack[];
     /** Seekbar previews, from the presentation's sprite. */
     sprites?: SpriteSource;
+    /**
+     * Save the viewer's position (a signed-in viewer of a recording), from the
+     * presentation, like the single player does. Needs `streamId`.
+     */
+    reportProgress?: boolean;
+    streamId?: number;
+    /** The recording's length in seconds, which progress is a fraction of. */
+    recordingDuration?: number;
   }>(),
   {
     live: false,
@@ -65,12 +74,17 @@ const props = withDefaults(
     autoplay: false,
     subtitles: undefined,
     sprites: undefined,
+    reportProgress: false,
+    streamId: undefined,
+    recordingDuration: undefined,
   },
 );
 
 const emit = defineEmits<{
   timeupdate: [seconds: number];
   loadedmetadata: [seconds: number];
+  /** The presentation reached the end of the recording (or of its clip). */
+  ended: [];
 }>();
 
 const presentation = computed(() => props.views.find((v) => v.kind === WatchViewKind.PRESENTATION));
@@ -134,9 +148,31 @@ const follower = ref<InstanceType<typeof VideoPlayer> | null>(null);
 const asController = (p: InstanceType<typeof VideoPlayer> | null) => p as unknown as PlayerController | null;
 const deferred = deferredController(() => asController(primary.value));
 let stopSync: (() => void) | null = null;
+let stopReporting: (() => void) | null = null;
+
+// The deferred controller keeps subscriptions across a primary that is replaced (a
+// source that appears later), so this attaches once. The primary's own controller does
+// the clip arithmetic, which the deferred one does not offer.
+function attachEnded(): void {
+  const toRecording = (t: number) => primary.value?.toRecordingTime(t) ?? t;
+  if (props.reportProgress && !props.live && props.streamId !== undefined) {
+    stopReporting = attachProgressReporting(
+      { ...deferred.api, toRecordingTime: toRecording },
+      {
+        streamId: props.streamId,
+        recordingDuration: props.recordingDuration,
+        clipStart: props.clip?.start,
+        onEnded: () => emit("ended"),
+      },
+    );
+  } else {
+    stopReporting = deferred.api.on("ended", () => emit("ended"));
+  }
+}
 
 onMounted(() => {
   document.addEventListener("fullscreenchange", onFullscreenChange);
+  attachEnded();
   deferred.retarget();
   const a = asController(primary.value);
   const b = asController(follower.value);
@@ -145,6 +181,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("fullscreenchange", onFullscreenChange);
   stopSync?.();
+  stopReporting?.();
 });
 // A source that appears later (the camera playlist of a stream that just went live)
 // mounts a player after onMounted; sync it then.

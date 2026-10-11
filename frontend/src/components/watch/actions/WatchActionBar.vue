@@ -37,7 +37,7 @@ const props = defineProps<{
   viewer: NonNullable<StreamWatch["viewer"]>;
   layout: WatchLayout;
   live: boolean;
-  controller?: Pick<PlayerController, "getCurrentTime">;
+  controller?: Pick<PlayerController, "getCurrentTime" | "getDuration">;
   /** The address to share; defaults to the current page. */
   pageUrl?: string;
   /** Prefills the report form's name. */
@@ -159,6 +159,7 @@ const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-cente
     :page-url="pageUrl ?? currentHref()"
     :live="live"
     :current-time="() => controller?.getCurrentTime() ?? 0"
+    :duration="() => controller?.getDuration() ?? NaN"
     @close="shareOpen = false"
   />
   <KeyboardShortcuts :open="shortcutsOpen" @close="shortcutsOpen = false" />

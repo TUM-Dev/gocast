@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 
 import BookmarksPanel from "@/components/watch/panels/BookmarksPanel.vue";
 import PlaylistPanel from "@/components/watch/panels/PlaylistPanel.vue";
@@ -87,6 +87,20 @@ function select(tab: SidebarTab): void {
   writeSidebarTab(tab);
 }
 
+// A plain variable with a function ref: the panel sits inside a v-for, where a string
+// ref would collect an array.
+type BookmarksPanelInstance = InstanceType<typeof BookmarksPanel>;
+let bookmarksPanel = null as BookmarksPanelInstance | null;
+
+/** The "B" hotkey: shows the bookmarks and opens the add form at the player's time. */
+async function addBookmark(): Promise<void> {
+  if (!visible.value.includes("bookmarks")) return;
+  select("bookmarks");
+  await nextTick();
+  await bookmarksPanel?.openAdd();
+}
+defineExpose({ addBookmark });
+
 const tabButtons = ref<HTMLElement[]>([]);
 function onKey(e: KeyboardEvent): void {
   const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
@@ -135,6 +149,7 @@ const mounted = (tab: SidebarTab) => opened.value.has(tab) || tab === "chat" || 
           <slot v-if="tab === 'chat'" name="chat" />
           <BookmarksPanel
             v-else-if="tab === 'bookmarks'"
+            :ref="(el) => (bookmarksPanel = el as BookmarksPanelInstance | null)"
             :stream-id="streamId"
             :player="player"
             @bookmarks="emit('bookmarks', $event)"

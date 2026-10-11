@@ -16,6 +16,7 @@ function respond(): Response {
       branding: { title: "TUM-Live", description: "…" },
       versionTag: "development",
       wikiUrl: "",
+      canonicalUrl: "https://tum.live",
       isFreshInstallation: false,
     }),
     { status: 200 },
@@ -37,6 +38,10 @@ describe("fetchConfig", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(a).toBe(b);
     expect(a.versionTag).toBe("development");
+  });
+
+  it("carries the canonical base URL", async () => {
+    expect((await fetchConfig()).canonicalUrl).toBe("https://tum.live");
   });
 
   it("does not ask again once it has an answer", async () => {

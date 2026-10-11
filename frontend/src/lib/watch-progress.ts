@@ -13,6 +13,38 @@ export async function saveProgress(streamId: number, progress: number): Promise<
   );
 }
 
+/**
+ * Marks the lecture watched (what the course page's eye icon reads). The plain progress
+ * saves above never touch the flag (the DAO only writes `watched` when it is true), so
+ * a late pause report cannot undo this.
+ */
+export async function markWatched(streamId: number): Promise<void> {
+  await apiPatchMessage(
+    UpdateProgressRequestSchema,
+    StreamProgressSchema,
+    `/progress/${streamId}`,
+    create(UpdateProgressRequestSchema, { streamId, progress: 1, watched: true }),
+  );
+}
+
+/**
+ * Calls `mark` the first time `fire` runs and never again for this marker: a viewer who
+ * scrubs back and reaches the end twice is still one page view. A failed attempt is
+ * forgotten, so the next end gets another try.
+ */
+export function createWatchedMarker(mark: () => Promise<void>): { fire(): void } {
+  let done = false;
+  return {
+    fire() {
+      if (done) return;
+      done = true;
+      mark().catch(() => {
+        done = false;
+      });
+    },
+  };
+}
+
 export interface ProgressReporter {
   onPlay(): void;
   onPause(): void;
@@ -71,5 +103,45 @@ export function createProgressReporter(options: ProgressReporterOptions): Progre
     },
     onEnded: stop,
     dispose: stop,
+  };
+}
+
+/** What {@link attachProgressReporting} needs of a player: both layouts' controllers have it. */
+export interface ReportablePlayer {
+  getCurrentTime(): number;
+  getDuration(): number;
+  toRecordingTime(clipTime: number): number;
+  on(event: "play" | "pause" | "ended", fn: () => void): () => void;
+}
+
+/**
+ * Reports the position of `player` as the single player and the split view both do:
+ * the fraction of the recording (the clip's start is added back when the recording's
+ * length is not known), on the reporter's cadence. `onEnded` runs when playback reaches
+ * the end of the recording or of its clip. Returns the function that detaches it.
+ */
+export function attachProgressReporting(
+  player: ReportablePlayer,
+  options: { streamId: number; recordingDuration?: number; clipStart?: number; onEnded?: () => void },
+): () => void {
+  const reporter = createProgressReporter({
+    fraction() {
+      const total = options.recordingDuration ?? player.getDuration() + (options.clipStart ?? 0);
+      if (!Number.isFinite(total) || total <= 0) return undefined;
+      return player.toRecordingTime(player.getCurrentTime()) / total;
+    },
+    save: (progress) => saveProgress(options.streamId, progress),
+  });
+  const offs = [
+    player.on("play", reporter.onPlay),
+    player.on("pause", reporter.onPause),
+    player.on("ended", () => {
+      reporter.onEnded();
+      options.onEnded?.();
+    }),
+  ];
+  return () => {
+    offs.forEach((off) => off());
+    reporter.dispose();
   };
 }

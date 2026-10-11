@@ -110,4 +110,23 @@ describe("WatchSidebar", () => {
     expect(w.emitted("sections")![0][0]).toEqual([{ description: "Intro", time: 0, fileId: 1 }]);
     w.unmount();
   });
+
+  it("shows the bookmarks and opens the add form on request", async () => {
+    const w = mountSidebar();
+    await flushPromises();
+    expect(w.find("[role=tab][aria-selected=true]").text()).toBe("Chat");
+    await (w.vm as unknown as { addBookmark(): Promise<void> }).addBookmark();
+    await flushPromises();
+    expect(w.find("[role=tab][aria-selected=true]").text()).toBe("Bookmarks");
+    expect(w.find("#watch-panel-bookmarks form").exists()).toBe(true);
+    w.unmount();
+  });
+
+  it("does nothing for a viewer without bookmarks", async () => {
+    const w = mountSidebar({ showBookmarks: false });
+    await flushPromises();
+    await (w.vm as unknown as { addBookmark(): Promise<void> }).addBookmark();
+    expect(w.find("[role=tab][aria-selected=true]").text()).toBe("Chat");
+    w.unmount();
+  });
 });

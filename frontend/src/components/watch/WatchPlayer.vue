@@ -4,12 +4,13 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import VideoPlayer from "@/components/player/VideoPlayer.vue";
 import ReactionOverlay from "@/components/watch/ReactionOverlay.vue";
 import SkipSilenceButton from "@/components/watch/SkipSilenceButton.vue";
+import type { Hotkey } from "@/lib/player/hotkeys";
 import type { Clip } from "@/lib/player/clip";
 import type { QualityPreference } from "@/lib/player/quality";
 import type { SubtitleTrack } from "@/lib/player/tracks";
 import { spriteSource, type WatchSilence, type WatchView } from "@/lib/watch";
 import type { WatchController } from "@/lib/watch-context";
-import { createProgressReporter, saveProgress } from "@/lib/watch-progress";
+import { attachProgressReporting } from "@/lib/watch-progress";
 
 /**
  * One view of a stream in the video player, with what the watch page adds: the seek
@@ -40,6 +41,8 @@ const props = withDefaults(
     reportProgress?: boolean;
     /** The recording's length in seconds, which progress is a fraction of. */
     recordingDuration?: number;
+    /** Added to the player's key bindings (see lib/player/hotkeys.ts). */
+    extraHotkeys?: Record<string, Hotkey>;
   }>(),
   {
     subtitles: undefined,
@@ -51,12 +54,15 @@ const props = withDefaults(
     silences: () => [],
     reportProgress: false,
     recordingDuration: undefined,
+    extraHotkeys: undefined,
   },
 );
 
 const emit = defineEmits<{
   /** The controller, once the player component exists; null when it goes away. */
   controller: [controller: WatchController | null];
+  /** Playback reached the end of the recording (or of its clip). */
+  ended: [];
 }>();
 
 const inner = ref<InstanceType<typeof VideoPlayer> | null>(null);
@@ -89,19 +95,12 @@ const sprites = computed(() => spriteSource(props.streamId, props.view));
 
 let stopReporting: (() => void) | null = null;
 function startReporting(c: WatchController): void {
-  const reporter = createProgressReporter({
-    fraction() {
-      const total = props.recordingDuration ?? c.getDuration() + (props.clip?.start ?? 0);
-      if (!Number.isFinite(total) || total <= 0) return undefined;
-      return c.toRecordingTime(c.getCurrentTime()) / total;
-    },
-    save: (progress) => saveProgress(props.streamId, progress),
+  stopReporting = attachProgressReporting(c, {
+    streamId: props.streamId,
+    recordingDuration: props.recordingDuration,
+    clipStart: props.clip?.start,
+    onEnded: () => emit("ended"),
   });
-  const offs = [c.on("play", reporter.onPlay), c.on("pause", reporter.onPause), c.on("ended", reporter.onEnded)];
-  stopReporting = () => {
-    offs.forEach((off) => off());
-    reporter.dispose();
-  };
 }
 
 onMounted(() => {
@@ -135,6 +134,7 @@ onBeforeUnmount(() => {
       persist
       hold-to-fast
       hotkeys="page"
+      :extra-hotkeys="extraHotkeys"
       airplay
       stats-panel
     />
