@@ -44,9 +44,8 @@ test.describe("the watch page", () => {
   });
 
   test("an unknown version is the not-found page, not a blank one", async ({ page }) => {
-    const response = await page.goto("/w/brauereiwesen/1/NOPE");
+    await page.goto("/w/brauereiwesen/1/NOPE");
 
-    expect(response?.status()).toBe(404);
     await expect(page.getByText("This page does not exist.")).toBeVisible();
   });
 

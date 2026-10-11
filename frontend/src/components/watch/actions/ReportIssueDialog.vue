@@ -81,21 +81,21 @@ async function submit(): Promise<void> {
           required
           rows="4"
           placeholder="Add a short description of the problem here."
-          class="tl-input mt-1 w-full resize-none"
+          class="tum-live-input mt-1 h-auto w-full resize-none py-2"
         ></textarea>
       </div>
       <p class="text-3 text-sm font-bold">Your contact information (optional)</p>
       <div>
         <label class="text-5 block text-sm" for="issue-name">Name</label>
-        <input id="issue-name" v-model="form.name" type="text" autocomplete="name" class="tl-input mt-1 w-full" />
+        <input id="issue-name" v-model="form.name" type="text" autocomplete="name" class="tum-live-input mt-1 w-full" />
       </div>
       <div>
         <label class="text-5 block text-sm" for="issue-email">Mail</label>
-        <input id="issue-email" v-model="form.email" type="email" autocomplete="email" class="tl-input mt-1 w-full" />
+        <input id="issue-email" v-model="form.email" type="email" autocomplete="email" class="tum-live-input mt-1 w-full" />
       </div>
       <div>
         <label class="text-5 block text-sm" for="issue-phone">Phone</label>
-        <input id="issue-phone" v-model="form.phone" type="tel" autocomplete="tel" class="tl-input mt-1 w-full" />
+        <input id="issue-phone" v-model="form.phone" type="tel" autocomplete="tel" class="tum-live-input mt-1 w-full" />
       </div>
       <p v-if="error" role="alert" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
       <div class="flex justify-end gap-2">

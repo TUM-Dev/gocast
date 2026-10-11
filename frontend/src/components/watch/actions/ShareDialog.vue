@@ -59,7 +59,7 @@ async function copy(): Promise<void> {
         type="text"
         readonly
         :value="url"
-        class="tl-input text-5 min-w-0 grow truncate text-sm"
+        class="tum-live-input text-5 h-10 min-w-0 grow truncate text-sm"
         @focus="($event.target as HTMLInputElement).select()"
       />
       <button

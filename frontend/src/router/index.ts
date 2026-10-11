@@ -286,14 +286,14 @@ const routes: RouteRecordRaw[] = [
   },
   {
     // The watch page. `:version` is the layout (COMB, PRES, CAM or SPLIT). Anonymous
-    // because a public course's stream is watchable without a session. 
+    // because a public course's stream is watchable without a session. The version is checked by the view.
     path: "/w/:slug/:streamID",
     name: "watch",
     component: WatchView,
     meta: { anonymous: true },
   },
   {
-    path: "/w/:slug/:streamID/:version(COMB|PRES|CAM|SPLIT)",
+    path: "/w/:slug/:streamID/:version",
     name: "watch-layout",
     component: WatchView,
     meta: { anonymous: true },

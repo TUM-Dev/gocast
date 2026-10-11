@@ -81,6 +81,13 @@ describe("WatchView", () => {
     expect(fetchStreamWatch).toHaveBeenCalledWith("c", 7);
   });
 
+  it("renders the not-found page for a version the page does not have", async () => {
+    const w = await open("/w/c/7/NOPE");
+    expect(fetchStreamWatch).not.toHaveBeenCalled();
+    expect(w.find("[data-testid=player]").exists()).toBe(false);
+    expect(w.text()).toContain("This page does not exist");
+  });
+
   it("falls back to the default layout and resumes from progress", async () => {
     fetchStreamWatch.mockResolvedValue(watchData({ progress: { progress: 0.5 } }));
     const w = await open("/w/c/7");

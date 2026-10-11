@@ -108,8 +108,6 @@ var spaRouteHooks = map[string]gin.HandlerFunc{
 
 var templatePaths = []string{
 	"template/*.gohtml",
-	"template/components/*.gohtml",
-	"template/admin/*.gohtml",
 	"template/partial/*.gohtml",
 }
 

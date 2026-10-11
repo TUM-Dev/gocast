@@ -19,7 +19,17 @@ import WatchEmbedView from "@/views/WatchEmbedView.vue";
 const route = useRoute();
 const slug = computed(() => singleRouteParam(route.params, "slug"));
 const streamId = computed(() => Number(singleRouteParam(route.params, "streamID")));
-const valid = computed(() => !!slug.value && Number.isInteger(streamId.value) && streamId.value > 0);
+// The route takes any `:version` because the table in web/router.go (compared with
+// this one literally, spa-routes.test.ts) does; an unknown one is a page that does not
+// exist, not a blank shell.
+const version = computed(() => singleRouteParam(route.params, "version"));
+const valid = computed(
+  () =>
+    !!slug.value &&
+    Number.isInteger(streamId.value) &&
+    streamId.value > 0 &&
+    (version.value === undefined || ["COMB", "PRES", "CAM", "SPLIT"].includes(version.value)),
+);
 // Artemis frames the player alone: the same URL with `?video_only=1`.
 const embed = computed(() => isEmbedQuery(route.query));
 </script>
