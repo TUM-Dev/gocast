@@ -1,8 +1,60 @@
 /*
- * Styles for the parts of the player that video.js' own stylesheet does not have: the
- * hotkey overlay icon (ported from the old player's web/assets/css/main.css) and the
+ * The player's skin, and styles for the parts video.js' own stylesheet does not have:
+ * the hotkey overlay icon (ported from the old player's web/assets/css/main.css) and the
  * seekbar preview. Loaded together with video.js' CSS, after it, so these win ties.
+ *
+ * Plain CSS on purpose: this file is a vendor-style override, not a Tailwind surface.
+ * The SPA's utilities are unlayered (see styles/main.css), so they and this file compete
+ * on specificity and order like any other stylesheet -- every selector here is as
+ * specific as video.js' own, which is what lets it win without `!important`.
  */
+
+/*
+ * The accent is the SPA's primary-action colour (`tum-live-bg-primary`: blue-500, and
+ * indigo in dark mode). The old player used a flat #3070b3 in both themes; indigo-500
+ * rather than -600 in dark because the bar sits on the video, which is always dark, and
+ * -600 would not stand out from it. `.dark` is the SPA's theme switch (the class strategy).
+ */
+.video-js {
+  --player-accent: var(--color-blue-500, #3b82f6);
+  --player-accent-hover: var(--color-blue-600, #2563eb);
+}
+.dark .video-js {
+  --player-accent: var(--color-indigo-500, #6366f1);
+  --player-accent-hover: var(--color-indigo-400, #818cf8);
+}
+
+.video-js .vjs-control-bar {
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.45) 20%, transparent);
+}
+
+.video-js .vjs-button,
+.video-js .vjs-control {
+  color: #fff;
+}
+
+/* Played part of the seekbar, and the volume level */
+.video-js .vjs-play-progress,
+.video-js .vjs-volume-level {
+  background-color: var(--player-accent);
+}
+
+/* Keeps the pointer's time above the playback progress */
+.video-js .vjs-mouse-display {
+  z-index: 2;
+}
+
+/* The big play button, centred over the picture (the element has `vjs-big-play-centered`) */
+.video-js .vjs-big-play-button {
+  background-color: var(--player-accent);
+  border: 0.06666em solid #fff;
+  color: #fff;
+}
+.video-js:hover .vjs-big-play-button,
+.video-js .vjs-big-play-button:focus {
+  background-color: var(--player-accent-hover);
+  border-color: #fff;
+}
 
 /* The icon that flashes over the picture when a hotkey acts */
 .video-js .vjs-overlay-icon-container {

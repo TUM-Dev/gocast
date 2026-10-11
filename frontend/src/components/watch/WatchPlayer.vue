@@ -6,7 +6,6 @@ import ReactionOverlay from "@/components/watch/ReactionOverlay.vue";
 import SkipSilenceButton from "@/components/watch/SkipSilenceButton.vue";
 import type { Hotkey } from "@/lib/player/hotkeys";
 import type { Clip } from "@/lib/player/clip";
-import type { QualityPreference } from "@/lib/player/quality";
 import type { SubtitleTrack } from "@/lib/player/tracks";
 import { spriteSource, type WatchSilence, type WatchView } from "@/lib/watch";
 import type { WatchController } from "@/lib/watch-context";
@@ -15,7 +14,7 @@ import { attachProgressReporting } from "@/lib/watch-progress";
 /**
  * One view of a stream in the video player, with what the watch page adds: the seek
  * preview sprite, subtitle tracks, the stored cut, the skip-silence button, progress
- * reporting and the highest-quality switch.
+ * reporting.
  *
  * Like VideoPlayer, everything that configures the instance is read once: the view
  * remounts this component (`:key`) when the layout or the live state changes.
@@ -70,27 +69,6 @@ const inner = ref<InstanceType<typeof VideoPlayer> | null>(null);
 const root = ref<HTMLElement | null>(null);
 const controller = ref<WatchController | null>(null);
 
-const QUALITY_KEY = "spa.watch.highestQuality";
-function readHighest(): boolean {
-  try {
-    return localStorage.getItem(QUALITY_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-// Off by default: the best rendition is a lot of bandwidth, and adaptive streaming is
-// what most viewers want.
-const highest = ref(readHighest());
-const quality = computed<QualityPreference>(() => (highest.value ? "highest" : "auto"));
-function toggleQuality(): void {
-  highest.value = !highest.value;
-  try {
-    localStorage.setItem(QUALITY_KEY, highest.value ? "1" : "0");
-  } catch {
-    // Not persisted; the choice still holds for this visit.
-  }
-}
-
 const sprites = computed(() => spriteSource(props.streamId, props.view));
 
 let stopReporting: (() => void) | null = null;
@@ -130,7 +108,6 @@ onBeforeUnmount(() => {
       :rate="rate"
       :playback-rates="playbackRates"
       :skip-seconds="skipSeconds"
-      :quality="quality"
       persist
       hold-to-fast
       hotkeys="page"
@@ -146,15 +123,5 @@ onBeforeUnmount(() => {
     >
       <slot name="seekbar" :controller="controller" :clip="clip" :container="root" />
     </div>
-    <button
-      type="button"
-      class="absolute top-2 left-2 z-10 rounded bg-black/60 px-2 py-1 text-xs text-white opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
-      :aria-pressed="highest"
-      title="Always play the highest quality available"
-      data-testid="highest-quality"
-      @click="toggleQuality"
-    >
-      Highest quality: {{ highest ? "on" : "off" }}
-    </button>
   </div>
 </template>

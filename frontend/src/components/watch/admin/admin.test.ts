@@ -53,7 +53,7 @@ describe("EndStreamDialog", () => {
     ["Yes", false],
     ["No", true],
   ])("%s ends the stream (discard=%s)", async (label, discard) => {
-    const w = mount(EndStreamDialog, { props: { courseId: 3, streamId: 7 } });
+    const w = mount(EndStreamDialog, { props: { courseId: 3, streamId: 7 }, global: { stubs: { Teleport: true } } });
     await w.findAll("button").find((b) => b.text() === label)!.trigger("click");
     await flushPromises();
     expect(api.endStream).toHaveBeenCalledWith(3, 7, discard);
@@ -62,12 +62,12 @@ describe("EndStreamDialog", () => {
   });
 
   it("cancels without ending, and stays open on failure", async () => {
-    const w = mount(EndStreamDialog, { props: { courseId: 3, streamId: 7 } });
+    const w = mount(EndStreamDialog, { props: { courseId: 3, streamId: 7 }, global: { stubs: { Teleport: true } } });
     await w.findAll("button").find((b) => b.text() === "Cancel")!.trigger("click");
     expect(api.endStream).not.toHaveBeenCalled();
     expect(w.emitted("close")).toBeTruthy();
 
-    const w2 = mount(EndStreamDialog, { props: { courseId: 3, streamId: 7 } });
+    const w2 = mount(EndStreamDialog, { props: { courseId: 3, streamId: 7 }, global: { stubs: { Teleport: true } } });
     api.endStream.mockRejectedValueOnce(new ApiError(500, "boom"));
     await w2.findAll("button")[0]!.trigger("click");
     await flushPromises();

@@ -20,14 +20,21 @@ describe("setSubtitleTracks", () => {
     expect(host.addRemoteTextTrack).toHaveBeenNthCalledWith(
       1,
       { kind: "subtitles", src: "/de.vtt", srclang: "de", label: "Deutsch", default: true },
-      false,
+      true,
     );
     expect(host.addRemoteTextTrack).toHaveBeenNthCalledWith(
       2,
       { kind: "subtitles", src: "/en.vtt", srclang: "en", label: "en", default: undefined },
-      false,
+      true,
     );
     undo();
     expect(host.removeRemoteTextTrack.mock.calls.map((c) => c[0])).toEqual(added);
+  });
+
+  it("copes with a player that has no tech yet", () => {
+    const host = { addRemoteTextTrack: vi.fn(() => undefined), removeRemoteTextTrack: vi.fn() };
+    const undo = setSubtitleTracks(host, [{ src: "/de.vtt", lang: "de" }]);
+    undo();
+    expect(host.removeRemoteTextTrack).not.toHaveBeenCalled();
   });
 });
