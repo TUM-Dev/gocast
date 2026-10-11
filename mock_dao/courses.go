@@ -256,21 +256,6 @@ func (mr *MockCoursesDaoMockRecorder) GetCourseByToken(token any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseByToken", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseByToken), token)
 }
 
-// GetCourseForLecturerIdByYearAndTerm mocks base method.
-func (m *MockCoursesDao) GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCourseForLecturerIdByYearAndTerm", c, year, term, userId)
-	ret0, _ := ret[0].([]model.Course)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCourseForLecturerIdByYearAndTerm indicates an expected call of GetCourseForLecturerIdByYearAndTerm.
-func (mr *MockCoursesDaoMockRecorder) GetCourseForLecturerIdByYearAndTerm(c, year, term, userId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseForLecturerIdByYearAndTerm", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseForLecturerIdByYearAndTerm), c, year, term, userId)
-}
-
 // GetCurrentOrNextLectureForCourse mocks base method.
 func (m *MockCoursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	m.ctrl.T.Helper()
@@ -389,16 +374,4 @@ func (mr *MockCoursesDaoMockRecorder) UpdateCourseColumns(ctx, course any, colum
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, course}, columns...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCourseColumns", reflect.TypeOf((*MockCoursesDao)(nil).UpdateCourseColumns), varargs...)
-}
-
-// UpdateCourseMetadata mocks base method.
-func (m *MockCoursesDao) UpdateCourseMetadata(ctx context.Context, course model.Course) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateCourseMetadata", ctx, course)
-}
-
-// UpdateCourseMetadata indicates an expected call of UpdateCourseMetadata.
-func (mr *MockCoursesDaoMockRecorder) UpdateCourseMetadata(ctx, course any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCourseMetadata", reflect.TypeOf((*MockCoursesDao)(nil).UpdateCourseMetadata), ctx, course)
 }

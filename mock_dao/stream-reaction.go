@@ -84,21 +84,6 @@ func (mr *MockStreamReactionDaoMockRecorder) Get(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStreamReactionDao)(nil).Get), arg0, arg1)
 }
 
-// GetByStream mocks base method.
-func (m *MockStreamReactionDao) GetByStream(arg0 context.Context, arg1 uint) ([]model.StreamReaction, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByStream", arg0, arg1)
-	ret0, _ := ret[0].([]model.StreamReaction)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetByStream indicates an expected call of GetByStream.
-func (mr *MockStreamReactionDaoMockRecorder) GetByStream(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStream", reflect.TypeOf((*MockStreamReactionDao)(nil).GetByStream), arg0, arg1)
-}
-
 // GetByStreamAndUser mocks base method.
 func (m *MockStreamReactionDao) GetByStreamAndUser(arg0 context.Context, arg1, arg2 uint) (model.StreamReaction, error) {
 	m.ctrl.T.Helper()
@@ -127,36 +112,6 @@ func (m *MockStreamReactionDao) GetByStreamWithinMinutes(arg0 context.Context, a
 func (mr *MockStreamReactionDaoMockRecorder) GetByStreamWithinMinutes(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamWithinMinutes", reflect.TypeOf((*MockStreamReactionDao)(nil).GetByStreamWithinMinutes), arg0, arg1, arg2)
-}
-
-// GetLastReactionOfUser mocks base method.
-func (m *MockStreamReactionDao) GetLastReactionOfUser(arg0 context.Context, arg1 uint) (model.StreamReaction, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastReactionOfUser", arg0, arg1)
-	ret0, _ := ret[0].(model.StreamReaction)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLastReactionOfUser indicates an expected call of GetLastReactionOfUser.
-func (mr *MockStreamReactionDaoMockRecorder) GetLastReactionOfUser(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastReactionOfUser", reflect.TypeOf((*MockStreamReactionDao)(nil).GetLastReactionOfUser), arg0, arg1)
-}
-
-// GetNumbersOfReactions mocks base method.
-func (m *MockStreamReactionDao) GetNumbersOfReactions(arg0 context.Context, arg1 uint) (map[string]int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumbersOfReactions", arg0, arg1)
-	ret0, _ := ret[0].(map[string]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNumbersOfReactions indicates an expected call of GetNumbersOfReactions.
-func (mr *MockStreamReactionDaoMockRecorder) GetNumbersOfReactions(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumbersOfReactions", reflect.TypeOf((*MockStreamReactionDao)(nil).GetNumbersOfReactions), arg0, arg1)
 }
 
 // Update mocks base method.

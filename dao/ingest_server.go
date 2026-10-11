@@ -12,7 +12,6 @@ import (
 
 type IngestServerDao interface {
 	SaveSlot(slot model.StreamName)
-	SaveIngestServer(server model.IngestServer)
 
 	GetBestIngestServer() (server model.IngestServer, err error)
 	GetTranscodedStreamSlot(ingestServerID uint) (sn model.StreamName, err error)
@@ -31,10 +30,6 @@ func NewIngestServerDao() IngestServerDao {
 
 func (d ingestServerDao) SaveSlot(slot model.StreamName) {
 	DB.Save(&slot)
-}
-
-func (d ingestServerDao) SaveIngestServer(server model.IngestServer) {
-	DB.Save(&server)
 }
 
 // GetBestIngestServer returns the IngestServer with the least streams assigned to it
