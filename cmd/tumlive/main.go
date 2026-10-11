@@ -24,7 +24,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/TUM-Dev/gocast/api"
 	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
@@ -156,9 +155,8 @@ func run(ctx context.Context) error {
 	}
 	camService := camera.NewService(camAuths)
 
-	// One hub for the process: the v2 realtime socket reads it, and the producers that
-	// still live in api/ (the runner's live flips, v1's title and description edits)
-	// publish to it.
+	// One hub for the process: the v2 realtime socket reads it, and the producers
+	// (the runner's live flips, title and description edits) publish to it.
 	hub := realtimehub.NewMemory()
 	livestate.SetRealtimeHub(hub)
 
@@ -265,6 +263,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithRealtimeHub(hub),
 		// Ending a stream goes through the manager, which tells the viewers it is over.
 		apiv2.WithStreamEnder(manager),
+		apiv2.WithSelfStreamStarter(manager),
 		apiv2.WithSubtitleSearch(tools.NewMeiliSearchFunctions()),
 		// The Meilisearch filters and post-filtering in pkg/search decide who may find what.
 		apiv2.WithSearch(search.SearchCatalog{Dao: dao.NewDaoWrapper(), Meili: tools.NewMeiliSearchFunctions()}),
@@ -285,8 +284,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	// excluded by path instead.
 	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{apiv2.RealtimePath})))
 	router.Any("/api/v2/*any", api2Client.Proxy())
-	api2Client.RegisterLegacyCalendar(router)
-	api.ConfigGinRouter(router, manager)
+	api2Client.RegisterLegacyRoutes(router)
 	web.ConfigGinRouter(router)
 	g.Go(func() error {
 		return router.RunListener(httpl)

@@ -15,8 +15,8 @@ Five Go modules, joined by `go.work`:
 | `runner/` | Newer replacement for the worker |
 | `vod-service/` | Video-on-demand serving |
 
-Inside the main module: `model/` (GORM models), `dao/` (data access), `api/` (the REST
-API, v1), `apiv2/` (Protobuf/Connect API), `web/` (Go side of the SPA: routing, session pages, branding files), `tools/`
+Inside the main module: `model/` (GORM models), `dao/` (data access), `apiv2/` (Protobuf/Connect API,
+plus the few plain-HTTP routes that scripts and webhooks call), `web/` (Go side of the SPA: routing, session pages, branding files), `tools/`
 (shared helpers), `mock_dao/` + `mock_tools/` (generated). `ingest/`, `rtmp-proxy/` and
 `voice-service/` are supporting services; `docs_v2/` is the Docusaurus site.
 
@@ -69,12 +69,15 @@ go run cmd/modelGen/modelGen.go <ModelName>   # scaffolds a model + dao
 The proto is one file, `apiv2/server/apiv2.proto`, and both sides generate from it.
 Change it and run both generators, or the Go and TypeScript halves drift.
 
-New API work belongs in `apiv2/` (Protobuf/Connect), not `api/`.
+New API work belongs in `apiv2/` (Protobuf/Connect). The v1 `api/` package is gone; its
+four external URLs (`/api/selfstream/onPublish`, `/api/token/proxy/:token`, `/api/stream/live`,
+`/api/schedule.ics`) are served from `apiv2/server/legacy_routes.go`, each also at a
+`/api/v2/...` address.
 
-## v1 is being deleted — spend the effort on v2
+## v1 is deleted — spend the effort on v2
 
-The migration's endpoint is v2 replacing v1, so refactoring v1 is work that gets
-thrown away. Keep edits to the legacy v1 API (`api/`)
+The migration's endpoint was v2 replacing v1, and the REST API (`api/`) is gone. What
+remains of v1 is the `web/` gohtml handlers: keep edits to them
 to the minimum the task needs: fix bugs, and do what a v2 change forces — no
 opportunistic cleanup. The higher bar applies on the v2 side instead: interceptors,
 declarative authorization, tests.
