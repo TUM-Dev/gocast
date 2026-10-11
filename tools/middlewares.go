@@ -222,6 +222,9 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		}
 
 		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
+			// The page alone would go out as a 200: a refused stream must say so to
+			// whatever frames or fetches it (the Artemis embed does).
+			c.Status(http.StatusForbidden)
 			RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
 			c.Abort()
 			return

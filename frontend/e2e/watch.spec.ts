@@ -21,9 +21,11 @@ test.describe("the watch page", () => {
 
     await expect(page.getByTestId("watch-title")).toHaveText("VL 1: Was ist Bier?");
     await expect(page.getByTestId("watch-player")).toBeVisible();
-    // The side panel is there for a recording; its chat is off in the fixture, so the
-    // tabs a signed-out visitor gets are the sections.
+    // The chat is off in the fixture, so the panels start closed; the button opens them.
+    await expect(page.getByTestId("region-sidebar")).toBeHidden();
+    await page.getByTestId("open-sidebar").click();
     await expect(page.getByTestId("region-sidebar")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Sections" })).toBeVisible();
     // The page sits in the app: header and footer around it.
     await expect(page.getByRole("banner")).toBeVisible();
   });
