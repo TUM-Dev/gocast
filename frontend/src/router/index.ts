@@ -7,6 +7,7 @@ import { START_LOCATION,
 } from "vue-router";
 
 import { singleQueryParam } from "@/lib/route-query";
+import ChatPopupView from "@/views/ChatPopupView.vue";
 import CourseView from "@/views/CourseView.vue";
 import HomeView from "@/views/HomeView.vue";
 import InfoPageDynamicView from "@/views/InfoPageDynamicView.vue";
@@ -56,6 +57,8 @@ declare module "vue-router" {
      * opens it on a narrow screen.
      */
     sidenav?: boolean;
+    /** Renders no header: the page is a window of its own, such as the popup chat. */
+    bare?: boolean;
   }
 }
 
@@ -271,6 +274,15 @@ const routes: RouteRecordRaw[] = [
     component: CourseTokenView,
     props: { mode: "opt-out" },
     meta: { minimalHeader: true, footer: true, anonymous: true },
+  },
+  {
+    // The chat on a page of its own. Deliberately not the popup's current URL
+    // (`/w/:slug/:streamID/chat/popup`, still the old template): nothing links here yet.
+    // Anonymous because the chat is readable without a session on a public stream.
+    path: "/w/:slug/:streamID/chat",
+    name: "stream-chat",
+    component: ChatPopupView,
+    meta: { bare: true, anonymous: true },
   },
   {
     // Where "/" sends a fresh deployment; the page refuses once an account exists.

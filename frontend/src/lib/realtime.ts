@@ -54,6 +54,12 @@ export interface RealtimeOptions {
   onStatus?: (status: RealtimeStatus) => void;
   /** The server refused the stream for good; no reconnect follows. */
   onFatal?: (code: number, reason: string) => void;
+  /**
+   * The server closed the socket, for any reason, before `onFatal` or a retry. Lets a
+   * view say *why* it is reconnecting — a 4401 that keeps coming back means the
+   * session has expired, which a retry alone never fixes.
+   */
+  onClose?: (code: number, reason: string) => void;
 
   /** A token for the first frame, or null for anonymous. Overridable in tests. */
   getToken?: () => Promise<string | null>;
@@ -166,6 +172,7 @@ export class RealtimeConnection {
     socket.onclose = (close: CloseEvent) => {
       if (this.socket !== socket) return; // replaced or closed on purpose
       this.socket = null;
+      this.options.onClose?.(close.code, close.reason);
 
       if (FATAL_CLOSE_CODES.has(close.code)) {
         this.closed = true;
