@@ -468,11 +468,11 @@ provide(watchContextKey, context);
             :slug="slug"
             :player="panelPlayer.player"
             :subtitle-languages="data.stream?.recording ? data.subtitleLanguages : []"
-            :show-chat="data.chat?.enabled === true"
-            :show-bookmarks="data.viewer?.signedIn === true"
-            :show-playlist="data.viewer?.signedIn === true"
-            :show-sections="data.stream?.recording === true"
-            :show-search="data.stream?.recording === true && data.subtitleLanguages.length > 0"
+            :show-chat="store.tabs.includes('chat')"
+            :show-bookmarks="store.tabs.includes('bookmarks')"
+            :show-playlist="store.tabs.includes('playlist')"
+            :show-sections="store.tabs.includes('sections')"
+            :show-search="store.tabs.includes('search')"
             @bookmarks="onBookmarks"
           >
             <template #chat>
