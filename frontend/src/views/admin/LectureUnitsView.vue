@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import AdminLayout from "@/components/admin/AdminLayout.vue";
-import UnitPlayer from "@/components/admin/lectures/units/UnitPlayer.vue";
+import VideoPlayer from "@/components/player/VideoPlayer.vue";
 import {
   checkUnit,
   createLectureUnit,
@@ -38,7 +38,7 @@ const units = ref<LectureUnit[]>([]);
 const loading = ref(true);
 const error = ref("");
 
-const player = ref<InstanceType<typeof UnitPlayer> | null>(null);
+const player = ref<InstanceType<typeof VideoPlayer> | null>(null);
 
 const duration = computed(() => serverDuration.value || playerDuration.value);
 
@@ -68,17 +68,22 @@ async function load(course: number, stream: number): Promise<void> {
   }
 }
 
+/** The playback position in milliseconds. */
+function position(): number {
+  return Math.floor((player.value?.currentTime ?? 0) * 1000);
+}
+
 function openForm(): void {
   // Starts where the recording is playing and runs to its end, like the old slider's
   // two handles at either edge.
-  draft.value.from = formatTimecode(player.value?.position() ?? 0);
+  draft.value.from = formatTimecode(position());
   draft.value.to = formatTimecode(duration.value * 1000);
   formProblem.value = "";
   showForm.value = true;
 }
 
 function useNow(field: "from" | "to"): void {
-  draft.value[field] = formatTimecode(player.value?.position() ?? 0);
+  draft.value[field] = formatTimecode(position());
 }
 
 /** The range inputs work in whole seconds; the text fields keep the timecode. */
@@ -90,7 +95,7 @@ function slide(field: "from" | "to", event: Event): void {
   const value = Number((event.target as HTMLInputElement).value);
   draft.value[field] = formatTimecode(value * 1000);
   // As the old page did, show the frame the handle is on.
-  player.value?.seek(value * 1000);
+  player.value?.seek(value);
 }
 
 async function add(): Promise<void> {
@@ -161,7 +166,7 @@ watch(
       <template v-else-if="!error || units.length || lectureName">
         <div v-if="playlistUrl">
           <p class="text-5 mb-1 text-sm">Reference video</p>
-          <UnitPlayer ref="player" :src="playlistUrl" @duration="playerDuration = $event" />
+          <VideoPlayer ref="player" :src="playlistUrl" @loadedmetadata="playerDuration = Math.floor($event)" />
         </div>
         <p v-else class="text-5 text-sm">
           This lecture has no recording yet. You can still add units by entering their times.
@@ -181,7 +186,7 @@ watch(
                       type="button"
                       class="hover:underline"
                       :aria-label="`Jump to ${formatTimecode(unit.fromMs)}`"
-                      @click="player?.seek(unit.fromMs)"
+                      @click="player?.seek(unit.fromMs / 1000)"
                     >
                       {{ formatTimecode(unit.fromMs) }}
                     </button>
