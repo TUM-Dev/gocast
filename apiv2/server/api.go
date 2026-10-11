@@ -147,6 +147,12 @@ func (a *API) Proxy() func(c *gin.Context) {
 			a.handleLectureUpload(c, route)
 			return
 		}
+		// Beside the gateway too: it streams a file, with Range, which the gateway's
+		// unary responses cannot.
+		if route, ok := streamFileRouteOf(c.Request); ok {
+			a.handleStreamFile(c, route)
+			return
+		}
 		// A websocket; the gateway cannot serve one. Must stay outside gzip, see main.
 		if c.Request.URL.Path == RealtimePath {
 			a.serveRealtime(c.Writer, c.Request)
