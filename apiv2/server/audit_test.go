@@ -103,6 +103,9 @@ func TestListAuditsMapsAnAuditWithAUser(t *testing.T) {
 	if entry.UserName != "admin@example.com" {
 		t.Errorf("userName = %q, want %q", entry.UserName, "admin@example.com")
 	}
+	if model.AuditImpersonation.String() != "Impersonation" {
+		t.Errorf("impersonation label = %q", model.AuditImpersonation.String())
+	}
 	if entry.Type != "Camera Moved" {
 		t.Errorf("type = %q, want %q", entry.Type, "Camera Moved")
 	}
