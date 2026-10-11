@@ -99,18 +99,6 @@ func (mr *MockIngestServerDaoMockRecorder) RemoveStreamFromSlot(streamID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveStreamFromSlot", reflect.TypeOf((*MockIngestServerDao)(nil).RemoveStreamFromSlot), streamID)
 }
 
-// SaveIngestServer mocks base method.
-func (m *MockIngestServerDao) SaveIngestServer(server model.IngestServer) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveIngestServer", server)
-}
-
-// SaveIngestServer indicates an expected call of SaveIngestServer.
-func (mr *MockIngestServerDaoMockRecorder) SaveIngestServer(server any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveIngestServer", reflect.TypeOf((*MockIngestServerDao)(nil).SaveIngestServer), server)
-}
-
 // SaveSlot mocks base method.
 func (m *MockIngestServerDao) SaveSlot(slot model.StreamName) {
 	m.ctrl.T.Helper()

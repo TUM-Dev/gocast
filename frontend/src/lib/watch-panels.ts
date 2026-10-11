@@ -4,20 +4,30 @@
  * request and every bit of arithmetic lives here so it can be tested without a DOM.
  */
 
-import { fromJson, type JsonValue } from "@bufbuild/protobuf";
+import { create, fromJson, type JsonValue } from "@bufbuild/protobuf";
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { ref, type Ref } from "vue";
 
 import {
+  AddBookmarkRequestSchema,
   AddBookmarkResponseSchema,
   GetBookmarksResponseSchema,
   GetStreamPlaylistResponseSchema,
   GetVideoSectionsResponseSchema,
   SearchStreamSubtitlesResponseSchema,
+  UpdateBookmarkRequestSchema,
   UpdateBookmarkResponseSchema,
   type Bookmark as BookmarkMessage,
 } from "@/gen/server/apiv2_pb";
-import { ApiError, apiDelete, apiFetch, apiFetchOptionalAuth, apiGetMessage, apiGetMessageOptionalAuth } from "./api";
+import {
+  ApiError,
+  apiDelete,
+  apiFetchOptionalAuth,
+  apiGetMessage,
+  apiGetMessageOptionalAuth,
+  apiPostMessage,
+  apiPutMessage,
+} from "./api";
 import type { PlayerController } from "./player/controller";
 
 /**
@@ -78,11 +88,7 @@ function byTime(a: WatchBookmark, b: WatchBookmark): number {
   return a.time - b.time || a.id - b.id;
 }
 
-/**
- * The add and update RPCs declare no `body` in the proto, so the gateway reads their
- * fields from the query string and throws the JSON body away. Sending a body, as the
- * other POSTs do, would create a bookmark with an empty description at 0:00.
- */
+/** GET /bookmarks has no body, so its one field travels in the query string. */
 function bookmarkQuery(fields: Record<string, string | number>): string {
   return new URLSearchParams(Object.entries(fields).map(([k, v]) => [k, String(v)])).toString();
 }
@@ -93,23 +99,24 @@ export async function fetchBookmarks(streamId: number): Promise<WatchBookmark[]>
 }
 
 export async function createBookmark(streamId: number, description: string, time: number): Promise<WatchBookmark> {
-  const { hours, minutes, seconds } = splitTime(time);
-  const json = await apiFetch<JsonValue>(
-    `/bookmarks?${bookmarkQuery({ stream_id: streamId, description, hours, minutes, seconds })}`,
-    { method: "POST" },
+  const res = await apiPostMessage(
+    AddBookmarkRequestSchema,
+    AddBookmarkResponseSchema,
+    "/bookmarks",
+    create(AddBookmarkRequestSchema, { streamId, description, ...splitTime(time) }),
   );
-  const res = fromJson(AddBookmarkResponseSchema, json, JSON_READ_OPTIONS);
   if (!res.bookmark) throw new Error("the server returned no bookmark");
   return parseBookmark(res.bookmark);
 }
 
 export async function saveBookmark(id: number, description: string, time: number): Promise<WatchBookmark> {
-  const { hours, minutes, seconds } = splitTime(time);
-  const json = await apiFetch<JsonValue>(
-    `/bookmarks/${id}?${bookmarkQuery({ description, hours, minutes, seconds })}`,
-    { method: "PUT" },
+  // The id is in the path (and the gateway takes it from there), the rest in the body.
+  const res = await apiPutMessage(
+    UpdateBookmarkRequestSchema,
+    UpdateBookmarkResponseSchema,
+    `/bookmarks/${id}`,
+    create(UpdateBookmarkRequestSchema, { bookmarkId: id, description, ...splitTime(time) }),
   );
-  const res = fromJson(UpdateBookmarkResponseSchema, json, JSON_READ_OPTIONS);
   if (!res.bookmark) throw new Error("the server returned no bookmark");
   return parseBookmark(res.bookmark);
 }

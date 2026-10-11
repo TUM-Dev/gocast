@@ -11,7 +11,6 @@ import (
 type FileDao interface {
 	NewFile(f *model.File) error
 	GetFileById(id string) (f model.File, err error)
-	UpdateFile(id string, f *model.File) error
 	DeleteFile(id uint) error
 	CountVoDFiles() (int64, error)
 	SetThumbnail(streamId uint, thumb model.File) error
@@ -33,10 +32,6 @@ func (d fileDao) NewFile(f *model.File) error {
 func (d fileDao) GetFileById(id string) (f model.File, err error) {
 	err = DB.Where("id = ?", id).First(&f).Error
 	return f, err
-}
-
-func (d fileDao) UpdateFile(id string, f *model.File) error {
-	return DB.Model(&model.File{}).Where("id = ?", id).Updates(f).Error
 }
 
 func (d fileDao) DeleteFile(id uint) error {

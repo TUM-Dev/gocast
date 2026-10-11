@@ -145,8 +145,8 @@ func TestAddStreamReaction(t *testing.T) {
 	t.Run("v1's cooldown across streams is gone: only this stream's reaction is consulted", func(t *testing.T) {
 		reactions(t, "👍")
 		env := newWatchEnv(t)
-		// A reaction to another stream a second ago is not even looked up; the DAO call
-		// that found it (GetLastReactionOfUser) has no expectation here and would fail.
+		// A reaction to another stream a second ago is not even looked up: the DAO has
+		// no across-streams lookup (v1's GetLastReactionOfUser) any more.
 		env.react.EXPECT().GetByStreamAndUser(gomock.Any(), uint(7), uint(20)).Return(model.StreamReaction{}, gorm.ErrRecordNotFound)
 		env.react.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 		if err := react(env, student, "👍"); err != nil {

@@ -55,7 +55,7 @@ describe("useBookmarks", () => {
     ]);
   });
 
-  it("sends add and update as query parameters, which is all the gateway reads", async () => {
+  it("sends add and update as JSON bodies", async () => {
     const { calls } = routeFetch([
       { path: "/bookmarks", body: { bookmarks: stored } },
       {
@@ -74,15 +74,14 @@ describe("useBookmarks", () => {
 
     expect(await b.add("new", 3605)).toBe(true);
     const post = calls.find((c) => c.method === "POST")!;
-    expect(new URL(post.url, "http://x").searchParams.toString()).toBe(
-      "stream_id=7&description=new&hours=1&minutes=0&seconds=5",
-    );
+    expect(post.url).toBe("/api/v2/bookmarks");
+    expect(JSON.parse(String(post.body))).toEqual({ streamId: 7, description: "new", hours: 1, seconds: 5 });
     expect(b.bookmarks.value.map((x) => x.id)).toEqual([1, 2, 3]);
 
     expect(await b.update(1, "renamed", 1200)).toBe(true);
-    expect(calls.find((c) => c.method === "PUT")!.url).toBe(
-      "/api/v2/bookmarks/1?description=renamed&hours=0&minutes=20&seconds=0",
-    );
+    const put = calls.find((c) => c.method === "PUT")!;
+    expect(put.url).toBe("/api/v2/bookmarks/1");
+    expect(JSON.parse(String(put.body))).toEqual({ bookmarkId: 1, description: "renamed", minutes: 20 });
     expect(b.bookmarks.value.map((x) => x.id)).toEqual([2, 1, 3]);
   });
 

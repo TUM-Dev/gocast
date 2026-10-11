@@ -862,7 +862,10 @@ service StreamService {
   }
 
   rpc addBookmark(AddBookmarkRequest) returns (AddBookmarkResponse) {
-    option (google.api.http) = {post: "/bookmarks"};
+    option (google.api.http) = {
+      post: "/bookmarks"
+      body: "*"
+    };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Bookmarks"
       summary: "Add a bookmark."
@@ -880,7 +883,10 @@ service StreamService {
   }
 
   rpc updateBookmark(UpdateBookmarkRequest) returns (UpdateBookmarkResponse) {
-    option (google.api.http) = {put: "/bookmarks/{bookmark_id}"};
+    option (google.api.http) = {
+      put: "/bookmarks/{bookmark_id}"
+      body: "*"
+    };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Bookmarks"
       summary: "Update a bookmark."
