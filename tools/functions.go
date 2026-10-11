@@ -2,8 +2,6 @@ package tools
 
 import (
 	"errors"
-	"log"
-	"os/exec"
 	"regexp"
 	"strings"
 
@@ -20,24 +18,6 @@ func CourseListContains(courses []model.Course, courseId uint) bool {
 	}
 
 	return false
-}
-
-func UploadLRZ(file string) error {
-	cmd := exec.Command("curl", "-F",
-		"filename=@"+file,
-		"-F", "benutzer="+Cfg.Lrz.Name,
-		"-F", "mailadresse="+Cfg.Lrz.Email,
-		"-F", "telefon="+Cfg.Lrz.Phone,
-		"-F", "unidir=tum",
-		"-F", "subdir="+Cfg.Lrz.SubDir,
-		"-F", "info=",
-		Cfg.Lrz.UploadURL)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Println(string(out))
-		return err
-	}
-	return nil
 }
 
 func MaskEmail(email string) (masked string, err error) {

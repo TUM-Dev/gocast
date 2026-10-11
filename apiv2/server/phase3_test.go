@@ -10,11 +10,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 
-	"github.com/TUM-Dev/gocast/api"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/search"
 )
 
 /* Search. */
@@ -24,12 +24,12 @@ type fakeSearch struct {
 	user  *model.User
 	query string
 	limit int64
-	scope api.SearchScope
-	hits  api.SearchHits
+	scope search.SearchScope
+	hits  search.SearchHits
 	err   error
 }
 
-func (f *fakeSearch) Search(_ context.Context, user *model.User, query string, limit int64, scope api.SearchScope) (api.SearchHits, error) {
+func (f *fakeSearch) Search(_ context.Context, user *model.User, query string, limit int64, scope search.SearchScope) (search.SearchHits, error) {
 	f.user, f.query, f.limit, f.scope = user, query, limit, scope
 	return f.hits, f.err
 }
@@ -38,9 +38,9 @@ func TestSearch(t *testing.T) {
 	student := &model.User{Model: gorm.Model{ID: 4}, Role: model.StudentType}
 
 	t.Run("passes the query, a default limit and the caller along and maps the hits", func(t *testing.T) {
-		search := &fakeSearch{hits: api.SearchHits{
-			Courses: []api.SearchCourseDTO{{Name: "Brauereiwesen", Slug: "brauereiwesen", Year: 2022, TeachingTerm: "S"}},
-			Streams: []api.SearchStreamDTO{{ID: 7, Name: "Hopfen", CourseSlug: "brauereiwesen", Year: 2022, TeachingTerm: "S"}},
+		search := &fakeSearch{hits: search.SearchHits{
+			Courses: []search.SearchCourseDTO{{Name: "Brauereiwesen", Slug: "brauereiwesen", Year: 2022, TeachingTerm: "S"}},
+			Streams: []search.SearchStreamDTO{{ID: 7, Name: "Hopfen", CourseSlug: "brauereiwesen", Year: 2022, TeachingTerm: "S"}},
 		}}
 		a := &API{search: search, log: slog.Default()}
 
@@ -129,7 +129,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	t.Run("answers 503 without Meilisearch", func(t *testing.T) {
-		a := &API{search: &fakeSearch{err: api.ErrSearchUnavailable}, log: slog.Default()}
+		a := &API{search: &fakeSearch{err: search.ErrSearchUnavailable}, log: slog.Default()}
 		_, err := a.Search(context.Background(), &protobuf.SearchRequest{Query: "bier"})
 		wantCode(t, err, codes.Unavailable)
 
