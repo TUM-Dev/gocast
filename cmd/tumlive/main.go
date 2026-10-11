@@ -260,6 +260,9 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
 		apiv2.WithSectionImages(api.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
 		apiv2.WithRealtimeHub(hub),
+		// Ending a stream goes through the manager, which tells the viewers it is over.
+		apiv2.WithStreamEnder(manager),
+		apiv2.WithSubtitleSearch(tools.NewMeiliSearchFunctions()),
 		// The same Meilisearch and filters v1's search uses, so both find the same.
 		apiv2.WithSearch(api.SearchCatalog{Dao: dao.NewDaoWrapper(), Meili: tools.NewMeiliSearchFunctions()}),
 	}
