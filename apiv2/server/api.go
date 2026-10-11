@@ -24,6 +24,8 @@ import (
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/pkg/realtimehub"
+	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/tools/bot"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
@@ -54,6 +56,16 @@ type API struct {
 	// Pushes per-stream events to the realtime socket. New gives every API one of its
 	// own; WithRealtimeHub shares it with the producers outside this package.
 	hub realtimehub.Hub
+
+	// The watch page: who reacted lately, who reported what, how a report reaches the
+	// operators (nil: Matrix, tests replace it), and the optional means to end a live
+	// stream and to search one recording's subtitles; see WithStreamEnder and
+	// WithSubtitleSearch.
+	reactions      reactionStats
+	issues         issueLimiter
+	sendAlert      func(bot.AlertMessage) error
+	streamEnder    StreamEnder
+	subtitleSearch tools.MeiliSearchInterface
 
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedUserServiceServer

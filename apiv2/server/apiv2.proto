@@ -887,6 +887,130 @@ service StreamService {
       description: "Moves the camera of the stream's lecture hall to the preset and returns once it has had time to arrive. The stream must be live and the preset must belong to its lecture hall. Requires administering the course."
     };
   }
+
+  // ----- The watch page -----
+  //
+  // Everything the watch page (/w/{slug}/{stream_id}), its popup, the embeddable
+  // player and the live management page need beyond what the RPCs above already
+  // answer. The page makes one getStreamWatch call and then talks to the rest as the
+  // viewer acts; the realtime socket (GET /api/v2/realtime) keeps it current.
+
+  rpc getStreamWatch(GetStreamWatchRequest) returns (StreamWatch) {
+    option (google.api.http) = {get: "/streams/{slug}/{stream_id}/watch"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get everything the watch page renders."
+      description:
+        "One call for the whole page: the stream and its course, the playable views "
+        "with signed playlist URLs (the course's per-lecture-hall source modes already "
+        "applied), the cut offsets, silences, attachments, downloads, the caller's "
+        "progress, the chat settings and what the caller may do. Open to anyone who "
+        "may watch the stream, signed in or not; fields that only apply to some "
+        "callers are absent for the others. 400 when the slug is not the stream's "
+        "course's, 403 when the caller may not watch the course or the stream is "
+        "private and the caller does not administer the course."
+    };
+  }
+
+  rpc listAllowedStreamReactions(ListAllowedStreamReactionsRequest) returns (ListAllowedStreamReactionsResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/reactions/allowed"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "List the emoji a viewer may react to a stream with."
+      description: "The server-wide list, in display order. Open to anyone who may watch the stream."
+    };
+  }
+
+  rpc addStreamReaction(AddStreamReactionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/reactions"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "React to a stream."
+      description:
+        "Sets the caller's reaction to the stream, replacing an earlier one, and "
+        "tells the course's administrators watching it (StreamReactionEvent). "
+        "Needs a signed-in caller who may watch the stream. 400 for an emoji "
+        "listAllowedStreamReactions does not list, 429 while the caller's cooldown "
+        "after their last reaction has not passed."
+    };
+  }
+
+  rpc reportStreamIssue(ReportStreamIssueRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/issues"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Report a technical problem with a stream."
+      description:
+        "Forwards the report to the operators' alert room. Open to every signed-in "
+        "caller who may watch the stream, not only to its administrators. 400 for a "
+        "stream held in no lecture hall, 503 when the deployment has no alert room "
+        "configured (StreamWatch.viewer.can_report_issue says so beforehand)."
+    };
+  }
+
+  rpc reportStreamSeek(ReportStreamSeekRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/seeks"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Report that a viewer jumped to a position."
+      description:
+        "Counts one seek to the position, for the seek heatmap. Open to anyone who "
+        "may watch the stream, signed in or not. 400 for a position beyond the "
+        "recording's length."
+    };
+  }
+
+  rpc getStreamSeekHeatmap(GetStreamSeekHeatmapRequest) returns (GetStreamSeekHeatmapResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/seeks/heatmap"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Get where viewers jump to in a recording."
+      description:
+        "The seek counts per slice of the recording. Empty until enough seeks have "
+        "been reported for the picture to mean something. Open to anyone who may "
+        "watch the stream."
+    };
+  }
+
+  rpc searchStreamSubtitles(SearchStreamSubtitlesRequest) returns (SearchStreamSubtitlesResponse) {
+    option (google.api.http) = {get: "/streams/{stream_id}/subtitles/search"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "Search the subtitles of one recording."
+      description:
+        "Finds the lines of the recording's subtitles matching the query, with their "
+        "position in the recording. Narrower than search, which spans courses and "
+        "answers with hits carrying their course; this has the stream in the path, "
+        "checks only that the caller may watch it, and answers 503 while Meilisearch "
+        "is unreachable."
+    };
+  }
+
+  // Ends a live stream early. Reaches the runner that is recording it.
+  rpc endStream(EndStreamRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/end"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Streams"
+      summary: "End a live stream."
+      description:
+        "Stops the live stream and, unless `discard` is set, keeps what was recorded "
+        "as the lecture's recording. The stream must be the course's and live. "
+        "Requires administering the course. Clients learn that it ended from "
+        "StreamLiveEvent."
+    };
+  }
 }
 
 // Server administration: everything belonging to no particular course.
@@ -3172,6 +3296,314 @@ message SwitchCameraPresetRequest {
   uint32 preset_id = 3;
 }
 
+// ----- The watch page -----
+//
+// Messages are named Watch* where they exist only for the watch page, so they do not
+// collide with the lecture, course and chat messages that look alike.
+
+message GetStreamWatchRequest {
+  uint32 stream_id = 1;
+  // The slug of the stream's course, as in the page's URL. Refused with 400 when it
+  // is another course's, as getStream does.
+  string slug = 2;
+}
+
+// Everything the watch page renders. The page's URL decides the layout (/w/{slug}/{id}
+// with an optional COMB, PRES, CAM or SPLIT after it) and the client picks the views
+// to play from `views`; default_layout is what to use when the URL names none.
+message StreamWatch {
+  WatchStream stream = 1;
+  WatchCourse course = 2;
+
+  // The sources the stream can be played from, with the course's source mode for the
+  // stream's lecture hall already applied: a hall set to presentation only yields
+  // just PRESENTATION, whatever else was recorded. Empty for a stream that is
+  // neither live nor a recording.
+  repeated WatchView views = 3;
+  // The layout to open with when the URL names none: the caller's LECTURE_VIEW
+  // setting, or the course's source mode forcing one, narrowed to what `views` can
+  // show. Never SPLIT unless split_available. UNSPECIFIED when views is empty.
+  WatchLayout default_layout = 4;
+  // Whether the split view (presentation and camera side by side) can be offered:
+  // both of those views are in `views`.
+  bool split_available = 5;
+
+  // The stored cut of a recording, in seconds into the recording: play from
+  // start_offset and stop at end_offset. Absent for an uncut recording and for a live
+  // stream. The client clips the player to it: the playlists in `views` are the whole
+  // recording. (The old page appended the cut to the playlist URL as wowza
+  // parameters, which nothing on the edge reads, so on a signed playlist it never
+  // took effect.)
+  optional uint32 start_offset = 6;
+  optional uint32 end_offset = 7;
+
+  // Stretches of the recording without speech, which the player offers to skip.
+  repeated WatchSilence silences = 8;
+  // Where playback starts for a viewer who skips the opening silence automatically,
+  // as a fraction of the recording from 0 to 1: the end of the first silence, when
+  // it begins at 0:00. Present only for a signed-in caller, on a recording held in a
+  // lecture hall that has such a silence. It is the caller's AUTO_SKIP setting
+  // (getUser) that says whether to use it; the client takes the larger of this and
+  // `progress`. The fraction is of the scheduled length, as in the old page, so it
+  // is slightly off for a recording that ran over or under.
+  optional float first_silence_end_progress = 9;
+
+  // Files the lecturer attached, served by GET /api/v2/streams/{stream_id}/files/{file_id}.
+  repeated WatchAttachment attachments = 10;
+  // Recordings the caller may download. Empty unless the stream is a recording and
+  // the course allows downloads and the caller is signed in, or the caller
+  // administers the course. The source mode applies as it does to `views`.
+  repeated WatchDownload downloads = 11;
+
+  // The caller's progress in this recording. Present only for a signed-in caller on
+  // a recording.
+  optional StreamProgress progress = 12;
+
+  WatchChat chat = 13;
+  WatchViewer viewer = 14;
+  // Present only for a caller who administers the course.
+  optional WatchAdmin admin = 15;
+
+  // How many sockets are watching right now. Realtime ViewersEvents keep it current.
+  uint32 viewers = 16;
+  // Languages the recording has subtitles in, as getSubtitles takes them. Empty means
+  // no transcript to offer.
+  repeated string subtitle_languages = 17;
+}
+
+message WatchStream {
+  uint32 id = 1;
+  // As the lecturer set it; empty for an unnamed lecture.
+  string name = 2;
+  // name, or "Lecture: Jan 2, 2006" built from the start for an unnamed lecture.
+  string display_name = 3;
+  // Rendered from markdown and sanitised, as the description is everywhere else; safe
+  // to inject. Realtime StreamDescriptionEvents replace it.
+  string description_html = 4;
+  google.protobuf.Timestamp start = 5;
+  // Realtime StreamTimeChangedEvents move start and end.
+  google.protobuf.Timestamp end = 6;
+  // The stream is being broadcast now. Realtime StreamLiveEvents flip it.
+  bool live_now = 7;
+  // A recording is available to play.
+  bool recording = 8;
+  // The scheduled slot is over, or the stream was ended early.
+  bool ended = 9;
+  // Starts within the next half hour and has not started: the waiting room.
+  bool is_coming_up = 10;
+  // Not live, not recorded, not over and not yet coming up.
+  bool is_planned = 11;
+  // True for a private lecture, which only the course's administrators are ever sent.
+  bool is_private = 12;
+  // Name of the lecture hall the stream is held in; absent for a self-stream (OBS or
+  // an upload). Sent to every caller who may watch.
+  optional string lecture_hall_name = 13;
+  // Length of the recording in seconds; absent until it has been processed.
+  optional uint32 duration = 14;
+}
+
+message WatchCourse {
+  uint32 id = 1;
+  string name = 2;
+  string slug = 3;
+  uint32 year = 4;
+  // S or W.
+  string term = 5;
+}
+
+// Which source a view plays.
+enum WatchViewKind {
+  WATCH_VIEW_KIND_UNSPECIFIED = 0;
+  // Presentation and camera in one picture.
+  WATCH_VIEW_KIND_COMBINED = 1;
+  WATCH_VIEW_KIND_PRESENTATION = 2;
+  WATCH_VIEW_KIND_CAMERA = 3;
+}
+
+// How the page lays the views out; the last path segment of /w/{slug}/{id}/{layout}
+// is COMB, PRES, CAM or SPLIT.
+enum WatchLayout {
+  WATCH_LAYOUT_UNSPECIFIED = 0;
+  WATCH_LAYOUT_COMBINED = 1;
+  WATCH_LAYOUT_PRESENTATION = 2;
+  WATCH_LAYOUT_CAMERA = 3;
+  // Presentation and camera in two players, kept in sync.
+  WATCH_LAYOUT_SPLIT = 4;
+}
+
+message WatchView {
+  WatchViewKind kind = 1;
+  // The HLS playlist, signed for the caller and valid for seven hours; reload the
+  // page's data to get a fresh one. Used as given: a literal {{quality}} in it is
+  // the edge's to fill in, and is to be removed when the URL is shown to the user to
+  // copy.
+  string playlist_url = 2;
+  // The seek-preview thumbnails of a recording, absent for a live stream and for a
+  // recording whose sprite has not been generated.
+  optional WatchSprite sprite = 3;
+}
+
+// A sheet of preview frames, one per interval, row by row.
+message WatchSprite {
+  // Fetched from GET /api/v2/streams/{stream_id}/files/{file_id}.
+  uint32 file_id = 1;
+  // Seconds of the recording between two frames.
+  uint32 interval_seconds = 2;
+}
+
+// A stretch without speech, in seconds into the recording.
+message WatchSilence {
+  uint32 start = 1;
+  uint32 end = 2;
+}
+
+message WatchAttachment {
+  uint32 file_id = 1;
+  string filename = 2;
+  // Set when the lecturer linked to a page instead of uploading a file: open this
+  // rather than fetching file_id.
+  optional string external_url = 3;
+}
+
+message WatchDownload {
+  WatchViewKind kind = 1;
+  // "Combined", "Camera" or "Presentation".
+  string friendly_name = 2;
+  // A signed URL that downloads the recording.
+  string url = 3;
+}
+
+// Whether and how the chat is offered. The chat's own reads and writes are
+// ChatService; this is what to decide whether to show it at all.
+message WatchChat {
+  // The chat is on, for the course or for this stream, as sendChatMessage decides.
+  bool enabled = 1;
+  // Messages may be sent without showing the author's name.
+  bool anonymous_allowed = 2;
+  // Messages of non-administrators wait for approval before others see them.
+  bool approval_required = 3;
+}
+
+message WatchViewer {
+  bool signed_in = 1;
+  bool is_course_admin = 2;
+  // Whether reportStreamIssue can succeed: the deployment has an alert room, the
+  // caller is signed in and the stream is held in a lecture hall.
+  bool can_report_issue = 3;
+}
+
+// What only a course administrator is sent: the controls under the player.
+message WatchAdmin {
+  // The hall the stream is held in; absent for a self-stream.
+  optional uint32 lecture_hall_id = 1;
+  // The camera positions of the hall, to move the camera to with switchCameraPreset.
+  // Empty unless the stream is live in a hall that has presets.
+  repeated WatchCameraPreset camera_presets = 2;
+  // Whether endStream is offered: the stream is live and held in a lecture hall. A
+  // self-stream is ended by its streamer.
+  bool can_end_stream = 3;
+}
+
+message WatchCameraPreset {
+  // The camera's own numbering, as switchCameraPreset takes it.
+  uint32 preset_id = 1;
+  string name = 2;
+  // A snapshot taken from the preset, or the placeholder when there is none; a path
+  // on this server.
+  string image_url = 3;
+  bool is_default = 4;
+}
+
+message ListAllowedStreamReactionsRequest {
+  uint32 stream_id = 1;
+}
+
+message ListAllowedStreamReactionsResponse {
+  // Emoji, in display order.
+  repeated string reactions = 1;
+}
+
+message AddStreamReactionRequest {
+  uint32 stream_id = 1;
+  // One of the emoji listAllowedStreamReactions lists.
+  string reaction = 2;
+}
+
+// What the problem is about, as the report form offers it. Several may apply.
+enum StreamIssueCategory {
+  STREAM_ISSUE_CATEGORY_UNSPECIFIED = 0;
+  STREAM_ISSUE_CATEGORY_VIDEO = 1;
+  STREAM_ISSUE_CATEGORY_AUDIO = 2;
+  STREAM_ISSUE_CATEGORY_CAMERA = 3;
+  STREAM_ISSUE_CATEGORY_MICROPHONE = 4;
+  STREAM_ISSUE_CATEGORY_LIGHT = 5;
+  STREAM_ISSUE_CATEGORY_OTHER = 6;
+}
+
+message ReportStreamIssueRequest {
+  uint32 stream_id = 1;
+  repeated StreamIssueCategory categories = 2;
+  // What went wrong. Required.
+  string comment = 3;
+  // How the operators can reach the reporter, all optional. The signed-in user is
+  // attached to the report whatever is filled in.
+  string name = 4;
+  string email = 5;
+  string phone = 6;
+}
+
+message ReportStreamSeekRequest {
+  uint32 stream_id = 1;
+  // Seconds into the recording that the viewer jumped to.
+  double position = 2;
+}
+
+message GetStreamSeekHeatmapRequest {
+  uint32 stream_id = 1;
+}
+
+message GetStreamSeekHeatmapResponse {
+  // Into how many equal slices the recording is divided; bucket indexes run from 0
+  // to bucket_count - 1.
+  uint32 bucket_count = 1;
+  // Only the slices that were jumped to; one missing has no hits. Empty while there
+  // are too few seeks to show.
+  repeated SeekHeatmapBucket buckets = 2;
+}
+
+message SeekHeatmapBucket {
+  uint32 index = 1;
+  uint32 hits = 2;
+}
+
+message SearchStreamSubtitlesRequest {
+  uint32 stream_id = 1;
+  // Three characters or more; shorter answers 400.
+  string query = 2;
+  // 10 by default, 100 at most.
+  uint32 limit = 3;
+}
+
+message SearchStreamSubtitlesResponse {
+  repeated StreamSubtitleHit hits = 1;
+}
+
+message StreamSubtitleHit {
+  // Milliseconds into the recording.
+  int64 timestamp = 1;
+  // The lines before, of and after the match.
+  string text_prev = 2;
+  string text = 3;
+  string text_next = 4;
+}
+
+message EndStreamRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // Throw the recording away instead of keeping it.
+  bool discard = 3;
+}
+
 // ----- Chat and realtime -----
 //
 // The chat's reads, and the events pushed over GET /api/v2/realtime. Names carry a
@@ -3579,6 +4011,11 @@ message RealtimeEvent {
     StreamDescriptionEvent description = 21;
     // Events were lost; re-fetch everything.
     ResyncEvent resync = 22;
+    // Course administrators only.
+    StreamReactionEvent stream_reaction = 23;
+    // Course administrators only.
+    StreamReactionStatsEvent stream_reaction_stats = 24;
+    StreamTimeChangedEvent time_changed = 25;
   }
 }
 
@@ -3625,8 +4062,40 @@ message ViewersEvent {
   uint32 viewers = 1;
 }
 
+// The stream went live, or stopped being. live = false is also how the end of a
+// broadcast arrives (it was ended early, or its slot ran out): there is no separate
+// event. What follows -- a recording appearing, the stream counted as ended -- is
+// read by fetching getStreamWatch again, which is what the old page did by reloading.
 message StreamLiveEvent {
   bool live = 1;
+}
+
+// A viewer reacted to a live stream. For the lecturer's reaction display, which
+// highlights the emoji for a moment.
+message StreamReactionEvent {
+  string reaction = 1;
+}
+
+// How the reactions of the last window split over the emoji, sent every five
+// seconds while at least one administrator is watching and there were reactions.
+message StreamReactionStatsEvent {
+  repeated StreamReactionShare shares = 1;
+  // The window the shares were counted over.
+  uint32 window_seconds = 2;
+}
+
+message StreamReactionShare {
+  string reaction = 1;
+  uint32 count = 2;
+  // count over the window's total, from 0 to 1.
+  float share = 3;
+}
+
+// The lecture was rescheduled while the page was open. Clients replace the stream's
+// start and end, and what they derive from them: the countdown, the time left.
+message StreamTimeChangedEvent {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
 }
 
 message StreamTitleEvent {

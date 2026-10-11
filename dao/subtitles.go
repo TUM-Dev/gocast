@@ -18,6 +18,9 @@ type SubtitlesDao interface {
 	// GetByStreamIDandLang returns the subtitles for a given query
 	GetByStreamIDandLang(context.Context, uint, string) (model.Subtitles, error)
 
+	// GetLanguagesByStreamID returns the languages a stream has subtitles in, sorted.
+	GetLanguagesByStreamID(context.Context, uint) ([]string, error)
+
 	// CreateOrUpsert creates or updates subtitles for the database
 	CreateOrUpsert(context.Context, *model.Subtitles) error
 
@@ -75,4 +78,9 @@ func (d subtitlesDao) Create(c context.Context, it *model.Subtitles) error {
 // Delete a Subtitles by id.
 func (d subtitlesDao) Delete(c context.Context, id uint) error {
 	return DB.WithContext(c).Delete(&model.Subtitles{}, id).Error
+}
+
+func (d subtitlesDao) GetLanguagesByStreamID(c context.Context, id uint) (langs []string, err error) {
+	return langs, d.db.WithContext(c).Model(&model.Subtitles{}).
+		Where("stream_id = ?", id).Distinct().Order("language").Pluck("language", &langs).Error
 }

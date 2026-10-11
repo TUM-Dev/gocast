@@ -170,6 +170,22 @@ var services = []service{
 			// Moves a lecture hall's camera; the handler checks the stream is the
 			// course's and takes the hall from it.
 			"switchCameraPreset": requiresCourseAdmin(),
+
+			// The watch page. The reads and the seek report are open to whoever may
+			// watch the stream; the handlers decide that with
+			// authorizeUserForStreamCourse, as for getStream. Reacting and reporting
+			// a problem are for signed-in viewers -- reporting was administrators-only
+			// in v1, which students' reports ran into as a 403.
+			"getStreamWatch":             public,
+			"listAllowedStreamReactions": public,
+			"reportStreamSeek":           public,
+			"getStreamSeekHeatmap":       public,
+			"searchStreamSubtitles":      public,
+			"addStreamReaction":          authenticated,
+			"reportStreamIssue":          authenticated,
+			// Ends the broadcast of a lecture hall; the handler checks the stream is
+			// the course's and live.
+			"endStream": requiresCourseAdmin(),
 		},
 	},
 	{
