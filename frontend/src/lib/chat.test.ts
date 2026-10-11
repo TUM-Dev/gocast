@@ -2,9 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
 import {
+  approveMessage,
+  closePoll,
+  deleteMessage,
+  resolveMessage,
+  retractMessage,
+  startPoll,
   ChatCooldownError,
   fetchActivePoll,
   fetchChatMessages,
+  NO_ACCESS,
   fetchChatUsers,
   fetchPolls,
   sendMessage,
@@ -44,6 +51,7 @@ afterEach(() => {
 describe("fetchChatMessages", () => {
   it("reads messages with replies, turning the wire's zeros into undefined", async () => {
     respondWith({
+      access: { canWrite: true, anonymousAllowed: true },
       messages: [
         {
           id: 1,
@@ -61,7 +69,8 @@ describe("fetchChatMessages", () => {
       ],
     });
 
-    const [msg] = await fetchChatMessages(7);
+    const { messages, access } = await fetchChatMessages(7);
+    const [msg] = messages;
 
     expect(new URL(lastCall()[0], "http://x").pathname).toBe("/api/v2/streams/7/chat/messages");
     expect(authHeader()).toBe("Bearer t");
@@ -78,12 +87,18 @@ describe("fetchChatMessages", () => {
     });
     expect(msg!.createdAt.toISOString()).toBe("2026-10-05T10:00:00.000Z");
     expect(msg!.replies[0]).toMatchObject({ id: 2, userId: 9, admin: true, replyTo: 1 });
+    expect(access).toEqual({
+      canWrite: true,
+      canModerate: false,
+      anonymousAllowed: true,
+      moderated: false,
+    });
   });
 
   it("asks without a token when nobody is signed in", async () => {
     respondWith({ messages: [] }, { signedIn: false });
 
-    expect(await fetchChatMessages(7)).toEqual([]);
+    expect(await fetchChatMessages(7)).toEqual({ messages: [], access: NO_ACCESS });
     expect(authHeader()).toBeUndefined();
   });
 });
@@ -250,5 +265,60 @@ describe("vote", () => {
     expect(lastBody()).toMatchObject({ streamId: 7, pollOptionId: 601 });
     expect(poll).toMatchObject({ id: 60, votedOptionId: 601 });
     expect(poll.options.map((o) => o.id)).toEqual([601, 602]);
+  });
+});
+
+describe("moderation", () => {
+  const path = () => new URL(lastCall()[0], "http://x").pathname;
+
+  it.each([
+    ["approve", approveMessage],
+    ["retract", retractMessage],
+    ["resolve", resolveMessage],
+  ] as const)("%s posts to the message and returns it", async (action, call) => {
+    respondWith({ message: { id: 30, visible: action === "approve", resolved: action === "resolve" } });
+
+    const msg = await call(7, 30);
+
+    expect(path()).toBe(`/api/v2/streams/7/chat/messages/30/${action}`);
+    expect(lastCall()[1].method).toBe("POST");
+    expect(lastBody()).toMatchObject({ streamId: 7, messageId: 30 });
+    expect(msg.id).toBe(30);
+  });
+
+  it("deletes with DELETE", async () => {
+    respondWith({});
+
+    await deleteMessage(7, 30);
+
+    expect(path()).toBe("/api/v2/streams/7/chat/messages/30");
+    expect(lastCall()[1].method).toBe("DELETE");
+  });
+});
+
+describe("polls", () => {
+  const path = () => new URL(lastCall()[0], "http://x").pathname;
+  const reply = {
+    poll: { id: 60, question: "Q?", active: true, options: [{ id: 601, answer: "a" }, { id: 602, answer: "b" }] },
+  };
+
+  it("starts a poll with its question and answers", async () => {
+    respondWith(reply);
+
+    const poll = await startPoll(7, "Q?", ["a", "b"]);
+
+    expect(path()).toBe("/api/v2/streams/7/chat/polls");
+    expect(lastBody()).toMatchObject({ streamId: 7, question: "Q?", answers: ["a", "b"] });
+    expect(poll).toMatchObject({ id: 60, active: true });
+  });
+
+  it("closes the running poll and returns the results", async () => {
+    respondWith({ poll: { ...reply.poll, active: false, options: [{ id: 601, answer: "a", votes: 3 }] } });
+
+    const poll = await closePoll(7);
+
+    expect(path()).toBe("/api/v2/streams/7/chat/polls/active/close");
+    expect(poll.active).toBe(false);
+    expect(poll.options[0]!.votes).toBe(3);
   });
 });

@@ -56,7 +56,16 @@ func (a *API) ListChatMessages(ctx context.Context, req *protobuf.ListChatMessag
 		messages = append(messages, chatMessageToProto(&chats[i], uid))
 	}
 
-	return &protobuf.ListChatMessagesResponse{Messages: messages}, nil
+	return &protobuf.ListChatMessagesResponse{
+		Messages: messages,
+		Access: &protobuf.ChatAccess{
+			// The rule authorizeChatWrite applies.
+			CanWrite:         user != nil && (course.ChatEnabled || stream.ChatEnabled),
+			CanModerate:      user.CanAdminister(course),
+			AnonymousAllowed: course.AnonymousChatEnabled,
+			Moderated:        course.ModeratedChatEnabled,
+		},
+	}, nil
 }
 
 // GetActivePoll returns the stream's running poll, if there is one. Vote counts are

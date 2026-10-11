@@ -5478,6 +5478,12 @@ const (
 	ChatService_SendChatMessage_FullMethodName    = "/protobuf.ChatService/sendChatMessage"
 	ChatService_ToggleChatReaction_FullMethodName = "/protobuf.ChatService/toggleChatReaction"
 	ChatService_VotePoll_FullMethodName           = "/protobuf.ChatService/votePoll"
+	ChatService_ApproveChatMessage_FullMethodName = "/protobuf.ChatService/approveChatMessage"
+	ChatService_RetractChatMessage_FullMethodName = "/protobuf.ChatService/retractChatMessage"
+	ChatService_DeleteChatMessage_FullMethodName  = "/protobuf.ChatService/deleteChatMessage"
+	ChatService_ResolveChatMessage_FullMethodName = "/protobuf.ChatService/resolveChatMessage"
+	ChatService_StartChatPoll_FullMethodName      = "/protobuf.ChatService/startChatPoll"
+	ChatService_CloseChatPoll_FullMethodName      = "/protobuf.ChatService/closeChatPoll"
 )
 
 // ChatServiceClient is the client API for ChatService service.
@@ -5491,6 +5497,12 @@ type ChatServiceClient interface {
 	SendChatMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*SendChatMessageResponse, error)
 	ToggleChatReaction(ctx context.Context, in *ToggleChatReactionRequest, opts ...grpc.CallOption) (*ToggleChatReactionResponse, error)
 	VotePoll(ctx context.Context, in *VoteChatPollRequest, opts ...grpc.CallOption) (*VoteChatPollResponse, error)
+	ApproveChatMessage(ctx context.Context, in *ApproveChatMessageRequest, opts ...grpc.CallOption) (*ApproveChatMessageResponse, error)
+	RetractChatMessage(ctx context.Context, in *RetractChatMessageRequest, opts ...grpc.CallOption) (*RetractChatMessageResponse, error)
+	DeleteChatMessage(ctx context.Context, in *DeleteChatMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ResolveChatMessage(ctx context.Context, in *ResolveChatMessageRequest, opts ...grpc.CallOption) (*ResolveChatMessageResponse, error)
+	StartChatPoll(ctx context.Context, in *StartChatPollRequest, opts ...grpc.CallOption) (*StartChatPollResponse, error)
+	CloseChatPoll(ctx context.Context, in *CloseChatPollRequest, opts ...grpc.CallOption) (*CloseChatPollResponse, error)
 }
 
 type chatServiceClient struct {
@@ -5571,6 +5583,66 @@ func (c *chatServiceClient) VotePoll(ctx context.Context, in *VoteChatPollReques
 	return out, nil
 }
 
+func (c *chatServiceClient) ApproveChatMessage(ctx context.Context, in *ApproveChatMessageRequest, opts ...grpc.CallOption) (*ApproveChatMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApproveChatMessageResponse)
+	err := c.cc.Invoke(ctx, ChatService_ApproveChatMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) RetractChatMessage(ctx context.Context, in *RetractChatMessageRequest, opts ...grpc.CallOption) (*RetractChatMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RetractChatMessageResponse)
+	err := c.cc.Invoke(ctx, ChatService_RetractChatMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) DeleteChatMessage(ctx context.Context, in *DeleteChatMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ChatService_DeleteChatMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) ResolveChatMessage(ctx context.Context, in *ResolveChatMessageRequest, opts ...grpc.CallOption) (*ResolveChatMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResolveChatMessageResponse)
+	err := c.cc.Invoke(ctx, ChatService_ResolveChatMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) StartChatPoll(ctx context.Context, in *StartChatPollRequest, opts ...grpc.CallOption) (*StartChatPollResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartChatPollResponse)
+	err := c.cc.Invoke(ctx, ChatService_StartChatPoll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) CloseChatPoll(ctx context.Context, in *CloseChatPollRequest, opts ...grpc.CallOption) (*CloseChatPollResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CloseChatPollResponse)
+	err := c.cc.Invoke(ctx, ChatService_CloseChatPoll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility.
@@ -5582,6 +5654,12 @@ type ChatServiceServer interface {
 	SendChatMessage(context.Context, *SendChatMessageRequest) (*SendChatMessageResponse, error)
 	ToggleChatReaction(context.Context, *ToggleChatReactionRequest) (*ToggleChatReactionResponse, error)
 	VotePoll(context.Context, *VoteChatPollRequest) (*VoteChatPollResponse, error)
+	ApproveChatMessage(context.Context, *ApproveChatMessageRequest) (*ApproveChatMessageResponse, error)
+	RetractChatMessage(context.Context, *RetractChatMessageRequest) (*RetractChatMessageResponse, error)
+	DeleteChatMessage(context.Context, *DeleteChatMessageRequest) (*emptypb.Empty, error)
+	ResolveChatMessage(context.Context, *ResolveChatMessageRequest) (*ResolveChatMessageResponse, error)
+	StartChatPoll(context.Context, *StartChatPollRequest) (*StartChatPollResponse, error)
+	CloseChatPoll(context.Context, *CloseChatPollRequest) (*CloseChatPollResponse, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -5612,6 +5690,24 @@ func (UnimplementedChatServiceServer) ToggleChatReaction(context.Context, *Toggl
 }
 func (UnimplementedChatServiceServer) VotePoll(context.Context, *VoteChatPollRequest) (*VoteChatPollResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VotePoll not implemented")
+}
+func (UnimplementedChatServiceServer) ApproveChatMessage(context.Context, *ApproveChatMessageRequest) (*ApproveChatMessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveChatMessage not implemented")
+}
+func (UnimplementedChatServiceServer) RetractChatMessage(context.Context, *RetractChatMessageRequest) (*RetractChatMessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetractChatMessage not implemented")
+}
+func (UnimplementedChatServiceServer) DeleteChatMessage(context.Context, *DeleteChatMessageRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteChatMessage not implemented")
+}
+func (UnimplementedChatServiceServer) ResolveChatMessage(context.Context, *ResolveChatMessageRequest) (*ResolveChatMessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResolveChatMessage not implemented")
+}
+func (UnimplementedChatServiceServer) StartChatPoll(context.Context, *StartChatPollRequest) (*StartChatPollResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartChatPoll not implemented")
+}
+func (UnimplementedChatServiceServer) CloseChatPoll(context.Context, *CloseChatPollRequest) (*CloseChatPollResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CloseChatPoll not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 func (UnimplementedChatServiceServer) testEmbeddedByValue()                     {}
@@ -5760,6 +5856,114 @@ func _ChatService_VotePoll_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_ApproveChatMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveChatMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ApproveChatMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ApproveChatMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ApproveChatMessage(ctx, req.(*ApproveChatMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_RetractChatMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetractChatMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).RetractChatMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_RetractChatMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).RetractChatMessage(ctx, req.(*RetractChatMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_DeleteChatMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteChatMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).DeleteChatMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_DeleteChatMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).DeleteChatMessage(ctx, req.(*DeleteChatMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_ResolveChatMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveChatMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).ResolveChatMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_ResolveChatMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).ResolveChatMessage(ctx, req.(*ResolveChatMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_StartChatPoll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartChatPollRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).StartChatPoll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_StartChatPoll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).StartChatPoll(ctx, req.(*StartChatPollRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_CloseChatPoll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloseChatPollRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).CloseChatPoll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_CloseChatPoll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).CloseChatPoll(ctx, req.(*CloseChatPollRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -5794,6 +5998,30 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "votePoll",
 			Handler:    _ChatService_VotePoll_Handler,
+		},
+		{
+			MethodName: "approveChatMessage",
+			Handler:    _ChatService_ApproveChatMessage_Handler,
+		},
+		{
+			MethodName: "retractChatMessage",
+			Handler:    _ChatService_RetractChatMessage_Handler,
+		},
+		{
+			MethodName: "deleteChatMessage",
+			Handler:    _ChatService_DeleteChatMessage_Handler,
+		},
+		{
+			MethodName: "resolveChatMessage",
+			Handler:    _ChatService_ResolveChatMessage_Handler,
+		},
+		{
+			MethodName: "startChatPoll",
+			Handler:    _ChatService_StartChatPoll_Handler,
+		},
+		{
+			MethodName: "closeChatPoll",
+			Handler:    _ChatService_CloseChatPoll_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

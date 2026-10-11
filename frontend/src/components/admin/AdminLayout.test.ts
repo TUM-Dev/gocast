@@ -38,7 +38,7 @@ function makeRouter(): Router {
     routes: [
       { path: "/admin/runners", name: "admin-runners", component: blank },
       { path: "/admin/users", name: "admin-users", component: blank },
-      { path: "/admin/courses/:courseID/settings", component: blank },
+      { path: "/admin/courses/:courseID/lectures", component: blank },
     ],
   });
 }
@@ -128,7 +128,7 @@ describe("the administration sidebar", () => {
   });
 
   describe("the tree of administered courses", () => {
-    it("groups a lecturer's courses by semester, newest first, linking to their settings", async () => {
+    it("groups a lecturer's courses by semester, newest first, linking to their lectures", async () => {
       vi.mocked(fetchAdministeredCourses).mockResolvedValue(prof1Courses);
       const wrapper = mountAs(["lecture"]);
       await flushPromises();
@@ -139,7 +139,7 @@ describe("the administration sidebar", () => {
         "Einführung Brauereiwesen",
         "Fortgeschrittene Bierkunde",
       ]);
-      expect(groups[1].find("a").attributes("href")).toBe("/admin/courses/3/settings");
+      expect(groups[1].find("a").attributes("href")).toBe("/admin/courses/3/lectures");
     });
 
     it("expands only the current semester", async () => {
