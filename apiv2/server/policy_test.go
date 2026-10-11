@@ -102,6 +102,13 @@ func TestOnlyExpectedMethodsArePublic(t *testing.T) {
 		"listChatMessages": true,
 		"getActivePoll":    true,
 		"listChatUsers":    true,
+		// The watch page's reads, for whoever may watch the stream. The seek report
+		// is a counter that anonymous viewers of a public course feed as well.
+		"getStreamWatch":             true,
+		"listAllowedStreamReactions": true,
+		"reportStreamSeek":           true,
+		"getStreamSeekHeatmap":       true,
+		"searchStreamSubtitles":      true,
 	}
 
 	for _, svc := range services {

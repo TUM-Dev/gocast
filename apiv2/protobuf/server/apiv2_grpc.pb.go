@@ -2731,18 +2731,26 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	StreamService_GetStream_FullMethodName          = "/protobuf.StreamService/getStream"
-	StreamService_GetVideoSections_FullMethodName   = "/protobuf.StreamService/getVideoSections"
-	StreamService_GetStreamPlaylist_FullMethodName  = "/protobuf.StreamService/getStreamPlaylist"
-	StreamService_GetSubtitles_FullMethodName       = "/protobuf.StreamService/getSubtitles"
-	StreamService_GetThumbs_FullMethodName          = "/protobuf.StreamService/getThumbs"
-	StreamService_GetProgressBatch_FullMethodName   = "/protobuf.StreamService/getProgressBatch"
-	StreamService_UpdateProgress_FullMethodName     = "/protobuf.StreamService/updateProgress"
-	StreamService_AddBookmark_FullMethodName        = "/protobuf.StreamService/addBookmark"
-	StreamService_GetBookmarks_FullMethodName       = "/protobuf.StreamService/getBookmarks"
-	StreamService_UpdateBookmark_FullMethodName     = "/protobuf.StreamService/updateBookmark"
-	StreamService_DeleteBookmark_FullMethodName     = "/protobuf.StreamService/deleteBookmark"
-	StreamService_SwitchCameraPreset_FullMethodName = "/protobuf.StreamService/switchCameraPreset"
+	StreamService_GetStream_FullMethodName                  = "/protobuf.StreamService/getStream"
+	StreamService_GetVideoSections_FullMethodName           = "/protobuf.StreamService/getVideoSections"
+	StreamService_GetStreamPlaylist_FullMethodName          = "/protobuf.StreamService/getStreamPlaylist"
+	StreamService_GetSubtitles_FullMethodName               = "/protobuf.StreamService/getSubtitles"
+	StreamService_GetThumbs_FullMethodName                  = "/protobuf.StreamService/getThumbs"
+	StreamService_GetProgressBatch_FullMethodName           = "/protobuf.StreamService/getProgressBatch"
+	StreamService_UpdateProgress_FullMethodName             = "/protobuf.StreamService/updateProgress"
+	StreamService_AddBookmark_FullMethodName                = "/protobuf.StreamService/addBookmark"
+	StreamService_GetBookmarks_FullMethodName               = "/protobuf.StreamService/getBookmarks"
+	StreamService_UpdateBookmark_FullMethodName             = "/protobuf.StreamService/updateBookmark"
+	StreamService_DeleteBookmark_FullMethodName             = "/protobuf.StreamService/deleteBookmark"
+	StreamService_SwitchCameraPreset_FullMethodName         = "/protobuf.StreamService/switchCameraPreset"
+	StreamService_GetStreamWatch_FullMethodName             = "/protobuf.StreamService/getStreamWatch"
+	StreamService_ListAllowedStreamReactions_FullMethodName = "/protobuf.StreamService/listAllowedStreamReactions"
+	StreamService_AddStreamReaction_FullMethodName          = "/protobuf.StreamService/addStreamReaction"
+	StreamService_ReportStreamIssue_FullMethodName          = "/protobuf.StreamService/reportStreamIssue"
+	StreamService_ReportStreamSeek_FullMethodName           = "/protobuf.StreamService/reportStreamSeek"
+	StreamService_GetStreamSeekHeatmap_FullMethodName       = "/protobuf.StreamService/getStreamSeekHeatmap"
+	StreamService_SearchStreamSubtitles_FullMethodName      = "/protobuf.StreamService/searchStreamSubtitles"
+	StreamService_EndStream_FullMethodName                  = "/protobuf.StreamService/endStream"
 )
 
 // StreamServiceClient is the client API for StreamService service.
@@ -2767,6 +2775,15 @@ type StreamServiceClient interface {
 	// the physical camera, so it answers the way (*API).cameraFor documents on top of
 	// the usual permission failures.
 	SwitchCameraPreset(ctx context.Context, in *SwitchCameraPresetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetStreamWatch(ctx context.Context, in *GetStreamWatchRequest, opts ...grpc.CallOption) (*StreamWatch, error)
+	ListAllowedStreamReactions(ctx context.Context, in *ListAllowedStreamReactionsRequest, opts ...grpc.CallOption) (*ListAllowedStreamReactionsResponse, error)
+	AddStreamReaction(ctx context.Context, in *AddStreamReactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReportStreamIssue(ctx context.Context, in *ReportStreamIssueRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReportStreamSeek(ctx context.Context, in *ReportStreamSeekRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetStreamSeekHeatmap(ctx context.Context, in *GetStreamSeekHeatmapRequest, opts ...grpc.CallOption) (*GetStreamSeekHeatmapResponse, error)
+	SearchStreamSubtitles(ctx context.Context, in *SearchStreamSubtitlesRequest, opts ...grpc.CallOption) (*SearchStreamSubtitlesResponse, error)
+	// Ends a live stream early. Reaches the runner that is recording it.
+	EndStream(ctx context.Context, in *EndStreamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type streamServiceClient struct {
@@ -2897,6 +2914,86 @@ func (c *streamServiceClient) SwitchCameraPreset(ctx context.Context, in *Switch
 	return out, nil
 }
 
+func (c *streamServiceClient) GetStreamWatch(ctx context.Context, in *GetStreamWatchRequest, opts ...grpc.CallOption) (*StreamWatch, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StreamWatch)
+	err := c.cc.Invoke(ctx, StreamService_GetStreamWatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamServiceClient) ListAllowedStreamReactions(ctx context.Context, in *ListAllowedStreamReactionsRequest, opts ...grpc.CallOption) (*ListAllowedStreamReactionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAllowedStreamReactionsResponse)
+	err := c.cc.Invoke(ctx, StreamService_ListAllowedStreamReactions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamServiceClient) AddStreamReaction(ctx context.Context, in *AddStreamReactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StreamService_AddStreamReaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamServiceClient) ReportStreamIssue(ctx context.Context, in *ReportStreamIssueRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StreamService_ReportStreamIssue_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamServiceClient) ReportStreamSeek(ctx context.Context, in *ReportStreamSeekRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StreamService_ReportStreamSeek_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamServiceClient) GetStreamSeekHeatmap(ctx context.Context, in *GetStreamSeekHeatmapRequest, opts ...grpc.CallOption) (*GetStreamSeekHeatmapResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStreamSeekHeatmapResponse)
+	err := c.cc.Invoke(ctx, StreamService_GetStreamSeekHeatmap_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamServiceClient) SearchStreamSubtitles(ctx context.Context, in *SearchStreamSubtitlesRequest, opts ...grpc.CallOption) (*SearchStreamSubtitlesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchStreamSubtitlesResponse)
+	err := c.cc.Invoke(ctx, StreamService_SearchStreamSubtitles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamServiceClient) EndStream(ctx context.Context, in *EndStreamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StreamService_EndStream_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StreamServiceServer is the server API for StreamService service.
 // All implementations must embed UnimplementedStreamServiceServer
 // for forward compatibility.
@@ -2919,6 +3016,15 @@ type StreamServiceServer interface {
 	// the physical camera, so it answers the way (*API).cameraFor documents on top of
 	// the usual permission failures.
 	SwitchCameraPreset(context.Context, *SwitchCameraPresetRequest) (*emptypb.Empty, error)
+	GetStreamWatch(context.Context, *GetStreamWatchRequest) (*StreamWatch, error)
+	ListAllowedStreamReactions(context.Context, *ListAllowedStreamReactionsRequest) (*ListAllowedStreamReactionsResponse, error)
+	AddStreamReaction(context.Context, *AddStreamReactionRequest) (*emptypb.Empty, error)
+	ReportStreamIssue(context.Context, *ReportStreamIssueRequest) (*emptypb.Empty, error)
+	ReportStreamSeek(context.Context, *ReportStreamSeekRequest) (*emptypb.Empty, error)
+	GetStreamSeekHeatmap(context.Context, *GetStreamSeekHeatmapRequest) (*GetStreamSeekHeatmapResponse, error)
+	SearchStreamSubtitles(context.Context, *SearchStreamSubtitlesRequest) (*SearchStreamSubtitlesResponse, error)
+	// Ends a live stream early. Reaches the runner that is recording it.
+	EndStream(context.Context, *EndStreamRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedStreamServiceServer()
 }
 
@@ -2964,6 +3070,30 @@ func (UnimplementedStreamServiceServer) DeleteBookmark(context.Context, *DeleteB
 }
 func (UnimplementedStreamServiceServer) SwitchCameraPreset(context.Context, *SwitchCameraPresetRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method SwitchCameraPreset not implemented")
+}
+func (UnimplementedStreamServiceServer) GetStreamWatch(context.Context, *GetStreamWatchRequest) (*StreamWatch, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStreamWatch not implemented")
+}
+func (UnimplementedStreamServiceServer) ListAllowedStreamReactions(context.Context, *ListAllowedStreamReactionsRequest) (*ListAllowedStreamReactionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAllowedStreamReactions not implemented")
+}
+func (UnimplementedStreamServiceServer) AddStreamReaction(context.Context, *AddStreamReactionRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddStreamReaction not implemented")
+}
+func (UnimplementedStreamServiceServer) ReportStreamIssue(context.Context, *ReportStreamIssueRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportStreamIssue not implemented")
+}
+func (UnimplementedStreamServiceServer) ReportStreamSeek(context.Context, *ReportStreamSeekRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportStreamSeek not implemented")
+}
+func (UnimplementedStreamServiceServer) GetStreamSeekHeatmap(context.Context, *GetStreamSeekHeatmapRequest) (*GetStreamSeekHeatmapResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStreamSeekHeatmap not implemented")
+}
+func (UnimplementedStreamServiceServer) SearchStreamSubtitles(context.Context, *SearchStreamSubtitlesRequest) (*SearchStreamSubtitlesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchStreamSubtitles not implemented")
+}
+func (UnimplementedStreamServiceServer) EndStream(context.Context, *EndStreamRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method EndStream not implemented")
 }
 func (UnimplementedStreamServiceServer) mustEmbedUnimplementedStreamServiceServer() {}
 func (UnimplementedStreamServiceServer) testEmbeddedByValue()                       {}
@@ -3202,6 +3332,150 @@ func _StreamService_SwitchCameraPreset_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StreamService_GetStreamWatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStreamWatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).GetStreamWatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_GetStreamWatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).GetStreamWatch(ctx, req.(*GetStreamWatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StreamService_ListAllowedStreamReactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAllowedStreamReactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).ListAllowedStreamReactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_ListAllowedStreamReactions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).ListAllowedStreamReactions(ctx, req.(*ListAllowedStreamReactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StreamService_AddStreamReaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddStreamReactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).AddStreamReaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_AddStreamReaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).AddStreamReaction(ctx, req.(*AddStreamReactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StreamService_ReportStreamIssue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportStreamIssueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).ReportStreamIssue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_ReportStreamIssue_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).ReportStreamIssue(ctx, req.(*ReportStreamIssueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StreamService_ReportStreamSeek_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportStreamSeekRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).ReportStreamSeek(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_ReportStreamSeek_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).ReportStreamSeek(ctx, req.(*ReportStreamSeekRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StreamService_GetStreamSeekHeatmap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStreamSeekHeatmapRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).GetStreamSeekHeatmap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_GetStreamSeekHeatmap_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).GetStreamSeekHeatmap(ctx, req.(*GetStreamSeekHeatmapRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StreamService_SearchStreamSubtitles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchStreamSubtitlesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).SearchStreamSubtitles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_SearchStreamSubtitles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).SearchStreamSubtitles(ctx, req.(*SearchStreamSubtitlesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StreamService_EndStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EndStreamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServiceServer).EndStream(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamService_EndStream_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServiceServer).EndStream(ctx, req.(*EndStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StreamService_ServiceDesc is the grpc.ServiceDesc for StreamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -3256,6 +3530,38 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "switchCameraPreset",
 			Handler:    _StreamService_SwitchCameraPreset_Handler,
+		},
+		{
+			MethodName: "getStreamWatch",
+			Handler:    _StreamService_GetStreamWatch_Handler,
+		},
+		{
+			MethodName: "listAllowedStreamReactions",
+			Handler:    _StreamService_ListAllowedStreamReactions_Handler,
+		},
+		{
+			MethodName: "addStreamReaction",
+			Handler:    _StreamService_AddStreamReaction_Handler,
+		},
+		{
+			MethodName: "reportStreamIssue",
+			Handler:    _StreamService_ReportStreamIssue_Handler,
+		},
+		{
+			MethodName: "reportStreamSeek",
+			Handler:    _StreamService_ReportStreamSeek_Handler,
+		},
+		{
+			MethodName: "getStreamSeekHeatmap",
+			Handler:    _StreamService_GetStreamSeekHeatmap_Handler,
+		},
+		{
+			MethodName: "searchStreamSubtitles",
+			Handler:    _StreamService_SearchStreamSubtitles_Handler,
+		},
+		{
+			MethodName: "endStream",
+			Handler:    _StreamService_EndStream_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

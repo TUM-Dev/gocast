@@ -3004,6 +3004,55 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}/end": {
+      "post": {
+        "summary": "End a live stream.",
+        "description": "Stops the live stream and, unless `discard` is set, keeps what was recorded as the lecture's recording. The stream must be the course's and live. Requires administering the course. Clients learn that it ended from StreamLiveEvent.",
+        "operationId": "StreamService_endStream",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StreamServiceendStreamBody"
+            }
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}/presets/{presetId}/switch": {
       "post": {
         "summary": "Switch a live stream's camera to a preset.",
@@ -4210,6 +4259,46 @@
         ]
       }
     },
+    "/streams/{slug}/{streamId}/watch": {
+      "get": {
+        "summary": "Get everything the watch page renders.",
+        "description": "One call for the whole page: the stream and its course, the playable views with signed playlist URLs (the course's per-lecture-hall source modes already applied), the cut offsets, silences, attachments, downloads, the caller's progress, the chat settings and what the caller may do. Open to anyone who may watch the stream, signed in or not; fields that only apply to some callers are absent for the others. 400 when the slug is not the stream's course's, 403 when the caller may not watch the course or the stream is private and the caller does not administer the course.",
+        "operationId": "StreamService_getStreamWatch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufStreamWatch"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "description": "The slug of the stream's course, as in the page's URL. Refused with 400 when it\nis another course's, as getStream does.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
     "/streams/{streamId}/chat/messages": {
       "get": {
         "summary": "List a stream's chat messages.",
@@ -4467,6 +4556,246 @@
         ],
         "tags": [
           "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/issues": {
+      "post": {
+        "summary": "Report a technical problem with a stream.",
+        "description": "Forwards the report to the operators' alert room. Open to every signed-in caller who may watch the stream, not only to its administrators. 400 for a stream held in no lecture hall, 503 when the deployment has no alert room configured (StreamWatch.viewer.can_report_issue says so beforehand).",
+        "operationId": "StreamService_reportStreamIssue",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StreamServicereportStreamIssueBody"
+            }
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/reactions": {
+      "post": {
+        "summary": "React to a stream.",
+        "description": "Sets the caller's reaction to the stream, replacing an earlier one, and tells the course's administrators watching it (StreamReactionEvent). Needs a signed-in caller who may watch the stream. 400 for an emoji listAllowedStreamReactions does not list, 429 while the caller's cooldown after their last reaction has not passed.",
+        "operationId": "StreamService_addStreamReaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StreamServiceaddStreamReactionBody"
+            }
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/reactions/allowed": {
+      "get": {
+        "summary": "List the emoji a viewer may react to a stream with.",
+        "description": "The server-wide list, in display order. Open to anyone who may watch the stream.",
+        "operationId": "StreamService_listAllowedStreamReactions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListAllowedStreamReactionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/seeks": {
+      "post": {
+        "summary": "Report that a viewer jumped to a position.",
+        "description": "Counts one seek to the position, for the seek heatmap. Open to anyone who may watch the stream, signed in or not. 400 for a position beyond the recording's length.",
+        "operationId": "StreamService_reportStreamSeek",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StreamServicereportStreamSeekBody"
+            }
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/seeks/heatmap": {
+      "get": {
+        "summary": "Get where viewers jump to in a recording.",
+        "description": "The seek counts per slice of the recording. Empty until enough seeks have been reported for the picture to mean something. Open to anyone who may watch the stream.",
+        "operationId": "StreamService_getStreamSeekHeatmap",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetStreamSeekHeatmapResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Streams"
+        ]
+      }
+    },
+    "/streams/{streamId}/subtitles/search": {
+      "get": {
+        "summary": "Search the subtitles of one recording.",
+        "description": "Finds the lines of the recording's subtitles matching the query, with their position in the recording. Narrower than search, which spans courses and answers with hits carrying their course; this has the stream in the path, checks only that the caller may watch it, and answers 503 while Meilisearch is unreachable.",
+        "operationId": "StreamService_searchStreamSubtitles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufSearchStreamSubtitlesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "query",
+            "description": "Three characters or more; shorter answers 400.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "10 by default, 100 at most.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Streams"
         ]
       }
     },
@@ -5121,6 +5450,59 @@
           "type": "integer",
           "format": "int64",
           "description": "0 moves the lectures out of any hall (self-streamed)."
+        }
+      }
+    },
+    "StreamServiceaddStreamReactionBody": {
+      "type": "object",
+      "properties": {
+        "reaction": {
+          "type": "string",
+          "description": "One of the emoji listAllowedStreamReactions lists."
+        }
+      }
+    },
+    "StreamServiceendStreamBody": {
+      "type": "object",
+      "properties": {
+        "discard": {
+          "type": "boolean",
+          "description": "Throw the recording away instead of keeping it."
+        }
+      }
+    },
+    "StreamServicereportStreamIssueBody": {
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufStreamIssueCategory"
+          }
+        },
+        "comment": {
+          "type": "string",
+          "description": "What went wrong. Required."
+        },
+        "name": {
+          "type": "string",
+          "description": "How the operators can reach the reporter, all optional. The signed-in user is\nattached to the report whatever is filled in."
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        }
+      }
+    },
+    "StreamServicereportStreamSeekBody": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "type": "number",
+          "format": "double",
+          "description": "Seconds into the recording that the viewer jumped to."
         }
       }
     },
@@ -6697,6 +7079,24 @@
         }
       }
     },
+    "protobufGetStreamSeekHeatmapResponse": {
+      "type": "object",
+      "properties": {
+        "bucketCount": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Into how many equal slices the recording is divided; bucket indexes run from 0\nto bucket_count - 1."
+        },
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufSeekHeatmapBucket"
+          },
+          "description": "Only the slices that were jumped to; one missing has no hits. Empty while there\nare too few seeks to show."
+        }
+      }
+    },
     "protobufGetUserCoursesResponse": {
       "type": "object",
       "properties": {
@@ -7016,6 +7416,18 @@
             "type": "object",
             "$ref": "#/definitions/protobufCourseAdminSummary"
           }
+        }
+      }
+    },
+    "protobufListAllowedStreamReactionsResponse": {
+      "type": "object",
+      "properties": {
+        "reactions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Emoji, in display order."
         }
       }
     },
@@ -7593,6 +8005,18 @@
         }
       }
     },
+    "protobufSearchStreamSubtitlesResponse": {
+      "type": "object",
+      "properties": {
+        "hits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufStreamSubtitleHit"
+          }
+        }
+      }
+    },
     "protobufSearchSubtitleHit": {
       "type": "object",
       "properties": {
@@ -7661,6 +8085,19 @@
             "type": "object",
             "$ref": "#/definitions/protobufCourseAdminUser"
           }
+        }
+      }
+    },
+    "protobufSeekHeatmapBucket": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "hits": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -7906,6 +8343,20 @@
         }
       }
     },
+    "protobufStreamIssueCategory": {
+      "type": "string",
+      "enum": [
+        "STREAM_ISSUE_CATEGORY_UNSPECIFIED",
+        "STREAM_ISSUE_CATEGORY_VIDEO",
+        "STREAM_ISSUE_CATEGORY_AUDIO",
+        "STREAM_ISSUE_CATEGORY_CAMERA",
+        "STREAM_ISSUE_CATEGORY_MICROPHONE",
+        "STREAM_ISSUE_CATEGORY_LIGHT",
+        "STREAM_ISSUE_CATEGORY_OTHER"
+      ],
+      "default": "STREAM_ISSUE_CATEGORY_UNSPECIFIED",
+      "description": "What the problem is about, as the report form offers it. Several may apply."
+    },
     "protobufStreamPlaylistEntry": {
       "type": "object",
       "properties": {
@@ -7953,6 +8404,118 @@
           "type": "boolean"
         }
       }
+    },
+    "protobufStreamSubtitleHit": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "int64",
+          "description": "Milliseconds into the recording."
+        },
+        "textPrev": {
+          "type": "string",
+          "description": "The lines before, of and after the match."
+        },
+        "text": {
+          "type": "string"
+        },
+        "textNext": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufStreamWatch": {
+      "type": "object",
+      "properties": {
+        "stream": {
+          "$ref": "#/definitions/protobufWatchStream"
+        },
+        "course": {
+          "$ref": "#/definitions/protobufWatchCourse"
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufWatchView"
+          },
+          "description": "The sources the stream can be played from, with the course's source mode for the\nstream's lecture hall already applied: a hall set to presentation only yields\njust PRESENTATION, whatever else was recorded. Empty for a stream that is\nneither live nor a recording."
+        },
+        "defaultLayout": {
+          "$ref": "#/definitions/protobufWatchLayout",
+          "description": "The layout to open with when the URL names none: the caller's LECTURE_VIEW\nsetting, or the course's source mode forcing one, narrowed to what `views` can\nshow. Never SPLIT unless split_available. UNSPECIFIED when views is empty."
+        },
+        "splitAvailable": {
+          "type": "boolean",
+          "description": "Whether the split view (presentation and camera side by side) can be offered:\nboth of those views are in `views`."
+        },
+        "startOffset": {
+          "type": "integer",
+          "format": "int64",
+          "title": "The stored cut of a recording, in seconds into the recording: play from\nstart_offset and stop at end_offset. Absent for an uncut recording and for a live\nstream. The client clips the player to it: the playlists in `views` are the whole\nrecording. (The old page appended the cut to the playlist URL as wowza\nparameters, which nothing on the edge reads, so on a signed playlist it never\ntook effect.)"
+        },
+        "endOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "silences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufWatchSilence"
+          },
+          "description": "Stretches of the recording without speech, which the player offers to skip."
+        },
+        "firstSilenceEndProgress": {
+          "type": "number",
+          "format": "float",
+          "description": "Where playback starts for a viewer who skips the opening silence automatically,\nas a fraction of the recording from 0 to 1: the end of the first silence, when\nit begins at 0:00. Present only for a signed-in caller, on a recording held in a\nlecture hall that has such a silence. It is the caller's AUTO_SKIP setting\n(getUser) that says whether to use it; the client takes the larger of this and\n`progress`. The fraction is of the scheduled length, as in the old page, so it\nis slightly off for a recording that ran over or under."
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufWatchAttachment"
+          },
+          "description": "Files the lecturer attached, served by GET /api/v2/streams/{stream_id}/files/{file_id}."
+        },
+        "downloads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufWatchDownload"
+          },
+          "description": "Recordings the caller may download. Empty unless the stream is a recording and\nthe course allows downloads and the caller is signed in, or the caller\nadministers the course. The source mode applies as it does to `views`."
+        },
+        "progress": {
+          "$ref": "#/definitions/protobufStreamProgress",
+          "description": "The caller's progress in this recording. Present only for a signed-in caller on\na recording."
+        },
+        "chat": {
+          "$ref": "#/definitions/protobufWatchChat"
+        },
+        "viewer": {
+          "$ref": "#/definitions/protobufWatchViewer"
+        },
+        "admin": {
+          "$ref": "#/definitions/protobufWatchAdmin",
+          "description": "Present only for a caller who administers the course."
+        },
+        "viewers": {
+          "type": "integer",
+          "format": "int64",
+          "description": "How many sockets are watching right now. Realtime ViewersEvents keep it current."
+        },
+        "subtitleLanguages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Languages the recording has subtitles in, as getSubtitles takes them. Empty means\nno transcript to offer."
+        }
+      },
+      "description": "Everything the watch page renders. The page's URL decides the layout (/w/{slug}/{id}\nwith an optional COMB, PRES, CAM or SPLIT after it) and the client picks the views\nto play from `views`; default_layout is what to use when the URL names none."
     },
     "protobufToggleChatReactionResponse": {
       "type": "object",
@@ -8262,6 +8825,269 @@
         "poll": {
           "$ref": "#/definitions/protobufChatPoll",
           "description": "The poll with the caller's vote; vote counts as in getActivePoll."
+        }
+      }
+    },
+    "protobufWatchAdmin": {
+      "type": "object",
+      "properties": {
+        "lectureHallId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The hall the stream is held in; absent for a self-stream."
+        },
+        "cameraPresets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufWatchCameraPreset"
+          },
+          "description": "The camera positions of the hall, to move the camera to with switchCameraPreset.\nEmpty unless the stream is live in a hall that has presets."
+        },
+        "canEndStream": {
+          "type": "boolean",
+          "description": "Whether endStream is offered: the stream is live and held in a lecture hall. A\nself-stream is ended by its streamer."
+        }
+      },
+      "description": "What only a course administrator is sent: the controls under the player."
+    },
+    "protobufWatchAttachment": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "externalUrl": {
+          "type": "string",
+          "description": "Set when the lecturer linked to a page instead of uploading a file: open this\nrather than fetching file_id."
+        }
+      }
+    },
+    "protobufWatchCameraPreset": {
+      "type": "object",
+      "properties": {
+        "presetId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The camera's own numbering, as switchCameraPreset takes it."
+        },
+        "name": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "A snapshot taken from the preset, or the placeholder when there is none; a path\non this server."
+        },
+        "isDefault": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufWatchChat": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "The chat is on, for the course or for this stream, as sendChatMessage decides."
+        },
+        "anonymousAllowed": {
+          "type": "boolean",
+          "description": "Messages may be sent without showing the author's name."
+        },
+        "approvalRequired": {
+          "type": "boolean",
+          "description": "Messages of non-administrators wait for approval before others see them."
+        }
+      },
+      "description": "Whether and how the chat is offered. The chat's own reads and writes are\nChatService; this is what to decide whether to show it at all."
+    },
+    "protobufWatchCourse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "term": {
+          "type": "string",
+          "description": "S or W."
+        }
+      }
+    },
+    "protobufWatchDownload": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/protobufWatchViewKind"
+        },
+        "friendlyName": {
+          "type": "string",
+          "description": "\"Combined\", \"Camera\" or \"Presentation\"."
+        },
+        "url": {
+          "type": "string",
+          "description": "A signed URL that downloads the recording."
+        }
+      }
+    },
+    "protobufWatchLayout": {
+      "type": "string",
+      "enum": [
+        "WATCH_LAYOUT_UNSPECIFIED",
+        "WATCH_LAYOUT_COMBINED",
+        "WATCH_LAYOUT_PRESENTATION",
+        "WATCH_LAYOUT_CAMERA",
+        "WATCH_LAYOUT_SPLIT"
+      ],
+      "default": "WATCH_LAYOUT_UNSPECIFIED",
+      "description": "How the page lays the views out; the last path segment of /w/{slug}/{id}/{layout}\nis COMB, PRES, CAM or SPLIT.\n\n - WATCH_LAYOUT_SPLIT: Presentation and camera in two players, kept in sync."
+    },
+    "protobufWatchSilence": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "end": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "description": "A stretch without speech, in seconds into the recording."
+    },
+    "protobufWatchSprite": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Fetched from GET /api/v2/streams/{stream_id}/files/{file_id}."
+        },
+        "intervalSeconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Seconds of the recording between two frames."
+        }
+      },
+      "description": "A sheet of preview frames, one per interval, row by row."
+    },
+    "protobufWatchStream": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string",
+          "description": "As the lecturer set it; empty for an unnamed lecture."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "name, or \"Lecture: Jan 2, 2006\" built from the start for an unnamed lecture."
+        },
+        "descriptionHtml": {
+          "type": "string",
+          "description": "Rendered from markdown and sanitised, as the description is everywhere else; safe\nto inject. Realtime StreamDescriptionEvents replace it."
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Realtime StreamTimeChangedEvents move start and end."
+        },
+        "liveNow": {
+          "type": "boolean",
+          "description": "The stream is being broadcast now. Realtime StreamLiveEvents flip it."
+        },
+        "recording": {
+          "type": "boolean",
+          "description": "A recording is available to play."
+        },
+        "ended": {
+          "type": "boolean",
+          "description": "The scheduled slot is over, or the stream was ended early."
+        },
+        "isComingUp": {
+          "type": "boolean",
+          "description": "Starts within the next half hour and has not started: the waiting room."
+        },
+        "isPlanned": {
+          "type": "boolean",
+          "description": "Not live, not recorded, not over and not yet coming up."
+        },
+        "isPrivate": {
+          "type": "boolean",
+          "description": "True for a private lecture, which only the course's administrators are ever sent."
+        },
+        "lectureHallName": {
+          "type": "string",
+          "description": "Name of the lecture hall the stream is held in; absent for a self-stream (OBS or\nan upload). Sent to every caller who may watch."
+        },
+        "duration": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Length of the recording in seconds; absent until it has been processed."
+        }
+      }
+    },
+    "protobufWatchView": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/protobufWatchViewKind"
+        },
+        "playlistUrl": {
+          "type": "string",
+          "description": "The HLS playlist, signed for the caller and valid for seven hours; reload the\npage's data to get a fresh one. Used as given: a literal {{quality}} in it is\nthe edge's to fill in, and is to be removed when the URL is shown to the user to\ncopy."
+        },
+        "sprite": {
+          "$ref": "#/definitions/protobufWatchSprite",
+          "description": "The seek-preview thumbnails of a recording, absent for a live stream and for a\nrecording whose sprite has not been generated."
+        }
+      }
+    },
+    "protobufWatchViewKind": {
+      "type": "string",
+      "enum": [
+        "WATCH_VIEW_KIND_UNSPECIFIED",
+        "WATCH_VIEW_KIND_COMBINED",
+        "WATCH_VIEW_KIND_PRESENTATION",
+        "WATCH_VIEW_KIND_CAMERA"
+      ],
+      "default": "WATCH_VIEW_KIND_UNSPECIFIED",
+      "description": "Which source a view plays.\n\n - WATCH_VIEW_KIND_COMBINED: Presentation and camera in one picture."
+    },
+    "protobufWatchViewer": {
+      "type": "object",
+      "properties": {
+        "signedIn": {
+          "type": "boolean"
+        },
+        "isCourseAdmin": {
+          "type": "boolean"
+        },
+        "canReportIssue": {
+          "type": "boolean",
+          "description": "Whether reportStreamIssue can succeed: the deployment has an alert room, the\ncaller is signed in and the stream is held in a lecture hall."
         }
       }
     },
