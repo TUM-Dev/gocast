@@ -121,6 +121,37 @@ func TestRequirePermission(t *testing.T) {
 	}
 }
 
+// A refused course page goes through the error page renderer, so the SPA can show the
+// refusal; a bare 403 used to leave the browser with an empty page.
+func TestAdminOfCourseRendersTheRefusal(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	var rendered int
+	SetErrorPageRenderer(func(c *gin.Context, status int, _ string) {
+		rendered = status
+		c.Status(status)
+	})
+	t.Cleanup(func() { SetErrorPageRenderer(nil) })
+
+	course := model.Course{Model: gorm.Model{ID: 1}}
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("TUMLiveContext", TUMLiveContext{
+			User:   &model.User{Role: model.StudentType},
+			Course: &course,
+		})
+	})
+	router.GET("/admin/courses/1/settings", AdminOfCourse, func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/courses/1/settings", nil))
+
+	if rec.Code != http.StatusForbidden || rendered != http.StatusForbidden {
+		t.Errorf("status = %d, rendered = %d, want 403 through the renderer", rec.Code, rendered)
+	}
+}
+
 // InitStream behind InitCourse: the course from the URL is already in the context, and
 // AdminOfCourse vouched only for it, so a stream of any other course must look missing.
 func TestInitStreamCourseScope(t *testing.T) {

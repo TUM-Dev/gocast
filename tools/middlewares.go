@@ -270,7 +270,8 @@ func AdminOfCourse(c *gin.Context) {
 	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
 		return
 	}
-	c.AbortWithStatus(http.StatusForbidden) // user is not admin of course
+	// The SPA renders the refusal from the shell; a bare status left a blank page.
+	RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 }
 
 // RequirePermission aborts with Forbidden unless the caller holds the permission. A
