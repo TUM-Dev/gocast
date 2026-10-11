@@ -6,11 +6,11 @@ import {
   contentErrorMessage,
   customThumbnailOf,
   deleteLectureThumbnail,
-  fileUrl,
   uploadLectureThumbnail,
   uploadProblem,
   type LectureFile,
 } from "@/lib/lecture-content";
+import { streamFileUrl } from "@/lib/stream-files";
 
 /**
  * The lecture's own thumbnail, shown in course listings instead of the frames taken
@@ -89,9 +89,15 @@ const inputId = computed(() => `lecture-${props.lectureId}-thumbnail-file`);
     <p v-else-if="status" class="text-5" role="status">{{ status }}</p>
 
     <div class="flex flex-wrap items-start gap-3">
-      <a v-if="current" :href="fileUrl(current.id, 'serve')" target="_blank" rel="noopener" class="block max-w-full">
+      <a
+        v-if="current"
+        :href="streamFileUrl(lectureId, current.id)"
+        target="_blank"
+        rel="noopener"
+        class="block max-w-full"
+      >
         <img
-          :src="fileUrl(current.id, 'serve')"
+          :src="streamFileUrl(lectureId, current.id)"
           alt="Custom thumbnail"
           class="aspect-video w-40 max-w-full rounded border object-cover dark:border-gray-700"
         />

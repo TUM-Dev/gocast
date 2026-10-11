@@ -35,15 +35,6 @@ export function downloadsOf(files: LectureFile[]): LectureFile[] {
   return files.filter((f) => f.type === FILE_TYPE_VOD);
 }
 
-/**
- * Where the browser fetches a file: `serve` shows an image inline, `download` hands
- * the file over as an attachment. Both through the session cookie, so a plain <img>
- * or link works without the bearer token.
- */
-export function fileUrl(id: number, as: "serve" | "download"): string {
-  return `/api/download/${id}?type=${as}`;
-}
-
 /* Sections. */
 
 /** "4:02" or "1:04:02", as the player names a chapter's start. */

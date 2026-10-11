@@ -20,8 +20,6 @@ func ConfigGinRouter(
 	configGinStreamRestRouter(router, daoWrapper, manager)
 	configGinUsersRouter(router, daoWrapper)
 	configGinCourseRouter(router, daoWrapper)
-	configGinDownloadRouter(router, daoWrapper)
-	configGinDownloadICSRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)

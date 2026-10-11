@@ -280,6 +280,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	// excluded by path instead.
 	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{apiv2.RealtimePath})))
 	router.Any("/api/v2/*any", api2Client.Proxy())
+	api2Client.RegisterLegacyCalendar(router)
 	api.ConfigGinRouter(router, manager)
 	web.ConfigGinRouter(router)
 	g.Go(func() error {

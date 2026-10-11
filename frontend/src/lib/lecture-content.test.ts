@@ -12,7 +12,6 @@ import {
   deleteLectureThumbnail,
   downloadsOf,
   fetchTranscodingProgress,
-  fileUrl,
   formatSectionStart,
   pollTranscodingProgress,
   requestLectureSubtitles,
@@ -127,11 +126,6 @@ describe("files", () => {
     expect(customThumbnailOf(files)?.id).toBe(4);
     expect(customThumbnailOf(files.slice(0, 3))).toBeUndefined();
     expect(downloadsOf(files).map((f) => f.id)).toEqual([1]);
-  });
-
-  it("links them through the download endpoint", () => {
-    expect(fileUrl(4, "serve")).toBe("/api/download/4?type=serve");
-    expect(fileUrl(2, "download")).toBe("/api/download/2?type=download");
   });
 
   it("refuses an oversized file or a thumbnail that is not an image before sending it", () => {

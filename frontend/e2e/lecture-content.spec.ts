@@ -136,7 +136,7 @@ test.describe("a lecture's attachments", () => {
       await attachments.getByLabel("Upload attachments").setInputFiles(path);
       await expect(attachments.getByRole("status")).toHaveText("Uploaded e2e-ui-handout.txt.");
       const link = attachments.getByRole("link", { name: "e2e-ui-handout.txt" });
-      await expect(link).toHaveAttribute("href", /^\/api\/download\/\d+\?type=download$/);
+      await expect(link).toHaveAttribute("href", /^\/api\/v2\/streams\/\d+\/files\/\d+\?download=1$/);
       expect(filesHolding(massStorage, content)).toHaveLength(1);
 
       await attachments.getByRole("button", { name: "Delete attachment e2e-ui-handout.txt" }).click();
