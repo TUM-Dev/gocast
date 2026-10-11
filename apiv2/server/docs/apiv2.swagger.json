@@ -3004,6 +3004,94 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}/cut": {
+      "get": {
+        "summary": "Get a lecture's cut.",
+        "description": "Returns the recording to cut (signed for the caller) and the cut the lecture has now. Requires administering the course; a lecture of another course answers 404.",
+        "operationId": "CourseService_getLectureCut",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLectureCutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "description": "Must be one of the course's lectures; anything else answers as missing.",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "put": {
+        "summary": "Cut a lecture's recording.",
+        "description": "Sets where the recording starts and ends for viewers. The recording itself is untouched, so the cut is reversible; both offsets 0 remove it. The end must be after the start (400). Requires administering the course; a lecture of another course answers 404.",
+        "operationId": "CourseService_setLectureCut",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicesetLectureCutBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}/presets/{presetId}/switch": {
       "post": {
         "summary": "Switch a live stream's camera to a preset.",
@@ -4804,6 +4892,19 @@
         "language": {
           "type": "string",
           "description": "The spoken language, as an ISO 639 code: \"de\" or \"en\" on the old page."
+        }
+      }
+    },
+    "CourseServicesetLectureCutBody": {
+      "type": "object",
+      "properties": {
+        "startOffsetMs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "endOffsetMs": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -6637,6 +6738,35 @@
       ],
       "default": "LECTURE_CREATION_KIND_LIVESTREAM",
       "description": "What a created lecture is. LIVESTREAM, the zero value, is v1's default.\n\n - LECTURE_CREATION_KIND_LIVESTREAM: Streamed live: from its lecture hall, or by the lecturer with its stream key.\n - LECTURE_CREATION_KIND_VOD_UPLOAD: A recording uploaded afterwards through POST .../streams/{stream_id}/media.\n - LECTURE_CREATION_KIND_PREMIERE: A recording a worker streams as if live, starting at the lecture's start."
+    },
+    "protobufLectureCutResponse": {
+      "type": "object",
+      "properties": {
+        "courseName": {
+          "type": "string"
+        },
+        "lectureName": {
+          "type": "string"
+        },
+        "playlistUrl": {
+          "type": "string",
+          "description": "The recording to cut, signed for the caller: the combined version, else the\npresentation, else the camera. Empty when the lecture has no recording."
+        },
+        "startOffsetMs": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The cut, in milliseconds from the start of the recording. Both 0 when uncut."
+        },
+        "endOffsetMs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The recording's length in seconds when the server knows it, else 0; the player's\nown figure wins once the recording has loaded."
+        }
+      }
     },
     "protobufLectureFileAdmin": {
       "type": "object",

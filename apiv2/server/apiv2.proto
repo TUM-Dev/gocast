@@ -372,6 +372,28 @@ service CourseService {
     };
   }
 
+  // The cut page: the reference recording and the cut it carries, and saving a new one.
+  rpc getLectureCut(GetLectureCutRequest) returns (LectureCutResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/cut"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get a lecture's cut."
+      description: "Returns the recording to cut (signed for the caller) and the cut the lecture has now. Requires administering the course; a lecture of another course answers 404."
+    };
+  }
+
+  rpc setLectureCut(SetLectureCutRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/courses/{course_id}/streams/{stream_id}/cut"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Cut a lecture's recording."
+      description: "Sets where the recording starts and ends for viewers. The recording itself is untouched, so the cut is reversible; both offsets 0 remove it. The end must be after the start (400). Requires administering the course; a lecture of another course answers 404."
+    };
+  }
+
   // Creating a course is open to every lecturer, not only to administrators of an
   // existing one; the creator becomes its administrator.
   rpc createCourse(CreateCourseRequest) returns (CreateCourseResponse) {
@@ -2852,6 +2874,33 @@ message LectureStatsResponse {
   // Set for lectures from 2021 or earlier, which can predate the viewing data
   // (collected from 28 June 2021), so their numbers undercount.
   bool partial_history = 11;
+}
+
+message GetLectureCutRequest {
+  uint32 course_id = 1;
+  // Must be one of the course's lectures; anything else answers as missing.
+  uint32 stream_id = 2;
+}
+
+message LectureCutResponse {
+  string course_name = 1;
+  string lecture_name = 2;
+  // The recording to cut, signed for the caller: the combined version, else the
+  // presentation, else the camera. Empty when the lecture has no recording.
+  string playlist_url = 3;
+  // The cut, in milliseconds from the start of the recording. Both 0 when uncut.
+  uint32 start_offset_ms = 4;
+  uint32 end_offset_ms = 5;
+  // The recording's length in seconds when the server knows it, else 0; the player's
+  // own figure wins once the recording has loaded.
+  uint32 duration_seconds = 6;
+}
+
+message SetLectureCutRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 start_offset_ms = 3;
+  uint32 end_offset_ms = 4;
 }
 
 // ----- Lecture administration -----

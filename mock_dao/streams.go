@@ -665,6 +665,20 @@ func (mr *MockStreamsDaoMockRecorder) SaveWorkerForStream(stream, worker any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWorkerForStream", reflect.TypeOf((*MockStreamsDao)(nil).SaveWorkerForStream), stream, worker)
 }
 
+// SetCut mocks base method.
+func (m *MockStreamsDao) SetCut(streamID, startOffset, endOffset uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetCut", streamID, startOffset, endOffset)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetCut indicates an expected call of SetCut.
+func (mr *MockStreamsDaoMockRecorder) SetCut(streamID, startOffset, endOffset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCut", reflect.TypeOf((*MockStreamsDao)(nil).SetCut), streamID, startOffset, endOffset)
+}
+
 // SetLectureHall mocks base method.
 func (m *MockStreamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
 	m.ctrl.T.Helper()

@@ -781,6 +781,8 @@ const (
 	CourseService_GetCourseStats_FullMethodName                  = "/protobuf.CourseService/getCourseStats"
 	CourseService_ExportCourseStats_FullMethodName               = "/protobuf.CourseService/exportCourseStats"
 	CourseService_GetLectureStats_FullMethodName                 = "/protobuf.CourseService/getLectureStats"
+	CourseService_GetLectureCut_FullMethodName                   = "/protobuf.CourseService/getLectureCut"
+	CourseService_SetLectureCut_FullMethodName                   = "/protobuf.CourseService/setLectureCut"
 	CourseService_CreateCourse_FullMethodName                    = "/protobuf.CourseService/createCourse"
 	CourseService_SearchTumOnlineCourses_FullMethodName          = "/protobuf.CourseService/searchTumOnlineCourses"
 	CourseService_GetSchedule_FullMethodName                     = "/protobuf.CourseService/getSchedule"
@@ -840,6 +842,9 @@ type CourseServiceClient interface {
 	GetCourseStats(ctx context.Context, in *GetCourseStatsRequest, opts ...grpc.CallOption) (*CourseStatsResponse, error)
 	ExportCourseStats(ctx context.Context, in *ExportCourseStatsRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 	GetLectureStats(ctx context.Context, in *GetLectureStatsRequest, opts ...grpc.CallOption) (*LectureStatsResponse, error)
+	// The cut page: the reference recording and the cut it carries, and saving a new one.
+	GetLectureCut(ctx context.Context, in *GetLectureCutRequest, opts ...grpc.CallOption) (*LectureCutResponse, error)
+	SetLectureCut(ctx context.Context, in *SetLectureCutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Creating a course is open to every lecturer, not only to administrators of an
 	// existing one; the creator becomes its administrator.
 	CreateCourse(ctx context.Context, in *CreateCourseRequest, opts ...grpc.CallOption) (*CreateCourseResponse, error)
@@ -1034,6 +1039,26 @@ func (c *courseServiceClient) GetLectureStats(ctx context.Context, in *GetLectur
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LectureStatsResponse)
 	err := c.cc.Invoke(ctx, CourseService_GetLectureStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) GetLectureCut(ctx context.Context, in *GetLectureCutRequest, opts ...grpc.CallOption) (*LectureCutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LectureCutResponse)
+	err := c.cc.Invoke(ctx, CourseService_GetLectureCut_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) SetLectureCut(ctx context.Context, in *SetLectureCutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_SetLectureCut_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1412,6 +1437,9 @@ type CourseServiceServer interface {
 	GetCourseStats(context.Context, *GetCourseStatsRequest) (*CourseStatsResponse, error)
 	ExportCourseStats(context.Context, *ExportCourseStatsRequest) (*httpbody.HttpBody, error)
 	GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error)
+	// The cut page: the reference recording and the cut it carries, and saving a new one.
+	GetLectureCut(context.Context, *GetLectureCutRequest) (*LectureCutResponse, error)
+	SetLectureCut(context.Context, *SetLectureCutRequest) (*emptypb.Empty, error)
 	// Creating a course is open to every lecturer, not only to administrators of an
 	// existing one; the creator becomes its administrator.
 	CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error)
@@ -1513,6 +1541,12 @@ func (UnimplementedCourseServiceServer) ExportCourseStats(context.Context, *Expo
 }
 func (UnimplementedCourseServiceServer) GetLectureStats(context.Context, *GetLectureStatsRequest) (*LectureStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLectureStats not implemented")
+}
+func (UnimplementedCourseServiceServer) GetLectureCut(context.Context, *GetLectureCutRequest) (*LectureCutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLectureCut not implemented")
+}
+func (UnimplementedCourseServiceServer) SetLectureCut(context.Context, *SetLectureCutRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetLectureCut not implemented")
 }
 func (UnimplementedCourseServiceServer) CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCourse not implemented")
@@ -1888,6 +1922,42 @@ func _CourseService_GetLectureStats_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CourseServiceServer).GetLectureStats(ctx, req.(*GetLectureStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_GetLectureCut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLectureCutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetLectureCut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetLectureCut_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetLectureCut(ctx, req.(*GetLectureCutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_SetLectureCut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetLectureCutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).SetLectureCut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_SetLectureCut_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).SetLectureCut(ctx, req.(*SetLectureCutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2584,6 +2654,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getLectureStats",
 			Handler:    _CourseService_GetLectureStats_Handler,
+		},
+		{
+			MethodName: "getLectureCut",
+			Handler:    _CourseService_GetLectureCut_Handler,
+		},
+		{
+			MethodName: "setLectureCut",
+			Handler:    _CourseService_SetLectureCut_Handler,
 		},
 		{
 			MethodName: "createCourse",

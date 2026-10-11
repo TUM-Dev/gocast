@@ -69,6 +69,9 @@ type StreamsDao interface {
 	GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error)
 	SaveStream(vod *model.Stream) error
 	ToggleVisibility(streamId uint, private bool) error
+	// SetCut stores where the recording starts and ends, in milliseconds. Zeros are
+	// written: SaveStream skips them, so it can never remove a cut.
+	SetCut(streamID uint, startOffset, endOffset uint) error
 
 	DeleteStream(streamID string)
 	DeleteUnit(id uint)
@@ -774,6 +777,12 @@ func (d streamsDao) SavePRESURL(stream *model.Stream, url string) {
 func (d streamsDao) ToggleVisibility(streamId uint, private bool) error {
 	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id = ?", streamId).Updates(map[string]interface{}{"private": private}).Error
+}
+
+func (d streamsDao) SetCut(streamID uint, startOffset, endOffset uint) error {
+	defer Cache.Clear()
+	return DB.Model(&model.Stream{}).Where("id = ?", streamID).
+		Updates(map[string]interface{}{"start_offset": startOffset, "end_offset": endOffset}).Error
 }
 
 func (d streamsDao) SaveStream(vod *model.Stream) error {
