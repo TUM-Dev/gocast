@@ -117,7 +117,7 @@ const mounted = (tab: SidebarTab) => opened.value.has(tab) || tab === "chat" || 
 
 <template>
   <aside class="flex h-full min-h-0 flex-col" aria-label="Lecture sidebar">
-    <div class="flex overflow-x-auto border-b dark:border-gray-800" role="tablist" aria-label="Sidebar" @keydown="onKey">
+    <div class="flex shrink-0 overflow-x-auto border-b dark:border-gray-800" role="tablist" aria-label="Sidebar" @keydown="onKey">
       <button
         v-for="(tab, i) in visible"
         :id="`watch-tab-${tab}`"
