@@ -17845,8 +17845,10 @@ func (x *StreamLiveEvent) GetLive() bool {
 	return false
 }
 
-// A viewer reacted to a live stream. For the lecturer's reaction display, which
-// highlights the emoji for a moment.
+// A viewer reacted to a live stream. Sent to every viewer: the emoji floats over the
+// picture, and the lecturer's reaction display highlights it for a moment. It says
+// nothing about who reacted, and a burst of the same emoji is coalesced to one event
+// per second.
 type StreamReactionEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Reaction      string                 `protobuf:"bytes,1,opt,name=reaction,proto3" json:"reaction,omitempty"`

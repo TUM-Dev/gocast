@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import { announceOwnReaction } from "@/lib/reaction-floats";
 import { addReaction, fetchAllowedReactions } from "@/lib/watch-actions";
 import ActionDialog from "./ActionDialog.vue";
 
@@ -39,6 +40,8 @@ async function pick(reaction: string): Promise<void> {
       message.value = "Please wait before reacting again.";
       return;
     }
+    // Shown over the player at once; the server's copy of it is skipped there.
+    announceOwnReaction(props.streamId, reaction);
     open.value = false;
   } catch {
     message.value = "The reaction could not be sent.";

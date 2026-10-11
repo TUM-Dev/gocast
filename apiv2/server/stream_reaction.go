@@ -26,6 +26,13 @@ const (
 
 	// reactionWindow is how far back the lecturer's picture of the mood reaches.
 	reactionWindow = 15 * time.Minute
+
+	// reactionBroadcastGap is the least time between two broadcasts of the same emoji
+	// to the same stream. Reactions are fanned out to every viewer, and a lecture hall
+	// reacting to a joke would otherwise send each of N sockets N events at once; one
+	// float per emoji per second is as much as the overlay can show anyway. Throttled
+	// reactions are still saved and still count in the lecturer's stats.
+	reactionBroadcastGap = time.Second
 )
 
 // reactionStatsInterval is how often administrators are told the split of reactions.
@@ -43,6 +50,39 @@ type reactionStats struct {
 	mu      sync.Mutex
 	last    map[uint]time.Time // stream -> its latest reaction
 	running bool
+
+	sent map[reactionKey]time.Time // when each emoji was last broadcast, see allowBroadcast
+}
+
+type reactionKey struct {
+	stream   uint
+	reaction string
+}
+
+// allowBroadcast reports whether a reaction may be fanned out to the viewers now, and
+// if so records it. It is a leading-edge throttle: the first reaction of a burst goes
+// out at once, the rest of that second are dropped.
+func (s *reactionStats) allowBroadcast(streamID uint, reaction string, now time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.sent == nil {
+		s.sent = make(map[reactionKey]time.Time)
+	}
+	key := reactionKey{streamID, reaction}
+	if at, ok := s.sent[key]; ok && now.Sub(at) < reactionBroadcastGap {
+		return false
+	}
+	// Bounded by streams x allowed emoji; swept only to forget ended streams.
+	if len(s.sent) > 512 {
+		for k, at := range s.sent {
+			if now.Sub(at) >= reactionBroadcastGap {
+				delete(s.sent, k)
+			}
+		}
+	}
+	s.sent[key] = now
+	return true
 }
 
 // touch records a reaction to the stream and starts the ticker if none is running.
@@ -145,7 +185,7 @@ func (a *API) ListAllowedStreamReactions(ctx context.Context, req *protobuf.List
 }
 
 // AddStreamReaction records the caller's reaction, replacing v1's addReaction, and
-// tells the course's administrators. A viewer has one reaction per stream; reacting
+// tells the stream's viewers. A viewer has one reaction per stream; reacting
 // again replaces it.
 func (a *API) AddStreamReaction(ctx context.Context, req *protobuf.AddStreamReactionRequest) (*emptypb.Empty, error) {
 	user, stream, _, err := a.authorizeUserForStreamCourse(ctx, req)
@@ -185,7 +225,9 @@ func (a *API) AddStreamReaction(ctx context.Context, req *protobuf.AddStreamReac
 		}
 	}
 
-	a.publish(ctx, stream.ID, realtimehub.ReactionEvent(stream.ID, req.GetReaction()))
+	if a.reactions.allowBroadcast(stream.ID, req.GetReaction(), time.Now()) {
+		a.publish(ctx, stream.ID, realtimehub.ReactionEvent(stream.ID, req.GetReaction()))
+	}
 	a.touchReactionStats(stream.ID)
 	return &emptypb.Empty{}, nil
 }

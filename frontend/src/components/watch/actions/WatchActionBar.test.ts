@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WatchLayout, WatchViewKind } from "@/gen/server/apiv2_pb";
 import { ApiError } from "@/lib/api";
+import { onOwnReaction } from "@/lib/reaction-floats";
 import WatchActionBar from "./WatchActionBar.vue";
 
 const { fetchAllowedReactions, addReaction, reportIssue } = vi.hoisted(() => ({
@@ -204,9 +205,13 @@ describe("WatchActionBar", () => {
     await flushPromises();
     expect(body().textContent).toContain("Please wait before reacting again.");
 
+    const own = vi.fn();
+    const off = onOwnReaction(7, own);
     emoji()[1].click();
     await flushPromises();
+    off();
     expect(addReaction).toHaveBeenLastCalledWith(7, "🎉");
+    expect(own).toHaveBeenCalledWith("🎉");
     expect(body().querySelector("[aria-label=Reactions]")).toBeNull();
     w.unmount();
   });

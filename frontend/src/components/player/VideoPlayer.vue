@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import { installClip, type Clip, type ClipHandle } from "@/lib/player/clip";
 import { centrePlayToggle, labelControlsWithHotkeys, type ComponentLike } from "@/lib/player/controls";
+import { attachContextMenu } from "@/lib/player/context-menu";
 import { createController } from "@/lib/player/controller";
 import { attachHotkeys, type Hotkey } from "@/lib/player/hotkeys";
 import { attachHoldSpeed } from "@/lib/player/hold-speed";
@@ -10,6 +11,7 @@ import { resetRateAtLiveEdge, type LiveTrackerLike } from "@/lib/player/live";
 import type { QualityLevelListLike, QualityPreference } from "@/lib/player/quality";
 import { keepRateAcrossSources, menuRates } from "@/lib/player/speeds";
 import { isMobileViewport, markTimeTooltip, spriteOptions, type SpriteSource } from "@/lib/player/sprites";
+import { createStatsPanel, type LatencyTrackerLike, type StatsPanel, type StatsPlayer } from "@/lib/player/stats";
 import { applyStartTime } from "@/lib/player/start-time";
 import { applyStoredSettings, persistSettings, resolveRate } from "@/lib/player/storage";
 import { setSubtitleTracks, type SubtitleTrack } from "@/lib/player/tracks";
@@ -63,6 +65,11 @@ const props = withDefaults(
     /** Added to (or replacing, by name) the default shortcuts. */
     extraHotkeys?: Record<string, Hotkey>;
     airplay?: boolean;
+    /**
+     * A "stats for nerds" overlay (resolution, bitrate, buffer, dropped frames, live
+     * latency), toggled from the right-click menu or the `I` key.
+     */
+    statsPanel?: boolean;
     /** "highest" pins the best rendition instead of letting the player adapt. */
     quality?: QualityPreference;
     /** Seekbar preview frames. */
@@ -84,6 +91,7 @@ const props = withDefaults(
     hotkeys: false,
     extraHotkeys: undefined,
     airplay: false,
+    statsPanel: false,
     quality: "auto",
     sprites: undefined,
     subtitles: undefined,
@@ -113,6 +121,7 @@ let mounted = false;
 let cleanups: (() => void)[] = [];
 let clipHandle: ClipHandle | null = null;
 let subtitleCleanup: (() => void) | null = null;
+let stats: StatsPanel | null = null;
 
 const controller = createController();
 
@@ -200,8 +209,22 @@ async function create(): Promise<void> {
     cleanups.push(applyStartTime(p, props.startTime, videojs.browser.IS_IOS));
   }
   if (skip) centrePlayToggle(extras.controlBar);
+  let extraHotkeys = props.extraHotkeys;
+  if (props.statsPanel) {
+    const panel = createStatsPanel(created as unknown as StatsPlayer, extras.liveTracker as LatencyTrackerLike | undefined);
+    stats = panel;
+    cleanups.push(panel.dispose);
+    cleanups.push(
+      attachContextMenu(p, [{ label: () => (panel.isOpen() ? "Hide stats for nerds" : "Stats for nerds"), run: panel.toggle }]),
+    );
+    // Documented in KeyboardShortcuts.vue, which cannot derive it from here.
+    extraHotkeys = {
+      statsForNerds: { keys: ["i", "I"], action: "Stats for nerds", label: "I / i", handle: () => panel.toggle() },
+      ...extraHotkeys,
+    };
+  }
   if (props.hotkeys) {
-    cleanups.push(attachHotkeys(p, { scope: props.hotkeys, seekSeconds: skip || 10, extra: props.extraHotkeys }));
+    cleanups.push(attachHotkeys(p, { scope: props.hotkeys, seekSeconds: skip || 10, extra: extraHotkeys }));
     cleanups.push(labelControlsWithHotkeys(p, extras.controlBar, skip));
   }
   setSubtitles(props.subtitles);
@@ -267,7 +290,11 @@ function toRecordingTime(clipTime: number): number {
   return clipHandle ? clipHandle.toRecordingTime(clipTime) : clipTime;
 }
 
-defineExpose({ ...controller.api, currentTime, duration, seek, toRecordingTime });
+function toggleStats(): void {
+  stats?.toggle();
+}
+
+defineExpose({ ...controller.api, currentTime, duration, seek, toRecordingTime, toggleStats });
 
 onMounted(() => {
   mounted = true;
@@ -291,6 +318,7 @@ onBeforeUnmount(() => {
   clipHandle?.dispose();
   for (const undo of cleanups.reverse()) undo();
   cleanups = [];
+  stats = null;
   controller.detach();
   player?.dispose();
   player = null;

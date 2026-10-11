@@ -171,7 +171,7 @@ onBeforeUnmount(() => clearInterval(tick));
             <span data-testid="clock">{{ clock(now) }}</span>
           </div>
 
-          <VideoPlayer ref="player" :src="view.playlistUrl" live autoplay quality="highest" airplay hotkeys="player" poster="/public/no_active_stream.jpg" />
+          <VideoPlayer ref="player" :src="view.playlistUrl" live autoplay quality="highest" airplay stats-panel hotkeys="player" poster="/public/no_active_stream.jpg" />
 
           <button
             type="button"

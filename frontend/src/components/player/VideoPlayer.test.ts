@@ -265,6 +265,43 @@ describe("VideoPlayer hotkeys", () => {
   });
 });
 
+describe("VideoPlayer stats panel", () => {
+  const panel = () => state.fake.el.querySelector<HTMLElement>(".vjs-stats-panel");
+
+  it("adds nothing unless asked for", async () => {
+    await mountPlayer({ hotkeys: "player" });
+    expect(panel()).toBeNull();
+    expect(state.fake.el.querySelector(".vjs-context-menu")).toBeNull();
+    state.fake.el.dispatchEvent(new KeyboardEvent("keydown", { key: "i", bubbles: true }));
+  });
+
+  it("toggles from the I key and from the right-click menu", async () => {
+    await mountPlayer({ statsPanel: true, hotkeys: "player" });
+    expect(panel()!.hidden).toBe(true);
+    state.fake.el.dispatchEvent(new KeyboardEvent("keydown", { key: "i", bubbles: true }));
+    expect(panel()!.hidden).toBe(false);
+
+    state.fake.el.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+    const entry = state.fake.el.querySelector<HTMLButtonElement>(".vjs-context-menu button")!;
+    expect(entry.textContent).toBe("Hide stats for nerds");
+    entry.click();
+    expect(panel()!.hidden).toBe(true);
+  });
+
+  it("works without hotkeys, through the exposed toggle", async () => {
+    const wrapper = await mountPlayer({ statsPanel: true });
+    (wrapper.vm as unknown as { toggleStats(): void }).toggleStats();
+    expect(panel()!.hidden).toBe(false);
+  });
+
+  it("is removed with the player", async () => {
+    const wrapper = await mountPlayer({ statsPanel: true });
+    wrapper.unmount();
+    expect(panel()).toBeNull();
+    expect(state.fake.el.querySelector(".vjs-context-menu")).toBeNull();
+  });
+});
+
 describe("VideoPlayer plugins and tracks", () => {
   it("initialises the seekbar preview from the sprite", async () => {
     await mountPlayer({ sprites: { url: "/thumbs/1", interval: 10 } });
