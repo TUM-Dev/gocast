@@ -1,3 +1,4 @@
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef } from "vue";
 
@@ -66,6 +67,13 @@ export const useWatchStore = defineStore("watch", () => {
     sidebar.value = null;
   }
 
+  /** A rescheduled lecture (StreamTimeChangedEvent): the countdown and the time left follow. */
+  function reschedule(start?: Timestamp, end?: Timestamp): void {
+    const current = watch.value;
+    if (!current?.stream) return;
+    watch.value = { ...current, stream: { ...current.stream, start: start ?? current.stream.start, end: end ?? current.stream.end } };
+  }
+
   function reset(): void {
     generation++;
     watch.value = undefined;
@@ -75,5 +83,5 @@ export const useWatchStore = defineStore("watch", () => {
     loadedFor = undefined;
   }
 
-  return { watch, failure, loading, sidebar, tabs, load, openSidebar, toggleSidebar, closeSidebar, reset };
+  return { watch, failure, loading, sidebar, tabs, load, openSidebar, toggleSidebar, closeSidebar, reschedule, reset };
 });

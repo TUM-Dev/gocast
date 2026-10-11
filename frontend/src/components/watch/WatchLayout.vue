@@ -10,7 +10,8 @@
  *  - `action-bar`  the buttons: layout switch, bookmark, share, shortcuts, reactions...
  *  - `description` the lecture's description.
  *  - `sidebar`     the tabbed side panel (WatchSidebar); shown beside the main column
- *                  from `lg` up and below it on a phone, when `sidebarOpen`.
+ *                  from `lg` up and below it on a phone, when `sidebarOpen`. It stays mounted while closed (hidden), so the chat keeps its
+ *                  socket and the bookmarks keep feeding the seekbar.
  *
  * On a phone the picture sticks to the top while the rest scrolls, as the old page did.
  */
@@ -37,7 +38,8 @@ defineProps<{ sidebarOpen: boolean }>();
       </div>
     </div>
     <aside
-      v-if="sidebarOpen && $slots.sidebar"
+      v-if="$slots.sidebar"
+      v-show="sidebarOpen"
       class="h-[70vh] w-full shrink-0 border-t lg:sticky lg:top-4 lg:h-[calc(100vh-7rem)] lg:w-[26rem] lg:rounded-lg lg:border dark:border-gray-800"
       data-testid="region-sidebar"
     >

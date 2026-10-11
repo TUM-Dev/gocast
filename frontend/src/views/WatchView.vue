@@ -3,8 +3,10 @@ import { computed } from "vue";
 import { useRoute } from "vue-router";
 
 import WatchPage from "@/components/watch/WatchPage.vue";
+import { isEmbedQuery } from "@/lib/watch-admin-embed";
 import { singleRouteParam } from "@/lib/route-query";
 import NotFoundView from "@/views/NotFoundView.vue";
+import WatchEmbedView from "@/views/WatchEmbedView.vue";
 
 /**
  * `/w/:slug/:streamID` and `/w/:slug/:streamID/:version` (COMB, PRES, CAM, SPLIT).
@@ -18,9 +20,12 @@ const route = useRoute();
 const slug = computed(() => singleRouteParam(route.params, "slug"));
 const streamId = computed(() => Number(singleRouteParam(route.params, "streamID")));
 const valid = computed(() => !!slug.value && Number.isInteger(streamId.value) && streamId.value > 0);
+// Artemis frames the player alone: the same URL with `?video_only=1`.
+const embed = computed(() => isEmbedQuery(route.query));
 </script>
 
 <template>
-  <WatchPage v-if="valid" :key="`${slug}/${streamId}`" :slug="slug!" :stream-id="streamId" />
+  <WatchEmbedView v-if="valid && embed" :key="`embed/${slug}/${streamId}`" />
+  <WatchPage v-else-if="valid" :key="`${slug}/${streamId}`" :slug="slug!" :stream-id="streamId" />
   <NotFoundView v-else />
 </template>

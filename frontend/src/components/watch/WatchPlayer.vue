@@ -59,6 +59,8 @@ const emit = defineEmits<{
 }>();
 
 const inner = ref<InstanceType<typeof VideoPlayer> | null>(null);
+/** The player's root, which the seekbar overlays find the progress holder in. */
+const root = ref<HTMLElement | null>(null);
 const controller = ref<WatchController | null>(null);
 
 const QUALITY_KEY = "spa.watch.highestQuality";
@@ -116,7 +118,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="group relative bg-black" data-testid="watch-player">
+  <div ref="root" class="group relative bg-black" data-testid="watch-player">
     <VideoPlayer
       ref="inner"
       :src="view.playlistUrl"
@@ -139,7 +141,7 @@ onBeforeUnmount(() => {
       class="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-[30px]"
       data-testid="region-seekbar-overlay"
     >
-      <slot name="seekbar" :controller="controller" :clip="clip" />
+      <slot name="seekbar" :controller="controller" :clip="clip" :container="root" />
     </div>
     <button
       type="button"

@@ -3,20 +3,24 @@ import { computed, onBeforeUnmount, onMounted, provide, ref, shallowRef, watch }
 import { useRoute, useRouter } from "vue-router";
 
 import ChatPanel from "@/components/chat/ChatPanel.vue";
+import WatchActionBar from "@/components/watch/actions/WatchActionBar.vue";
+import WatchAdminStrip from "@/components/watch/admin/WatchAdminStrip.vue";
+import WatchSidebar from "@/components/watch/panels/WatchSidebar.vue";
+import SeekbarOverlay from "@/components/watch/seekbar/SeekbarOverlay.vue";
+import { useSeekReporting } from "@/components/watch/seekbar/useSeekReporting";
+import SplitView from "@/components/watch/split/SplitView.vue";
 import WatchDescription from "@/components/watch/WatchDescription.vue";
 import WatchInfo from "@/components/watch/WatchInfo.vue";
 import WatchLayout from "@/components/watch/WatchLayout.vue";
 import WatchMessage from "@/components/watch/WatchMessage.vue";
 import WatchPlaceholder from "@/components/watch/WatchPlaceholder.vue";
 import WatchPlayer from "@/components/watch/WatchPlayer.vue";
-import WatchSidebar from "@/components/watch/WatchSidebar.vue";
 import WatchWaitingRoom from "@/components/watch/WatchWaitingRoom.vue";
+import { WatchViewKind } from "@/gen/server/apiv2_pb";
 import { fetchConfig } from "@/lib/config";
 import { parseNumberParam } from "@/lib/player/start-time";
 import {
   WatchLayout as Layout,
-  availableLayouts,
-  countdown,
   layoutSegment,
   offsetsToClip,
   parseLayoutSegment,
@@ -24,17 +28,19 @@ import {
   resolveLayout,
   resolveStartTime,
   skipSecondsFor,
+  spriteSource,
   streamStart,
   subtitleTracks,
   viewForLayout,
-  waitingPollInterval,
   watchDocumentTitle,
   watchPhase,
-  type SidebarTab,
 } from "@/lib/watch";
+import { fetchSeekHeatmap, fetchSections, type SeekbarSection } from "@/lib/watch-actions";
+import { splitTime, type WatchBookmark } from "@/lib/watch-panels";
+import { createPanelPlayer } from "@/lib/watch-wiring";
 import { watchContextKey, type WatchContext, type WatchController } from "@/lib/watch-context";
 import { useAuthStore } from "@/stores/auth";
-import { useChatStore } from "@/stores/chat";
+import { useStreamRealtime } from "@/stores/streamRealtime";
 import { useWatchStore } from "@/stores/watch";
 import NotFoundView from "@/views/NotFoundView.vue";
 
@@ -42,20 +48,16 @@ import NotFoundView from "@/views/NotFoundView.vue";
  * The watch page for one stream (WatchView keys it by stream, so a navigation to
  * another lecture is a fresh page with its own chat store and player).
  *
- * ## Region contract
+ * ## Regions
  *
- * The regions other parts of the watch page plug into. Each is a spot below marked
- * `TODO(integrator)`; the component named there replaces the placeholder. All of them
- * can also reach the shared state with `useWatchContext()` (lib/watch-context.ts).
+ * WatchLayout lays them out; this page fills them: the player (or the split view), the
+ * lecturer's strip, title and status, the action bar, the description and the tabbed
+ * side panel. Deeper descendants can reach the shared state with `useWatchContext()`
+ * (lib/watch-context.ts).
  *
- *  - action bar  (`<template #action-bar>`): needs `watch`, `layout`, `layouts`,
- *    `setLayout`, `controller`, `sidebar` (open/toggle a tab).
- *  - seekbar overlays (`<template #seekbar>` of WatchPlayer): `controller` and `clip`.
- *  - admin strip (`<template #admin-strip>`, only when `watch.admin`): `watch`.
- *  - sidebar panels (`<template #panel-<tab>>`): `watch`, `streamId`, `slug`,
- *    `controller`, and `active` for panels that must pause work while hidden.
- *  - split view  (the player region when `layout === SPLIT`): `watch`, `clip`, start
- *    time and rate; it builds its own two players.
+ * One realtime socket serves the page (`useStreamRealtime`): viewer count, the live
+ * flip, title and description edits, and a rescheduled start. The chat panel listens to
+ * the same one.
  */
 const props = defineProps<{ slug: string; streamId: number }>();
 
@@ -63,7 +65,7 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const store = useWatchStore();
-const chat = useChatStore(props.streamId);
+const realtime = useStreamRealtime(props.streamId);
 
 // ------------------------------------------------------------ loading
 
@@ -85,18 +87,28 @@ onMounted(() => {
 
 const data = computed(() => store.watch);
 
-// The chat store doubles as the page's realtime socket (viewers, live flips, title,
-// description) until the shared stream socket replaces it. Started once there is a
-// stream the viewer may see; ChatPanel's own start is then a no-op.
+// One socket per tab, shared with the chat panel (it subscribes to the same store, so
+// closing the panel does not close the socket the page still listens on). Subscribed
+// once there is a stream the viewer may see: the server refuses the rest.
+let unsubscribe: (() => void) | null = null;
+let firstSync = true;
 watch(
   data,
   (value) => {
-    if (value) chat.start();
+    if (!value || unsubscribe) return;
+    unsubscribe = realtime.subscribe({
+      onEvent(event) {
+        // A rescheduled lecture moves the countdown; this replaces polling the server.
+        if (event.event.case === "timeChanged") store.reschedule(event.event.value.start, event.event.value.end);
+      },
+      // The first subscribe is a resync too, but the page has just loaded.
+      onResync: () => (firstSync ? (firstSync = false) : void load(true)),
+    });
   },
   { immediate: true },
 );
 onBeforeUnmount(() => {
-  chat.stop();
+  unsubscribe?.();
   store.reset();
 });
 
@@ -104,8 +116,9 @@ onBeforeUnmount(() => {
 // brings the new playlist, or the recording, or the ended state. The server may not
 // have caught up when the event arrives, so one retry follows.
 let retry: ReturnType<typeof setTimeout> | undefined;
+onBeforeUnmount(() => clearTimeout(retry));
 watch(
-  () => chat.live,
+  () => realtime.live,
   async (live) => {
     const current = store.watch?.stream;
     if (live === undefined || !current || live === current.liveNow) return;
@@ -119,7 +132,6 @@ watch(
 const phase = computed(() => (data.value ? watchPhase(data.value) : "ended"));
 const requested = computed(() => parseLayoutSegment(route.params.version));
 const layout = computed(() => (data.value ? resolveLayout(data.value, requested.value) : Layout.UNSPECIFIED));
-const layouts = computed(() => (data.value ? availableLayouts(data.value) : []));
 const view = computed(() => (data.value ? viewForLayout(data.value, layout.value) : undefined));
 const clip = computed(() => (data.value ? offsetsToClip(data.value) : undefined));
 const live = computed(() => phase.value === "live");
@@ -152,41 +164,50 @@ const controller = shallowRef<WatchController | null>(null);
 
 // ------------------------------------------------------------ live values
 
-const title = computed(() => chat.title ?? data.value?.stream?.displayName ?? "");
-const descriptionHtml = computed(() => chat.descriptionHtml ?? data.value?.stream?.descriptionHtml ?? "");
+const title = computed(() => realtime.title ?? data.value?.stream?.displayName ?? "");
+const descriptionHtml = computed(() => realtime.descriptionHtml ?? data.value?.stream?.descriptionHtml ?? "");
 // The socket's count is 0 until its first event; the page data has the count from
 // when it was loaded, which beats showing 0 to someone who is watching.
-const viewers = computed(() => (chat.viewers > 0 ? chat.viewers : (data.value?.viewers ?? 0)));
+const viewers = computed(() => (realtime.viewers > 0 ? realtime.viewers : (data.value?.viewers ?? 0)));
 
-// ------------------------------------------------------------ waiting room poll
+// ------------------------------------------------------------ panels and seekbar
 
-// StreamTimeChangedEvent is not on the chat store yet, so a rescheduled lecture is
-// noticed by asking again: lightly while waiting, faster once the start has passed.
-let poll: ReturnType<typeof setTimeout> | undefined;
-function stopPolling(): void {
-  clearTimeout(poll);
-  poll = undefined;
+// The panels and the seek reporting keep time on the recording's clock and subscribe
+// once; the controller they read changes with the layout.
+const panelPlayer = createPanelPlayer(() => controller.value);
+watch(controller, () => panelPlayer.rebind());
+useSeekReporting(panelPlayer.player, props.streamId, { enabled: () => phase.value === "vod" });
+
+const seekbarBookmarks = ref<{ hours: number; minutes: number; seconds: number; description: string }[]>([]);
+function onBookmarks(list: WatchBookmark[]): void {
+  seekbarBookmarks.value = list.map((b) => ({ ...splitTime(b.time), description: b.description }));
 }
-function schedulePoll(): void {
-  const start = data.value ? streamStart(data.value) : undefined;
-  const wait = start ? waitingPollInterval(countdown(start, new Date())) : 30_000;
-  poll = setTimeout(async () => {
-    await load(true);
-    if (phase.value === "waiting") schedulePoll();
-  }, wait);
-}
+const seekbarSections = ref<SeekbarSection[]>([]);
+const heatmap = ref<number[]>([]);
+// Sections and the heatmap exist for recordings only; both are decoration, so a failure is silence.
 watch(
-  phase,
-  (now) => {
-    stopPolling();
-    if (now === "waiting" && data.value) schedulePoll();
+  () => phase.value === "vod",
+  (recording) => {
+    if (!recording) return;
+    fetchSections(props.slug, props.streamId).then((v) => (seekbarSections.value = v), () => undefined);
+    fetchSeekHeatmap(props.streamId).then((v) => (heatmap.value = v), () => undefined);
   },
   { immediate: true },
 );
-onBeforeUnmount(() => {
-  stopPolling();
-  clearTimeout(retry);
+/** The playable range's length, which the seekbar's fractions are of. */
+const seekDuration = computed(() => {
+  const total = data.value?.stream?.duration ?? 0;
+  return Math.max(0, (clip.value?.end ?? total) - (clip.value?.start ?? 0));
 });
+
+const sprites = computed(() => {
+  const presentation = data.value?.views.find((v) => v.kind === WatchViewKind.PRESENTATION);
+  return presentation ? spriteSource(props.streamId, presentation) : undefined;
+});
+
+function setSplitController(el: unknown): void {
+  if (el) controller.value = el as WatchController;
+}
 
 // ------------------------------------------------------------ document title
 
@@ -227,9 +248,6 @@ const context: WatchContext = {
 };
 provide(watchContextKey, context);
 
-function onSelectTab(tab: SidebarTab): void {
-  store.openSidebar(tab);
-}
 </script>
 
 <template>
@@ -258,11 +276,24 @@ function onSelectTab(tab: SidebarTab): void {
         <p class="text-sm text-gray-300">There is no recording of it (yet).</p>
       </div>
 
-      <template v-else-if="layout === Layout.SPLIT">
-        <!-- TODO(integrator): extras agent's split view replaces this placeholder:
-             <WatchSplitView :watch="data" :clip="clip" :start-time="startTime" :rate="rate" /> -->
-        <WatchPlaceholder label="Split view is not wired in yet." />
-      </template>
+      <SplitView
+        v-else-if="layout === Layout.SPLIT"
+        :key="playerKey"
+        :ref="setSplitController"
+        :views="data.views"
+        :live="live"
+        :clip="clip"
+        :start-time="startTime"
+        :rate="rate"
+        :subtitles="subtitles"
+        :sprites="sprites"
+        :playback-rates="playbackRates"
+        :skip-seconds="skipSeconds"
+        persist
+        hold-to-fast
+        hotkeys="page"
+        airplay
+      />
 
       <WatchPlayer
         v-else-if="view"
@@ -281,18 +312,31 @@ function onSelectTab(tab: SidebarTab): void {
         :recording-duration="data.stream?.duration"
         @controller="controller = $event"
       >
-        <template #seekbar="{ controller: c, clip: cl }">
-          <!-- TODO(integrator): actions agent's seekbar overlays (section dividers,
-               bookmark markers, heatmap): <... :controller="c" :clip="cl" /> -->
-          <span v-if="false">{{ c }}{{ cl }}</span>
+        <template #seekbar="{ container }">
+          <SeekbarOverlay
+            v-if="phase === 'vod'"
+            :container="container"
+            :duration="seekDuration"
+            :offset="clip?.start ?? 0"
+            :sections="seekbarSections"
+            :bookmarks="seekbarBookmarks"
+            :heatmap="heatmap"
+          />
         </template>
       </WatchPlayer>
 
       <WatchPlaceholder v-else label="This stream has no playable view." />
     </template>
 
-    <template v-if="data.admin" #admin-strip>
-      <!-- TODO(integrator): extras agent's admin strip: <... :watch="data" /> -->
+    <template v-if="data.admin && data.course" #admin-strip>
+      <WatchAdminStrip
+        :admin="data.admin"
+        :course-id="data.course.id"
+        :stream-id="streamId"
+        :slug="slug"
+        :live-now="data.stream?.liveNow === true"
+        @ended="load(true)"
+      />
     </template>
 
     <template #info>
@@ -310,11 +354,20 @@ function onSelectTab(tab: SidebarTab): void {
       </div>
     </template>
 
-    <template #action-bar>
-      <!-- TODO(integrator): actions agent's action bar:
-           <... :watch="data" :layout="layout" :layouts="layouts" :set-layout="setLayout"
-                :controller="controller" :sidebar="context.sidebar" /> -->
-      <span v-if="false">{{ layouts }}</span>
+    <template v-if="phase !== 'waiting' && data.viewer" #action-bar>
+      <WatchActionBar
+        :stream-id="streamId"
+        :views="data.views"
+        :split-available="data.splitAvailable"
+        :attachments="data.attachments"
+        :downloads="data.downloads"
+        :viewer="data.viewer"
+        :layout="layout"
+        :live="live"
+        :controller="controller ?? undefined"
+        :user-name="auth.user?.name"
+        @select-layout="setLayout($event.layout)"
+      />
     </template>
 
     <template #description>
@@ -322,31 +375,38 @@ function onSelectTab(tab: SidebarTab): void {
     </template>
 
     <template #sidebar>
-      <WatchSidebar :tabs="store.tabs" :active="sidebarTab" @select="onSelectTab" @close="store.closeSidebar()">
-        <template #panel-chat>
-          <ChatPanel :stream-id="streamId" />
-        </template>
-        <template #panel-bookmarks>
-          <!-- TODO(integrator): panels agent: <... :stream-id :controller /> -->
-          <WatchPlaceholder label="Bookmarks are not wired in yet." />
-        </template>
-        <template #panel-playlist>
-          <!-- TODO(integrator): panels agent -->
-          <WatchPlaceholder label="The playlist is not wired in yet." />
-        </template>
-        <template #panel-sections>
-          <!-- TODO(integrator): panels agent -->
-          <WatchPlaceholder label="Sections are not wired in yet." />
-        </template>
-        <template #panel-transcript>
-          <!-- TODO(integrator): panels agent -->
-          <WatchPlaceholder label="The transcript is not wired in yet." />
-        </template>
-        <template #panel-search>
-          <!-- TODO(integrator): panels agent -->
-          <WatchPlaceholder label="Search is not wired in yet." />
-        </template>
-      </WatchSidebar>
+      <div class="flex h-full min-h-0 flex-col">
+        <div class="flex justify-end border-b px-2 py-1 dark:border-gray-800">
+          <button
+            type="button"
+            class="tum-live-icon-button px-2 py-1 text-sm"
+            aria-label="Close side panel"
+            title="Close"
+            data-testid="close-sidebar"
+            @click="store.closeSidebar()"
+          >
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="min-h-0 grow">
+          <WatchSidebar
+            :stream-id="streamId"
+            :slug="slug"
+            :player="panelPlayer.player"
+            :subtitle-languages="data.stream?.recording ? data.subtitleLanguages : []"
+            :show-chat="data.chat?.enabled === true"
+            :show-bookmarks="data.viewer?.signedIn === true"
+            :show-playlist="data.viewer?.signedIn === true"
+            :show-sections="data.stream?.recording === true"
+            :show-search="data.stream?.recording === true && data.subtitleLanguages.length > 0"
+            @bookmarks="onBookmarks"
+          >
+            <template #chat>
+              <ChatPanel :stream-id="streamId" />
+            </template>
+          </WatchSidebar>
+        </div>
+      </div>
     </template>
   </WatchLayout>
 </template>

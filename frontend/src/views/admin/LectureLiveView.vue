@@ -13,16 +13,17 @@ import { ApiError } from "@/lib/api";
 import {
   adminLinks,
   clock,
-  fetchAllowedReactions,
-  fetchStreamWatch,
   reactionPercentages,
   timeLeft,
 } from "@/lib/watch-admin";
+import { fetchStreamWatch } from "@/lib/watch";
+import { fetchAllowedReactions } from "@/lib/watch-actions";
 import { useLiveEvents } from "@/lib/watch-admin-live";
 import { pickEmbedView } from "@/lib/watch-admin-embed";
 import { WatchViewKind } from "@/gen/server/apiv2_pb";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 import { useCourseAdminStore } from "@/stores/course-admin";
+import { useStreamRealtime } from "@/stores/streamRealtime";
 
 /**
  * The lecturer's view of a running lecture: the live picture (muted, at the highest
@@ -48,7 +49,16 @@ const ending = ref(false);
 const player = ref<{ seekToLive(): void } | null>(null);
 const now = ref(new Date());
 
-const events = useLiveEvents(streamId.value, () => void reload());
+// One socket per tab: the chat panel on this page listens to the same one.
+const realtime = useStreamRealtime(streamId.value);
+let firstSync = true;
+const events = useLiveEvents(streamId.value, () => void reload(), (handler) =>
+  realtime.subscribe({
+    onEvent: handler,
+    // The first subscribe is a resync too, but the page has just loaded.
+    onResync: () => (firstSync ? (firstSync = false) : void reload()),
+  }),
+);
 
 const stream = computed(() => data.value?.stream);
 const admin = computed(() => data.value?.admin);

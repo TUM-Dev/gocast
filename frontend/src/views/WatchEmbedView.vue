@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api";
 import type { PlayerController } from "@/lib/player/controller";
 import { DEFAULT_PLAYBACK_RATES } from "@/lib/player/speeds";
 import { RealtimeConnection } from "@/lib/realtime";
-import { fetchStreamWatch } from "@/lib/watch-admin";
+import { fetchStreamWatch } from "@/lib/watch";
 import {
   embedClip,
   embedKind,

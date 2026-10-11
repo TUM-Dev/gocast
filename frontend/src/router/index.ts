@@ -286,8 +286,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     // The watch page. `:version` is the layout (COMB, PRES, CAM or SPLIT). Anonymous
-    // because a public course's stream is watchable without a session. Not in
-    // spaRoutes (web/router.go) until the watch family flips as a whole.
+    // because a public course's stream is watchable without a session. 
     path: "/w/:slug/:streamID",
     name: "watch",
     component: WatchView,
@@ -300,9 +299,15 @@ const routes: RouteRecordRaw[] = [
     meta: { anonymous: true },
   },
   {
-    // The chat on a page of its own. Deliberately not the popup's current URL
-    // (`/w/:slug/:streamID/chat/popup`, still the old template): nothing links here yet.
+    // The chat on a page of its own, for a window beside the player. Two URLs, one
+    // page: `/chat/popup` is what the old player's popup button and any old link use.
     // Anonymous because the chat is readable without a session on a public stream.
+    path: "/w/:slug/:streamID/chat/popup",
+    name: "stream-chat-popup",
+    component: ChatPopupView,
+    meta: { bare: true, anonymous: true },
+  },
+  {
     path: "/w/:slug/:streamID/chat",
     name: "stream-chat",
     component: ChatPopupView,

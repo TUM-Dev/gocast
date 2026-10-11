@@ -8,30 +8,10 @@ import { EmptySchema } from "@bufbuild/protobuf/wkt";
 
 import {
   EndStreamRequestSchema,
-  ListAllowedStreamReactionsResponseSchema,
-  StreamWatchSchema,
   SwitchCameraPresetRequestSchema,
   type StreamReactionStatsEvent,
-  type StreamWatch,
 } from "@/gen/server/apiv2_pb";
-import { apiGetMessage, apiGetMessageOptionalAuth, apiPostMessage } from "./api";
-
-/**
- * Everything the watch page renders. Anonymous callers are served on a public course,
- * so this does not insist on a session; a signed-in one gets the admin slice too.
- */
-export function fetchStreamWatch(slug: string, streamId: number): Promise<StreamWatch> {
-  return apiGetMessageOptionalAuth(
-    StreamWatchSchema,
-    `/streams/${encodeURIComponent(slug)}/${streamId}/watch`,
-  );
-}
-
-/** The emoji a viewer may react with, in display order. */
-export async function fetchAllowedReactions(streamId: number): Promise<string[]> {
-  const res = await apiGetMessage(ListAllowedStreamReactionsResponseSchema, `/streams/${streamId}/reactions/allowed`);
-  return res.reactions;
-}
+import { apiPostMessage } from "./api";
 
 /** Moves the stream's camera to a preset; resolves once the camera has had time to arrive. */
 export async function switchCameraPreset(courseId: number, streamId: number, presetId: number): Promise<void> {
