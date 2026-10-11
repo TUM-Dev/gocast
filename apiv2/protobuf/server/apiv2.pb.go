@@ -4361,10 +4361,13 @@ func (x *GetProgressBatchRequest) GetStreamIds() []uint32 {
 }
 
 type UpdateProgressRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StreamId      uint32                 `protobuf:"varint,1,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
-	Progress      float32                `protobuf:"fixed32,2,opt,name=progress,proto3" json:"progress,omitempty"`
-	Watched       bool                   `protobuf:"varint,3,opt,name=watched,proto3" json:"watched,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	StreamId uint32                 `protobuf:"varint,1,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
+	Progress float32                `protobuf:"fixed32,2,opt,name=progress,proto3" json:"progress,omitempty"`
+	// Absent: a plain progress report, which leaves the watched flag alone. true marks the
+	// stream watched, false clears the mark ("unmark as watched"). Optional so that the two
+	// cannot be confused: a report that merely carries false must not undo a mark.
+	Watched       *bool `protobuf:"varint,3,opt,name=watched,proto3,oneof" json:"watched,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4414,8 +4417,8 @@ func (x *UpdateProgressRequest) GetProgress() float32 {
 }
 
 func (x *UpdateProgressRequest) GetWatched() bool {
-	if x != nil {
-		return x.Watched
+	if x != nil && x.Watched != nil {
+		return *x.Watched
 	}
 	return false
 }
@@ -19762,11 +19765,13 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\aentries\x18\x01 \x03(\v2\x1d.protobuf.StreamPlaylistEntryR\aentries\"8\n" +
 	"\x17GetProgressBatchRequest\x12\x1d\n" +
 	"\n" +
-	"stream_ids\x18\x01 \x03(\rR\tstreamIds\"j\n" +
+	"stream_ids\x18\x01 \x03(\rR\tstreamIds\"{\n" +
 	"\x15UpdateProgressRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\rR\bstreamId\x12\x1a\n" +
-	"\bprogress\x18\x02 \x01(\x02R\bprogress\x12\x18\n" +
-	"\awatched\x18\x03 \x01(\bR\awatched\"[\n" +
+	"\bprogress\x18\x02 \x01(\x02R\bprogress\x12\x1d\n" +
+	"\awatched\x18\x03 \x01(\bH\x00R\awatched\x88\x01\x01B\n" +
+	"\n" +
+	"\b_watched\"[\n" +
 	"\x18GetProgressBatchResponse\x12?\n" +
 	"\x0eprogress_batch\x18\x01 \x03(\v2\x18.protobuf.StreamProgressR\rprogressBatch\"R\n" +
 	"\bDownload\x12#\n" +
@@ -22090,6 +22095,7 @@ func file_server_apiv2_proto_init() {
 	}
 	file_server_apiv2_proto_msgTypes[32].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[56].OneofWrappers = []any{}
+	file_server_apiv2_proto_msgTypes[61].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[86].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[140].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[143].OneofWrappers = []any{}

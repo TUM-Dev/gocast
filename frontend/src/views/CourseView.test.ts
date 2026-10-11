@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 import CourseView from "./CourseView.vue";
@@ -242,6 +242,67 @@ describe("watch progress", () => {
     await render();
 
     expect(fetchProgress).toHaveBeenCalledWith([1]);
+  });
+});
+
+describe("a watch progress that cannot be loaded", () => {
+  const recordings = () =>
+    makeCourse([lecture(1, -HOUR, { recording: true }), lecture(2, -2 * HOUR, { recording: true })]);
+
+  beforeEach(() => vi.useFakeTimers({ toFake: ["setTimeout"] }));
+  afterEach(() => vi.useRealTimers());
+
+  async function renderAfterBackoff() {
+    const pending = render();
+    await vi.advanceTimersByTimeAsync(10_000);
+    return pending;
+  }
+
+  it("says so, with the rest of the page still working", async () => {
+    fetchCourse.mockResolvedValue(recordings());
+    fetchProgress.mockRejectedValue(new ApiError(500, "down"));
+
+    const wrapper = await renderAfterBackoff();
+
+    expect(wrapper.text()).toContain("Couldn't load your watch progress");
+    expect(wrapper.text()).toContain("Lecture 1");
+    expect(wrapper.text()).toContain("Hide watched");
+  });
+
+  it("does not say so after a transient failure that a retry got past", async () => {
+    fetchCourse.mockResolvedValue(recordings());
+    fetchProgress
+      .mockRejectedValueOnce(new ApiError(503, "busy"))
+      .mockResolvedValue(new Map([[1, { streamId: 1, progress: 1, watched: true }]]));
+
+    const wrapper = await renderAfterBackoff();
+
+    expect(wrapper.text()).not.toContain("Couldn't load your watch progress");
+    expect(wrapper.find(".tum-live-thumbnail i.fa-eye").exists()).toBe(true);
+  });
+
+  it("loads the marks and drops the notice when the viewer retries", async () => {
+    fetchCourse.mockResolvedValue(recordings());
+    fetchProgress.mockRejectedValue(new ApiError(500, "down"));
+    const wrapper = await renderAfterBackoff();
+
+    fetchProgress.mockReset();
+    fetchProgress.mockResolvedValue(new Map([[1, { streamId: 1, progress: 1, watched: true }]]));
+    await wrapper.find("[role=status] button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Couldn't load your watch progress");
+    expect(wrapper.find(".tum-live-thumbnail i.fa-eye").exists()).toBe(true);
+  });
+
+  it("shows nothing of the kind to an anonymous visitor", async () => {
+    fetchCourse.mockResolvedValue(recordings());
+    fetchProgress.mockRejectedValue(new ApiError(401, "unauthenticated"));
+
+    const wrapper = await render(false);
+
+    expect(fetchProgress).not.toHaveBeenCalled();
+    expect(wrapper.text()).not.toContain("Couldn't load your watch progress");
   });
 });
 
