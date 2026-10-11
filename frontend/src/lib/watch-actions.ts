@@ -88,6 +88,18 @@ export function formatClock(totalSeconds: number): string {
   return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
 }
 
+/**
+ * The share dialog's start time: "1:02:05", "02:05" or plain seconds "125"; null for
+ * anything else (minutes and seconds past 59 included -- "0:99" is a typo, not 99 s).
+ */
+export function parseShareTime(text: string): number | null {
+  const parts = text.trim().split(":");
+  if (parts.length > 3 || parts.some((p) => !/^\d{1,5}$/.test(p))) return null;
+  const numbers = parts.map(Number);
+  if (numbers.length > 1 && numbers.slice(1).some((n) => n > 59)) return null;
+  return numbers.reduce((total, n) => total * 60 + n, 0);
+}
+
 export interface AttachmentLink {
   label: string;
   href: string;

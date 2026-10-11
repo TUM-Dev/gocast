@@ -35,7 +35,7 @@ function bar(props: Record<string, unknown> = {}) {
       viewer: { signedIn: true, isCourseAdmin: false, canReportIssue: true },
       layout: WatchLayout.COMBINED,
       live: false,
-      controller: { getCurrentTime: () => 125.4 },
+      controller: { getCurrentTime: () => 125.4, getDuration: () => 3600 },
       pageUrl: "https://tum.live/w/c/7/COMB?rate=2",
       ...props,
     } as never,
@@ -123,13 +123,45 @@ describe("WatchActionBar", () => {
     const input = body().querySelector<HTMLInputElement>("#watch-share-url")!;
     expect(input.value).toBe("https://tum.live/w/c/7/COMB");
     const box = body().querySelector<HTMLInputElement>("#watch-share-time")!;
-    expect(body().textContent).toContain("Start at 00:02:05");
+    expect(body().querySelector("#watch-share-time-value")).toBeNull();
     box.click();
     await flushPromises();
+    expect(body().querySelector<HTMLInputElement>("#watch-share-time-value")!.value).toBe("00:02:05");
     expect(input.value).toBe("https://tum.live/w/c/7/COMB?t=125");
     [...body().querySelectorAll("button")].find((b) => b.textContent?.includes("Copy"))!.click();
     await flushPromises();
     expect(writeText).toHaveBeenCalledWith("https://tum.live/w/c/7/COMB?t=125");
+    w.unmount();
+  });
+
+  it("lets the viewer edit the start time, and the URL follows", async () => {
+    const w = bar();
+    await byLabel(w, "Share").trigger("click");
+    const input = body().querySelector<HTMLInputElement>("#watch-share-url")!;
+    body().querySelector<HTMLInputElement>("#watch-share-time")!.click();
+    await flushPromises();
+    const field = body().querySelector<HTMLInputElement>("#watch-share-time-value")!;
+
+    field.value = "00:10:30";
+    field.dispatchEvent(new Event("input"));
+    await flushPromises();
+    expect(input.value).toBe("https://tum.live/w/c/7/COMB?t=630");
+
+    // Not a time: the URL keeps the last good one and the field is flagged.
+    field.value = "10:99";
+    field.dispatchEvent(new Event("input"));
+    await flushPromises();
+    expect(input.value).toBe("https://tum.live/w/c/7/COMB?t=630");
+    expect(field.getAttribute("aria-invalid")).toBe("true");
+    expect(body().textContent).toContain("Enter the time as hh:mm:ss.");
+
+    // Past the end of the video: clamped to it, and the field shows the clamp.
+    field.value = "5:00:00";
+    field.dispatchEvent(new Event("input"));
+    field.dispatchEvent(new Event("blur"));
+    await flushPromises();
+    expect(input.value).toBe("https://tum.live/w/c/7/COMB?t=3600");
+    expect(field.value).toBe("01:00:00");
     w.unmount();
   });
 

@@ -10,6 +10,7 @@ import {
   fetchSeekHeatmap,
   fetchSections,
   formatClock,
+  parseShareTime,
   heatmapPath,
   layoutOptions,
   reportIssue,
@@ -174,5 +175,16 @@ describe("seekbar data", () => {
     respond(() => json({}));
     await reportSeek(5, 12.5);
     expect(JSON.parse(calls()[0][1].body)).toEqual({ streamId: 5, position: 12.5 });
+  });
+});
+
+describe("parseShareTime", () => {
+  it("reads hh:mm:ss, mm:ss and plain seconds", () => {
+    expect(parseShareTime("01:02:05")).toBe(3725);
+    expect(parseShareTime("2:05")).toBe(125);
+    expect(parseShareTime(" 125 ")).toBe(125);
+  });
+  it("rejects what is not a time", () => {
+    for (const bad of ["", "abc", "1:2:3:4", "1:99", "-5", "1.5", "1::2"]) expect(parseShareTime(bad), bad).toBeNull();
   });
 });
