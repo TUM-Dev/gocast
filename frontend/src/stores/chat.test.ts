@@ -211,3 +211,27 @@ describe("the chat store", () => {
     expect(useChatStore(7)).not.toBe(useChatStore(8));
   });
 });
+
+describe("the chat store's connection state", () => {
+  it("remembers why the server hung up until a connection holds", async () => {
+    const { store, conn } = await started();
+
+    conn.options.onClose!(4401, "token expired");
+    expect(store.lastCloseCode).toBe(4401);
+
+    conn.options.onStatus!("open");
+    expect(store.lastCloseCode).toBeUndefined();
+  });
+
+  it("keeps the code of a refusal, and still loads what the read allows", async () => {
+    fetchChatMessages.mockResolvedValue([]);
+    fetchActivePoll.mockResolvedValue(undefined);
+    const store = useChatStore(7);
+    store.start();
+
+    connections.at(-1)!.options.onFatal!(4404, "stream not found");
+
+    expect(store.fatalCode).toBe(4404);
+    expect(store.error).toBe("stream not found");
+  });
+});

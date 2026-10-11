@@ -88,6 +88,7 @@ var spaRoutes = map[string]bool{
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
 	"/admin/create-course":                              true,
 	"/admin":                                            true,
+	"/w/:slug/:streamID/chat":                           true,
 }
 
 // spaRouteHooks holds work a route must still do server-side, run before the shell is
@@ -404,6 +405,8 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopOutChat)
+	// The SPA's chat, beside the popup until step 5 of the chat migration replaces it.
+	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID/chat", nil)
 
 	// misc
 	router.GET("/healthcheck", routes.HealthCheck)

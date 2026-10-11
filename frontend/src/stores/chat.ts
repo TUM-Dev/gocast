@@ -36,6 +36,10 @@ export function useChatStore(streamId: number) {
     const status = ref<RealtimeStatus>("closed");
     const loaded = ref(false);
     const error = ref<string | undefined>(undefined);
+    /** The close code of a refusal that will not be retried: 4400, 4403 or 4404. */
+    const fatalCode = ref<number | undefined>(undefined);
+    /** The close code of the last time the server hung up, until a connection holds. */
+    const lastCloseCode = ref<number | undefined>(undefined);
 
     let connection: RealtimeConnection | null = null;
     /** Events received while a snapshot is in flight, applied once it lands. */
@@ -183,8 +187,13 @@ export function useChatStore(streamId: number) {
         streamId,
         onEvent: apply,
         onResync: () => void snapshot(),
-        onStatus: (s) => (status.value = s),
-        onFatal: (_code, reason) => {
+        onStatus: (s) => {
+          status.value = s;
+          if (s === "open") lastCloseCode.value = undefined;
+        },
+        onClose: (code) => (lastCloseCode.value = code),
+        onFatal: (code, reason) => {
+          fatalCode.value = code;
           error.value = reason || "the chat is not available";
           // Still worth showing what the chat holds; the read decides for itself.
           void snapshot();
@@ -209,6 +218,8 @@ export function useChatStore(streamId: number) {
       status,
       loaded,
       error,
+      fatalCode,
+      lastCloseCode,
       apply,
       snapshot,
       start,

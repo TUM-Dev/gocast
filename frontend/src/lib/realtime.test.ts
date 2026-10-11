@@ -50,6 +50,7 @@ function connect(overrides: Partial<RealtimeOptions> = {}) {
     onResync: vi.fn(),
     onStatus: vi.fn(),
     onFatal: vi.fn(),
+    onClose: vi.fn(),
     random: () => 0.5,
     ...overrides,
   };
@@ -176,6 +177,14 @@ describe("RealtimeConnection", () => {
     await vi.advanceTimersByTimeAsync(60_000);
     expect(FakeSocket.instances).toHaveLength(2);
     expect(options.onFatal).toHaveBeenCalledWith(4403, "not allowed");
+  });
+
+  it("reports every close, retried or not", async () => {
+    const { options } = connect();
+    await settle();
+    latest().drop(4401, "token expired");
+    expect(options.onClose).toHaveBeenCalledWith(4401, "token expired");
+    expect(options.onFatal).not.toHaveBeenCalled();
   });
 
   it("stays closed after close()", async () => {

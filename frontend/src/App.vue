@@ -34,6 +34,7 @@ onMounted(async () => {
   <!-- Layout copied from the body and #content wrapper of the server-rendered pages. -->
   <div class="tum-live-bg flex h-screen flex-col items-stretch">
     <AppHeader
+      v-if="!route.meta.bare"
       :minimal="route.meta.minimalHeader"
       :show-sidenav-toggle="route.meta.sidenav"
       @toggle-sidenav="sidenav.toggle()"
