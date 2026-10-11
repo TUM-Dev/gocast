@@ -31,6 +31,7 @@ import InfoPagesView from "@/views/admin/InfoPagesView.vue";
 import IntegrationsView from "@/views/admin/IntegrationsView.vue";
 import LectureHallCreateView from "@/views/admin/LectureHallCreateView.vue";
 import LectureHallsView from "@/views/admin/LectureHallsView.vue";
+import LectureLiveView from "@/views/admin/LectureLiveView.vue";
 import LectureStatsView from "@/views/admin/LectureStatsView.vue";
 import MaintenanceView from "@/views/admin/MaintenanceView.vue";
 import NotificationsView from "@/views/admin/NotificationsView.vue";
@@ -232,6 +233,13 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/courses/:courseID/lectures/:streamID/stats",
     name: "admin-lecture-stats",
     component: LectureStatsView,
+  },
+  {
+    // The lecturer's view of a running lecture; replaces /admin/management/:c/:s. Not in
+    // spaRoutes until the watch flip, which also redirects the old URL here.
+    path: "/admin/courses/:courseID/lectures/:streamID/live",
+    name: "admin-lecture-live",
+    component: LectureLiveView,
   },
   {
     path: "/admin/create-course",
