@@ -11,12 +11,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
-	"github.com/TUM-Dev/gocast/api"
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 )
+
+// No v1 mirror, by decision: the watch pages and the old chat UI are replaced together,
+// so these writes are not repeated to the old sockets.
 
 const (
 	maxPollQuestion = 500
@@ -98,7 +100,6 @@ func (a *API) ApproveChatMessage(ctx context.Context, req *protobuf.ApproveChatM
 	// No viewer's view (0): the message goes to everyone, and nobody has reacted to it yet.
 	toAll := visibleReplies(*chat)
 	a.publish(ctx, stream.ID, realtimehub.MessageEvent(stream.ID, chatMessageToProto(&toAll, 0), false, 0))
-	api.MirrorChatApproved(stream.ID, toAll)
 
 	return &protobuf.ApproveChatMessageResponse{Message: chatMessageToProto(chat, user.ID)}, nil
 }
@@ -126,7 +127,6 @@ func (a *API) RetractChatMessage(ctx context.Context, req *protobuf.RetractChatM
 	chat.Reactions = nil
 
 	a.publish(ctx, stream.ID, realtimehub.MessageRetractedEvent(stream.ID, chat.ID))
-	api.MirrorChatRetracted(stream.ID, *chat)
 
 	return &protobuf.RetractChatMessageResponse{Message: chatMessageToProto(chat, user.ID)}, nil
 }
@@ -148,7 +148,6 @@ func (a *API) DeleteChatMessage(ctx context.Context, req *protobuf.DeleteChatMes
 	}
 
 	a.publish(ctx, stream.ID, realtimehub.MessageDeletedEvent(stream.ID, chat.ID, chat.Visible.Bool, chatAuthorID(chat)))
-	api.MirrorChatDeleted(stream.ID, chat.ID)
 
 	return &emptypb.Empty{}, nil
 }
@@ -171,7 +170,6 @@ func (a *API) ResolveChatMessage(ctx context.Context, req *protobuf.ResolveChatM
 	chat.Resolved = true
 
 	a.publish(ctx, stream.ID, realtimehub.MessageResolvedEvent(stream.ID, chat.ID, chat.Visible.Bool, chatAuthorID(chat)))
-	api.MirrorChatResolved(stream.ID, chat.ID)
 
 	return &protobuf.ResolveChatMessageResponse{Message: chatMessageToProto(chat, user.ID)}, nil
 }
@@ -221,7 +219,6 @@ func (a *API) StartChatPoll(ctx context.Context, req *protobuf.StartChatPollRequ
 		return nil, err
 	}
 	a.publish(ctx, stream.ID, realtimehub.PollStartedEvent(stream.ID, out))
-	api.MirrorPollStarted(stream.ID, poll)
 
 	return &protobuf.StartChatPollResponse{Poll: out}, nil
 }
@@ -253,12 +250,7 @@ func (a *API) CloseChatPoll(ctx context.Context, req *protobuf.CloseChatPollRequ
 	}
 	out.Active = false
 
-	votes := make(map[uint]int64, len(out.Options))
-	for _, o := range out.Options {
-		votes[uint(o.Id)] = int64(o.Votes)
-	}
 	a.publish(ctx, stream.ID, realtimehub.PollClosedEvent(stream.ID, out))
-	api.MirrorPollClosed(stream.ID, poll, votes)
 
 	return &protobuf.CloseChatPollResponse{Poll: out}, nil
 }
