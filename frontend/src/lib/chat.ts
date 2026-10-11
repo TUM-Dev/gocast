@@ -9,6 +9,16 @@ import { create } from "@bufbuild/protobuf";
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 
 import {
+  ApproveChatMessageRequestSchema,
+  ApproveChatMessageResponseSchema,
+  CloseChatPollRequestSchema,
+  CloseChatPollResponseSchema,
+  ResolveChatMessageRequestSchema,
+  ResolveChatMessageResponseSchema,
+  RetractChatMessageRequestSchema,
+  RetractChatMessageResponseSchema,
+  StartChatPollRequestSchema,
+  StartChatPollResponseSchema,
   GetActiveChatPollResponseSchema,
   ListChatMessagesResponseSchema,
   ListChatPollsResponseSchema,
@@ -19,11 +29,18 @@ import {
   ToggleChatReactionResponseSchema,
   VoteChatPollRequestSchema,
   VoteChatPollResponseSchema,
+  type ChatAccess as ChatAccessProto,
   type ChatMessage as ChatMessageProto,
   type ChatPoll as ChatPollProto,
   type ChatReactionSummary,
 } from "@/gen/server/apiv2_pb";
-import { ApiError, apiGetMessage, apiGetMessageOptionalAuth, apiPostMessage } from "./api";
+import {
+  ApiError,
+  apiDelete,
+  apiGetMessage,
+  apiGetMessageOptionalAuth,
+  apiPostMessage,
+} from "./api";
 
 export interface ChatReaction {
   /** The emoji's short name, e.g. `+1` or `tada`. */
@@ -72,6 +89,26 @@ export interface ChatPoll {
   votedOptionId?: number;
 }
 
+/** What the caller may do in the chat; the server checks every write for itself. */
+export interface ChatAccess {
+  /** Signed in, and the chat is on. */
+  canWrite: boolean;
+  /** Administers the course: moderates messages and runs polls. */
+  canModerate: boolean;
+  /** The course allows anonymous messages. */
+  anonymousAllowed: boolean;
+  /** Messages of ordinary users wait for approval. */
+  moderated: boolean;
+}
+
+/** Read-only until the first snapshot says otherwise. */
+export const NO_ACCESS: ChatAccess = {
+  canWrite: false,
+  canModerate: false,
+  anonymousAllowed: false,
+  moderated: false,
+};
+
 export interface ChatUser {
   id: number;
   name: string;
@@ -100,6 +137,17 @@ export function toChatMessage(m: ChatMessageProto): ChatMessage {
   };
 }
 
+export function toChatAccess(a: ChatAccessProto | undefined): ChatAccess {
+  return a
+    ? {
+        canWrite: a.canWrite,
+        canModerate: a.canModerate,
+        anonymousAllowed: a.anonymousAllowed,
+        moderated: a.moderated,
+      }
+    : NO_ACCESS;
+}
+
 export function toChatPoll(p: ChatPollProto): ChatPoll {
   return {
     id: p.id,
@@ -112,13 +160,15 @@ export function toChatPoll(p: ChatPollProto): ChatPoll {
 
 const base = (streamId: number) => `/streams/${streamId}/chat`;
 
-/** The messages the caller may see, oldest first, replies nested. */
-export async function fetchChatMessages(streamId: number): Promise<ChatMessage[]> {
+/** The messages the caller may see, oldest first, replies nested, and what they may do. */
+export async function fetchChatMessages(
+  streamId: number,
+): Promise<{ messages: ChatMessage[]; access: ChatAccess }> {
   const res = await apiGetMessageOptionalAuth(
     ListChatMessagesResponseSchema,
     `${base(streamId)}/messages`,
   );
-  return res.messages.map(toChatMessage);
+  return { messages: res.messages.map(toChatMessage), access: toChatAccess(res.access) };
 }
 
 /** The running poll, or undefined when there is none. */
@@ -230,6 +280,77 @@ export async function vote(streamId: number, pollOptionId: number): Promise<Chat
       `${base(streamId)}/polls/votes`,
       create(VoteChatPollRequestSchema, { streamId, pollOptionId }),
     ),
+  );
+  if (!res.poll) throw new Error("the server answered without the poll");
+  return toChatPoll(res.poll);
+}
+
+// ----- Moderation and polls, for the course's administrators -----
+
+/** Publishes a message that awaited approval to every viewer. */
+export async function approveMessage(streamId: number, messageId: number): Promise<ChatMessage> {
+  const res = await apiPostMessage(
+    ApproveChatMessageRequestSchema,
+    ApproveChatMessageResponseSchema,
+    `${base(streamId)}/messages/${messageId}/approve`,
+    create(ApproveChatMessageRequestSchema, { streamId, messageId }),
+  );
+  if (!res.message) throw new Error("the server answered without the message");
+  return toChatMessage(res.message);
+}
+
+/** Hides an approved message again, and drops its reactions. */
+export async function retractMessage(streamId: number, messageId: number): Promise<ChatMessage> {
+  const res = await apiPostMessage(
+    RetractChatMessageRequestSchema,
+    RetractChatMessageResponseSchema,
+    `${base(streamId)}/messages/${messageId}/retract`,
+    create(RetractChatMessageRequestSchema, { streamId, messageId }),
+  );
+  if (!res.message) throw new Error("the server answered without the message");
+  return toChatMessage(res.message);
+}
+
+/** Marks a message as resolved. */
+export async function resolveMessage(streamId: number, messageId: number): Promise<ChatMessage> {
+  const res = await apiPostMessage(
+    ResolveChatMessageRequestSchema,
+    ResolveChatMessageResponseSchema,
+    `${base(streamId)}/messages/${messageId}/resolve`,
+    create(ResolveChatMessageRequestSchema, { streamId, messageId }),
+  );
+  if (!res.message) throw new Error("the server answered without the message");
+  return toChatMessage(res.message);
+}
+
+/** Deletes a message, and its replies, for everyone. */
+export function deleteMessage(streamId: number, messageId: number): Promise<void> {
+  return apiDelete(`${base(streamId)}/messages/${messageId}`);
+}
+
+/** Starts a poll. Rejects with a 409 ApiError while another one is running. */
+export async function startPoll(
+  streamId: number,
+  question: string,
+  answers: string[],
+): Promise<ChatPoll> {
+  const res = await apiPostMessage(
+    StartChatPollRequestSchema,
+    StartChatPollResponseSchema,
+    `${base(streamId)}/polls`,
+    create(StartChatPollRequestSchema, { streamId, question, answers }),
+  );
+  if (!res.poll) throw new Error("the server answered without the poll");
+  return toChatPoll(res.poll);
+}
+
+/** Closes the running poll. Resolves with it and its final counts. */
+export async function closePoll(streamId: number): Promise<ChatPoll> {
+  const res = await apiPostMessage(
+    CloseChatPollRequestSchema,
+    CloseChatPollResponseSchema,
+    `${base(streamId)}/polls/active/close`,
+    create(CloseChatPollRequestSchema, { streamId }),
   );
   if (!res.poll) throw new Error("the server answered without the poll");
   return toChatPoll(res.poll);

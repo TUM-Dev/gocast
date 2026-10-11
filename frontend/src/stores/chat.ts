@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import {
   fetchActivePoll,
@@ -10,19 +10,23 @@ import {
   toChatMessage,
   toChatPoll,
   toChatReaction,
+  NO_ACCESS,
+  approveMessage,
+  closePoll,
+  deleteMessage,
+  resolveMessage,
+  retractMessage,
+  startPoll,
+  type ChatAccess,
   type ChatMessage,
   type ChatPoll,
   type NewChatMessage,
 } from "@/lib/chat";
-import {
-  CLOSE_UNAUTHORIZED,
-  RealtimeConnection,
-  type RealtimeEvent,
-  type RealtimeStatus,
-} from "@/lib/realtime";
+import { CLOSE_UNAUTHORIZED, type RealtimeEvent } from "@/lib/realtime";
+import { useStreamRealtime } from "@/stores/streamRealtime";
 
 /**
- * One stream's chat, kept current by the realtime socket.
+ * One stream's chat, kept current by the stream's shared realtime socket.
  *
  * The state is a snapshot plus the events since. The snapshot is (re)loaded whenever
  * the connection says it may have missed something — including once it first
@@ -36,27 +40,22 @@ export function useChatStore(streamId: number) {
     const activePoll = ref<ChatPoll | undefined>(undefined);
     /** The poll that closed last, with its results. */
     const closedPoll = ref<ChatPoll | undefined>(undefined);
-    const viewers = ref(0);
-    /** Pushed changes to the stream itself; undefined until one arrives. */
-    const live = ref<boolean | undefined>(undefined);
-    const title = ref<string | undefined>(undefined);
-    const descriptionHtml = ref<string | undefined>(undefined);
+    /** What the caller may do; read-only until the first snapshot says otherwise. */
+    const access = ref<ChatAccess>(NO_ACCESS);
 
-    const status = ref<RealtimeStatus>("closed");
+    // The socket is the stream's, shared with everything else on the page listening to
+    // it; the connection's state is read through from there.
+    const realtime = useStreamRealtime(streamId);
+    const viewers = computed(() => realtime.viewers);
+    const status = computed(() => realtime.status);
+    const fatalCode = computed(() => realtime.fatalCode);
+    const lastCloseCode = computed(() => realtime.lastCloseCode);
+    const sessionExpired = computed(() => realtime.sessionExpired);
+
     const loaded = ref(false);
     const error = ref<string | undefined>(undefined);
-    /** The close code of a refusal that will not be retried: 4400, 4403, 4404, or a 4401 refused twice in a row. */
-    const fatalCode = ref<number | undefined>(undefined);
-    /** The close code of the last time the server hung up, until a connection holds. */
-    const lastCloseCode = ref<number | undefined>(undefined);
-    /**
-     * The socket was refused because the session ended. The chat as last loaded stays
-     * readable, but nothing live arrives and nothing can be written until the user
-     * signs in again.
-     */
-    const sessionExpired = ref(false);
 
-    let connection: RealtimeConnection | null = null;
+    let unsubscribe: (() => void) | null = null;
     /** Events received while a snapshot is in flight, applied once it lands. */
     let held: RealtimeEvent[] | null = null;
     /** Which snapshot is current, so an older one finishing late is discarded. */
@@ -107,6 +106,18 @@ export function useChatStore(streamId: number) {
       }
     }
 
+    /**
+     * Kept, hidden: an administrator still lists a retracted message, and the view
+     * decides who sees a message that is not visible.
+     */
+    function hideMessage(id: number): void {
+      const m = findMessage(id);
+      if (m) {
+        m.visible = false;
+        m.reactions = [];
+      }
+    }
+
     /** Applies one event to the state. Exposed for tests and for optimistic updates. */
     function apply(event: RealtimeEvent): void {
       if (held !== null) {
@@ -127,16 +138,9 @@ export function useChatStore(streamId: number) {
           if (m) m.resolved = true;
           break;
         }
-        case "messageRetracted": {
-          // Kept, hidden: an administrator still lists it, and the view decides who
-          // sees a message that is not visible.
-          const m = findMessage(e.value.messageId);
-          if (m) {
-            m.visible = false;
-            m.reactions = [];
-          }
+        case "messageRetracted":
+          hideMessage(e.value.messageId);
           break;
-        }
         case "reactions": {
           const m = findMessage(e.value.messageId);
           if (m) m.reactions = e.value.reactions.map(toChatReaction);
@@ -155,21 +159,8 @@ export function useChatStore(streamId: number) {
           if (option) option.votes = e.value.votes;
           break;
         }
-        case "viewers":
-          viewers.value = e.value.viewers;
-          break;
-        case "live":
-          live.value = e.value.live;
-          break;
-        case "title":
-          title.value = e.value.title;
-          break;
-        case "description":
-          descriptionHtml.value = e.value.html;
-          break;
-        case "resync":
-        case undefined:
-          // The connection turns a resync into a snapshot; nothing to apply.
+        default:
+          // The stream's own events are the shared socket's; a resync reaches us as a snapshot.
           break;
       }
     }
@@ -179,12 +170,13 @@ export function useChatStore(streamId: number) {
       const mine = ++generation;
       held ??= [];
       try {
-        const [m, poll] = await Promise.all([
+        const [chat, poll] = await Promise.all([
           fetchChatMessages(streamId),
           fetchActivePoll(streamId),
         ]);
         if (mine !== generation) return; // a newer snapshot owns the held events
-        messages.value = m;
+        messages.value = chat.messages;
+        access.value = chat.access;
         activePoll.value = poll;
         loaded.value = true;
         // A snapshot that loads after the session ended must not hide the reason
@@ -200,29 +192,18 @@ export function useChatStore(streamId: number) {
       replay.forEach(apply);
     }
 
-    /** Connects, and loads the chat once subscribed. Idempotent. */
+    /** Listens to the socket, and loads the chat once it has subscribed. Idempotent. */
     function start(): void {
-      if (connection) return;
-      connection = new RealtimeConnection({
-        streamId,
+      if (unsubscribe) return;
+      unsubscribe = realtime.subscribe({
         onEvent: apply,
         onResync: () => void snapshot(),
-        onStatus: (s) => {
-          status.value = s;
-          if (s === "open") lastCloseCode.value = undefined;
-        },
-        onClose: (code) => (lastCloseCode.value = code),
         onFatal: (code, reason) => {
-          fatalCode.value = code;
-          sessionExpired.value = code === CLOSE_UNAUTHORIZED;
-          error.value = sessionExpired.value
-            ? "your session has expired"
-            : reason || "the chat is not available";
+          error.value = code === CLOSE_UNAUTHORIZED ? "your session has expired" : reason || "the chat is not available";
           // Still worth showing what the chat holds; the read decides for itself.
           void snapshot();
         },
       });
-      connection.connect();
     }
 
     /**
@@ -250,19 +231,63 @@ export function useChatStore(streamId: number) {
       if (activePoll.value?.id === voted.id) activePoll.value = voted;
     }
 
+    // ----- Moderation and polls, for the course's administrators -----
+    // Each call applies its own result as well as waiting for the socket's event, as
+    // sendMessage does: the events are idempotent, so the second arrival is a no-op.
+
+    /** Publishes a message that awaited approval to every viewer. */
+    async function approve(messageId: number): Promise<void> {
+      upsertMessage(await approveMessage(streamId, messageId));
+    }
+
+    /** Hides an approved message again; it keeps its place for administrators and its author. */
+    async function retract(messageId: number): Promise<void> {
+      await retractMessage(streamId, messageId);
+      hideMessage(messageId);
+    }
+
+    /** Deletes a message, and its replies, for everyone. */
+    async function remove(messageId: number): Promise<void> {
+      await deleteMessage(streamId, messageId);
+      removeMessage(messageId);
+    }
+
+    /** Marks a message as resolved. */
+    async function resolve(messageId: number): Promise<void> {
+      await resolveMessage(streamId, messageId);
+      const m = findMessage(messageId);
+      if (m) m.resolved = true;
+    }
+
+    /** Starts a poll. Rejects with a 409 ApiError while another one is running. */
+    async function openPoll(question: string, answers: string[]): Promise<void> {
+      activePoll.value = await startPoll(streamId, question, answers);
+      closedPoll.value = undefined;
+    }
+
+    /** Closes the running poll and keeps its results for display. */
+    async function endPoll(): Promise<void> {
+      const results = await closePoll(streamId);
+      activePoll.value = undefined;
+      closedPoll.value = results;
+    }
+
+    /** Stops showing the results of the poll that closed. */
+    function dismissClosedPoll(): void {
+      closedPoll.value = undefined;
+    }
+
     function stop(): void {
-      connection?.close();
-      connection = null;
+      unsubscribe?.();
+      unsubscribe = null;
     }
 
     return {
       messages,
       activePoll,
       closedPoll,
+      access,
       viewers,
-      live,
-      title,
-      descriptionHtml,
       status,
       loaded,
       error,
@@ -272,6 +297,13 @@ export function useChatStore(streamId: number) {
       sendMessage,
       toggleReaction,
       vote,
+      approve,
+      retract,
+      remove,
+      resolve,
+      openPoll,
+      endPoll,
+      dismissClosedPoll,
       apply,
       snapshot,
       start,

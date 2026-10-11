@@ -20,6 +20,24 @@ const REACTION_GLYPHS: Record<string, string> = {
   eyes: "\u{1F440}",
 };
 
+/** The reactions a message can get, in the order the picker offers them; the server's list. */
+export const REACTIONS = ["+1", "-1", "smile", "tada", "confused", "heart", "eyes"] as const;
+
+const REACTION_NAMES: Record<string, string> = {
+  "+1": "Thumbs up",
+  "-1": "Thumbs down",
+  smile: "Smile",
+  tada: "Celebrate",
+  confused: "Confused",
+  heart: "Heart",
+  eyes: "Eyes",
+};
+
+/** What a screen reader says for a reaction. */
+export function reactionName(name: string): string {
+  return REACTION_NAMES[name] ?? name;
+}
+
 export function reactionGlyph(name: string): string {
   return REACTION_GLYPHS[name] ?? `:${name}:`;
 }
@@ -93,4 +111,39 @@ export function pollShare(poll: ChatPoll, votes: number): number {
 /** 14:05, in the viewer's locale and time zone. */
 export function formatMessageTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * Whether the viewer sees a message in the list. The server sends a held message to
+ * the course's administrators and its author only, but a message retracted while the
+ * viewer had it stays in their list until the page reloads, so the view enforces it too.
+ */
+export function isShown(message: ChatMessage, canModerate: boolean, userId?: number): boolean {
+  return message.visible || canModerate || (userId !== undefined && message.userId === userId);
+}
+
+/** The messages the viewer sees, replies included, for display; the input is not changed. */
+export function shownMessages(
+  messages: ChatMessage[],
+  canModerate: boolean,
+  userId?: number,
+): ChatMessage[] {
+  return messages
+    .filter((m) => isShown(m, canModerate, userId))
+    .map((m) => ({ ...m, replies: m.replies.filter((r) => isShown(r, canModerate, userId)) }));
+}
+
+/** How many messages wait for an administrator, replies included. */
+export function countAwaitingApproval(messages: ChatMessage[]): number {
+  return messages.reduce(
+    (n, m) => n + (m.visible ? 0 : 1) + m.replies.filter((r) => !r.visible).length,
+    0,
+  );
+}
+
+/** The longest message the server takes, in bytes once trimmed. */
+export const MAX_MESSAGE_BYTES = 1000;
+
+export function messageBytes(text: string): number {
+  return new TextEncoder().encode(text.trim()).length;
 }

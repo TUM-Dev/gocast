@@ -4,7 +4,7 @@ import { apiAs, login } from "./helpers";
 import { users } from "./seed";
 
 /**
- * The read-only chat on its own page, `/w/:slug/:streamID/chat`.
+ * The chat on its own page, `/w/:slug/:streamID/chat`.
  *
  * Messages are written the way the old UI writes them, over the v1 websocket, since
  * nothing in the SPA sends yet. Stream 8 is a recording in the public godev course,
@@ -59,7 +59,7 @@ async function postV1(page: Page, messages: { msg: string; replyTo?: number }[])
 }
 
 test.describe("the chat panel", () => {
-  test("lists the messages written before it opened, and is read-only", async ({ page, browser }) => {
+  test("lists the messages written before it opened", async ({ page, browser }) => {
     const token = `panel-${Date.now()}`;
     const poster = await browser.newPage();
     await login(poster, users.prof1);
@@ -75,7 +75,8 @@ test.describe("the chat panel", () => {
     const text = await page.getByTestId("chat-list").innerText();
     expect(text.indexOf(`${token} first`)).toBeLessThan(text.indexOf(`${token} second`));
     await expect(page.getByTestId("chat-list").getByText("Peter").first()).toBeVisible();
-    await expect(page.getByLabel("Message")).toBeDisabled();
+    // Stream 8's chat is on, so a signed-in student may write (chat-moderation.spec.ts does).
+    await expect(page.getByRole("textbox", { name: "Message", exact: true })).toBeEnabled();
     // The panel is the whole page: no application header around it.
     await expect(page.getByRole("banner")).toHaveCount(0);
   });
