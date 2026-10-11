@@ -10,25 +10,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-func (r mainRoutes) LectureUnitsPage(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	indexData := NewIndexData()
-	indexData.TUMLiveContext = tumLiveContext
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-units.gohtml", LectureUnitsPageData{
-		IndexData: indexData,
-		Lecture:   *tumLiveContext.Stream,
-		Units:     tumLiveContext.Stream.Units,
-	}); err != nil {
-		logger.Error("can not execute template", "err", err)
-	}
-}
-
 func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -66,12 +47,6 @@ func (r mainRoutes) LectureLiveManagementPage(c *gin.Context) {
 	}); err != nil {
 		logger.Error("can not execute template", "err", err)
 	}
-}
-
-type LectureUnitsPageData struct {
-	IndexData IndexData
-	Lecture   model.Stream
-	Units     []model.StreamUnit
 }
 
 type LiveLectureManagementData struct {

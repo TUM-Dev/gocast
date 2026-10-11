@@ -86,6 +86,7 @@ var spaRoutes = map[string]bool{
 	"/admin/courses/:courseID/participants": true,
 	"/admin/courses/:courseID/lectures":     true,
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
+	"/admin/courses/:courseID/lectures/:streamID/units": true,
 	"/admin/create-course":                              true,
 	"/admin":                                            true,
 	"/w/:slug/:streamID/chat":                           true,
@@ -381,11 +382,16 @@ func configMainRoute(router *gin.Engine) {
 			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/stats")
 	})
 
+	router.GET("/admin/units/:courseID/:streamID", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
+			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/units")
+	})
+
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))
-	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
 	// Rule 3's nested path; the old one redirects below.
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats", nil)
+	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/units", nil)
 	withStream.GET("/admin/management/:courseID/:streamID", routes.LectureLiveManagementPage)
 
 	// login/logout/password-mgmt

@@ -125,15 +125,25 @@ const watchLink = computed(() =>
             <i v-if="badge.key === 'private'" class="fas fa-eye-slash mr-1"></i>{{ badge.label }}
           </li>
         </ul>
-        <button
-          type="button"
-          class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
-          :aria-expanded="expanded"
-          :aria-controls="editorId"
-          @click="emit('toggle')"
-        >
+        <div class="flex gap-2">
+          <!-- Units are ranges of the recording, so there is nothing to cut before one exists. -->
+          <RouterLink
+            v-if="lecture.vodVersions.length"
+            :to="`/admin/courses/${courseId}/lectures/${lecture.id}/units`"
+            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+          >
+            Units
+          </RouterLink>
+          <button
+            type="button"
+            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+            :aria-expanded="expanded"
+            :aria-controls="editorId"
+            @click="emit('toggle')"
+          >
           {{ expanded ? "Close" : "Edit" }}
-        </button>
+          </button>
+        </div>
       </div>
     </div>
     <LectureEditor
