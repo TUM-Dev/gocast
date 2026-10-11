@@ -1,6 +1,8 @@
-package api
+// Package workergrpc is the gRPC link between tum-live and its workers: the server the
+// workers call (join, heartbeats, stream and transcoding notifications) and the calls
+// the main process makes to them (dispatching streams, previews, thumbnails).
+package workergrpc
 
-// worker_grpc.go handles communication with workers via grpc
 import (
 	"context"
 	"database/sql"
@@ -925,10 +927,11 @@ func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.
 	return nil
 }
 
-type generateVideoSectionImagesParameters struct {
-	sections                                    []model.VideoSection
-	playlistUrl, courseName, courseTeachingTerm string
-	courseYear                                  uint32
+// SectionImagesParameters is what a worker needs to cut thumbnails for sections.
+type SectionImagesParameters struct {
+	Sections                                    []model.VideoSection
+	PlaylistURL, CourseName, CourseTeachingTerm string
+	CourseYear                                  uint32
 }
 
 func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
@@ -954,7 +957,7 @@ func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 	return err
 }
 
-func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
+func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *SectionImagesParameters) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
 	if len(workers) == 0 {
 		return errors.New("no workers available")
@@ -972,8 +975,8 @@ func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateV
 	client := pb.NewToWorkerClient(conn)
 
 	// collect timestamps
-	sectionTimestamps := make([]*pb.Section, len(parameters.sections))
-	for i, section := range parameters.sections {
+	sectionTimestamps := make([]*pb.Section, len(parameters.Sections))
+	for i, section := range parameters.Sections {
 		sectionTimestamps[i] = &pb.Section{
 			Hours:   uint32(section.StartHours),
 			Minutes: uint32(section.StartMinutes),
@@ -985,10 +988,10 @@ func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateV
 	ctx, cancel := rpcCtx(workerJobTimeout)
 	defer cancel()
 	res, err := client.GenerateSectionImages(ctx, &pb.GenerateSectionImageRequest{
-		PlaylistURL:        parameters.playlistUrl,
-		CourseName:         parameters.courseName,
-		CourseYear:         parameters.courseYear,
-		CourseTeachingTerm: parameters.courseTeachingTerm,
+		PlaylistURL:        parameters.PlaylistURL,
+		CourseName:         parameters.CourseName,
+		CourseYear:         parameters.CourseYear,
+		CourseTeachingTerm: parameters.CourseTeachingTerm,
 		Sections:           sectionTimestamps,
 	})
 	if err != nil {
@@ -996,7 +999,7 @@ func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateV
 	}
 
 	// update database
-	for i, section := range parameters.sections {
+	for i, section := range parameters.Sections {
 		imageFile := model.File{StreamID: section.StreamID, Path: res.Paths[i], Type: model.FILETYPE_IMAGE_JPG}
 		if err := daoWrapper.FileDao.NewFile(&imageFile); err != nil {
 			return err

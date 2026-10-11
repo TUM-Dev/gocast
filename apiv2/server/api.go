@@ -154,6 +154,16 @@ func (a *API) Proxy() func(c *gin.Context) {
 			a.handleAuthToken(c)
 			return
 		}
+		// Beside the gateway too: it sets a session cookie, which an RPC cannot.
+		if id, ok := impersonateRouteOf(c.Request); ok {
+			a.handleImpersonate(c, id)
+			return
+		}
+		// Beside the gateway too: it answers text/calendar from a path with a file name.
+		if route, ok := courseCalendarRouteOf(c.Request); ok {
+			a.handleCourseCalendar(c, route.year, route.term, route.slug)
+			return
+		}
 		// Beside the gateway too: it cannot take a multipart body.
 		if route, ok := lectureUploadRouteOf(c.Request); ok {
 			a.handleLectureUpload(c, route)

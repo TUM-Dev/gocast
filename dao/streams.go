@@ -29,7 +29,6 @@ type StreamsDao interface {
 	GetDuePremieresForWorkers() []model.Stream
 	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
-	GetStreamsByIds(ids []uint) ([]model.Stream, error)
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
 	GetAllStreams() ([]model.Stream, error)
@@ -194,13 +193,6 @@ func (d streamsDao) GetStreamByTumOnlineID(ctx context.Context, id uint) (stream
 		return res, err
 	}
 	return res, nil
-}
-
-// GetStreamsByIds get multiple streams by their ids
-func (d streamsDao) GetStreamsByIds(ids []uint) ([]model.Stream, error) {
-	var streams []model.Stream
-	err := DB.Find(&streams, ids).Error
-	return streams, err
 }
 
 func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {

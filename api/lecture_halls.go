@@ -17,14 +17,7 @@ import (
 func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := lectureHallRoutes{DaoWrapper: daoWrapper}
 
-	admins := router.Group("/api")
-	admins.Use(tools.RequirePermission(model.PermAdministerServer))
-	// CRUD on lecture halls (create/update/delete) and camera preset management
-	// (refresh/default/snapshot) moved to v2 -- see apiv2/server/lecture_hall_admin.go
-	// -- and switching a live stream's preset followed, to apiv2/server/stream_camera.go,
-	// taking the camera service with it.
-	admins.POST("/setLectureHall", routes.setLectureHall)
-
+	// CRUD on lecture halls and camera presets live in apiv2/server/lecture_hall_admin.go.
 	router.GET("/api/schedule.ics", routes.lectureHallIcal)
 }
 
@@ -86,66 +79,4 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	if err != nil {
 		logger.Error("Error executing template ical.gotemplate", "err", err)
 	}
-}
-
-func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
-	var req setLectureHallRequest
-	err := c.BindJSON(&req)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-
-	streams, err := r.StreamsDao.GetStreamsByIds(req.StreamIDs)
-	if err != nil || len(streams) != len(req.StreamIDs) {
-		logger.Error("can not get all streams to update lecture hall", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not get all streams to update lecture hall",
-			Err:           err,
-		})
-		return
-	}
-
-	if req.LectureHallID == 0 {
-		err = r.StreamsDao.UnsetLectureHall(req.StreamIDs)
-		if err != nil {
-			logger.Error("can not update lecture hall for streams", "err", err)
-			_ = c.Error(tools.RequestError{
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "can not update lecture hall for streams",
-				Err:           err,
-			})
-		}
-		return
-	}
-
-	_, err = r.LectureHallsDao.GetLectureHallByID(req.LectureHallID)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not get lecture hall",
-			Err:           err,
-		})
-		return
-	}
-	err = r.StreamsDao.SetLectureHall(req.StreamIDs, req.LectureHallID)
-	if err != nil {
-		logger.Error("can not update lecture hall", "err", err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not update lecture hall",
-			Err:           err,
-		})
-		return
-	}
-}
-
-type setLectureHallRequest struct {
-	StreamIDs     []uint `json:"streamIDs"`
-	LectureHallID uint   `json:"lectureHall"`
 }

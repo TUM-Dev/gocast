@@ -13,7 +13,7 @@ import {
   UserSummarySchema,
   type UserSummary,
 } from "@/gen/server/apiv2_pb";
-import { apiDelete, apiGetMessage, apiPatchMessage, apiPostMessage } from "./api";
+import { apiDelete, apiFetch, apiGetMessage, apiPatchMessage, apiPostMessage } from "./api";
 
 /** model.User.Role, named once rather than spelled out at each comparison. */
 export const Role = {
@@ -112,18 +112,10 @@ export async function deleteUser(id: number): Promise<void> {
 }
 
 /**
- * Signs the caller in as another account, replacing their own session. Still v1: it
- * creates a session, which the SPA does not manage. Leave by full navigation after.
+ * Signs the caller in as another account, replacing their own session: the response
+ * sets the session cookie. Leave by full navigation after, so nothing keeps the old
+ * account's bearer token.
  */
 export async function impersonate(id: number): Promise<void> {
-  const response = await fetch("/api/users/impersonate", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
-  });
-
-  if (!response.ok) {
-    throw new Error("could not impersonate that account");
-  }
+  await apiFetch<void>(`/users/${id}/impersonate`, { method: "POST" });
 }

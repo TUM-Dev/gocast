@@ -1,4 +1,6 @@
-package api
+// Package search is the Meilisearch-backed search of courses, lectures and subtitles,
+// including the filters that decide who may find what.
+package search
 
 import (
 	"context"
@@ -13,15 +15,14 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// SearchCatalog is the search the v2 API exposes. It runs on v1's filter building
-// and post-filtering above, so both APIs agree on who may find what for as long as
-// both exist; v1's handlers go with the search page, the filters stay.
+// SearchCatalog is the search the v2 API exposes. It builds the filters and post-filters the
+// hits (filters.go) so that who may find what is decided in one place.
 type SearchCatalog struct {
 	Dao   dao.DaoWrapper
 	Meili tools.MeiliSearchInterface
 }
 
-// SearchScope narrows a search the way v1's URL parameters did: named semesters, a
+// SearchScope narrows a search: named semesters, a
 // range of them, or up to FilterMaxCoursesCount courses the caller may watch.
 type SearchScope struct {
 	Semesters []model.Semester
@@ -31,7 +32,7 @@ type SearchScope struct {
 	// courses, hidden ones included: naming a course is opting into it. The caller
 	// has checked the user may watch each.
 	Courses []model.Course
-	// Only courses, never lectures (v1's /api/search/courses).
+	// Only courses, never lectures.
 	CoursesOnly bool
 }
 
@@ -56,9 +57,8 @@ func (s SearchCatalog) Search(ctx context.Context, user *model.User, query strin
 	inCourses := len(scope.Courses) > 0
 	switch {
 	case inCourses:
-		// The gin context the filters take is never read; v1 passes it along by habit.
 		res = s.Meili.Search(query, limit, 3, "",
-			meiliStreamFilter(nil, user, model.Semester{}, scope.Courses),
+			meiliStreamFilter(user, model.Semester{}, scope.Courses),
 			meiliSubtitleFilter(user, scope.Courses))
 	case len(scope.Semesters) > 0 || (scope.FirstSemester != nil && scope.LastSemester != nil):
 		var first, last model.Semester
@@ -68,15 +68,15 @@ func (s SearchCatalog) Search(ctx context.Context, user *model.User, query strin
 		single, semester := determineSingleSemester(first, last, scope.Semesters)
 		if !scope.CoursesOnly && single {
 			res = s.Meili.Search(query, limit, 6,
-				meiliCourseFilter(nil, user, semester, semester, nil),
-				meiliStreamFilter(nil, user, semester, nil), "")
+				meiliCourseFilter(user, semester, semester, nil),
+				meiliStreamFilter(user, semester, nil), "")
 		} else {
-			res = s.Meili.Search(query, limit, 4, meiliCourseFilter(nil, user, first, last, scope.Semesters), "", "")
+			res = s.Meili.Search(query, limit, 4, meiliCourseFilter(user, first, last, scope.Semesters), "", "")
 		}
 	default:
-		// Every semester there is, as v1 did without parameters.
+		// Every semester there is.
 		res = s.Meili.Search(query, limit, 4,
-			meiliCourseFilter(nil, user, model.Semester{TeachingTerm: "S"}, model.Semester{TeachingTerm: "W", Year: 3000}, nil), "", "")
+			meiliCourseFilter(user, model.Semester{TeachingTerm: "S"}, model.Semester{TeachingTerm: "W", Year: 3000}, nil), "", "")
 	}
 	if res == nil {
 		return SearchHits{}, ErrSearchUnavailable

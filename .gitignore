@@ -102,6 +102,8 @@ migrate.linux-amd64
 
 # out
 edge-service/edge
+# `go build` inside the module directory names the binary after the module.
+edge-service/edge-service
 
 # secrets
 variables-backend.env

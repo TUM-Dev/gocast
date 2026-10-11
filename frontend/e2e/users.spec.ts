@@ -303,7 +303,7 @@ test.describe("changing what an account may do", () => {
   });
 
   test("continuing as another account replaces the session", async ({ page }) => {
-    // Still the v1 endpoint: it creates a session, which the SPA does not manage.
+    // POST /api/v2/users/{id}/impersonate answers with the new session cookie.
     await login(page, users.admin, "/admin/users");
 
     await page.getByLabel("Role", { exact: true }).selectOption({ label: "Student" });
@@ -324,5 +324,23 @@ test.describe("changing what an account may do", () => {
     });
 
     expect(me.user.name).toBe(users.studi1.name);
+  });
+});
+
+test.describe("impersonation over the API", () => {
+  test("is refused to anyone without users.manage, and to nobody signed in", async ({ playwright }) => {
+    // 403 for a lecturer; 401 with no session. Neither starts a session.
+    const prof = await apiAs(playwright, users.prof1);
+    const refused = await prof.post("/api/v2/users/1/impersonate");
+    expect(refused.status()).toBe(403);
+    expect(refused.headers()["set-cookie"]).toBeUndefined();
+
+    const anonymous = await apiAs(playwright);
+    expect((await anonymous.post("/api/v2/users/1/impersonate")).status()).toBe(401);
+  });
+
+  test("answers 404 for an account that does not exist", async ({ playwright }) => {
+    const admin = await apiAs(playwright, users.admin);
+    expect((await admin.post("/api/v2/users/999999/impersonate")).status()).toBe(404);
   });
 });

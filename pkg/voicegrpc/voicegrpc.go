@@ -1,17 +1,16 @@
-// voice_service_grpc.go handles communication between tum-live and voice-service
-
-package api
+// Package voicegrpc handles communication between tum-live and voice-service: the
+// receiver the voice-service posts finished subtitles to, and the client for
+// requesting them.
+package voicegrpc
 
 import (
 	"context"
 	"crypto/subtle"
-	"fmt"
 	"net"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
@@ -89,25 +87,4 @@ func (s *subtitleReceiverServer) authInterceptor(ctx context.Context, req interf
 	}
 
 	return handler(ctx, req)
-}
-
-type SubtitleGeneratorClient struct {
-	pb.SubtitleGeneratorClient
-	*grpc.ClientConn
-}
-
-func GetSubtitleGeneratorClient() (SubtitleGeneratorClient, error) {
-	voiceAddr := fmt.Sprintf("%s:%s", tools.Cfg.VoiceService.Host, tools.Cfg.VoiceService.Port)
-	conn, err := grpc.Dial(voiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return SubtitleGeneratorClient{}, err
-	}
-	return SubtitleGeneratorClient{pb.NewSubtitleGeneratorClient(conn), conn}, nil
-}
-
-func (s SubtitleGeneratorClient) CloseConn() {
-	err := s.ClientConn.Close()
-	if err != nil {
-		logger.Error("could not close voice-service connection", "err", err)
-	}
 }
