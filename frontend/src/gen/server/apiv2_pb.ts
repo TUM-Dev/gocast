@@ -8326,8 +8326,10 @@ export const StreamLiveEventSchema: GenMessage<StreamLiveEvent> = /*@__PURE__*/
   messageDesc(file_server_apiv2, 272);
 
 /**
- * A viewer reacted to a live stream. For the lecturer's reaction display, which
- * highlights the emoji for a moment.
+ * A viewer reacted to a live stream. Sent to every viewer: the emoji floats over the
+ * picture, and the lecturer's reaction display highlights it for a moment. It says
+ * nothing about who reacted, and a burst of the same emoji is coalesced to one event
+ * per second.
  *
  * @generated from message protobuf.StreamReactionEvent
  */

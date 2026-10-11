@@ -9,6 +9,7 @@ const emit = defineEmits<{ close: [] }>();
 const SHORTCUTS: { action: string; keys: string }[] = [
   ...HOTKEY_HELP,
   { action: "Skip silence", keys: "S / s" },
+  { action: "Stats for nerds (player and management page)", keys: "I / i" },
   { action: "Close any kind of popup", keys: "ESCAPE" },
 ];
 </script>
