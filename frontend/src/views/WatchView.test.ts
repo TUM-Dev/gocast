@@ -81,6 +81,23 @@ describe("WatchView", () => {
     expect(fetchStreamWatch).toHaveBeenCalledWith("c", 7);
   });
 
+  it("shows the sidebar from the start when the chat is on", async () => {
+    fetchStreamWatch.mockResolvedValue(watchData());
+    const w = await open();
+    const aside = w.get("[data-testid=region-sidebar]");
+    expect(aside.attributes("style") ?? "").not.toContain("display: none");
+    expect(w.find("[data-testid=sidebar]").exists()).toBe(true);
+    expect(w.find("[data-testid=open-sidebar]").exists()).toBe(false);
+  });
+
+  it("collapses the sidebar behind the Panels button when the chat is off, as the old page had no column", async () => {
+    fetchStreamWatch.mockResolvedValue(watchData({ chat: { enabled: false }, viewer: { signedIn: true } }));
+    const w = await open();
+    expect(w.get("[data-testid=region-sidebar]").attributes("style")).toContain("display: none");
+    await w.get("[data-testid=open-sidebar]").trigger("click");
+    expect(w.get("[data-testid=region-sidebar]").attributes("style") ?? "").not.toContain("display: none");
+  });
+
   it("renders the not-found page for a version the page does not have", async () => {
     const w = await open("/w/c/7/NOPE");
     expect(fetchStreamWatch).not.toHaveBeenCalled();
