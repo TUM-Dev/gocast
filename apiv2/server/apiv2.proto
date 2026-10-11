@@ -3260,6 +3260,83 @@ service ChatService {
         "running poll, which includes a poll that has closed."
     };
   }
+
+  rpc approveChatMessage(ApproveChatMessageRequest) returns (ApproveChatMessageResponse) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/chat/messages/{message_id}/approve"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "Approve a message, publishing it to every viewer."
+      description:
+        "For the course's administrators. Approving a message that is visible "
+        "already changes nothing. The message is pushed as a ChatMessageEvent."
+    };
+  }
+
+  rpc retractChatMessage(RetractChatMessageRequest) returns (RetractChatMessageResponse) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/chat/messages/{message_id}/retract"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "Hide an approved message again."
+      description:
+        "For the course's administrators. The message stays for them and its "
+        "author, loses its reactions, and can be approved again."
+    };
+  }
+
+  rpc deleteChatMessage(DeleteChatMessageRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/streams/{stream_id}/chat/messages/{message_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "Delete a message for everyone."
+      description: "For the course's administrators. The message's replies are deleted with it."
+    };
+  }
+
+  rpc resolveChatMessage(ResolveChatMessageRequest) returns (ResolveChatMessageResponse) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/chat/messages/{message_id}/resolve"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "Mark a message as resolved."
+      description: "For the course's administrators, for questions that have been answered."
+    };
+  }
+
+  rpc startChatPoll(StartChatPollRequest) returns (StartChatPollResponse) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/chat/polls"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "Start a poll in a stream's chat."
+      description:
+        "For the course's administrators. 409 while another poll is running. "
+        "Pushed to every viewer as a ChatPollStartedEvent."
+    };
+  }
+
+  rpc closeChatPoll(CloseChatPollRequest) returns (CloseChatPollResponse) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/chat/polls/active/close"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Chat"
+      summary: "Close a stream's running poll."
+      description:
+        "For the course's administrators. Answers with the results, which are also "
+        "pushed to every viewer as a ChatPollClosedEvent. 404 when no poll is running."
+    };
+  }
 }
 
 message ListChatMessagesRequest {
@@ -3325,6 +3402,62 @@ message VoteChatPollRequest {
 
 message VoteChatPollResponse {
   // The poll with the caller's vote; vote counts as in getActivePoll.
+  ChatPoll poll = 1;
+}
+
+// The moderation calls name the stream as well as the message, so that a message of
+// another stream is no message here.
+message ApproveChatMessageRequest {
+  uint32 stream_id = 1;
+  uint32 message_id = 2;
+}
+
+message ApproveChatMessageResponse {
+  ChatMessage message = 1;
+}
+
+message RetractChatMessageRequest {
+  uint32 stream_id = 1;
+  uint32 message_id = 2;
+}
+
+message RetractChatMessageResponse {
+  ChatMessage message = 1;
+}
+
+message DeleteChatMessageRequest {
+  uint32 stream_id = 1;
+  uint32 message_id = 2;
+}
+
+message ResolveChatMessageRequest {
+  uint32 stream_id = 1;
+  uint32 message_id = 2;
+}
+
+message ResolveChatMessageResponse {
+  ChatMessage message = 1;
+}
+
+message StartChatPollRequest {
+  uint32 stream_id = 1;
+  // At most 500 characters once trimmed, and not empty.
+  string question = 2;
+  // Two to ten answers of at most 200 characters each, none empty.
+  repeated string answers = 3;
+}
+
+message StartChatPollResponse {
+  // With every count at 0.
+  ChatPoll poll = 1;
+}
+
+message CloseChatPollRequest {
+  uint32 stream_id = 1;
+}
+
+message CloseChatPollResponse {
+  // The poll as closed, with its final vote counts.
   ChatPoll poll = 1;
 }
 

@@ -4282,6 +4282,95 @@
         ]
       }
     },
+    "/streams/{streamId}/chat/messages/{messageId}": {
+      "delete": {
+        "summary": "Delete a message for everyone.",
+        "description": "For the course's administrators. The message's replies are deleted with it.",
+        "operationId": "ChatService_deleteChatMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/messages/{messageId}/approve": {
+      "post": {
+        "summary": "Approve a message, publishing it to every viewer.",
+        "description": "For the course's administrators. Approving a message that is visible already changes nothing. The message is pushed as a ChatMessageEvent.",
+        "operationId": "ChatService_approveChatMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufApproveChatMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServiceapproveChatMessageBody"
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/streams/{streamId}/chat/messages/{messageId}/reactions": {
       "post": {
         "summary": "React to a message, or take the reaction back.",
@@ -4330,6 +4419,102 @@
         ]
       }
     },
+    "/streams/{streamId}/chat/messages/{messageId}/resolve": {
+      "post": {
+        "summary": "Mark a message as resolved.",
+        "description": "For the course's administrators, for questions that have been answered.",
+        "operationId": "ChatService_resolveChatMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufResolveChatMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServiceresolveChatMessageBody"
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/messages/{messageId}/retract": {
+      "post": {
+        "summary": "Hide an approved message again.",
+        "description": "For the course's administrators. The message stays for them and its author, loses its reactions, and can be approved again.",
+        "operationId": "ChatService_retractChatMessage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufRetractChatMessageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServiceretractChatMessageBody"
+            }
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/streams/{streamId}/chat/polls": {
       "get": {
         "summary": "List a stream's closed polls, newest first.",
@@ -4356,6 +4541,45 @@
             "required": true,
             "type": "integer",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      },
+      "post": {
+        "summary": "Start a poll in a stream's chat.",
+        "description": "For the course's administrators. 409 while another poll is running. Pushed to every viewer as a ChatPollStartedEvent.",
+        "operationId": "ChatService_startChatPoll",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufStartChatPollResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServicestartChatPollBody"
+            }
           }
         ],
         "tags": [
@@ -4389,6 +4613,47 @@
             "required": true,
             "type": "integer",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/streams/{streamId}/chat/polls/active/close": {
+      "post": {
+        "summary": "Close a stream's running poll.",
+        "description": "For the course's administrators. Answers with the results, which are also pushed to every viewer as a ChatPollClosedEvent. 404 when no poll is running.",
+        "operationId": "ChatService_closeChatPoll",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCloseChatPollResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ChatServicecloseChatPollBody"
+            }
           }
         ],
         "tags": [
@@ -4802,6 +5067,19 @@
         }
       }
     },
+    "ChatServiceapproveChatMessageBody": {
+      "type": "object",
+      "description": "The moderation calls name the stream as well as the message, so that a message of\nanother stream is no message here."
+    },
+    "ChatServicecloseChatPollBody": {
+      "type": "object"
+    },
+    "ChatServiceresolveChatMessageBody": {
+      "type": "object"
+    },
+    "ChatServiceretractChatMessageBody": {
+      "type": "object"
+    },
     "ChatServicesendChatMessageBody": {
       "type": "object",
       "properties": {
@@ -4825,6 +5103,22 @@
             "format": "int64"
           },
           "description": "Users to @-mention, at most 20."
+        }
+      }
+    },
+    "ChatServicestartChatPollBody": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "At most 500 characters once trimmed, and not empty."
+        },
+        "answers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Two to ten answers of at most 200 characters each, none empty."
         }
       }
     },
@@ -5212,6 +5506,14 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nIn its binary encoding, an `Any` is an ordinary message; but in other wire\nforms like JSON, it has a special encoding. The format of the type URL is\ndescribed on the `type_url` field.\n\nProtobuf APIs provide utilities to interact with `Any` values:\n\n- A 'pack' operation accepts a message and constructs a generic `Any` wrapper\n  around it.\n- An 'unpack' operation reads the content of an `Any` message, either into an\n  existing message or a new one. Unpack operations must check the type of the\n  value they unpack against the declared `type_url`.\n- An 'is' operation decides whether an `Any` contains a message of the given\n  type, i.e. whether it can 'unpack' that type.\n\nThe JSON format representation of an `Any` follows one of these cases:\n\n- For types without special-cased JSON encodings, the JSON format\n  representation of the `Any` is the same as that of the message, with an\n  additional `@type` field which contains the type URL.\n- For types with special-cased JSON encodings (typically called 'well-known'\n  types, listed in https://protobuf.dev/programming-guides/json/#any), the\n  JSON format representation has a key `@type` which contains the type URL\n  and a key `value` which contains the JSON-serialized value.\n\nThe text format representation of an `Any` is like a message with one field\nwhose name is the type URL in brackets. For example, an `Any` containing a\n`foo.Bar` message may be written `[type.googleapis.com/foo.Bar] { a: 2 }`."
     },
+    "protobufApproveChatMessageResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/protobufChatMessage"
+        }
+      }
+    },
     "protobufAuditEntry": {
       "type": "object",
       "properties": {
@@ -5495,6 +5797,15 @@
         },
         "name": {
           "type": "string"
+        }
+      }
+    },
+    "protobufCloseChatPollResponse": {
+      "type": "object",
+      "properties": {
+        "poll": {
+          "$ref": "#/definitions/protobufChatPoll",
+          "description": "The poll as closed, with its final vote counts."
         }
       }
     },
@@ -7417,6 +7728,22 @@
         }
       }
     },
+    "protobufResolveChatMessageResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/protobufChatMessage"
+        }
+      }
+    },
+    "protobufRetractChatMessageResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/protobufChatMessage"
+        }
+      }
+    },
     "protobufRotateIntegrationKeyResponse": {
       "type": "object",
       "properties": {
@@ -7798,6 +8125,15 @@
         }
       },
       "description": "ServerStatsSeries is one of the page's charts: a label for the dataset plus its\npoints, in the order they should be plotted."
+    },
+    "protobufStartChatPollResponse": {
+      "type": "object",
+      "properties": {
+        "poll": {
+          "$ref": "#/definitions/protobufChatPoll",
+          "description": "With every count at 0."
+        }
+      }
     },
     "protobufStream": {
       "type": "object",

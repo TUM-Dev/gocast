@@ -191,6 +191,14 @@ var services = []service{
 			"sendChatMessage":    authenticated,
 			"toggleChatReaction": authenticated,
 			"votePoll":           authenticated,
+			// Moderation: the handlers check the caller administers the stream's
+			// course, since the requests name a stream rather than a course.
+			"approveChatMessage": authenticated,
+			"retractChatMessage": authenticated,
+			"deleteChatMessage":  authenticated,
+			"resolveChatMessage": authenticated,
+			"startChatPoll":      authenticated,
+			"closeChatPoll":      authenticated,
 		},
 	},
 	{
