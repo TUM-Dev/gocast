@@ -55,6 +55,7 @@ let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 const currentHref = () => window.location.href;
 const layouts = computed(() => layoutOptions(props.views, props.splitAvailable));
 const attachmentLinks = computed(() => props.attachments.map((a) => attachmentLink(props.streamId, a)));
+const currentLayout = computed(() => layouts.value.find((o) => o.layout === props.layout));
 const playlist = computed(() => viewForLayout(props.views, props.layout)?.playlistUrl);
 
 async function copyHls(): Promise<void> {
@@ -105,7 +106,13 @@ const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-cente
       </a>
     </ActionMenu>
 
-    <ActionMenu v-if="layouts.length > 1" label="Change view" icon="fa-camera-rotate">
+    <ActionMenu
+      v-if="layouts.length > 1"
+      label="Change view"
+      :button-label="currentLayout ? `Change view, current: ${currentLayout.label}` : 'Change view'"
+      :text="currentLayout?.label"
+      icon="fa-camera-rotate"
+    >
       <button
         v-for="o in layouts"
         :key="o.segment"
