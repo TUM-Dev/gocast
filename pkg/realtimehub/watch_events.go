@@ -8,12 +8,14 @@ import (
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 )
 
-// ReactionEvent says a viewer reacted to the live stream. Only the course's
-// administrators see reactions: they are for the lecturer's display, not for the
-// audience.
+// ReactionEvent says a viewer reacted to the live stream. Every viewer receives it:
+// the emoji floats over the picture for the whole audience, and the lecturer's display
+// highlights it. The event is the emoji and nothing else -- no user, no count -- so
+// widening the audience reveals nobody. (The split of reactions over the emoji,
+// ReactionStatsEvent, stays administrators-only.) Reusing this event instead of adding
+// a second, viewer-facing one keeps one fan-out per reaction rather than two.
 func ReactionEvent(streamID uint, reaction string) *protobuf.RealtimeEvent {
 	ev := Event(streamID)
-	ev.Audience = protobuf.RealtimeEvent_AUDIENCE_COURSE_ADMINS
 	ev.Event = &protobuf.RealtimeEvent_StreamReaction{StreamReaction: &protobuf.StreamReactionEvent{Reaction: reaction}}
 	return ev
 }

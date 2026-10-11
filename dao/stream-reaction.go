@@ -24,25 +24,14 @@ type StreamReactionDao interface {
 	// Delete a StreamReaction by id.
 	Delete(context.Context, uint) error
 
-	GetByStream(context.Context, uint) ([]model.StreamReaction, error)
-
 	GetByStreamWithinMinutes(context.Context, uint, uint) ([]model.StreamReaction, error)
 
 	// GetByStreamAndUser gets the StreamReaction a user has for a stream, if any
 	GetByStreamAndUser(context.Context, uint, uint) (model.StreamReaction, error)
-
-	GetNumbersOfReactions(context.Context, uint) (map[string]int, error)
-
-	GetLastReactionOfUser(context.Context, uint) (model.StreamReaction, error)
 }
 
 type streamReactionDao struct {
 	db *gorm.DB
-}
-
-type reactionCount struct {
-	Reaction string `json:"reaction"`
-	Count    int    `json:"count"`
 }
 
 func NewStreamReactionDao() StreamReactionDao {
@@ -70,11 +59,6 @@ func (d streamReactionDao) Delete(c context.Context, id uint) error {
 	return d.db.WithContext(c).Delete(&model.StreamReaction{}, id).Error
 }
 
-// GetByStream gets a StreamReaction by stream.
-func (d streamReactionDao) GetByStream(c context.Context, streamID uint) (res []model.StreamReaction, err error) {
-	return res, d.db.WithContext(c).Where("stream_id = ?", streamID).Find(&res).Error
-}
-
 // GetByStreamWithinMinutes gets a StreamReaction by stream that was last updated within the last ... minutes and filtering on updated_at
 func (d streamReactionDao) GetByStreamWithinMinutes(c context.Context, streamID uint, minutes uint) (res []model.StreamReaction, err error) {
 	time_specified := time.Now().Add(-time.Duration(minutes) * time.Minute)
@@ -84,25 +68,4 @@ func (d streamReactionDao) GetByStreamWithinMinutes(c context.Context, streamID 
 // GetByStreamAndUser gets the StreamReaction a user currently has for a stream, if any.
 func (d streamReactionDao) GetByStreamAndUser(c context.Context, streamID uint, userID uint) (res model.StreamReaction, err error) {
 	return res, d.db.WithContext(c).Where("stream_id = ? AND user_id = ?", streamID, userID).First(&res).Error
-}
-
-// GetNumbersOfReactions gets the number of reactions grouped by reactions for a stream.
-func (d streamReactionDao) GetNumbersOfReactions(c context.Context, streamID uint) (map[string]int, error) {
-	var reactionCounts []reactionCount
-	err := d.db.WithContext(c).Model(&model.StreamReaction{}).Where("stream_id = ?", streamID).Group("reaction").Select("reaction, count(reaction) as count").Scan(&reactionCounts).Error
-	if err != nil {
-		return nil, err
-	}
-
-	reactionMap := make(map[string]int)
-	for _, rc := range reactionCounts {
-		reactionMap[rc.Reaction] = rc.Count
-	}
-
-	return reactionMap, err
-}
-
-// GetLastReactionOfUser gets the most recently written reaction of a user (across all streams)
-func (d streamReactionDao) GetLastReactionOfUser(c context.Context, userID uint) (res model.StreamReaction, err error) {
-	return res, d.db.WithContext(c).Where("user_id = ?", userID).Order("updated_at desc").First(&res).Error
 }

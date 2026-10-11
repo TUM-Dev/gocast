@@ -20,7 +20,6 @@ type CoursesDao interface {
 
 	GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error)
 	GetAllCourses() ([]model.Course, error)
-	GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error)
 	GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error)
 	GetAllCoursesForSemester(ctx context.Context, year int, term string) (courses []model.Course)
 	GetPublicCourses(year int, term string) (courses []model.Course, err error)
@@ -38,11 +37,9 @@ type CoursesDao interface {
 	ExecAllCourses(f func([]Course))
 
 	UpdateCourse(ctx context.Context, course model.Course) error
-	UpdateCourseMetadata(ctx context.Context, course model.Course)
 	// UpdateCourseColumns writes the named columns of course, zero values included,
 	// and nothing else. UpdateCourse skips zero values, so it cannot switch a setting
-	// off, and UpdateCourseMetadata saves every association the course was loaded
-	// with.
+	// off, and saving the whole course writes every association it was loaded with.
 	UpdateCourseColumns(ctx context.Context, course model.Course, columns ...string) error
 	// AddUserToCourse enrols a user in a course; enrolling them twice is no error.
 	AddUserToCourse(ctx context.Context, userID uint, courseID uint) error
@@ -99,14 +96,6 @@ func (d CoursesDaoImpl) GetAllCourses() ([]model.Course, error) {
 		Cache.SetWithTTL("allCourses", courses, 1, time.Minute)
 	}
 	return courses, err
-}
-
-func (d CoursesDaoImpl) GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
-	var res []model.Course
-	err := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
-	}).Model(&model.Course{}).Find(&res, "user_id = ? AND year = ? AND teaching_term = ?", userId, year, term).Error
-	return res, err
 }
 
 func (d CoursesDaoImpl) GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error) {
@@ -321,11 +310,6 @@ func (d CoursesDaoImpl) ExecAllCourses(f func([]Course)) {
 func (d CoursesDaoImpl) UpdateCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
-}
-
-func (d CoursesDaoImpl) UpdateCourseMetadata(ctx context.Context, course model.Course) {
-	defer Cache.Clear()
-	DB.Save(&course)
 }
 
 func (d CoursesDaoImpl) UpdateCourseColumns(ctx context.Context, course model.Course, columns ...string) error {

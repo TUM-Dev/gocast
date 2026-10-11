@@ -52,7 +52,12 @@ describe("BookmarksPanel", () => {
     await wrapper.find("form").trigger("submit");
     await flushPromises();
 
-    expect(fetch.calls.find((c) => c.method === "POST")!.url).toContain("description=here&hours=0&minutes=2&seconds=5");
+    // proto3 JSON leaves out zero values, hence no `hours`.
+    expect(JSON.parse(String(fetch.calls.find((c) => c.method === "POST")!.body))).toMatchObject({
+      description: "here",
+      minutes: 2,
+      seconds: 5,
+    });
     expect(wrapper.findAll("[data-testid=bookmark]")).toHaveLength(3);
     expect((wrapper.emitted("bookmarks")!.at(-1)![0] as unknown[]).length).toBe(3);
     expect(wrapper.find("form").exists()).toBe(false);
@@ -83,9 +88,9 @@ describe("BookmarksPanel", () => {
     await wrapper.find("[data-testid=bookmark] form").trigger("submit");
     await flushPromises();
 
-    expect(fetch.calls.find((c) => c.method === "PUT")!.url).toBe(
-      "/api/v2/bookmarks/1?description=opening&hours=0&minutes=0&seconds=30",
-    );
+    const put = fetch.calls.find((c) => c.method === "PUT")!;
+    expect(put.url).toBe("/api/v2/bookmarks/1");
+    expect(JSON.parse(String(put.body))).toEqual({ bookmarkId: 1, description: "opening", seconds: 30 });
     expect(wrapper.text()).toContain("opening");
   });
 

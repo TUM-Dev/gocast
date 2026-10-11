@@ -15,7 +15,6 @@ type ProgressDao interface {
 	SaveProgresses(progresses []model.StreamProgress) error
 	GetProgressesForUser(userID uint) ([]model.StreamProgress, error)
 	LoadProgress(userID uint, streamIDs []uint) (streamProgress []model.StreamProgress, err error)
-	SaveWatchedState(progress *model.StreamProgress) error
 }
 
 type progressDao struct {
@@ -66,14 +65,6 @@ func (d progressDao) SaveProgresses(progresses []model.StreamProgress) error {
 		return err
 	}
 	return err2
-}
-
-// SaveWatchedState creates/updates a stream progress with its corresponding watched state.
-func (d progressDao) SaveWatchedState(progress *model.StreamProgress) error {
-	return DB.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
-		DoUpdates: clause.AssignmentColumns([]string{"watched"}),           // column needed to be updated
-	}).Create(progress).Error
 }
 
 // LoadProgress retrieves the current StreamProgress from the database for a given user and stream.

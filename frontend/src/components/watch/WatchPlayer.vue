@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import VideoPlayer from "@/components/player/VideoPlayer.vue";
+import ReactionOverlay from "@/components/watch/ReactionOverlay.vue";
 import SkipSilenceButton from "@/components/watch/SkipSilenceButton.vue";
 import type { Hotkey } from "@/lib/player/hotkeys";
 import type { Clip } from "@/lib/player/clip";
@@ -135,7 +136,9 @@ onBeforeUnmount(() => {
       hotkeys="page"
       :extra-hotkeys="extraHotkeys"
       airplay
+      stats-panel
     />
+    <ReactionOverlay v-if="live" :stream-id="streamId" />
     <SkipSilenceButton v-if="silences.length > 0 && !live" :controller="controller" :silences="silences" :clip="clip" />
     <div
       class="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-[30px]"

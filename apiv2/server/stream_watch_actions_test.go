@@ -65,7 +65,7 @@ func TestAddStreamReaction(t *testing.T) {
 		return err
 	}
 
-	t.Run("a first reaction is stored and sent to the administrators only", func(t *testing.T) {
+	t.Run("a first reaction is stored and sent to every viewer", func(t *testing.T) {
 		reactions(t, "👍", "👎")
 		env := newWatchEnv(t)
 		env.react.EXPECT().GetByStreamAndUser(gomock.Any(), uint(7), uint(20)).Return(model.StreamReaction{}, gorm.ErrRecordNotFound)
@@ -80,12 +80,29 @@ func TestAddStreamReaction(t *testing.T) {
 			t.Fatalf("AddStreamReaction: %v", err)
 		}
 		ev := env.next(t)
-		if ev.GetStreamReaction().GetReaction() != "👍" || ev.Audience != protobuf.RealtimeEvent_AUDIENCE_COURSE_ADMINS {
+		if ev.GetStreamReaction().GetReaction() != "👍" || ev.Audience != protobuf.RealtimeEvent_AUDIENCE_ALL {
 			t.Fatalf("event = %v", ev)
 		}
-		if !(realtimeViewer{userID: 22, isAdmin: true}).receives(ev) || (realtimeViewer{userID: 20}).receives(ev) || (realtimeViewer{}).receives(ev) {
-			t.Error("only administrators receive reactions")
+		if !(realtimeViewer{userID: 22, isAdmin: true}).receives(ev) || !(realtimeViewer{userID: 21}).receives(ev) || !(realtimeViewer{}).receives(ev) {
+			t.Error("every viewer, signed in or not, receives reactions")
 		}
+		// The audience sees the emoji and nothing that says who sent it.
+		if ev.GetAudienceUserId() != 0 || ev.GetStreamReaction().String() != (&protobuf.StreamReactionEvent{Reaction: "👍"}).String() {
+			t.Errorf("event identifies its sender: %v", ev)
+		}
+	})
+
+	t.Run("a reaction within the broadcast gap of the same emoji is stored but not sent", func(t *testing.T) {
+		reactions(t, "👍", "👎")
+		env := newWatchEnv(t)
+		env.api.reactions.allowBroadcast(7, "👍", time.Now())
+		env.react.EXPECT().GetByStreamAndUser(gomock.Any(), uint(7), uint(20)).Return(model.StreamReaction{}, gorm.ErrRecordNotFound)
+		env.react.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
+
+		if err := react(env, student, "👍"); err != nil {
+			t.Fatalf("AddStreamReaction: %v", err)
+		}
+		env.none(t)
 	})
 
 	t.Run("reacting again after the cooldown replaces the reaction", func(t *testing.T) {
@@ -128,8 +145,8 @@ func TestAddStreamReaction(t *testing.T) {
 	t.Run("v1's cooldown across streams is gone: only this stream's reaction is consulted", func(t *testing.T) {
 		reactions(t, "👍")
 		env := newWatchEnv(t)
-		// A reaction to another stream a second ago is not even looked up; the DAO call
-		// that found it (GetLastReactionOfUser) has no expectation here and would fail.
+		// A reaction to another stream a second ago is not even looked up: the DAO has
+		// no across-streams lookup (v1's GetLastReactionOfUser) any more.
 		env.react.EXPECT().GetByStreamAndUser(gomock.Any(), uint(7), uint(20)).Return(model.StreamReaction{}, gorm.ErrRecordNotFound)
 		env.react.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 		if err := react(env, student, "👍"); err != nil {
@@ -640,4 +657,24 @@ func TestUpdateLecturePublishesTimeChanges(t *testing.T) {
 			t.Fatalf("event = %v", ev)
 		}
 	})
+}
+
+func TestReactionBroadcastThrottle(t *testing.T) {
+	var s reactionStats
+	now := time.Now()
+	if !s.allowBroadcast(7, "👍", now) {
+		t.Fatal("the first reaction of a burst must go out")
+	}
+	if s.allowBroadcast(7, "👍", now.Add(reactionBroadcastGap-time.Millisecond)) {
+		t.Error("the same emoji within the gap was sent again")
+	}
+	if !s.allowBroadcast(7, "👎", now) {
+		t.Error("another emoji is throttled separately")
+	}
+	if !s.allowBroadcast(8, "👍", now) {
+		t.Error("another stream is throttled separately")
+	}
+	if !s.allowBroadcast(7, "👍", now.Add(reactionBroadcastGap)) {
+		t.Error("the emoji was not allowed again after the gap")
+	}
 }

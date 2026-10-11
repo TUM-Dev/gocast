@@ -10,6 +10,7 @@ const SHORTCUTS: { action: string; keys: string }[] = [
   ...HOTKEY_HELP,
   { action: BOOKMARK_ACTION, keys: BOOKMARK_KEYS_LABEL },
   { action: "Skip silence", keys: "S / s" },
+  { action: "Stats for nerds (player and management page)", keys: "I / i" },
   { action: "Close any kind of popup", keys: "ESCAPE" },
 ];
 </script>
