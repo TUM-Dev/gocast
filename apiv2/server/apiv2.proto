@@ -3346,6 +3346,22 @@ message ListChatMessagesRequest {
 message ListChatMessagesResponse {
   // Top-level messages in the order they were written, replies nested under them.
   repeated ChatMessage messages = 1;
+  // What the caller may do here, so that a client offers only that.
+  ChatAccess access = 2;
+}
+
+// What the caller can do in a stream's chat. The server checks every write for itself;
+// this only drives what the interface offers.
+message ChatAccess {
+  // Signed in, and the chat is on. Anonymous viewers read only.
+  bool can_write = 1;
+  // Administers the stream's course: may approve, retract, delete and resolve
+  // messages and run polls, and sees the messages awaiting approval.
+  bool can_moderate = 2;
+  // The course allows anonymous messages.
+  bool anonymous_allowed = 3;
+  // The course holds messages back until an administrator approves them.
+  bool moderated = 4;
 }
 
 message GetActiveChatPollRequest {

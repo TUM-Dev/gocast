@@ -317,3 +317,45 @@ func TestCloseChatPoll(t *testing.T) {
 		f.none(t)
 	})
 }
+
+func TestListChatMessagesReportsWhatTheCallerMayDo(t *testing.T) {
+	list := func(f chatWriteFixture, user *model.User) *protobuf.ChatAccess {
+		var uid uint
+		if user != nil {
+			uid = user.ID
+		}
+		f.chat.EXPECT().GetVisibleChats(uid, uint(7)).Return(nil, nil).AnyTimes()
+		f.chat.EXPECT().GetAllChats(uid, uint(7)).Return(nil, nil).AnyTimes()
+		resp, err := f.api.ListChatMessages(asCaller(user), &protobuf.ListChatMessagesRequest{StreamId: 7})
+		if err != nil {
+			t.Fatalf("ListChatMessages: %v", err)
+		}
+		return resp.Access
+	}
+
+	t.Run("a student in a moderated chat with anonymous messages", func(t *testing.T) {
+		got := list(newChatWriteFixture(t, chatWriteOpts{courseChat: true, moderated: true}), chatStudent)
+		want := &protobuf.ChatAccess{CanWrite: true, AnonymousAllowed: true, Moderated: true}
+		if got.CanWrite != want.CanWrite || got.CanModerate || !got.AnonymousAllowed || !got.Moderated {
+			t.Errorf("access = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("an administrator moderates", func(t *testing.T) {
+		if got := list(newChatWriteFixture(t, chatWriteOpts{courseChat: true, noAnonymous: true}), chatAdmin); !got.CanModerate || got.AnonymousAllowed {
+			t.Errorf("access = %v", got)
+		}
+	})
+
+	t.Run("an anonymous viewer, or a chat that is off, cannot write", func(t *testing.T) {
+		if got := list(newChatWriteFixture(t, chatWriteOpts{courseChat: true, visibility: "public"}), nil); got.CanWrite || got.CanModerate {
+			t.Errorf("anonymous access = %v", got)
+		}
+		if got := list(newChatWriteFixture(t, chatWriteOpts{}), chatStudent); got.CanWrite {
+			t.Errorf("access with the chat off = %v", got)
+		}
+		if got := list(newChatWriteFixture(t, chatWriteOpts{streamChat: true}), chatStudent); !got.CanWrite {
+			t.Errorf("access with only the stream's chat on = %v", got)
+		}
+	})
+}

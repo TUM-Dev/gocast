@@ -5644,6 +5644,28 @@
         }
       }
     },
+    "protobufChatAccess": {
+      "type": "object",
+      "properties": {
+        "canWrite": {
+          "type": "boolean",
+          "description": "Signed in, and the chat is on. Anonymous viewers read only."
+        },
+        "canModerate": {
+          "type": "boolean",
+          "description": "Administers the stream's course: may approve, retract, delete and resolve\nmessages and run polls, and sees the messages awaiting approval."
+        },
+        "anonymousAllowed": {
+          "type": "boolean",
+          "description": "The course allows anonymous messages."
+        },
+        "moderated": {
+          "type": "boolean",
+          "description": "The course holds messages back until an administrator approves them."
+        }
+      },
+      "description": "What the caller can do in a stream's chat. The server checks every write for itself;\nthis only drives what the interface offers."
+    },
     "protobufChatMessage": {
       "type": "object",
       "properties": {
@@ -7352,6 +7374,10 @@
             "$ref": "#/definitions/protobufChatMessage"
           },
           "description": "Top-level messages in the order they were written, replies nested under them."
+        },
+        "access": {
+          "$ref": "#/definitions/protobufChatAccess",
+          "description": "What the caller may do here, so that a client offers only that."
         }
       }
     },
