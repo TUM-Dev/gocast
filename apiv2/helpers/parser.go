@@ -219,7 +219,7 @@ func ParseNotificationToProto(notification model.Notification) *protobuf.UserGro
 
 	return &protobuf.UserGroupNotification{
 		Title:     title,
-		Body:      notification.Body,
+		Body:      notification.SanitizedBody,
 		Target:    parseNotificationTarget(notification.Target),
 		CreatedAt: timestamppb.New(notification.CreatedAt),
 	}
