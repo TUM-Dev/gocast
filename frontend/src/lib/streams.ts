@@ -81,6 +81,15 @@ export function minutesUntilStart(stream: Stream, now = new Date()): number {
   return Math.round((stream.start.valueOf() - now.valueOf()) / 60_000);
 }
 
+/** `1 hour 31 minutes`, `2 hours`, `45 minutes`. */
+export function formatMinutesInWords(minutes: number): string {
+  const unit = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours < 1) return unit(minutes, "minute");
+  return rest === 0 ? unit(hours, "hour") : `${unit(hours, "hour")} ${unit(rest, "minute")}`;
+}
+
 /** `1:23:45`, as the server-rendered page formatted it. */
 export function formatDuration(seconds: number): string {
   return new Date(seconds * 1000).toISOString().slice(11, 19);
