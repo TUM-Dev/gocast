@@ -8,7 +8,7 @@ import StartPageLayout from "@/components/start-page/StartPageLayout.vue";
 import StreamThumbnail from "@/components/start-page/StreamThumbnail.vue";
 import { courseUrl, type Course } from "@/lib/courses";
 import { fetchServerNotifications, type ServerNotification } from "@/lib/notifications";
-import { isToday, minutesUntilStart, watchUrl } from "@/lib/streams";
+import { formatMinutesInWords, isToday, minutesUntilStart, watchUrl } from "@/lib/streams";
 import { useWatchProgress } from "@/lib/use-watch-progress";
 import { useAuthStore } from "@/stores/auth";
 import { useCourseStore } from "@/stores/courses";
@@ -181,7 +181,7 @@ watch(
               </RouterLink>
               <div class="text-5 flex items-center text-sm font-light">
                 <span>
-                  Next lecture starts in {{ minutesUntilStart(course.nextLecture!) }} Minutes.
+                  Next lecture starts in {{ formatMinutesInWords(minutesUntilStart(course.nextLecture!)) }}.
                   <a
                     :href="watchUrl(course.slug, course.nextLecture!.id)"
                     title="Join waiting room"
