@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
-import { fetchProgress, formatDuration, minutesUntilStart, setWatched, thumbnailUrl } from "./streams";
+import {
+  fetchProgress,
+  formatDuration,
+  formatMinutesInWords,
+  minutesUntilStart,
+  setWatched,
+  thumbnailUrl,
+} from "./streams";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -109,5 +116,19 @@ describe("minutesUntilStart", () => {
   it("counts up to the start and goes negative after it", () => {
     expect(minutesUntilStart(at("2026-08-21T12:30:00Z"), now)).toBe(30);
     expect(minutesUntilStart(at("2026-08-21T11:45:00Z"), now)).toBe(-15);
+  });
+});
+
+describe("formatMinutesInWords", () => {
+  it.each([
+    [91, "1 hour 31 minutes"],
+    [61, "1 hour 1 minute"],
+    [120, "2 hours"],
+    [60, "1 hour"],
+    [45, "45 minutes"],
+    [1, "1 minute"],
+    [0, "0 minutes"],
+  ])("renders %d minutes as %s", (minutes, expected) => {
+    expect(formatMinutesInWords(minutes)).toBe(expected);
   });
 });

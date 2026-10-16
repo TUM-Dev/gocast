@@ -12,6 +12,7 @@ import { groupLectures } from "@/lib/lecture-groups";
 import { useLectureViewPrefs } from "@/lib/lecture-view-prefs";
 import { useWatchProgress } from "@/lib/use-watch-progress";
 import {
+  formatMinutesInWords,
   isMappedRoom,
   isToday,
   minutesUntilStart,
@@ -194,7 +195,7 @@ const isTodayLecture = (lecture: Stream) => isToday(lecture);
               :key="lecture.id"
               class="tum-live-upcoming-item"
             >
-              <span>Next lecture starts in {{ minutesUntilStart(lecture) }} Minutes.</span>
+              <span>Next lecture starts in {{ formatMinutesInWords(minutesUntilStart(lecture)) }}.</span>
               <a :href="watchUrl(course.slug, lecture.id)" class="underline" title="Join waiting room">
                 Join waiting room
               </a>
