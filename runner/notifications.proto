@@ -13,6 +13,8 @@ message Notification {
     VODReadyNotification vod_ready = 4;
     ThumbnailReadyNotification thumbnail_ready = 5;
     SectionImagesReadyNotification section_images_ready = 6;
+    TranscodingProgressNotification transcoding_progress = 7;
+    VODFailedNotification vod_failed = 8;
   }
 }
 
@@ -41,6 +43,24 @@ message VODReadyNotification {
   StreamInfo stream = 1;
   StreamVersion stream_version = 2;
   string url = 3;
+}
+
+// TranscodingProgressNotification reports how far the conversion of one version of an
+// uploaded video has got. It is best effort: a lost one is replaced by the next.
+message TranscodingProgressNotification {
+  StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
+  // percent, 0 to 99. A finished conversion is reported by VODReadyNotification.
+  int32 progress = 3;
+}
+
+// VODFailedNotification reports that a VOD could not be made from an uploaded video.
+message VODFailedNotification {
+  StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
+  // reason is meant for the person who uploaded the video: it names no paths and
+  // none of the runner's internals. Those are in the runner's log.
+  string reason = 3;
 }
 
 message ThumbnailReadyNotification {

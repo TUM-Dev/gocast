@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
@@ -118,7 +119,7 @@ func TestImportVOD(t *testing.T) {
 			config.Config.StoragePath = storage
 			config.Config.EdgeServer = "http://edge"
 
-			notify := make(chan *protobuf.Notification, 1)
+			notify := make(chan *protobuf.Notification, 64)
 			data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_PRESENTATION", "uploadPath": upload}
 			if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
 				t.Fatalf("ImportVOD = %v", err)
@@ -140,10 +141,19 @@ func TestImportVOD(t *testing.T) {
 			}
 			assertNoLeftovers(t, filepath.Join(storage, "7"), "STREAM_VERSION_PRESENTATION")
 
-			n := <-notify
-			ready := n.GetVodReady()
+			ns := drain(notify)
+			if len(ns) == 0 {
+				t.Fatal("nothing was reported")
+			}
+			// The conversion is over when VodReady comes, so nothing may follow it.
+			ready := ns[len(ns)-1].GetVodReady()
 			if ready == nil {
-				t.Fatalf("notification = %v, want VodReady", n)
+				t.Fatalf("last notification = %v, want VodReady", ns[len(ns)-1])
+			}
+			for _, n := range ns[:len(ns)-1] {
+				if p := n.GetTranscodingProgress(); p == nil || p.GetProgress() < 0 || p.GetProgress() > 99 {
+					t.Errorf("before VodReady: %v, want progress of 0 to 99", n)
+				}
 			}
 			if got, want := ready.GetUrl(), "http://edge/vod/7/STREAM_VERSION_PRESENTATION/playlist.m3u8"; got != want {
 				t.Errorf("url = %q, want %q", got, want)
@@ -163,7 +173,7 @@ func TestImportVODFailureKeepsPreviousVOD(t *testing.T) {
 	}
 	storage := t.TempDir()
 	config.Config.StoragePath = storage
-	old := filepath.Join(storage, "7", "STREAM_VERSION_COMB")
+	old := filepath.Join(storage, "7", "STREAM_VERSION_COMBINED")
 	if err := os.MkdirAll(old, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
@@ -175,8 +185,8 @@ func TestImportVODFailureKeepsPreviousVOD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	notify := make(chan *protobuf.Notification, 1)
-	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMB", "uploadPath": upload}
+	notify := make(chan *protobuf.Notification, 64)
+	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": upload}
 	err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker())
 	if err == nil || !IsAbortingError(err) {
 		t.Fatalf("ImportVOD = %v, want an aborting error", err)
@@ -187,8 +197,21 @@ func TestImportVODFailureKeepsPreviousVOD(t *testing.T) {
 	if _, ok := data["playlistURL"]; ok {
 		t.Error("playlistURL set although the import failed")
 	}
-	if len(notify) != 0 {
-		t.Error("notified although the import failed")
+	ns := drain(notify)
+	if len(ns) != 1 || ns[0].GetVodFailed() == nil {
+		t.Fatalf("notifications = %v, want one VodFailed", ns)
+	}
+	failed := ns[0].GetVodFailed()
+	if failed.GetStream().GetId() != 7 || failed.GetStreamVersion() != protobuf.StreamVersion_STREAM_VERSION_COMBINED {
+		t.Errorf("failure for %v", failed)
+	}
+	if failed.GetReason() != reasonUnreadable {
+		t.Errorf("reason = %q, want %q", failed.GetReason(), reasonUnreadable)
+	}
+	for _, leak := range []string{upload, "ffprobe", "exit status"} {
+		if strings.Contains(failed.GetReason(), leak) {
+			t.Errorf("reason %q leaks %q", failed.GetReason(), leak)
+		}
 	}
 	if _, err := os.Stat(upload); !os.IsNotExist(err) {
 		t.Errorf("uploaded file still there: %v", err)
@@ -204,7 +227,7 @@ func TestImportVODThenThumbnail(t *testing.T) {
 	upload := makeUpload(t, "up.mp4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
 	config.Config.StoragePath = t.TempDir()
 
-	notify := make(chan *protobuf.Notification, 2)
+	notify := make(chan *protobuf.Notification, 64)
 	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": upload}
 	for _, action := range []Action{ImportVOD, RegenerateThumb} {
 		if err := action(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
@@ -212,10 +235,17 @@ func TestImportVODThenThumbnail(t *testing.T) {
 		}
 	}
 
-	if n := <-notify; n.GetVodReady() == nil {
-		t.Fatalf("first notification = %v, want VodReady", n)
+	var thumb *protobuf.ThumbnailReadyNotification
+	var ready bool
+	for _, n := range drain(notify) {
+		ready = ready || n.GetVodReady() != nil
+		if t := n.GetThumbnailReady(); t != nil {
+			thumb = t
+		}
 	}
-	thumb := (<-notify).GetThumbnailReady()
+	if !ready {
+		t.Fatal("no VodReady")
+	}
 	if thumb == nil || len(thumb.GetThumbnail()) == 0 {
 		t.Fatalf("no thumbnail: %v", thumb)
 	}
@@ -257,7 +287,7 @@ func TestImportVODReplacesPreviousVOD(t *testing.T) {
 	}
 
 	upload := makeUpload(t, "up.mp4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
-	notify := make(chan *protobuf.Notification, 1)
+	notify := make(chan *protobuf.Notification, 64)
 	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": upload}
 	if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
 		t.Fatalf("ImportVOD = %v", err)
@@ -288,7 +318,7 @@ func TestImportVODConcurrent(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			notify := make(chan *protobuf.Notification, 1)
+			notify := make(chan *protobuf.Notification, 64)
 			data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": upload}
 			errs <- ImportVOD(context.Background(), testLogger(), notify, data, testBroker())
 		}()
@@ -325,7 +355,7 @@ func TestImportVODReportsFFmpegError(t *testing.T) {
 		t.Fatal(err)
 	}
 	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": broken}
-	err = ImportVOD(context.Background(), testLogger(), make(chan *protobuf.Notification, 1), data, testBroker())
+	err = ImportVOD(context.Background(), testLogger(), make(chan *protobuf.Notification, 64), data, testBroker())
 	if err == nil {
 		t.Skip("ffmpeg accepted the truncated file")
 	}
@@ -341,4 +371,112 @@ func TestTailBuffer(t *testing.T) {
 	if got := tb.String(); len(got) > tailBufferSize || !strings.HasSuffix(got, "the error") {
 		t.Errorf("tail = %d bytes ending %q", len(got), got[len(got)-10:])
 	}
+}
+
+// drain returns what was reported, once the action that reported it has returned.
+func drain(notify chan *protobuf.Notification) []*protobuf.Notification {
+	var ns []*protobuf.Notification
+	for {
+		select {
+		case n := <-notify:
+			ns = append(ns, n)
+		default:
+			return ns
+		}
+	}
+}
+
+func failureOf(t *testing.T, notify chan *protobuf.Notification) string {
+	t.Helper()
+	ns := drain(notify)
+	if len(ns) == 0 || ns[len(ns)-1].GetVodFailed() == nil {
+		t.Fatalf("notifications = %v, want a VodFailed last", ns)
+	}
+	return ns[len(ns)-1].GetVodFailed().GetReason()
+}
+
+func TestImportVODReasons(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	config.Config.StoragePath = t.TempDir()
+	run := func(ctx context.Context, file string) chan *protobuf.Notification {
+		notify := make(chan *protobuf.Notification, 64)
+		data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": file}
+		if err := ImportVOD(ctx, testLogger(), notify, data, testBroker()); err == nil || !IsAbortingError(err) {
+			t.Fatalf("ImportVOD = %v, want an aborting error", err)
+		}
+		return notify
+	}
+
+	t.Run("no video", func(t *testing.T) {
+		audio := filepath.Join(t.TempDir(), "audio.m4a")
+		if out, err := exec.Command("ffmpeg", "-y", "-f", "lavfi", "-i", "sine=duration=1", "-c:a", "aac", audio).CombinedOutput(); err != nil {
+			t.Skipf("could not create audio: %v (%s)", err, out)
+		}
+		if got := failureOf(t, run(context.Background(), audio)); got != reasonNoVideo {
+			t.Errorf("reason = %q, want %q", got, reasonNoVideo)
+		}
+	})
+
+	t.Run("interrupted", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		upload := makeUpload(t, "up.mp4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
+		if got := failureOf(t, run(ctx, upload)); got != reasonInterrupted {
+			t.Errorf("reason = %q, want %q", got, reasonInterrupted)
+		}
+	})
+}
+
+func TestImportVODNoFailureNotificationWithoutContext(t *testing.T) {
+	// Nothing to report on, and a nil channel would block for good.
+	err := ImportVOD(context.Background(), testLogger(), nil, map[string]any{"streamID": uint64(1), "streamVersion": "x"}, nil)
+	if err == nil {
+		t.Fatal("ImportVOD = nil, want an error")
+	}
+}
+
+func TestProgressWriter(t *testing.T) {
+	now := time.Unix(1000, 0)
+	var got []int
+	w := newProgressWriter(10, func(p int) { got = append(got, p) })
+	w.now = func() time.Time { return now }
+	write := func(s string) { _, _ = w.Write([]byte(s)) }
+	step := func(micros string) {
+		now = now.Add(2 * time.Second)
+		write("frame=1\nout_time_us=" + micros + "\nprogress=continue\n")
+	}
+
+	write("out_time_us=N/A\nout_time_us=-9\n") // before the first frame: nothing to say
+	step("1000000")                            // 10%
+	write("out_time_us=1")                     // a line cut in two ...
+	write("500000\n")                          // ... is read as one: 15%, but too soon after the last
+	step("1100000")                            // 11%: too little to be worth a call
+	step("5000000")                            // 50%
+	step("30000000")                           // past the end: never 100, that is VODReady's to say
+	if want := []int{10, 50, 99}; !equalInts(got, want) {
+		t.Errorf("reported %v, want %v", got, want)
+	}
+
+	t.Run("unknown duration", func(t *testing.T) {
+		var any bool
+		w := newProgressWriter(0, func(int) { any = true })
+		_, _ = w.Write([]byte("out_time_us=5000000\n"))
+		if any {
+			t.Error("reported without a duration to measure against")
+		}
+	})
+}
+
+func equalInts(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

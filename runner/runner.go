@@ -270,9 +270,14 @@ func notificationBackoff(n *protobuf.Notification) retry.Backoff {
 		*protobuf.Notification_StreamStart,
 		*protobuf.Notification_VodReady,
 		*protobuf.Notification_ThumbnailReady,
-		*protobuf.Notification_SectionImagesReady:
+		*protobuf.Notification_SectionImagesReady,
+		*protobuf.Notification_VodFailed:
 		// Critical notifications retry indefinitely until delivered or runner shuts down
 		return retry.WithCappedDuration(30*time.Second, b)
+	case *protobuf.Notification_TranscodingProgress:
+		// Never retried: each one is outdated by the next, and one that is delivered late
+		// could land after the VODReady or VODFailed that ended the conversion.
+		return retry.WithMaxRetries(0, b)
 	default:
 		return retry.WithMaxRetries(10, b)
 	}
