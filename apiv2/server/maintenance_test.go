@@ -2,7 +2,6 @@ package apiv2
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"testing"
 	"time"
@@ -18,119 +17,6 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
-
-// resetMaintenanceThumbnails leaves the package-level job tracker as it found it, so
-// one test's run cannot leak into the next.
-func resetMaintenanceThumbnails(t *testing.T) {
-	t.Helper()
-	maintenanceThumbnails.mu.Lock()
-	before := maintenanceThumbnails.running
-	maintenanceThumbnails.mu.Unlock()
-	t.Cleanup(func() {
-		maintenanceThumbnails.mu.Lock()
-		maintenanceThumbnails.running = before
-		maintenanceThumbnails.progress = 0
-		maintenanceThumbnails.mu.Unlock()
-	})
-}
-
-func TestGetMaintenanceThumbnailStatus(t *testing.T) {
-	resetMaintenanceThumbnails(t)
-
-	maintenanceThumbnails.mu.Lock()
-	maintenanceThumbnails.running = true
-	maintenanceThumbnails.progress = 0.5
-	maintenanceThumbnails.mu.Unlock()
-
-	api := &API{log: slog.Default()}
-	resp, err := api.GetMaintenanceThumbnailStatus(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		t.Fatalf("GetMaintenanceThumbnailStatus: %v", err)
-	}
-	if !resp.Running || resp.Progress != 0.5 {
-		t.Errorf("got running=%v progress=%v, want running=true progress=0.5", resp.Running, resp.Progress)
-	}
-}
-
-func TestGenerateMaintenanceThumbnails(t *testing.T) {
-	t.Run("leaves an in-progress run alone rather than starting a second one", func(t *testing.T) {
-		resetMaintenanceThumbnails(t)
-		maintenanceThumbnails.mu.Lock()
-		maintenanceThumbnails.running = true
-		maintenanceThumbnails.progress = 0.25
-		maintenanceThumbnails.mu.Unlock()
-
-		ctrl := gomock.NewController(t)
-		fileMock := mock_dao.NewMockFileDao(ctrl)
-		// Asking how many files there are would be pointless work for a run that is
-		// not going to start.
-		fileMock.EXPECT().CountVoDFiles().Times(0)
-
-		api := &API{dao: dao.DaoWrapper{FileDao: fileMock}, log: slog.Default()}
-		resp, err := api.GenerateMaintenanceThumbnails(context.Background(), &emptypb.Empty{})
-		if err != nil {
-			t.Fatalf("GenerateMaintenanceThumbnails: %v", err)
-		}
-		if !resp.Running || resp.Progress != 0.25 {
-			t.Errorf("got running=%v progress=%v, want the untouched in-progress state", resp.Running, resp.Progress)
-		}
-	})
-
-	t.Run("reports a failure to count files without starting a run", func(t *testing.T) {
-		resetMaintenanceThumbnails(t)
-
-		ctrl := gomock.NewController(t)
-		fileMock := mock_dao.NewMockFileDao(ctrl)
-		fileMock.EXPECT().CountVoDFiles().Return(int64(0), errors.New("database is on fire")).Times(1)
-
-		api := &API{dao: dao.DaoWrapper{FileDao: fileMock}, log: slog.Default()}
-		if _, err := api.GenerateMaintenanceThumbnails(context.Background(), &emptypb.Empty{}); err == nil {
-			t.Fatal("a failed count was reported as success")
-		}
-
-		maintenanceThumbnails.mu.Lock()
-		running := maintenanceThumbnails.running
-		maintenanceThumbnails.mu.Unlock()
-		if running {
-			t.Error("running is true after a count failure; no job should have started")
-		}
-	})
-
-	t.Run("marks a run started before returning, so a concurrent poll sees it", func(t *testing.T) {
-		resetMaintenanceThumbnails(t)
-
-		ctrl := gomock.NewController(t)
-		fileMock := mock_dao.NewMockFileDao(ctrl)
-		fileMock.EXPECT().CountVoDFiles().Return(int64(3), nil).Times(1)
-		// No courses, so the goroutine it starts exits immediately without touching
-		// anything else; permitted any number of times since it races the assertions
-		// below by design.
-		coursesMock := mock_dao.NewMockCoursesDao(ctrl)
-		coursesMock.EXPECT().GetAllCourses().Return(nil, nil).AnyTimes()
-
-		api := &API{dao: dao.DaoWrapper{FileDao: fileMock, CoursesDao: coursesMock}, log: slog.Default()}
-		resp, err := api.GenerateMaintenanceThumbnails(context.Background(), &emptypb.Empty{})
-		if err != nil {
-			t.Fatalf("GenerateMaintenanceThumbnails: %v", err)
-		}
-		if !resp.Running {
-			t.Error("running = false, want true immediately after starting a job")
-		}
-
-		// Give the trivial (no-course) goroutine a moment to finish and flip the flag
-		// back, so this test does not leak a "running" state into whichever test the
-		// race detector schedules next.
-		for i := 0; i < 100; i++ {
-			maintenanceThumbnails.mu.Lock()
-			done := !maintenanceThumbnails.running
-			maintenanceThumbnails.mu.Unlock()
-			if done {
-				break
-			}
-			time.Sleep(time.Millisecond)
-		}
-	})
-}
 
 func TestListMaintenanceCronJobs(t *testing.T) {
 	before := tools.Cron

@@ -1,10 +1,6 @@
 /**
- * Server maintenance: thumbnail regeneration, manually triggering a cron job, and
- * dismissing failed transcodings and emails.
- *
- * Thumbnail regeneration runs in a background goroutine the request that started it
- * does not wait for, so the old page polled a status endpoint every five seconds
- * instead of blocking; REFRESH_INTERVAL_MS keeps that behaviour here.
+ * Server maintenance: manually triggering a cron job, and dismissing failed
+ * transcodings and emails.
  */
 
 import { timestampDate } from "@bufbuild/protobuf/wkt";
@@ -13,20 +9,10 @@ import {
   ListMaintenanceCronJobsResponseSchema,
   ListMaintenanceEmailFailuresResponseSchema,
   ListMaintenanceTranscodingFailuresResponseSchema,
-  MaintenanceThumbnailStatusSchema,
   type MaintenanceEmailFailure,
   type MaintenanceTranscodingFailure,
 } from "@/gen/server/apiv2_pb";
-import { apiDelete, apiGetMessage, apiPost, apiPostMessage } from "./api";
-
-/** How often the page polls while a thumbnail run is in progress. */
-export const REFRESH_INTERVAL_MS = 5000;
-
-export interface ThumbnailStatus {
-  running: boolean;
-  /** Fraction between 0 and 1; meaningless while running is false. */
-  progress: number;
-}
+import { apiDelete, apiGetMessage, apiPost } from "./api";
 
 export interface TranscodingFailure {
   id: number;
@@ -46,10 +32,6 @@ export interface EmailFailure {
   lastTry: Date | null;
   retries: number;
   errors: string;
-}
-
-function toThumbnailStatus(status: { running: boolean; progress: number }): ThumbnailStatus {
-  return { running: status.running, progress: status.progress };
 }
 
 function toTranscodingFailure(failure: MaintenanceTranscodingFailure): TranscodingFailure {
@@ -74,30 +56,6 @@ function toEmailFailure(failure: MaintenanceEmailFailure): EmailFailure {
     retries: failure.retries,
     errors: failure.errors,
   };
-}
-
-/** The current state of the background regeneration job, for the page to poll. */
-export async function fetchThumbnailStatus(): Promise<ThumbnailStatus> {
-  const res = await apiGetMessage(
-    MaintenanceThumbnailStatusSchema,
-    "/admin/maintenance/thumbnails/status",
-  );
-  return toThumbnailStatus(res);
-}
-
-/**
- * Starts regenerating every VoD thumbnail. A run already in progress is left alone by
- * the server, so calling this twice is harmless; the returned status reflects
- * whichever run is now active.
- */
-export async function generateThumbnails(): Promise<ThumbnailStatus> {
-  const res = await apiPostMessage(
-    MaintenanceThumbnailStatusSchema,
-    MaintenanceThumbnailStatusSchema,
-    "/admin/maintenance/thumbnails/generate",
-    { $typeName: "protobuf.MaintenanceThumbnailStatus", running: false, progress: 0 },
-  );
-  return toThumbnailStatus(res);
 }
 
 /** The jobs the scheduler knows by name, to offer as choices before running one. */

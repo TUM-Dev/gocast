@@ -786,54 +786,6 @@
         ]
       }
     },
-    "/admin/maintenance/thumbnails/generate": {
-      "post": {
-        "summary": "Regenerate every VoD thumbnail.",
-        "description": "Starts a background job that requests a fresh thumbnail for every VoD file. A run already in progress is left alone rather than started twice. Requires the server.administer permission.",
-        "operationId": "AdminService_generateMaintenanceThumbnails",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufMaintenanceThumbnailStatus"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "Maintenance"
-        ]
-      }
-    },
-    "/admin/maintenance/thumbnails/status": {
-      "get": {
-        "summary": "Get the thumbnail regeneration progress.",
-        "description": "Reports whether a thumbnail regeneration run is in progress and how far it has gotten. Requires the server.administer permission.",
-        "operationId": "AdminService_getMaintenanceThumbnailStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufMaintenanceThumbnailStatus"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "Maintenance"
-        ]
-      }
-    },
     "/admin/maintenance/transcoding-failures": {
       "get": {
         "summary": "List transcoding failures.",
@@ -8284,19 +8236,6 @@
         }
       },
       "description": "MaintenanceEmailFailure restates model.Email for a message that never sent."
-    },
-    "protobufMaintenanceThumbnailStatus": {
-      "type": "object",
-      "properties": {
-        "running": {
-          "type": "boolean"
-        },
-        "progress": {
-          "type": "number",
-          "format": "float"
-        }
-      },
-      "description": "MaintenanceThumbnailStatus reports the state of the background regeneration job.\nprogress is meaningless once running is false; a finished run resets it to zero\nrather than leaving it at 1, so a stale tab does not read a fresh run as complete."
     },
     "protobufMaintenanceTranscodingFailure": {
       "type": "object",

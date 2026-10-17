@@ -3704,8 +3704,6 @@ const (
 	AdminService_RevokeIntegrationKey_FullMethodName                = "/protobuf.AdminService/revokeIntegrationKey"
 	AdminService_ListWorkers_FullMethodName                         = "/protobuf.AdminService/listWorkers"
 	AdminService_DeleteWorker_FullMethodName                        = "/protobuf.AdminService/deleteWorker"
-	AdminService_GetMaintenanceThumbnailStatus_FullMethodName       = "/protobuf.AdminService/getMaintenanceThumbnailStatus"
-	AdminService_GenerateMaintenanceThumbnails_FullMethodName       = "/protobuf.AdminService/generateMaintenanceThumbnails"
 	AdminService_ListMaintenanceCronJobs_FullMethodName             = "/protobuf.AdminService/listMaintenanceCronJobs"
 	AdminService_RunMaintenanceCronJob_FullMethodName               = "/protobuf.AdminService/runMaintenanceCronJob"
 	AdminService_ListMaintenanceTranscodingFailures_FullMethodName  = "/protobuf.AdminService/listMaintenanceTranscodingFailures"
@@ -3768,11 +3766,6 @@ type AdminServiceClient interface {
 	RevokeIntegrationKey(ctx context.Context, in *RevokeIntegrationKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListWorkers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListWorkersResponse, error)
 	DeleteWorker(ctx context.Context, in *DeleteWorkerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Thumbnail regeneration runs in a goroutine and outlives the request that started
-	// it, so the page polls getMaintenanceThumbnailStatus the way the old page polled
-	// its own status endpoint every five seconds.
-	GetMaintenanceThumbnailStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error)
-	GenerateMaintenanceThumbnails(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error)
 	ListMaintenanceCronJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceCronJobsResponse, error)
 	RunMaintenanceCronJob(ctx context.Context, in *RunMaintenanceCronJobRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceTranscodingFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceTranscodingFailuresResponse, error)
@@ -4023,26 +4016,6 @@ func (c *adminServiceClient) DeleteWorker(ctx context.Context, in *DeleteWorkerR
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AdminService_DeleteWorker_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminServiceClient) GetMaintenanceThumbnailStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MaintenanceThumbnailStatus)
-	err := c.cc.Invoke(ctx, AdminService_GetMaintenanceThumbnailStatus_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminServiceClient) GenerateMaintenanceThumbnails(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MaintenanceThumbnailStatus, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MaintenanceThumbnailStatus)
-	err := c.cc.Invoke(ctx, AdminService_GenerateMaintenanceThumbnails_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4325,11 +4298,6 @@ type AdminServiceServer interface {
 	RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error)
 	ListWorkers(context.Context, *emptypb.Empty) (*ListWorkersResponse, error)
 	DeleteWorker(context.Context, *DeleteWorkerRequest) (*emptypb.Empty, error)
-	// Thumbnail regeneration runs in a goroutine and outlives the request that started
-	// it, so the page polls getMaintenanceThumbnailStatus the way the old page polled
-	// its own status endpoint every five seconds.
-	GetMaintenanceThumbnailStatus(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error)
-	GenerateMaintenanceThumbnails(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error)
 	ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error)
 	RunMaintenanceCronJob(context.Context, *RunMaintenanceCronJobRequest) (*emptypb.Empty, error)
 	ListMaintenanceTranscodingFailures(context.Context, *emptypb.Empty) (*ListMaintenanceTranscodingFailuresResponse, error)
@@ -4438,12 +4406,6 @@ func (UnimplementedAdminServiceServer) ListWorkers(context.Context, *emptypb.Emp
 }
 func (UnimplementedAdminServiceServer) DeleteWorker(context.Context, *DeleteWorkerRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteWorker not implemented")
-}
-func (UnimplementedAdminServiceServer) GetMaintenanceThumbnailStatus(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMaintenanceThumbnailStatus not implemented")
-}
-func (UnimplementedAdminServiceServer) GenerateMaintenanceThumbnails(context.Context, *emptypb.Empty) (*MaintenanceThumbnailStatus, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateMaintenanceThumbnails not implemented")
 }
 func (UnimplementedAdminServiceServer) ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMaintenanceCronJobs not implemented")
@@ -4912,42 +4874,6 @@ func _AdminService_DeleteWorker_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).DeleteWorker(ctx, req.(*DeleteWorkerRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminService_GetMaintenanceThumbnailStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).GetMaintenanceThumbnailStatus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_GetMaintenanceThumbnailStatus_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).GetMaintenanceThumbnailStatus(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminService_GenerateMaintenanceThumbnails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).GenerateMaintenanceThumbnails(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_GenerateMaintenanceThumbnails_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).GenerateMaintenanceThumbnails(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5474,14 +5400,6 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteWorker",
 			Handler:    _AdminService_DeleteWorker_Handler,
-		},
-		{
-			MethodName: "getMaintenanceThumbnailStatus",
-			Handler:    _AdminService_GetMaintenanceThumbnailStatus_Handler,
-		},
-		{
-			MethodName: "generateMaintenanceThumbnails",
-			Handler:    _AdminService_GenerateMaintenanceThumbnails_Handler,
 		},
 		{
 			MethodName: "listMaintenanceCronJobs",

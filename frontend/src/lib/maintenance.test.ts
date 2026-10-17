@@ -6,9 +6,7 @@ import {
   deleteTranscodingFailure,
   fetchCronJobs,
   fetchEmailFailures,
-  fetchThumbnailStatus,
   fetchTranscodingFailures,
-  generateThumbnails,
   runCronJob,
 } from "./maintenance";
 
@@ -34,38 +32,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-});
-
-describe("fetchThumbnailStatus", () => {
-  it("reads running and progress off the wire", async () => {
-    respondWith({ running: true, progress: 0.42 });
-
-    const status = await fetchThumbnailStatus();
-
-    expect(status).toEqual({ running: true, progress: 0.42 });
-  });
-
-  it("reads an idle job as not running with zero progress", async () => {
-    // protojson omits false/zero fields, so an idle job answers `{}`.
-    respondWith({});
-
-    const status = await fetchThumbnailStatus();
-
-    expect(status).toEqual({ running: false, progress: 0 });
-  });
-});
-
-describe("generateThumbnails", () => {
-  it("posts to the generate endpoint and returns the resulting status", async () => {
-    respondWith({ running: true, progress: 0 });
-
-    const status = await generateThumbnails();
-
-    expect(status.running).toBe(true);
-    const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
-    expect(url).toBe("/api/v2/admin/maintenance/thumbnails/generate");
-    expect(init.method).toBe("POST");
-  });
 });
 
 describe("fetchCronJobs", () => {
