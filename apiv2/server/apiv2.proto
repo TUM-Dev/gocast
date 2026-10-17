@@ -616,6 +616,18 @@ service CourseService {
     };
   }
 
+  rpc regenerateCourseThumbnails(RegenerateCourseThumbnailsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/actions/regenerate-thumbnails"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Regenerate thumbnails for every VOD in the course."
+      description: "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course."
+    };
+  }
+
   rpc listCourseAdmins(ListCourseAdminsRequest) returns (ListCourseAdminsResponse) {
     option (google.api.http) = {get: "/courses/{course_id}/admins"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -2846,6 +2858,10 @@ message CopyCourseResponse {
 }
 
 message DeleteCourseRequest {
+  uint32 course_id = 1;
+}
+
+message RegenerateCourseThumbnailsRequest {
   uint32 course_id = 1;
 }
 

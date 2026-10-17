@@ -506,7 +506,7 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.Internal, "can't write file: %v", err)
 	}
 
-	err = m.dao.FileDao.NewFile(&file)
+	err = m.dao.FileDao.SetThumbnail(stream.ID, file)
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't save thumbnail to db: %v", err)
 	}

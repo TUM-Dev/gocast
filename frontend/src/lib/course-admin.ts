@@ -28,7 +28,7 @@ import {
   type CourseAdmin as CourseAdminMessage,
   type CourseLectureHallSetting,
 } from "@/gen/server/apiv2_pb";
-import { apiDelete, apiGetMessage, apiPatchMessage, apiPostMessage, apiPutMessage } from "./api";
+import { apiDelete, apiGetMessage, apiPatchMessage, apiPost, apiPostMessage, apiPutMessage } from "./api";
 import { semesterLabel, type Semester, type TeachingTerm } from "./semesters";
 
 export { CourseSourceMode };
@@ -134,6 +134,15 @@ export async function copyCourse(courseId: number, target: Semester): Promise<Co
 
 export async function deleteCourse(courseId: number): Promise<void> {
   await apiDelete(`/courses/${courseId}`);
+}
+
+/**
+ * Queues a background job that asks a runner to redo the thumbnail for every
+ * available version of every recorded lecture in the course. Returns as soon as the
+ * jobs are queued, not once they are done.
+ */
+export async function regenerateCourseThumbnails(courseId: number): Promise<void> {
+  await apiPost(`/courses/${courseId}/actions/regenerate-thumbnails`, {});
 }
 
 // ----- Authorized applications -----
