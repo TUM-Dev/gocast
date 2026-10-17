@@ -58,6 +58,7 @@ type Runner struct {
 	discard  map[string]bool
 
 	hlsServer *HLSServer
+	uploads   *uploadSlots
 
 	stats *vmstat.VmStat
 
@@ -87,6 +88,7 @@ func NewRunner(v string) *Runner {
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		draining:      false,
+		uploads:       newUploadSlots(),
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
 		stats:         vmstats,
 		StartTime:     start,
@@ -113,6 +115,8 @@ func (r *Runner) Run(ctx context.Context) {
 	go r.handleNotifications(ctx)
 	go r.InitApiGrpc()
 	go r.livestreamCleanup(ctx, r.log.With("job", "livestreamCleanup"))
+	go r.uploadCleanup(ctx, r.log.With("job", "uploadCleanup"))
+	go r.serveUploads(ctx)
 	go func() {
 		err := r.hlsServer.Start()
 		if err != nil {

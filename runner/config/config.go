@@ -13,6 +13,8 @@ var Config struct {
 	StoragePath  string `env:"STORAGE_PATH" envDefault:"storage/mass"`
 	SegmentPath  string `env:"SEGMENT_PATH" envDefault:"storage/live"`
 	ErrorPath    string `env:"ERROR_PATH" envDefault:"storage/errors"`
+	UploadPath   string `env:"UPLOAD_PATH" envDefault:"storage/uploads"`
+	UploadPort   int    `env:"UPLOAD_PORT" envDefault:"8188"`
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
 	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:8089"`
