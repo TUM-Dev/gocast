@@ -14,6 +14,7 @@ BUMP="${1:-}"
 if [ -z "$BUMP" ]; then
   BUMP="patch"
   while IFS= read -r -d $'\x1e' record; do
+    record="${record#$'\n'}"  # git log separates records with a newline after the \x1e
     subject="${record%%$'\x1f'*}"
     body="${record#*$'\x1f'}"
     if [[ "$subject" =~ ^[a-zA-Z]+(\([^\)]*\))?!: ]] || [[ "$body" == *"BREAKING CHANGE"* ]]; then
