@@ -19,6 +19,11 @@ service RunnerService {
   // Regenerates the thumbnail for an already-recorded VOD.
   // The result is delivered asynchronously via ThumbnailReadyNotification.
   rpc RegenerateThumbnail (RegenerateThumbnailRequest) returns (RegenerateThumbnailResponse) {}
+  // Reserves a one-time upload slot for a video file of a stream. The file itself is
+  // then POSTed to the runner's upload endpoint using the returned token; the runner
+  // converts it to a VOD and reports it via VODReadyNotification and
+  // ThumbnailReadyNotification.
+  rpc PrepareUpload (PrepareUploadRequest) returns (PrepareUploadResponse) {}
 }
 
 message StreamRequest {
@@ -67,6 +72,18 @@ message RegenerateThumbnailRequest {
 
 message RegenerateThumbnailResponse {
   string job_id = 1;
+}
+
+message PrepareUploadRequest {
+  uint64 stream_id = 1;
+  StreamVersion version = 2;
+}
+
+message PrepareUploadResponse {
+  // token is single use and only valid for a short time.
+  string token = 1;
+  // upload_port is the port of the runner's HTTP upload endpoint.
+  int32 upload_port = 2;
 }
 
 // RunnerManagerService service defines communication from runners to gocast

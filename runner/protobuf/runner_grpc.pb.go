@@ -23,6 +23,7 @@ const (
 	RunnerService_RequestStreamEnd_FullMethodName     = "/protobuf.RunnerService/RequestStreamEnd"
 	RunnerService_RequestSectionImages_FullMethodName = "/protobuf.RunnerService/RequestSectionImages"
 	RunnerService_RegenerateThumbnail_FullMethodName  = "/protobuf.RunnerService/RegenerateThumbnail"
+	RunnerService_PrepareUpload_FullMethodName        = "/protobuf.RunnerService/PrepareUpload"
 )
 
 // RunnerServiceClient is the client API for RunnerService service.
@@ -38,6 +39,11 @@ type RunnerServiceClient interface {
 	// Regenerates the thumbnail for an already-recorded VOD.
 	// The result is delivered asynchronously via ThumbnailReadyNotification.
 	RegenerateThumbnail(ctx context.Context, in *RegenerateThumbnailRequest, opts ...grpc.CallOption) (*RegenerateThumbnailResponse, error)
+	// Reserves a one-time upload slot for a video file of a stream. The file itself is
+	// then POSTed to the runner's upload endpoint using the returned token; the runner
+	// converts it to a VOD and reports it via VODReadyNotification and
+	// ThumbnailReadyNotification.
+	PrepareUpload(ctx context.Context, in *PrepareUploadRequest, opts ...grpc.CallOption) (*PrepareUploadResponse, error)
 }
 
 type runnerServiceClient struct {
@@ -88,6 +94,16 @@ func (c *runnerServiceClient) RegenerateThumbnail(ctx context.Context, in *Regen
 	return out, nil
 }
 
+func (c *runnerServiceClient) PrepareUpload(ctx context.Context, in *PrepareUploadRequest, opts ...grpc.CallOption) (*PrepareUploadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PrepareUploadResponse)
+	err := c.cc.Invoke(ctx, RunnerService_PrepareUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RunnerServiceServer is the server API for RunnerService service.
 // All implementations must embed UnimplementedRunnerServiceServer
 // for forward compatibility.
@@ -101,6 +117,11 @@ type RunnerServiceServer interface {
 	// Regenerates the thumbnail for an already-recorded VOD.
 	// The result is delivered asynchronously via ThumbnailReadyNotification.
 	RegenerateThumbnail(context.Context, *RegenerateThumbnailRequest) (*RegenerateThumbnailResponse, error)
+	// Reserves a one-time upload slot for a video file of a stream. The file itself is
+	// then POSTed to the runner's upload endpoint using the returned token; the runner
+	// converts it to a VOD and reports it via VODReadyNotification and
+	// ThumbnailReadyNotification.
+	PrepareUpload(context.Context, *PrepareUploadRequest) (*PrepareUploadResponse, error)
 	mustEmbedUnimplementedRunnerServiceServer()
 }
 
@@ -122,6 +143,9 @@ func (UnimplementedRunnerServiceServer) RequestSectionImages(context.Context, *S
 }
 func (UnimplementedRunnerServiceServer) RegenerateThumbnail(context.Context, *RegenerateThumbnailRequest) (*RegenerateThumbnailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegenerateThumbnail not implemented")
+}
+func (UnimplementedRunnerServiceServer) PrepareUpload(context.Context, *PrepareUploadRequest) (*PrepareUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrepareUpload not implemented")
 }
 func (UnimplementedRunnerServiceServer) mustEmbedUnimplementedRunnerServiceServer() {}
 func (UnimplementedRunnerServiceServer) testEmbeddedByValue()                       {}
@@ -216,6 +240,24 @@ func _RunnerService_RegenerateThumbnail_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RunnerService_PrepareUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RunnerServiceServer).PrepareUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RunnerService_PrepareUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RunnerServiceServer).PrepareUpload(ctx, req.(*PrepareUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RunnerService_ServiceDesc is the grpc.ServiceDesc for RunnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -238,6 +280,10 @@ var RunnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RegenerateThumbnail",
 			Handler:    _RunnerService_RegenerateThumbnail_Handler,
+		},
+		{
+			MethodName: "PrepareUpload",
+			Handler:    _RunnerService_PrepareUpload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

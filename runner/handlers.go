@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 
+	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"google.golang.org/grpc/codes"
@@ -112,4 +113,26 @@ func (r *Runner) RegenerateThumbnail(_ context.Context, req *protobuf.Regenerate
 	r.log.Info("thumbnail regeneration job added", "ID", jID)
 
 	return &protobuf.RegenerateThumbnailResponse{JobId: ptr.Take(jID)}, nil
+}
+
+// PrepareUpload reserves a slot for a video file upload. The file is then POSTed to the
+// upload endpoint with the returned token; the result is delivered asynchronously in
+// VODReady and ThumbnailReady notifications, so nothing is started here.
+func (r *Runner) PrepareUpload(_ context.Context, req *protobuf.PrepareUploadRequest) (*protobuf.PrepareUploadResponse, error) {
+	if req.GetStreamId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no stream id given")
+	}
+	version, ok := protobuf.StreamVersion_name[int32(req.GetVersion())]
+	if !ok || req.GetVersion() == protobuf.StreamVersion_STREAM_VERSION_UNSPECIFIED {
+		return nil, status.Errorf(codes.InvalidArgument, "no valid stream version given")
+	}
+
+	token, err := r.uploads.create(req.GetStreamId(), version)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "couldn't create upload token")
+	}
+	return &protobuf.PrepareUploadResponse{
+		Token:      ptr.Take(token),
+		UploadPort: ptr.Take(int32(config.Config.UploadPort)),
+	}, nil
 }

@@ -68,6 +68,37 @@ func (r *Runner) livestreamCleanup(ctx context.Context, log *slog.Logger) {
 	}
 }
 
+// uploadMaxAge is how long an uploaded file may stay in config.Config.UploadPath. The
+// import deletes it itself, so what is left was orphaned by a crash or a restart.
+const uploadMaxAge = 24 * time.Hour
+
+// uploadCleanup removes files in config.Config.UploadPath that are older than uploadMaxAge.
+func (r *Runner) uploadCleanup(ctx context.Context, log *slog.Logger) {
+	for {
+		entries, err := os.ReadDir(config.Config.UploadPath)
+		if err != nil && !os.IsNotExist(err) {
+			log.Error("Couldn't read upload directory", "err", err)
+		}
+		for _, e := range entries {
+			info, err := e.Info()
+			if err != nil || e.IsDir() || time.Since(info.ModTime()) < uploadMaxAge {
+				continue
+			}
+			f := filepath.Join(config.Config.UploadPath, e.Name())
+			log.Debug("removing stale upload", "file", f)
+			if err := os.Remove(f); err != nil {
+				log.Error("Couldn't remove stale upload", "file", f, "err", err)
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Hour):
+		}
+	}
+}
+
 func determineCleanableDirectories(path string) (remove map[string]time.Time, backup map[string]time.Time, err error) {
 	remove = make(map[string]time.Time)
 	backup = make(map[string]time.Time)
