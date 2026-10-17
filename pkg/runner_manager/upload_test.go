@@ -102,6 +102,24 @@ func TestHandleVODReady(t *testing.T) {
 		}
 	})
 
+	t.Run("a stream made private beforehand stays private", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}, CourseID: 3, Private: true}, nil)
+		coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+		coursesDao.EXPECT().GetCourseById(gomock.Any(), uint(3)).Return(model.Course{VodPrivate: false}, nil)
+		var saved model.Stream
+		streamsDao.EXPECT().SaveStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { saved = *s; return nil })
+
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao, CoursesDao: coursesDao})
+		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_COMBINED)); err != nil {
+			t.Fatal(err)
+		}
+		if !saved.Private {
+			t.Error("the stream became public")
+		}
+	})
+
 	t.Run("later VODs keep the visibility", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		streamsDao := mock_dao.NewMockStreamsDao(ctrl)

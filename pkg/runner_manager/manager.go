@@ -539,12 +539,13 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	}
 	if !stream.Recording {
 		// The first VOD of a stream follows the course's setting, as it did when workers
-		// reported it. Later versions and re-uploads keep what was set since.
+		// reported it. Later versions and re-uploads keep what was set since. A stream
+		// that was made private beforehand stays so: this only ever hides a VOD.
 		course, err := m.dao.CoursesDao.GetCourseById(ctx, stream.CourseID)
 		if err != nil {
 			return nil, err
 		}
-		stream.Private = course.VodPrivate
+		stream.Private = stream.Private || course.VodPrivate
 	}
 	modelVersion := model.COMB
 	switch *notification.StreamVersion {

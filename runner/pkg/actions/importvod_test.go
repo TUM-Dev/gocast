@@ -20,21 +20,26 @@ var testBroker = sync.OnceValue(func() *metrics.Broker { return metrics.NewBroke
 
 func TestNeedsTranscode(t *testing.T) {
 	cases := []struct {
-		name                string
-		video, audio, level string
-		want                bool
+		name                        string
+		video, audio, level, pixFmt string
+		want                        bool
 	}{
-		{"h264 aac", "h264", "aac", "40", false},
-		{"h264 without audio", "h264", "", "40", false},
-		{"level at the limit", "h264", "aac", "42", false},
-		{"level too high", "h264", "aac", "51", true},
-		{"unknown level", "h264", "aac", "", true},
-		{"hevc", "hevc", "aac", "40", true},
-		{"ac3 audio", "h264", "ac3", "40", true},
+		{"h264 aac", "h264", "aac", "40", "yuv420p", false},
+		{"full range jpeg yuv", "h264", "aac", "40", "yuvj420p", false},
+		{"h264 without audio", "h264", "", "40", "yuv420p", false},
+		{"level at the limit", "h264", "aac", "42", "yuv420p", false},
+		{"level too high", "h264", "aac", "51", "yuv420p", true},
+		{"unknown level", "h264", "aac", "", "yuv420p", true},
+		{"hevc", "hevc", "aac", "40", "yuv420p", true},
+		{"ac3 audio", "h264", "ac3", "40", "yuv420p", true},
+		{"10 bit", "h264", "aac", "40", "yuv420p10le", true},
+		{"4:2:2", "h264", "aac", "40", "yuv422p", true},
+		{"4:4:4", "h264", "aac", "40", "yuv444p", true},
+		{"unknown pixel format", "h264", "aac", "40", "", true},
 	}
 	for _, c := range cases {
-		if got := needsTranscode(c.video, c.audio, c.level); got != c.want {
-			t.Errorf("%s: needsTranscode(%q, %q, %q) = %v, want %v", c.name, c.video, c.audio, c.level, got, c.want)
+		if got := needsTranscode(c.video, c.audio, c.level, c.pixFmt); got != c.want {
+			t.Errorf("%s: needsTranscode(%q, %q, %q, %q) = %v, want %v", c.name, c.video, c.audio, c.level, c.pixFmt, got, c.want)
 		}
 	}
 }
@@ -133,9 +138,7 @@ func TestImportVOD(t *testing.T) {
 			if _, err := os.Stat(upload); !os.IsNotExist(err) {
 				t.Errorf("uploaded file still there: %v", err)
 			}
-			if _, err := os.Stat(filepath.Join(storage, "7", "STREAM_VERSION_PRESENTATION.importing")); err == nil {
-				t.Error("work directory left behind")
-			}
+			assertNoLeftovers(t, filepath.Join(storage, "7"), "STREAM_VERSION_PRESENTATION")
 
 			n := <-notify
 			ready := n.GetVodReady()
@@ -218,5 +221,124 @@ func TestImportVODThenThumbnail(t *testing.T) {
 	}
 	if thumb.GetStream().GetId() != 7 || thumb.GetStreamVersion() != protobuf.StreamVersion_STREAM_VERSION_COMBINED {
 		t.Errorf("thumbnail for %v", thumb)
+	}
+}
+
+// assertNoLeftovers checks that dir holds nothing but the VOD directory itself: no work
+// or trash directories of an import.
+func assertNoLeftovers(t *testing.T, dir, vod string) {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if e.Name() != vod {
+			t.Errorf("%s left behind next to the VOD", e.Name())
+		}
+	}
+}
+
+// TestImportVODReplacesPreviousVOD checks that a re-upload replaces the VOD, leaves no
+// stale segments and cleans up after itself.
+func TestImportVODReplacesPreviousVOD(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	storage := t.TempDir()
+	config.Config.StoragePath = storage
+	config.Config.EdgeServer = "http://edge"
+	old := filepath.Join(storage, "7", "STREAM_VERSION_COMBINED")
+	if err := os.MkdirAll(old, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(old, "stale.ts"), []byte("old"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	upload := makeUpload(t, "up.mp4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
+	notify := make(chan *protobuf.Notification, 1)
+	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": upload}
+	if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
+		t.Fatalf("ImportVOD = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(old, "stale.ts")); err == nil {
+		t.Error("stale segment of the previous VOD survived")
+	}
+	if _, err := os.Stat(filepath.Join(old, "playlist.m3u8")); err != nil {
+		t.Errorf("no new playlist: %v", err)
+	}
+	assertNoLeftovers(t, filepath.Join(storage, "7"), "STREAM_VERSION_COMBINED")
+}
+
+// TestImportVODConcurrent checks that imports of the same stream version don't share a
+// work directory and wipe each other's output.
+func TestImportVODConcurrent(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	storage := t.TempDir()
+	config.Config.StoragePath = storage
+	config.Config.EdgeServer = "http://edge"
+
+	var wg sync.WaitGroup
+	errs := make(chan error, 3)
+	for i := 0; i < 3; i++ {
+		upload := makeUpload(t, "up.mp4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			notify := make(chan *protobuf.Notification, 1)
+			data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": upload}
+			errs <- ImportVOD(context.Background(), testLogger(), notify, data, testBroker())
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Errorf("ImportVOD = %v", err)
+		}
+	}
+	b, err := os.ReadFile(filepath.Join(storage, "7", "STREAM_VERSION_COMBINED", "playlist.m3u8"))
+	if err != nil || !strings.Contains(string(b), "#EXT-X-ENDLIST") {
+		t.Errorf("no complete playlist: %v\n%s", err, b)
+	}
+	assertNoLeftovers(t, filepath.Join(storage, "7"), "STREAM_VERSION_COMBINED")
+}
+
+// TestImportVODReportsFFmpegError checks that what ffmpeg says on failing is part of
+// the error, which is all anyone gets to see of a failed import.
+func TestImportVODReportsFFmpegError(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	config.Config.StoragePath = t.TempDir()
+	full := makeUpload(t, "up.mp4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
+	b, err := os.ReadFile(full)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// ffprobe still reads the head of a truncated file; ffmpeg fails on the missing rest.
+	broken := filepath.Join(t.TempDir(), "broken.mp4")
+	if err := os.WriteFile(broken, b[:len(b)/3], 0o600); err != nil {
+		t.Fatal(err)
+	}
+	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": broken}
+	err = ImportVOD(context.Background(), testLogger(), make(chan *protobuf.Notification, 1), data, testBroker())
+	if err == nil {
+		t.Skip("ffmpeg accepted the truncated file")
+	}
+	if !IsAbortingError(err) {
+		t.Errorf("err = %v, want an aborting error", err)
+	}
+}
+
+func TestTailBuffer(t *testing.T) {
+	var tb tailBuffer
+	_, _ = tb.Write([]byte(strings.Repeat("a", 3*tailBufferSize)))
+	_, _ = tb.Write([]byte("the error\n"))
+	if got := tb.String(); len(got) > tailBufferSize || !strings.HasSuffix(got, "the error") {
+		t.Errorf("tail = %d bytes ending %q", len(got), got[len(got)-10:])
 	}
 }

@@ -153,6 +153,18 @@ func TestHandleUpload(t *testing.T) {
 		}
 	})
 
+	t.Run("empty file", func(t *testing.T) {
+		r := newUploadTestRunner(t)
+		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA")
+		body, ct := multipartBody(t, "file", "")
+		if rec := post(r, token, body, ct); rec.Code != http.StatusBadRequest {
+			t.Errorf("status = %d, want 400", rec.Code)
+		}
+		if entries, _ := os.ReadDir(config.Config.UploadPath); len(entries) != 0 {
+			t.Errorf("%d files left in the upload dir", len(entries))
+		}
+	})
+
 	t.Run("not multipart", func(t *testing.T) {
 		r := newUploadTestRunner(t)
 		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA")

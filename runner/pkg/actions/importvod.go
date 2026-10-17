@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tum-dev/gocast/runner/config"
@@ -57,16 +58,18 @@ func ImportVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	if probe.Codec("video") == "" {
 		return AbortingError(fmt.Errorf("upload has no video stream"))
 	}
-	transcode := needsTranscode(probe.Codec("video"), probe.Codec("audio"), probe.Level())
+	transcode := needsTranscode(probe.Codec("video"), probe.Codec("audio"), probe.Level(), probe.PixelFormat())
 
 	vodDir := path.Join(config.Config.StoragePath, fmt.Sprintf("%d", streamID), streamVersion)
 	// Written next to the final directory and swapped in at the end: a failed re-upload
 	// must leave the previous VOD intact, and a half-written one must never be served.
-	workDir := vodDir + ".importing"
-	if err := os.RemoveAll(workDir); err != nil {
-		return AbortingError(fmt.Errorf("clear work directory: %w", err))
+	// Unique per import, so two uploads of the same stream version can't wipe each
+	// other's output.
+	if err := os.MkdirAll(path.Dir(vodDir), os.ModePerm); err != nil {
+		return AbortingError(fmt.Errorf("create stream directory: %w", err))
 	}
-	if err := os.MkdirAll(workDir, os.ModePerm); err != nil {
+	workDir, err := os.MkdirTemp(path.Dir(vodDir), ".importing-")
+	if err != nil {
 		return AbortingError(fmt.Errorf("create work directory: %w", err))
 	}
 	defer func() { _ = os.RemoveAll(workDir) }() // no-op once renamed
@@ -75,21 +78,16 @@ func ImportVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	// An argument slice, not a split string: the file name comes from the uploader.
 	command := exec.CommandContext(ctx, "ffmpeg", importArgs(uploadPath, workDir, transcode)...)
 	command.WaitDelay = 10 * time.Second
-	stderr, err := command.StderrPipe()
-	if err != nil {
-		return AbortingError(err)
-	}
-	go logCmdPipe(logger, stderr, []any{"stream", streamID, "logStream", "stderr"})
+	// Not StderrPipe: Wait closes the pipe, so reading it concurrently can lose the end
+	// of the output, which is where ffmpeg says why it failed.
+	var stderr tailBuffer
+	command.Stderr = &stderr
 	if err := command.Run(); err != nil {
-		return AbortingError(fmt.Errorf("ffmpeg failed: %w", err))
+		return AbortingError(fmt.Errorf("ffmpeg failed: %w: %s", err, stderr.String()))
 	}
 
-	// A re-upload replaces the previous VOD.
-	if err := os.RemoveAll(vodDir); err != nil {
-		return AbortingError(fmt.Errorf("remove previous VOD: %w", err))
-	}
-	if err := os.Rename(workDir, vodDir); err != nil {
-		return AbortingError(fmt.Errorf("publish VOD: %w", err))
+	if err := replaceVOD(workDir, vodDir); err != nil {
+		return AbortingError(err)
 	}
 
 	vodPath := path.Join(vodDir, "playlist.m3u8")
@@ -115,8 +113,14 @@ func ImportVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 // needsTranscode reports whether an upload can't be repackaged as is. The container
 // doesn't matter, only the codecs do: HLS segments are rewritten either way. A missing
 // audio track is fine, a missing level is not, as the video can't be shown to be playable.
-func needsTranscode(videoCodec, audioCodec, level string) bool {
+// The pixel format matters too: 10 bit and 4:2:2/4:4:4 H.264, which cameras and screen
+// recorders produce, have the right codec name and the right level, yet browsers can't
+// decode them.
+func needsTranscode(videoCodec, audioCodec, level, pixFmt string) bool {
 	if videoCodec != "h264" {
+		return true
+	}
+	if pixFmt != "yuv420p" && pixFmt != "yuvj420p" {
 		return true
 	}
 	if audioCodec != "" && audioCodec != "aac" {
@@ -149,3 +153,43 @@ func importArgs(input, vodDir string, transcode bool) []string {
 		path.Join(vodDir, "playlist.m3u8"),
 	)
 }
+
+// replaceVOD puts the finished import at vodDir, replacing a previous VOD. The old one is
+// moved aside rather than deleted first, so a failure leaves it in place, and viewers
+// only miss the playlist for the time between two renames.
+func replaceVOD(workDir, vodDir string) error {
+	var trash string
+	if _, err := os.Stat(vodDir); err == nil {
+		trash, err = os.MkdirTemp(path.Dir(vodDir), ".replaced-")
+		if err != nil {
+			return fmt.Errorf("create trash directory: %w", err)
+		}
+		defer func() { _ = os.RemoveAll(trash) }()
+		if err := os.Rename(vodDir, path.Join(trash, "vod")); err != nil {
+			return fmt.Errorf("move previous VOD aside: %w", err)
+		}
+	}
+	if err := os.Rename(workDir, vodDir); err != nil {
+		if trash != "" {
+			_ = os.Rename(path.Join(trash, "vod"), vodDir) // best effort: keep the old VOD
+		}
+		return fmt.Errorf("publish VOD: %w", err)
+	}
+	return nil
+}
+
+// tailBuffer keeps the last bytes written to it: the end of ffmpeg's output is the part
+// that holds the error.
+type tailBuffer struct{ b []byte }
+
+const tailBufferSize = 4096
+
+func (t *tailBuffer) Write(p []byte) (int, error) {
+	t.b = append(t.b, p...)
+	if len(t.b) > tailBufferSize {
+		t.b = t.b[len(t.b)-tailBufferSize:]
+	}
+	return len(p), nil
+}
+
+func (t *tailBuffer) String() string { return strings.TrimSpace(string(t.b)) }

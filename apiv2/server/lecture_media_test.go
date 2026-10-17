@@ -156,7 +156,7 @@ func TestUploadLectureMedia(t *testing.T) {
 		}
 	})
 
-	t.Run("a runner that lost the token is the runner's fault", func(t *testing.T) {
+	t.Run("a runner that lost the token is worth retrying", func(t *testing.T) {
 		uploads := &fakeUploads{}
 		uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "unknown or expired upload token", http.StatusNotFound)
@@ -165,7 +165,7 @@ func TestUploadLectureMedia(t *testing.T) {
 		expectLecture(m)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
-		if rec.Code != http.StatusBadRequest {
+		if rec.Code != http.StatusServiceUnavailable {
 			t.Errorf("status = %d: %s", rec.Code, rec.Body)
 		}
 	})
