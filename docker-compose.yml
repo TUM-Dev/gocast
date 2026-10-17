@@ -87,11 +87,13 @@ services:
     environment:
       - STORAGE_PATH=/storage/mass
       - SEGMENT_PATH=/storage/live
+      - UPLOAD_PATH=/storage/uploads
       - REALHOST=runner
       - "EDGE_SERVER=http://localhost:8089"
       - "GOCAST_SERVER=tum-live:50056"
     volumes:
       - runner_data:/storage/live
+      - runner_uploads:/storage/uploads
       - vod:/storage/mass
     ports:
       - "52735:52735"
@@ -243,5 +245,6 @@ volumes:
   vod:
   mariadb-data:
   runner_data:
+  runner_uploads:
   meili_gocast_data:
   prometheus-data:

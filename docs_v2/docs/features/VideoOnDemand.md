@@ -11,3 +11,6 @@ feature is useful for hosting videos that you want to share with your students.
 
 You can also record your live classes and get them automatically uploaded to the server. This way, students who missed
 the live class can watch the recording later.
+
+Uploaded videos are converted by a runner: videos browsers can play are repackaged as they are, others are
+transcoded first. See [Uploading a video](../development/Upload.md) for the details.
