@@ -717,3 +717,17 @@ func (mr *MockStreamsDaoMockRecorder) UpdateStream(stream any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStream", reflect.TypeOf((*MockStreamsDao)(nil).UpdateStream), stream)
 }
+
+// UpdateTranscodingProgress mocks base method.
+func (m *MockStreamsDao) UpdateTranscodingProgress(streamVersion model.StreamVersion, streamId uint, progress int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTranscodingProgress", streamVersion, streamId, progress)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTranscodingProgress indicates an expected call of UpdateTranscodingProgress.
+func (mr *MockStreamsDaoMockRecorder) UpdateTranscodingProgress(streamVersion, streamId, progress any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).UpdateTranscodingProgress), streamVersion, streamId, progress)
+}

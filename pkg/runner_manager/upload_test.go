@@ -5,7 +5,9 @@ import (
 	"errors"
 	"net"
 	"strconv"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -92,6 +94,7 @@ func TestHandleVODReady(t *testing.T) {
 		coursesDao.EXPECT().GetCourseById(gomock.Any(), uint(3)).Return(model.Course{VodPrivate: true}, nil)
 		var saved model.Stream
 		streamsDao.EXPECT().SaveStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { saved = *s; return nil })
+		streamsDao.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(5)).Return(nil)
 
 		m := New(dao.DaoWrapper{StreamsDao: streamsDao, CoursesDao: coursesDao})
 		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_CAMERA)); err != nil {
@@ -110,6 +113,7 @@ func TestHandleVODReady(t *testing.T) {
 		coursesDao.EXPECT().GetCourseById(gomock.Any(), uint(3)).Return(model.Course{VodPrivate: false}, nil)
 		var saved model.Stream
 		streamsDao.EXPECT().SaveStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { saved = *s; return nil })
+		streamsDao.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(5)).Return(nil)
 
 		m := New(dao.DaoWrapper{StreamsDao: streamsDao, CoursesDao: coursesDao})
 		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_COMBINED)); err != nil {
@@ -126,6 +130,7 @@ func TestHandleVODReady(t *testing.T) {
 		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}, Recording: true}, nil)
 		var saved model.Stream
 		streamsDao.EXPECT().SaveStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { saved = *s; return nil })
+		streamsDao.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(5)).Return(nil)
 
 		// no CoursesDao: asking the course would be a mistake here
 		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
@@ -145,6 +150,133 @@ func TestHandleVODReady(t *testing.T) {
 		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
 		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_COMBINED)); err != nil {
 			t.Errorf("handleVODReady = %v, want nil so the runner stops retrying", err)
+		}
+	})
+}
+
+// TestHandleVODReadyEndsTheConversion checks that the card stops showing the version
+// that is done, and only that one.
+func TestHandleVODReadyEndsTheConversion(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}, Recording: true}, nil)
+	streamsDao.EXPECT().SaveStream(gomock.Any()).Return(nil)
+	streamsDao.EXPECT().RemoveTranscodingProgress(model.PRES, uint(5)).Return(nil)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+	_, err := m.handleVODReady(context.Background(), &protobuf.VODReadyNotification{
+		Stream:        &protobuf.StreamInfo{Id: ptr.Take(uint64(5))},
+		StreamVersion: ptr.Take(protobuf.StreamVersion_STREAM_VERSION_PRESENTATION),
+		Url:           ptr.Take("http://edge/vod/5/x/playlist.m3u8"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestHandleTranscodingProgress(t *testing.T) {
+	report := func(progress int32) *protobuf.TranscodingProgressNotification {
+		return &protobuf.TranscodingProgressNotification{
+			Stream:        &protobuf.StreamInfo{Id: ptr.Take(uint64(5))},
+			StreamVersion: ptr.Take(protobuf.StreamVersion_STREAM_VERSION_CAMERA),
+			Progress:      ptr.Take(progress),
+		}
+	}
+	for name, c := range map[string]struct {
+		in   int32
+		want int
+	}{
+		"in range": {42, 42},
+		"over":     {250, 99}, // 100 is VODReady's to say
+		"negative": {-3, 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+			streamsDao.EXPECT().UpdateTranscodingProgress(model.CAM, uint(5), c.want).Return(nil)
+
+			m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+			if _, err := m.handleTranscodingProgress(context.Background(), report(c.in)); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+
+	t.Run("a failing database is retried by the runner's next report", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+		streamsDao.EXPECT().UpdateTranscodingProgress(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("db down"))
+
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		if _, err := m.handleTranscodingProgress(context.Background(), report(1)); err == nil {
+			t.Error("handleTranscodingProgress = nil, want the error")
+		}
+	})
+}
+
+func TestHandleVODFailed(t *testing.T) {
+	failure := func(reason string) *protobuf.VODFailedNotification {
+		return &protobuf.VODFailedNotification{
+			Stream:        &protobuf.StreamInfo{Id: ptr.Take(uint64(5))},
+			StreamVersion: ptr.Take(protobuf.StreamVersion_STREAM_VERSION_PRESENTATION),
+			Reason:        ptr.Take(reason),
+		}
+	}
+
+	t.Run("is kept for the uploader", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}}, nil)
+		var saved model.TranscodingProgress
+		streamsDao.EXPECT().SaveTranscodingProgress(gomock.Any()).DoAndReturn(func(p model.TranscodingProgress) error { saved = p; return nil })
+
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		if _, err := m.handleVODFailed(context.Background(), failure("The file contains no video.")); err != nil {
+			t.Fatal(err)
+		}
+		want := model.TranscodingProgress{StreamID: 5, Version: model.PRES, Failed: true, Error: "The file contains no video."}
+		if saved != want {
+			t.Errorf("saved %+v, want %+v", saved, want)
+		}
+	})
+
+	t.Run("a reason too long for its column is cut", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}}, nil)
+		var saved model.TranscodingProgress
+		streamsDao.EXPECT().SaveTranscodingProgress(gomock.Any()).DoAndReturn(func(p model.TranscodingProgress) error { saved = p; return nil })
+
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		if _, err := m.handleVODFailed(context.Background(), failure(strings.Repeat("ä", 1000))); err != nil {
+			t.Fatal(err)
+		}
+		if n := utf8.RuneCountInString(saved.Error); n != maxProgressError {
+			t.Errorf("saved %d characters, want %d", n, maxProgressError)
+		}
+	})
+
+	t.Run("deleted stream is acknowledged", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{}, gorm.ErrRecordNotFound)
+
+		// no SaveTranscodingProgress: it would leave a row for a stream that is gone
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		if _, err := m.handleVODFailed(context.Background(), failure("x")); err != nil {
+			t.Errorf("handleVODFailed = %v, want nil so the runner stops retrying", err)
+		}
+	})
+
+	t.Run("a failing database is retried", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}}, nil)
+		streamsDao.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(errors.New("db down"))
+
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		if _, err := m.handleVODFailed(context.Background(), failure("x")); err == nil {
+			t.Error("handleVODFailed = nil, want the error so the runner retries")
 		}
 	})
 }

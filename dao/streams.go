@@ -58,6 +58,10 @@ type StreamsDao interface {
 	SaveCAMURL(stream *model.Stream, url string)
 	SavePRESURL(stream *model.Stream, url string)
 	SaveTranscodingProgress(progress model.TranscodingProgress) error
+	// UpdateTranscodingProgress moves the percentage of a conversion that is under way.
+	// It does nothing for a version with no row, or one that failed: a report that comes
+	// late must not revive what a notification that came after it has ended.
+	UpdateTranscodingProgress(streamVersion model.StreamVersion, streamId uint, progress int) error
 	RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error
 	GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error)
 	SaveStream(vod *model.Stream) error
@@ -125,6 +129,12 @@ func (d streamsDao) CreateStreams(streams []model.Stream) error {
 
 func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
 	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&progress).Error
+}
+
+func (d streamsDao) UpdateTranscodingProgress(v model.StreamVersion, streamId uint, progress int) error {
+	return d.db.Model(&model.TranscodingProgress{}).
+		Where("version = ? AND stream_id = ? AND failed = ?", v, streamId, false).
+		Update("progress", progress).Error
 }
 
 // AddVodView Adds a stat entry to the database or increases the one existing for this hour

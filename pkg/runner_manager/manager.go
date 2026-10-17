@@ -282,6 +282,10 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, m.streamEnded(ctx, notification.GetStreamEnd())
 	case *protobuf.Notification_VodReady:
 		return m.handleVODReady(ctx, notification.GetVodReady())
+	case *protobuf.Notification_TranscodingProgress:
+		return m.handleTranscodingProgress(ctx, notification.GetTranscodingProgress())
+	case *protobuf.Notification_VodFailed:
+		return m.handleVODFailed(ctx, notification.GetVodFailed())
 	case *protobuf.Notification_ThumbnailReady:
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
 	case *protobuf.Notification_SectionImagesReady:
@@ -562,6 +566,12 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	err = m.dao.StreamsDao.SaveStream(&stream)
 	if err != nil {
 		return nil, err
+	}
+
+	// The conversion is over: the card stops showing it. Before anything that can't be
+	// repeated, so that a failure here retries the whole notification.
+	if err := m.dao.StreamsDao.RemoveTranscodingProgress(modelVersion, stream.ID); err != nil {
+		return nil, status.Errorf(codes.Internal, "can't clear the transcoding progress: %v", err)
 	}
 
 	err = m.requestSubtitles(ctx, stream, modelVersion)

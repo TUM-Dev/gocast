@@ -3052,8 +3052,13 @@ message LectureFileAdmin {
 message LectureTranscodingProgress {
   // COMB, PRES or CAM.
   string version = 1;
-  // Percent.
+  // Percent. Meaningless when failed.
   int32 progress = 2;
+  // The conversion ended without a video. The version stays listed, with the reason,
+  // until the next upload of it replaces it.
+  bool failed = 3;
+  // Why, in words for the person who uploaded the video. Only set when failed.
+  string error = 4;
 }
 
 message LectureVideoSectionAdmin {
@@ -3214,7 +3219,8 @@ message GetLectureTranscodingProgressRequest {
 }
 
 message GetLectureTranscodingProgressResponse {
-  // Empty once every version has finished.
+  // Versions still converting, and those whose conversion failed. Holds nothing
+  // converting once every version has finished.
   repeated LectureTranscodingProgress progresses = 1;
 }
 

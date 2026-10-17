@@ -148,7 +148,7 @@ func courseLectureAdmin(s *model.Stream, hallNames map[uint]string) *protobuf.Co
 	progresses := make([]*protobuf.LectureTranscodingProgress, 0, len(s.TranscodingProgresses))
 	for _, p := range s.TranscodingProgresses {
 		progresses = append(progresses, &protobuf.LectureTranscodingProgress{
-			Version: string(p.Version), Progress: int32(p.Progress),
+			Version: string(p.Version), Progress: int32(p.Progress), Failed: p.Failed, Error: p.Error,
 		})
 	}
 

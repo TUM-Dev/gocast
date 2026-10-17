@@ -590,6 +590,23 @@ func TestGetLectureTranscodingProgress(t *testing.T) {
 		}
 	})
 
+	t.Run("keeps a failed version listed, with why", func(t *testing.T) {
+		api, m := newContentAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.streams.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(7)).
+			Return(model.TranscodingProgress{StreamID: 7, Version: model.COMB, Failed: true, Error: "The file contains no video."}, nil)
+		m.streams.EXPECT().GetTranscodingProgressByVersion(model.PRES, uint(7)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
+		m.streams.EXPECT().GetTranscodingProgressByVersion(model.CAM, uint(7)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
+
+		resp, err := api.GetLectureTranscodingProgress(asCaller(lectureAdmin), &protobuf.GetLectureTranscodingProgressRequest{CourseId: 1, StreamId: 7})
+		if err != nil {
+			t.Fatalf("GetLectureTranscodingProgress: %v", err)
+		}
+		if len(resp.Progresses) != 1 || !resp.Progresses[0].Failed || resp.Progresses[0].Error != "The file contains no video." {
+			t.Errorf("progresses = %v", resp.Progresses)
+		}
+	})
+
 	t.Run("500s a failed read", func(t *testing.T) {
 		api, m := newContentAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)

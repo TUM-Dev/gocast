@@ -370,7 +370,8 @@ var transcodedVersions = []model.StreamVersion{model.COMB, model.PRES, model.CAM
 // GetLectureTranscodingProgress replaces v1's getTranscodingProgress, which answered
 // one version per request and 100 for a version with no progress row. The row is
 // removed when a version finishes, so the absent versions are left out here, and an
-// empty list means done.
+// empty list means done. A version that failed stays listed, with the reason, until the
+// next upload of it.
 //
 // Read from the progress table rather than the lecture, whose cached copy can be ten
 // seconds old: this is what the card polls.
@@ -388,7 +389,9 @@ func (a *API) GetLectureTranscodingProgress(ctx context.Context, req *protobuf.G
 		if err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
-		progresses = append(progresses, &protobuf.LectureTranscodingProgress{Version: string(v), Progress: int32(p.Progress)})
+		progresses = append(progresses, &protobuf.LectureTranscodingProgress{
+			Version: string(v), Progress: int32(p.Progress), Failed: p.Failed, Error: p.Error,
+		})
 	}
 	return &protobuf.GetLectureTranscodingProgressResponse{Progresses: progresses}, nil
 }

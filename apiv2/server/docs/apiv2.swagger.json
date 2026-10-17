@@ -7433,7 +7433,7 @@
             "type": "object",
             "$ref": "#/definitions/protobufLectureTranscodingProgress"
           },
-          "description": "Empty once every version has finished."
+          "description": "Versions still converting, and those whose conversion failed. Holds nothing\nconverting once every version has finished."
         }
       }
     },
@@ -7898,7 +7898,15 @@
         "progress": {
           "type": "integer",
           "format": "int32",
-          "description": "Percent."
+          "description": "Percent. Meaningless when failed."
+        },
+        "failed": {
+          "type": "boolean",
+          "description": "The conversion ended without a video. The version stays listed, with the reason,\nuntil the next upload of it replaces it."
+        },
+        "error": {
+          "type": "string",
+          "description": "Why, in words for the person who uploaded the video. Only set when failed."
         }
       }
     },

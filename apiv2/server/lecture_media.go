@@ -77,6 +77,22 @@ func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream) {
 		return
 	}
 
+	// The card shows the upload as converting from here on. The runner's reports move the
+	// percentage, VODReady removes the row and VODFailed marks it failed. Replacing the row
+	// also clears a failure left by an earlier upload.
+	version := model.StreamVersion(videoType)
+	if err := a.dao.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{StreamID: stream.ID, Version: version}); err != nil {
+		// Not worth refusing the upload: the video is made all the same, the card just
+		// doesn't show it converting.
+		a.log.Warn("can't mark the upload as converting", "stream", stream.ID, "err", err)
+	}
+	// If the runner doesn't take the file there is no conversion to show.
+	dropProgress := func() {
+		if err := a.dao.StreamsDao.RemoveTranscodingProgress(version, stream.ID); err != nil {
+			a.log.Warn("can't clear the progress of an upload that wasn't taken", "stream", stream.ID, "err", err)
+		}
+	}
+
 	target := &url.URL{
 		Scheme: "http",
 		Host:   net.JoinHostPort(slot.Host, strconv.Itoa(slot.Port)),
@@ -90,9 +106,16 @@ func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream) {
 			r.Out.Header.Del("Authorization")
 			r.Out.Header.Del("Cookie")
 		},
-		ModifyResponse: runnerUploadResponse,
+		ModifyResponse: func(resp *http.Response) error {
+			err := runnerUploadResponse(resp)
+			if resp.StatusCode != http.StatusOK {
+				dropProgress()
+			}
+			return err
+		},
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			a.log.Warn("can't reach runner for upload", "runner", slot.Host, "err", err)
+			dropProgress()
 			writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errors.New("the runner taking the upload can't be reached")))
 		},
 	}
