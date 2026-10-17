@@ -2,10 +2,12 @@ package apiv2
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -14,28 +16,45 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc/status"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	"github.com/TUM-Dev/gocast/model"
 )
 
-// workerUploadPort is where a worker takes uploads (worker/rest), api.WorkerHTTPPort
-// in v1. A variable so a test can point it at its own server.
-var workerUploadPort = "8060"
+var errNoRunner = errors.New("no runner is available to take the upload")
 
-var errNoWorker = errors.New("no worker is available to take the upload")
+// UploadTarget is where a runner takes one upload.
+type UploadTarget struct {
+	Host string
+	Port int
+	// Token is single use and tells the runner which lecture the file belongs to.
+	Token string
+}
 
-// proxyLectureMedia replaces v1's uploadVODMedia: the recording is streamed on to
-// the least busy worker, which transcodes it and reports it back as the lecture's
-// version of the given type. The worker learns which lecture and type through an
-// upload key it trades in over gRPC, so the key is all it is sent.
+// Uploads reserves a runner for a lecture's uploaded recording. Only a runner converts
+// uploads, so without one (see WithUploads) uploading answers 503.
+type Uploads interface {
+	// Reserve picks a runner and returns where to send the file for the given version of
+	// the stream. The runner learns which stream and version through the token.
+	Reserve(ctx context.Context, streamID uint, version model.StreamVersion) (UploadTarget, error)
+}
+
+// WithUploads lets uploading a lecture's recording reach a runner. Without it the
+// upload answers 503.
+func WithUploads(u Uploads) Option {
+	return func(a *API) { a.uploads = u }
+}
+
+// proxyLectureMedia replaces v1's uploadVODMedia: the recording is streamed on to a
+// runner, which converts it and reports it back as the lecture's version of the given
+// type. The runner learns which lecture and type through a token it handed out when it
+// was reserved, so the token is all the caller sends it.
 //
 // handleLectureUpload has authorized the caller and the lecture; nothing of the body
-// has been read yet. Unlike v1, the worker is chosen before the key is created, so a
-// refused upload leaves no key behind, and a lecture that is live is refused, since
-// the worker's result would be discarded (NotifyUploadFinished skips live streams).
+// has been read yet. A runner is reserved before the body is touched, so a refused
+// upload costs nothing, and a lecture that is live is refused, since the VOD of its own
+// stream would race the upload for the same playlist.
 func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream) {
 	videoType := model.VideoType(c.Query("type"))
 	if !videoType.Valid() {
@@ -46,48 +65,44 @@ func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream) {
 		writeUploadError(c, e.WithStatus(http.StatusConflict, errors.New("the lecture is live")))
 		return
 	}
-
-	workers := a.dao.WorkerDao.GetAliveWorkers()
-	if len(workers) == 0 {
-		writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errNoWorker))
+	if a.uploads == nil {
+		writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))
 		return
 	}
-	worker := leastBusyWorker(workers)
 
-	key := uuid.NewV4().String()
-	if err := a.dao.UploadKeyDao.CreateUploadKey(key, stream.ID, videoType); err != nil {
-		writeUploadError(c, e.WithStatus(http.StatusInternalServerError, fmt.Errorf("can't create upload key: %w", err)))
+	slot, err := a.uploads.Reserve(c.Request.Context(), stream.ID, model.StreamVersion(videoType))
+	if err != nil {
+		a.log.Warn("can't reserve a runner for an upload", "stream", stream.ID, "err", err)
+		writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))
 		return
 	}
 
 	target := &url.URL{
-		Scheme:   "http",
-		Host:     worker.Host + ":" + workerUploadPort,
-		Path:     "/upload",
-		RawQuery: url.Values{"key": {key}}.Encode(),
+		Scheme: "http",
+		Host:   net.JoinHostPort(slot.Host, strconv.Itoa(slot.Port)),
+		Path:   "/upload/" + slot.Token,
 	}
 	proxy := &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.Out.URL = target
 			r.Out.Host = target.Host
-			// The worker has no use for the caller's credentials.
+			// The runner has no use for the caller's credentials.
 			r.Out.Header.Del("Authorization")
 			r.Out.Header.Del("Cookie")
 		},
-		ModifyResponse: workerUploadResponse,
+		ModifyResponse: runnerUploadResponse,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			a.log.Warn("can't reach worker for upload", "worker", worker.WorkerID, "err", err)
-			a.dropUploadKey(key)
-			writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errors.New("the worker taking the upload can't be reached")))
+			a.log.Warn("can't reach runner for upload", "runner", slot.Host, "err", err)
+			writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errors.New("the runner taking the upload can't be reached")))
 		},
 	}
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
-// workerUploadResponse answers as the gateway answers: {} once the worker has the
-// file, else an error in the gateway's shape, the worker's plain-text message in it.
-// A worker's 4xx is the upload's fault (no file); anything else is the worker's.
-func workerUploadResponse(resp *http.Response) error {
+// runnerUploadResponse answers as the gateway answers: {} once the runner has the
+// file, else an error in the gateway's shape, the runner's plain-text message in it.
+// A runner's 4xx is the upload's fault (no file); anything else is the runner's.
+func runnerUploadResponse(resp *http.Response) error {
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
 	_ = resp.Body.Close()
 	if err != nil {
@@ -104,7 +119,7 @@ func workerUploadResponse(resp *http.Response) error {
 		if msg == "" {
 			msg = http.StatusText(resp.StatusCode)
 		}
-		code, jsonBody := uploadErrorBody(e.WithStatus(status, fmt.Errorf("worker: %s", msg)))
+		code, jsonBody := uploadErrorBody(e.WithStatus(status, fmt.Errorf("runner: %s", msg)))
 		resp.StatusCode = code
 		out = jsonBody
 	} else {
@@ -124,27 +139,4 @@ func uploadErrorBody(err error) (int, []byte) {
 	st := status.Convert(err)
 	body, _ := json.Marshal(gin.H{"code": int(st.Code()), "message": st.Message()})
 	return runtime.HTTPStatusFromCode(st.Code()), body
-}
-
-// dropUploadKey deletes a key no worker will trade in. Best effort: an unused key
-// grants nothing but the upload it was made for.
-func (a *API) dropUploadKey(key string) {
-	k, err := a.dao.UploadKeyDao.GetUploadKey(key)
-	if err == nil {
-		err = a.dao.UploadKeyDao.DeleteUploadKey(k)
-	}
-	if err != nil {
-		a.log.Warn("can't delete unused upload key", "err", err)
-	}
-}
-
-// leastBusyWorker is v1's getWorkerWithLeastWorkload. workers must not be empty.
-func leastBusyWorker(workers []model.Worker) model.Worker {
-	best := workers[0]
-	for _, w := range workers[1:] {
-		if w.Workload < best.Workload {
-			best = w
-		}
-	}
-	return best
 }

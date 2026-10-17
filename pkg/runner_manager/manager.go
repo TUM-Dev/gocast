@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
@@ -290,6 +291,9 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	}
 }
 
+// ErrNoRunner is returned when no runner is alive and accepting jobs.
+var ErrNoRunner = errors.New("no runner is available")
+
 // getClient reserves a runner and dials it. The caller owns the returned connection and
 // must close it: an un-closed grpc.ClientConn keeps its resolver and balancer goroutines
 // alive for the lifetime of the process. The connection is nil when an error is returned.
@@ -297,6 +301,11 @@ func (m *Manager) getClient(ctx context.Context) (model.Runner, protobuf.RunnerS
 	r, err := m.dao.RunnerDao.ReserveRunner(ctx)
 	if err != nil {
 		return model.Runner{}, nil, nil, fmt.Errorf("reserve available runner: %w", err)
+	}
+	if r.Hostname == "" {
+		// ReserveRunner finds nothing without an error, and dialRunner is lazy, so
+		// without this the caller would only see a timeout dialing an empty host.
+		return model.Runner{}, nil, nil, ErrNoRunner
 	}
 	conn, err := dialRunner(r)
 	if err != nil {
@@ -518,8 +527,24 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	m.logger.Debug("vodReady", "payload", notification)
 	streamId := notification.Stream.GetId()
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(streamId, 10))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// The stream was deleted while its VOD was made, which is easy for an upload.
+		// The runner retries every error it gets back and retrying cannot bring the
+		// stream back, so the notification is acknowledged instead.
+		m.logger.Warn("dropping VOD for a stream that no longer exists", "stream", streamId)
+		return &protobuf.NotificationResponse{}, nil
+	}
 	if err != nil {
 		return nil, err
+	}
+	if !stream.Recording {
+		// The first VOD of a stream follows the course's setting, as it did when workers
+		// reported it. Later versions and re-uploads keep what was set since.
+		course, err := m.dao.CoursesDao.GetCourseById(ctx, stream.CourseID)
+		if err != nil {
+			return nil, err
+		}
+		stream.Private = course.VodPrivate
 	}
 	modelVersion := model.COMB
 	switch *notification.StreamVersion {

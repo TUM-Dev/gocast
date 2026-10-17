@@ -28,7 +28,7 @@ import (
 const maxLectureUploadSize = 50 * 1000 * 1000
 
 // The uploads a lecture takes. The media upload is a recording, which is not stored
-// here but proxied to a worker: see lecture_media.go.
+// here but proxied to a runner: see lecture_media.go.
 const (
 	uploadAttachment = "attachments"
 	uploadThumbnail  = "thumbnail"

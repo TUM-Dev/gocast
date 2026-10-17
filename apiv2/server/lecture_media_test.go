@@ -1,12 +1,15 @@
 package apiv2
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"go.uber.org/mock/gomock"
@@ -20,40 +23,51 @@ import (
 type mediaMocks struct {
 	streams *mock_dao.MockStreamsDao
 	courses *mock_dao.MockCoursesDao
-	workers *mock_dao.MockWorkerDao
-	keys    *mock_dao.MockUploadKeyDao
 }
 
-func newMediaAPI(t *testing.T) (*API, mediaMocks) {
+// fakeUploads hands out one target, or an error, and records what it was asked for.
+type fakeUploads struct {
+	target UploadTarget
+	err    error
+
+	called   bool
+	streamID uint
+	version  model.StreamVersion
+}
+
+func (f *fakeUploads) Reserve(_ context.Context, streamID uint, version model.StreamVersion) (UploadTarget, error) {
+	f.called, f.streamID, f.version = true, streamID, version
+	return f.target, f.err
+}
+
+func newMediaAPI(t *testing.T, uploads Uploads) (*API, mediaMocks) {
 	ctrl := gomock.NewController(t)
 	m := mediaMocks{
 		streams: mock_dao.NewMockStreamsDao(ctrl),
 		courses: mock_dao.NewMockCoursesDao(ctrl),
-		workers: mock_dao.NewMockWorkerDao(ctrl),
-		keys:    mock_dao.NewMockUploadKeyDao(ctrl),
 	}
 	return &API{
-		dao: dao.DaoWrapper{
-			StreamsDao: m.streams, CoursesDao: m.courses, WorkerDao: m.workers, UploadKeyDao: m.keys,
-		},
-		log: slog.Default(),
+		dao:     dao.DaoWrapper{StreamsDao: m.streams, CoursesDao: m.courses},
+		log:     slog.Default(),
+		uploads: uploads,
 	}, m
 }
 
-// fakeWorker serves a worker's /upload with handler, and points the proxy at it for
-// the test. Its host is the worker's Host.
-func fakeWorker(t *testing.T, handler http.HandlerFunc) model.Worker {
+// fakeRunner serves a runner's upload endpoint with handler and returns the target
+// pointing at it.
+func fakeRunner(t *testing.T, handler http.HandlerFunc) UploadTarget {
 	t.Helper()
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
-	host, port, err := net.SplitHostPort(srv.Listener.Addr().String())
+	host, portStr, err := net.SplitHostPort(srv.Listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
-	orig := workerUploadPort
-	workerUploadPort = port
-	t.Cleanup(func() { workerUploadPort = orig })
-	return model.Worker{WorkerID: "w1", Host: host}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return UploadTarget{Host: host, Port: port, Token: "tok"}
 }
 
 func gatewayError(t *testing.T, body []byte) (code int, message string) {
@@ -86,33 +100,27 @@ func TestLectureMediaRouteOf(t *testing.T) {
 func TestUploadLectureMedia(t *testing.T) {
 	const path = "/api/v2/courses/1/streams/7/media?type=PRES"
 
-	t.Run("streams the file to the least busy worker with a fresh key", func(t *testing.T) {
-		api, m := newMediaAPI(t)
-		var gotKey, gotFile, gotCookie string
-		idle := fakeWorker(t, func(w http.ResponseWriter, r *http.Request) {
-			gotKey, gotCookie = r.URL.Query().Get("key"), r.Header.Get("Cookie")
-			if r.URL.Path != "/upload" || r.URL.Query().Has("type") {
-				t.Errorf("worker called at %s", r.URL)
-			}
+	expectLecture := func(m mediaMocks) {
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+	}
+
+	t.Run("streams the file to the reserved runner under its token", func(t *testing.T) {
+		var gotPath, gotFile, gotCookie string
+		uploads := &fakeUploads{}
+		uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {
+			gotPath, gotCookie = r.URL.Path, r.Header.Get("Cookie")
 			f, _, err := r.FormFile("file")
 			if err != nil {
-				t.Errorf("worker form: %v", err)
+				t.Errorf("runner form: %v", err)
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			b, _ := io.ReadAll(f)
 			gotFile = string(b)
 		})
-		busy := model.Worker{WorkerID: "busy", Host: "busy.invalid", Workload: 5}
-		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
-		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
-		m.workers.EXPECT().GetAliveWorkers().Return([]model.Worker{busy, idle})
-		var createdKey string
-		m.keys.EXPECT().CreateUploadKey(gomock.Any(), uint(7), model.VideoTypePresentation).
-			DoAndReturn(func(key string, _ uint, _ model.VideoType) error {
-				createdKey = key
-				return nil
-			})
+		api, m := newMediaAPI(t, uploads)
+		expectLecture(m)
 
 		req := uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4")
 		req.Header.Set("Cookie", "jwt=secret")
@@ -120,60 +128,58 @@ func TestUploadLectureMedia(t *testing.T) {
 		if rec.Code != http.StatusOK || rec.Body.String() != "{}" {
 			t.Fatalf("status = %d: %s", rec.Code, rec.Body)
 		}
-		if gotKey == "" || gotKey != createdKey || gotFile != "content" {
-			t.Errorf("worker got key %q (created %q), file %q", gotKey, createdKey, gotFile)
+		if uploads.streamID != 7 || uploads.version != model.PRES {
+			t.Errorf("reserved stream %d version %s, want 7 PRES", uploads.streamID, uploads.version)
+		}
+		if gotPath != "/upload/tok" || gotFile != "content" {
+			t.Errorf("runner got %q with file %q", gotPath, gotFile)
 		}
 		if gotCookie != "" {
-			t.Errorf("the caller's cookie reached the worker: %q", gotCookie)
+			t.Errorf("the caller's cookie reached the runner: %q", gotCookie)
 		}
 	})
 
-	t.Run("passes a worker's refusal on in the gateway's shape", func(t *testing.T) {
-		api, m := newMediaAPI(t)
-		worker := fakeWorker(t, func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "http: no such file", http.StatusBadRequest)
+	t.Run("passes a runner's refusal on in the gateway's shape", func(t *testing.T) {
+		uploads := &fakeUploads{}
+		uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "no file in request", http.StatusBadRequest)
 		})
-		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
-		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
-		m.workers.EXPECT().GetAliveWorkers().Return([]model.Worker{worker})
-		m.keys.EXPECT().CreateUploadKey(gomock.Any(), uint(7), model.VideoTypePresentation).Return(nil)
+		api, m := newMediaAPI(t, uploads)
+		expectLecture(m)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("status = %d: %s", rec.Code, rec.Body)
 		}
-		if _, msg := gatewayError(t, rec.Body.Bytes()); msg != "worker: http: no such file" {
+		if _, msg := gatewayError(t, rec.Body.Bytes()); msg != "runner: no file in request" {
 			t.Errorf("message = %q", msg)
 		}
 	})
 
-	t.Run("503s an unreachable worker and drops the key", func(t *testing.T) {
-		api, m := newMediaAPI(t)
-		worker := fakeWorker(t, func(http.ResponseWriter, *http.Request) {})
+	t.Run("a runner that lost the token is the runner's fault", func(t *testing.T) {
+		uploads := &fakeUploads{}
+		uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "unknown or expired upload token", http.StatusNotFound)
+		})
+		api, m := newMediaAPI(t, uploads)
+		expectLecture(m)
+
+		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		}
+	})
+
+	t.Run("503s an unreachable runner", func(t *testing.T) {
 		// Nothing listens there any more.
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, workerUploadPort, _ = net.SplitHostPort(l.Addr().String())
+		port := l.Addr().(*net.TCPAddr).Port
 		_ = l.Close()
-
-		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
-		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
-		m.workers.EXPECT().GetAliveWorkers().Return([]model.Worker{worker})
-		var createdKey string
-		m.keys.EXPECT().CreateUploadKey(gomock.Any(), uint(7), model.VideoTypePresentation).
-			DoAndReturn(func(key string, _ uint, _ model.VideoType) error {
-				createdKey = key
-				return nil
-			})
-		m.keys.EXPECT().GetUploadKey(gomock.Any()).DoAndReturn(func(key string) (model.UploadKey, error) {
-			if key != createdKey {
-				t.Errorf("looked up key %q, created %q", key, createdKey)
-			}
-			return model.UploadKey{Model: gorm.Model{ID: 3}, UploadKey: key}, nil
-		})
-		m.keys.EXPECT().DeleteUploadKey(gomock.Any()).Return(nil)
+		api, m := newMediaAPI(t, &fakeUploads{target: UploadTarget{Host: "127.0.0.1", Port: port, Token: "tok"}})
+		expectLecture(m)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
 		if rec.Code != http.StatusServiceUnavailable {
@@ -181,12 +187,9 @@ func TestUploadLectureMedia(t *testing.T) {
 		}
 	})
 
-	// Every refusal below creates no upload key: the mock has no expectation for one.
-	t.Run("503s when no worker is alive", func(t *testing.T) {
-		api, m := newMediaAPI(t)
-		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
-		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
-		m.workers.EXPECT().GetAliveWorkers().Return(nil)
+	t.Run("503s when no runner can be reserved", func(t *testing.T) {
+		api, m := newMediaAPI(t, &fakeUploads{err: errors.New("no runner is available")})
+		expectLecture(m)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
 		if rec.Code != http.StatusServiceUnavailable {
@@ -194,33 +197,47 @@ func TestUploadLectureMedia(t *testing.T) {
 		}
 	})
 
+	t.Run("503s without a runner configured", func(t *testing.T) {
+		api, m := newMediaAPI(t, nil)
+		expectLecture(m)
+
+		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
+		if rec.Code != http.StatusServiceUnavailable {
+			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		}
+	})
+
+	// No runner is reserved for any refusal below: the fake records it.
 	t.Run("401s an anonymous request", func(t *testing.T) {
-		api, _ := newMediaAPI(t)
+		uploads := &fakeUploads{}
+		api, _ := newMediaAPI(t, uploads)
 		rec := serveUpload(api, uploadRequest(t, path, nil, "lecture.mp4", "video/mp4"))
-		if rec.Code != http.StatusUnauthorized {
-			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		if rec.Code != http.StatusUnauthorized || uploads.called {
+			t.Errorf("status = %d, reserved = %v: %s", rec.Code, uploads.called, rec.Body)
 		}
 	})
 
 	t.Run("404s a caller who does not administer the course", func(t *testing.T) {
-		api, m := newMediaAPI(t)
+		uploads := &fakeUploads{}
+		api, m := newMediaAPI(t, uploads)
 		student := &model.User{Model: gorm.Model{ID: 9}, Role: model.StudentType}
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
 
 		rec := serveUpload(api, uploadRequest(t, path, student, "lecture.mp4", "video/mp4"))
-		if rec.Code != http.StatusNotFound {
-			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		if rec.Code != http.StatusNotFound || uploads.called {
+			t.Errorf("status = %d, reserved = %v: %s", rec.Code, uploads.called, rec.Body)
 		}
 	})
 
 	t.Run("404s another course's lecture", func(t *testing.T) {
-		api, m := newMediaAPI(t)
+		uploads := &fakeUploads{}
+		api, m := newMediaAPI(t, uploads)
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(foreignLecture(), nil)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
-		if rec.Code != http.StatusNotFound {
-			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		if rec.Code != http.StatusNotFound || uploads.called {
+			t.Errorf("status = %d, reserved = %v: %s", rec.Code, uploads.called, rec.Body)
 		}
 	})
 
@@ -229,34 +246,28 @@ func TestUploadLectureMedia(t *testing.T) {
 		"unknown type": "/api/v2/courses/1/streams/7/media?type=SCREEN",
 	} {
 		t.Run("400s "+name, func(t *testing.T) {
-			api, m := newMediaAPI(t)
-			m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
-			m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+			uploads := &fakeUploads{}
+			api, m := newMediaAPI(t, uploads)
+			expectLecture(m)
 
 			rec := serveUpload(api, uploadRequest(t, p, lectureAdmin, "lecture.mp4", "video/mp4"))
-			if rec.Code != http.StatusBadRequest {
-				t.Errorf("status = %d: %s", rec.Code, rec.Body)
+			if rec.Code != http.StatusBadRequest || uploads.called {
+				t.Errorf("status = %d, reserved = %v: %s", rec.Code, uploads.called, rec.Body)
 			}
 		})
 	}
 
 	t.Run("409s a lecture that is live", func(t *testing.T) {
-		api, m := newMediaAPI(t)
+		uploads := &fakeUploads{}
+		api, m := newMediaAPI(t, uploads)
 		live := courseOneLecture()
 		live.LiveNow = true
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(live, nil)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
-		if rec.Code != http.StatusConflict {
-			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		if rec.Code != http.StatusConflict || uploads.called {
+			t.Errorf("status = %d, reserved = %v: %s", rec.Code, uploads.called, rec.Body)
 		}
 	})
-}
-
-func TestLeastBusyWorker(t *testing.T) {
-	got := leastBusyWorker([]model.Worker{{WorkerID: "a", Workload: 3}, {WorkerID: "b", Workload: 1}, {WorkerID: "c", Workload: 1}})
-	if got.WorkerID != "b" {
-		t.Errorf("chose %s, want b (the first of the least busy, as v1)", got.WorkerID)
-	}
 }
