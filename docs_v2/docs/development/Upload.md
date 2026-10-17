@@ -15,7 +15,21 @@ that serves the result; `vod-service` and the legacy `worker` are not involved.
 5. The result is written to `STORAGE_PATH/<stream id>/<version>/`, where the edge serves it, and the runner reports it
    to `tum-live` (`VODReady`, `ThumbnailReady`). Only then does the lecture show the video.
 
-If the conversion fails, the runner only logs it: look at the runner's logs when an uploaded lecture stays empty.
+## What the lecturer sees
+
+`tum-live` records the conversion in `transcoding_progresses` as soon as a runner has taken the upload, so the lecture
+card shows it as converting right away:
+
+- While ffmpeg runs, the runner sends `TranscodingProgress` (at most once a second, in steps of 2 percent). These are best
+  effort and never retried: a lost one is replaced by the next, and one delivered late could land after the notification
+  that ended the conversion. The server therefore only ever updates a row that exists and has not failed.
+- `VODReady` removes the row.
+- If the import fails, the runner sends `VODFailed` with a reason meant for the uploader (it names no paths; the details
+  are in the runner's log). The row is kept, marked failed, and the card shows the reason until the next upload of that
+  version replaces it. Unlike progress, `VODFailed` is retried until it is delivered.
+
+Not covered: if the runner itself dies mid-conversion, nothing reports it and the card keeps showing the last
+percentage. Uploading the version again replaces it.
 
 ## Starting the services
 

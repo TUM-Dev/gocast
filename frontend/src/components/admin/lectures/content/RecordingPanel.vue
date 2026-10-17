@@ -46,9 +46,9 @@ async function requestSubtitles(code: string, label: string): Promise<void> {
   }
 }
 
-/* Uploading a version. A worker takes the file and transcodes it; the list shows the
+/* Uploading a version. A runner takes the file and converts it; the list shows the
  * progress once it reloads. Not offered while the lecture is live: the server would
- * refuse it, and the worker streaming it would throw the result away. */
+ * refuse it, since the live stream would race the upload for the same playlist. */
 const uploading = ref<MediaType | null>(null);
 const uploadError = ref("");
 const uploadStatus = ref("");
@@ -69,7 +69,7 @@ async function upload(type: MediaType, label: string, event: Event): Promise<voi
   uploading.value = type;
   try {
     await uploadLectureRecording(props.courseId, props.lecture.id, type, file);
-    uploadStatus.value = `${label} uploaded. It is being transcoded; the lecture shows the progress.`;
+    uploadStatus.value = `${label} uploaded. It is being converted; the lecture shows the progress, or why it failed.`;
     emit("changed");
   } catch (err) {
     uploadError.value = recordingUploadErrorMessage(err);
