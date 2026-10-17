@@ -19,5 +19,5 @@ type TranscodingProgress struct {
 	// words fit for the person who uploaded it. The row stays until the next upload of
 	// this version replaces it, so that they get to see it.
 	Failed bool   `gorm:"not null; default:false" json:"failed"`
-	Error  string `json:"error,omitempty"`
+	Error  string `gorm:"size:255" json:"error,omitempty"`
 }

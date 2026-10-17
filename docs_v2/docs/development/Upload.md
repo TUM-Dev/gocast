@@ -28,8 +28,16 @@ card shows it as converting right away:
   are in the runner's log). The row is kept, marked failed, and the card shows the reason until the next upload of that
   version replaces it. Unlike progress, `VODFailed` is retried until it is delivered.
 
-Not covered: if the runner itself dies mid-conversion, nothing reports it and the card keeps showing the last
-percentage. Uploading the version again replaces it.
+Not covered:
+
+- If the runner itself dies mid-conversion, nothing reports it and the card keeps showing the last percentage.
+  Uploading the version again replaces it.
+- Notifications carry no upload ID. `VODFailed` and `VODReady` are retried until delivered, so if the server was down
+  while a version was uploaded a second time, the first upload's late notification can land on the second one's row
+  (marking it failed, or removing it while it still converts). It takes a server outage plus a re-upload of the same
+  version within the retry window; fixing it needs an ID on the row and in the notifications.
+- If `tum-live` is asked to replace an upload and the runner then refuses the new file, the version's row is put back as
+  it was, so a conversion still running or a failure the lecturer has not seen yet is not lost.
 
 ## Starting the services
 
