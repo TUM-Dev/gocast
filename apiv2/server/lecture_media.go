@@ -101,7 +101,8 @@ func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream) {
 
 // runnerUploadResponse answers as the gateway answers: {} once the runner has the
 // file, else an error in the gateway's shape, the runner's plain-text message in it.
-// A runner's 4xx is the upload's fault (no file); anything else is the runner's.
+// A runner's 4xx is the upload's fault (no file), except that it lost the token; anything
+// else is the runner's.
 func runnerUploadResponse(resp *http.Response) error {
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
 	_ = resp.Body.Close()
@@ -112,7 +113,9 @@ func runnerUploadResponse(resp *http.Response) error {
 	out := []byte("{}")
 	if resp.StatusCode >= 300 {
 		status := http.StatusServiceUnavailable
-		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+		// A 404 is the runner not knowing the token it handed out a moment ago, because it
+		// restarted or took too long: the upload is worth retrying, unlike one without a file.
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 && resp.StatusCode != http.StatusNotFound {
 			status = http.StatusBadRequest
 		}
 		msg := strings.TrimSpace(string(body))

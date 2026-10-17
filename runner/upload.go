@@ -130,10 +130,18 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		if part.FormName() != "file" {
 			continue
 		}
-		file, err = r.storeUpload(part)
+		var size int64
+		file, size, err = r.storeUpload(part)
 		if err != nil {
 			log.Error("storing upload failed", "error", err)
 			http.Error(w, "couldn't store the upload", http.StatusInternalServerError)
+			return
+		}
+		if size == 0 {
+			// Answering 200 would send the uploader off to wait for a video that
+			// the import can only fail to make.
+			_ = os.Remove(file)
+			http.Error(w, "the file is empty", http.StatusBadRequest)
 			return
 		}
 		break
@@ -153,23 +161,24 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (r *Runner) storeUpload(src io.Reader) (string, error) {
+func (r *Runner) storeUpload(src io.Reader) (string, int64, error) {
 	if err := os.MkdirAll(config.Config.UploadPath, os.ModePerm); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	// The uploader's file name is not used: ffmpeg probes the content.
 	out, err := os.CreateTemp(config.Config.UploadPath, "upload-*")
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	if _, err := io.Copy(out, src); err != nil {
+	n, err := io.Copy(out, src)
+	if err != nil {
 		_ = out.Close()
 		_ = os.Remove(out.Name())
-		return "", err
+		return "", 0, err
 	}
 	if err := out.Close(); err != nil {
 		_ = os.Remove(out.Name())
-		return "", err
+		return "", 0, err
 	}
-	return out.Name(), nil
+	return out.Name(), n, nil
 }

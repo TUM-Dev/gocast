@@ -24,6 +24,18 @@ func (r *FFProbeResult) Codec(codecType string) string {
 	return ""
 }
 
+// PixelFormat returns the pixel format (e.g. yuv420p) of the first video stream in an
+// FFProbeResult or ""
+func (r *FFProbeResult) PixelFormat() string {
+	nStreams := gjson.Get(r.raw, "streams.#").Int()
+	for i := 0; i < int(nStreams); i++ {
+		if gjson.Get(r.raw, fmt.Sprintf("streams.%d.codec_type", i)).String() == "video" {
+			return gjson.Get(r.raw, fmt.Sprintf("streams.%d.pix_fmt", i)).String()
+		}
+	}
+	return ""
+}
+
 // Level returns the level of a FFProbeResult if in h264 or ""
 func (r *FFProbeResult) Level() string {
 	return gjson.Get(r.raw, "streams.0.level").String()
