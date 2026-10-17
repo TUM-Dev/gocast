@@ -241,6 +241,12 @@ func (c *Course) GetNextLecture(u *User) *Stream {
 		if s.Private && (u == nil || (c != nil && !u.IsAdminOfCourse(*c))) {
 			continue
 		}
+		// A live stream is current, not upcoming, even if its scheduled start time is
+		// still in the future. Otherwise the stale start timestamp keeps it in the
+		// "next lecture" list while the stream is already broadcasting.
+		if s.LiveNow {
+			continue
+		}
 		if s.Start.Before(earliestLectureDate) && s.End.After(time.Now()) {
 			earliestLectureDate = s.Start
 			earliestLecture = s
@@ -284,6 +290,9 @@ func (c *Course) GetNextLectureDate() time.Time {
 	// TODO: Refactor this with IsNextLectureSelfStream when the sorting error fixed
 	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
+		if s.LiveNow {
+			continue
+		}
 		if s.Start.Before(earliestLectureDate) && s.End.After(time.Now()) {
 			earliestLectureDate = s.Start
 		}
@@ -305,6 +314,9 @@ func (c *Course) GetNextLectureDateFormatted() string {
 func (c *Course) HasNextLecture() bool {
 	n := time.Now()
 	for _, s := range c.Streams {
+		if s.LiveNow {
+			continue
+		}
 		if s.Start.After(n) {
 			return true
 		}

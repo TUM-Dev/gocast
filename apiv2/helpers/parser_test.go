@@ -68,6 +68,26 @@ func TestParseCourseToProtoDerivedStreams(t *testing.T) {
 
 // Both getters answer with a zero-value stream rather than nothing, and the v1 page
 // tested every one for `ID !== 0`. Absent says the same thing without the trap.
+func TestParseCourseToProtoSkipsLiveStreamWithFutureStartAsNextLecture(t *testing.T) {
+	now := time.Now()
+	course := model.Course{
+		Model: gorm.Model{ID: 1}, Name: "Course", Slug: "course",
+		Visibility: "public", UserID: 42,
+		Streams: []model.Stream{
+			{Model: gorm.Model{ID: 1}, Start: now.Add(15 * time.Minute), End: now.Add(2 * time.Hour), LiveNow: true},
+			{Model: gorm.Model{ID: 2}, Start: now.Add(2 * time.Hour), End: now.Add(3 * time.Hour)},
+		},
+	}
+
+	got := ParseCourseToProto(course, nil)
+	if got.NextLecture == nil {
+		t.Fatal("next lecture is absent, want stream 2")
+	}
+	if got.NextLecture.Id != 2 {
+		t.Errorf("next lecture = %d, want %d", got.NextLecture.Id, 2)
+	}
+}
+
 func TestParseCourseToProtoOmitsStreamsThatDoNotExist(t *testing.T) {
 	empty := model.Course{Model: gorm.Model{ID: 1}, Slug: "empty", Visibility: "public", UserID: 42}
 
