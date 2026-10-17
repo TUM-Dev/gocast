@@ -104,6 +104,14 @@ func TestUploadLectureMedia(t *testing.T) {
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
 	}
+	// The upload shows as converting once a runner is reserved, with nothing done yet and
+	// no failure left from an earlier one; it stops showing when the runner doesn't take it.
+	expectConverting := func(m mediaMocks, kept bool) {
+		m.streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: 7, Version: model.PRES}).Return(nil)
+		if !kept {
+			m.streams.EXPECT().RemoveTranscodingProgress(model.PRES, uint(7)).Return(nil)
+		}
+	}
 
 	t.Run("streams the file to the reserved runner under its token", func(t *testing.T) {
 		var gotPath, gotFile, gotCookie string
@@ -121,6 +129,7 @@ func TestUploadLectureMedia(t *testing.T) {
 		})
 		api, m := newMediaAPI(t, uploads)
 		expectLecture(m)
+		expectConverting(m, true)
 
 		req := uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4")
 		req.Header.Set("Cookie", "jwt=secret")
@@ -146,6 +155,7 @@ func TestUploadLectureMedia(t *testing.T) {
 		})
 		api, m := newMediaAPI(t, uploads)
 		expectLecture(m)
+		expectConverting(m, false)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
 		if rec.Code != http.StatusBadRequest {
@@ -163,9 +173,23 @@ func TestUploadLectureMedia(t *testing.T) {
 		})
 		api, m := newMediaAPI(t, uploads)
 		expectLecture(m)
+		expectConverting(m, false)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
 		if rec.Code != http.StatusServiceUnavailable {
+			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		}
+	})
+
+	t.Run("a progress row that can't be saved doesn't refuse the upload", func(t *testing.T) {
+		uploads := &fakeUploads{}
+		uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {})
+		api, m := newMediaAPI(t, uploads)
+		expectLecture(m)
+		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(errors.New("db down"))
+
+		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
+		if rec.Code != http.StatusOK {
 			t.Errorf("status = %d: %s", rec.Code, rec.Body)
 		}
 	})
@@ -180,6 +204,7 @@ func TestUploadLectureMedia(t *testing.T) {
 		_ = l.Close()
 		api, m := newMediaAPI(t, &fakeUploads{target: UploadTarget{Host: "127.0.0.1", Port: port, Token: "tok"}})
 		expectLecture(m)
+		expectConverting(m, false)
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
 		if rec.Code != http.StatusServiceUnavailable {

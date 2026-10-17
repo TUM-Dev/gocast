@@ -172,8 +172,15 @@ func (s *Stream) GetName() string {
 	return fmt.Sprintf("Lecture: %s", s.Start.Format("Jan 2, 2006"))
 }
 
+// IsConverting returns whether a version is still being converted. A conversion that
+// failed is over, though its row stays to tell the uploader.
 func (s *Stream) IsConverting() bool {
-	return len(s.TranscodingProgresses) > 0
+	for _, p := range s.TranscodingProgresses {
+		if !p.Failed {
+			return true
+		}
+	}
+	return false
 }
 
 // IsDownloadable returns true if the stream is a recording and has at least one stream associated with it.

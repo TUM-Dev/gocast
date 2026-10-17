@@ -82,7 +82,10 @@ func TestListCourseLecturesAdmin(t *testing.T) {
 	recorded.LectureHallID = 3
 	recorded.PlaylistUrl, recorded.PlaylistUrlCAM = "https://comb", "https://cam"
 	recorded.Files = []model.File{{Model: gorm.Model{ID: 5}, Type: model.FILETYPE_ATTACHMENT, Path: "/x/slides.pdf"}}
-	recorded.TranscodingProgresses = []model.TranscodingProgress{{StreamID: 7, Version: model.PRES, Progress: 40}}
+	recorded.TranscodingProgresses = []model.TranscodingProgress{
+		{StreamID: 7, Version: model.PRES, Progress: 40},
+		{StreamID: 7, Version: model.CAM, Failed: true, Error: "The file contains no video."},
+	}
 	recorded.VideoSections = []model.VideoSection{{Model: gorm.Model{ID: 9}, Description: "Intro", StartMinutes: 3}}
 	selfStreamed := model.Stream{Model: gorm.Model{ID: 8}, CourseID: 1, Name: "Self"}
 
@@ -108,8 +111,14 @@ func TestListCourseLecturesAdmin(t *testing.T) {
 	if len(got.Files) != 1 || got.Files[0].FriendlyName != recorded.Files[0].GetFriendlyFileName() || got.Files[0].Type != uint32(model.FILETYPE_ATTACHMENT) {
 		t.Errorf("files = %v", got.Files)
 	}
-	if len(got.TranscodingProgresses) != 1 || got.TranscodingProgresses[0].Progress != 40 {
+	if len(got.TranscodingProgresses) != 2 || got.TranscodingProgresses[0].Progress != 40 || got.TranscodingProgresses[0].Failed {
 		t.Errorf("progresses = %v", got.TranscodingProgresses)
+	}
+	if f := got.TranscodingProgresses[1]; !f.Failed || f.Error != "The file contains no video." {
+		t.Errorf("failed progress = %v", f)
+	}
+	if !got.Converting {
+		t.Error("a lecture with a version under way is not converting")
 	}
 	if len(got.VideoSections) != 1 || got.VideoSections[0].StartMinutes != 3 {
 		t.Errorf("sections = %v", got.VideoSections)

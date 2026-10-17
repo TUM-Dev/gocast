@@ -236,6 +236,16 @@ func TestStreamIsConverting(t *testing.T) {
 	if !converting.IsConverting() {
 		t.Error("a stream with a queued transcode does not report as converting")
 	}
+
+	// A conversion that failed is over, although its row stays to tell the uploader.
+	failed := Stream{TranscodingProgresses: []TranscodingProgress{{Version: COMB, Failed: true, Error: "x"}}}
+	if failed.IsConverting() {
+		t.Error("a stream whose only conversion failed reports as converting")
+	}
+	other := Stream{TranscodingProgresses: []TranscodingProgress{{Version: COMB, Failed: true}, {Version: PRES, Progress: 3}}}
+	if !other.IsConverting() {
+		t.Error("a stream with another version under way does not report as converting")
+	}
 }
 
 func TestStreamIsDownloadable(t *testing.T) {

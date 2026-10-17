@@ -11538,8 +11538,13 @@ type LectureTranscodingProgress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// COMB, PRES or CAM.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// Percent.
-	Progress      int32 `protobuf:"varint,2,opt,name=progress,proto3" json:"progress,omitempty"`
+	// Percent. Meaningless when failed.
+	Progress int32 `protobuf:"varint,2,opt,name=progress,proto3" json:"progress,omitempty"`
+	// The conversion ended without a video. The version stays listed, with the reason,
+	// until the next upload of it replaces it.
+	Failed bool `protobuf:"varint,3,opt,name=failed,proto3" json:"failed,omitempty"`
+	// Why, in words for the person who uploaded the video. Only set when failed.
+	Error         string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11586,6 +11591,20 @@ func (x *LectureTranscodingProgress) GetProgress() int32 {
 		return x.Progress
 	}
 	return 0
+}
+
+func (x *LectureTranscodingProgress) GetFailed() bool {
+	if x != nil {
+		return x.Failed
+	}
+	return false
+}
+
+func (x *LectureTranscodingProgress) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
 }
 
 type LectureVideoSectionAdmin struct {
@@ -12824,7 +12843,8 @@ func (x *GetLectureTranscodingProgressRequest) GetStreamId() uint32 {
 
 type GetLectureTranscodingProgressResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Empty once every version has finished.
+	// Versions still converting, and those whose conversion failed. Holds nothing
+	// converting once every version has finished.
 	Progresses    []*LectureTranscodingProgress `protobuf:"bytes,1,rep,name=progresses,proto3" json:"progresses,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20282,10 +20302,12 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10LectureFileAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\rR\x04type\x12#\n" +
-	"\rfriendly_name\x18\x03 \x01(\tR\ffriendlyName\"R\n" +
+	"\rfriendly_name\x18\x03 \x01(\tR\ffriendlyName\"\x80\x01\n" +
 	"\x1aLectureTranscodingProgress\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12\x1a\n" +
-	"\bprogress\x18\x02 \x01(\x05R\bprogress\"\xd0\x01\n" +
+	"\bprogress\x18\x02 \x01(\x05R\bprogress\x12\x16\n" +
+	"\x06failed\x18\x03 \x01(\bR\x06failed\x12\x14\n" +
+	"\x05error\x18\x04 \x01(\tR\x05error\"\xd0\x01\n" +
 	"\x18LectureVideoSectionAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1f\n" +
