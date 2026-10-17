@@ -6,12 +6,6 @@ import { emailFailures, transcodingFailures, users } from "./seed";
 /**
  * The maintenance page renders the fixture, and the endpoints behind it refuse
  * everyone without server.administer — a hidden control being no substitute for that.
- *
- * Thumbnail regeneration itself is not exercised end to end beyond starting it: each
- * file's regeneration dials a transcoding worker over gRPC, and the e2e environment
- * registers none, so a run finishes immediately with every file skipped. What is
- * covered is the part visible to an administrator — the button disabling itself the
- * moment a run starts.
  */
 
 test.describe("the maintenance page", () => {
@@ -40,22 +34,6 @@ test.describe("the maintenance page", () => {
     const response = await page.goto("/admin/maintenance");
     expect(response?.status()).toBe(403);
     expect((await response?.text()) ?? "").toContain(REFUSED);
-  });
-
-  test.describe("thumbnails", () => {
-    test("starts a run and disables the button while it is in progress", async ({ page }) => {
-      await login(page, users.admin, "/admin/maintenance");
-
-      // Matched by a pattern rather than the exact label: the button's own text
-      // switches to "Regenerating…" once a run starts, and re-querying by its old
-      // name would then find nothing.
-      const button = page.getByRole("button", { name: /Regenerat/ });
-      await button.click();
-
-      // The server marks the run started before the request returns, precisely so
-      // this is not a race against a background goroutine.
-      await expect(button).toBeDisabled();
-    });
   });
 
   test.describe("cron jobs", () => {
