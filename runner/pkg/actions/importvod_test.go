@@ -191,3 +191,32 @@ func TestImportVODFailureKeepsPreviousVOD(t *testing.T) {
 		t.Errorf("uploaded file still there: %v", err)
 	}
 }
+
+// TestImportVODThenThumbnail runs the chain an upload runs: the thumbnail is made from
+// the local playlist ImportVOD leaves behind, through the playlistURL it hands over.
+func TestImportVODThenThumbnail(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	upload := makeUpload(t, "up.mp4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
+	config.Config.StoragePath = t.TempDir()
+
+	notify := make(chan *protobuf.Notification, 2)
+	data := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "uploadPath": upload}
+	for _, action := range []Action{ImportVOD, RegenerateThumb} {
+		if err := action(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
+			t.Fatalf("action: %v", err)
+		}
+	}
+
+	if n := <-notify; n.GetVodReady() == nil {
+		t.Fatalf("first notification = %v, want VodReady", n)
+	}
+	thumb := (<-notify).GetThumbnailReady()
+	if thumb == nil || len(thumb.GetThumbnail()) == 0 {
+		t.Fatalf("no thumbnail: %v", thumb)
+	}
+	if thumb.GetStream().GetId() != 7 || thumb.GetStreamVersion() != protobuf.StreamVersion_STREAM_VERSION_COMBINED {
+		t.Errorf("thumbnail for %v", thumb)
+	}
+}
