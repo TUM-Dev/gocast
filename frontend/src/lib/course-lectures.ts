@@ -54,7 +54,7 @@ export interface CourseLecture {
   /** 0 when not known. */
   durationSeconds: number;
   files: { id: number; type: number; friendlyName: string }[];
-  transcodingProgresses: { version: string; progress: number }[];
+  transcodingProgresses: { version: string; progress: number; failed: boolean; error: string }[];
   /** In order of their start, as the server sends them. */
   videoSections: LectureSection[];
 }
@@ -86,6 +86,8 @@ export function toLecture(l: CourseLectureAdmin): CourseLecture {
     transcodingProgresses: l.transcodingProgresses.map((p) => ({
       version: p.version,
       progress: p.progress,
+      failed: p.failed,
+      error: p.error,
     })),
     videoSections: l.videoSections.map((v) => ({
       id: v.id,

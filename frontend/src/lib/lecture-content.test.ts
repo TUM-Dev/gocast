@@ -200,7 +200,7 @@ describe("the content calls", () => {
 
   it("read the progress, an empty answer as nothing transcoding", async () => {
     respondWith({ progresses: [{ version: "CAM", progress: 40 }] });
-    expect(await fetchTranscodingProgress(1, 2)).toEqual([{ version: "CAM", progress: 40 }]);
+    expect(await fetchTranscodingProgress(1, 2)).toEqual([{ version: "CAM", progress: 40, failed: false, error: "" }]);
     expect(lastCall()[0]).toBe("/api/v2/courses/1/streams/2/transcoding-progress");
 
     respondWith({});
@@ -208,11 +208,26 @@ describe("the content calls", () => {
   });
 });
 
+const tp = (version: string, progress: number, failed = false, error = ""): TranscodingProgress => ({
+  version,
+  progress,
+  failed,
+  error,
+});
+
 describe("shouldPollProgress", () => {
   it("polls only a converting lecture with a version still listed", () => {
-    expect(shouldPollProgress(true, [{ version: "COMB", progress: 3 }])).toBe(true);
+    expect(shouldPollProgress(true, [tp("COMB", 3)])).toBe(true);
     expect(shouldPollProgress(true, [])).toBe(false);
-    expect(shouldPollProgress(false, [{ version: "COMB", progress: 3 }])).toBe(false);
+    // a failure is over: nothing to wait for
+    expect(shouldPollProgress(true, [tp("COMB", 0, true, "x")])).toBe(false);
+    expect(
+      shouldPollProgress(true, [
+        tp("COMB", 0, true, "x"),
+        tp("PRES", 5),
+      ]),
+    ).toBe(true);
+    expect(shouldPollProgress(false, [tp("COMB", 3)])).toBe(false);
   });
 });
 
@@ -233,18 +248,31 @@ describe("pollTranscodingProgress", () => {
   }
 
   it("asks every interval until nothing is transcoding, then stops", async () => {
-    const p = poller([[{ version: "COMB", progress: 10 }], [{ version: "COMB", progress: 60 }], []]);
+    const p = poller([[tp("COMB", 10)], [tp("COMB", 60)], []]);
 
     expect(p.fetch).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1000);
-    expect(p.onProgress).toHaveBeenLastCalledWith([{ version: "COMB", progress: 10 }]);
+    expect(p.onProgress).toHaveBeenLastCalledWith([tp("COMB", 10)]);
     await vi.advanceTimersByTimeAsync(1000);
-    expect(p.onProgress).toHaveBeenLastCalledWith([{ version: "COMB", progress: 60 }]);
+    expect(p.onProgress).toHaveBeenLastCalledWith([tp("COMB", 60)]);
     await vi.advanceTimersByTimeAsync(1000);
     expect(p.onDone).toHaveBeenCalledOnce();
 
     await vi.advanceTimersByTimeAsync(5000);
     expect(p.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("is done when only failed versions are left, and hands them over", async () => {
+    const failed = tp("PRES", 0, true, "The file contains no video.");
+    const p = poller([[tp("COMB", 10), failed], [failed]]);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(p.onProgress).toHaveBeenLastCalledWith([tp("COMB", 10), failed]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(p.onDone).toHaveBeenCalledExactlyOnceWith([failed]);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(p.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("retries after a failure but gives up on a lecture that is gone", async () => {
@@ -257,7 +285,7 @@ describe("pollTranscodingProgress", () => {
   });
 
   it("stops when told to", async () => {
-    const p = poller([[{ version: "COMB", progress: 10 }]]);
+    const p = poller([[tp("COMB", 10)]]);
     p.stop();
     await vi.advanceTimersByTimeAsync(5000);
     expect(p.fetch).not.toHaveBeenCalled();

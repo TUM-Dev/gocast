@@ -65,7 +65,10 @@ describe("fetchCourseLectures", () => {
           vodVersions: ["COMB", "PRES"],
           durationSeconds: 5400,
           files: [{ id: 3, type: 2, friendlyName: "slides.pdf" }],
-          transcodingProgresses: [{ version: "CAM", progress: 40 }],
+          transcodingProgresses: [
+            { version: "CAM", progress: 40 },
+            { version: "PRES", failed: true, error: "The file contains no video." },
+          ],
           videoSections: [{ id: 1, description: "Intro" }],
           seriesIdentifier: "abc",
         },
@@ -82,7 +85,10 @@ describe("fetchCourseLectures", () => {
     expect(lecture.chatEnabled).toBe(false);
     expect(lecture.vodVersions).toEqual(["COMB", "PRES"]);
     expect(lecture.files).toEqual([{ id: 3, type: 2, friendlyName: "slides.pdf" }]);
-    expect(lecture.transcodingProgresses).toEqual([{ version: "CAM", progress: 40 }]);
+    expect(lecture.transcodingProgresses).toEqual([
+      { version: "CAM", progress: 40, failed: false, error: "" },
+      { version: "PRES", progress: 0, failed: true, error: "The file contains no video." },
+    ]);
     expect(lecture.videoSections).toEqual([
       { id: 1, description: "Intro", startHours: 0, startMinutes: 0, startSeconds: 0, fileId: 0 },
     ]);

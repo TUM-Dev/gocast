@@ -249,28 +249,33 @@ export async function fetchTranscodingProgress(courseId: number, streamId: numbe
     GetLectureTranscodingProgressResponseSchema,
     `${lecturePath(courseId, streamId)}/transcoding-progress`,
   );
-  return res.progresses.map((p) => ({ version: p.version, progress: p.progress }));
+  return res.progresses.map((p) => ({ version: p.version, progress: p.progress, failed: p.failed, error: p.error }));
 }
 
 export const PROGRESS_POLL_MS = 4000;
 
+/** A version whose conversion failed stays listed, for the uploader to see why. */
+function stillConverting(progresses: TranscodingProgress[]): boolean {
+  return progresses.some((p) => !p.failed);
+}
+
 /** Polling is worth it only while a version is still transcoding. */
 export function shouldPollProgress(converting: boolean, progresses: TranscodingProgress[]): boolean {
-  return converting && progresses.length > 0;
+  return converting && stillConverting(progresses);
 }
 
 export interface ProgressPoll {
   fetch: () => Promise<TranscodingProgress[]>;
-  /** Every answer that still lists a version. */
+  /** Every answer that still lists a version under way. */
   onProgress: (progresses: TranscodingProgress[]) => void;
-  /** Once nothing is transcoding any more; polling has stopped. */
-  onDone: () => void;
+  /** Once nothing is transcoding any more; polling has stopped. Gets the versions that failed. */
+  onDone: (failed: TranscodingProgress[]) => void;
   intervalMs?: number;
 }
 
 /**
  * Asks for the progress every few seconds until the server lists nothing still
- * transcoding, one request at a time: the next is scheduled only once the last has
+ * transcoding (a version that failed is not), one request at a time: the next is scheduled only once the last has
  * answered, so a slow server is not stacked up. A failed request is retried at the
  * next tick, except a 401 or 404 (signed out, or the lecture is gone), which stops.
  *
@@ -289,9 +294,9 @@ export function pollTranscodingProgress(poll: ProgressPoll): () => void {
     try {
       const progresses = await poll.fetch();
       if (stopped) return;
-      if (progresses.length === 0) {
+      if (!stillConverting(progresses)) {
         stopped = true;
-        poll.onDone();
+        poll.onDone(progresses);
         return;
       }
       poll.onProgress(progresses);
