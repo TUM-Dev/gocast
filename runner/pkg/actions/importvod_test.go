@@ -480,3 +480,39 @@ func equalInts(a, b []int) bool {
 	}
 	return true
 }
+
+func TestProgressReporter(t *testing.T) {
+	t.Run("reports to a receiver that is ready", func(t *testing.T) {
+		notify := make(chan *protobuf.Notification)
+		got := make(chan *protobuf.Notification, 1)
+		go func() { got <- <-notify }()
+		report := progressReporter(notify, 7, "STREAM_VERSION_CAMERA")
+		var n *protobuf.Notification
+		for n == nil { // the receiver goroutine may not be parked yet
+			report(42)
+			select {
+			case n = <-got:
+			case <-time.After(10 * time.Millisecond):
+			}
+		}
+		p := n.GetTranscodingProgress()
+		if p.GetProgress() != 42 || p.GetStream().GetId() != 7 || p.GetStreamVersion() != protobuf.StreamVersion_STREAM_VERSION_CAMERA {
+			t.Errorf("reported %v", p)
+		}
+	})
+
+	// A receiver that is busy or gone must not stall ffmpeg's stdout.
+	t.Run("never waits for a receiver", func(t *testing.T) {
+		report := progressReporter(make(chan *protobuf.Notification), 7, "STREAM_VERSION_CAMERA")
+		done := make(chan struct{})
+		go func() {
+			report(10)
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Fatal("progressReporter blocked on a channel nobody reads")
+		}
+	})
+}

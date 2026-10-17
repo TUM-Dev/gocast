@@ -132,7 +132,8 @@ func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) 
 }
 
 func (d streamsDao) UpdateTranscodingProgress(v model.StreamVersion, streamId uint, progress int) error {
-	return d.db.Model(&model.TranscodingProgress{}).
+	// DB, like SaveTranscodingProgress: the two must reach the same rows.
+	return DB.Model(&model.TranscodingProgress{}).
 		Where("version = ? AND stream_id = ? AND failed = ?", v, streamId, false).
 		Update("progress", progress).Error
 }

@@ -142,17 +142,7 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	command.Stderr = &stderr
 	// ffmpeg reports how far it is on stdout. A writer rather than a pipe for the reason
 	// above: Wait returns only once it has been handed everything.
-	command.Stdout = newProgressWriter(probe.Duration(), func(percent int) {
-		notify <- &protobuf.Notification{
-			Data: &protobuf.Notification_TranscodingProgress{
-				TranscodingProgress: &protobuf.TranscodingProgressNotification{
-					Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
-					StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
-					Progress:      ptr.Take(int32(percent)),
-				},
-			},
-		}
-	})
+	command.Stdout = newProgressWriter(probe.Duration(), progressReporter(notify, streamID, streamVersion))
 	if err := command.Run(); err != nil {
 		return failImport(reasonConversion, fmt.Errorf("ffmpeg failed: %w: %s", err, stderr.String()))
 	}
@@ -322,4 +312,27 @@ func (w *progressWriter) line(line string) {
 	}
 	w.last, w.lastAt = percent, now
 	w.report(percent)
+}
+
+// progressReporter reports progress of one version of a stream's import to notify.
+//
+// Best effort, like everything about progress: it runs in the goroutine that drains
+// ffmpeg's stdout, so waiting for a busy or gone receiver would stall ffmpeg itself. The
+// next report replaces a dropped one.
+func progressReporter(notify chan<- *protobuf.Notification, streamID uint64, streamVersion string) func(percent int) {
+	return func(percent int) {
+		n := &protobuf.Notification{
+			Data: &protobuf.Notification_TranscodingProgress{
+				TranscodingProgress: &protobuf.TranscodingProgressNotification{
+					Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
+					StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
+					Progress:      ptr.Take(int32(percent)),
+				},
+			},
+		}
+		select {
+		case notify <- n:
+		default:
+		}
+	}
 }

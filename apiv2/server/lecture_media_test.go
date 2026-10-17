@@ -1,6 +1,7 @@
 package apiv2
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -107,6 +108,7 @@ func TestUploadLectureMedia(t *testing.T) {
 	// The upload shows as converting once a runner is reserved, with nothing done yet and
 	// no failure left from an earlier one; it stops showing when the runner doesn't take it.
 	expectConverting := func(m mediaMocks, kept bool) {
+		m.streams.EXPECT().GetTranscodingProgressByVersion(model.PRES, uint(7)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
 		m.streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: 7, Version: model.PRES}).Return(nil)
 		if !kept {
 			m.streams.EXPECT().RemoveTranscodingProgress(model.PRES, uint(7)).Return(nil)
@@ -186,10 +188,67 @@ func TestUploadLectureMedia(t *testing.T) {
 		uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {})
 		api, m := newMediaAPI(t, uploads)
 		expectLecture(m)
+		m.streams.EXPECT().GetTranscodingProgressByVersion(gomock.Any(), gomock.Any()).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
 		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(errors.New("db down"))
 
 		rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
 		if rec.Code != http.StatusOK {
+			t.Errorf("status = %d: %s", rec.Code, rec.Body)
+		}
+	})
+
+	// Another upload of this version may still be converting, or may have failed without
+	// its uploader having looked yet: refusing this file must not take that away.
+	t.Run("a refused upload gives back what the row said before", func(t *testing.T) {
+		for name, refuse := range map[string]func(http.ResponseWriter, *http.Request){
+			"the runner says no": func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "no file in request", http.StatusBadRequest)
+			},
+			"the runner hangs up": func(w http.ResponseWriter, r *http.Request) {
+				c, _, _ := w.(http.Hijacker).Hijack()
+				_ = c.Close()
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				uploads := &fakeUploads{}
+				uploads.target = fakeRunner(t, refuse)
+				api, m := newMediaAPI(t, uploads)
+				expectLecture(m)
+				earlier := model.TranscodingProgress{StreamID: 7, Version: model.PRES, Failed: true, Error: "The file contains no video."}
+				m.streams.EXPECT().GetTranscodingProgressByVersion(model.PRES, uint(7)).Return(earlier, nil)
+				gomock.InOrder(
+					m.streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: 7, Version: model.PRES}).Return(nil),
+					m.streams.EXPECT().SaveTranscodingProgress(earlier).Return(nil), // and not RemoveTranscodingProgress
+				)
+
+				rec := serveUpload(api, uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4"))
+				if rec.Code < 400 {
+					t.Errorf("status = %d: %s", rec.Code, rec.Body)
+				}
+			})
+		}
+	})
+
+	// The caller going away mid-upload is the likeliest way to not hand the runner a file.
+	t.Run("a caller who aborts the upload leaves no conversion behind", func(t *testing.T) {
+		uploads := &fakeUploads{}
+		uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {
+			_, _ = io.Copy(io.Discard, r.Body) // fails when the proxy gives up on the body
+			http.Error(w, "incomplete", http.StatusBadRequest)
+		})
+		api, m := newMediaAPI(t, uploads)
+		expectLecture(m)
+		expectConverting(m, false)
+
+		req := uploadRequest(t, path, lectureAdmin, "lecture.mp4", "video/mp4")
+		full, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Body = io.NopCloser(io.MultiReader(bytes.NewReader(full[:len(full)/2]), errReader{errors.New("client went away")}))
+		req.ContentLength = -1
+		rec := serveUpload(api, req)
+		if rec.Code < 400 {
 			t.Errorf("status = %d: %s", rec.Code, rec.Body)
 		}
 	})
@@ -296,3 +355,8 @@ func TestUploadLectureMedia(t *testing.T) {
 		}
 	})
 }
+
+// errReader fails every read, like a connection that dropped.
+type errReader struct{ err error }
+
+func (e errReader) Read([]byte) (int, error) { return 0, e.err }
