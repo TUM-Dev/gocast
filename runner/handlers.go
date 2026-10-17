@@ -88,3 +88,28 @@ func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionIm
 
 	return &protobuf.SectionImageResponse{JobId: ptr.Take(jID)}, nil
 }
+
+// RegenerateThumbnail regenerates the thumbnail for an already-recorded VOD. The
+// result is delivered asynchronously in a ThumbnailReadyNotification, so this only
+// acknowledges the job.
+func (r *Runner) RegenerateThumbnail(_ context.Context, req *protobuf.RegenerateThumbnailRequest) (*protobuf.RegenerateThumbnailResponse, error) {
+	if req.GetStreamId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no stream id given")
+	}
+	if req.GetPlaylistUrl() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "no playlist url given")
+	}
+
+	data := map[string]any{
+		"streamID":      req.GetStreamId(),
+		"streamVersion": protobuf.StreamVersion_name[int32(req.GetVersion())],
+		"playlistURL":   req.GetPlaylistUrl(),
+	}
+
+	// A thumbnail regeneration job has no VoD phase, so there is nothing to skip on discard.
+	jID := r.RunAction([]actions.Action{actions.RegenerateThumb}, nil, data,
+		r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion()))
+	r.log.Info("thumbnail regeneration job added", "ID", jID)
+
+	return &protobuf.RegenerateThumbnailResponse{JobId: ptr.Take(jID)}, nil
+}

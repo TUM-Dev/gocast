@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import { ApiError } from "@/lib/api";
-import { copyCourse, deleteCourse, type CourseAdmin } from "@/lib/course-admin";
+import { copyCourse, deleteCourse, regenerateCourseThumbnails, type CourseAdmin } from "@/lib/course-admin";
 import { fetchSemesters, semesterLabel, type TeachingTerm } from "@/lib/semesters";
 import { courseError, useCourseAdminStore } from "@/stores/course-admin";
 
@@ -18,6 +18,7 @@ const year = ref(new Date().getFullYear());
 const term = ref<TeachingTerm>("W");
 const busy = ref(false);
 const error = ref("");
+const thumbnailsQueued = ref(false);
 
 // The tab stays mounted when a copy navigates to the new course; start that one closed.
 watch(
@@ -25,6 +26,7 @@ watch(
   () => {
     copying.value = false;
     error.value = "";
+    thumbnailsQueued.value = false;
   },
 );
 
@@ -61,6 +63,24 @@ async function copy(): Promise<void> {
   }
 }
 
+async function regenerateThumbnails(): Promise<void> {
+  const confirmed = window.confirm(
+    `Regenerate thumbnails for every recording in "${props.course.name}"? This runs in the background and can take a while.`,
+  );
+  if (!confirmed) return;
+  busy.value = true;
+  error.value = "";
+  thumbnailsQueued.value = false;
+  try {
+    await regenerateCourseThumbnails(props.course.id);
+    thumbnailsQueued.value = true;
+  } catch (err) {
+    error.value = courseError(err);
+  } finally {
+    busy.value = false;
+  }
+}
+
 async function remove(): Promise<void> {
   const confirmed = window.confirm(
     `Delete "${props.course.name}" and all of its lectures? This cannot be undone.`,
@@ -90,6 +110,14 @@ async function remove(): Promise<void> {
       role="alert"
     >
       {{ error }}
+    </p>
+
+    <p
+      v-if="thumbnailsQueued"
+      class="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
+      role="status"
+    >
+      Thumbnails are being regenerated in the background.
     </p>
 
     <form v-if="copying" class="flex flex-col gap-3 text-sm" @submit.prevent="copy">
@@ -131,6 +159,14 @@ async function remove(): Promise<void> {
     <div v-else class="flex flex-col gap-2 sm:flex-row">
       <button type="button" class="tum-live-button-secondary tum-live-button px-4 py-2 text-sm" :disabled="busy" @click="copying = true">
         <i class="fa-regular fa-copy mr-2" aria-hidden="true"></i>Copy course and all its lectures
+      </button>
+      <button
+        type="button"
+        class="tum-live-button-secondary tum-live-button px-4 py-2 text-sm"
+        :disabled="busy"
+        @click="regenerateThumbnails"
+      >
+        <i class="fa-regular fa-image mr-2" aria-hidden="true"></i>Regenerate thumbnails
       </button>
       <button
         type="button"

@@ -48,6 +48,9 @@ type API struct {
 	// A lecture's content: section thumbnails, subtitles and where uploads go. All
 	// optional: see WithSectionImages, WithSubtitleGenerator and WithMassStorage.
 	sectionImages SectionImages
+	// Regenerating a VOD's own large thumbnail, as opposed to a section's; see
+	// WithThumbnails. Optional: nil means RegenerateCourseThumbnails answers 503.
+	thumbnails Thumbnails
 	// Courses, lectures and subtitles by text; see WithSearch.
 	search        Search
 	subtitles     pb.SubtitleGeneratorClient

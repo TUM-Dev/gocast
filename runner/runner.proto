@@ -16,6 +16,9 @@ service RunnerService {
   // Requests thumbnails for the given video sections of an already recorded stream.
   // The images are delivered asynchronously via SectionImagesReadyNotification.
   rpc RequestSectionImages (SectionImageRequest) returns (SectionImageResponse) {}
+  // Regenerates the thumbnail for an already-recorded VOD.
+  // The result is delivered asynchronously via ThumbnailReadyNotification.
+  rpc RegenerateThumbnail (RegenerateThumbnailRequest) returns (RegenerateThumbnailResponse) {}
 }
 
 message StreamRequest {
@@ -53,6 +56,16 @@ message SectionImageRequest {
 }
 
 message SectionImageResponse {
+  string job_id = 1;
+}
+
+message RegenerateThumbnailRequest {
+  uint64 stream_id = 1;
+  StreamVersion version = 2;
+  string playlist_url = 3;
+}
+
+message RegenerateThumbnailResponse {
   string job_id = 1;
 }
 

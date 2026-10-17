@@ -34,6 +34,7 @@ import (
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/pkg/search"
 	"github.com/TUM-Dev/gocast/pkg/sectionimages"
+	"github.com/TUM-Dev/gocast/pkg/thumbnails"
 	"github.com/TUM-Dev/gocast/pkg/voicegrpc"
 	"github.com/TUM-Dev/gocast/pkg/workergrpc"
 	"github.com/TUM-Dev/gocast/tools"
@@ -262,6 +263,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
 		apiv2.WithSectionImages(sectionimages.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
+		apiv2.WithThumbnails(thumbnails.Thumbnails{Manager: manager}),
 		apiv2.WithRealtimeHub(hub),
 		// Ending a stream goes through the manager, which tells the viewers it is over.
 		apiv2.WithStreamEnder(manager),
