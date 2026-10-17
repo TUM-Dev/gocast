@@ -113,7 +113,6 @@ func run(ctx context.Context) error {
 		&model.VideoSection{},
 		&model.VideoSeekChunk{},
 		&model.Notification{},
-		&model.UploadKey{},
 		&model.UserSetting{},
 		&model.Audit{},
 		&model.InfoPage{},

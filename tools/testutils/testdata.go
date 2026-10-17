@@ -644,12 +644,3 @@ func GetUsersMock(t *testing.T) dao.UsersDao {
 		AnyTimes()
 	return usersMock
 }
-
-func GetUploadKeyMock(t *testing.T) dao.UploadKeyDao {
-	streamsMock := mock_dao.NewMockUploadKeyDao(gomock.NewController(t))
-	streamsMock.
-		EXPECT().
-		CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil)
-	return streamsMock
-}
