@@ -286,7 +286,7 @@ describe("error messages", () => {
 describe("recordingUploadErrorMessage", () => {
   it("names the missing worker and a live lecture, and falls back otherwise", () => {
     expect(recordingUploadErrorMessage(new ApiError(503, "no worker available"))).toBe(
-      "No worker is available to receive the upload right now. Please try again later.",
+      "No runner is available to receive the upload right now. Please try again later.",
     );
     expect(recordingUploadErrorMessage(new ApiError(409, "the lecture is live"))).toBe(
       "The recording cannot be replaced while the lecture is live.",

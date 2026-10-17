@@ -148,7 +148,7 @@ test.describe("creating lectures from the lectures tab", () => {
     await expect(wizard(page).getByText(/Self-streamed: the stream key/)).toBeVisible();
   });
 
-  test("creates a video upload and says when no worker takes the file", async ({ page, playwright }) => {
+  test("creates a video upload and says when no runner takes the file", async ({ page, playwright }) => {
     const prof1 = await apiAs(playwright, users.prof1);
     const title = `${PREFIX} Aufzeichnung`;
     try {
@@ -178,7 +178,7 @@ test.describe("creating lectures from the lectures tab", () => {
       await w.getByRole("button", { name: "Create lecture" }).click();
 
       await expect(page.getByRole("alert")).toHaveText(
-        "No worker is available to receive the upload right now. The lecture was created; upload the video later from its card.",
+        "No runner is available to receive the upload right now. The lecture was created; upload the video later from its card.",
       );
       await expect(card(page, title)).toHaveCount(1);
       expect((await listed(prof1)).filter((l) => l.name === title)).toHaveLength(1);
