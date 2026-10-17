@@ -326,6 +326,26 @@ func TestNotificationBackoffCriticalRetriesIndefinitelyWithCap(t *testing.T) {
 	}
 }
 
+// A failed import must reach the server whatever it takes: it is the only way the
+// uploader finds out. Progress is the opposite, see notificationBackoff.
+func TestNotificationBackoffVODFailedIsCritical(t *testing.T) {
+	b := notificationBackoff(&protobuf.Notification{Data: &protobuf.Notification_VodFailed{}})
+	for i := 0; i < 100; i++ {
+		if _, stop := b.Next(); stop {
+			t.Fatalf("VODFailed backoff stopped after %d retries", i)
+		}
+	}
+}
+
+// A progress report that arrives late could land after the VODReady or VODFailed that
+// ended the conversion, so it is tried once and dropped.
+func TestNotificationBackoffProgressIsNotRetried(t *testing.T) {
+	n := &protobuf.Notification{Data: &protobuf.Notification_TranscodingProgress{}}
+	if got := drainBackoff(notificationBackoff(n), 100); got != 0 {
+		t.Fatalf("got %d retries, want 0", got)
+	}
+}
+
 // Ending a stream early stops the capture, it does not cancel what comes after: the VoD is
 // made from the segments that were captured until then. Handing the VoD actions the
 // cancelled stream context makes every exec.CommandContext in them fail before it starts.
