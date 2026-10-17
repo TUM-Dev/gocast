@@ -13,10 +13,10 @@ import StreamThumbnail from "./StreamThumbnail.vue";
  */
 defineProps<{ livestream: LiveStream }>();
 
-/** Matches Stream.UntilString in web/ts/api/courses.ts. */
+/** "Until 9:05": the minutes are zero-padded, the hours are not. */
 function untilString(end: Date): string {
   const minutes = end.getMinutes();
-  return `Until ${end.getHours()}:${minutes < 10 ? `${minutes}0` : minutes}`;
+  return `Until ${end.getHours()}:${minutes < 10 ? `0${minutes}` : minutes}`;
 }
 </script>
 
