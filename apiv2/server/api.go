@@ -51,6 +51,9 @@ type API struct {
 	// Regenerating a VOD's own large thumbnail, as opposed to a section's; see
 	// WithThumbnails. Optional: nil means RegenerateCourseThumbnails answers 503.
 	thumbnails Thumbnails
+	// Where an uploaded recording is converted; see WithUploads. Optional: nil means
+	// uploading a lecture's media answers 503.
+	uploads Uploads
 	// Courses, lectures and subtitles by text; see WithSearch.
 	search        Search
 	subtitles     pb.SubtitleGeneratorClient

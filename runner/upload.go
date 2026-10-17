@@ -148,7 +148,6 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		"streamVersion": slot.version,
 		"uploadPath":    file,
 	}
-	// The thumbnail is made from the VOD that ImportVOD leaves, see its playlistURL.
 	jID := r.RunAction(importActions, nil, data, log)
 	log.Info("upload import job added", "ID", jID)
 	w.WriteHeader(http.StatusOK)
