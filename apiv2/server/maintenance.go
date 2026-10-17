@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"slices"
-	"sync"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -13,101 +12,10 @@ import (
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/pkg/workergrpc"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
 // Every RPC here is gated on PermAdministerServer by its policy in services.go.
-
-// maintenanceThumbnails tracks the one thumbnail-regeneration run that can be in
-// flight at a time. Package-level rather than on API, the way tools.Cron is a global:
-// there is exactly one of these per process regardless of how many API instances a
-// test constructs.
-var maintenanceThumbnails = struct {
-	mu       sync.Mutex
-	running  bool
-	progress float32
-}{}
-
-// GetMaintenanceThumbnailStatus reports the state of the background regeneration job,
-// for the page to poll instead of blocking on a request that can run for a long time.
-func (a *API) GetMaintenanceThumbnailStatus(ctx context.Context, req *emptypb.Empty) (*protobuf.MaintenanceThumbnailStatus, error) {
-	maintenanceThumbnails.mu.Lock()
-	defer maintenanceThumbnails.mu.Unlock()
-
-	return &protobuf.MaintenanceThumbnailStatus{
-		Running:  maintenanceThumbnails.running,
-		Progress: maintenanceThumbnails.progress,
-	}, nil
-}
-
-// GenerateMaintenanceThumbnails starts a background job that requests a fresh
-// thumbnail for every VoD file. A run already in progress is left alone: the old page
-// disabled its button while running, but nothing stops two admins opening the page
-// at once, so the handler itself has to be the guard.
-func (a *API) GenerateMaintenanceThumbnails(ctx context.Context, req *emptypb.Empty) (*protobuf.MaintenanceThumbnailStatus, error) {
-	maintenanceThumbnails.mu.Lock()
-	if maintenanceThumbnails.running {
-		defer maintenanceThumbnails.mu.Unlock()
-		return &protobuf.MaintenanceThumbnailStatus{Running: true, Progress: maintenanceThumbnails.progress}, nil
-	}
-
-	noFiles, err := a.dao.FileDao.CountVoDFiles()
-	if err != nil {
-		maintenanceThumbnails.mu.Unlock()
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-
-	// Set synchronously, before the goroutine starts, so the response this call
-	// returns and the state a concurrent status poll sees can never disagree about
-	// whether a run has begun.
-	maintenanceThumbnails.running = true
-	maintenanceThumbnails.progress = 0
-	maintenanceThumbnails.mu.Unlock()
-
-	daoWrapper := a.dao
-	go func() {
-		defer func() {
-			maintenanceThumbnails.mu.Lock()
-			maintenanceThumbnails.running = false
-			maintenanceThumbnails.progress = 0
-			maintenanceThumbnails.mu.Unlock()
-		}()
-
-		courses, err := daoWrapper.CoursesDao.GetAllCourses()
-		if err != nil {
-			a.log.Error("maintenance: can't get courses", "err", err)
-			return
-		}
-
-		processed := 0
-		// Iterate over every course. Some streams already have a valid thumbnail;
-		// there is no cheap way to tell which without asking a worker, so this
-		// regenerates all of them rather than trying to be clever about it.
-		for _, course := range courses {
-			for _, stream := range course.Streams {
-				for _, file := range stream.Files {
-					if file.Type != model.FILETYPE_VOD {
-						continue
-					}
-					if err := workergrpc.RegenerateThumbs(daoWrapper, file, &stream, &course); err != nil {
-						a.log.Error("maintenance: can't regenerate thumbnail",
-							"streamID", stream.ID, "file", file.Path, "err", err)
-						continue
-					}
-					processed++
-					if noFiles > 0 {
-						maintenanceThumbnails.mu.Lock()
-						maintenanceThumbnails.progress = float32(processed) / float32(noFiles)
-						maintenanceThumbnails.mu.Unlock()
-					}
-				}
-			}
-		}
-	}()
-
-	return &protobuf.MaintenanceThumbnailStatus{Running: true, Progress: 0}, nil
-}
 
 // ListMaintenanceCronJobs lists the jobs the scheduler knows by name, for the page to
 // offer as choices before triggering one manually.

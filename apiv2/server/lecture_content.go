@@ -113,7 +113,7 @@ func (a *API) lectureSectionOf(stream model.Stream, sectionID uint32) (model.Vid
 // logged, the sections themselves being saved.
 //
 // v1 also sent lectures without a recording, which no runner or worker can do anything
-// with; those are skipped here. RegenerateThumbs makes them once there is one.
+// with; those are skipped here.
 func (a *API) generateSectionImages(ctx context.Context, stream model.Stream, sections []model.VideoSection) {
 	if a.sectionImages == nil || len(sections) == 0 || stream.PlaylistUrl == "" {
 		return

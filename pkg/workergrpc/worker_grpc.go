@@ -886,47 +886,6 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 	return err
 }
 
-// RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails
-// and for VoDs that were created before the thumbnail feature.
-func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.Stream, course *model.Course) error {
-	workers := daoWrapper.WorkerDao.GetAliveWorkers()
-	workerIndex := getWorkerWithLeastWorkload(workers)
-	if len(workers) == 0 {
-		return errors.New("no workers available")
-	}
-	conn, err := dialIn(workers[workerIndex])
-	defer func() {
-		endConnection(conn)
-	}()
-	if err != nil {
-		logger.Error("Unable to dial server", "err", err)
-		return err
-	}
-	client := pb.NewToWorkerClient(conn)
-	ctx, cancel := rpcCtx(workerJobTimeout)
-	defer cancel()
-	res, err := client.GenerateThumbnails(ctx,
-		&pb.GenerateThumbnailRequest{
-			Path:          file.Path,
-			WorkerID:      workers[workerIndex].WorkerID,
-			StreamID:      uint32(stream.ID),
-			StreamVersion: file.GetVodTypeByName(),
-			CourseSlug:    course.Slug,
-			CourseYear:    uint32(course.Year),
-			TeachingTerm:  course.TeachingTerm,
-			Start:         timestamppb.New(stream.Start),
-		})
-	if err != nil {
-		logger.Error("thumbnail generation request failed", "err", err)
-		return err
-	}
-	if !res.Ok {
-		logger.Error("did not get response from worker for thumbnail generation request", "err", err)
-	}
-
-	return nil
-}
-
 // SectionImagesParameters is what a worker needs to cut thumbnails for sections.
 type SectionImagesParameters struct {
 	Sections                                    []model.VideoSection

@@ -257,8 +257,6 @@ var services = []service{
 			"revokeIntegrationKey": requires(model.PermAdministerServer),
 
 			// Maintenance operations belong to no course, same as runners.
-			"getMaintenanceThumbnailStatus":       requires(model.PermAdministerServer),
-			"generateMaintenanceThumbnails":       requires(model.PermAdministerServer),
 			"listMaintenanceCronJobs":             requires(model.PermAdministerServer),
 			"runMaintenanceCronJob":               requires(model.PermAdministerServer),
 			"listMaintenanceTranscodingFailures":  requires(model.PermAdministerServer),

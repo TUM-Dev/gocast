@@ -4,14 +4,11 @@ import { onMounted, onUnmounted, ref } from "vue";
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { ApiError } from "@/lib/api";
 import {
-  REFRESH_INTERVAL_MS,
   deleteEmailFailure,
   deleteTranscodingFailure,
   fetchCronJobs,
   fetchEmailFailures,
-  fetchThumbnailStatus,
   fetchTranscodingFailures,
-  generateThumbnails,
   runCronJob,
   type EmailFailure,
   type TranscodingFailure,
@@ -19,9 +16,9 @@ import {
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
- * Server maintenance: thumbnail regeneration, cron jobs, and dismissing failed
- * transcodings and emails. Four independent panels, matching the old page — nothing
- * here shares state, so one panel's error does not block the others from loading.
+ * Server maintenance: cron jobs, and dismissing failed transcodings and emails. Three
+ * independent panels, matching the old page — nothing here shares state, so one
+ * panel's error does not block the others from loading.
  */
 const auth = useAuthStore();
 const error = ref("");
@@ -33,36 +30,6 @@ function message(err: unknown): string {
     return err.message;
   }
   return "Something went wrong. Please try again.";
-}
-
-// --- Thumbnails ------------------------------------------------------------------
-
-const thumbnailsRunning = ref(false);
-const thumbnailsProgress = ref(0);
-const startingThumbnails = ref(false);
-let thumbnailTimer: ReturnType<typeof setInterval> | undefined;
-
-async function pollThumbnailStatus(): Promise<void> {
-  try {
-    const status = await fetchThumbnailStatus();
-    thumbnailsRunning.value = status.running;
-    thumbnailsProgress.value = status.progress;
-  } catch (err) {
-    error.value = message(err);
-  }
-}
-
-async function startThumbnailGeneration(): Promise<void> {
-  startingThumbnails.value = true;
-  try {
-    const status = await generateThumbnails();
-    thumbnailsRunning.value = status.running;
-    thumbnailsProgress.value = status.progress;
-  } catch (err) {
-    error.value = message(err);
-  } finally {
-    startingThumbnails.value = false;
-  }
 }
 
 // --- Cron jobs ---------------------------------------------------------------------
@@ -190,14 +157,10 @@ onMounted(async () => {
     return;
   }
 
-  await pollThumbnailStatus();
-  thumbnailTimer = setInterval(pollThumbnailStatus, REFRESH_INTERVAL_MS);
-
   await Promise.all([loadCronJobs(), loadTranscodingFailures(), loadEmailFailures()]);
 });
 
 onUnmounted(() => {
-  if (thumbnailTimer) clearInterval(thumbnailTimer);
   if (cronStatusTimer) clearTimeout(cronStatusTimer);
 });
 </script>
@@ -212,29 +175,6 @@ onUnmounted(() => {
           {{ error }}
         </p>
       </Transition>
-
-      <div class="flex flex-col gap-3 rounded-lg border p-4 dark:border-gray-800">
-        <h2 class="text-1 font-semibold">Thumbnails</h2>
-        <button
-          type="button"
-          class="tum-live-button-primary self-start px-4 py-2 text-sm"
-          :disabled="startingThumbnails || thumbnailsRunning"
-          @click="startThumbnailGeneration"
-        >
-          {{ thumbnailsRunning ? "Regenerating…" : "Regenerate All Thumbnails" }}
-        </button>
-        <div v-if="thumbnailsRunning" class="flex flex-col gap-1">
-          <span class="text-2 text-sm font-semibold"
-            >Progress: {{ Math.floor(thumbnailsProgress * 100) }}%</span
-          >
-          <div class="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
-            <div
-              class="h-1.5 rounded-full bg-blue-600 dark:bg-blue-500"
-              :style="`width: ${thumbnailsProgress * 100}%`"
-            ></div>
-          </div>
-        </div>
-      </div>
 
       <div class="flex flex-col gap-3 rounded-lg border p-4 dark:border-gray-800">
         <h2 class="text-1 font-semibold">Cron Jobs</h2>

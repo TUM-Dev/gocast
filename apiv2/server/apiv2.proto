@@ -1273,27 +1273,6 @@ service AdminService {
     };
   }
 
-  // Thumbnail regeneration runs in a goroutine and outlives the request that started
-  // it, so the page polls getMaintenanceThumbnailStatus the way the old page polled
-  // its own status endpoint every five seconds.
-  rpc getMaintenanceThumbnailStatus(google.protobuf.Empty) returns (MaintenanceThumbnailStatus) {
-    option (google.api.http) = {get: "/admin/maintenance/thumbnails/status"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Maintenance"
-      summary: "Get the thumbnail regeneration progress."
-      description: "Reports whether a thumbnail regeneration run is in progress and how far it has gotten. Requires the server.administer permission."
-    };
-  }
-
-  rpc generateMaintenanceThumbnails(google.protobuf.Empty) returns (MaintenanceThumbnailStatus) {
-    option (google.api.http) = {post: "/admin/maintenance/thumbnails/generate"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Maintenance"
-      summary: "Regenerate every VoD thumbnail."
-      description: "Starts a background job that requests a fresh thumbnail for every VoD file. A run already in progress is left alone rather than started twice. Requires the server.administer permission."
-    };
-  }
-
   rpc listMaintenanceCronJobs(google.protobuf.Empty) returns (ListMaintenanceCronJobsResponse) {
     option (google.api.http) = {get: "/admin/maintenance/cron"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -2396,14 +2375,6 @@ message RevokeIntegrationKeyRequest {
 ///////////////////////////////
 ///// MAINTENANCE_MESSAGE /////
 ///////////////////////////////
-
-// MaintenanceThumbnailStatus reports the state of the background regeneration job.
-// progress is meaningless once running is false; a finished run resets it to zero
-// rather than leaving it at 1, so a stale tab does not read a fresh run as complete.
-message MaintenanceThumbnailStatus {
-  bool running = 1;
-  float progress = 2;
-}
 
 message RunMaintenanceCronJobRequest {
   string job = 1;
