@@ -233,7 +233,7 @@ export async function uploadLectureRecording(
 export function recordingUploadErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     // No worker alive, or the chosen one did not answer.
-    if (err.status === 503) return "No worker is available to receive the upload right now. Please try again later.";
+    if (err.status === 503) return "No runner is available to receive the upload right now. Please try again later.";
     // The worker that is streaming it would throw the result away.
     if (err.status === 409) return "The recording cannot be replaced while the lecture is live.";
   }

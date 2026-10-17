@@ -177,8 +177,8 @@ test.describe("creating lectures", () => {
 });
 
 test.describe("uploading a VOD's recording", () => {
-  // The fixture's workers are dead (no heartbeat), so the upload has nowhere to go.
-  test("answers 503 when no worker is alive, and 404 to a non-administrator", async ({
+  // The dev stack has no runner, so the upload has nowhere to go.
+  test("answers 503 when no runner is alive, and 404 to a non-administrator", async ({
     playwright,
   }) => {
     const prof1 = await apiAs(playwright, users.prof1);
@@ -202,11 +202,11 @@ test.describe("uploading a VOD's recording", () => {
         buffer: Buffer.from("not really a video"),
       };
 
-      const noWorker = await prof1.post(`${media}?type=COMB`, {
+      const noRunner = await prof1.post(`${media}?type=COMB`, {
         multipart: { file },
       });
-      expect(noWorker.status()).toBe(503);
-      expect((await noWorker.json()).message).toContain("no worker");
+      expect(noRunner.status()).toBe(503);
+      expect((await noRunner.json()).message).toContain("no runner");
 
       expect(
         (

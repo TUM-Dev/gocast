@@ -356,7 +356,7 @@ export function createErrorMessage(err: unknown): string {
 export function mediaUploadErrorMessage(err: unknown, label: string): string {
   if (err instanceof ApiError) {
     if (err.status === 503) {
-      return "No worker is available to receive the upload right now. The lecture was created; upload the video later from its card.";
+      return "No runner is available to receive the upload right now. The lecture was created; upload the video later from its card.";
     }
     if (err.isUnauthenticated) return "Your session expired. Please sign in again.";
     return `The ${label} could not be uploaded: ${err.message}. The lecture was created.`;

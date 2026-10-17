@@ -9812,10 +9812,10 @@ export const CourseService: GenService<{
    * POST /courses/{course_id}/streams/{stream_id}/media?type=COMB|PRES|CAM, the video
    * in the form field `file`. Authorized as these RPCs are, a caller who does not
    * administer the course answered 404, before anything of the body is read. The body
-   * is then streamed to the least busy worker, which transcodes it and attaches the
-   * result to the lecture as that version. Answers {} once the worker has the file;
-   * 400 for a missing or unknown type, 409 while the lecture is live, 503 when no
-   * worker is alive or the one chosen cannot be reached.
+   * is then streamed to a runner, which converts it and attaches the result to the
+   * lecture as that version. Answers {} once the runner has the file; 400 for a
+   * missing or unknown type, 409 while the lecture is live, 503 when no runner is
+   * alive or the one chosen cannot be reached.
    *
    * @generated from rpc protobuf.CourseService.createLectures
    */

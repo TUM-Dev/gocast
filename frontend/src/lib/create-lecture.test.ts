@@ -271,7 +271,7 @@ describe("messages", () => {
 
   it("says the lecture exists when no worker takes the upload", () => {
     expect(mediaUploadErrorMessage(new ApiError(503, "no worker"), "combined video")).toBe(
-      "No worker is available to receive the upload right now. The lecture was created; upload the video later from its card.",
+      "No runner is available to receive the upload right now. The lecture was created; upload the video later from its card.",
     );
     expect(mediaUploadErrorMessage(new ApiError(409, "the lecture is live"), "camera video")).toBe(
       "The camera video could not be uploaded: the lecture is live. The lecture was created.",

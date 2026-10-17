@@ -138,7 +138,7 @@ async function submit(): Promise<void> {
       try {
         await uploadLectureMedia(props.courseId, created[0].id, type, form.files[type]!);
       } catch (err) {
-        // The rest would most likely fail the same way (no worker, or a live lecture).
+        // The rest would most likely fail the same way (no runner, or a live lecture).
         problem = mediaUploadErrorMessage(err, label);
         break;
       }
