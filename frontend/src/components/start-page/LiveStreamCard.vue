@@ -61,7 +61,7 @@ function untilString(end: Date): string {
       >
         {{ livestream.stream.name }}
       </a>
-      <span class="date text-sm">{{ untilString(livestream.stream.end) }}</span>
+      <span class="date text-sm block">{{ untilString(livestream.stream.end) }}</span>
     </div>
   </article>
 </template>
