@@ -159,6 +159,10 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 	if err != nil {
 		return nil, err
 	}
+	if !tools.TestEnv.AllowsStream(stream.CourseID) {
+		logger.Warn("Stream rejected, course not allowed in test env", "streamId", stream.ID, "course", stream.CourseID)
+		return nil, errors.New("stream rejected")
+	}
 	course, err := s.DaoWrapper.CoursesDao.GetCourseById(ctx, stream.CourseID)
 	if err != nil {
 		return nil, err
@@ -625,7 +629,7 @@ func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingPro
 }
 
 func CreateStreamRequest(daoWrapper dao.DaoWrapper, stream model.Stream, course model.Course, workers []model.Worker, sourceType string, source string) {
-	if source == "" {
+	if source == "" || !tools.TestEnv.AllowsStream(stream.CourseID) {
 		return
 	}
 	server, err := daoWrapper.IngestServerDao.GetBestIngestServer()
@@ -699,6 +703,10 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 			return
 		}
 		for i := range streams {
+			// Checked before SaveEndedState, which would otherwise rewrite the copy's rows.
+			if !tools.TestEnv.AllowsStream(streams[i].CourseID) {
+				continue
+			}
 			err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 			if err != nil {
 				logger.Warn("Can't set stream undone", "err", err)
@@ -744,6 +752,9 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		return
 	}
 	for i := range streams {
+		if !tools.TestEnv.AllowsStream(streams[i].CourseID) {
+			continue
+		}
 		err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			logger.Warn("Can't set stream undone", "err", err)

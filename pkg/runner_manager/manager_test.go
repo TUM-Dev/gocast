@@ -10,12 +10,14 @@ import (
 
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 
 	"github.com/tum-dev/gocast/runner/protobuf"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func TestManagerOptions(t *testing.T) {
@@ -233,5 +235,46 @@ func TestEndStream_MarksStreamEnded(t *testing.T) {
 	}
 	if !ended {
 		t.Error("stream was not marked ended, TriggerDueStreams will start it again")
+	}
+}
+
+// TestTriggerDueStreams_TestEnvAllowlist guards the test-environment promise: against a copy
+// of the production database, a due stream of a course that is not allowlisted must not reach
+// a runner. The mock has no expectation for GetLectureHallByID or HasRunnerJobForStreamVersion,
+// so any attempt to go on to start the stream fails the test.
+func TestTriggerDueStreams_TestEnvAllowlist(t *testing.T) {
+	policy, err := tools.NewTestEnvPolicy(true, "2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := tools.TestEnv
+	tools.TestEnv = policy
+	t.Cleanup(func() { tools.TestEnv = before })
+
+	ctrl := gomock.NewController(t)
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().GetDueStreamsForRunners().Return([]model.Stream{{Model: gorm.Model{ID: 5}, CourseID: 1}}, nil)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+
+	if err := m.TriggerDueStreams(); err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+func TestRequestSelfStream_TestEnvAllowlist(t *testing.T) {
+	policy, err := tools.NewTestEnvPolicy(true, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := tools.TestEnv
+	tools.TestEnv = policy
+	t.Cleanup(func() { tools.TestEnv = before })
+
+	m := New(dao.DaoWrapper{})
+
+	// Rejected before any runner is looked up, which would panic on the empty wrapper.
+	if err := m.RequestSelfStream(context.Background(), model.Stream{CourseID: 1}); err == nil {
+		t.Error("expected the stream to be rejected")
 	}
 }
