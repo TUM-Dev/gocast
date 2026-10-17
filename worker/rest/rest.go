@@ -24,8 +24,6 @@ type safeStreams struct {
 func InitApi(addr string) {
 	http.HandleFunc("/", defaultHandler)
 	http.HandleFunc("/on_publish", streams.onPublish)
-	// this endpoint should **not** be exposed to the public!
-	http.HandleFunc("/upload", handleUpload)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 

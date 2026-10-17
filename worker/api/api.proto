@@ -125,7 +125,6 @@ service FromWorker {
   rpc NotifyUploadFinished(UploadFinished) returns (Status) {}
   rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
-  rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
 
   rpc NotifyTranscodingFailure(NotifyTranscodingFailureRequest) returns (NotifyTranscodingFailureResponse) {}
 }
@@ -218,21 +217,6 @@ message SilenceResults {
   uint32 StreamID = 2;
   repeated uint32 starts = 3 [packed = true];
   repeated uint32 ends = 4 [packed = true];
-}
-
-message GetStreamInfoForUploadRequest {
-  string WorkerID = 1;
-  string UploadKey = 2;
-}
-
-message GetStreamInfoForUploadResponse {
-  string CourseSlug = 1;
-  string CourseTerm = 2;
-  uint32 CourseYear = 3;
-  google.protobuf.Timestamp StreamStart = 4;
-  google.protobuf.Timestamp StreamEnd = 5;
-  uint32 StreamID = 6;
-  string VideoType = 7;
 }
 
 message LivePreviewRequest {
