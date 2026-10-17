@@ -108,6 +108,10 @@ func (m *Manager) TriggerDueStreams() error {
 	var errs []error
 
 	for _, s := range streams {
+		if !tools.TestEnv.AllowsStream(s.CourseID) {
+			m.logger.Debug("test env: not starting stream of unlisted course", "stream", s.ID, "course", s.CourseID)
+			continue
+		}
 		lh, err := m.dao.GetLectureHallByID(s.LectureHallID)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("GetLectureHallByID: %w", err))
@@ -443,6 +447,10 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 }
 
 func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) error {
+	if !tools.TestEnv.AllowsStream(stream.CourseID) {
+		m.logger.Warn("Stream rejected, course not allowed in test env", "streamId", stream.ID, "course", stream.CourseID)
+		return errors.New("stream rejected")
+	}
 	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
 		m.logger.Warn("Stream rejected, time out of bounds", "streamId", stream.ID)

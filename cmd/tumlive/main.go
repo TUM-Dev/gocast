@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net"
@@ -45,8 +46,18 @@ import (
 )
 
 func main() {
+	testEnv := flag.Bool("test-env", false, "run against a copy of the production database: no cronjobs, no mailer, no Meilisearch settings sync, and no stream starts except for --stream-courses")
+	streamCourses := flag.String("stream-courses", "", "comma-separated course IDs that may start streams in --test-env")
+	flag.Parse()
+
 	ctx := context.Background()
-	err := run(ctx)
+	policy, err := tools.NewTestEnvPolicy(*testEnv, *streamCourses)
+	if err != nil {
+		slog.With("err", err).ErrorContext(ctx, "invalid flags")
+		os.Exit(2)
+	}
+	tools.TestEnv = policy
+	err = run(ctx)
 	if err != nil {
 		slog.With("err", err).ErrorContext(ctx, "shutting down")
 		os.Exit(1)
@@ -190,13 +201,22 @@ func run(ctx context.Context) error {
 
 	workergrpc.ServeWorkerGRPC(subtitleClient, tools.Cfg.VoiceService.AuthToken)
 
-	// init meili search index settings
-	go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()
+	if tools.TestEnv.Enabled {
+		// The database is a copy of production: its email queue holds mails for real
+		// users, and Meilisearch may be the real instance.
+		logger.Warn("test environment: cronjobs, mailer and Meilisearch settings sync are disabled",
+			"streamCourses", tools.TestEnv.StreamCourseIDs())
+		// Keep the (empty) cron service so the admin cron RPCs list no jobs instead of panicking.
+		tools.InitCronService()
+	} else {
+		// init meili search index settings
+		go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()
 
-	mailer := tools.NewMailer(dao.NewDaoWrapper(), tools.Cfg.Mail.MaxMailsPerMinute)
-	go mailer.Run()
+		mailer := tools.NewMailer(dao.NewDaoWrapper(), tools.Cfg.Mail.MaxMailsPerMinute)
+		go mailer.Run()
 
-	initCron(logger, m, hub)
+		initCron(logger, m, hub)
+	}
 	return serveHttp(ctx, m, camService, apiv2Subtitles, hub)
 }
 
