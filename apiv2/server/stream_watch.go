@@ -46,7 +46,7 @@ func (a *API) GetStreamWatch(ctx context.Context, req *protobuf.GetStreamWatchRe
 	// is what the edge checks, so it is decided before signing. v1 let anonymous
 	// callers have it too whenever the course allowed downloads.
 	canDownload := stream.IsDownloadable() && ((course.DownloadsEnabled && signedIn) || isAdmin)
-	if err := tools.SetSignedPlaylists(&stream, user, canDownload); err != nil {
+	if err := tools.SetSignedPlaylistsForCourse(&stream, user, course.Slug, canDownload); err != nil {
 		// Unsigned playlists are refused by the edge, so the page will show an error
 		// where the player should be, which is what v1 did too.
 		a.log.Warn("can't sign playlists", "err", err, "stream", stream.ID)

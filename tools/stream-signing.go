@@ -27,36 +27,52 @@ type JWTPlaylistClaims struct {
 
 var unsafeFileNameChars = regexp.MustCompile(`[^\p{L}\p{N}._-]+`)
 
-// DownloadFileName returns a human-friendly file name like "Graphs-and-Trees_2025-10-14_COMB.mp4"
-// for downloads of s. version (COMB, CAM or PRES) is part of the name so that the
-// camera and presentation downloads of one lecture don't overwrite each other.
-// Anything that could break a Content-Disposition header or a path on the user's
-// disk is replaced, and the result is bounded in length.
-func DownloadFileName(s *model.Stream, version string) string {
-	name := strings.Trim(unsafeFileNameChars.ReplaceAllString(strings.TrimSpace(s.Name), "-"), "-._")
-	if r := []rune(name); len(r) > 80 {
-		name = strings.Trim(string(r[:80]), "-._")
+// fileNamePart makes v safe to use inside a file name and bounds its length.
+func fileNamePart(v string, max int) string {
+	v = strings.Trim(unsafeFileNameChars.ReplaceAllString(strings.TrimSpace(v), "-"), "-._")
+	if r := []rune(v); len(r) > max {
+		v = strings.Trim(string(r[:max]), "-._")
 	}
+	return v
+}
+
+// DownloadFileName returns a human-friendly file name for downloads of s, like
+// "eidi_Graphs-and-Trees_2025-10-14_COMB.mp4". Streams usually have no name, which
+// gives "eidi_2025-10-14_COMB.mp4". version (COMB, CAM or PRES) is part of the name so
+// that the camera and presentation downloads of one lecture don't overwrite each other.
+// Anything that could break a Content-Disposition header or a path on the user's disk
+// is replaced, and the parts are bounded in length. It returns "" when there is
+// nothing to name the file after, and the edge falls back to the stream id.
+func DownloadFileName(courseSlug string, s *model.Stream, version string) string {
 	date := ""
 	if !s.Start.IsZero() {
 		date = s.Start.Format("2006-01-02")
 	}
-	parts := make([]string, 0, 3)
-	for _, p := range []string{name, date, version} {
+	slug, name := fileNamePart(courseSlug, 40), fileNamePart(s.Name, 80)
+	if slug == "" && name == "" && date == "" {
+		return ""
+	}
+	parts := make([]string, 0, 4)
+	for _, p := range []string{slug, name, date, version} {
 		if p != "" {
 			parts = append(parts, p)
 		}
-	}
-	if name == "" && date == "" {
-		return "" // the edge falls back to the stream id
 	}
 	return strings.Join(parts, "_") + ".mp4"
 }
 
 // SetSignedPlaylists adds a signed jwt to all available playlist urls that indicates that the
 // user is allowed to consume the playlist. The method assumes that the user has been pre-authorized and doesn't
-// check for permissions.
+// check for permissions. Downloads signed through it are not named after a course, use
+// SetSignedPlaylistsForCourse where downloads may be allowed.
 func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool) error {
+	return SetSignedPlaylistsForCourse(s, user, "", allowDownloading)
+}
+
+// SetSignedPlaylistsForCourse is SetSignedPlaylists that also names downloads after the
+// course (courseSlug), as the stream doesn't know it. The slug is only used when
+// allowDownloading is set.
+func SetSignedPlaylistsForCourse(s *model.Stream, user *model.User, courseSlug string, allowDownloading bool) error {
 	var playlists []struct{ Type, Playlist string }
 	if s.PlaylistUrl != "" {
 		playlists = append(playlists, struct{ Type, Playlist string }{Type: "COMB", Playlist: s.PlaylistUrl})
@@ -91,7 +107,7 @@ func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool
 			CourseID: fmt.Sprintf("%d", s.CourseID),
 		}
 		if allowDownloading {
-			claims.FileName = DownloadFileName(s, playlist.Type)
+			claims.FileName = DownloadFileName(courseSlug, s, playlist.Type)
 		}
 		t.Claims = claims
 		str, err := t.SignedString(Cfg.GetJWTKey())
