@@ -44,7 +44,10 @@ type Manager struct {
 	protobuf.UnimplementedRunnerManagerServiceServer
 
 	streamStartLock sync.Mutex
-	massStorage     string
+	// selfStreamLock makes the lookup of a self-stream's job and the start of a new one
+	// atomic, so two publishes in quick succession can't both start a job.
+	selfStreamLock sync.Mutex
+	massStorage    string
 
 	subtitleClient pb.SubtitleGeneratorClient
 	subtitleAuth   string
@@ -458,6 +461,21 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		return errors.New("stream rejected")
 	}
 
+	m.selfStreamLock.Lock()
+	defer m.selfStreamLock.Unlock()
+
+	// mediamtx asks for every publish, so a lecturer who reconnects (connection loss, a break)
+	// lands here again while the job from their first publish still waits for them. A second
+	// job would write the same recording as the first, possibly on another runner.
+	running, err := m.selfStreamJobRunning(ctx, stream.ID)
+	if err != nil {
+		return err
+	}
+	if running {
+		m.logger.Info("self-stream already has a job, not starting another", "stream", stream.ID)
+		return nil
+	}
+
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		m.logger.Error("Could not get client", "err", err)
@@ -479,6 +497,31 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		}
 	}
 	return nil
+}
+
+// selfStreamJobRunning reports whether a live runner holds the combined-version job of a
+// stream. Jobs are removed when the runner reports the stream's end, so a job that is still
+// there is in flight. One whose runner is gone (it lost its heartbeat, or deregistered) is
+// stale: it is dropped, and false is returned so that the stream gets a new job.
+func (m *Manager) selfStreamJobRunning(ctx context.Context, streamID uint) (bool, error) {
+	jobs, err := m.dao.StreamsDao.GetRunnerJobsForStream(streamID)
+	if err != nil {
+		return false, fmt.Errorf("get runner jobs: %w", err)
+	}
+	for _, job := range jobs {
+		if job.Version != model.COMB {
+			continue
+		}
+		runner, err := m.dao.RunnerDao.Get(ctx, job.RunnerHostname)
+		if err == nil && runner.Alive() {
+			return true, nil
+		}
+		m.logger.Warn("dropping job of a runner that is gone", "stream", streamID, "runner", job.RunnerHostname, "job", job.JobID)
+		if err := m.dao.StreamsDao.ClearRunnerJobForStream(streamID, model.COMB); err != nil {
+			return false, fmt.Errorf("clear stale runner job: %w", err)
+		}
+	}
+	return false, nil
 }
 
 func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailReadyNotification) error {
