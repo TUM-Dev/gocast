@@ -499,9 +499,15 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 	return nil
 }
 
+// selfStreamRunnerTimeout is how long a runner may be silent before its self-stream job is
+// given up on. It is deliberately not Runner.Alive: runners heartbeat every 5 seconds and
+// Alive allows exactly 5, so a delayed heartbeat makes a healthy runner look dead for a
+// moment, and a reconnect in that moment would start a second job next to the running one.
+const selfStreamRunnerTimeout = 30 * time.Second
+
 // selfStreamJobRunning reports whether a live runner holds the combined-version job of a
 // stream. Jobs are removed when the runner reports the stream's end, so a job that is still
-// there is in flight. One whose runner is gone (it lost its heartbeat, or deregistered) is
+// there is in flight. One whose runner is gone (silent for selfStreamRunnerTimeout, or deregistered) is
 // stale: it is dropped, and false is returned so that the stream gets a new job.
 func (m *Manager) selfStreamJobRunning(ctx context.Context, streamID uint) (bool, error) {
 	jobs, err := m.dao.StreamsDao.GetRunnerJobsForStream(streamID)
@@ -513,7 +519,7 @@ func (m *Manager) selfStreamJobRunning(ctx context.Context, streamID uint) (bool
 			continue
 		}
 		runner, err := m.dao.RunnerDao.Get(ctx, job.RunnerHostname)
-		if err == nil && runner.Alive() {
+		if err == nil && time.Since(runner.LastSeen) < selfStreamRunnerTimeout {
 			return true, nil
 		}
 		m.logger.Warn("dropping job of a runner that is gone", "stream", streamID, "runner", job.RunnerHostname, "job", job.JobID)
