@@ -28,6 +28,8 @@ func newTestRunner() *Runner {
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		notifications: make(chan *protobuf.Notification, 64),
+		retryMin:      time.Millisecond,
+		retryMax:      4 * time.Millisecond,
 	}
 }
 
@@ -416,5 +418,40 @@ func TestCleanupStopsThePhaseAfterTheStream(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("a forced shutdown did not stop the phase after the stream")
 	}
+	waitForJob(t, r, job)
+}
+
+func TestRetryDelayGrowsAndCaps(t *testing.T) {
+	r := &Runner{}
+	var got []time.Duration
+	var d time.Duration
+	for range 7 {
+		d = r.retryDelay(d)
+		got = append(got, d)
+	}
+	want := []time.Duration{1, 2, 4, 8, 15, 15, 15}
+	for i := range want {
+		if got[i] != want[i]*time.Second {
+			t.Fatalf("delays: got %v, want %v seconds", got, want)
+		}
+	}
+}
+
+func TestRunActionStopsWaitingWhenEndedDuringBackoff(t *testing.T) {
+	r := newTestRunner()
+	r.retryMin, r.retryMax = time.Hour, time.Hour
+
+	failed := make(chan struct{}, 1)
+	stream := func(ctx context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		if ctx.Err() != nil {
+			return actions.AbortingError(ctx.Err())
+		}
+		failed <- struct{}{}
+		return fmt.Errorf("source gone")
+	}
+	job := r.RunAction([]actions.Action{stream}, nil, map[string]any{}, r.log)
+	<-failed
+	endJob(t, r, job, true)
+	// would take an hour if the backoff ignored the cancellation
 	waitForJob(t, r, job)
 }

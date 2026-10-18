@@ -22,6 +22,7 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		"inputOpts":     req.GetFfmpegInputOptions(),
 		"outputOpts":    req.GetFfmpegOutputOptions(),
 		"input":         req.GetInput(),
+		"selfStream":    req.GetSelfStream(),
 	}
 	r.log.Info("RequestStream data constructed", "data", data)
 	a := []actions.Action{

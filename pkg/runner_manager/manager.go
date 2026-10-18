@@ -443,6 +443,7 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		End:                 timestamppb.New(s.End),
 		FfmpegOutputOptions: ptr.Take(outputOptions),
 		Input:               ptr.Take(input),
+		SelfStream:          ptr.Take(s.IsSelfStream()),
 	})
 }
 

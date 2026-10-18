@@ -19,6 +19,19 @@ import (
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
+// selfStreamGrace is how long the RTMP source of a self-stream may stay gone after the
+// scheduled end before the stream counts as over. Before the scheduled end an absent
+// source is always waited for. The grace is what lets the lecturer lose their connection or
+// take a break after the end without the recording being finalised under them.
+const selfStreamGrace = 15 * time.Minute
+
+// selfStreamLiveMin is how long an ffmpeg attempt has to run to count as having received a
+// stream, as opposed to failing right away because nobody publishes.
+const selfStreamLiveMin = 10 * time.Second
+
+// selfStreamLastLive is the key in the job data for when a self-stream last delivered.
+const selfStreamLastLive = "selfStreamLastLive"
+
 func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notification, d map[string]any, metrics *metrics.Broker) error {
 	if ctx.Err() != nil {
 		return AbortingError(ctx.Err())
@@ -31,7 +44,18 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream end in context"))
 	}
-	if streamEnd.Before(time.Now()) {
+	// The lecturer of a self-stream decides when it is over, not the schedule.
+	selfStream, _ := d["selfStream"].(bool)
+	if selfStream {
+		lastLive, ok := d[selfStreamLastLive].(time.Time)
+		if !ok {
+			lastLive = time.Now()
+			d[selfStreamLastLive] = lastLive
+		}
+		if streamEnd.Before(time.Now()) && time.Since(lastLive) > selfStreamGrace {
+			return nil
+		}
+	} else if streamEnd.Before(time.Now()) {
 		return nil
 	}
 	streamVersion, ok := d["streamVersion"].(string)
@@ -82,7 +106,11 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	if globalOpts != "" {
 		args = append(args, strings.Split(globalOpts, " ")...)
 	}
-	args = append(args, "-t", fmt.Sprintf("%.0f", time.Until(streamEnd).Seconds()))
+	if !selfStream {
+		// Not for self-streams: ffmpeg ends them when the publisher disconnects, and a
+		// duration would cut off a lecturer who runs over the scheduled end.
+		args = append(args, "-t", fmt.Sprintf("%.0f", time.Until(streamEnd).Seconds()))
+	}
 	if inputOpts != "" {
 		args = append(args, strings.Split(inputOpts, " ")...)
 	}
@@ -110,7 +138,21 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 		return err
 	}
 	go logCmdPipe(log, stdo, []any{"stream", streamID, "logStream", "stdout"})
+	started := time.Now()
 	err = command.Run()
+	if selfStream {
+		if time.Since(started) >= selfStreamLiveMin {
+			d[selfStreamLastLive] = time.Now()
+		}
+		if err != nil {
+			metrics.StreamErrors.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
+			return err
+		}
+		// A clean exit is the publisher disconnecting. It may come back (connection
+		// loss, a break), so retry: whether it is over is decided at the top, by
+		// the scheduled end and the grace.
+		return fmt.Errorf("self-stream publisher disconnected")
+	}
 	if err != nil {
 		metrics.StreamErrors.With(metrics.With().Stream(streamID).Source(input).L()).Inc()
 		return err

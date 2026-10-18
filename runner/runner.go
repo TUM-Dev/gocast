@@ -57,6 +57,10 @@ type Runner struct {
 	jobs     map[string]jobCancels
 	discard  map[string]bool
 
+	// retryMin and retryMax bound the wait between retries of a failing action, see
+	// retryDelay. Zero means the defaults.
+	retryMin, retryMax time.Duration
+
 	hlsServer *HLSServer
 	uploads   *uploadSlots
 
@@ -188,6 +192,31 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to serve", "error", err)
 		os.Exit(1)
 	}
+}
+
+const (
+	defaultRetryMin = time.Second
+	defaultRetryMax = 15 * time.Second
+	// An attempt that ran at least this long was working until it failed, so the failure
+	// is a drop-out to reconnect from quickly, not a source that stays unavailable.
+	retryHealthyAfter = 30 * time.Second
+)
+
+// retryDelay is how long to wait before retrying after the given wait, doubling up to the
+// maximum. Without a wait, a source that is gone (a self-stream that was ended early, an
+// unreachable camera) makes ffmpeg fail instantly and the retries burn a core.
+func (r *Runner) retryDelay(prev time.Duration) time.Duration {
+	lo, hi := r.retryMin, r.retryMax
+	if lo <= 0 {
+		lo = defaultRetryMin
+	}
+	if hi <= 0 {
+		hi = defaultRetryMax
+	}
+	if prev <= 0 {
+		return min(lo, hi)
+	}
+	return min(prev*2, hi)
 }
 
 // RunAction runs the actions in a in the background and returns the id of the created job.
