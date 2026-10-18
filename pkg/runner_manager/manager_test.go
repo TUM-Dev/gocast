@@ -297,7 +297,8 @@ func TestRequestSelfStream_ReconnectKeepsExistingJob(t *testing.T) {
 	streamsDao.EXPECT().GetRunnerJobsForStream(uint(9)).Return([]model.StreamRunnerJob{
 		{StreamID: 9, Version: model.COMB, RunnerHostname: "r1", JobID: "j1"},
 	}, nil)
-	runnerDao.EXPECT().Get(gomock.Any(), "r1").Return(model.Runner{Hostname: "r1", LastSeen: time.Now()}, nil)
+	// a heartbeat that is late, so Runner.Alive would say dead, but not gone
+	runnerDao.EXPECT().Get(gomock.Any(), "r1").Return(model.Runner{Hostname: "r1", LastSeen: time.Now().Add(-10 * time.Second)}, nil)
 
 	m := New(dao.DaoWrapper{StreamsDao: streamsDao, RunnerDao: runnerDao})
 
@@ -314,7 +315,7 @@ func TestRequestSelfStream_DeadRunnerJobIsReplaced(t *testing.T) {
 	streamsDao.EXPECT().GetRunnerJobsForStream(uint(9)).Return([]model.StreamRunnerJob{
 		{StreamID: 9, Version: model.COMB, RunnerHostname: "r1", JobID: "j1"},
 	}, nil)
-	runnerDao.EXPECT().Get(gomock.Any(), "r1").Return(model.Runner{Hostname: "r1", LastSeen: time.Now().Add(-time.Minute)}, nil)
+	runnerDao.EXPECT().Get(gomock.Any(), "r1").Return(model.Runner{Hostname: "r1", LastSeen: time.Now().Add(-selfStreamRunnerTimeout - time.Second)}, nil)
 	streamsDao.EXPECT().ClearRunnerJobForStream(uint(9), model.COMB).Return(nil)
 	// no runner is available, which is how the test sees that it got that far
 	runnerDao.EXPECT().ReserveRunner(gomock.Any()).Return(model.Runner{}, nil)
