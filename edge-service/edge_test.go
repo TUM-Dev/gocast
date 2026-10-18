@@ -3,8 +3,10 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"mime"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -166,4 +168,32 @@ func prepareJWT(exp time.Duration, playlist string) (string, error) {
 		Playlist: playlist,
 	}
 	return t.SignedString(key)
+}
+
+func TestGetFileName(t *testing.T) {
+	var nilClaims *JWTPlaylistClaims
+	if got := nilClaims.GetFileName(); got != "video.mp4" {
+		t.Errorf("nil claims: got %q", got)
+	}
+	c := &JWTPlaylistClaims{StreamID: "75911", Playlist: "https://edge/vod/75911/STREAM_VERSION_COMBINED/playlist.m3u8"}
+	if got := c.GetFileName(); got != "75911.mp4" {
+		t.Errorf("fallback: got %q", got)
+	}
+	c.FileName = "Graphs_2025-10-14.mp4"
+	if got := c.GetFileName(); got != c.FileName {
+		t.Errorf("claim: got %q", got)
+	}
+}
+
+func TestContentDisposition(t *testing.T) {
+	for _, name := range []string{"75911.mp4", "Übung_2025-10-14.mp4", `a"b.mp4`} {
+		got := contentDisposition(name)
+		if !strings.HasPrefix(got, "attachment;") {
+			t.Errorf("%q: got %q", name, got)
+		}
+		_, params, err := mime.ParseMediaType(got)
+		if err != nil || params["filename"] != name {
+			t.Errorf("%q does not round-trip: %q (%v)", name, got, err)
+		}
+	}
 }

@@ -142,11 +142,15 @@ type JWTPlaylistClaims struct {
 	Download bool
 	StreamID string
 	CourseID string
+	FileName string // human-friendly download name, set by the main server; may be empty
 }
 
 func (c *JWTPlaylistClaims) GetFileName() string {
 	if c == nil {
 		return "video.mp4"
+	}
+	if c.FileName != "" {
+		return c.FileName
 	}
 	pts := strings.Split(c.Playlist, "/")
 	for _, pt := range pts {
