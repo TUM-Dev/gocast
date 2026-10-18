@@ -19,6 +19,8 @@ export interface FrontendConfig {
   canonicalUrl: string;
   /** True while the deployment has no users, when the first account is still to be made. */
   isFreshInstallation: boolean;
+  /** RTMP address self-streamers connect to, ending in a slash as configured; may be empty. */
+  ingestBase: string;
 }
 
 /**
@@ -54,5 +56,6 @@ async function request(): Promise<FrontendConfig> {
     wikiUrl: res.wikiUrl,
     canonicalUrl: res.canonicalUrl,
     isFreshInstallation: res.isFreshInstallation,
+    ingestBase: res.ingestBase,
   };
 }

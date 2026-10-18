@@ -1553,6 +1553,10 @@ message GetFrontendConfigResponse {
   // isFreshInstallation reports that the database holds no users yet, so the
   // frontend can offer to create the first account instead of a login form.
   bool is_fresh_installation = 5;
+  // ingestBase is the RTMP address a self-streaming lecturer's client connects to; a
+  // lecture's stream is `<ingest_base><course slug>-<lecture id>?secret=<stream key>`.
+  // Not a secret: the key is what authorises a stream. Empty when not configured.
+  string ingest_base = 6;
 }
 
 // The name is the page's route -- its slug, e.g. "privacy" -- not the editable title

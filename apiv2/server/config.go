@@ -31,5 +31,6 @@ func (a *API) GetFrontendConfig(ctx context.Context, req *emptypb.Empty) (*proto
 		WikiUrl:             tools.Cfg.WikiURL,
 		CanonicalUrl:        tools.Cfg.CanonicalURL,
 		IsFreshInstallation: fresh,
+		IngestBase:          tools.Cfg.IngestBase,
 	}, nil
 }

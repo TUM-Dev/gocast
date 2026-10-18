@@ -7393,6 +7393,10 @@
         "isFreshInstallation": {
           "type": "boolean",
           "description": "isFreshInstallation reports that the database holds no users yet, so the\nfrontend can offer to create the first account instead of a login form."
+        },
+        "ingestBase": {
+          "type": "string",
+          "description": "ingestBase is the RTMP address a self-streaming lecturer's client connects to; a\nlecture's stream is `\u003cingest_base\u003e\u003ccourse slug\u003e-\u003clecture id\u003e?secret=\u003cstream key\u003e`.\nNot a secret: the key is what authorises a stream. Empty when not configured."
         }
       }
     },
