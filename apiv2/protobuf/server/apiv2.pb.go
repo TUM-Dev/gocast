@@ -702,8 +702,12 @@ type GetFrontendConfigResponse struct {
 	// isFreshInstallation reports that the database holds no users yet, so the
 	// frontend can offer to create the first account instead of a login form.
 	IsFreshInstallation bool `protobuf:"varint,5,opt,name=is_fresh_installation,json=isFreshInstallation,proto3" json:"is_fresh_installation,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// ingestBase is the RTMP address a self-streaming lecturer's client connects to; a
+	// lecture's stream is `<ingest_base><course slug>-<lecture id>?secret=<stream key>`.
+	// Not a secret: the key is what authorises a stream. Empty when not configured.
+	IngestBase    string `protobuf:"bytes,6,opt,name=ingest_base,json=ingestBase,proto3" json:"ingest_base,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetFrontendConfigResponse) Reset() {
@@ -769,6 +773,13 @@ func (x *GetFrontendConfigResponse) GetIsFreshInstallation() bool {
 		return x.IsFreshInstallation
 	}
 	return false
+}
+
+func (x *GetFrontendConfigResponse) GetIngestBase() string {
+	if x != nil {
+		return x.IngestBase
+	}
+	return ""
 }
 
 // The name is the page's route -- its slug, e.g. "privacy" -- not the editable title
@@ -19497,14 +19508,16 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x06status\x18\x01 \x01(\tR\x06status\"B\n" +
 	"\bBranding\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x02 \x01(\tR\vdescription\"\xe0\x01\n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\"\x81\x02\n" +
 	"\x19GetFrontendConfigResponse\x12.\n" +
 	"\bbranding\x18\x01 \x01(\v2\x12.protobuf.BrandingR\bbranding\x12\x1f\n" +
 	"\vversion_tag\x18\x02 \x01(\tR\n" +
 	"versionTag\x12\x19\n" +
 	"\bwiki_url\x18\x03 \x01(\tR\awikiUrl\x12#\n" +
 	"\rcanonical_url\x18\x04 \x01(\tR\fcanonicalUrl\x122\n" +
-	"\x15is_fresh_installation\x18\x05 \x01(\bR\x13isFreshInstallation\"(\n" +
+	"\x15is_fresh_installation\x18\x05 \x01(\bR\x13isFreshInstallation\x12\x1f\n" +
+	"\vingest_base\x18\x06 \x01(\tR\n" +
+	"ingestBase\"(\n" +
 	"\x12GetInfoPageRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"C\n" +
 	"\x13GetInfoPageResponse\x12\x12\n" +
