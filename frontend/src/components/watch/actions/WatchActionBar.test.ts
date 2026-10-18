@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WatchLayout, WatchViewKind } from "@/gen/server/apiv2_pb";
 import { ApiError } from "@/lib/api";
+import { dismissDownloadNotice, downloadNoticeVisible } from "@/lib/download-notice";
 import { onOwnReaction } from "@/lib/reaction-floats";
 import WatchActionBar from "./WatchActionBar.vue";
 
@@ -118,6 +119,23 @@ describe("WatchActionBar", () => {
       "https://dl/c.mp4",
     ]);
     expect(links[1].attributes("target")).toBe("_blank");
+    w.unmount();
+  });
+
+  it("says the download is being prepared when a recording download is clicked", async () => {
+    dismissDownloadNotice();
+    const w = bar({
+      attachments: [{ fileId: 3, filename: "slides.pdf" }],
+      downloads: [{ kind: WatchViewKind.COMBINED, friendlyName: "Combined", url: "https://dl/c.mp4" }],
+    });
+    await byLabel(w, "Attachments and downloads").trigger("click");
+    const links = w.findAll("a[role=menuitem]");
+    // An attachment is a file the server already has and starts at once.
+    await links[0].trigger("click");
+    expect(downloadNoticeVisible.value).toBe(false);
+    await links[1].trigger("click");
+    expect(downloadNoticeVisible.value).toBe(true);
+    dismissDownloadNotice();
     w.unmount();
   });
 

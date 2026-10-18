@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import { announceDownload } from "@/lib/download-notice";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { watchUrl, type Stream, type StreamProgress } from "@/lib/streams";
 
@@ -145,6 +146,7 @@ function toggleWatched(): void {
                 :key="file.downloadUrl"
                 :href="file.downloadUrl"
                 download
+                @click="announceDownload"
                 class="block px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 {{ file.friendlyName }}

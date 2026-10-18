@@ -4,6 +4,7 @@ import { START_LOCATION, useRoute, useRouter } from "vue-router";
 
 import AppFooter from "@/components/AppFooter.vue";
 import AppHeader from "@/components/AppHeader.vue";
+import DownloadNotice from "@/components/DownloadNotice.vue";
 import { readServerError } from "@/lib/server-error";
 import { isEmbedQuery } from "@/lib/watch-admin-embed";
 import { useAuthStore } from "@/stores/auth";
@@ -62,5 +63,6 @@ onMounted(async () => {
       `mobile_footer` being separate partials for exactly this reason.
     -->
     <AppFooter v-if="route.meta.footer && !bare" :only="route.meta.sidenav ? 'desktop' : undefined" />
+    <DownloadNotice />
   </div>
 </template>
