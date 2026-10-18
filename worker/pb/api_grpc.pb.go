@@ -25,7 +25,6 @@ const (
 	ToWorker_RequestWaveform_FullMethodName       = "/api.ToWorker/RequestWaveform"
 	ToWorker_RequestCut_FullMethodName            = "/api.ToWorker/RequestCut"
 	ToWorker_GenerateThumbnails_FullMethodName    = "/api.ToWorker/GenerateThumbnails"
-	ToWorker_GenerateLivePreview_FullMethodName   = "/api.ToWorker/GenerateLivePreview"
 	ToWorker_GenerateSectionImages_FullMethodName = "/api.ToWorker/GenerateSectionImages"
 	ToWorker_DeleteSectionImage_FullMethodName    = "/api.ToWorker/DeleteSectionImage"
 	ToWorker_CombineThumbnails_FullMethodName     = "/api.ToWorker/CombineThumbnails"
@@ -42,7 +41,6 @@ type ToWorkerClient interface {
 	RequestWaveform(ctx context.Context, in *WaveformRequest, opts ...grpc.CallOption) (*WaveFormResponse, error)
 	RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error)
 	GenerateThumbnails(ctx context.Context, in *GenerateThumbnailRequest, opts ...grpc.CallOption) (*Status, error)
-	GenerateLivePreview(ctx context.Context, in *LivePreviewRequest, opts ...grpc.CallOption) (*LivePreviewResponse, error)
 	GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(ctx context.Context, in *DeleteSectionImageRequest, opts ...grpc.CallOption) (*Status, error)
 	CombineThumbnails(ctx context.Context, in *CombineThumbnailsRequest, opts ...grpc.CallOption) (*CombineThumbnailsResponse, error)
@@ -116,16 +114,6 @@ func (c *toWorkerClient) GenerateThumbnails(ctx context.Context, in *GenerateThu
 	return out, nil
 }
 
-func (c *toWorkerClient) GenerateLivePreview(ctx context.Context, in *LivePreviewRequest, opts ...grpc.CallOption) (*LivePreviewResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LivePreviewResponse)
-	err := c.cc.Invoke(ctx, ToWorker_GenerateLivePreview_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *toWorkerClient) GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GenerateSectionImageResponse)
@@ -167,7 +155,6 @@ type ToWorkerServer interface {
 	RequestWaveform(context.Context, *WaveformRequest) (*WaveFormResponse, error)
 	RequestCut(context.Context, *CutRequest) (*CutResponse, error)
 	GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error)
-	GenerateLivePreview(context.Context, *LivePreviewRequest) (*LivePreviewResponse, error)
 	GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error)
 	CombineThumbnails(context.Context, *CombineThumbnailsRequest) (*CombineThumbnailsResponse, error)
@@ -198,9 +185,6 @@ func (UnimplementedToWorkerServer) RequestCut(context.Context, *CutRequest) (*Cu
 }
 func (UnimplementedToWorkerServer) GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateThumbnails not implemented")
-}
-func (UnimplementedToWorkerServer) GenerateLivePreview(context.Context, *LivePreviewRequest) (*LivePreviewResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateLivePreview not implemented")
 }
 func (UnimplementedToWorkerServer) GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateSectionImages not implemented")
@@ -340,24 +324,6 @@ func _ToWorker_GenerateThumbnails_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ToWorker_GenerateLivePreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LivePreviewRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ToWorkerServer).GenerateLivePreview(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ToWorker_GenerateLivePreview_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToWorkerServer).GenerateLivePreview(ctx, req.(*LivePreviewRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ToWorker_GenerateSectionImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GenerateSectionImageRequest)
 	if err := dec(in); err != nil {
@@ -442,10 +408,6 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateThumbnails",
 			Handler:    _ToWorker_GenerateThumbnails_Handler,
-		},
-		{
-			MethodName: "GenerateLivePreview",
-			Handler:    _ToWorker_GenerateLivePreview_Handler,
 		},
 		{
 			MethodName: "GenerateSectionImages",

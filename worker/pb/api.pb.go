@@ -1754,102 +1754,6 @@ func (x *SilenceResults) GetEnds() []uint32 {
 	return nil
 }
 
-type LivePreviewRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	WorkerID      string                 `protobuf:"bytes,1,opt,name=WorkerID,proto3" json:"WorkerID,omitempty"`
-	HLSUrl        string                 `protobuf:"bytes,2,opt,name=HLSUrl,proto3" json:"HLSUrl,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *LivePreviewRequest) Reset() {
-	*x = LivePreviewRequest{}
-	mi := &file_api_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *LivePreviewRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*LivePreviewRequest) ProtoMessage() {}
-
-func (x *LivePreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use LivePreviewRequest.ProtoReflect.Descriptor instead.
-func (*LivePreviewRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *LivePreviewRequest) GetWorkerID() string {
-	if x != nil {
-		return x.WorkerID
-	}
-	return ""
-}
-
-func (x *LivePreviewRequest) GetHLSUrl() string {
-	if x != nil {
-		return x.HLSUrl
-	}
-	return ""
-}
-
-type LivePreviewResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	LiveThumb     []byte                 `protobuf:"bytes,1,opt,name=LiveThumb,proto3" json:"LiveThumb,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *LivePreviewResponse) Reset() {
-	*x = LivePreviewResponse{}
-	mi := &file_api_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *LivePreviewResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*LivePreviewResponse) ProtoMessage() {}
-
-func (x *LivePreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use LivePreviewResponse.ProtoReflect.Descriptor instead.
-func (*LivePreviewResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *LivePreviewResponse) GetLiveThumb() []byte {
-	if x != nil {
-		return x.LiveThumb
-	}
-	return nil
-}
-
 type NotifyTranscodingFailureRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	WorkerID      string                 `protobuf:"bytes,1,opt,name=WorkerID,proto3" json:"WorkerID,omitempty"`
@@ -1864,7 +1768,7 @@ type NotifyTranscodingFailureRequest struct {
 
 func (x *NotifyTranscodingFailureRequest) Reset() {
 	*x = NotifyTranscodingFailureRequest{}
-	mi := &file_api_proto_msgTypes[27]
+	mi := &file_api_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1876,7 +1780,7 @@ func (x *NotifyTranscodingFailureRequest) String() string {
 func (*NotifyTranscodingFailureRequest) ProtoMessage() {}
 
 func (x *NotifyTranscodingFailureRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[27]
+	mi := &file_api_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1889,7 +1793,7 @@ func (x *NotifyTranscodingFailureRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyTranscodingFailureRequest.ProtoReflect.Descriptor instead.
 func (*NotifyTranscodingFailureRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{27}
+	return file_api_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *NotifyTranscodingFailureRequest) GetWorkerID() string {
@@ -1942,7 +1846,7 @@ type NotifyTranscodingFailureResponse struct {
 
 func (x *NotifyTranscodingFailureResponse) Reset() {
 	*x = NotifyTranscodingFailureResponse{}
-	mi := &file_api_proto_msgTypes[28]
+	mi := &file_api_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1954,7 +1858,7 @@ func (x *NotifyTranscodingFailureResponse) String() string {
 func (*NotifyTranscodingFailureResponse) ProtoMessage() {}
 
 func (x *NotifyTranscodingFailureResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[28]
+	mi := &file_api_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1967,7 +1871,7 @@ func (x *NotifyTranscodingFailureResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyTranscodingFailureResponse.ProtoReflect.Descriptor instead.
 func (*NotifyTranscodingFailureResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{28}
+	return file_api_proto_rawDescGZIP(), []int{26}
 }
 
 type CombineThumbnailsRequest struct {
@@ -1981,7 +1885,7 @@ type CombineThumbnailsRequest struct {
 
 func (x *CombineThumbnailsRequest) Reset() {
 	*x = CombineThumbnailsRequest{}
-	mi := &file_api_proto_msgTypes[29]
+	mi := &file_api_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1993,7 +1897,7 @@ func (x *CombineThumbnailsRequest) String() string {
 func (*CombineThumbnailsRequest) ProtoMessage() {}
 
 func (x *CombineThumbnailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[29]
+	mi := &file_api_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2006,7 +1910,7 @@ func (x *CombineThumbnailsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CombineThumbnailsRequest.ProtoReflect.Descriptor instead.
 func (*CombineThumbnailsRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{29}
+	return file_api_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CombineThumbnailsRequest) GetPrimaryThumbnail() string {
@@ -2039,7 +1943,7 @@ type CombineThumbnailsResponse struct {
 
 func (x *CombineThumbnailsResponse) Reset() {
 	*x = CombineThumbnailsResponse{}
-	mi := &file_api_proto_msgTypes[30]
+	mi := &file_api_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2051,7 +1955,7 @@ func (x *CombineThumbnailsResponse) String() string {
 func (*CombineThumbnailsResponse) ProtoMessage() {}
 
 func (x *CombineThumbnailsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[30]
+	mi := &file_api_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2064,7 +1968,7 @@ func (x *CombineThumbnailsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CombineThumbnailsResponse.ProtoReflect.Descriptor instead.
 func (*CombineThumbnailsResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{30}
+	return file_api_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *CombineThumbnailsResponse) GetFilePath() string {
@@ -2085,7 +1989,7 @@ type CutRequest_Segment struct {
 
 func (x *CutRequest_Segment) Reset() {
 	*x = CutRequest_Segment{}
-	mi := &file_api_proto_msgTypes[31]
+	mi := &file_api_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2097,7 +2001,7 @@ func (x *CutRequest_Segment) String() string {
 func (*CutRequest_Segment) ProtoMessage() {}
 
 func (x *CutRequest_Segment) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[31]
+	mi := &file_api_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2318,12 +2222,7 @@ const file_api_proto_rawDesc = "" +
 	"\bWorkerID\x18\x01 \x01(\tR\bWorkerID\x12\x1a\n" +
 	"\bStreamID\x18\x02 \x01(\rR\bStreamID\x12\x1a\n" +
 	"\x06starts\x18\x03 \x03(\rB\x02\x10\x01R\x06starts\x12\x16\n" +
-	"\x04ends\x18\x04 \x03(\rB\x02\x10\x01R\x04ends\"H\n" +
-	"\x12LivePreviewRequest\x12\x1a\n" +
-	"\bWorkerID\x18\x01 \x01(\tR\bWorkerID\x12\x16\n" +
-	"\x06HLSUrl\x18\x02 \x01(\tR\x06HLSUrl\"3\n" +
-	"\x13LivePreviewResponse\x12\x1c\n" +
-	"\tLiveThumb\x18\x01 \x01(\fR\tLiveThumb\"\xbf\x01\n" +
+	"\x04ends\x18\x04 \x03(\rB\x02\x10\x01R\x04ends\"\xbf\x01\n" +
 	"\x1fNotifyTranscodingFailureRequest\x12\x1a\n" +
 	"\bWorkerID\x18\x01 \x01(\tR\bWorkerID\x12\x1a\n" +
 	"\bStreamID\x18\x02 \x01(\rR\bStreamID\x12\x18\n" +
@@ -2337,7 +2236,7 @@ const file_api_proto_rawDesc = "" +
 	"\x12SecondaryThumbnail\x18\x02 \x01(\tR\x12SecondaryThumbnail\x12\x12\n" +
 	"\x04Path\x18\x03 \x01(\tR\x04Path\"7\n" +
 	"\x19CombineThumbnailsResponse\x12\x1a\n" +
-	"\bFilePath\x18\x01 \x01(\tR\bFilePath2\xb0\x05\n" +
+	"\bFilePath\x18\x01 \x01(\tR\bFilePath2\xe4\x04\n" +
 	"\bToWorker\x122\n" +
 	"\rRequestStream\x12\x12.api.StreamRequest\x1a\v.api.Status\"\x00\x126\n" +
 	"\x0fRequestPremiere\x12\x14.api.PremiereRequest\x1a\v.api.Status\"\x00\x128\n" +
@@ -2345,8 +2244,7 @@ const file_api_proto_rawDesc = "" +
 	"\x0fRequestWaveform\x12\x14.api.WaveformRequest\x1a\x15.api.WaveFormResponse\"\x00\x121\n" +
 	"\n" +
 	"RequestCut\x12\x0f.api.CutRequest\x1a\x10.api.CutResponse\"\x00\x12B\n" +
-	"\x12GenerateThumbnails\x12\x1d.api.GenerateThumbnailRequest\x1a\v.api.Status\"\x00\x12J\n" +
-	"\x13GenerateLivePreview\x12\x17.api.LivePreviewRequest\x1a\x18.api.LivePreviewResponse\"\x00\x12^\n" +
+	"\x12GenerateThumbnails\x12\x1d.api.GenerateThumbnailRequest\x1a\v.api.Status\"\x00\x12^\n" +
 	"\x15GenerateSectionImages\x12 .api.GenerateSectionImageRequest\x1a!.api.GenerateSectionImageResponse\"\x00\x12C\n" +
 	"\x12DeleteSectionImage\x12\x1e.api.DeleteSectionImageRequest\x1a\v.api.Status\"\x00\x12T\n" +
 	"\x11CombineThumbnails\x12\x1d.api.CombineThumbnailsRequest\x1a\x1e.api.CombineThumbnailsResponse\"\x002\x84\x06\n" +
@@ -2376,7 +2274,7 @@ func file_api_proto_rawDescGZIP() []byte {
 	return file_api_proto_rawDescData
 }
 
-var file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_api_proto_goTypes = []any{
 	(*DeleteSectionImageRequest)(nil),        // 0: api.DeleteSectionImageRequest
 	(*GenerateSectionImageResponse)(nil),     // 1: api.GenerateSectionImageResponse
@@ -2403,66 +2301,62 @@ var file_api_proto_goTypes = []any{
 	(*UploadFinished)(nil),                   // 22: api.UploadFinished
 	(*StreamStarted)(nil),                    // 23: api.StreamStarted
 	(*SilenceResults)(nil),                   // 24: api.SilenceResults
-	(*LivePreviewRequest)(nil),               // 25: api.LivePreviewRequest
-	(*LivePreviewResponse)(nil),              // 26: api.LivePreviewResponse
-	(*NotifyTranscodingFailureRequest)(nil),  // 27: api.NotifyTranscodingFailureRequest
-	(*NotifyTranscodingFailureResponse)(nil), // 28: api.NotifyTranscodingFailureResponse
-	(*CombineThumbnailsRequest)(nil),         // 29: api.CombineThumbnailsRequest
-	(*CombineThumbnailsResponse)(nil),        // 30: api.CombineThumbnailsResponse
-	(*CutRequest_Segment)(nil),               // 31: api.CutRequest.Segment
-	(*timestamppb.Timestamp)(nil),            // 32: google.protobuf.Timestamp
+	(*NotifyTranscodingFailureRequest)(nil),  // 25: api.NotifyTranscodingFailureRequest
+	(*NotifyTranscodingFailureResponse)(nil), // 26: api.NotifyTranscodingFailureResponse
+	(*CombineThumbnailsRequest)(nil),         // 27: api.CombineThumbnailsRequest
+	(*CombineThumbnailsResponse)(nil),        // 28: api.CombineThumbnailsResponse
+	(*CutRequest_Segment)(nil),               // 29: api.CutRequest.Segment
+	(*timestamppb.Timestamp)(nil),            // 30: google.protobuf.Timestamp
 }
 var file_api_proto_depIdxs = []int32{
-	32, // 0: api.GenerateThumbnailRequest.start:type_name -> google.protobuf.Timestamp
+	30, // 0: api.GenerateThumbnailRequest.start:type_name -> google.protobuf.Timestamp
 	3,  // 1: api.GenerateSectionImageRequest.Sections:type_name -> api.Section
-	31, // 2: api.CutRequest.segments:type_name -> api.CutRequest.Segment
-	32, // 3: api.StreamRequest.Start:type_name -> google.protobuf.Timestamp
-	32, // 4: api.StreamRequest.End:type_name -> google.protobuf.Timestamp
-	32, // 5: api.SelfStreamResponse.StreamStart:type_name -> google.protobuf.Timestamp
+	29, // 2: api.CutRequest.segments:type_name -> api.CutRequest.Segment
+	30, // 3: api.StreamRequest.Start:type_name -> google.protobuf.Timestamp
+	30, // 4: api.StreamRequest.End:type_name -> google.protobuf.Timestamp
+	30, // 5: api.SelfStreamResponse.StreamStart:type_name -> google.protobuf.Timestamp
 	9,  // 6: api.ToWorker.RequestStream:input_type -> api.StreamRequest
 	10, // 7: api.ToWorker.RequestPremiere:input_type -> api.PremiereRequest
 	11, // 8: api.ToWorker.RequestStreamEnd:input_type -> api.EndStreamRequest
 	7,  // 9: api.ToWorker.RequestWaveform:input_type -> api.WaveformRequest
 	5,  // 10: api.ToWorker.RequestCut:input_type -> api.CutRequest
 	2,  // 11: api.ToWorker.GenerateThumbnails:input_type -> api.GenerateThumbnailRequest
-	25, // 12: api.ToWorker.GenerateLivePreview:input_type -> api.LivePreviewRequest
-	4,  // 13: api.ToWorker.GenerateSectionImages:input_type -> api.GenerateSectionImageRequest
-	0,  // 14: api.ToWorker.DeleteSectionImage:input_type -> api.DeleteSectionImageRequest
-	29, // 15: api.ToWorker.CombineThumbnails:input_type -> api.CombineThumbnailsRequest
-	14, // 16: api.FromWorker.JoinWorkers:input_type -> api.JoinWorkersRequest
-	18, // 17: api.FromWorker.SendHeartBeat:input_type -> api.HeartBeat
-	13, // 18: api.FromWorker.NotifyTranscodingProgress:input_type -> api.NotifyTranscodingProgressRequest
-	21, // 19: api.FromWorker.NotifyTranscodingFinished:input_type -> api.TranscodingFinished
-	24, // 20: api.FromWorker.NotifySilenceResults:input_type -> api.SilenceResults
-	23, // 21: api.FromWorker.NotifyStreamStarted:input_type -> api.StreamStarted
-	19, // 22: api.FromWorker.NotifyStreamFinished:input_type -> api.StreamFinished
-	22, // 23: api.FromWorker.NotifyUploadFinished:input_type -> api.UploadFinished
-	20, // 24: api.FromWorker.NotifyThumbnailsFinished:input_type -> api.ThumbnailsFinished
-	16, // 25: api.FromWorker.SendSelfStreamRequest:input_type -> api.SelfStreamRequest
-	27, // 26: api.FromWorker.NotifyTranscodingFailure:input_type -> api.NotifyTranscodingFailureRequest
-	12, // 27: api.ToWorker.RequestStream:output_type -> api.Status
-	12, // 28: api.ToWorker.RequestPremiere:output_type -> api.Status
-	12, // 29: api.ToWorker.RequestStreamEnd:output_type -> api.Status
-	8,  // 30: api.ToWorker.RequestWaveform:output_type -> api.WaveFormResponse
-	6,  // 31: api.ToWorker.RequestCut:output_type -> api.CutResponse
-	12, // 32: api.ToWorker.GenerateThumbnails:output_type -> api.Status
-	26, // 33: api.ToWorker.GenerateLivePreview:output_type -> api.LivePreviewResponse
-	1,  // 34: api.ToWorker.GenerateSectionImages:output_type -> api.GenerateSectionImageResponse
-	12, // 35: api.ToWorker.DeleteSectionImage:output_type -> api.Status
-	30, // 36: api.ToWorker.CombineThumbnails:output_type -> api.CombineThumbnailsResponse
-	15, // 37: api.FromWorker.JoinWorkers:output_type -> api.JoinWorkersResponse
-	12, // 38: api.FromWorker.SendHeartBeat:output_type -> api.Status
-	12, // 39: api.FromWorker.NotifyTranscodingProgress:output_type -> api.Status
-	12, // 40: api.FromWorker.NotifyTranscodingFinished:output_type -> api.Status
-	12, // 41: api.FromWorker.NotifySilenceResults:output_type -> api.Status
-	12, // 42: api.FromWorker.NotifyStreamStarted:output_type -> api.Status
-	12, // 43: api.FromWorker.NotifyStreamFinished:output_type -> api.Status
-	12, // 44: api.FromWorker.NotifyUploadFinished:output_type -> api.Status
-	12, // 45: api.FromWorker.NotifyThumbnailsFinished:output_type -> api.Status
-	17, // 46: api.FromWorker.SendSelfStreamRequest:output_type -> api.SelfStreamResponse
-	28, // 47: api.FromWorker.NotifyTranscodingFailure:output_type -> api.NotifyTranscodingFailureResponse
-	27, // [27:48] is the sub-list for method output_type
-	6,  // [6:27] is the sub-list for method input_type
+	4,  // 12: api.ToWorker.GenerateSectionImages:input_type -> api.GenerateSectionImageRequest
+	0,  // 13: api.ToWorker.DeleteSectionImage:input_type -> api.DeleteSectionImageRequest
+	27, // 14: api.ToWorker.CombineThumbnails:input_type -> api.CombineThumbnailsRequest
+	14, // 15: api.FromWorker.JoinWorkers:input_type -> api.JoinWorkersRequest
+	18, // 16: api.FromWorker.SendHeartBeat:input_type -> api.HeartBeat
+	13, // 17: api.FromWorker.NotifyTranscodingProgress:input_type -> api.NotifyTranscodingProgressRequest
+	21, // 18: api.FromWorker.NotifyTranscodingFinished:input_type -> api.TranscodingFinished
+	24, // 19: api.FromWorker.NotifySilenceResults:input_type -> api.SilenceResults
+	23, // 20: api.FromWorker.NotifyStreamStarted:input_type -> api.StreamStarted
+	19, // 21: api.FromWorker.NotifyStreamFinished:input_type -> api.StreamFinished
+	22, // 22: api.FromWorker.NotifyUploadFinished:input_type -> api.UploadFinished
+	20, // 23: api.FromWorker.NotifyThumbnailsFinished:input_type -> api.ThumbnailsFinished
+	16, // 24: api.FromWorker.SendSelfStreamRequest:input_type -> api.SelfStreamRequest
+	25, // 25: api.FromWorker.NotifyTranscodingFailure:input_type -> api.NotifyTranscodingFailureRequest
+	12, // 26: api.ToWorker.RequestStream:output_type -> api.Status
+	12, // 27: api.ToWorker.RequestPremiere:output_type -> api.Status
+	12, // 28: api.ToWorker.RequestStreamEnd:output_type -> api.Status
+	8,  // 29: api.ToWorker.RequestWaveform:output_type -> api.WaveFormResponse
+	6,  // 30: api.ToWorker.RequestCut:output_type -> api.CutResponse
+	12, // 31: api.ToWorker.GenerateThumbnails:output_type -> api.Status
+	1,  // 32: api.ToWorker.GenerateSectionImages:output_type -> api.GenerateSectionImageResponse
+	12, // 33: api.ToWorker.DeleteSectionImage:output_type -> api.Status
+	28, // 34: api.ToWorker.CombineThumbnails:output_type -> api.CombineThumbnailsResponse
+	15, // 35: api.FromWorker.JoinWorkers:output_type -> api.JoinWorkersResponse
+	12, // 36: api.FromWorker.SendHeartBeat:output_type -> api.Status
+	12, // 37: api.FromWorker.NotifyTranscodingProgress:output_type -> api.Status
+	12, // 38: api.FromWorker.NotifyTranscodingFinished:output_type -> api.Status
+	12, // 39: api.FromWorker.NotifySilenceResults:output_type -> api.Status
+	12, // 40: api.FromWorker.NotifyStreamStarted:output_type -> api.Status
+	12, // 41: api.FromWorker.NotifyStreamFinished:output_type -> api.Status
+	12, // 42: api.FromWorker.NotifyUploadFinished:output_type -> api.Status
+	12, // 43: api.FromWorker.NotifyThumbnailsFinished:output_type -> api.Status
+	17, // 44: api.FromWorker.SendSelfStreamRequest:output_type -> api.SelfStreamResponse
+	26, // 45: api.FromWorker.NotifyTranscodingFailure:output_type -> api.NotifyTranscodingFailureResponse
+	26, // [26:46] is the sub-list for method output_type
+	6,  // [6:26] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -2479,7 +2373,7 @@ func file_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_rawDesc), len(file_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   32,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

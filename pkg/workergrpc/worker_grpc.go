@@ -11,7 +11,7 @@ import (
 	"io"
 	"net"
 	"os"
-	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -54,8 +54,6 @@ type server struct {
 const (
 	// workerDispatchTimeout applies to the short fire-and-forget calls.
 	workerDispatchTimeout = 15 * time.Second
-	// workerPreviewTimeout has to stay well below the one minute preview cron period.
-	workerPreviewTimeout = 15 * time.Second
 	// workerThumbTimeout applies to thumbnail combination, which reads two images.
 	workerThumbTimeout = 5 * time.Minute
 	// workerJobTimeout is an upper bound for the long synchronous media jobs, not a target.
@@ -797,74 +795,49 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
-// FetchLivePreviews gets a live thumbnail from a worker.
-func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
+// LivePreviewer produces a JPEG of the most recent state of a livestream. The runner
+// manager is the implementation; it is an interface so this package doesn't depend on it.
+type LivePreviewer interface {
+	RequestLivePreview(ctx context.Context, playlistURL string) ([]byte, error)
+}
+
+// FetchLivePreviews gets a live thumbnail from a runner for every live stream.
+func FetchLivePreviews(daoWrapper dao.DaoWrapper, runners LivePreviewer) func() {
 	return func() {
-		workers := daoWrapper.WorkerDao.GetAliveWorkers()
-		if len(workers) == 0 {
-			return
-		}
 		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
 		if err != nil {
 			return
 		}
 
 		// In case of an error, the preview might be outdated.
-		// That's okay since the cron job is run in 10s again.
+		// That's okay since the cron job runs again in a minute.
 		for _, s := range liveStreams {
 			if s.PlaylistUrl == "" {
 				continue
 			}
-			// The connection is owned by this iteration: a defer in the loop body itself
-			// would only run once the whole tick is over.
-			func() {
-				workerIndex := getWorkerWithLeastWorkload(workers)
-				conn, err := dialIn(workers[workerIndex])
-				defer endConnection(conn)
-				if err != nil {
-					logger.Error("Could not connect to worker", "err", err)
-					return
-				}
-				client := pb.NewToWorkerClient(conn)
-				workers[workerIndex].Workload++
-				defer func() { workers[workerIndex].Workload-- }()
-				if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
-					logger.Error("Could not generate live preview", "err", err)
-					return
-				}
-			}()
+			if err := tools.SetSignedPlaylists(&s, nil, false); err != nil {
+				logger.Error("Could not sign playlist for live preview", "err", err)
+				continue
+			}
+			// The runner manager bounds the call itself.
+			thumb, err := runners.RequestLivePreview(context.Background(), s.PlaylistUrl)
+			if err != nil {
+				logger.Error("Could not generate live preview", "stream", s.ID, "err", err)
+				continue
+			}
+			if err := saveLivePreview(s.ID, thumb); err != nil {
+				logger.Error("Could not save live preview", "stream", s.ID, "err", err)
+			}
 		}
 	}
 }
 
-func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
-	if err := tools.SetSignedPlaylists(s, nil, false); err != nil {
-		return err
-	}
-	req := pb.LivePreviewRequest{
-		WorkerID: workerID,
-		HLSUrl:   s.PlaylistUrl,
-	}
-	ctx, cancel := rpcCtx(workerPreviewTimeout)
-	defer cancel()
-	resp, err := client.GenerateLivePreview(ctx, &req)
-	if err != nil {
-		return err
-	}
-
+// saveLivePreview stores the preview where pathprovider.LiveThumbnail's readers look.
+func saveLivePreview(streamID uint, thumb []byte) error {
 	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0o750); err != nil {
 		return err
 	}
-
-	file, err := os.Create(filepath.Join(pathprovider.TUMLiveTemporary, fmt.Sprintf("%d.jpeg", s.ID)))
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-	_, err = file.Write(resp.GetLiveThumb())
-	return err
+	return os.WriteFile(pathprovider.LiveThumbnail(strconv.FormatUint(uint64(streamID), 10)), thumb, 0o644)
 }
 
 // SectionImagesParameters is what a worker needs to cut thumbnails for sections.

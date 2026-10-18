@@ -78,26 +78,6 @@ func (s server) GenerateThumbnails(ctx context.Context, request *pb.GenerateThum
 	return &pb.Status{Ok: true}, nil
 }
 
-// GenerateLiveThumbs generates a preview image of the most recent stream state.
-func (s server) GenerateLivePreview(ctx context.Context, request *pb.LivePreviewRequest) (*pb.LivePreviewResponse, error) {
-	if request.WorkerID != cfg.WorkerID {
-		log.Info("Rejected request to generate live thumbnails")
-		return nil, errors.New("unauthenticated: wrong worker id")
-	}
-	cmd := exec.Command("ffmpeg",
-		"-sseof", "-3",
-		"-i", request.HLSUrl,
-		"-vframes", "1",
-		"-update", "1",
-		"-vf", "scale=720:-1",
-		"-q:v", "1",
-		"-c:v", "mjpeg",
-		"-f", "mjpeg",
-		"pipe:1")
-	liveThumb, err := cmd.Output()
-	return &pb.LivePreviewResponse{LiveThumb: liveThumb}, err
-}
-
 func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
 	// The course name is free text, so it is sanitized before it becomes a
 	// directory name. Without this, a name containing path elements would make
