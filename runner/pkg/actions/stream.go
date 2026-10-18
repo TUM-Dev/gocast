@@ -25,10 +25,6 @@ import (
 // take a break after the end without the recording being finalised under them.
 const selfStreamGrace = 15 * time.Minute
 
-// selfStreamLiveMin is how long an ffmpeg attempt has to run to count as having received a
-// stream, as opposed to failing right away because nobody publishes.
-const selfStreamLiveMin = 10 * time.Second
-
 // selfStreamLastLive is the key in the job data for when a self-stream last delivered.
 const selfStreamLastLive = "selfStreamLastLive"
 
@@ -141,7 +137,9 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 	started := time.Now()
 	err = command.Run()
 	if selfStream {
-		if time.Since(started) >= selfStreamLiveMin {
+		// Judged by what ffmpeg wrote, not by how long it ran: a publisher that
+		// connects and drops again within seconds is still a live one.
+		if wroteSince(liveRecDir, started) {
 			d[selfStreamLastLive] = time.Now()
 		}
 		if err != nil {
@@ -161,6 +159,21 @@ func Stream(ctx context.Context, log *slog.Logger, notify chan *protobuf.Notific
 		return fmt.Errorf("ffmpeg terminated before stream end")
 	}
 	return nil
+}
+
+// wroteSince reports whether anything in dir (HLS segments, the playlist) was modified at or
+// after t, i.e. whether ffmpeg received a stream.
+func wroteSince(dir string, t time.Time) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		if info, err := e.Info(); err == nil && !info.ModTime().Before(t) {
+			return true
+		}
+	}
+	return false
 }
 
 func logCmdPipe(log *slog.Logger, pipe io.ReadCloser, fields []any) {
