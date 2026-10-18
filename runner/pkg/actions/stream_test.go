@@ -14,11 +14,16 @@ import (
 )
 
 // fakeFFmpeg puts an ffmpeg on PATH that records its arguments and exits with the given code.
-func fakeFFmpeg(t *testing.T, exit string) (argsFile string) {
+func fakeFFmpeg(t *testing.T, exit string, writeSegment ...bool) (argsFile string) {
 	t.Helper()
 	dir := t.TempDir()
 	argsFile = filepath.Join(dir, "args")
-	script := "#!/bin/sh\necho \"$@\" > " + argsFile + "\nexit " + exit + "\n"
+	script := "#!/bin/sh\necho \"$@\" > " + argsFile + "\n"
+	if len(writeSegment) > 0 && writeSegment[0] {
+		// the last argument is the playlist path, like a real ffmpeg that received data
+		script += "for a; do last=$a; done\ntouch \"$(dirname \"$last\")/00000.ts\"\n"
+	}
+	script += "exit " + exit + "\n"
 	if err := os.WriteFile(filepath.Join(dir, "ffmpeg"), []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -82,5 +87,30 @@ func TestSelfStreamRetriesWhenPublisherDisconnectsBeforeEnd(t *testing.T) {
 	err := runStream(t, map[string]any{"streamEnd": time.Now().Add(time.Hour), "selfStream": true})
 	if err == nil {
 		t.Fatal("a clean ffmpeg exit before the end must be retried")
+	}
+}
+
+func TestSelfStreamShortConnectionRefreshesGrace(t *testing.T) {
+	fakeFFmpeg(t, "1", true)
+	d := map[string]any{
+		"streamEnd":        time.Now().Add(-time.Hour),
+		"selfStream":       true,
+		selfStreamLastLive: time.Now().Add(-selfStreamGrace + time.Minute),
+	}
+	if err := runStream(t, d); err == nil {
+		t.Fatal("want a retryable error")
+	}
+	if got := d[selfStreamLastLive].(time.Time); time.Since(got) > time.Minute {
+		t.Errorf("a connection that delivered segments did not refresh lastLive: %v ago", time.Since(got))
+	}
+}
+
+func TestSelfStreamFailedConnectionKeepsLastLive(t *testing.T) {
+	fakeFFmpeg(t, "1")
+	last := time.Now().Add(-5 * time.Minute)
+	d := map[string]any{"streamEnd": time.Now().Add(-time.Hour), "selfStream": true, selfStreamLastLive: last}
+	_ = runStream(t, d)
+	if got := d[selfStreamLastLive].(time.Time); !got.Equal(last) {
+		t.Errorf("lastLive moved to %v without any data", got)
 	}
 }
