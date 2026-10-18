@@ -2,6 +2,7 @@ package runner_manager
 
 import (
 	"context"
+	"errors"
 	"net"
 	"runtime"
 	"strconv"
@@ -276,5 +277,51 @@ func TestRequestSelfStream_TestEnvAllowlist(t *testing.T) {
 	// Rejected before any runner is looked up, which would panic on the empty wrapper.
 	if err := m.RequestSelfStream(context.Background(), model.Stream{CourseID: 1}); err == nil {
 		t.Error("expected the stream to be rejected")
+	}
+}
+
+func selfStreamInWindow() model.Stream {
+	return model.Stream{
+		Model: gorm.Model{ID: 9},
+		Start: time.Now().Add(-time.Minute),
+		End:   time.Now().Add(time.Hour),
+	}
+}
+
+// A lecturer who reconnects makes mediamtx ask again. The job from the first publish is still
+// waiting for them, so no runner is reserved: the mocks have no expectation for that.
+func TestRequestSelfStream_ReconnectKeepsExistingJob(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	runnerDao := mock_dao.NewMockRunnerDao(ctrl)
+	streamsDao.EXPECT().GetRunnerJobsForStream(uint(9)).Return([]model.StreamRunnerJob{
+		{StreamID: 9, Version: model.COMB, RunnerHostname: "r1", JobID: "j1"},
+	}, nil)
+	runnerDao.EXPECT().Get(gomock.Any(), "r1").Return(model.Runner{Hostname: "r1", LastSeen: time.Now()}, nil)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao, RunnerDao: runnerDao})
+
+	if err := m.RequestSelfStream(context.Background(), selfStreamInWindow()); err != nil {
+		t.Fatalf("expected the reconnect to be accepted, got %v", err)
+	}
+}
+
+// The runner holding the job is gone, so the lecturer's reconnect has to get a new job.
+func TestRequestSelfStream_DeadRunnerJobIsReplaced(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	runnerDao := mock_dao.NewMockRunnerDao(ctrl)
+	streamsDao.EXPECT().GetRunnerJobsForStream(uint(9)).Return([]model.StreamRunnerJob{
+		{StreamID: 9, Version: model.COMB, RunnerHostname: "r1", JobID: "j1"},
+	}, nil)
+	runnerDao.EXPECT().Get(gomock.Any(), "r1").Return(model.Runner{Hostname: "r1", LastSeen: time.Now().Add(-time.Minute)}, nil)
+	streamsDao.EXPECT().ClearRunnerJobForStream(uint(9), model.COMB).Return(nil)
+	// no runner is available, which is how the test sees that it got that far
+	runnerDao.EXPECT().ReserveRunner(gomock.Any()).Return(model.Runner{}, nil)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao, RunnerDao: runnerDao})
+
+	if err := m.RequestSelfStream(context.Background(), selfStreamInWindow()); !errors.Is(err, ErrNoRunner) {
+		t.Fatalf("expected ErrNoRunner after dropping the stale job, got %v", err)
 	}
 }
