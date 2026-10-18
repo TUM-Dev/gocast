@@ -19,9 +19,10 @@ type JWTPlaylistClaims struct {
 	StreamID string
 	CourseID string
 	// FileName is what a download is saved as. The edge has no database, so the
-	// human-friendly name has to travel in the token. Empty for tokens issued
-	// before it existed; the edge then falls back to the stream id.
-	FileName string
+	// human-friendly name has to travel in the token. Only set when downloads are
+	// allowed, since nothing else reads it; also empty for tokens issued before it
+	// existed, where the edge falls back to the stream id.
+	FileName string `json:",omitempty"`
 }
 
 var unsafeFileNameChars = regexp.MustCompile(`[^\p{L}\p{N}._-]+`)
@@ -79,7 +80,7 @@ func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool
 		if user != nil {
 			userid = user.ID
 		}
-		t.Claims = &JWTPlaylistClaims{
+		claims := &JWTPlaylistClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 7)}, // Token expires in 7 hours
 			},
@@ -88,8 +89,11 @@ func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool
 			Download: allowDownloading,
 			StreamID: fmt.Sprintf("%d", s.ID),
 			CourseID: fmt.Sprintf("%d", s.CourseID),
-			FileName: DownloadFileName(s, playlist.Type),
 		}
+		if allowDownloading {
+			claims.FileName = DownloadFileName(s, playlist.Type)
+		}
+		t.Claims = claims
 		str, err := t.SignedString(Cfg.GetJWTKey())
 		if err != nil {
 			return err
