@@ -32,8 +32,11 @@ type StreamRequest struct {
 	FfmpegInputOptions  *string                `protobuf:"bytes,5,opt,name=ffmpeg_input_options,json=ffmpegInputOptions" json:"ffmpeg_input_options,omitempty"`    // optional
 	FfmpegOutputOptions *string                `protobuf:"bytes,6,opt,name=ffmpeg_output_options,json=ffmpegOutputOptions" json:"ffmpeg_output_options,omitempty"` // e.g. -c:a copy -c:v copy
 	Input               *string                `protobuf:"bytes,7,opt,name=input" json:"input,omitempty"`                                                          // e.g. rtsp://user:password@host:port/rtsp_path
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// The input is published by a lecturer (RTMP ingest), who decides when the stream is over,
+	// not the schedule.
+	SelfStream    *bool `protobuf:"varint,8,opt,name=self_stream,json=selfStream" json:"self_stream,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StreamRequest) Reset() {
@@ -113,6 +116,13 @@ func (x *StreamRequest) GetInput() string {
 		return *x.Input
 	}
 	return ""
+}
+
+func (x *StreamRequest) GetSelfStream() bool {
+	if x != nil && x.SelfStream != nil {
+		return *x.SelfStream
+	}
+	return false
 }
 
 type StreamResponse struct {
@@ -804,7 +814,7 @@ var File_runner_proto protoreflect.FileDescriptor
 
 const file_runner_proto_rawDesc = "" +
 	"\n" +
-	"\frunner.proto\x12\bprotobuf\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\rcommons.proto\x1a\x13notifications.proto\"\xbd\x02\n" +
+	"\frunner.proto\x12\bprotobuf\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\rcommons.proto\x1a\x13notifications.proto\"\xde\x02\n" +
 	"\rStreamRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x121\n" +
 	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\x12,\n" +
@@ -812,7 +822,9 @@ const file_runner_proto_rawDesc = "" +
 	"\x15ffmpeg_global_options\x18\x04 \x01(\tR\x13ffmpegGlobalOptions\x120\n" +
 	"\x14ffmpeg_input_options\x18\x05 \x01(\tR\x12ffmpegInputOptions\x122\n" +
 	"\x15ffmpeg_output_options\x18\x06 \x01(\tR\x13ffmpegOutputOptions\x12\x14\n" +
-	"\x05input\x18\a \x01(\tR\x05input\"'\n" +
+	"\x05input\x18\a \x01(\tR\x05input\x12\x1f\n" +
+	"\vself_stream\x18\b \x01(\bR\n" +
+	"selfStream\"'\n" +
 	"\x0eStreamResponse\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"J\n" +
 	"\x10StreamEndRequest\x12\x15\n" +

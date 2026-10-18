@@ -38,6 +38,9 @@ message StreamRequest {
   string ffmpeg_input_options = 5; // optional
   string ffmpeg_output_options = 6; // e.g. -c:a copy -c:v copy
   string input = 7; // e.g. rtsp://user:password@host:port/rtsp_path
+  // The input is published by a lecturer (RTMP ingest), who decides when the stream is over,
+  // not the schedule.
+  bool self_stream = 8;
 }
 
 message StreamResponse {
