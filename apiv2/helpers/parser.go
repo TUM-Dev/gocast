@@ -136,7 +136,7 @@ func ParseSemesterToProto(semester model.Semester) *protobuf.Semester {
 func ParseStreamToProto(stream model.Stream, course model.Course, user *model.User) *protobuf.Stream {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
-	_ = tools.SetSignedPlaylists(&stream, user, course.DownloadsEnabled)
+	_ = tools.SetSignedPlaylistsForCourse(&stream, user, course.Slug, course.DownloadsEnabled)
 
 	s := &protobuf.Stream{
 		Id:               uint32(stream.ID),
