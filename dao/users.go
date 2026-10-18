@@ -202,14 +202,36 @@ func (d usersDao) UpsertUser(user *model.User) error {
 }
 
 func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {
-	// create empty users for ids that are not yet registered:
-	stubUsers := make([]model.User, len(matrNr))
-	for i, id := range matrNr {
-		stubUsers[i] = model.User{MatriculationNumber: id, Name: "Unbekannt", Role: model.StudentType}
+	if len(matrNr) == 0 {
+		return nil
 	}
-	err := DB.Model(&model.User{}).Clauses(clause.OnConflict{DoNothing: true}).Create(&stubUsers).Error
+
+	// Only insert stubs for ids that don't exist yet. Relying on ON CONFLICT DO NOTHING alone
+	// burns an auto-increment value per ignored row (InnoDB never hands them back), which
+	// used up ~2M user ids a month while only a handful of users were created.
+	var existing []string
+	err := DB.Model(&model.User{}).Unscoped().Where("matriculation_number in ?", matrNr).Pluck("matriculation_number", &existing).Error
 	if err != nil {
 		return err
+	}
+	known := make(map[string]struct{}, len(existing))
+	for _, id := range existing {
+		known[id] = struct{}{}
+	}
+	stubUsers := make([]model.User, 0)
+	for _, id := range matrNr {
+		if _, ok := known[id]; ok {
+			continue
+		}
+		known[id] = struct{}{} // also drops duplicates within matrNr
+		stubUsers = append(stubUsers, model.User{MatriculationNumber: id, Name: "Unbekannt", Role: model.StudentType})
+	}
+	if len(stubUsers) > 0 {
+		// DoNothing stays as a guard against a concurrent login creating the same user between lookup and insert.
+		err = DB.Model(&model.User{}).Clauses(clause.OnConflict{DoNothing: true}).Create(&stubUsers).Error
+		if err != nil {
+			return err
+		}
 	}
 
 	// find users for current course:
