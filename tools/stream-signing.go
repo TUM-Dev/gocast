@@ -26,10 +26,12 @@ type JWTPlaylistClaims struct {
 
 var unsafeFileNameChars = regexp.MustCompile(`[^\p{L}\p{N}._-]+`)
 
-// DownloadFileName returns a human-friendly file name like "Graphs-and-Trees_2025-10-14.mp4"
-// for downloads of s. Anything that could break a Content-Disposition header or a
-// path on the user's disk is replaced, and the result is bounded in length.
-func DownloadFileName(s *model.Stream) string {
+// DownloadFileName returns a human-friendly file name like "Graphs-and-Trees_2025-10-14_COMB.mp4"
+// for downloads of s. version (COMB, CAM or PRES) is part of the name so that the
+// camera and presentation downloads of one lecture don't overwrite each other.
+// Anything that could break a Content-Disposition header or a path on the user's
+// disk is replaced, and the result is bounded in length.
+func DownloadFileName(s *model.Stream, version string) string {
 	name := strings.Trim(unsafeFileNameChars.ReplaceAllString(strings.TrimSpace(s.Name), "-"), "-._")
 	if r := []rune(name); len(r) > 80 {
 		name = strings.Trim(string(r[:80]), "-._")
@@ -38,15 +40,16 @@ func DownloadFileName(s *model.Stream) string {
 	if !s.Start.IsZero() {
 		date = s.Start.Format("2006-01-02")
 	}
-	switch {
-	case name != "" && date != "":
-		return name + "_" + date + ".mp4"
-	case name != "":
-		return name + ".mp4"
-	case date != "":
-		return date + ".mp4"
+	parts := make([]string, 0, 3)
+	for _, p := range []string{name, date, version} {
+		if p != "" {
+			parts = append(parts, p)
+		}
 	}
-	return "" // the edge falls back to the stream id
+	if name == "" && date == "" {
+		return "" // the edge falls back to the stream id
+	}
+	return strings.Join(parts, "_") + ".mp4"
 }
 
 // SetSignedPlaylists adds a signed jwt to all available playlist urls that indicates that the
@@ -85,7 +88,7 @@ func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool
 			Download: allowDownloading,
 			StreamID: fmt.Sprintf("%d", s.ID),
 			CourseID: fmt.Sprintf("%d", s.CourseID),
-			FileName: DownloadFileName(s),
+			FileName: DownloadFileName(s, playlist.Type),
 		}
 		str, err := t.SignedString(Cfg.GetJWTKey())
 		if err != nil {
