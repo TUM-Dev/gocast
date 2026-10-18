@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -17,6 +18,35 @@ type JWTPlaylistClaims struct {
 	Download bool
 	StreamID string
 	CourseID string
+	// FileName is what a download is saved as. The edge has no database, so the
+	// human-friendly name has to travel in the token. Empty for tokens issued
+	// before it existed; the edge then falls back to the stream id.
+	FileName string
+}
+
+var unsafeFileNameChars = regexp.MustCompile(`[^\p{L}\p{N}._-]+`)
+
+// DownloadFileName returns a human-friendly file name like "Graphs-and-Trees_2025-10-14.mp4"
+// for downloads of s. Anything that could break a Content-Disposition header or a
+// path on the user's disk is replaced, and the result is bounded in length.
+func DownloadFileName(s *model.Stream) string {
+	name := strings.Trim(unsafeFileNameChars.ReplaceAllString(strings.TrimSpace(s.Name), "-"), "-._")
+	if r := []rune(name); len(r) > 80 {
+		name = strings.Trim(string(r[:80]), "-._")
+	}
+	date := ""
+	if !s.Start.IsZero() {
+		date = s.Start.Format("2006-01-02")
+	}
+	switch {
+	case name != "" && date != "":
+		return name + "_" + date + ".mp4"
+	case name != "":
+		return name + ".mp4"
+	case date != "":
+		return date + ".mp4"
+	}
+	return "" // the edge falls back to the stream id
 }
 
 // SetSignedPlaylists adds a signed jwt to all available playlist urls that indicates that the
@@ -55,6 +85,7 @@ func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool
 			Download: allowDownloading,
 			StreamID: fmt.Sprintf("%d", s.ID),
 			CourseID: fmt.Sprintf("%d", s.CourseID),
+			FileName: DownloadFileName(s),
 		}
 		str, err := t.SignedString(Cfg.GetJWTKey())
 		if err != nil {

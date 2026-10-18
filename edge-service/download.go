@@ -1,14 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 )
+
+// contentDisposition builds an attachment header that survives non-ASCII names
+// (course titles contain umlauts) and quotes in the name.
+func contentDisposition(name string) string {
+	if v := mime.FormatMediaType("attachment", map[string]string{"filename": name}); v != "" {
+		return v
+	}
+	return "attachment"
+}
 
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	var jwtClaims *JWTPlaylistClaims
@@ -55,6 +64,6 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "video/mp4")
-	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", jwtClaims.GetFileName()))
+	w.Header().Add("Content-Disposition", contentDisposition(jwtClaims.GetFileName()))
 	http.ServeContent(w, r, "", time.Time{}, tmp)
 }
