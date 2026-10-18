@@ -24,6 +24,10 @@ service RunnerService {
   // converts it to a VOD and reports it via VODReadyNotification and
   // ThumbnailReadyNotification.
   rpc PrepareUpload (PrepareUploadRequest) returns (PrepareUploadResponse) {}
+  // Grabs a preview frame from the most recent part of a running livestream. Unlike the
+  // other thumbnail RPCs this one is synchronous: previews are refreshed every minute and
+  // a stale one is simply replaced, so there is no job to track.
+  rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse) {}
 }
 
 message StreamRequest {
@@ -84,6 +88,16 @@ message PrepareUploadResponse {
   string token = 1;
   // upload_port is the port of the runner's HTTP upload endpoint.
   int32 upload_port = 2;
+}
+
+message LivePreviewRequest {
+  // playlist_url must be signed, as for SectionImageRequest.
+  string playlist_url = 1;
+}
+
+message LivePreviewResponse {
+  // thumbnail is a JPEG.
+  bytes thumbnail = 1;
 }
 
 // RunnerManagerService service defines communication from runners to gocast

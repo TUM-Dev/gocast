@@ -12,7 +12,6 @@ service ToWorker {
   rpc RequestWaveform (WaveformRequest) returns (WaveFormResponse) {}
   rpc RequestCut (CutRequest) returns (CutResponse) {}
   rpc GenerateThumbnails (GenerateThumbnailRequest) returns (Status) {}
-  rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse) {}
   rpc GenerateSectionImages (GenerateSectionImageRequest) returns (GenerateSectionImageResponse) {}
   rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
   rpc CombineThumbnails (CombineThumbnailsRequest) returns (CombineThumbnailsResponse) {}
@@ -217,15 +216,6 @@ message SilenceResults {
   uint32 StreamID = 2;
   repeated uint32 starts = 3 [packed = true];
   repeated uint32 ends = 4 [packed = true];
-}
-
-message LivePreviewRequest {
-  string WorkerID = 1;
-  string HLSUrl = 2;
-}
-
-message LivePreviewResponse {
-  bytes LiveThumb = 1;
 }
 
 message NotifyTranscodingFailureRequest {
