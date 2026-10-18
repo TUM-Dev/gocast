@@ -455,3 +455,24 @@ func TestRunActionStopsWaitingWhenEndedDuringBackoff(t *testing.T) {
 	// would take an hour if the backoff ignored the cancellation
 	waitForJob(t, r, job)
 }
+
+func TestRunActionWaitsBetweenRetries(t *testing.T) {
+	r := newTestRunner()
+	r.retryMin, r.retryMax = 40*time.Millisecond, 40*time.Millisecond
+
+	var times []time.Time
+	stream := func(_ context.Context, _ *slog.Logger, _ chan *protobuf.Notification, _ map[string]any, _ *metrics.Broker) error {
+		times = append(times, time.Now())
+		if len(times) < 3 {
+			return fmt.Errorf("source gone")
+		}
+		return nil
+	}
+	waitForJob(t, r, r.RunAction([]actions.Action{stream}, nil, map[string]any{}, r.log))
+
+	for i := 1; i < len(times); i++ {
+		if gap := times[i].Sub(times[i-1]); gap < 40*time.Millisecond {
+			t.Errorf("retry %d came after %v, want at least the backoff", i, gap)
+		}
+	}
+}

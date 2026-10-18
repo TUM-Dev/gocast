@@ -249,17 +249,31 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 		}()
 
 		run := func(ctx context.Context, action actions.Action) {
+			var wait time.Duration
 			for {
 				log := logger.With("action", getFunctionName(action)).With("job", job)
 				log.Info("running action")
 				s := time.Now()
 				err := action(ctx, log, r.notifications, data, r.Metrics)
-				log.Info("action completed", "duration", time.Since(s).String())
+				ran := time.Since(s)
+				log.Info("action completed", "duration", ran.String())
 				if err != nil {
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
 						return // escape retry loop on unrecoverable error
+					}
+					if ran >= retryHealthyAfter {
+						wait = 0
+					}
+					wait = r.retryDelay(wait)
+					log.Info("retrying action", "in", wait.String())
+					t := time.NewTimer(wait)
+					select {
+					case <-ctx.Done():
+						// the next attempt aborts on the cancelled context
+						t.Stop()
+					case <-t.C:
 					}
 				} else {
 					return // escape retry loop on no error
