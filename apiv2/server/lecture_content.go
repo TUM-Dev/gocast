@@ -24,15 +24,14 @@ import (
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 )
 
-// SectionImages generates and deletes the thumbnails of a lecture's sections. The
-// generation goes to a runner or else a worker, and the worker half only exists in
-// api/, so it is handed in; api.SectionImages satisfies it.
+// SectionImages generates the thumbnails of a lecture's sections. The generation goes
+// to a runner or else a worker, and the worker half lives in pkg/sectionimages, so it
+// is handed in; sectionimages.SectionImages satisfies it. Deleting one needs neither:
+// DeleteLectureSection removes the file itself.
 type SectionImages interface {
 	// Generate makes the thumbnails of sections from the recording at playlistURL,
 	// which must be signed. It blocks until the job is handed off.
 	Generate(streamID uint, playlistURL string, course model.Course, sections []model.VideoSection) error
-	// Delete asks a worker to delete a section thumbnail's file.
-	Delete(path string) error
 }
 
 // WithSectionImages lets the section endpoints have thumbnails made. Without it the

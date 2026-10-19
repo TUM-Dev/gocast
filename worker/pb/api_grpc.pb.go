@@ -8,6 +8,7 @@ package pb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -26,7 +27,6 @@ const (
 	ToWorker_RequestCut_FullMethodName            = "/api.ToWorker/RequestCut"
 	ToWorker_GenerateThumbnails_FullMethodName    = "/api.ToWorker/GenerateThumbnails"
 	ToWorker_GenerateSectionImages_FullMethodName = "/api.ToWorker/GenerateSectionImages"
-	ToWorker_DeleteSectionImage_FullMethodName    = "/api.ToWorker/DeleteSectionImage"
 	ToWorker_CombineThumbnails_FullMethodName     = "/api.ToWorker/CombineThumbnails"
 )
 
@@ -42,7 +42,6 @@ type ToWorkerClient interface {
 	RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error)
 	GenerateThumbnails(ctx context.Context, in *GenerateThumbnailRequest, opts ...grpc.CallOption) (*Status, error)
 	GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error)
-	DeleteSectionImage(ctx context.Context, in *DeleteSectionImageRequest, opts ...grpc.CallOption) (*Status, error)
 	CombineThumbnails(ctx context.Context, in *CombineThumbnailsRequest, opts ...grpc.CallOption) (*CombineThumbnailsResponse, error)
 }
 
@@ -124,16 +123,6 @@ func (c *toWorkerClient) GenerateSectionImages(ctx context.Context, in *Generate
 	return out, nil
 }
 
-func (c *toWorkerClient) DeleteSectionImage(ctx context.Context, in *DeleteSectionImageRequest, opts ...grpc.CallOption) (*Status, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Status)
-	err := c.cc.Invoke(ctx, ToWorker_DeleteSectionImage_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *toWorkerClient) CombineThumbnails(ctx context.Context, in *CombineThumbnailsRequest, opts ...grpc.CallOption) (*CombineThumbnailsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CombineThumbnailsResponse)
@@ -156,7 +145,6 @@ type ToWorkerServer interface {
 	RequestCut(context.Context, *CutRequest) (*CutResponse, error)
 	GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error)
 	GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error)
-	DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error)
 	CombineThumbnails(context.Context, *CombineThumbnailsRequest) (*CombineThumbnailsResponse, error)
 	mustEmbedUnimplementedToWorkerServer()
 }
@@ -188,9 +176,6 @@ func (UnimplementedToWorkerServer) GenerateThumbnails(context.Context, *Generate
 }
 func (UnimplementedToWorkerServer) GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateSectionImages not implemented")
-}
-func (UnimplementedToWorkerServer) DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteSectionImage not implemented")
 }
 func (UnimplementedToWorkerServer) CombineThumbnails(context.Context, *CombineThumbnailsRequest) (*CombineThumbnailsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CombineThumbnails not implemented")
@@ -342,24 +327,6 @@ func _ToWorker_GenerateSectionImages_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ToWorker_DeleteSectionImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteSectionImageRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ToWorkerServer).DeleteSectionImage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ToWorker_DeleteSectionImage_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToWorkerServer).DeleteSectionImage(ctx, req.(*DeleteSectionImageRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ToWorker_CombineThumbnails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CombineThumbnailsRequest)
 	if err := dec(in); err != nil {
@@ -412,10 +379,6 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateSectionImages",
 			Handler:    _ToWorker_GenerateSectionImages_Handler,
-		},
-		{
-			MethodName: "DeleteSectionImage",
-			Handler:    _ToWorker_DeleteSectionImage_Handler,
 		},
 		{
 			MethodName: "CombineThumbnails",

@@ -847,29 +847,6 @@ type SectionImagesParameters struct {
 	CourseYear                                  uint32
 }
 
-func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
-	workers := workerDao.GetAliveWorkers()
-	if len(workers) == 0 {
-		return errors.New("no workers available")
-	}
-	workerIndex := getWorkerWithLeastWorkload(workers)
-	conn, err := dialIn(workers[workerIndex])
-	defer func() {
-		endConnection(conn)
-	}()
-	if err != nil {
-		logger.Error("Unable to dial server", "err", err)
-		return err
-	}
-
-	client := pb.NewToWorkerClient(conn)
-
-	ctx, cancel := rpcCtx(workerDispatchTimeout)
-	defer cancel()
-	_, err = client.DeleteSectionImage(ctx, &pb.DeleteSectionImageRequest{Path: path})
-	return err
-}
-
 func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *SectionImagesParameters) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
 	if len(workers) == 0 {

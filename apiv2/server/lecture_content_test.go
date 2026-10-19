@@ -87,20 +87,14 @@ type generated struct {
 // goroutine, hence the channels.
 type fakeSectionImages struct {
 	generated chan generated
-	deleted   chan string
 }
 
 func newFakeSectionImages() *fakeSectionImages {
-	return &fakeSectionImages{generated: make(chan generated, 4), deleted: make(chan string, 4)}
+	return &fakeSectionImages{generated: make(chan generated, 4)}
 }
 
 func (f *fakeSectionImages) Generate(streamID uint, playlistURL string, course model.Course, sections []model.VideoSection) error {
 	f.generated <- generated{streamID, playlistURL, course, sections}
-	return nil
-}
-
-func (f *fakeSectionImages) Delete(path string) error {
-	f.deleted <- path
 	return nil
 }
 
