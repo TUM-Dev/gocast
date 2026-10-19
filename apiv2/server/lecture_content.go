@@ -207,9 +207,12 @@ func (a *API) UpdateLectureSection(ctx context.Context, req *protobuf.UpdateLect
 	return &emptypb.Empty{}, nil
 }
 
-// DeleteLectureSection replaces v1's deleteVideoSection, asking a worker to delete the
-// thumbnail as it did. v1 answered 500 when the thumbnail's file row could not be
-// read, after the section was already gone; that is only logged here.
+// DeleteLectureSection replaces v1's deleteVideoSection. v1 asked a worker to delete
+// the thumbnail, but gocast reads section images from its own disk to serve them
+// (sendStreamFile), whoever wrote them, so it removes them itself like an attachment,
+// and with no worker around the file is still removed. v1 answered 500 when the
+// thumbnail's file row could not be read, after the section was already gone; that is
+// only logged here.
 func (a *API) DeleteLectureSection(ctx context.Context, req *protobuf.DeleteLectureSectionRequest) (*emptypb.Empty, error) {
 	stream, err := a.courseLecture(ctx, req.GetCourseId(), req.GetStreamId())
 	if err != nil {
@@ -224,8 +227,7 @@ func (a *API) DeleteLectureSection(ctx context.Context, req *protobuf.DeleteLect
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
-	// v1 also asked when there was no thumbnail, handing the worker an empty path.
-	if section.FileID == 0 || a.sectionImages == nil {
+	if section.FileID == 0 {
 		return &emptypb.Empty{}, nil
 	}
 	file, err := a.dao.FileDao.GetFileById(fmt.Sprintf("%d", section.FileID))
@@ -235,11 +237,15 @@ func (a *API) DeleteLectureSection(ctx context.Context, req *protobuf.DeleteLect
 		}
 		return &emptypb.Empty{}, nil
 	}
-	go func() {
-		if err := a.sectionImages.Delete(file.Path); err != nil {
-			a.log.Error("failed to delete video section image", "section", section.ID, "err", err)
-		}
-	}()
+	// The section is gone already, so a failure is only logged. The row stays then, the
+	// one record of a file left on disk; v1 never removed it at all.
+	if err := removeStoredFile(file.Path); err != nil {
+		a.log.Error("failed to delete video section image", "section", section.ID, "err", err)
+		return &emptypb.Empty{}, nil
+	}
+	if err := a.dao.FileDao.DeleteFile(file.ID); err != nil {
+		a.log.Error("failed to delete video section image's file row", "section", section.ID, "err", err)
+	}
 	return &emptypb.Empty{}, nil
 }
 
