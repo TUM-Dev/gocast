@@ -124,14 +124,6 @@ func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateS
 	return &pb.GenerateSectionImageResponse{Paths: paths}, nil
 }
 
-func (s server) DeleteSectionImage(ctx context.Context, request *pb.DeleteSectionImageRequest) (*pb.Status, error) {
-	err := os.RemoveAll(request.Path) // remove image file
-	if err != nil {
-		return &pb.Status{Ok: false}, err
-	}
-	return &pb.Status{Ok: true}, err
-}
-
 func (s server) CombineThumbnails(ctx context.Context, request *pb.CombineThumbnailsRequest) (*pb.CombineThumbnailsResponse, error) {
 	err := thumbgen.CombineThumbs(request.GetPrimaryThumbnail(), request.GetSecondaryThumbnail(), request.GetPath())
 	if err != nil {

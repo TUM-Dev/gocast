@@ -7,12 +7,13 @@
 package pb
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -21,50 +22,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-type DeleteSectionImageRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=Path,proto3" json:"Path,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteSectionImageRequest) Reset() {
-	*x = DeleteSectionImageRequest{}
-	mi := &file_api_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteSectionImageRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteSectionImageRequest) ProtoMessage() {}
-
-func (x *DeleteSectionImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteSectionImageRequest.ProtoReflect.Descriptor instead.
-func (*DeleteSectionImageRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *DeleteSectionImageRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
 
 type GenerateSectionImageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -75,7 +32,7 @@ type GenerateSectionImageResponse struct {
 
 func (x *GenerateSectionImageResponse) Reset() {
 	*x = GenerateSectionImageResponse{}
-	mi := &file_api_proto_msgTypes[1]
+	mi := &file_api_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -87,7 +44,7 @@ func (x *GenerateSectionImageResponse) String() string {
 func (*GenerateSectionImageResponse) ProtoMessage() {}
 
 func (x *GenerateSectionImageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[1]
+	mi := &file_api_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +57,7 @@ func (x *GenerateSectionImageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateSectionImageResponse.ProtoReflect.Descriptor instead.
 func (*GenerateSectionImageResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{1}
+	return file_api_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GenerateSectionImageResponse) GetPaths() []string {
@@ -126,7 +83,7 @@ type GenerateThumbnailRequest struct {
 
 func (x *GenerateThumbnailRequest) Reset() {
 	*x = GenerateThumbnailRequest{}
-	mi := &file_api_proto_msgTypes[2]
+	mi := &file_api_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -138,7 +95,7 @@ func (x *GenerateThumbnailRequest) String() string {
 func (*GenerateThumbnailRequest) ProtoMessage() {}
 
 func (x *GenerateThumbnailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[2]
+	mi := &file_api_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,7 +108,7 @@ func (x *GenerateThumbnailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateThumbnailRequest.ProtoReflect.Descriptor instead.
 func (*GenerateThumbnailRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{2}
+	return file_api_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GenerateThumbnailRequest) GetPath() string {
@@ -221,7 +178,7 @@ type Section struct {
 
 func (x *Section) Reset() {
 	*x = Section{}
-	mi := &file_api_proto_msgTypes[3]
+	mi := &file_api_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -233,7 +190,7 @@ func (x *Section) String() string {
 func (*Section) ProtoMessage() {}
 
 func (x *Section) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[3]
+	mi := &file_api_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -246,7 +203,7 @@ func (x *Section) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Section.ProtoReflect.Descriptor instead.
 func (*Section) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{3}
+	return file_api_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Section) GetHours() uint32 {
@@ -283,7 +240,7 @@ type GenerateSectionImageRequest struct {
 
 func (x *GenerateSectionImageRequest) Reset() {
 	*x = GenerateSectionImageRequest{}
-	mi := &file_api_proto_msgTypes[4]
+	mi := &file_api_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -295,7 +252,7 @@ func (x *GenerateSectionImageRequest) String() string {
 func (*GenerateSectionImageRequest) ProtoMessage() {}
 
 func (x *GenerateSectionImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[4]
+	mi := &file_api_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -308,7 +265,7 @@ func (x *GenerateSectionImageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateSectionImageRequest.ProtoReflect.Descriptor instead.
 func (*GenerateSectionImageRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{4}
+	return file_api_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GenerateSectionImageRequest) GetPlaylistURL() string {
@@ -358,7 +315,7 @@ type CutRequest struct {
 
 func (x *CutRequest) Reset() {
 	*x = CutRequest{}
-	mi := &file_api_proto_msgTypes[5]
+	mi := &file_api_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -370,7 +327,7 @@ func (x *CutRequest) String() string {
 func (*CutRequest) ProtoMessage() {}
 
 func (x *CutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[5]
+	mi := &file_api_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +340,7 @@ func (x *CutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CutRequest.ProtoReflect.Descriptor instead.
 func (*CutRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{5}
+	return file_api_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CutRequest) GetWorkerId() string {
@@ -424,7 +381,7 @@ type CutResponse struct {
 
 func (x *CutResponse) Reset() {
 	*x = CutResponse{}
-	mi := &file_api_proto_msgTypes[6]
+	mi := &file_api_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -436,7 +393,7 @@ func (x *CutResponse) String() string {
 func (*CutResponse) ProtoMessage() {}
 
 func (x *CutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[6]
+	mi := &file_api_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -449,7 +406,7 @@ func (x *CutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CutResponse.ProtoReflect.Descriptor instead.
 func (*CutResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{6}
+	return file_api_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CutResponse) GetSuccess() bool {
@@ -476,7 +433,7 @@ type WaveformRequest struct {
 
 func (x *WaveformRequest) Reset() {
 	*x = WaveformRequest{}
-	mi := &file_api_proto_msgTypes[7]
+	mi := &file_api_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -488,7 +445,7 @@ func (x *WaveformRequest) String() string {
 func (*WaveformRequest) ProtoMessage() {}
 
 func (x *WaveformRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[7]
+	mi := &file_api_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -501,7 +458,7 @@ func (x *WaveformRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WaveformRequest.ProtoReflect.Descriptor instead.
 func (*WaveformRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{7}
+	return file_api_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *WaveformRequest) GetWorkerId() string {
@@ -527,7 +484,7 @@ type WaveFormResponse struct {
 
 func (x *WaveFormResponse) Reset() {
 	*x = WaveFormResponse{}
-	mi := &file_api_proto_msgTypes[8]
+	mi := &file_api_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -539,7 +496,7 @@ func (x *WaveFormResponse) String() string {
 func (*WaveFormResponse) ProtoMessage() {}
 
 func (x *WaveFormResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[8]
+	mi := &file_api_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -552,7 +509,7 @@ func (x *WaveFormResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WaveFormResponse.ProtoReflect.Descriptor instead.
 func (*WaveFormResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{8}
+	return file_api_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *WaveFormResponse) GetWaveform() []byte {
@@ -584,7 +541,7 @@ type StreamRequest struct {
 
 func (x *StreamRequest) Reset() {
 	*x = StreamRequest{}
-	mi := &file_api_proto_msgTypes[9]
+	mi := &file_api_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -596,7 +553,7 @@ func (x *StreamRequest) String() string {
 func (*StreamRequest) ProtoMessage() {}
 
 func (x *StreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[9]
+	mi := &file_api_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -609,7 +566,7 @@ func (x *StreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamRequest.ProtoReflect.Descriptor instead.
 func (*StreamRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{9}
+	return file_api_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *StreamRequest) GetWorkerId() string {
@@ -724,7 +681,7 @@ type PremiereRequest struct {
 
 func (x *PremiereRequest) Reset() {
 	*x = PremiereRequest{}
-	mi := &file_api_proto_msgTypes[10]
+	mi := &file_api_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -736,7 +693,7 @@ func (x *PremiereRequest) String() string {
 func (*PremiereRequest) ProtoMessage() {}
 
 func (x *PremiereRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[10]
+	mi := &file_api_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -749,7 +706,7 @@ func (x *PremiereRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PremiereRequest.ProtoReflect.Descriptor instead.
 func (*PremiereRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{10}
+	return file_api_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PremiereRequest) GetStreamID() uint32 {
@@ -805,7 +762,7 @@ type EndStreamRequest struct {
 
 func (x *EndStreamRequest) Reset() {
 	*x = EndStreamRequest{}
-	mi := &file_api_proto_msgTypes[11]
+	mi := &file_api_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -817,7 +774,7 @@ func (x *EndStreamRequest) String() string {
 func (*EndStreamRequest) ProtoMessage() {}
 
 func (x *EndStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[11]
+	mi := &file_api_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -830,7 +787,7 @@ func (x *EndStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndStreamRequest.ProtoReflect.Descriptor instead.
 func (*EndStreamRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{11}
+	return file_api_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *EndStreamRequest) GetStreamID() uint32 {
@@ -863,7 +820,7 @@ type Status struct {
 
 func (x *Status) Reset() {
 	*x = Status{}
-	mi := &file_api_proto_msgTypes[12]
+	mi := &file_api_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -875,7 +832,7 @@ func (x *Status) String() string {
 func (*Status) ProtoMessage() {}
 
 func (x *Status) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[12]
+	mi := &file_api_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -888,7 +845,7 @@ func (x *Status) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Status.ProtoReflect.Descriptor instead.
 func (*Status) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{12}
+	return file_api_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Status) GetOk() bool {
@@ -910,7 +867,7 @@ type NotifyTranscodingProgressRequest struct {
 
 func (x *NotifyTranscodingProgressRequest) Reset() {
 	*x = NotifyTranscodingProgressRequest{}
-	mi := &file_api_proto_msgTypes[13]
+	mi := &file_api_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -922,7 +879,7 @@ func (x *NotifyTranscodingProgressRequest) String() string {
 func (*NotifyTranscodingProgressRequest) ProtoMessage() {}
 
 func (x *NotifyTranscodingProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[13]
+	mi := &file_api_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -935,7 +892,7 @@ func (x *NotifyTranscodingProgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyTranscodingProgressRequest.ProtoReflect.Descriptor instead.
 func (*NotifyTranscodingProgressRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{13}
+	return file_api_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NotifyTranscodingProgressRequest) GetWorkerID() string {
@@ -976,7 +933,7 @@ type JoinWorkersRequest struct {
 
 func (x *JoinWorkersRequest) Reset() {
 	*x = JoinWorkersRequest{}
-	mi := &file_api_proto_msgTypes[14]
+	mi := &file_api_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -988,7 +945,7 @@ func (x *JoinWorkersRequest) String() string {
 func (*JoinWorkersRequest) ProtoMessage() {}
 
 func (x *JoinWorkersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[14]
+	mi := &file_api_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1001,7 +958,7 @@ func (x *JoinWorkersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinWorkersRequest.ProtoReflect.Descriptor instead.
 func (*JoinWorkersRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{14}
+	return file_api_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *JoinWorkersRequest) GetToken() string {
@@ -1027,7 +984,7 @@ type JoinWorkersResponse struct {
 
 func (x *JoinWorkersResponse) Reset() {
 	*x = JoinWorkersResponse{}
-	mi := &file_api_proto_msgTypes[15]
+	mi := &file_api_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1039,7 +996,7 @@ func (x *JoinWorkersResponse) String() string {
 func (*JoinWorkersResponse) ProtoMessage() {}
 
 func (x *JoinWorkersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[15]
+	mi := &file_api_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1052,7 +1009,7 @@ func (x *JoinWorkersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinWorkersResponse.ProtoReflect.Descriptor instead.
 func (*JoinWorkersResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{15}
+	return file_api_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *JoinWorkersResponse) GetWorkerId() string {
@@ -1073,7 +1030,7 @@ type SelfStreamRequest struct {
 
 func (x *SelfStreamRequest) Reset() {
 	*x = SelfStreamRequest{}
-	mi := &file_api_proto_msgTypes[16]
+	mi := &file_api_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1085,7 +1042,7 @@ func (x *SelfStreamRequest) String() string {
 func (*SelfStreamRequest) ProtoMessage() {}
 
 func (x *SelfStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[16]
+	mi := &file_api_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1098,7 +1055,7 @@ func (x *SelfStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SelfStreamRequest.ProtoReflect.Descriptor instead.
 func (*SelfStreamRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{16}
+	return file_api_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SelfStreamRequest) GetWorkerID() string {
@@ -1139,7 +1096,7 @@ type SelfStreamResponse struct {
 
 func (x *SelfStreamResponse) Reset() {
 	*x = SelfStreamResponse{}
-	mi := &file_api_proto_msgTypes[17]
+	mi := &file_api_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1151,7 +1108,7 @@ func (x *SelfStreamResponse) String() string {
 func (*SelfStreamResponse) ProtoMessage() {}
 
 func (x *SelfStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[17]
+	mi := &file_api_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1164,7 +1121,7 @@ func (x *SelfStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SelfStreamResponse.ProtoReflect.Descriptor instead.
 func (*SelfStreamResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{17}
+	return file_api_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *SelfStreamResponse) GetStreamID() uint32 {
@@ -1246,7 +1203,7 @@ type HeartBeat struct {
 
 func (x *HeartBeat) Reset() {
 	*x = HeartBeat{}
-	mi := &file_api_proto_msgTypes[18]
+	mi := &file_api_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1258,7 +1215,7 @@ func (x *HeartBeat) String() string {
 func (*HeartBeat) ProtoMessage() {}
 
 func (x *HeartBeat) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[18]
+	mi := &file_api_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1271,7 +1228,7 @@ func (x *HeartBeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartBeat.ProtoReflect.Descriptor instead.
 func (*HeartBeat) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{18}
+	return file_api_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *HeartBeat) GetWorkerID() string {
@@ -1340,7 +1297,7 @@ type StreamFinished struct {
 
 func (x *StreamFinished) Reset() {
 	*x = StreamFinished{}
-	mi := &file_api_proto_msgTypes[19]
+	mi := &file_api_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1352,7 +1309,7 @@ func (x *StreamFinished) String() string {
 func (*StreamFinished) ProtoMessage() {}
 
 func (x *StreamFinished) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[19]
+	mi := &file_api_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1365,7 +1322,7 @@ func (x *StreamFinished) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamFinished.ProtoReflect.Descriptor instead.
 func (*StreamFinished) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{19}
+	return file_api_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *StreamFinished) GetWorkerID() string {
@@ -1396,7 +1353,7 @@ type ThumbnailsFinished struct {
 
 func (x *ThumbnailsFinished) Reset() {
 	*x = ThumbnailsFinished{}
-	mi := &file_api_proto_msgTypes[20]
+	mi := &file_api_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1408,7 +1365,7 @@ func (x *ThumbnailsFinished) String() string {
 func (*ThumbnailsFinished) ProtoMessage() {}
 
 func (x *ThumbnailsFinished) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[20]
+	mi := &file_api_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1421,7 +1378,7 @@ func (x *ThumbnailsFinished) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThumbnailsFinished.ProtoReflect.Descriptor instead.
 func (*ThumbnailsFinished) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{20}
+	return file_api_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ThumbnailsFinished) GetWorkerID() string {
@@ -1479,7 +1436,7 @@ type TranscodingFinished struct {
 
 func (x *TranscodingFinished) Reset() {
 	*x = TranscodingFinished{}
-	mi := &file_api_proto_msgTypes[21]
+	mi := &file_api_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1491,7 +1448,7 @@ func (x *TranscodingFinished) String() string {
 func (*TranscodingFinished) ProtoMessage() {}
 
 func (x *TranscodingFinished) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[21]
+	mi := &file_api_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1504,7 +1461,7 @@ func (x *TranscodingFinished) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TranscodingFinished.ProtoReflect.Descriptor instead.
 func (*TranscodingFinished) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{21}
+	return file_api_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *TranscodingFinished) GetWorkerID() string {
@@ -1555,7 +1512,7 @@ type UploadFinished struct {
 
 func (x *UploadFinished) Reset() {
 	*x = UploadFinished{}
-	mi := &file_api_proto_msgTypes[22]
+	mi := &file_api_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1567,7 +1524,7 @@ func (x *UploadFinished) String() string {
 func (*UploadFinished) ProtoMessage() {}
 
 func (x *UploadFinished) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[22]
+	mi := &file_api_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1580,7 +1537,7 @@ func (x *UploadFinished) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadFinished.ProtoReflect.Descriptor instead.
 func (*UploadFinished) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{22}
+	return file_api_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *UploadFinished) GetWorkerID() string {
@@ -1630,7 +1587,7 @@ type StreamStarted struct {
 
 func (x *StreamStarted) Reset() {
 	*x = StreamStarted{}
-	mi := &file_api_proto_msgTypes[23]
+	mi := &file_api_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1642,7 +1599,7 @@ func (x *StreamStarted) String() string {
 func (*StreamStarted) ProtoMessage() {}
 
 func (x *StreamStarted) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[23]
+	mi := &file_api_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1655,7 +1612,7 @@ func (x *StreamStarted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamStarted.ProtoReflect.Descriptor instead.
 func (*StreamStarted) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{23}
+	return file_api_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *StreamStarted) GetWorkerID() string {
@@ -1698,7 +1655,7 @@ type SilenceResults struct {
 
 func (x *SilenceResults) Reset() {
 	*x = SilenceResults{}
-	mi := &file_api_proto_msgTypes[24]
+	mi := &file_api_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1710,7 +1667,7 @@ func (x *SilenceResults) String() string {
 func (*SilenceResults) ProtoMessage() {}
 
 func (x *SilenceResults) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[24]
+	mi := &file_api_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1723,7 +1680,7 @@ func (x *SilenceResults) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SilenceResults.ProtoReflect.Descriptor instead.
 func (*SilenceResults) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{24}
+	return file_api_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *SilenceResults) GetWorkerID() string {
@@ -1768,7 +1725,7 @@ type NotifyTranscodingFailureRequest struct {
 
 func (x *NotifyTranscodingFailureRequest) Reset() {
 	*x = NotifyTranscodingFailureRequest{}
-	mi := &file_api_proto_msgTypes[25]
+	mi := &file_api_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1780,7 +1737,7 @@ func (x *NotifyTranscodingFailureRequest) String() string {
 func (*NotifyTranscodingFailureRequest) ProtoMessage() {}
 
 func (x *NotifyTranscodingFailureRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[25]
+	mi := &file_api_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1793,7 +1750,7 @@ func (x *NotifyTranscodingFailureRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyTranscodingFailureRequest.ProtoReflect.Descriptor instead.
 func (*NotifyTranscodingFailureRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{25}
+	return file_api_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *NotifyTranscodingFailureRequest) GetWorkerID() string {
@@ -1846,7 +1803,7 @@ type NotifyTranscodingFailureResponse struct {
 
 func (x *NotifyTranscodingFailureResponse) Reset() {
 	*x = NotifyTranscodingFailureResponse{}
-	mi := &file_api_proto_msgTypes[26]
+	mi := &file_api_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1858,7 +1815,7 @@ func (x *NotifyTranscodingFailureResponse) String() string {
 func (*NotifyTranscodingFailureResponse) ProtoMessage() {}
 
 func (x *NotifyTranscodingFailureResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[26]
+	mi := &file_api_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1871,7 +1828,7 @@ func (x *NotifyTranscodingFailureResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyTranscodingFailureResponse.ProtoReflect.Descriptor instead.
 func (*NotifyTranscodingFailureResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{26}
+	return file_api_proto_rawDescGZIP(), []int{25}
 }
 
 type CombineThumbnailsRequest struct {
@@ -1885,7 +1842,7 @@ type CombineThumbnailsRequest struct {
 
 func (x *CombineThumbnailsRequest) Reset() {
 	*x = CombineThumbnailsRequest{}
-	mi := &file_api_proto_msgTypes[27]
+	mi := &file_api_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1897,7 +1854,7 @@ func (x *CombineThumbnailsRequest) String() string {
 func (*CombineThumbnailsRequest) ProtoMessage() {}
 
 func (x *CombineThumbnailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[27]
+	mi := &file_api_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1910,7 +1867,7 @@ func (x *CombineThumbnailsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CombineThumbnailsRequest.ProtoReflect.Descriptor instead.
 func (*CombineThumbnailsRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{27}
+	return file_api_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *CombineThumbnailsRequest) GetPrimaryThumbnail() string {
@@ -1943,7 +1900,7 @@ type CombineThumbnailsResponse struct {
 
 func (x *CombineThumbnailsResponse) Reset() {
 	*x = CombineThumbnailsResponse{}
-	mi := &file_api_proto_msgTypes[28]
+	mi := &file_api_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1955,7 +1912,7 @@ func (x *CombineThumbnailsResponse) String() string {
 func (*CombineThumbnailsResponse) ProtoMessage() {}
 
 func (x *CombineThumbnailsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[28]
+	mi := &file_api_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1968,7 +1925,7 @@ func (x *CombineThumbnailsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CombineThumbnailsResponse.ProtoReflect.Descriptor instead.
 func (*CombineThumbnailsResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{28}
+	return file_api_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CombineThumbnailsResponse) GetFilePath() string {
@@ -1989,7 +1946,7 @@ type CutRequest_Segment struct {
 
 func (x *CutRequest_Segment) Reset() {
 	*x = CutRequest_Segment{}
-	mi := &file_api_proto_msgTypes[29]
+	mi := &file_api_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2001,7 +1958,7 @@ func (x *CutRequest_Segment) String() string {
 func (*CutRequest_Segment) ProtoMessage() {}
 
 func (x *CutRequest_Segment) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_msgTypes[29]
+	mi := &file_api_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2014,7 +1971,7 @@ func (x *CutRequest_Segment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CutRequest_Segment.ProtoReflect.Descriptor instead.
 func (*CutRequest_Segment) Descriptor() ([]byte, []int) {
-	return file_api_proto_rawDescGZIP(), []int{5, 0}
+	return file_api_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *CutRequest_Segment) GetStartTime() int64 {
@@ -2042,9 +1999,7 @@ var File_api_proto protoreflect.FileDescriptor
 
 const file_api_proto_rawDesc = "" +
 	"\n" +
-	"\tapi.proto\x12\x03api\x1a\x1fgoogle/protobuf/timestamp.proto\"/\n" +
-	"\x19DeleteSectionImageRequest\x12\x12\n" +
-	"\x04Path\x18\x01 \x01(\tR\x04Path\"4\n" +
+	"\tapi.proto\x12\x03api\x1a\x1fgoogle/protobuf/timestamp.proto\"4\n" +
 	"\x1cGenerateSectionImageResponse\x12\x14\n" +
 	"\x05Paths\x18\x01 \x03(\tR\x05Paths\"\xa2\x02\n" +
 	"\x18GenerateThumbnailRequest\x12\x12\n" +
@@ -2236,7 +2191,7 @@ const file_api_proto_rawDesc = "" +
 	"\x12SecondaryThumbnail\x18\x02 \x01(\tR\x12SecondaryThumbnail\x12\x12\n" +
 	"\x04Path\x18\x03 \x01(\tR\x04Path\"7\n" +
 	"\x19CombineThumbnailsResponse\x12\x1a\n" +
-	"\bFilePath\x18\x01 \x01(\tR\bFilePath2\xe4\x04\n" +
+	"\bFilePath\x18\x01 \x01(\tR\bFilePath2\x9f\x04\n" +
 	"\bToWorker\x122\n" +
 	"\rRequestStream\x12\x12.api.StreamRequest\x1a\v.api.Status\"\x00\x126\n" +
 	"\x0fRequestPremiere\x12\x14.api.PremiereRequest\x1a\v.api.Status\"\x00\x128\n" +
@@ -2245,8 +2200,7 @@ const file_api_proto_rawDesc = "" +
 	"\n" +
 	"RequestCut\x12\x0f.api.CutRequest\x1a\x10.api.CutResponse\"\x00\x12B\n" +
 	"\x12GenerateThumbnails\x12\x1d.api.GenerateThumbnailRequest\x1a\v.api.Status\"\x00\x12^\n" +
-	"\x15GenerateSectionImages\x12 .api.GenerateSectionImageRequest\x1a!.api.GenerateSectionImageResponse\"\x00\x12C\n" +
-	"\x12DeleteSectionImage\x12\x1e.api.DeleteSectionImageRequest\x1a\v.api.Status\"\x00\x12T\n" +
+	"\x15GenerateSectionImages\x12 .api.GenerateSectionImageRequest\x1a!.api.GenerateSectionImageResponse\"\x00\x12T\n" +
 	"\x11CombineThumbnails\x12\x1d.api.CombineThumbnailsRequest\x1a\x1e.api.CombineThumbnailsResponse\"\x002\x84\x06\n" +
 	"\n" +
 	"FromWorker\x12B\n" +
@@ -2274,89 +2228,86 @@ func file_api_proto_rawDescGZIP() []byte {
 	return file_api_proto_rawDescData
 }
 
-var file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_api_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_api_proto_goTypes = []any{
-	(*DeleteSectionImageRequest)(nil),        // 0: api.DeleteSectionImageRequest
-	(*GenerateSectionImageResponse)(nil),     // 1: api.GenerateSectionImageResponse
-	(*GenerateThumbnailRequest)(nil),         // 2: api.GenerateThumbnailRequest
-	(*Section)(nil),                          // 3: api.Section
-	(*GenerateSectionImageRequest)(nil),      // 4: api.GenerateSectionImageRequest
-	(*CutRequest)(nil),                       // 5: api.CutRequest
-	(*CutResponse)(nil),                      // 6: api.CutResponse
-	(*WaveformRequest)(nil),                  // 7: api.WaveformRequest
-	(*WaveFormResponse)(nil),                 // 8: api.WaveFormResponse
-	(*StreamRequest)(nil),                    // 9: api.StreamRequest
-	(*PremiereRequest)(nil),                  // 10: api.PremiereRequest
-	(*EndStreamRequest)(nil),                 // 11: api.EndStreamRequest
-	(*Status)(nil),                           // 12: api.Status
-	(*NotifyTranscodingProgressRequest)(nil), // 13: api.NotifyTranscodingProgressRequest
-	(*JoinWorkersRequest)(nil),               // 14: api.JoinWorkersRequest
-	(*JoinWorkersResponse)(nil),              // 15: api.JoinWorkersResponse
-	(*SelfStreamRequest)(nil),                // 16: api.SelfStreamRequest
-	(*SelfStreamResponse)(nil),               // 17: api.SelfStreamResponse
-	(*HeartBeat)(nil),                        // 18: api.HeartBeat
-	(*StreamFinished)(nil),                   // 19: api.StreamFinished
-	(*ThumbnailsFinished)(nil),               // 20: api.ThumbnailsFinished
-	(*TranscodingFinished)(nil),              // 21: api.TranscodingFinished
-	(*UploadFinished)(nil),                   // 22: api.UploadFinished
-	(*StreamStarted)(nil),                    // 23: api.StreamStarted
-	(*SilenceResults)(nil),                   // 24: api.SilenceResults
-	(*NotifyTranscodingFailureRequest)(nil),  // 25: api.NotifyTranscodingFailureRequest
-	(*NotifyTranscodingFailureResponse)(nil), // 26: api.NotifyTranscodingFailureResponse
-	(*CombineThumbnailsRequest)(nil),         // 27: api.CombineThumbnailsRequest
-	(*CombineThumbnailsResponse)(nil),        // 28: api.CombineThumbnailsResponse
-	(*CutRequest_Segment)(nil),               // 29: api.CutRequest.Segment
-	(*timestamppb.Timestamp)(nil),            // 30: google.protobuf.Timestamp
+	(*GenerateSectionImageResponse)(nil),     // 0: api.GenerateSectionImageResponse
+	(*GenerateThumbnailRequest)(nil),         // 1: api.GenerateThumbnailRequest
+	(*Section)(nil),                          // 2: api.Section
+	(*GenerateSectionImageRequest)(nil),      // 3: api.GenerateSectionImageRequest
+	(*CutRequest)(nil),                       // 4: api.CutRequest
+	(*CutResponse)(nil),                      // 5: api.CutResponse
+	(*WaveformRequest)(nil),                  // 6: api.WaveformRequest
+	(*WaveFormResponse)(nil),                 // 7: api.WaveFormResponse
+	(*StreamRequest)(nil),                    // 8: api.StreamRequest
+	(*PremiereRequest)(nil),                  // 9: api.PremiereRequest
+	(*EndStreamRequest)(nil),                 // 10: api.EndStreamRequest
+	(*Status)(nil),                           // 11: api.Status
+	(*NotifyTranscodingProgressRequest)(nil), // 12: api.NotifyTranscodingProgressRequest
+	(*JoinWorkersRequest)(nil),               // 13: api.JoinWorkersRequest
+	(*JoinWorkersResponse)(nil),              // 14: api.JoinWorkersResponse
+	(*SelfStreamRequest)(nil),                // 15: api.SelfStreamRequest
+	(*SelfStreamResponse)(nil),               // 16: api.SelfStreamResponse
+	(*HeartBeat)(nil),                        // 17: api.HeartBeat
+	(*StreamFinished)(nil),                   // 18: api.StreamFinished
+	(*ThumbnailsFinished)(nil),               // 19: api.ThumbnailsFinished
+	(*TranscodingFinished)(nil),              // 20: api.TranscodingFinished
+	(*UploadFinished)(nil),                   // 21: api.UploadFinished
+	(*StreamStarted)(nil),                    // 22: api.StreamStarted
+	(*SilenceResults)(nil),                   // 23: api.SilenceResults
+	(*NotifyTranscodingFailureRequest)(nil),  // 24: api.NotifyTranscodingFailureRequest
+	(*NotifyTranscodingFailureResponse)(nil), // 25: api.NotifyTranscodingFailureResponse
+	(*CombineThumbnailsRequest)(nil),         // 26: api.CombineThumbnailsRequest
+	(*CombineThumbnailsResponse)(nil),        // 27: api.CombineThumbnailsResponse
+	(*CutRequest_Segment)(nil),               // 28: api.CutRequest.Segment
+	(*timestamppb.Timestamp)(nil),            // 29: google.protobuf.Timestamp
 }
 var file_api_proto_depIdxs = []int32{
-	30, // 0: api.GenerateThumbnailRequest.start:type_name -> google.protobuf.Timestamp
-	3,  // 1: api.GenerateSectionImageRequest.Sections:type_name -> api.Section
-	29, // 2: api.CutRequest.segments:type_name -> api.CutRequest.Segment
-	30, // 3: api.StreamRequest.Start:type_name -> google.protobuf.Timestamp
-	30, // 4: api.StreamRequest.End:type_name -> google.protobuf.Timestamp
-	30, // 5: api.SelfStreamResponse.StreamStart:type_name -> google.protobuf.Timestamp
-	9,  // 6: api.ToWorker.RequestStream:input_type -> api.StreamRequest
-	10, // 7: api.ToWorker.RequestPremiere:input_type -> api.PremiereRequest
-	11, // 8: api.ToWorker.RequestStreamEnd:input_type -> api.EndStreamRequest
-	7,  // 9: api.ToWorker.RequestWaveform:input_type -> api.WaveformRequest
-	5,  // 10: api.ToWorker.RequestCut:input_type -> api.CutRequest
-	2,  // 11: api.ToWorker.GenerateThumbnails:input_type -> api.GenerateThumbnailRequest
-	4,  // 12: api.ToWorker.GenerateSectionImages:input_type -> api.GenerateSectionImageRequest
-	0,  // 13: api.ToWorker.DeleteSectionImage:input_type -> api.DeleteSectionImageRequest
-	27, // 14: api.ToWorker.CombineThumbnails:input_type -> api.CombineThumbnailsRequest
-	14, // 15: api.FromWorker.JoinWorkers:input_type -> api.JoinWorkersRequest
-	18, // 16: api.FromWorker.SendHeartBeat:input_type -> api.HeartBeat
-	13, // 17: api.FromWorker.NotifyTranscodingProgress:input_type -> api.NotifyTranscodingProgressRequest
-	21, // 18: api.FromWorker.NotifyTranscodingFinished:input_type -> api.TranscodingFinished
-	24, // 19: api.FromWorker.NotifySilenceResults:input_type -> api.SilenceResults
-	23, // 20: api.FromWorker.NotifyStreamStarted:input_type -> api.StreamStarted
-	19, // 21: api.FromWorker.NotifyStreamFinished:input_type -> api.StreamFinished
-	22, // 22: api.FromWorker.NotifyUploadFinished:input_type -> api.UploadFinished
-	20, // 23: api.FromWorker.NotifyThumbnailsFinished:input_type -> api.ThumbnailsFinished
-	16, // 24: api.FromWorker.SendSelfStreamRequest:input_type -> api.SelfStreamRequest
-	25, // 25: api.FromWorker.NotifyTranscodingFailure:input_type -> api.NotifyTranscodingFailureRequest
-	12, // 26: api.ToWorker.RequestStream:output_type -> api.Status
-	12, // 27: api.ToWorker.RequestPremiere:output_type -> api.Status
-	12, // 28: api.ToWorker.RequestStreamEnd:output_type -> api.Status
-	8,  // 29: api.ToWorker.RequestWaveform:output_type -> api.WaveFormResponse
-	6,  // 30: api.ToWorker.RequestCut:output_type -> api.CutResponse
-	12, // 31: api.ToWorker.GenerateThumbnails:output_type -> api.Status
-	1,  // 32: api.ToWorker.GenerateSectionImages:output_type -> api.GenerateSectionImageResponse
-	12, // 33: api.ToWorker.DeleteSectionImage:output_type -> api.Status
-	28, // 34: api.ToWorker.CombineThumbnails:output_type -> api.CombineThumbnailsResponse
-	15, // 35: api.FromWorker.JoinWorkers:output_type -> api.JoinWorkersResponse
-	12, // 36: api.FromWorker.SendHeartBeat:output_type -> api.Status
-	12, // 37: api.FromWorker.NotifyTranscodingProgress:output_type -> api.Status
-	12, // 38: api.FromWorker.NotifyTranscodingFinished:output_type -> api.Status
-	12, // 39: api.FromWorker.NotifySilenceResults:output_type -> api.Status
-	12, // 40: api.FromWorker.NotifyStreamStarted:output_type -> api.Status
-	12, // 41: api.FromWorker.NotifyStreamFinished:output_type -> api.Status
-	12, // 42: api.FromWorker.NotifyUploadFinished:output_type -> api.Status
-	12, // 43: api.FromWorker.NotifyThumbnailsFinished:output_type -> api.Status
-	17, // 44: api.FromWorker.SendSelfStreamRequest:output_type -> api.SelfStreamResponse
-	26, // 45: api.FromWorker.NotifyTranscodingFailure:output_type -> api.NotifyTranscodingFailureResponse
-	26, // [26:46] is the sub-list for method output_type
-	6,  // [6:26] is the sub-list for method input_type
+	29, // 0: api.GenerateThumbnailRequest.start:type_name -> google.protobuf.Timestamp
+	2,  // 1: api.GenerateSectionImageRequest.Sections:type_name -> api.Section
+	28, // 2: api.CutRequest.segments:type_name -> api.CutRequest.Segment
+	29, // 3: api.StreamRequest.Start:type_name -> google.protobuf.Timestamp
+	29, // 4: api.StreamRequest.End:type_name -> google.protobuf.Timestamp
+	29, // 5: api.SelfStreamResponse.StreamStart:type_name -> google.protobuf.Timestamp
+	8,  // 6: api.ToWorker.RequestStream:input_type -> api.StreamRequest
+	9,  // 7: api.ToWorker.RequestPremiere:input_type -> api.PremiereRequest
+	10, // 8: api.ToWorker.RequestStreamEnd:input_type -> api.EndStreamRequest
+	6,  // 9: api.ToWorker.RequestWaveform:input_type -> api.WaveformRequest
+	4,  // 10: api.ToWorker.RequestCut:input_type -> api.CutRequest
+	1,  // 11: api.ToWorker.GenerateThumbnails:input_type -> api.GenerateThumbnailRequest
+	3,  // 12: api.ToWorker.GenerateSectionImages:input_type -> api.GenerateSectionImageRequest
+	26, // 13: api.ToWorker.CombineThumbnails:input_type -> api.CombineThumbnailsRequest
+	13, // 14: api.FromWorker.JoinWorkers:input_type -> api.JoinWorkersRequest
+	17, // 15: api.FromWorker.SendHeartBeat:input_type -> api.HeartBeat
+	12, // 16: api.FromWorker.NotifyTranscodingProgress:input_type -> api.NotifyTranscodingProgressRequest
+	20, // 17: api.FromWorker.NotifyTranscodingFinished:input_type -> api.TranscodingFinished
+	23, // 18: api.FromWorker.NotifySilenceResults:input_type -> api.SilenceResults
+	22, // 19: api.FromWorker.NotifyStreamStarted:input_type -> api.StreamStarted
+	18, // 20: api.FromWorker.NotifyStreamFinished:input_type -> api.StreamFinished
+	21, // 21: api.FromWorker.NotifyUploadFinished:input_type -> api.UploadFinished
+	19, // 22: api.FromWorker.NotifyThumbnailsFinished:input_type -> api.ThumbnailsFinished
+	15, // 23: api.FromWorker.SendSelfStreamRequest:input_type -> api.SelfStreamRequest
+	24, // 24: api.FromWorker.NotifyTranscodingFailure:input_type -> api.NotifyTranscodingFailureRequest
+	11, // 25: api.ToWorker.RequestStream:output_type -> api.Status
+	11, // 26: api.ToWorker.RequestPremiere:output_type -> api.Status
+	11, // 27: api.ToWorker.RequestStreamEnd:output_type -> api.Status
+	7,  // 28: api.ToWorker.RequestWaveform:output_type -> api.WaveFormResponse
+	5,  // 29: api.ToWorker.RequestCut:output_type -> api.CutResponse
+	11, // 30: api.ToWorker.GenerateThumbnails:output_type -> api.Status
+	0,  // 31: api.ToWorker.GenerateSectionImages:output_type -> api.GenerateSectionImageResponse
+	27, // 32: api.ToWorker.CombineThumbnails:output_type -> api.CombineThumbnailsResponse
+	14, // 33: api.FromWorker.JoinWorkers:output_type -> api.JoinWorkersResponse
+	11, // 34: api.FromWorker.SendHeartBeat:output_type -> api.Status
+	11, // 35: api.FromWorker.NotifyTranscodingProgress:output_type -> api.Status
+	11, // 36: api.FromWorker.NotifyTranscodingFinished:output_type -> api.Status
+	11, // 37: api.FromWorker.NotifySilenceResults:output_type -> api.Status
+	11, // 38: api.FromWorker.NotifyStreamStarted:output_type -> api.Status
+	11, // 39: api.FromWorker.NotifyStreamFinished:output_type -> api.Status
+	11, // 40: api.FromWorker.NotifyUploadFinished:output_type -> api.Status
+	11, // 41: api.FromWorker.NotifyThumbnailsFinished:output_type -> api.Status
+	16, // 42: api.FromWorker.SendSelfStreamRequest:output_type -> api.SelfStreamResponse
+	25, // 43: api.FromWorker.NotifyTranscodingFailure:output_type -> api.NotifyTranscodingFailureResponse
+	25, // [25:44] is the sub-list for method output_type
+	6,  // [6:25] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -2373,7 +2324,7 @@ func file_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_rawDesc), len(file_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

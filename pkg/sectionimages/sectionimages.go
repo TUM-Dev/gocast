@@ -8,10 +8,9 @@ import (
 	"github.com/TUM-Dev/gocast/pkg/workergrpc"
 )
 
-// SectionImages generates and deletes section thumbnails. The worker
-// fallback and the worker-side delete are only implemented here, against the worker
-// connection helpers, so apiv2 is handed this rather than reimplementing them; it goes
-// once the workers do.
+// SectionImages generates section thumbnails. The worker fallback is only implemented
+// here, against the worker connection helpers, so apiv2 is handed this rather than
+// reimplementing it; it goes once the workers do.
 type SectionImages struct {
 	Dao dao.DaoWrapper
 	// May be nil, as for v1: then only the workers are asked.
@@ -31,9 +30,4 @@ func (s SectionImages) Generate(streamID uint, playlistURL string, course model.
 	return runner_manager.GenerateSectionImages(s.Manager,
 		runner_manager.SectionImageRequest{StreamID: streamID, PlaylistURL: playlistURL, Sections: sections},
 		func() error { return workergrpc.GenerateVideoSectionImages(s.Dao, &parameters) })
-}
-
-// Delete asks a worker to delete a section's thumbnail, as v1's deleteVideoSection does.
-func (s SectionImages) Delete(path string) error {
-	return workergrpc.DeleteVideoSectionImage(s.Dao.WorkerDao, path)
 }
