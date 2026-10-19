@@ -9,8 +9,6 @@ service ToWorker {
   rpc RequestStream (StreamRequest) returns (Status) {}
   rpc RequestPremiere (PremiereRequest) returns (Status) {}
   rpc RequestStreamEnd (EndStreamRequest) returns (Status) {}
-  rpc RequestWaveform (WaveformRequest) returns (WaveFormResponse) {}
-  rpc RequestCut (CutRequest) returns (CutResponse) {}
   rpc GenerateThumbnails (GenerateThumbnailRequest) returns (Status) {}
   rpc GenerateSectionImages (GenerateSectionImageRequest) returns (GenerateSectionImageResponse) {}
   rpc CombineThumbnails (CombineThumbnailsRequest) returns (CombineThumbnailsResponse) {}
@@ -42,32 +40,6 @@ message GenerateSectionImageRequest {
   uint32 CourseYear = 3;
   string CourseTeachingTerm = 4;
   repeated Section Sections = 5;
-}
-
-message CutRequest {
-  string WorkerId = 1;
-  repeated string Files = 2;
-  message Segment {
-    int64 Start_time = 1; // milliseconds
-    int64 End_time = 2;
-    bool Discard = 3;
-  }
-  repeated Segment segments = 3;
-  bool UploadResult = 4;
-}
-
-message CutResponse {
-  bool success = 1;
-  string error = 2; // if success == false: error message
-}
-
-message WaveformRequest {
-  string WorkerId = 1;
-  string File = 2;
-}
-
-message WaveFormResponse {
-  bytes Waveform = 1;
 }
 
 message StreamRequest {

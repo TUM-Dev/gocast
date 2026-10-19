@@ -8,7 +8,6 @@ package pb
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,8 +22,6 @@ const (
 	ToWorker_RequestStream_FullMethodName         = "/api.ToWorker/RequestStream"
 	ToWorker_RequestPremiere_FullMethodName       = "/api.ToWorker/RequestPremiere"
 	ToWorker_RequestStreamEnd_FullMethodName      = "/api.ToWorker/RequestStreamEnd"
-	ToWorker_RequestWaveform_FullMethodName       = "/api.ToWorker/RequestWaveform"
-	ToWorker_RequestCut_FullMethodName            = "/api.ToWorker/RequestCut"
 	ToWorker_GenerateThumbnails_FullMethodName    = "/api.ToWorker/GenerateThumbnails"
 	ToWorker_GenerateSectionImages_FullMethodName = "/api.ToWorker/GenerateSectionImages"
 	ToWorker_CombineThumbnails_FullMethodName     = "/api.ToWorker/CombineThumbnails"
@@ -38,8 +35,6 @@ type ToWorkerClient interface {
 	RequestStream(ctx context.Context, in *StreamRequest, opts ...grpc.CallOption) (*Status, error)
 	RequestPremiere(ctx context.Context, in *PremiereRequest, opts ...grpc.CallOption) (*Status, error)
 	RequestStreamEnd(ctx context.Context, in *EndStreamRequest, opts ...grpc.CallOption) (*Status, error)
-	RequestWaveform(ctx context.Context, in *WaveformRequest, opts ...grpc.CallOption) (*WaveFormResponse, error)
-	RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error)
 	GenerateThumbnails(ctx context.Context, in *GenerateThumbnailRequest, opts ...grpc.CallOption) (*Status, error)
 	GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error)
 	CombineThumbnails(ctx context.Context, in *CombineThumbnailsRequest, opts ...grpc.CallOption) (*CombineThumbnailsResponse, error)
@@ -77,26 +72,6 @@ func (c *toWorkerClient) RequestStreamEnd(ctx context.Context, in *EndStreamRequ
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Status)
 	err := c.cc.Invoke(ctx, ToWorker_RequestStreamEnd_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *toWorkerClient) RequestWaveform(ctx context.Context, in *WaveformRequest, opts ...grpc.CallOption) (*WaveFormResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(WaveFormResponse)
-	err := c.cc.Invoke(ctx, ToWorker_RequestWaveform_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *toWorkerClient) RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CutResponse)
-	err := c.cc.Invoke(ctx, ToWorker_RequestCut_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -141,8 +116,6 @@ type ToWorkerServer interface {
 	RequestStream(context.Context, *StreamRequest) (*Status, error)
 	RequestPremiere(context.Context, *PremiereRequest) (*Status, error)
 	RequestStreamEnd(context.Context, *EndStreamRequest) (*Status, error)
-	RequestWaveform(context.Context, *WaveformRequest) (*WaveFormResponse, error)
-	RequestCut(context.Context, *CutRequest) (*CutResponse, error)
 	GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error)
 	GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error)
 	CombineThumbnails(context.Context, *CombineThumbnailsRequest) (*CombineThumbnailsResponse, error)
@@ -164,12 +137,6 @@ func (UnimplementedToWorkerServer) RequestPremiere(context.Context, *PremiereReq
 }
 func (UnimplementedToWorkerServer) RequestStreamEnd(context.Context, *EndStreamRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestStreamEnd not implemented")
-}
-func (UnimplementedToWorkerServer) RequestWaveform(context.Context, *WaveformRequest) (*WaveFormResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RequestWaveform not implemented")
-}
-func (UnimplementedToWorkerServer) RequestCut(context.Context, *CutRequest) (*CutResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RequestCut not implemented")
 }
 func (UnimplementedToWorkerServer) GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateThumbnails not implemented")
@@ -255,42 +222,6 @@ func _ToWorker_RequestStreamEnd_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ToWorker_RequestWaveform_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WaveformRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ToWorkerServer).RequestWaveform(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ToWorker_RequestWaveform_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToWorkerServer).RequestWaveform(ctx, req.(*WaveformRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ToWorker_RequestCut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CutRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ToWorkerServer).RequestCut(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ToWorker_RequestCut_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToWorkerServer).RequestCut(ctx, req.(*CutRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ToWorker_GenerateThumbnails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GenerateThumbnailRequest)
 	if err := dec(in); err != nil {
@@ -363,14 +294,6 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestStreamEnd",
 			Handler:    _ToWorker_RequestStreamEnd_Handler,
-		},
-		{
-			MethodName: "RequestWaveform",
-			Handler:    _ToWorker_RequestWaveform_Handler,
-		},
-		{
-			MethodName: "RequestCut",
-			Handler:    _ToWorker_RequestCut_Handler,
 		},
 		{
 			MethodName: "GenerateThumbnails",

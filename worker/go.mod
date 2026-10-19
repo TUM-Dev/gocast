@@ -7,7 +7,6 @@ go 1.27.0
 // Indirect dependencies
 require (
 	github.com/icza/gox v0.2.14
-	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/joschahenningsen/thumbgen v0.1.2
 	github.com/pkg/profile v1.7.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -26,10 +25,8 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/google/pprof v0.0.0-20241210010833-40e02aabc2ad // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
-	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
@@ -40,5 +37,4 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260630182238-925bb5da69e7 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

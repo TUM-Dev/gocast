@@ -28,20 +28,6 @@ type server struct {
 	pb.UnimplementedToWorkerServer
 }
 
-// RequestCut is a gRPC endpoint for the worker to Cut a video
-func (s server) RequestCut(ctx context.Context, request *pb.CutRequest) (*pb.CutResponse, error) {
-	return nil, errors.New("not implemented")
-}
-
-// RequestWaveform is a gRPC endpoint for the worker to generate a waveform
-func (s server) RequestWaveform(ctx context.Context, request *pb.WaveformRequest) (*pb.WaveFormResponse, error) {
-	if request.WorkerId != cfg.WorkerID {
-		return nil, errors.New("unauthenticated: wrong worker id")
-	}
-	waveform, err := worker.GetWaveform(request)
-	return &pb.WaveFormResponse{Waveform: waveform}, err
-}
-
 func (s server) RequestStream(ctx context.Context, request *pb.StreamRequest) (*pb.Status, error) {
 	if request.WorkerId != cfg.WorkerID {
 		log.Info("Rejected request to stream")
