@@ -3,6 +3,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -282,37 +283,62 @@ func TestUpdateLectureSection(t *testing.T) {
 }
 
 func TestDeleteLectureSection(t *testing.T) {
-	t.Run("deletes it and has a worker delete its thumbnail", func(t *testing.T) {
-		api, m := newContentAPI(t)
-		images := newFakeSectionImages()
-		api.sectionImages = images
+	// The thumbnail's row, for a section whose image is at path.
+	expectThumbnail := func(m contentMocks, path string) {
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
 		m.sections.EXPECT().Get(uint(3)).Return(model.VideoSection{Model: gorm.Model{ID: 3}, StreamID: 7, FileID: 12}, nil)
 		m.sections.EXPECT().Delete(uint(3)).Return(nil)
-		m.files.EXPECT().GetFileById("12").Return(model.File{Model: gorm.Model{ID: 12}, Path: "/mass/sections/7_3.jpg"}, nil)
-
+		m.files.EXPECT().GetFileById("12").Return(model.File{Model: gorm.Model{ID: 12}, Path: path}, nil)
+	}
+	deleteSection := func(t *testing.T, api *API) {
+		t.Helper()
 		if _, err := api.DeleteLectureSection(asCaller(lectureAdmin), &protobuf.DeleteLectureSectionRequest{
 			CourseId: 1, StreamId: 7, SectionId: 3,
 		}); err != nil {
 			t.Fatalf("DeleteLectureSection: %v", err)
 		}
-		if got := receive(t, images.deleted); got != "/mass/sections/7_3.jpg" {
-			t.Errorf("deleted %q", got)
+	}
+
+	t.Run("deletes it with its thumbnail's file and row, no worker needed", func(t *testing.T) {
+		api, m := newContentAPI(t)
+		path := writeTempFile(t)
+		expectThumbnail(m, path)
+		m.files.EXPECT().DeleteFile(uint(12)).Return(nil)
+
+		deleteSection(t, api)
+		if _, err := os.Stat(path); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("thumbnail still on disk (stat err: %v)", err)
 		}
 	})
 
-	t.Run("asks for nothing when the section had no thumbnail", func(t *testing.T) {
+	t.Run("drops the row of a thumbnail whose file is gone already", func(t *testing.T) {
 		api, m := newContentAPI(t)
-		api.sectionImages = newFakeSectionImages()
+		expectThumbnail(m, filepath.Join(t.TempDir(), "gone.jpg"))
+		m.files.EXPECT().DeleteFile(uint(12)).Return(nil)
+
+		deleteSection(t, api)
+	})
+
+	t.Run("keeps the row when the file can't be removed", func(t *testing.T) {
+		api, m := newContentAPI(t)
+		// A directory with something in it, which os.Remove refuses.
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, "x"), nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		expectThumbnail(m, dir)
+		// No DeleteFile: gomock fails the test on a call it wasn't told to expect.
+
+		deleteSection(t, api)
+	})
+
+	t.Run("touches no file when the section had no thumbnail", func(t *testing.T) {
+		api, m := newContentAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
 		m.sections.EXPECT().Get(uint(3)).Return(model.VideoSection{Model: gorm.Model{ID: 3}, StreamID: 7}, nil)
 		m.sections.EXPECT().Delete(uint(3)).Return(nil)
 
-		if _, err := api.DeleteLectureSection(asCaller(lectureAdmin), &protobuf.DeleteLectureSectionRequest{
-			CourseId: 1, StreamId: 7, SectionId: 3,
-		}); err != nil {
-			t.Fatalf("DeleteLectureSection: %v", err)
-		}
+		deleteSection(t, api)
 	})
 
 	t.Run("404s another lecture's section and deletes nothing", func(t *testing.T) {
