@@ -97,3 +97,97 @@ func (a *API) RevokeIntegrationGrant(ctx context.Context, req *protobuf.RevokeIn
 	}
 	return &emptypb.Empty{}, nil
 }
+
+// GetIntegrationRecording answers for one version, the one the watch page starts with
+// when the viewer chose none (see integrationRecordingVersion). It hands out that
+// playlist signed without a user like for an anonymous viewer of a public course: the
+// grant is the permission here.
+func (a *API) GetIntegrationRecording(ctx context.Context, req *protobuf.GetIntegrationRecordingRequest) (*protobuf.GetIntegrationRecordingResponse, error) {
+	if req.GetGrantId() == 0 || req.GetStreamId() == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("grant_id and stream_id must be positive"))
+	}
+	integration, err := a.getCurrentIntegration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stream, err := a.dao.IntegrationGrantDao.GetIntegrationGrantStream(ctx, uint(req.GetGrantId()), integration.ID, uint(req.GetStreamId()))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("recording not found"))
+	}
+	if err != nil {
+		a.log.Error("integration recording lookup failed", "err", err)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not read recording"))
+	}
+	version, playlist, err := a.integrationRecordingVersion(ctx, &stream)
+	if err != nil {
+		a.log.Error("integration recording course lookup failed", "err", err, "stream", stream.ID)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not read recording"))
+	}
+	response := &protobuf.GetIntegrationRecordingResponse{}
+	progress, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(version, stream.ID)
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		// No conversion under way and none failed.
+	case err != nil:
+		a.log.Error("integration recording progress lookup failed", "err", err, "stream", stream.ID)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not read recording"))
+	case progress.Failed:
+		response.Failed, response.Error = true, progress.Error
+	default:
+		response.Converting, response.Progress = true, int32(progress.Progress)
+	}
+	if stream.Recording && playlist != "" {
+		// Sign only the chosen playlist; the other versions are not handed out.
+		chosen := model.Stream{Model: stream.Model, CourseID: stream.CourseID}
+		*playlistOf(&chosen, version) = playlist
+		if err := signPlaylists(&chosen, nil, false); err != nil {
+			// The edge refuses unsigned playlists, so an unsigned one is of no use.
+			a.log.Error("can't sign integration playlist", "err", err, "stream", stream.ID)
+			return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not sign playlist"))
+		}
+		response.PlaylistUrl = *playlistOf(&chosen, version)
+	}
+	return response, nil
+}
+
+// integrationRecordingVersion picks the version the watch page starts with when the
+// viewer chose none: the first of combined, presentation and camera that the course
+// records in the lecture hall and that has a playlist (as watchSources). A hall
+// recorded as presentation or camera only has no combined version. Without any
+// playlist yet it is the first version the hall records, whose conversion is the one
+// to report; uploads and self-streams only have the combined version.
+func (a *API) integrationRecordingVersion(ctx context.Context, s *model.Stream) (model.StreamVersion, string, error) {
+	mode := model.SourceModeCOMB
+	if s.LectureHallID != 0 {
+		course, err := a.dao.CoursesDao.GetCourseById(ctx, s.CourseID)
+		if err != nil {
+			return "", "", err
+		}
+		mode = course.GetSourceModeForLectureHall(s.LectureHallID)
+	}
+	versions := []model.StreamVersion{model.COMB, model.PRES, model.CAM}
+	switch mode {
+	case model.SourceModePRESOnly:
+		versions = []model.StreamVersion{model.PRES}
+	case model.SourceModeCAMOnly:
+		versions = []model.StreamVersion{model.CAM}
+	}
+	for _, v := range versions {
+		if url := *playlistOf(s, v); url != "" {
+			return v, url, nil
+		}
+	}
+	return versions[0], "", nil
+}
+
+// playlistOf is the field holding the playlist of a version.
+func playlistOf(s *model.Stream, v model.StreamVersion) *string {
+	switch v {
+	case model.PRES:
+		return &s.PlaylistUrlPRES
+	case model.CAM:
+		return &s.PlaylistUrlCAM
+	default:
+		return &s.PlaylistUrl
+	}
+}

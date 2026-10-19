@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file server/integration.proto.
  */
 export const file_server_integration: GenFile = /*@__PURE__*/
-  fileDesc("ChhzZXJ2ZXIvaW50ZWdyYXRpb24ucHJvdG8SCHByb3RvYnVmIkQKJVJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlcXVlc3QSDAoEY29kZRgBIAEoCRINCgVzdGF0ZRgCIAEoCSJNCiZSZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXNwb25zZRIQCghncmFudF9pZBgBIAEoDRIRCgljb3Vyc2VfaWQYAiABKA0iLgoaR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iMQodUmV2b2tlSW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iYAobR2V0SW50ZWdyYXRpb25HcmFudFJlc3BvbnNlEhEKCWNvdXJzZV9pZBgBIAEoDRIMCgRuYW1lGAIgASgJEgwKBHNsdWcYAyABKAkSEgoKdmlzaWJpbGl0eRgEIAEoCTLEBwoSSW50ZWdyYXRpb25TZXJ2aWNlEq8CCh5yZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb24SLy5wcm90b2J1Zi5SZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXF1ZXN0GjAucHJvdG9idWYuUmVkZWVtSW50ZWdyYXRpb25BdXRob3JpemF0aW9uUmVzcG9uc2UiqQGSQXkKDEludGVncmF0aW9ucxIkUmVkZWVtIGFuIGludGVncmF0aW9uIGF1dGhvcml6YXRpb24uGkNDb25zdW1lcyBhIGJyb3dzZXIgYXBwcm92YWwgY29kZSBmb3IgdGhlIGF1dGhlbnRpY2F0ZWQgaW50ZWdyYXRpb24ugtPkkwInOgEqIiIvaW50ZWdyYXRpb24vYXV0aG9yaXphdGlvbnMvcmVkZWVtEoQCChNnZXRJbnRlZ3JhdGlvbkdyYW50EiQucHJvdG9idWYuR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QaJS5wcm90b2J1Zi5HZXRJbnRlZ3JhdGlvbkdyYW50UmVzcG9uc2UinwGSQXYKDEludGVncmF0aW9ucxIZR2V0IGFuIGF1dGhvcml6ZWQgY291cnNlLhpLUmV0dXJucyBmaXhlZCBtZXRhZGF0YSBmb3IgdGhlIGNvdXJzZSBhdXRob3JpemVkIGJ5IHRoaXMgaW50ZWdyYXRpb24gZ3JhbnQugtPkkwIgEh4vaW50ZWdyYXRpb24vZ3JhbnRzL3tncmFudF9pZH0S9AIKFnJldm9rZUludGVncmF0aW9uR3JhbnQSJy5wcm90b2J1Zi5SZXZva2VJbnRlZ3JhdGlvbkdyYW50UmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eSKYApJB7gEKDEludGVncmF0aW9ucxIcUmV2b2tlIGFuIGludGVncmF0aW9uIGdyYW50Lhq/AVJldm9rZXMgdGhpcyBpbnRlZ3JhdGlvbidzIGFjY2VzcyB0aHJvdWdoIHRoZSBzcGVjaWZpZWQgZ3JhbnQuIEEgZ3JhbnQgdGhhdCBpcyB1bmtub3duLCBiZWxvbmdzIHRvIGFub3RoZXIgaW50ZWdyYXRpb24gb3IgaXMgYWxyZWFkeSByZXZva2VkIGFsc28gYW5zd2VycyBzdWNjZXNzLCBzbyB0aGUgY2FsbCBjYW4gYmUgcmVwZWF0ZWQugtPkkwIgKh4vaW50ZWdyYXRpb24vZ3JhbnRzL3tncmFudF9pZH1CEloQLi9hcGl2Mi9wcm90b2J1ZmIGcHJvdG8z", [file_google_api_annotations, file_google_protobuf_empty, file_protoc_gen_openapiv2_options_annotations]);
+  fileDesc("ChhzZXJ2ZXIvaW50ZWdyYXRpb24ucHJvdG8SCHByb3RvYnVmIkQKJVJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlcXVlc3QSDAoEY29kZRgBIAEoCRINCgVzdGF0ZRgCIAEoCSJNCiZSZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXNwb25zZRIQCghncmFudF9pZBgBIAEoDRIRCgljb3Vyc2VfaWQYAiABKA0iLgoaR2V0SW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iMQodUmV2b2tlSW50ZWdyYXRpb25HcmFudFJlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0iYAobR2V0SW50ZWdyYXRpb25HcmFudFJlc3BvbnNlEhEKCWNvdXJzZV9pZBgBIAEoDRIMCgRuYW1lGAIgASgJEgwKBHNsdWcYAyABKAkSEgoKdmlzaWJpbGl0eRgEIAEoCSJFCh5HZXRJbnRlZ3JhdGlvblJlY29yZGluZ1JlcXVlc3QSEAoIZ3JhbnRfaWQYASABKA0SEQoJc3RyZWFtX2lkGAIgASgNInwKH0dldEludGVncmF0aW9uUmVjb3JkaW5nUmVzcG9uc2USFAoMcGxheWxpc3RfdXJsGAEgASgJEhIKCmNvbnZlcnRpbmcYAiABKAgSEAoIcHJvZ3Jlc3MYAyABKAUSDgoGZmFpbGVkGAQgASgIEg0KBWVycm9yGAUgASgJMr0KChJJbnRlZ3JhdGlvblNlcnZpY2USrwIKHnJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvbhIvLnByb3RvYnVmLlJlZGVlbUludGVncmF0aW9uQXV0aG9yaXphdGlvblJlcXVlc3QaMC5wcm90b2J1Zi5SZWRlZW1JbnRlZ3JhdGlvbkF1dGhvcml6YXRpb25SZXNwb25zZSKpAZJBeQoMSW50ZWdyYXRpb25zEiRSZWRlZW0gYW4gaW50ZWdyYXRpb24gYXV0aG9yaXphdGlvbi4aQ0NvbnN1bWVzIGEgYnJvd3NlciBhcHByb3ZhbCBjb2RlIGZvciB0aGUgYXV0aGVudGljYXRlZCBpbnRlZ3JhdGlvbi6C0+STAic6ASoiIi9pbnRlZ3JhdGlvbi9hdXRob3JpemF0aW9ucy9yZWRlZW0ShAIKE2dldEludGVncmF0aW9uR3JhbnQSJC5wcm90b2J1Zi5HZXRJbnRlZ3JhdGlvbkdyYW50UmVxdWVzdBolLnByb3RvYnVmLkdldEludGVncmF0aW9uR3JhbnRSZXNwb25zZSKfAZJBdgoMSW50ZWdyYXRpb25zEhlHZXQgYW4gYXV0aG9yaXplZCBjb3Vyc2UuGktSZXR1cm5zIGZpeGVkIG1ldGFkYXRhIGZvciB0aGUgY291cnNlIGF1dGhvcml6ZWQgYnkgdGhpcyBpbnRlZ3JhdGlvbiBncmFudC6C0+STAiASHi9pbnRlZ3JhdGlvbi9ncmFudHMve2dyYW50X2lkfRL0AgoWcmV2b2tlSW50ZWdyYXRpb25HcmFudBInLnByb3RvYnVmLlJldm9rZUludGVncmF0aW9uR3JhbnRSZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5IpgCkkHuAQoMSW50ZWdyYXRpb25zEhxSZXZva2UgYW4gaW50ZWdyYXRpb24gZ3JhbnQuGr8BUmV2b2tlcyB0aGlzIGludGVncmF0aW9uJ3MgYWNjZXNzIHRocm91Z2ggdGhlIHNwZWNpZmllZCBncmFudC4gQSBncmFudCB0aGF0IGlzIHVua25vd24sIGJlbG9uZ3MgdG8gYW5vdGhlciBpbnRlZ3JhdGlvbiBvciBpcyBhbHJlYWR5IHJldm9rZWQgYWxzbyBhbnN3ZXJzIHN1Y2Nlc3MsIHNvIHRoZSBjYWxsIGNhbiBiZSByZXBlYXRlZC6C0+STAiAqHi9pbnRlZ3JhdGlvbi9ncmFudHMve2dyYW50X2lkfRL2AgoXZ2V0SW50ZWdyYXRpb25SZWNvcmRpbmcSKC5wcm90b2J1Zi5HZXRJbnRlZ3JhdGlvblJlY29yZGluZ1JlcXVlc3QaKS5wcm90b2J1Zi5HZXRJbnRlZ3JhdGlvblJlY29yZGluZ1Jlc3BvbnNlIoUCkkHEAQoMSW50ZWdyYXRpb25zEihHZXQgYSByZWNvcmRpbmcgb2YgYW4gYXV0aG9yaXplZCBjb3Vyc2UuGokBUmV0dXJucyB0aGUgY29udmVyc2lvbiBzdGF0ZSBhbmQgYSBzaWduZWQgcGxheWxpc3Qgb2Ygb25lIGxlY3R1cmUgdGhhdCBpcyB2aXNpYmxlIHRvIHN0dWRlbnRzLCBpbiB0aGUgdmVyc2lvbiB0aGUgd2F0Y2ggcGFnZSBzdGFydHMgd2l0aC6C0+STAjcSNS9pbnRlZ3JhdGlvbi9ncmFudHMve2dyYW50X2lkfS9yZWNvcmRpbmdzL3tzdHJlYW1faWR9QhJaEC4vYXBpdjIvcHJvdG9idWZiBnByb3RvMw", [file_google_api_annotations, file_google_protobuf_empty, file_protoc_gen_openapiv2_options_annotations]);
 
 /**
  * @generated from message protobuf.RedeemIntegrationAuthorizationRequest
@@ -127,6 +127,81 @@ export const GetIntegrationGrantResponseSchema: GenMessage<GetIntegrationGrantRe
   messageDesc(file_server_integration, 4);
 
 /**
+ * @generated from message protobuf.GetIntegrationRecordingRequest
+ */
+export type GetIntegrationRecordingRequest = Message<"protobuf.GetIntegrationRecordingRequest"> & {
+  /**
+   * @generated from field: uint32 grant_id = 1;
+   */
+  grantId: number;
+
+  /**
+   * @generated from field: uint32 stream_id = 2;
+   */
+  streamId: number;
+};
+
+/**
+ * Describes the message protobuf.GetIntegrationRecordingRequest.
+ * Use `create(GetIntegrationRecordingRequestSchema)` to create a new message.
+ */
+export const GetIntegrationRecordingRequestSchema: GenMessage<GetIntegrationRecordingRequest> = /*@__PURE__*/
+  messageDesc(file_server_integration, 5);
+
+/**
+ * @generated from message protobuf.GetIntegrationRecordingResponse
+ */
+export type GetIntegrationRecordingResponse = Message<"protobuf.GetIntegrationRecordingResponse"> & {
+  /**
+   * The playlist the watch page starts with for this recording when the viewer chose no
+   * view: combined, else presentation, else camera, of the versions the course records
+   * in the lecture hall. Signed like there for seven hours with downloads off. Empty
+   * while the lecture has no recording. As on the watch page, it can still be the live
+   * playlist when another version's VOD is ready first, and legacy LRZ playlists are not
+   * signed.
+   *
+   * @generated from field: string playlist_url = 1;
+   */
+  playlistUrl: string;
+
+  /**
+   * That version is being converted. A re-upload converts while the old playlist is
+   * still served.
+   *
+   * @generated from field: bool converting = 2;
+   */
+  converting: boolean;
+
+  /**
+   * Percent of the running conversion. Meaningless unless converting.
+   *
+   * @generated from field: int32 progress = 3;
+   */
+  progress: number;
+
+  /**
+   * The last conversion of that version ended without a video.
+   *
+   * @generated from field: bool failed = 4;
+   */
+  failed: boolean;
+
+  /**
+   * Why, in words for the person who uploaded the video. Only set when failed.
+   *
+   * @generated from field: string error = 5;
+   */
+  error: string;
+};
+
+/**
+ * Describes the message protobuf.GetIntegrationRecordingResponse.
+ * Use `create(GetIntegrationRecordingResponseSchema)` to create a new message.
+ */
+export const GetIntegrationRecordingResponseSchema: GenMessage<GetIntegrationRecordingResponse> = /*@__PURE__*/
+  messageDesc(file_server_integration, 6);
+
+/**
  * Application endpoints use API keys rather than a user's session.
  *
  * @generated from service protobuf.IntegrationService
@@ -155,6 +230,14 @@ export const IntegrationService: GenService<{
     methodKind: "unary";
     input: typeof RevokeIntegrationGrantRequestSchema;
     output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc protobuf.IntegrationService.getIntegrationRecording
+   */
+  getIntegrationRecording: {
+    methodKind: "unary";
+    input: typeof GetIntegrationRecordingRequestSchema;
+    output: typeof GetIntegrationRecordingResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_server_integration, 0);
