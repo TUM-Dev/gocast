@@ -550,6 +550,58 @@ func (x *CreateIntegrationUploadResponse) GetUploadPath() string {
 	return ""
 }
 
+type DeleteIntegrationRecordingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GrantId       uint32                 `protobuf:"varint,1,opt,name=grant_id,json=grantId,proto3" json:"grant_id,omitempty"`
+	ExternalRef   string                 `protobuf:"bytes,2,opt,name=external_ref,json=externalRef,proto3" json:"external_ref,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteIntegrationRecordingRequest) Reset() {
+	*x = DeleteIntegrationRecordingRequest{}
+	mi := &file_server_integration_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteIntegrationRecordingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteIntegrationRecordingRequest) ProtoMessage() {}
+
+func (x *DeleteIntegrationRecordingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_integration_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteIntegrationRecordingRequest.ProtoReflect.Descriptor instead.
+func (*DeleteIntegrationRecordingRequest) Descriptor() ([]byte, []int) {
+	return file_server_integration_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DeleteIntegrationRecordingRequest) GetGrantId() uint32 {
+	if x != nil {
+		return x.GrantId
+	}
+	return 0
+}
+
+func (x *DeleteIntegrationRecordingRequest) GetExternalRef() string {
+	if x != nil {
+		return x.ExternalRef
+	}
+	return ""
+}
+
 var File_server_integration_proto protoreflect.FileDescriptor
 
 const file_server_integration_proto_rawDesc = "" +
@@ -592,7 +644,10 @@ const file_server_integration_proto_rawDesc = "" +
 	"\x1fCreateIntegrationUploadResponse\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\rR\bstreamId\x12\x1f\n" +
 	"\vupload_path\x18\x02 \x01(\tR\n" +
-	"uploadPath2\x89\x0e\n" +
+	"uploadPath\"a\n" +
+	"!DeleteIntegrationRecordingRequest\x12\x19\n" +
+	"\bgrant_id\x18\x01 \x01(\rR\agrantId\x12!\n" +
+	"\fexternal_ref\x18\x02 \x01(\tR\vexternalRef2\xf4\x11\n" +
 	"\x12IntegrationService\x12\xaf\x02\n" +
 	"\x1eredeemIntegrationAuthorization\x12/.protobuf.RedeemIntegrationAuthorizationRequest\x1a0.protobuf.RedeemIntegrationAuthorizationResponse\"\xa9\x01\x92Ay\n" +
 	"\fIntegrations\x12$Redeem an integration authorization.\x1aCConsumes a browser approval code for the authenticated integration.\x82\xd3\xe4\x93\x02':\x01*\"\"/integration/authorizations/redeem\x12\x84\x02\n" +
@@ -603,7 +658,9 @@ const file_server_integration_proto_rawDesc = "" +
 	"\x17getIntegrationRecording\x12(.protobuf.GetIntegrationRecordingRequest\x1a).protobuf.GetIntegrationRecordingResponse\"\x9f\x02\x92A\xde\x01\n" +
 	"\fIntegrations\x12(Get a recording of an authorized course.\x1a\xa3\x01Returns the conversion state and a signed playlist of one lecture that is visible to students, in the requested version or else the one the watch page starts with.\x82\xd3\xe4\x93\x027\x125/integration/grants/{grant_id}/recordings/{stream_id}\x12\xaf\x03\n" +
 	"\x17createIntegrationUpload\x12(.protobuf.CreateIntegrationUploadRequest\x1a).protobuf.CreateIntegrationUploadResponse\"\xbe\x02\x92A\x89\x02\n" +
-	"\fIntegrations\x12 Create a lecture for one upload.\x1a\xd6\x01Creates a lecture owned by the integration for its upload reference and returns a one-use upload path. Repeating the call for a reference whose upload has not started returns the same lecture and a new upload path.\x82\xd3\xe4\x93\x02+:\x01*\"&/integration/grants/{grant_id}/uploadsB\x12Z\x10./apiv2/protobufb\x06proto3"
+	"\fIntegrations\x12 Create a lecture for one upload.\x1a\xd6\x01Creates a lecture owned by the integration for its upload reference and returns a one-use upload path. Repeating the call for a reference whose upload has not started returns the same lecture and a new upload path.\x82\xd3\xe4\x93\x02+:\x01*\"&/integration/grants/{grant_id}/uploads\x12\xe8\x03\n" +
+	"\x1adeleteIntegrationRecording\x12+.protobuf.DeleteIntegrationRecordingRequest\x1a\x16.google.protobuf.Empty\"\x84\x03\x92A\xc3\x02\n" +
+	"\fIntegrations\x12 Delete the lecture of an upload.\x1a\x90\x02Closes the upload reference, so no upload path works for it anymore, and deletes its lecture. Any active grant of the integration for the lecture's course may do so. Repeating the call succeeds; closing a reference that was never created keeps it from being created later.\x82\xd3\xe4\x93\x027*5/integration/grants/{grant_id}/uploads/{external_ref}B\x12Z\x10./apiv2/protobufb\x06proto3"
 
 var (
 	file_server_integration_proto_rawDescOnce sync.Once
@@ -617,7 +674,7 @@ func file_server_integration_proto_rawDescGZIP() []byte {
 	return file_server_integration_proto_rawDescData
 }
 
-var file_server_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_server_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_server_integration_proto_goTypes = []any{
 	(*RedeemIntegrationAuthorizationRequest)(nil),  // 0: protobuf.RedeemIntegrationAuthorizationRequest
 	(*RedeemIntegrationAuthorizationResponse)(nil), // 1: protobuf.RedeemIntegrationAuthorizationResponse
@@ -628,23 +685,26 @@ var file_server_integration_proto_goTypes = []any{
 	(*GetIntegrationRecordingResponse)(nil),        // 6: protobuf.GetIntegrationRecordingResponse
 	(*CreateIntegrationUploadRequest)(nil),         // 7: protobuf.CreateIntegrationUploadRequest
 	(*CreateIntegrationUploadResponse)(nil),        // 8: protobuf.CreateIntegrationUploadResponse
-	(VideoType)(0),                                 // 9: protobuf.VideoType
-	(*emptypb.Empty)(nil),                          // 10: google.protobuf.Empty
+	(*DeleteIntegrationRecordingRequest)(nil),      // 9: protobuf.DeleteIntegrationRecordingRequest
+	(VideoType)(0),        // 10: protobuf.VideoType
+	(*emptypb.Empty)(nil), // 11: google.protobuf.Empty
 }
 var file_server_integration_proto_depIdxs = []int32{
-	9,  // 0: protobuf.GetIntegrationRecordingRequest.stream_version:type_name -> protobuf.VideoType
+	10, // 0: protobuf.GetIntegrationRecordingRequest.stream_version:type_name -> protobuf.VideoType
 	0,  // 1: protobuf.IntegrationService.redeemIntegrationAuthorization:input_type -> protobuf.RedeemIntegrationAuthorizationRequest
 	2,  // 2: protobuf.IntegrationService.getIntegrationGrant:input_type -> protobuf.GetIntegrationGrantRequest
 	3,  // 3: protobuf.IntegrationService.revokeIntegrationGrant:input_type -> protobuf.RevokeIntegrationGrantRequest
 	5,  // 4: protobuf.IntegrationService.getIntegrationRecording:input_type -> protobuf.GetIntegrationRecordingRequest
 	7,  // 5: protobuf.IntegrationService.createIntegrationUpload:input_type -> protobuf.CreateIntegrationUploadRequest
-	1,  // 6: protobuf.IntegrationService.redeemIntegrationAuthorization:output_type -> protobuf.RedeemIntegrationAuthorizationResponse
-	4,  // 7: protobuf.IntegrationService.getIntegrationGrant:output_type -> protobuf.GetIntegrationGrantResponse
-	10, // 8: protobuf.IntegrationService.revokeIntegrationGrant:output_type -> google.protobuf.Empty
-	6,  // 9: protobuf.IntegrationService.getIntegrationRecording:output_type -> protobuf.GetIntegrationRecordingResponse
-	8,  // 10: protobuf.IntegrationService.createIntegrationUpload:output_type -> protobuf.CreateIntegrationUploadResponse
-	6,  // [6:11] is the sub-list for method output_type
-	1,  // [1:6] is the sub-list for method input_type
+	9,  // 6: protobuf.IntegrationService.deleteIntegrationRecording:input_type -> protobuf.DeleteIntegrationRecordingRequest
+	1,  // 7: protobuf.IntegrationService.redeemIntegrationAuthorization:output_type -> protobuf.RedeemIntegrationAuthorizationResponse
+	4,  // 8: protobuf.IntegrationService.getIntegrationGrant:output_type -> protobuf.GetIntegrationGrantResponse
+	11, // 9: protobuf.IntegrationService.revokeIntegrationGrant:output_type -> google.protobuf.Empty
+	6,  // 10: protobuf.IntegrationService.getIntegrationRecording:output_type -> protobuf.GetIntegrationRecordingResponse
+	8,  // 11: protobuf.IntegrationService.createIntegrationUpload:output_type -> protobuf.CreateIntegrationUploadResponse
+	11, // 12: protobuf.IntegrationService.deleteIntegrationRecording:output_type -> google.protobuf.Empty
+	7,  // [7:13] is the sub-list for method output_type
+	1,  // [1:7] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -663,7 +723,7 @@ func file_server_integration_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_server_integration_proto_rawDesc), len(file_server_integration_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

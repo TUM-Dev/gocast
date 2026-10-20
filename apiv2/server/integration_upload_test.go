@@ -279,3 +279,62 @@ func TestOriginOfMatchesWhatBrowsersSend(t *testing.T) {
 		assert.Equal(t, origin, originOf(returnURL), returnURL)
 	}
 }
+
+func TestDeleteIntegrationRecordingAuditsOnlyADeletedLecture(t *testing.T) {
+	for name, deleted := range map[string]model.Stream{
+		"lecture deleted":           {Model: gorm.Model{ID: 55}, Name: "Lecture 3", CourseID: 456},
+		"already deleted or unused": {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			grants := mock_dao.NewMockIntegrationGrantDao(ctrl)
+			audits := mock_dao.NewMockAuditDao(ctrl)
+			grants.EXPECT().DeleteIntegrationRecording(gomock.Any(), uint(7), uint(123), testUploadRef).Return(deleted, nil)
+			if deleted.ID != 0 {
+				audits.EXPECT().Create(gomock.Any()).DoAndReturn(func(entry *model.Audit) error {
+					assert.Nil(t, entry.User)
+					assert.Equal(t, model.AuditStreamDelete, entry.Type)
+					assert.Contains(t, entry.Message, "'Artemis' (7)")
+					assert.Equal(t, uint(456), *entry.CourseID)
+					assert.Equal(t, uint(55), *entry.StreamID)
+					return nil
+				})
+			}
+			api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: grants, AuditDao: audits}, log: slog.Default()}
+
+			_, err := api.DeleteIntegrationRecording(integrationCaller(), &protobuf.DeleteIntegrationRecordingRequest{GrantId: 123, ExternalRef: testUploadRef})
+
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestDeleteIntegrationRecordingRejectsAndMapsFailures(t *testing.T) {
+	for name, test := range map[string]struct {
+		request *protobuf.DeleteIntegrationRecordingRequest
+		err     error
+		code    codes.Code
+	}{
+		"no grant":                  {request: &protobuf.DeleteIntegrationRecordingRequest{ExternalRef: testUploadRef}, code: codes.InvalidArgument},
+		"invalid reference":         {request: &protobuf.DeleteIntegrationRecordingRequest{GrantId: 123, ExternalRef: "x"}, code: codes.InvalidArgument},
+		"missing or revoked grant":  {err: gorm.ErrRecordNotFound, code: codes.NotFound},
+		"another grant's reference": {err: dao.ErrIntegrationUploadRefused, code: codes.AlreadyExists},
+		"database failure":          {err: errors.New("secret database detail"), code: codes.Unknown},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			grants := mock_dao.NewMockIntegrationGrantDao(ctrl)
+			request := test.request
+			if request == nil {
+				request = &protobuf.DeleteIntegrationRecordingRequest{GrantId: 123, ExternalRef: testUploadRef}
+				grants.EXPECT().DeleteIntegrationRecording(gomock.Any(), uint(7), uint(123), testUploadRef).Return(model.Stream{}, test.err)
+			}
+			api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: grants}, log: slog.Default()}
+
+			_, err := api.DeleteIntegrationRecording(integrationCaller(), request)
+
+			assert.Equal(t, test.code, status.Code(err))
+			assert.NotContains(t, status.Convert(err).Message(), "secret")
+		})
+	}
+}

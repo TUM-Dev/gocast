@@ -59,6 +59,15 @@ service IntegrationService {
       description: "Creates a lecture owned by the integration for its upload reference and returns a one-use upload path. Repeating the call for a reference whose upload has not started returns the same lecture and a new upload path."
     };
   }
+
+  rpc deleteIntegrationRecording(DeleteIntegrationRecordingRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/integration/grants/{grant_id}/uploads/{external_ref}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Delete the lecture of an upload."
+      description: "Closes the upload reference, so no upload path works for it anymore, and deletes its lecture. Any active grant of the integration for the lecture's course may do so. Repeating the call succeeds; closing a reference that was never created keeps it from being created later."
+    };
+  }
 }
 
 message RedeemIntegrationAuthorizationRequest {
@@ -127,4 +136,9 @@ message CreateIntegrationUploadResponse {
   // POST the recording as the multipart field "file" to this path on TUM-Live, once,
   // within ten minutes. Needs no login; the path is the credential.
   string upload_path = 2;
+}
+
+message DeleteIntegrationRecordingRequest {
+  uint32 grant_id = 1;
+  string external_ref = 2;
 }

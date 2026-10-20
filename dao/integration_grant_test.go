@@ -449,3 +449,57 @@ func TestIntegrationUploadsAreSerializedOnMariaDB(t *testing.T) {
 	require.NoError(t, revocation.Commit().Error)
 	require.ErrorIs(t, <-used, gorm.ErrRecordNotFound)
 }
+
+func TestIntegrationRecordingDeletionClosesTheReference(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.Course{}, &model.Integration{}, &model.IntegrationGrant{}, &model.IntegrationRecording{}))
+	if err := db.Migrator().CreateTable(&model.Stream{}); err != nil {
+		require.True(t, db.Migrator().HasTable(&model.Stream{}), err)
+	}
+	require.NoError(t, db.Create(&[]model.Course{{Model: gorm.Model{ID: 1}, Name: "One", Slug: "one"}, {Model: gorm.Model{ID: 2}, Name: "Two", Slug: "two"}}).Error)
+	require.NoError(t, db.Create(&model.Integration{ID: 1, Name: "Course portal", APIKeyHash: bytes.Repeat([]byte{7}, 32)}).Error)
+	revokedAt := time.Now()
+	require.NoError(t, db.Create(&[]model.IntegrationGrant{{ID: 10, IntegrationID: 1, CourseID: 1}, {ID: 11, IntegrationID: 1, CourseID: 2}, {ID: 12, IntegrationID: 1, CourseID: 1, RevokedAt: &revokedAt}, {ID: 13, IntegrationID: 1, CourseID: 1}}).Error)
+	d := integrationGrantDao{db: db}
+	ctx, now := context.Background(), time.Now()
+	ticket := bytes.Repeat([]byte{1}, 32)
+	stream, _, err := d.CreateIntegrationUpload(ctx, 1, 10, "reference-a-0000", model.Stream{Name: "A"}, ticket, now.Add(time.Minute))
+	require.NoError(t, err)
+
+	_, err = d.DeleteIntegrationRecording(ctx, 1, 11, "reference-a-0000")
+	require.ErrorIs(t, err, ErrIntegrationUploadRefused, "another grant's reference")
+	_, err = d.DeleteIntegrationRecording(ctx, 1, 12, "reference-a-0000")
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound, "revoked grant")
+
+	deleted, err := d.DeleteIntegrationRecording(ctx, 1, 10, "reference-a-0000")
+	require.NoError(t, err)
+	require.Equal(t, stream.ID, deleted.ID)
+	require.ErrorIs(t, db.First(&model.Stream{}, stream.ID).Error, gorm.ErrRecordNotFound, "the lecture is deleted")
+	require.NoError(t, db.Unscoped().First(&model.Stream{}, stream.ID).Error, "softly")
+	_, err = d.ConsumeIntegrationUploadTicket(ctx, ticket, now)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound, "its ticket is closed too")
+	again, err := d.DeleteIntegrationRecording(ctx, 1, 10, "reference-a-0000")
+	require.NoError(t, err, "repeating succeeds")
+	require.Zero(t, again.ID)
+
+	// The answer to a create may have been lost before GoCast committed it.
+	_, err = d.DeleteIntegrationRecording(ctx, 1, 10, "reference-b-0000")
+	require.NoError(t, err)
+	_, _, err = d.CreateIntegrationUpload(ctx, 1, 10, "reference-b-0000", model.Stream{Name: "late"}, bytes.Repeat([]byte{2}, 32), now.Add(time.Minute))
+	require.ErrorIs(t, err, ErrIntegrationUploadRefused, "a closed reference is not created late")
+	var lectures int64
+	require.NoError(t, db.Model(&model.Stream{}).Count(&lectures).Error)
+	require.Zero(t, lectures)
+
+	// The course was connected again: the new grant deletes what the old one uploaded.
+	other, _, err := d.CreateIntegrationUpload(ctx, 1, 10, "reference-c-0000", model.Stream{Name: "C"}, bytes.Repeat([]byte{3}, 32), now.Add(time.Minute))
+	require.NoError(t, err)
+	_, err = d.DeleteIntegrationRecording(ctx, 1, 11, "reference-c-0000")
+	require.ErrorIs(t, err, ErrIntegrationUploadRefused, "a grant for another course")
+	deleted, err = d.DeleteIntegrationRecording(ctx, 1, 13, "reference-c-0000")
+	require.NoError(t, err)
+	require.Equal(t, other.ID, deleted.ID)
+	_, err = d.DeleteIntegrationRecording(ctx, 1, 13, "reference-b-0000")
+	require.NoError(t, err, "a reference closed before its lecture was made")
+}

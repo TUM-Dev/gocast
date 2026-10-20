@@ -16,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/net/idna"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
@@ -86,6 +87,41 @@ func (a *API) CreateIntegrationUpload(ctx context.Context, req *protobuf.CreateI
 		StreamId:   uint32(stream.ID),
 		UploadPath: integrationUploadPrefix + base64.RawURLEncoding.EncodeToString(ticket),
 	}, nil
+}
+
+// DeleteIntegrationRecording deletes the lecture of an integration's upload, as the
+// course settings delete a lecture: soft, so its files stay and playlists signed before
+// stay valid for their seven hours.
+func (a *API) DeleteIntegrationRecording(ctx context.Context, req *protobuf.DeleteIntegrationRecordingRequest) (*emptypb.Empty, error) {
+	if req.GetGrantId() == 0 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("grant_id must be positive"))
+	}
+	if !externalRefPattern.MatchString(req.GetExternalRef()) {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("external_ref must be 16 to 64 characters of A-Z, a-z, 0-9, - and _"))
+	}
+	integration, err := a.getCurrentIntegration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deleted, err := a.dao.IntegrationGrantDao.DeleteIntegrationRecording(ctx, integration.ID, uint(req.GetGrantId()), req.GetExternalRef())
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("grant not found"))
+	case errors.Is(err, dao.ErrIntegrationUploadRefused):
+		return nil, e.WithStatus(http.StatusConflict, errors.New("the upload reference belongs to another course"))
+	case err != nil:
+		a.log.Error("integration recording deletion failed", "err", err)
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not delete recording"))
+	}
+	if deleted.ID != 0 {
+		message := fmt.Sprintf("Stream '%s' (%d) deleted by integration '%s' (%d)", deleted.Name, deleted.ID, integration.Name, integration.ID)
+		entry := model.Audit{Message: message, Type: model.AuditStreamDelete}
+		forStream(deleted)(&entry)
+		if err := a.dao.AuditDao.Create(&entry); err != nil {
+			a.log.Error("can't write audit entry", "err", err, "message", message)
+		}
+	}
+	return &emptypb.Empty{}, nil
 }
 
 // handleIntegrationUpload takes the recording for a lecture an integration created. It
