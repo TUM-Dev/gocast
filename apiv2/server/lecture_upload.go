@@ -103,7 +103,7 @@ func (a *API) handleLectureUpload(c *gin.Context, route lectureUploadRoute) {
 		return
 	}
 	if route.kind == uploadMedia {
-		a.proxyLectureMedia(c, stream)
+		a.proxyLectureMedia(c, stream, model.VideoType(c.Query("type")))
 		return
 	}
 	if a.massStorage == "" {

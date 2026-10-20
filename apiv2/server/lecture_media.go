@@ -55,8 +55,7 @@ func WithUploads(u Uploads) Option {
 // has been read yet. A runner is reserved before the body is touched, so a refused
 // upload costs nothing, and a lecture that is live is refused, since the VOD of its own
 // stream would race the upload for the same playlist.
-func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream) {
-	videoType := model.VideoType(c.Query("type"))
+func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream, videoType model.VideoType) {
 	if !videoType.Valid() {
 		writeUploadError(c, e.WithStatus(http.StatusBadRequest, errors.New("type must be COMB, PRES or CAM")))
 		return

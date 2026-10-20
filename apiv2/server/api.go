@@ -188,6 +188,11 @@ func (a *API) Proxy() func(c *gin.Context) {
 			a.handleLectureUpload(c, route)
 			return
 		}
+		// Beside the gateway too: a multipart body, and a browser's CORS preflight.
+		if ticket, ok := integrationUploadRouteOf(c.Request); ok {
+			a.handleIntegrationUpload(c, ticket)
+			return
+		}
 		// Beside the gateway too: it streams a file, with Range, which the gateway's
 		// unary responses cannot.
 		if route, ok := streamFileRouteOf(c.Request); ok {
