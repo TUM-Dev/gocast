@@ -47,6 +47,18 @@ service IntegrationService {
       description: "Returns the conversion state and a signed playlist of one lecture that is visible to students, in the requested version or else the one the watch page starts with."
     };
   }
+
+  rpc createIntegrationUpload(CreateIntegrationUploadRequest) returns (CreateIntegrationUploadResponse) {
+    option (google.api.http) = {
+      post: "/integration/grants/{grant_id}/uploads"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Create a lecture for one upload."
+      description: "Creates a lecture owned by the integration for its upload reference and returns a one-use upload path. Repeating the call for a reference whose upload has not started returns the same lecture and a new upload path."
+    };
+  }
 }
 
 message RedeemIntegrationAuthorizationRequest {
@@ -100,4 +112,19 @@ message GetIntegrationRecordingResponse {
   bool failed = 4;
   // Why, in words for the person who uploaded the video. Only set when failed.
   string error = 5;
+}
+
+message CreateIntegrationUploadRequest {
+  uint32 grant_id = 1;
+  // Chosen by the integration, new for every upload: 16 to 64 characters of A-Z, a-z,
+  // 0-9, - and _.
+  string external_ref = 2;
+  string title = 3;
+}
+
+message CreateIntegrationUploadResponse {
+  uint32 stream_id = 1;
+  // POST the recording as the multipart field "file" to this path on TUM-Live, once,
+  // within ten minutes. Needs no login; the path is the credential.
+  string upload_path = 2;
 }

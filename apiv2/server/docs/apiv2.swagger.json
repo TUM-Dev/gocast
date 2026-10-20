@@ -3956,6 +3956,47 @@
         ]
       }
     },
+    "/integration/grants/{grantId}/uploads": {
+      "post": {
+        "summary": "Create a lecture for one upload.",
+        "description": "Creates a lecture owned by the integration for its upload reference and returns a one-use upload path. Repeating the call for a reference whose upload has not started returns the same lecture and a new upload path.",
+        "operationId": "IntegrationService_createIntegrationUpload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCreateIntegrationUploadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "grantId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IntegrationServicecreateIntegrationUploadBody"
+            }
+          }
+        ],
+        "tags": [
+          "Integrations"
+        ]
+      }
+    },
     "/login-options": {
       "get": {
         "summary": "Get available login methods.",
@@ -6037,6 +6078,18 @@
         }
       }
     },
+    "IntegrationServicecreateIntegrationUploadBody": {
+      "type": "object",
+      "properties": {
+        "externalRef": {
+          "type": "string",
+          "description": "Chosen by the integration, new for every upload: 16 to 64 characters of A-Z, a-z,\n0-9, - and _."
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
     "StreamServiceaddStreamReactionBody": {
       "type": "object",
       "properties": {
@@ -7384,6 +7437,19 @@
         "apiKey": {
           "type": "string",
           "description": "Only returned on creation; the stored hash cannot recover the key."
+        }
+      }
+    },
+    "protobufCreateIntegrationUploadResponse": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "uploadPath": {
+          "type": "string",
+          "description": "POST the recording as the multipart field \"file\" to this path on TUM-Live, once,\nwithin ten minutes. Needs no login; the path is the credential."
         }
       }
     },

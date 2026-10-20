@@ -22,10 +22,15 @@ type IntegrationGrantDao interface {
 	RedeemIntegrationAuthorizationCode(context.Context, uint, []byte, []byte, time.Time) (uint, uint, error)
 	GetIntegrationGrantCourse(context.Context, uint, uint) (model.Course, error)
 	GetIntegrationGrantStream(context.Context, uint, uint, uint) (model.Stream, error)
+	CreateIntegrationUpload(context.Context, uint, uint, string, model.Stream, []byte, time.Time) (model.Stream, bool, error)
 	GetCourseIntegrationGrants(context.Context, uint) ([]model.IntegrationGrant, error)
 	RevokeIntegrationGrant(context.Context, uint, uint) error
 	RevokeIntegrationGrantForIntegration(context.Context, uint, uint) (model.Course, error)
 }
+
+// ErrIntegrationUploadRefused is a reference whose lecture took its upload, was closed or
+// deleted, or belongs to another grant: a new upload needs a new reference.
+var ErrIntegrationUploadRefused = errors.New("the upload reference cannot take another upload")
 
 type integrationGrantDao struct {
 	db *gorm.DB
@@ -129,15 +134,18 @@ func (d integrationGrantDao) GetIntegrationGrantCourse(ctx context.Context, gran
 }
 
 // GetIntegrationGrantStream reads a lecture of the course behind an active grant. Only
-// lectures that students may see: the consent page promises no access to private
-// videos. Read from the database rather than the stream cache, which can still hold a
+// lectures that students may see, or that the integration uploaded: the consent page
+// promises no access to private videos. Read from the database rather than the stream cache, which can still hold a
 // lecture for some seconds after it was deleted or made private.
 func (d integrationGrantDao) GetIntegrationGrantStream(ctx context.Context, grantID, integrationID, streamID uint) (model.Stream, error) {
 	var stream model.Stream
 	err := d.db.WithContext(ctx).Model(&model.Stream{}).
 		Joins("JOIN courses ON courses.id = streams.course_id AND courses.deleted_at IS NULL").
 		Joins("JOIN integration_grants ON integration_grants.course_id = streams.course_id").
-		Where("streams.id = ? AND streams.private = ?", streamID, false).
+		Where("streams.id = ?", streamID).
+		// A lecture the integration uploaded itself stays readable when it is private,
+		// as GoCast makes the first VOD of a course with private VODs.
+		Where("streams.private = ? OR EXISTS (SELECT 1 FROM integration_recordings r WHERE r.stream_id = streams.id AND r.integration_id = ? AND r.closed = ?)", false, integrationID, false).
 		Where("integration_grants.id = ? AND integration_grants.integration_id = ? AND integration_grants.revoked_at IS NULL", grantID, integrationID).
 		First(&stream).Error
 	return stream, err
@@ -175,4 +183,47 @@ func (d integrationGrantDao) RevokeIntegrationGrantForIntegration(ctx context.Co
 			First(&course).Error
 	})
 	return course, err
+}
+
+// CreateIntegrationUpload creates the lecture for an integration's upload reference
+// together with its ownership row and ticket, or, for a known reference whose upload has
+// not started, replaces the ticket. created reports a new lecture. Locking the grant
+// serializes requests for the same reference and against revocation.
+func (d integrationGrantDao) CreateIntegrationUpload(ctx context.Context, integrationID, grantID uint, ref string, lecture model.Stream, ticketHash []byte, expiresAt time.Time) (stream model.Stream, created bool, err error) {
+	err = d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var grant model.IntegrationGrant
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND integration_id = ? AND revoked_at IS NULL", grantID, integrationID).First(&grant).Error; err != nil {
+			return err
+		}
+		if err := tx.Select("id").First(&model.Course{}, grant.CourseID).Error; err != nil {
+			return err
+		}
+		var rec model.IntegrationRecording
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("integration_id = ? AND external_ref = ?", integrationID, ref).First(&rec).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			lecture.CourseID = grant.CourseID
+			if err := tx.Create(&lecture).Error; err != nil {
+				return err
+			}
+			stream, created = lecture, true
+			return tx.Create(&model.IntegrationRecording{
+				IntegrationID: integrationID, ExternalRef: ref, GrantID: grantID, StreamID: lecture.ID,
+				TicketHash: ticketHash, TicketExpiresAt: expiresAt,
+			}).Error
+		}
+		if err != nil {
+			return err
+		}
+		if rec.GrantID != grantID || rec.UploadStarted || rec.Closed {
+			return ErrIntegrationUploadRefused
+		}
+		if err := tx.Where("id = ? AND course_id = ?", rec.StreamID, grant.CourseID).First(&stream).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrIntegrationUploadRefused
+		} else if err != nil {
+			return err
+		}
+		return tx.Model(&rec).Updates(map[string]any{"ticket_hash": ticketHash, "ticket_expires_at": expiresAt}).Error
+	})
+	return stream, created, err
 }
