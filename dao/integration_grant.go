@@ -25,6 +25,7 @@ type IntegrationGrantDao interface {
 	CreateIntegrationUpload(context.Context, uint, uint, string, model.Stream, []byte, time.Time) (model.Stream, bool, error)
 	GetIntegrationUploadReturnURL(context.Context, []byte, time.Time) (string, error)
 	ConsumeIntegrationUploadTicket(context.Context, []byte, time.Time) (model.Stream, error)
+	DeleteIntegrationRecording(context.Context, uint, uint, string) (model.Stream, error)
 	GetCourseIntegrationGrants(context.Context, uint) ([]model.IntegrationGrant, error)
 	RevokeIntegrationGrant(context.Context, uint, uint) error
 	RevokeIntegrationGrantForIntegration(context.Context, uint, uint) (model.Course, error)
@@ -280,4 +281,57 @@ func (d integrationGrantDao) ConsumeIntegrationUploadTicket(ctx context.Context,
 		return tx.Model(&rec).Updates(map[string]any{"upload_started": true, "ticket_hash": nil}).Error
 	})
 	return stream, err
+}
+
+// DeleteIntegrationRecording closes an integration's upload reference and soft-deletes
+// its lecture, whatever the runner is doing with it: a VOD that arrives later is dropped.
+// Any active grant of the integration for the lecture's course may do so.
+// A reference that was never created is closed all the same, without a lecture, so a
+// createIntegrationUpload that arrives late cannot create it anymore. Repeating it
+// succeeds. The deleted lecture is returned for the audit, if there was one.
+func (d integrationGrantDao) DeleteIntegrationRecording(ctx context.Context, integrationID, grantID uint, ref string) (deleted model.Stream, err error) {
+	err = d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var grant model.IntegrationGrant
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND integration_id = ? AND revoked_at IS NULL", grantID, integrationID).First(&grant).Error; err != nil {
+			return err
+		}
+		var rec model.IntegrationRecording
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("integration_id = ? AND external_ref = ?", integrationID, ref).First(&rec).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return tx.Create(&model.IntegrationRecording{IntegrationID: integrationID, ExternalRef: ref, GrantID: grantID, Closed: true}).Error
+		}
+		if err != nil {
+			return err
+		}
+		if rec.GrantID != grantID {
+			// Another grant of the integration for the lecture's course, such as one made
+			// when the course was connected again, may delete it too.
+			if rec.StreamID == 0 {
+				return nil // closed before a lecture was made
+			}
+			var inCourse int64
+			if err := tx.Unscoped().Model(&model.Stream{}).Where("id = ? AND course_id = ?", rec.StreamID, grant.CourseID).Count(&inCourse).Error; err != nil {
+				return err
+			}
+			if inCourse == 0 {
+				return ErrIntegrationUploadRefused
+			}
+		}
+		if err := tx.Model(&rec).Updates(map[string]any{"closed": true, "ticket_hash": nil}).Error; err != nil {
+			return err
+		}
+		err = tx.Where("id = ? AND course_id = ?", rec.StreamID, grant.CourseID).First(&deleted).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		return tx.Delete(&deleted).Error
+	})
+	if err == nil && deleted.ID != 0 {
+		Cache.Clear()
+	}
+	return deleted, err
 }

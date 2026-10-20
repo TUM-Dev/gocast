@@ -88,6 +88,21 @@ func (mr *MockIntegrationGrantDaoMockRecorder) CreateIntegrationUpload(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIntegrationUpload", reflect.TypeOf((*MockIntegrationGrantDao)(nil).CreateIntegrationUpload), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
+// DeleteIntegrationRecording mocks base method.
+func (m *MockIntegrationGrantDao) DeleteIntegrationRecording(arg0 context.Context, arg1, arg2 uint, arg3 string) (model.Stream, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteIntegrationRecording", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(model.Stream)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteIntegrationRecording indicates an expected call of DeleteIntegrationRecording.
+func (mr *MockIntegrationGrantDaoMockRecorder) DeleteIntegrationRecording(arg0, arg1, arg2, arg3 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteIntegrationRecording", reflect.TypeOf((*MockIntegrationGrantDao)(nil).DeleteIntegrationRecording), arg0, arg1, arg2, arg3)
+}
+
 // GetAuthorizableCourses mocks base method.
 func (m *MockIntegrationGrantDao) GetAuthorizableCourses(arg0 context.Context, arg1 uint) ([]model.Course, error) {
 	m.ctrl.T.Helper()
