@@ -53,13 +53,15 @@ async function copy(what: "key" | "secret" | "server", value: string): Promise<v
 <template>
   <div class="text-3 rounded border p-2 text-sm dark:border-gray-700">
     <p v-if="pending" class="text-5 mb-1">Once saved, this lecture is streamed by you rather than from a hall.</p>
-    <button type="button" class="text-5 hover:text-1" :aria-expanded="shown" @click="shown = !shown">
+    <button type="button" class="tum-live-button tum-live-button-primary" :aria-expanded="shown" @click="shown = !shown">
       <i class="fas fa-key mr-1"></i>{{ shown ? "Hide stream key" : "Show stream key" }}
     </button>
     <div v-if="shown" class="mt-2 flex flex-col gap-1">
       <p class="rounded bg-danger/25 p-2 text-xs">
-        Self-streaming is experimental. Keep a local recording while you stream: it is the only copy
-        if something fails while your stream is processed.
+        Self streaming can be unreliable and we cannot guarantee proper recording of your lecture just yet. In some
+        cases, recordings might be corrupted. Please save a local copy just in case using the streaming software of your
+        choice.
+
       </p>
       <p v-if="server" class="flex min-w-0 flex-wrap items-center gap-2">
         <span class="font-semibold">Server:</span>

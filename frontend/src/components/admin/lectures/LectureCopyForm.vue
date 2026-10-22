@@ -65,7 +65,7 @@ async function submit(): Promise<void> {
           <label class="flex items-center gap-1"><input v-model="move" type="radio" :value="false" /> Copy</label>
           <label class="flex items-center gap-1"><input v-model="move" type="radio" :value="true" /> Move</label>
         </fieldset>
-        <button type="submit" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="busy || !target">
+        <button type="submit" class="tum-live-button tum-live-button-primary px-3 py-1 text-sm" :disabled="busy || !target">
           {{ move ? "Move" : "Copy" }}
         </button>
       </div>
