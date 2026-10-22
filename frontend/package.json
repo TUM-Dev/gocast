@@ -7,10 +7,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:pwa": "GOCAST_PWA_DEV=1 vite",
     "prebuild": "node -e \"require('fs').rmSync('../web/spa/assets',{recursive:true,force:true})\"",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vue-tsc --noEmit -p tsconfig.sw.json && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck": "vue-tsc --noEmit && vue-tsc --noEmit -p tsconfig.sw.json",
     "proto": "cd ../apiv2 && buf generate --template buf.gen.es.yaml",
     "icons": "node scripts/build-icons.mjs",
     "test": "vitest run",
@@ -44,7 +45,13 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.9.3",
     "vite": "^8.0.0",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.0.0",
-    "vue-tsc": "^3.0.0"
+    "vue-tsc": "^3.0.0",
+    "workbox-core": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1",
+    "workbox-window": "^7.4.1"
   }
 }
