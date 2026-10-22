@@ -88,9 +88,11 @@ func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
 	logger.Info("sending mail", "to", to, "subject", subject, "body", body)
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
-	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert, "-inkey", Cfg.Mail.SMIMEKey)
+	signed, err := signBody(body)
 	if err != nil {
-		fmt.Printf("can't encrypt: %v", err)
+		// Returning matters: sending on with the empty result would deliver a mail
+		// with no body and mark it as sent, so a broken cert silently ate every invite.
+		return fmt.Errorf("signing the mail: %w", err)
 	}
 	msg := "To: " + strings.Join(to, ",") + "\r\n" +
 		"From: " + from + "\r\n" +
@@ -128,6 +130,17 @@ func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
 		return err
 	}
 	return c.Quit()
+}
+
+// signBody S/MIME-signs body. Without any S/MIME config the mail goes out unsigned,
+// so development setups need no certificate; a half-configured or unreadable pair is
+// an error rather than a reason to fall back, so a deploy that lost its cert files
+// shows up as failed sends instead of unsigned mail.
+func signBody(body string) ([]byte, error) {
+	if Cfg.Mail.SMIMECert == "" && Cfg.Mail.SMIMEKey == "" {
+		return []byte("Content-Type: text/plain\r\n\r\n" + body), nil
+	}
+	return openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert, "-inkey", Cfg.Mail.SMIMEKey)
 }
 
 func openssl(stdin []byte, args ...string) ([]byte, error) {
