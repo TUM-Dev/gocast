@@ -426,7 +426,9 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 			// acknowledged is otherwise invisible: it just keeps being sent.
 			r.log.Warn("notification not delivered, will retry", "type", fmt.Sprintf("%T", notification.Data),
 				"code", status.Code(err).String(), "took", time.Since(start).String(), "error", err)
-			r.invalidateManagerConn()
+			if shouldReconnect(err) {
+				r.invalidateManagerConn(conn)
+			}
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
 		return nil

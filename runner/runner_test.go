@@ -9,7 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/actions"
@@ -508,5 +511,57 @@ func TestStreamEndCancelsStartRetries(t *testing.T) {
 	}
 	if camCtx.Err() != nil || otherCtx.Err() != nil {
 		t.Error("StreamEnd cancelled the StreamStart of another version or stream")
+	}
+}
+
+// Only an unavailable connection is replaced. A cancelled or timed out call says nothing
+// about the connection, and closing it would abort every other call running on it.
+func TestShouldReconnect(t *testing.T) {
+	for code, want := range map[codes.Code]bool{
+		codes.Unavailable:      true,
+		codes.Canceled:         false,
+		codes.DeadlineExceeded: false,
+		codes.Internal:         false,
+		codes.NotFound:         false,
+		codes.OK:               false,
+	} {
+		if got := shouldReconnect(status.Error(code, "x")); got != want {
+			t.Errorf("shouldReconnect(%v) = %v, want %v", code, got, want)
+		}
+	}
+	if shouldReconnect(nil) {
+		t.Error("shouldReconnect(nil) = true")
+	}
+}
+
+// Many notifications fail together when the connection breaks. Each of them reports it, but
+// only the first may replace the connection: the others hold the old client and must not
+// close the new one, which would abort the calls that already moved over to it.
+func TestInvalidateManagerConnReplacesOnlyOnce(t *testing.T) {
+	dial := func() (*grpc.ClientConn, protobuf.RunnerManagerServiceClient) {
+		conn, err := grpc.NewClient("127.0.0.1:1", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = conn.Close() })
+		return conn, protobuf.NewRunnerManagerServiceClient(conn)
+	}
+	r := newTestRunner()
+	oldConn, oldClient := dial()
+	r.managerConn, r.managerClient = oldConn, oldClient
+
+	r.invalidateManagerConn(oldClient)
+	if r.managerConn != nil || r.managerClient != nil {
+		t.Fatal("the failed connection was not dropped")
+	}
+	if oldConn.GetState() == connectivity.Shutdown {
+		t.Error("the replaced connection was closed at once, aborting the calls still running on it")
+	}
+
+	newConn, newClient := dial()
+	r.managerConn, r.managerClient = newConn, newClient
+	r.invalidateManagerConn(oldClient) // a late failure from a call on the old connection
+	if r.managerClient != newClient || newConn.GetState() == connectivity.Shutdown {
+		t.Error("a failure on the old connection replaced the new one")
 	}
 }
