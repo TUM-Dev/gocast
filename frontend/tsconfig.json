@@ -19,5 +19,7 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"],
+  // Checked by tsconfig.sw.json instead, against the WebWorker lib.
+  "exclude": ["src/sw.ts"]
 }
