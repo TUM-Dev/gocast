@@ -46,7 +46,7 @@ watch(open, async (isOpen) => {
   <div ref="root" class="relative inline-block" @keydown.escape="open = false">
     <button
       type="button"
-      class="text-4 hover:text-1 flex h-8 items-center justify-center rounded"
+      class="group text-4 hover:text-1 flex h-8 items-center justify-center rounded transition-colors hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
       :class="text ? 'min-w-0 gap-1.5 px-2' : 'w-8'"
       :title="buttonLabel ?? label"
       :aria-label="buttonLabel ?? label"
@@ -54,7 +54,7 @@ watch(open, async (isOpen) => {
       :aria-expanded="open"
       @click="open = !open"
     >
-      <i class="fa-solid text-lg" :class="icon"></i>
+      <i class="fa-solid text-lg transition-transform motion-safe:group-hover:scale-110" :class="icon"></i>
       <!-- Truncates on a phone, where the bar is already tight; the full name is in the title. -->
       <span v-if="text" class="max-w-[8rem] truncate text-sm sm:max-w-none" aria-hidden="true">{{ text }}</span>
       <i v-if="text" class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
