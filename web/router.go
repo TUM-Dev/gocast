@@ -55,7 +55,7 @@ var spaRoutes = map[string]bool{
 	"/settings":                             true,
 	"/login":                                true,
 	"/search":                               true,
-	"/setPassword/:key":                     true,
+	"/setPassword/:resetKey":                true,
 	"/edit-course":                          true,
 	"/edit-course/opt-out":                  true,
 	"/onboarding":                           true,
@@ -401,7 +401,7 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(&router.RouterGroup, http.MethodGet, "/onboarding")
 	router.GET("/logout", routes.LogoutPage)
 	// The key in the link is the credential; the page asks v2 whether it is still good.
-	registerPage(&router.RouterGroup, http.MethodGet, "/setPassword/:key")
+	registerPage(&router.RouterGroup, http.MethodGet, "/setPassword/:resetKey")
 
 	// home & course pages
 	newStartPage(router, &routes)
