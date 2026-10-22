@@ -53,7 +53,7 @@ type Manager struct {
 	subtitleAuth   string
 
 	camService      CamService
-	camsHandled     map[uint]bool
+	camsHandled     map[uint]int // attempts per stream, see maxCameraAttempts
 	camsHandledLock sync.Mutex
 
 	lightLock sync.Mutex
@@ -84,7 +84,7 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 			Level: log.LevelDebug,
 		})).With("service", "runner_manager"),
 		streamStartLock: sync.Mutex{},
-		camsHandled:     make(map[uint]bool),
+		camsHandled:     make(map[uint]int),
 		liveNotified:    make(map[uint]bool),
 	}
 	m.applyOpts(opts)
@@ -358,17 +358,31 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 
 	m.notifyLiveState(stream.ID, true)
 
-	err = m.handleCamera(ctx, stream)
-	if err != nil {
-		log.Error("failed to handle camera", "stream", stream.ID, "err", err)
-	}
-
-	err = m.handleLightsOn(stream)
-	if err != nil {
-		log.Error("failed to turn on lights", "stream", stream.ID, "err", err)
+	// The runner retries a StreamStart until it is acknowledged, and this handler used to
+	// answer only after the camera and the lights had been dealt with, which can take many
+	// seconds per call and was serialized behind lightLock. The runner's call then timed
+	// out or was cut off by the connection's max age, so the notification was sent again,
+	// long after the stream had ended in the worst case. Acknowledge as soon as the URL is
+	// saved and do the hardware in the background.
+	// A start that is delivered after the scheduled end is a leftover retry: ffmpeg is
+	// bounded by the end (see the runner's Stream action), so moving the camera or turning
+	// on the lights for it would only disturb whatever is happening in the hall now.
+	if time.Now().Before(stream.End) {
+		go m.setUpHall(context.WithoutCancel(ctx), stream)
 	}
 
 	return nil
+}
+
+// setUpHall points the camera and turns on the lights for a stream that just started.
+// Failures are logged only, they must never keep the stream from going live.
+func (m *Manager) setUpHall(ctx context.Context, stream model.Stream) {
+	if err := m.handleCamera(ctx, stream); err != nil {
+		log.Error("failed to handle camera", "stream", stream.ID, "err", err)
+	}
+	if err := m.handleLightsOn(stream); err != nil {
+		log.Error("failed to turn on lights", "stream", stream.ID, "err", err)
+	}
 }
 
 // notifyLiveState invokes the configured LiveStateNotifier, making sure viewers are only notified
@@ -679,23 +693,32 @@ func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, ver
 	return nil
 }
 
+// maxCameraAttempts is how often the camera is set up for one stream: once per stream
+// version, if it keeps failing.
+const maxCameraAttempts = 3
+
 // handleCamera takes care of PTZ camera control and positioning on stream start`
 func (m *Manager) handleCamera(ctx context.Context, stream model.Stream) (err error) {
 	if stream.IsSelfStream() {
 		return nil
 	}
+	// A StreamStart arrives once per stream version, so a camera that is briefly unreachable
+	// gets a few tries. A failed attempt used to clear the mark entirely, which made every
+	// redelivered StreamStart move the camera again: several streams of one hall then kept
+	// calling their presets against each other every 30 seconds.
 	m.camsHandledLock.Lock()
-	if m.camsHandled[stream.ID] {
+	if m.camsHandled[stream.ID] >= maxCameraAttempts {
 		m.camsHandledLock.Unlock()
 		return nil
 	}
-	m.camsHandled[stream.ID] = true
+	m.camsHandled[stream.ID]++
 	m.camsHandledLock.Unlock()
 
 	defer func() {
-		if err != nil {
+		if err == nil {
+			// done for good, the other versions' StreamStarts must not move it again
 			m.camsHandledLock.Lock()
-			m.camsHandled[stream.ID] = false
+			m.camsHandled[stream.ID] = maxCameraAttempts
 			m.camsHandledLock.Unlock()
 		}
 	}()
@@ -816,9 +839,13 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 	delete(m.camsHandled, streamID)
 	m.camsHandledLock.Unlock()
 
-	if err := m.handleLightsOff(stream); err != nil {
-		log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
-	}
+	// In the background for the same reason as in streamStarted: the runner retries a
+	// StreamEnd until it is acknowledged, and the power control can be slow or unreachable.
+	go func() {
+		if err := m.handleLightsOff(stream); err != nil {
+			log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
+		}
+	}()
 	return nil
 }
 
