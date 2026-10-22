@@ -38,6 +38,12 @@ const spaShellPath = "spa/index.html"
 // The URL grammar for /admin. The shapes are effectively permanent once a sibling
 // exists: ServeMux panics at startup when two patterns can match the same request and
 // neither is more specific.
+// spaServiceWorkerPath is the SPA's service worker (frontend/src/sw.ts), built beside
+// the shell.
+const spaServiceWorkerPath = "spa/sw.js"
+
+// The URL grammar for /admin. gin panics when two parameters with different names
+// share a position, so these shapes are effectively permanent once a sibling exists.
 //
 //  1. Kebab-case: /admin/lecture-halls. The old spellings redirect.
 //  2. Plural collections: /admin/courses/:courseID.
@@ -200,11 +206,34 @@ func (fsys noDirectories) Open(name string) (http.File, error) {
 // readSPAShell returns the SPA's entry document, from disk in development so a
 // rebuild is picked up without a restart.
 func readSPAShell() ([]byte, error) {
+	return readSPAFile(spaShellPath)
+}
+
+// readSPAFile returns a file of the SPA build, from disk in development like the shell.
+func readSPAFile(name string) ([]byte, error) {
 	if VersionTag == "development" {
-		return os.ReadFile("web/" + spaShellPath)
+		return os.ReadFile("web/" + name)
 	}
 
-	return fs.ReadFile(spaFS, spaShellPath)
+	return fs.ReadFile(spaFS, name)
+}
+
+// serveServiceWorker serves the SPA's service worker from the root. A worker only
+// controls pages under the path it is served from, so the build's own path,
+// /spa-assets/sw.js, would leave every page uncontrolled.
+func serveServiceWorker(c *gin.Context) {
+	worker, err := readSPAFile(spaServiceWorkerPath)
+	if err != nil {
+		logger.Error("can't read SPA service worker", "err", err)
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	// Browsers may answer the update check for a worker from their HTTP cache for up
+	// to a day; no-cache sends every check to the server, so a deploy is noticed on
+	// the next page load.
+	c.Header("Cache-Control", "no-cache")
+	c.Data(http.StatusOK, "text/javascript; charset=utf-8", worker)
 }
 
 // serveSPAShell responds with the SPA's entry document. Written directly rather than
@@ -286,13 +315,17 @@ func configStaticRouter(router *tools.Router) {
 
 	// Browsers that visited before the server-rendered pages were removed still have
 	// the service worker they registered, which caches those pages' bundles. Nothing
-	// registers one any more, so this answers the update check with a worker that
+	// registers that URL any more, so this answers its update check with a worker that
 	// removes itself and its caches. Do not delete the route: without it the old worker
 	// would never be replaced.
 	router.HandleFunc("GET /service-worker.js", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		tools.WriteData(w, http.StatusOK, "text/javascript; charset=utf-8", []byte(retireServiceWorker))
 	})
+
+	// The SPA's own worker, under a different URL so the route above keeps retiring
+	// the old one.
+	router.GET("/sw.js", serveServiceWorker)
 }
 
 const retireServiceWorker = `self.addEventListener("install", () => self.skipWaiting());
