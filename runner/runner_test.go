@@ -27,6 +27,7 @@ func newTestRunner() *Runner {
 		JobCount:      make(chan int, 64),
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
+		startRetries:  make(map[streamVersionKey]context.CancelFunc),
 		notifications: make(chan *protobuf.Notification, 64),
 		retryMin:      time.Millisecond,
 		retryMax:      4 * time.Millisecond,
@@ -474,5 +475,38 @@ func TestRunActionWaitsBetweenRetries(t *testing.T) {
 		if gap := times[i].Sub(times[i-1]); gap < 40*time.Millisecond {
 			t.Errorf("retry %d came after %v, want at least the backoff", i, gap)
 		}
+	}
+}
+
+// A StreamStart the manager is slow to acknowledge is retried for as long as it takes. One
+// that is still retried after the stream version's VODReady makes the manager mark the
+// finished stream live again, so its StreamEnd has to stop the retries.
+func TestStreamEndCancelsStartRetries(t *testing.T) {
+	r := newTestRunner()
+	start := func(stream uint64, v protobuf.StreamVersion) *protobuf.Notification {
+		return &protobuf.Notification{Data: &protobuf.Notification_StreamStart{
+			StreamStart: &protobuf.StreamStartNotification{Stream: &protobuf.StreamInfo{Id: ptr.Take(stream)}, StreamVersion: ptr.Take(v)},
+		}}
+	}
+	end := func(stream uint64, v protobuf.StreamVersion) *protobuf.Notification {
+		return &protobuf.Notification{Data: &protobuf.Notification_StreamEnd{
+			StreamEnd: &protobuf.StreamEndNotification{Stream: &protobuf.StreamInfo{Id: ptr.Take(stream)}, StreamVersion: ptr.Take(v)},
+		}}
+	}
+	pres, cam := protobuf.StreamVersion_STREAM_VERSION_PRESENTATION, protobuf.StreamVersion_STREAM_VERSION_CAMERA
+
+	presCtx, _ := r.trackStartRetry(context.Background(), start(7, pres))
+	camCtx, _ := r.trackStartRetry(context.Background(), start(7, cam))
+	otherCtx, _ := r.trackStartRetry(context.Background(), start(8, pres))
+
+	endCtx, _ := r.trackStartRetry(context.Background(), end(7, pres))
+	if endCtx.Err() != nil {
+		t.Error("a StreamEnd must not be cancelled itself")
+	}
+	if presCtx.Err() == nil {
+		t.Error("StreamStart of an ended version is still retried")
+	}
+	if camCtx.Err() != nil || otherCtx.Err() != nil {
+		t.Error("StreamEnd cancelled the StreamStart of another version or stream")
 	}
 }
