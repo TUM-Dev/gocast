@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
@@ -76,6 +77,18 @@ type Runner struct {
 	connMu        sync.Mutex
 	managerConn   *grpc.ClientConn
 	managerClient protobuf.RunnerManagerServiceClient
+
+	// startRetries holds the cancel of every StreamStart that is still being retried, see
+	// cancelStartRetry.
+	startRetriesMu sync.Mutex
+	startRetries   map[streamVersionKey]context.CancelFunc
+}
+
+// streamVersionKey identifies one version of one stream, which is what a StreamStart and
+// its StreamEnd have in common.
+type streamVersionKey struct {
+	stream  uint64
+	version protobuf.StreamVersion
 }
 
 func NewRunner(v string) *Runner {
@@ -91,6 +104,7 @@ func NewRunner(v string) *Runner {
 		JobCount:      make(chan int),
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
+		startRetries:  make(map[streamVersionKey]context.CancelFunc),
 		draining:      false,
 		uploads:       newUploadSlots(),
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
@@ -326,13 +340,50 @@ func notificationBackoff(n *protobuf.Notification) retry.Backoff {
 	}
 }
 
+// trackStartRetry makes a StreamStart's retries end with its stream version. They are
+// otherwise endless (see notificationBackoff), so when the manager takes long to answer
+// a StreamStart, one that is delivered after the VODReady of the same version makes the
+// manager mark the finished stream live again, with the live playlist and no recording.
+// A StreamEnd for the version cancels the retries of its StreamStart; every other
+// notification gets ctx back unchanged. The returned func releases the tracking.
+func (r *Runner) trackStartRetry(ctx context.Context, n *protobuf.Notification) (context.Context, func()) {
+	switch d := n.Data.(type) {
+	case *protobuf.Notification_StreamEnd:
+		r.cancelStartRetry(streamVersionKey{d.StreamEnd.GetStream().GetId(), d.StreamEnd.GetStreamVersion()})
+	case *protobuf.Notification_StreamStart:
+		key := streamVersionKey{d.StreamStart.GetStream().GetId(), d.StreamStart.GetStreamVersion()}
+		sendCtx, cancel := context.WithCancel(ctx)
+		r.startRetriesMu.Lock()
+		if prev, ok := r.startRetries[key]; ok {
+			prev() // a restarted version supersedes the old start
+		}
+		r.startRetries[key] = cancel
+		r.startRetriesMu.Unlock()
+		return sendCtx, cancel
+	}
+	return ctx, func() {}
+}
+
+func (r *Runner) cancelStartRetry(key streamVersionKey) {
+	r.startRetriesMu.Lock()
+	defer r.startRetriesMu.Unlock()
+	if cancel, ok := r.startRetries[key]; ok {
+		cancel()
+		delete(r.startRetries, key)
+	}
+}
+
 func (r *Runner) handleNotifications(ctx context.Context) {
 	for {
 		select {
 		case n := <-r.notifications:
+			sendCtx, done := r.trackStartRetry(ctx, n)
 			go func() {
-				err := retry.Do(ctx, notificationBackoff(n), r.sendNotification(n))
-				if err != nil {
+				defer done()
+				err := retry.Do(sendCtx, notificationBackoff(n), r.sendNotification(n))
+				if err != nil && ctx.Err() == nil && sendCtx.Err() != nil {
+					r.log.Info("gave up on a StreamStart, its stream version ended", "error", err)
+				} else if err != nil {
 					r.log.Error("failed to send notification", "error", err,
 						"type", fmt.Sprintf("%T", n.Data))
 				}
@@ -368,8 +419,13 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 		if err != nil {
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
+		start := time.Now()
 		_, err = conn.Notify(ctx, notification)
 		if err != nil {
+			// retry.RetryableError hides the cause, and a notification that is never
+			// acknowledged is otherwise invisible: it just keeps being sent.
+			r.log.Warn("notification not delivered, will retry", "type", fmt.Sprintf("%T", notification.Data),
+				"code", status.Code(err).String(), "took", time.Since(start).String(), "error", err)
 			r.invalidateManagerConn()
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
