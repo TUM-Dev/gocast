@@ -72,6 +72,8 @@ type API struct {
 	sendAlert      func(bot.AlertMessage) error
 	streamEnder    StreamEnder
 	subtitleSearch tools.MeiliSearchInterface
+	// Starts self streams for the mediamtx publish webhook; see WithSelfStreamStarter.
+	selfStreams SelfStreamStarter
 
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedIntegrationServiceServer
@@ -169,6 +171,10 @@ func (a *API) Proxy() func(c *gin.Context) {
 		// Beside the gateway too: it answers text/calendar from a path with a file name.
 		if route, ok := courseCalendarRouteOf(c.Request); ok {
 			a.handleCourseCalendar(c, route.year, route.term, route.slug)
+			return
+		}
+		// Beside the gateway too: webhook and calendar-feed endpoints that predate it.
+		if a.legacyRoutes(c) {
 			return
 		}
 		// Beside the gateway too: it cannot take a multipart body.

@@ -16,7 +16,7 @@ flowchart LR
     end
 
     subgraph core [Main server]
-        tumlive["tum-live<br/>Go server: web, REST v1, Connect v2, gRPC"]
+        tumlive["tum-live<br/>Go server: web, Connect v2, gRPC"]
         spa["Vue SPA<br/>embedded in the binary"]
     end
 
@@ -52,7 +52,7 @@ flowchart LR
 
 | Component | Role |
 |---|---|
-| `tum-live` | Web app, REST v1 (`api/`), Protobuf/Connect v2 (`apiv2/`), gRPC endpoint for runners. Owns the database. |
+| `tum-live` | Web app, Protobuf/Connect v2 (`apiv2/`, which also serves the few plain-HTTP routes that scripts, the ingest webhook and calendar apps call), gRPC endpoint for runners. Owns the database. |
 | `frontend/` + `web/` | The Vue SPA (`frontend/`), embedded into the binary from `web/spa/`. `spaRoutes` in `web/router.go` lists the paths Go answers with the SPA shell. |
 | `ingest` | Receives RTMP streams from lecture hall SMPs and self-streamers. |
 | `runner` | Captures streams, transcodes them to HLS and creates VoDs, including from uploaded files. Replaces the older `worker`. |
