@@ -14,7 +14,7 @@ import {
  * credential; the server is asked whether it still opens anything before the form
  * shows, where the template redirected home without a word.
  */
-const props = defineProps<{ key: string }>();
+const props = defineProps<{ resetKey: string }>();
 const router = useRouter();
 
 const state = ref<"checking" | "ready" | "invalid" | "failed">("checking");
@@ -27,7 +27,7 @@ const problem = computed(() => passwordProblem(password.value, confirmation.valu
 
 onMounted(async () => {
   try {
-    state.value = (await checkPasswordResetKey(props.key)) ? "ready" : "invalid";
+    state.value = (await checkPasswordResetKey(props.resetKey)) ? "ready" : "invalid";
   } catch {
     state.value = "failed";
   }
@@ -38,7 +38,7 @@ async function submit(): Promise<void> {
   saving.value = true;
   error.value = "";
   try {
-    await setPasswordByResetKey(props.key, password.value);
+    await setPasswordByResetKey(props.resetKey, password.value);
     await router.push({ name: "login", query: { passwordSet: "1" } });
   } catch (err) {
     error.value = setPasswordErrorMessage(err);

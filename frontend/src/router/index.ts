@@ -227,8 +227,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     // The link a password reset or account invite mails. camelCase, unlike every other
-    // path: it is in emails that were already sent.
-    path: "/setPassword/:key",
+    // path: it is in emails that were already sent. The param isn't called `key`:
+    // Vue reserves that name, so the view would never receive it as a prop.
+    path: "/setPassword/:resetKey",
     name: "set-password",
     component: () => import("@/views/SetPasswordView.vue"),
     props: true,
