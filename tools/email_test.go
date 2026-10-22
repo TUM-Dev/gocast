@@ -93,3 +93,39 @@ func TestAppendSendError(t *testing.T) {
 		}
 	})
 }
+
+func TestSignBody(t *testing.T) {
+	orig := Cfg.Mail
+	t.Cleanup(func() { Cfg.Mail = orig })
+
+	t.Run("sends unsigned without S/MIME config", func(t *testing.T) {
+		Cfg.Mail = MailConfig{}
+
+		got, err := signBody("hello")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !strings.Contains(string(got), "\r\n\r\nhello") {
+			t.Errorf("body missing from %q", got)
+		}
+	})
+
+	t.Run("fails when the configured files are missing", func(t *testing.T) {
+		// The regression: this used to yield an empty message that was sent and
+		// recorded as a success.
+		dir := t.TempDir()
+		Cfg.Mail = MailConfig{SMIMECert: dir + "/nope.crt.pem", SMIMEKey: dir + "/nope.key.pem"}
+
+		if got, err := signBody("hello"); err == nil {
+			t.Errorf("expected an error, got %q", got)
+		}
+	})
+
+	t.Run("fails when only one of cert and key is set", func(t *testing.T) {
+		Cfg.Mail = MailConfig{SMIMECert: t.TempDir() + "/only.crt.pem"}
+
+		if _, err := signBody("hello"); err == nil {
+			t.Error("expected an error")
+		}
+	})
+}
