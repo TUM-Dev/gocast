@@ -108,7 +108,7 @@ func TestMakeAuthenticatedRequest(t *testing.T) {
 	// used to carry that, and every driver dropped it, so failures read as successes; it is
 	// now an error as well, naming both the camera and the status so an operator can tell
 	// "wrong credentials" from "camera is broken".
-	t.Run("a non-200 response is an error naming the camera and the status", func(t *testing.T) {
+	t.Run("a non-2xx response is an error naming the camera and the status", func(t *testing.T) {
 		for _, code := range []int{http.StatusInternalServerError, http.StatusUnauthorized, http.StatusNotFound} {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(code)
@@ -140,11 +140,28 @@ func TestMakeAuthenticatedRequest(t *testing.T) {
 		}
 	})
 
-	// A 2xx that is not exactly 200 is still treated as a failure: these vendor CGIs answer
-	// 200 on success, and anything else means the request did not do what was asked.
-	t.Run("a 204 is treated as a failure", func(t *testing.T) {
+	// PTZ CGIs answer a preset change with 204 No Content; that is a success, not a camera
+	// that failed to do what was asked.
+	t.Run("a 2xx other than 200 is a success", func(t *testing.T) {
+		for _, code := range []int{http.StatusCreated, http.StatusAccepted, http.StatusNoContent} {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(code)
+			}))
+
+			_, status, err := MakeAuthenticatedRequest(nil, "GET", "", srv.URL)
+			if err != nil {
+				t.Errorf("code %d: unexpected error: %v", code, err)
+			}
+			if status != code {
+				t.Errorf("status = %d, want %d", status, code)
+			}
+			srv.Close()
+		}
+	})
+
+	t.Run("a 3xx is still a failure", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusNotModified)
 		}))
 		defer srv.Close()
 
