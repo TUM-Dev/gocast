@@ -45,12 +45,14 @@ const greeting = computed(() => {
   return `${user.settings.greeting} ${user.settings.preferredName}, nice to see you! 👋`;
 });
 
-/** The user's courses whose next lecture is later today. */
+/** The user's courses whose next lecture is later today, the soonest first. */
 const liveToday = computed(() =>
-  courses.userCourses.filter(
-    (course) =>
-      course.nextLecture && isToday(course.nextLecture) && minutesUntilStart(course.nextLecture) > 0,
-  ),
+  courses.userCourses
+    .filter(
+      (course) =>
+        course.nextLecture && isToday(course.nextLecture) && minutesUntilStart(course.nextLecture) > 0,
+    )
+    .sort((a, b) => a.nextLecture!.start.valueOf() - b.nextLecture!.start.valueOf()),
 );
 
 /**
