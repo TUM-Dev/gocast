@@ -268,14 +268,6 @@
     @apply font-bold;
   }
 
-  .tum-live-settings-grid {
-    @apply grid gap-y-5 content-start lg:w-3/6 md:w-4/5 w-full p-6 text-3;
-  }
-
-  .tum-live-settings-grid > section > h2 {
-    @apply text-sm text-5 mb-1;
-  }
-
   /* Start page content. From web/assets/css/home.css. */
   .tum-live-button-tertiary > i {
     @apply mr-2;
