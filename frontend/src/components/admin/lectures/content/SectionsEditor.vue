@@ -268,7 +268,7 @@ const timeInput = "tum-live-input w-16 min-w-0 shrink px-1 py-1 text-center";
             :aria-invalid="!!draftProblems.description"
           />
         </div>
-        <button type="submit" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="busy">Add section</button>
+        <button type="submit" class="tum-live-button tum-live-button-primary px-3 py-1 text-sm" :disabled="busy">Add section</button>
       </div>
       <p v-if="draftProblems.time" class="text-xs text-red-600 dark:text-red-400">{{ draftProblems.time }}</p>
       <p v-if="draftProblems.description" class="text-xs text-red-600 dark:text-red-400">

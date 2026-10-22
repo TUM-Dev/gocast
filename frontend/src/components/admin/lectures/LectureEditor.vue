@@ -274,7 +274,7 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
           <input v-model="series.text" type="checkbox" />
           Apply to all {{ seriesCount }} lectures of the series
         </label>
-        <button type="submit" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="saving || !textDirty">
+        <button type="submit" class="tum-live-button tum-live-button-primary px-3 py-1 text-sm" :disabled="saving || !textDirty">
           Save
         </button>
       </div>
@@ -303,7 +303,7 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
         </label>
         <button
           type="submit"
-          class="tum-live-button-primary px-3 py-1 text-sm"
+          class="tum-live-button tum-live-button-primary px-3 py-1 text-sm"
           :disabled="saving || !timeDirty || !!timeProblem"
         >
           Save
@@ -349,7 +349,7 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
           <input v-model="series.hall" type="checkbox" />
           Apply to all {{ seriesCount }} lectures of the series
         </label>
-        <button type="submit" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="saving || !hallDirty">
+        <button type="submit" class="tum-live-button tum-live-button-primary px-3 py-1 text-sm" :disabled="saving || !hallDirty">
           Save
         </button>
       </div>
@@ -373,7 +373,7 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
         Private: only the course's administrators can see this lecture
       </label>
       <div class="flex justify-end">
-        <button type="submit" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="saving || !optionsDirty">
+        <button type="submit" class="tum-live-button tum-live-button-primary px-3 py-1 text-sm" :disabled="saving || !optionsDirty">
           Save
         </button>
       </div>
