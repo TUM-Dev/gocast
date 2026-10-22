@@ -55,12 +55,12 @@ async function pick(reaction: string): Promise<void> {
 <template>
   <button
     type="button"
-    class="text-4 hover:text-1 flex h-8 w-8 items-center justify-center rounded"
+    class="group text-4 hover:text-1 flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-black/5 active:scale-95 dark:hover:bg-white/10"
     title="React to stream"
     aria-label="React to stream"
     @click="show"
   >
-    <i class="fa-solid fa-face-smile text-lg"></i>
+    <i class="fa-solid fa-face-smile text-lg transition-transform motion-safe:group-hover:scale-110"></i>
   </button>
   <ActionDialog :open="open" title="React to stream" @close="open = false">
     <div class="flex flex-wrap justify-center gap-2" role="group" aria-label="Reactions">
