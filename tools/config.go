@@ -187,10 +187,12 @@ type Config struct {
 }
 
 type MailConfig struct {
-	Sender            string `yaml:"sender"`
-	Server            string `yaml:"server"`
-	SMIMECert         string `yaml:"SMIMECert"`
-	SMIMEKey          string `yaml:"SMIMEKey"`
+	Sender    string `yaml:"sender"`
+	Server    string `yaml:"server"`
+	SMIMECert string `yaml:"SMIMECert"`
+	SMIMEKey  string `yaml:"SMIMEKey"`
+	// SMIMEKeyPassword unlocks an encrypted SMIMEKey; leave empty for an unencrypted one.
+	SMIMEKeyPassword  string `yaml:"SMIMEKeyPassword"`
 	MaxMailsPerMinute int    `yaml:"maxMailsPerMinute"`
 }
 

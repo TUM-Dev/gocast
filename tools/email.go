@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/smtp"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -140,11 +141,20 @@ func signBody(body string) ([]byte, error) {
 	if Cfg.Mail.SMIMECert == "" && Cfg.Mail.SMIMEKey == "" {
 		return []byte("Content-Type: text/plain\r\n\r\n" + body), nil
 	}
-	return openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert, "-inkey", Cfg.Mail.SMIMEKey)
+	// The password travels through the environment rather than "-passin pass:...",
+	// which would show up in the process list. -passin is passed even when the
+	// password is empty: without it openssl prompts on /dev/tty for an encrypted
+	// key, which would hang the mailer instead of failing the send.
+	env := append(os.Environ(), smimePasswordEnv+"="+Cfg.Mail.SMIMEKeyPassword)
+	return openssl(env, []byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert,
+		"-inkey", Cfg.Mail.SMIMEKey, "-passin", "env:"+smimePasswordEnv)
 }
 
-func openssl(stdin []byte, args ...string) ([]byte, error) {
+const smimePasswordEnv = "GOCAST_SMIME_KEY_PASSWORD"
+
+func openssl(env []string, stdin []byte, args ...string) ([]byte, error) {
 	cmd := exec.Command("openssl", args...)
+	cmd.Env = env
 
 	in := bytes.NewReader(stdin)
 	out := &bytes.Buffer{}
