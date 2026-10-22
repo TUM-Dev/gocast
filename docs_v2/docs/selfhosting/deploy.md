@@ -433,6 +433,7 @@ mail:
   server: mailrelay.my.domain:25 # todo changeme
   smimecert: /path/to/mail.p12.crt.pem
   smimekey: /path/to/mail.p12.key.pem
+  # smimekeypassword: changeme # only if the key is password protected
 paths:
   mass: /share
   static: /var/www/public

@@ -3,6 +3,7 @@ package tools
 import (
 	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -123,6 +124,50 @@ func TestSignBody(t *testing.T) {
 
 	t.Run("fails when only one of cert and key is set", func(t *testing.T) {
 		Cfg.Mail = MailConfig{SMIMECert: t.TempDir() + "/only.crt.pem"}
+
+		if _, err := signBody("hello"); err == nil {
+			t.Error("expected an error")
+		}
+	})
+}
+
+func TestSignBodyEncryptedKey(t *testing.T) {
+	if _, err := exec.LookPath("openssl"); err != nil {
+		t.Skip("openssl not installed")
+	}
+	orig := Cfg.Mail
+	t.Cleanup(func() { Cfg.Mail = orig })
+
+	dir := t.TempDir()
+	cert, key := dir+"/cert.pem", dir+"/key.pem"
+	out, err := exec.Command("openssl", "req", "-x509", "-newkey", "rsa:2048", "-days", "1", "-subj", "/CN=test",
+		"-keyout", key, "-out", cert, "-passout", "pass:hunter2").CombinedOutput()
+	if err != nil {
+		t.Fatalf("generating a key: %v\n%s", err, out)
+	}
+
+	t.Run("signs with the right password", func(t *testing.T) {
+		Cfg.Mail = MailConfig{SMIMECert: cert, SMIMEKey: key, SMIMEKeyPassword: "hunter2"}
+
+		got, err := signBody("hello")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !strings.Contains(string(got), "hello") {
+			t.Errorf("body missing from %q", got)
+		}
+	})
+
+	t.Run("fails with a wrong password", func(t *testing.T) {
+		Cfg.Mail = MailConfig{SMIMECert: cert, SMIMEKey: key, SMIMEKeyPassword: "wrong"}
+
+		if _, err := signBody("hello"); err == nil {
+			t.Error("expected an error")
+		}
+	})
+
+	t.Run("fails instead of prompting without a password", func(t *testing.T) {
+		Cfg.Mail = MailConfig{SMIMECert: cert, SMIMEKey: key}
 
 		if _, err := signBody("hello"); err == nil {
 			t.Error("expected an error")

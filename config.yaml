@@ -96,6 +96,7 @@ mail:
   server: mailrelay.example.org
   smimecert: /path/to/cert.pem
   smimekey: /path/to/key.pem
+  # smimekeypassword: changeme # only if the key is password protected
   maxMailsPerMinute: 10
 paths:
   mass: runner/storage # to make development easier, files will end up here were streams also are
