@@ -136,7 +136,7 @@ async function upload(type: MediaType, label: string, event: Event): Promise<voi
           :id="`lecture-${lecture.id}-recording-${type}`"
           type="file"
           accept="video/mp4,.mp4"
-          class="text-3 min-w-0 max-w-full grow text-sm"
+          class="text-3 min-w-0 max-w-full grow text-sm file:tum-live-button file:mr-2 file:cursor-pointer file:border-0 file:text-white file:bg-blue-500 dark:file:bg-indigo-600"
           :disabled="uploading !== null"
           @change="upload(type, label, $event)"
         />
