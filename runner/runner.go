@@ -387,11 +387,6 @@ func (r *Runner) counts() (busy, pending int) {
 	return r.busy, r.pending
 }
 
-func (r *Runner) busyCount() int {
-	busy, _ := r.counts()
-	return busy
-}
-
 // WaitIdle returns once no job, upload or critical notification is pending. Jobs and
 // uploads are waited for as long as they take; notifications for at most notifyGrace after
 // they are the only thing left, see defaultNotifyGrace.
@@ -506,7 +501,7 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 				err := retry.Do(sendCtx, notificationBackoff(n), r.sendNotification(n))
 				if err != nil && ctx.Err() == nil && sendCtx.Err() != nil {
 					r.log.Info("gave up on a StreamStart, its stream version ended", "error", err)
-				} else if err != nil {
+				} else if err != nil && !isPermanent(err) { // those were logged when they were rejected
 					r.log.Error("failed to send notification", "error", err,
 						"type", fmt.Sprintf("%T", n.Data))
 				}
@@ -575,7 +570,7 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 // as opposed to the manager or the connection being unavailable.
 func isPermanent(err error) bool {
 	switch status.Code(err) {
-	case codes.NotFound, codes.InvalidArgument, codes.FailedPrecondition:
+	case codes.NotFound, codes.InvalidArgument:
 		return true
 	}
 	return false

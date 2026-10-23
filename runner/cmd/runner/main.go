@@ -29,21 +29,23 @@ func main() {
 
 	<-ctx.Done()
 	slog.Info("Received signal")
-	r.Drain(context.Background())
-
-	// let drainage propagate
-	time.Sleep(time.Second)
-
+	// Stop swallowing signals and listen for the second one before anything else: it is
+	// the way out of the wait below, and one that arrives while draining must not be lost.
+	cancel()
+	osSignal := make(chan os.Signal, 1)
+	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 	go func() {
-		osSignal := make(chan os.Signal, 1)
-		signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
-
 		<-osSignal
 		// second signal, force shutdown
 		slog.Info("Received second signal, shutting down immediately")
 		r.Cleanup()
 		os.Exit(1)
 	}()
+
+	r.Drain(context.Background())
+
+	// let drainage propagate
+	time.Sleep(time.Second)
 
 	// Exit once the jobs, the uploads being received and the notifications that report
 	// their results are done.

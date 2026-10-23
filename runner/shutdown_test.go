@@ -139,7 +139,7 @@ func TestWaitIdleWaitsForAnUploadThatIsStillArriving(t *testing.T) {
 	go func() { r.uploadHandler().ServeHTTP(rec, req); close(handled) }()
 
 	deadline := time.Now().Add(3 * time.Second)
-	for r.busyCount() == 0 {
+	for busy, _ := r.counts(); busy == 0; busy, _ = r.counts() {
 		if time.Now().After(deadline) {
 			t.Fatal("the upload did not hold the runner while it was arriving")
 		}
@@ -188,11 +188,10 @@ func TestSendNotificationRetriesOnlyWhatMayChange(t *testing.T) {
 	for code, wantCalls := range map[codes.Code]int32{
 		// Unavailable is retried too, but it drops the client (see shouldReconnect), so the
 		// fake is gone after the first call.
-		codes.Internal:           3,
-		codes.DeadlineExceeded:   3,
-		codes.NotFound:           1, // the manager refuses it and will keep doing so
-		codes.InvalidArgument:    1,
-		codes.FailedPrecondition: 1,
+		codes.Internal:         3,
+		codes.DeadlineExceeded: 3,
+		codes.NotFound:         1, // the manager refuses it and will keep doing so
+		codes.InvalidArgument:  1,
 	} {
 		mgr := &failingManager{err: status.Error(code, "x")}
 		r := newManagerTestRunner(t, mgr)

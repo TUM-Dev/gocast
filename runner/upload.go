@@ -104,16 +104,17 @@ func (r *Runner) uploadHandler() http.Handler {
 // handleUpload stores the file of the multipart body and starts the import. As with the
 // worker's upload endpoint it answers once the file is on disk, not once it is converted.
 func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
+	// A runner that is draining must not exit while the body is still arriving. The job
+	// RunAction creates holds the runner itself, and it takes that hold before returning,
+	// so there is no gap between this hold and that one.
+	defer r.hold()()
+
 	slot, ok := r.uploads.take(req.PathValue("token"))
 	if !ok {
 		http.Error(w, "unknown or expired upload token", http.StatusNotFound)
 		return
 	}
 	log := r.log.With("stream_id", slot.streamID, "stream_version", slot.version)
-	// A runner that is draining must not exit while the body is still arriving. The job
-	// RunAction creates holds the runner itself, and it takes that hold before returning,
-	// so there is no gap between this hold and that one.
-	defer r.hold()()
 
 	// Streamed part by part: ParseMultipartForm would spool the whole video through memory and a second temp file.
 	mr, err := req.MultipartReader()
