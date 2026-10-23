@@ -20,7 +20,12 @@ func main() {
 	defer cancel()
 
 	r := runner.NewRunner(V)
-	go r.Run(ctx)
+	// Run gets a context of its own, not the signal one. Everything it starts has to keep
+	// working while the jobs finish after a SIGTERM: delivering their StreamEnd/VODReady
+	// (an unread r.notifications blocks the job forever), the heartbeats that keep the
+	// runner marked as draining rather than gone, and the uploads already in flight.
+	// The process ends through os.Exit below.
+	go r.Run(context.Background())
 
 	shouldShutdown := false // set to true once we receive a shutdown signal
 
@@ -40,7 +45,7 @@ func main() {
 	<-ctx.Done()
 	slog.Info("Received signal")
 	shouldShutdown = true
-	r.Drain(ctx)
+	r.Drain(context.Background())
 
 	// let drainage propagate
 	time.Sleep(time.Second)
