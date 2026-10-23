@@ -91,6 +91,33 @@ Playwright is a dependency of `frontend/` and the package is `@playwright/test` 
 `playwright`, which fails with `ERR_MODULE_NOT_FOUND` even though the browsers are
 installed. `lib.mjs` resolves it by path for scripts living outside `frontend/`.
 
+## The service worker and offline lectures
+
+The worker (`frontend/src/sw.ts`) is off under plain `pnpm dev`, which also unregisters
+one left over from an earlier run. `pnpm --dir frontend run dev:pwa` turns it on; there
+it caches what loaded, so an offline reload can be tried without a build. Updates wait
+for the "Reload" bar (or "skipWaiting" in DevTools → Application → Service Workers).
+The built worker is served by Go at `/sw.js`; `/service-worker.js` is the kill switch
+for the old pages' worker and stays.
+
+"Save offline" only shows in the **installed** app with a worker in control. Install it
+from Chrome's address bar, or check the logic without installing by emulating
+`display-mode: standalone` (DevTools → Rendering). Saving needs a runner with ffmpeg
+and a course with downloads enabled; the fixture's VODs live on an LRZ host that a
+runner cannot read, so upload a short video to a lecture first. To check the result:
+
+- DevTools → Application → Cache Storage → `gocast-offline-media`: the segments, which
+  must not start with the TS sync byte `0x47`, since they are stored encrypted.
+- IndexedDB `gocast-offline`: the lecture, its key as a `CryptoKey` with
+  `extractable: false`, and `lastSeen`.
+- The runner's storage has no `offline/<package>` directory left once the download is
+  complete.
+- Offline (DevTools → Network → Offline), `/offline` plays the lecture. Lowering
+  `expiresAt` in IndexedDB, or raising `lastSeen` past now, makes the worker answer
+  403.
+- Online, the watch page of a saved lecture loads its segments from `/offline-media/`,
+  not from the edge.
+
 ## Visual regression against a baseline
 
 This is the part CI cannot do, and it is how every bug below was found. Comparing a

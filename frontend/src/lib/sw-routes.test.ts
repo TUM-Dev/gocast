@@ -10,7 +10,7 @@ describe("isAppNavigation", () => {
     (path) => expect(isAppNavigation(at(path))).toBe(true),
   );
 
-  it.each(["/api/download/1", "/saml/out", "/saml", "/logout", "/public/x.pdf"])(
+  it.each(["/api/download/1", "/saml/out", "/saml", "/logout", "/public/x.pdf", "/offline-media/7/playlist.m3u8"])(
     "leaves %s to the server",
     (path) => expect(isAppNavigation(at(path))).toBe(false),
   );

@@ -8,5 +8,14 @@
     // For import.meta.env, which tells the dev worker from the built one.
     "types": ["vite/client"]
   },
-  "include": ["src/sw.ts", "src/lib/sw-routes.ts"]
+  // tsconfig.json's exclude, which is inherited, is what leaves the worker out there.
+  "exclude": [],
+  "include": [
+    "src/sw.ts",
+    "src/lib/sw-routes.ts",
+    "src/lib/offline/db.ts",
+    "src/lib/offline/license.ts",
+    "src/lib/offline/media.ts",
+    "src/lib/offline/playlist.ts"
+  ]
 }
