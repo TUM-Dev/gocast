@@ -25,6 +25,12 @@ export const useOfflineStore = defineStore("offline", () => {
   /** The last error saving a lecture, by stream. */
   const errors = ref<Record<number, string>>({});
   const saving = ref<Record<number, boolean>>({});
+  /**
+   * The last save that ended, for the app-wide notice (OfflineSaveNotice.vue): the menu
+   * the save button sits in closes on the click, taking the button's own label with it.
+   * The title is kept here because a failed lecture's record is gone by then.
+   */
+  const finished = ref<{ streamId: number; title: string; error?: string } | null>(null);
 
   let loading: Promise<void> | null = null;
 
@@ -83,9 +89,12 @@ export const useOfflineStore = defineStore("offline", () => {
       record = await downloadPackage(record, ready, (p) => (progress.value = { ...progress.value, [streamId]: p }));
       upsert(record);
       await complete(record);
+      finished.value = { streamId, title: record.title };
     } catch (err) {
-      errors.value = { ...errors.value, [streamId]: messageOf(err) };
+      const error = messageOf(err);
+      errors.value = { ...errors.value, [streamId]: error };
       const record = byStream(streamId);
+      finished.value = { streamId, title: record?.title ?? "", error };
       if (err instanceof OfflineError && err.final && record) await forget(record);
     } finally {
       const { [streamId]: _p, ...p } = progress.value;
@@ -150,7 +159,7 @@ export const useOfflineStore = defineStore("offline", () => {
     }
   }
 
-  return { lectures, progress, errors, saving, load, byStream, save, remove, sync };
+  return { lectures, progress, errors, saving, finished, load, byStream, save, remove, sync };
 });
 
 function messageOf(err: unknown): string {
