@@ -22,12 +22,9 @@ import (
 )
 
 // newTestRunner builds a Runner with just the state RunAction and RequestStreamEnd touch.
-// JobCount is buffered because RunAction sends on it synchronously; in production Run
-// drains it from the heartbeat loop.
 func newTestRunner() *Runner {
 	return &Runner{
 		log:           slog.New(slog.NewTextHandler(io.Discard, nil)),
-		JobCount:      make(chan int, 64),
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		startRetries:  make(map[streamVersionKey]context.CancelFunc),
