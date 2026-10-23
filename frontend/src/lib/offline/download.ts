@@ -1,9 +1,10 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 
 import { OfflineLectureState, type OfflineLecture } from "@/gen/server/apiv2_pb";
+import { thumbnailUrl } from "@/lib/streams";
 import { getOfflineLecture } from "./api";
 import { putKey, putLecture, type OfflineLectureRecord } from "./db";
-import { putSegment } from "./media";
+import { putSegment, putThumbnail } from "./media";
 import { parsePackagePlaylist } from "./playlist";
 
 /**
@@ -89,6 +90,24 @@ export async function ensureSpace(bytes: number): Promise<void> {
 }
 
 /**
+ * Fetches a lecture's thumbnail into the device's storage and returns it. Decoration
+ * only: without one the offline page shows a plain tile, so a failure is undefined.
+ */
+export async function fetchThumbnail(record: Pick<OfflineLectureRecord, "packageId" | "streamId" | "courseSlug">): Promise<Blob | undefined> {
+  if (!record.courseSlug) return undefined;
+  try {
+    const res = await fetch(thumbnailUrl(record.courseSlug, record.streamId));
+    if (!res.ok) return undefined;
+    const blob = await res.blob();
+    if (!blob.type.startsWith("image/")) return undefined;
+    await putThumbnail(record.packageId, blob);
+    return blob;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Downloads a ready package into the device's storage and returns the saved record.
  * The key is imported once, as a non-extractable CryptoKey: from then on the device
  * can decrypt with it but nothing can read it back.
@@ -126,6 +145,7 @@ export async function downloadPackage(
     await putLecture(r);
     onProgress(r.downloadedSegments / total);
   }
+  await fetchThumbnail(r);
 
   r = {
     ...r,

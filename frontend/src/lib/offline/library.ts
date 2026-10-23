@@ -12,6 +12,58 @@ export function clipOf(l: Pick<OfflineLectureRecord, "startOffset" | "endOffset"
   return hasEnd ? { start, end } : { start };
 }
 
+export interface CourseGroup<T> {
+  /** The course's slug, or its name for a lecture saved without one. */
+  key: string;
+  name: string;
+  lectures: T[];
+}
+
+/**
+ * Saved lectures by course, the way a course page lists them: courses by name, each
+ * course's lectures in the order they took place.
+ */
+export function groupByCourse<T extends Pick<OfflineLectureRecord, "courseSlug" | "courseName" | "start">>(
+  lectures: readonly T[],
+): CourseGroup<T>[] {
+  const groups = new Map<string, CourseGroup<T>>();
+  for (const l of lectures) {
+    const key = l.courseSlug || l.courseName;
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, name: l.courseName || "Other lectures", lectures: [] };
+      groups.set(key, group);
+    }
+    group.lectures.push(l);
+  }
+  const out = [...groups.values()];
+  for (const g of out) g.lectures.sort((a, b) => a.start - b.start);
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** How long the saved copy plays: the cut when there is one, else the whole recording. */
+export function playableSeconds(
+  l: Pick<OfflineLectureRecord, "durationSeconds" | "startOffset" | "endOffset">,
+): number | undefined {
+  const clip = clipOf(l);
+  const end = clip?.end ?? l.durationSeconds;
+  if (end === undefined) return undefined;
+  const seconds = end - (clip?.start ?? 0);
+  return seconds > 0 ? seconds : undefined;
+}
+
+/**
+ * How far an unfinished lecture has come, 0 to 1: the live progress while it downloads,
+ * else what the record says was stored before the download stopped.
+ */
+export function downloadFraction(
+  l: Pick<OfflineLectureRecord, "downloadedSegments" | "segments">,
+  live: number | undefined,
+): number {
+  if (live !== undefined) return live;
+  return l.segments.length > 0 ? l.downloadedSegments / l.segments.length : 0;
+}
+
 export function formatSize(bytes: number): string {
   if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
   if (bytes >= 1e6) return `${Math.round(bytes / 1e6)} MB`;

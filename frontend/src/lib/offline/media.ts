@@ -36,7 +36,26 @@ export async function putSegment(packageId: number, index: number, body: ArrayBu
   await cache.put(storeKey(packageId, index), new Response(body, { headers: { "Content-Type": "application/octet-stream" } }));
 }
 
-/** Removes a package's segments and its key from the device. */
+/**
+ * The Cache Storage key of a package's thumbnail. Under the package's prefix, so
+ * deletePackage removes it with the segments.
+ */
+function thumbnailKey(packageId: number): string {
+  return `/offline-store/${packageId}/thumbnail`;
+}
+
+/** Keeps a saved lecture's thumbnail, for the offline page, which can't ask the server. */
+export async function putThumbnail(packageId: number, body: Blob): Promise<void> {
+  const cache = await caches.open(MEDIA_CACHE);
+  await cache.put(thumbnailKey(packageId), new Response(body, { headers: { "Content-Type": body.type || "image/jpeg" } }));
+}
+
+export async function getThumbnail(packageId: number): Promise<Blob | undefined> {
+  const stored = await (await caches.open(MEDIA_CACHE)).match(thumbnailKey(packageId));
+  return stored ? stored.blob() : undefined;
+}
+
+/** Removes a package's segments, thumbnail and key from the device. */
 export async function deletePackage(packageId: number): Promise<void> {
   const cache = await caches.open(MEDIA_CACHE);
   const prefix = `/offline-store/${packageId}/`;
