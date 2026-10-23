@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"os"
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
@@ -114,6 +115,47 @@ func (r *Runner) RegenerateThumbnail(_ context.Context, req *protobuf.Regenerate
 	r.log.Info("thumbnail regeneration job added", "ID", jID)
 
 	return &protobuf.RegenerateThumbnailResponse{JobId: ptr.Take(jID)}, nil
+}
+
+// RequestOfflinePackage packages a VOD for offline viewing. The result is delivered
+// asynchronously in an OfflinePackageReady or OfflinePackageFailed notification. The
+// request holds the package's key: it is passed on to the action and never logged.
+func (r *Runner) RequestOfflinePackage(_ context.Context, req *protobuf.OfflinePackageRequest) (*protobuf.OfflinePackageResponse, error) {
+	if req.GetPackageId() == 0 || req.GetStreamId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no package or stream id given")
+	}
+	version, ok := protobuf.StreamVersion_name[int32(req.GetVersion())]
+	if !ok || req.GetVersion() == protobuf.StreamVersion_STREAM_VERSION_UNSPECIFIED {
+		return nil, status.Errorf(codes.InvalidArgument, "no valid stream version given")
+	}
+	if len(req.GetKey()) != 16 {
+		return nil, status.Errorf(codes.InvalidArgument, "key must be 16 bytes")
+	}
+
+	data := map[string]any{
+		"packageID":     req.GetPackageId(),
+		"streamID":      req.GetStreamId(),
+		"streamVersion": version,
+		"key":           req.GetKey(),
+		"keyURI":        req.GetKeyUri(),
+	}
+	jID := r.RunAction([]actions.Action{actions.MkOfflinePackage}, nil, data,
+		r.log.With("package_id", req.GetPackageId(), "stream_id", req.GetStreamId(), "stream_version", version))
+	r.log.Info("offline package job added", "ID", jID)
+
+	return &protobuf.OfflinePackageResponse{JobId: ptr.Take(jID)}, nil
+}
+
+// DeleteOfflinePackage removes an offline package. A package that is gone already is
+// not an error: the device that asked may have retried after a lost answer.
+func (r *Runner) DeleteOfflinePackage(_ context.Context, req *protobuf.DeleteOfflinePackageRequest) (*protobuf.DeleteOfflinePackageResponse, error) {
+	if req.GetPackageId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no package id given")
+	}
+	if err := os.RemoveAll(actions.OfflinePackageDir(req.GetPackageId())); err != nil {
+		return nil, status.Errorf(codes.Internal, "can't delete offline package: %v", err)
+	}
+	return &protobuf.DeleteOfflinePackageResponse{}, nil
 }
 
 // PrepareUpload reserves a slot for a video file upload. The file is then POSTed to the

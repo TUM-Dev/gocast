@@ -16,6 +16,12 @@ import (
 // the old page showed it. Served from the static directory, like the snapshots.
 const presetPlaceholder = "noPreset.jpg"
 
+// canDownloadStream is model.Stream.DownloadableBy, the one rule for downloads and
+// offline saving. v1 let anonymous callers download too whenever the course allowed it.
+func canDownloadStream(user *model.User, stream *model.Stream, course *model.Course) bool {
+	return stream.DownloadableBy(user, *course)
+}
+
 // GetStreamWatch returns everything the watch page renders in one call, replacing
 // web/watch.go's WatchPage and the template logic around it. Which layout to show is
 // the URL's business and the viewer's saved preference, so v1's redirect to the
@@ -41,11 +47,9 @@ func (a *API) GetStreamWatch(ctx context.Context, req *protobuf.GetStreamWatchRe
 		}
 	}
 
-	// Recordings may be downloaded when the course allows it to signed-in viewers, or
-	// to its administrators. The permission is baked into the signed playlist, which
-	// is what the edge checks, so it is decided before signing. v1 let anonymous
-	// callers have it too whenever the course allowed downloads.
-	canDownload := stream.IsDownloadable() && ((course.DownloadsEnabled && signedIn) || isAdmin)
+	// The permission is baked into the signed playlist, which is what the edge checks,
+	// so it is decided before signing.
+	canDownload := canDownloadStream(user, &stream, &course)
 	if err := tools.SetSignedPlaylistsForCourse(&stream, user, course.Slug, canDownload); err != nil {
 		// Unsigned playlists are refused by the edge, so the page will show an error
 		// where the player should be, which is what v1 did too.

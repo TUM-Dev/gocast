@@ -28,6 +28,37 @@ service RunnerService {
   // other thumbnail RPCs this one is synchronous: previews are refreshed every minute and
   // a stale one is simply replaced, so there is no job to track.
   rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse) {}
+  // Packages a VOD for offline viewing: the segments are copied, not re-encoded, and
+  // encrypted with the given key. The result is delivered asynchronously via
+  // OfflinePackageReadyNotification or OfflinePackageFailedNotification.
+  rpc RequestOfflinePackage (OfflinePackageRequest) returns (OfflinePackageResponse) {}
+  // Deletes an offline package once the device has downloaded it. Synchronous: it is
+  // one directory removal.
+  rpc DeleteOfflinePackage (DeleteOfflinePackageRequest) returns (DeleteOfflinePackageResponse) {}
+}
+
+message OfflinePackageRequest {
+  // package_id names the package's directory, offline/<package_id> in the storage path.
+  uint64 package_id = 1;
+  uint64 stream_id = 2;
+  StreamVersion version = 3;
+  // key is the 16 byte AES-128 key the segments are encrypted with. It is never written
+  // anywhere but a temporary file ffmpeg reads, which is removed afterwards.
+  bytes key = 4;
+  // key_uri is written into the playlist's EXT-X-KEY line. Players never fetch it: the
+  // device holds the key already.
+  string key_uri = 5;
+}
+
+message OfflinePackageResponse {
+  string job_id = 1;
+}
+
+message DeleteOfflinePackageRequest {
+  uint64 package_id = 1;
+}
+
+message DeleteOfflinePackageResponse {
 }
 
 message StreamRequest {

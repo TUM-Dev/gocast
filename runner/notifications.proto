@@ -15,7 +15,24 @@ message Notification {
     SectionImagesReadyNotification section_images_ready = 6;
     TranscodingProgressNotification transcoding_progress = 7;
     VODFailedNotification vod_failed = 8;
+    OfflinePackageReadyNotification offline_package_ready = 9;
+    OfflinePackageFailedNotification offline_package_failed = 10;
   }
+}
+
+// OfflinePackageReadyNotification reports that an offline package can be downloaded
+// from the edge at vod/offline/<package_id>/playlist.m3u8.
+message OfflinePackageReadyNotification {
+  uint64 package_id = 1;
+  uint32 segment_count = 2;
+  uint64 size_bytes = 3;
+}
+
+// OfflinePackageFailedNotification reports that an offline package could not be made.
+message OfflinePackageFailedNotification {
+  uint64 package_id = 1;
+  // reason is meant for the viewer, like VODFailedNotification's.
+  string reason = 2;
 }
 
 message StreamInfo {
