@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,7 +53,8 @@ type jobCancels struct {
 type Runner struct {
 	log *slog.Logger
 
-	draining bool
+	// draining is read by the heartbeat goroutine while Drain sets it on a signal.
+	draining atomic.Bool
 	JobCount chan int
 	jobsMu   sync.Mutex
 	jobs     map[string]jobCancels
@@ -105,7 +107,6 @@ func NewRunner(v string) *Runner {
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		startRetries:  make(map[streamVersionKey]context.CancelFunc),
-		draining:      false,
 		uploads:       newUploadSlots(),
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
 		stats:         vmstats,
@@ -150,18 +151,7 @@ func (r *Runner) Run(ctx context.Context) {
 		for {
 			select {
 			case <-ticker.C:
-				r.jobsMu.Lock()
-				jobCount := uint64(len(r.jobs))
-				r.jobsMu.Unlock()
-				r.notifications <- &protobuf.Notification{
-					Data: &protobuf.Notification_Heartbeat{
-						Heartbeat: &protobuf.HeartbeatNotification{
-							Hostname: ptr.Take(config.Config.Hostname),
-							Draining: ptr.Take(r.draining),
-							JobCount: ptr.Take(jobCount),
-						},
-					},
-				}
+				r.notifications <- r.heartbeat()
 			case <-ctx.Done():
 				return
 			}
@@ -169,18 +159,30 @@ func (r *Runner) Run(ctx context.Context) {
 	}()
 }
 
-func (r *Runner) Drain(ctx context.Context) {
-	r.log.Info("Runner set to drain.")
-	r.draining = true
-	select {
-	case r.notifications <- &protobuf.Notification{
+// heartbeat reports the runner's liveness, drain state and number of running jobs.
+func (r *Runner) heartbeat() *protobuf.Notification {
+	r.jobsMu.Lock()
+	jobCount := uint64(len(r.jobs))
+	r.jobsMu.Unlock()
+	return &protobuf.Notification{
 		Data: &protobuf.Notification_Heartbeat{
 			Heartbeat: &protobuf.HeartbeatNotification{
 				Hostname: ptr.Take(config.Config.Hostname),
-				Draining: ptr.Take(r.draining),
+				Draining: ptr.Take(r.draining.Load()),
+				JobCount: ptr.Take(jobCount),
 			},
 		},
-	}:
+	}
+}
+
+// Drain tells the manager to stop assigning jobs. ctx must outlive the signal that
+// started the shutdown: the notification is handed to handleNotifications, which has to
+// still be running to take it.
+func (r *Runner) Drain(ctx context.Context) {
+	r.log.Info("Runner set to drain.")
+	r.draining.Store(true)
+	select {
+	case r.notifications <- r.heartbeat():
 	case <-ctx.Done():
 	}
 }

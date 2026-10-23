@@ -565,3 +565,44 @@ func TestInvalidateManagerConnReplacesOnlyOnce(t *testing.T) {
 		t.Error("a failure on the old connection replaced the new one")
 	}
 }
+
+// A draining runner must say so, and say how many jobs it is still waiting for: the
+// manager stops assigning jobs on the flag and shows the count to whoever is deploying.
+func TestDrainAnnouncesDrainingWithTheRunningJobs(t *testing.T) {
+	r := newTestRunner()
+	r.jobs["a"] = jobCancels{}
+	r.jobs["b"] = jobCancels{}
+
+	if r.heartbeat().GetHeartbeat().GetDraining() {
+		t.Fatal("a runner that was not told to drain reports draining")
+	}
+
+	r.Drain(context.Background())
+
+	hb := (<-r.notifications).GetHeartbeat()
+	if hb == nil || !hb.GetDraining() {
+		t.Fatalf("Drain sent %v, want a draining heartbeat", hb)
+	}
+	if hb.GetJobCount() != 2 {
+		t.Errorf("drain heartbeat job count = %d, want 2", hb.GetJobCount())
+	}
+	// the periodic heartbeats after it must not flip the runner back to accepting jobs
+	if !r.heartbeat().GetHeartbeat().GetDraining() {
+		t.Error("heartbeat after Drain does not report draining")
+	}
+}
+
+// Drain must not block a shutdown whose context is already gone, nobody reads then.
+func TestDrainGivesUpWhenContextIsDone(t *testing.T) {
+	r := newTestRunner()
+	r.notifications = make(chan *protobuf.Notification) // unbuffered, no reader
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	done := make(chan struct{})
+	go func() { r.Drain(ctx); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Drain blocked on a cancelled context")
+	}
+}
