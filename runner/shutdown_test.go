@@ -7,11 +7,15 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/sethvargo/go-retry"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/actions"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
@@ -153,4 +157,86 @@ func TestWaitIdleWaitsForAnUploadThatIsStillArriving(t *testing.T) {
 		t.Fatalf("upload answered %d: %s", rec.Code, rec.Body.String())
 	}
 	assertIdle(t, done)
+}
+
+// failingManager answers every Notify with err and counts the calls.
+type failingManager struct {
+	protobuf.RunnerManagerServiceClient
+	err   error
+	calls atomic.Int32
+}
+
+func (m *failingManager) Notify(context.Context, *protobuf.Notification, ...grpc.CallOption) (*protobuf.NotificationResponse, error) {
+	m.calls.Add(1)
+	return nil, m.err
+}
+
+func newManagerTestRunner(t *testing.T, mgr protobuf.RunnerManagerServiceClient) *Runner {
+	t.Helper()
+	r := newTestRunner()
+	conn, err := grpc.NewClient("127.0.0.1:1", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	r.managerConn, r.managerClient = conn, mgr
+	return r
+}
+
+func TestSendNotificationRetriesOnlyWhatMayChange(t *testing.T) {
+	n := &protobuf.Notification{Data: &protobuf.Notification_VodReady{VodReady: &protobuf.VODReadyNotification{}}}
+	for code, wantCalls := range map[codes.Code]int32{
+		// Unavailable is retried too, but it drops the client (see shouldReconnect), so the
+		// fake is gone after the first call.
+		codes.Internal:           3,
+		codes.DeadlineExceeded:   3,
+		codes.NotFound:           1, // the manager refuses it and will keep doing so
+		codes.InvalidArgument:    1,
+		codes.FailedPrecondition: 1,
+	} {
+		mgr := &failingManager{err: status.Error(code, "x")}
+		r := newManagerTestRunner(t, mgr)
+		b := retry.WithMaxRetries(2, retry.NewConstant(time.Millisecond))
+		_ = retry.Do(context.Background(), b, r.sendNotification(n))
+		if got := mgr.calls.Load(); got != wantCalls {
+			t.Errorf("%v: Notify called %d times, want %d", code, got, wantCalls)
+		}
+	}
+}
+
+// A notification that is refused for good must not keep a finished runner alive.
+func TestWaitIdleDoesNotWaitForARejectedNotification(t *testing.T) {
+	r := newManagerTestRunner(t, &failingManager{err: status.Error(codes.NotFound, "no such stream")})
+	r.notifications = make(chan *protobuf.Notification)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go r.handleNotifications(ctx)
+
+	r.notifications <- &protobuf.Notification{Data: &protobuf.Notification_StreamEnd{StreamEnd: &protobuf.StreamEndNotification{}}}
+	assertIdle(t, waitIdleAsync(r))
+}
+
+// Notifications the manager does not accept for a long time are given up on after the
+// grace, but not while a job still runs: that one is waited for as long as it takes.
+func TestWaitIdleGivesUpOnUndeliveredNotificationsAfterTheGrace(t *testing.T) {
+	r := newManagerTestRunner(t, &failingManager{err: status.Error(codes.Unavailable, "manager is restarting")})
+	r.notifications = make(chan *protobuf.Notification)
+	r.notifyGrace = 400 * time.Millisecond
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go r.handleNotifications(ctx)
+
+	r.notifications <- &protobuf.Notification{Data: &protobuf.Notification_VodReady{VodReady: &protobuf.VODReadyNotification{}}}
+	jobDone := r.hold() // a job that is still running
+	done := waitIdleAsync(r)
+
+	time.Sleep(2 * r.notifyGrace)
+	assertStillWaiting(t, done, "a job was still running")
+
+	jobDone()
+	start := time.Now()
+	assertIdle(t, done)
+	if waited := time.Since(start); waited < r.notifyGrace/2 {
+		t.Errorf("gave up after %v, the grace only starts once the job is done", waited)
+	}
 }
