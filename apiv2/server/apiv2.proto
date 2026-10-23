@@ -1059,6 +1059,74 @@ service StreamService {
         "StreamLiveEvent."
     };
   }
+
+  // Saving a lecture for offline viewing, in the installed app. A runner packages the
+  // recording, encrypted with a key of its own; the device downloads the package,
+  // keeps the key, and renews the licence with syncOfflineLicenses.
+
+  rpc requestOfflineLecture(RequestOfflineLectureRequest) returns (OfflineLecture) {
+    option (google.api.http) = {
+      post: "/streams/{stream_id}/offline"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Offline"
+      summary: "Save a lecture for offline viewing."
+      description:
+        "Asks a runner to package the recording; poll getOfflineLecture until it is "
+        "ready. Only where the caller may download the recording: signed in and the "
+        "course allows downloads, or the caller administers the course. 403 otherwise, "
+        "429 when the caller saved too many lectures lately or has too many being "
+        "prepared, 503 when the server has too many packages waiting or no runner."
+    };
+  }
+
+  rpc getOfflineLecture(GetOfflineLectureRequest) returns (OfflineLecture) {
+    option (google.api.http) = {get: "/offline/{package_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Offline"
+      summary: "Get a saved lecture's state, and its licence once it is ready."
+      description:
+        "The licence, with the key and the package's signed URL, is only in the answer "
+        "while the package is ready to download. 404 for another caller's package."
+    };
+  }
+
+  rpc completeOfflineDownload(CompleteOfflineDownloadRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/offline/{package_id}/complete"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Offline"
+      summary: "Report that the device has downloaded a package."
+      description: "The package is deleted from the server; the licence lives on. 404 for another caller's package."
+    };
+  }
+
+  rpc deleteOfflineLecture(DeleteOfflineLectureRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/offline/{package_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Offline"
+      summary: "Give up a saved lecture."
+      description: "Revokes the licence and deletes a package still on the server. 404 for another caller's package."
+    };
+  }
+
+  rpc syncOfflineLicenses(SyncOfflineLicensesRequest) returns (SyncOfflineLicensesResponse) {
+    option (google.api.http) = {
+      post: "/offline/sync"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Offline"
+      summary: "Renew the licences of the lectures saved on a device."
+      description:
+        "Checks again whether the caller may still have each lecture, and answers "
+        "every package with a new expiry or as revoked. Packages that are not the "
+        "caller's, or no longer exist, are revoked."
+    };
+  }
 }
 
 // Server administration: everything belonging to no particular course.
@@ -3461,6 +3529,80 @@ message WatchDownload {
   string friendly_name = 2;
   // A signed URL that downloads the recording.
   string url = 3;
+}
+
+message RequestOfflineLectureRequest {
+  uint32 stream_id = 1;
+}
+
+message GetOfflineLectureRequest {
+  uint32 package_id = 1;
+}
+
+message CompleteOfflineDownloadRequest {
+  uint32 package_id = 1;
+}
+
+message DeleteOfflineLectureRequest {
+  uint32 package_id = 1;
+}
+
+enum OfflineLectureState {
+  OFFLINE_LECTURE_STATE_UNSPECIFIED = 0;
+  // A runner is packaging the recording.
+  OFFLINE_LECTURE_STATE_PREPARING = 1;
+  // The package waits for the device; the answer carries the licence.
+  OFFLINE_LECTURE_STATE_READY = 2;
+  // The device has the package, and the server no longer does.
+  OFFLINE_LECTURE_STATE_DOWNLOADED = 3;
+  OFFLINE_LECTURE_STATE_FAILED = 4;
+  OFFLINE_LECTURE_STATE_REVOKED = 5;
+}
+
+// A lecture saved, or being saved, for offline viewing: one package.
+message OfflineLecture {
+  uint32 package_id = 1;
+  OfflineLectureState state = 2;
+  // Why it failed, for the viewer.
+  optional string error = 3;
+  // What the offline library shows, so it never needs the API.
+  WatchStream stream = 4;
+  WatchCourse course = 5;
+  // Which view was saved: the first the watch page would offer.
+  WatchViewKind kind = 6;
+  // The cut, in seconds, as on StreamWatch.
+  optional uint32 start_offset = 7;
+  optional uint32 end_offset = 8;
+  uint32 segment_count = 9;
+  uint64 size_bytes = 10;
+  // Only while state is READY.
+  optional OfflineLicense license = 11;
+}
+
+message OfflineLicense {
+  // The AES-128 key the package's segments are encrypted with (HLS AES-128: CBC, the
+  // IV is the segment's media sequence number).
+  bytes key = 1;
+  // Until when the lecture may be played without renewing.
+  google.protobuf.Timestamp expires_at = 2;
+  // The package's playlist on the edge, signed.
+  string playlist_url = 3;
+}
+
+message SyncOfflineLicensesRequest {
+  repeated uint32 package_ids = 1;
+}
+
+message SyncOfflineLicensesResponse {
+  repeated OfflineLicenseStatus licenses = 1;
+}
+
+message OfflineLicenseStatus {
+  uint32 package_id = 1;
+  // The device must delete the lecture and its key.
+  bool revoked = 2;
+  // The new expiry, when not revoked.
+  google.protobuf.Timestamp expires_at = 3;
 }
 
 // Whether and how the chat is offered. The chat's own reads and writes are

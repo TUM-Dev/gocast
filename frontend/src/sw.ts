@@ -14,6 +14,7 @@ import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from "workbox-
 import { registerRoute } from "workbox-routing";
 import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
 
+import { OFFLINE_MEDIA_PREFIX, serveOfflineMedia } from "./lib/offline/media";
 import { isAppNavigation, isBrandingFile, SHELL_URL } from "./lib/sw-routes";
 
 declare const self: ServiceWorkerGlobalScope;
@@ -24,6 +25,14 @@ const DEV_CACHE = "gocast-dev";
 // The hashed bundle, plus the shell under SHELL_URL. The list is injected at build time.
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
+
+// Saved lectures: decrypted from the device, one segment at a time, and only while the
+// licence holds (lib/offline/media.ts). Registered first, so nothing else answers them,
+// online or not.
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith(OFFLINE_MEDIA_PREFIX),
+  ({ url }) => serveOfflineMedia(url),
+);
 
 // Navigations go to the network first, and the precached shell answers only when the
 // network fails. Do not turn this around into cache-first: the server does more than

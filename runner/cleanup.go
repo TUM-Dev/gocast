@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/actions"
 
 	cp "github.com/otiai10/copy"
 )
@@ -95,6 +96,45 @@ func (r *Runner) uploadCleanup(ctx context.Context, log *slog.Logger) {
 		case <-ctx.Done():
 			return
 		case <-time.After(time.Hour):
+		}
+	}
+}
+
+// offlinePackageMaxAge is how long an offline package may stay on disk. The manager
+// deletes one as soon as the device has downloaded it, so what is left was abandoned:
+// the download was never finished, or the delete never arrived.
+const offlinePackageMaxAge = 24 * time.Hour
+
+// offlinePackageCleanup removes offline packages, and the work directories of packages
+// that were never finished, older than offlinePackageMaxAge.
+func (r *Runner) offlinePackageCleanup(ctx context.Context, log *slog.Logger) {
+	root := filepath.Join(config.Config.StoragePath, actions.OfflinePackageRoot)
+	for {
+		removeStaleEntries(root, offlinePackageMaxAge, time.Now(), log)
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(15 * time.Minute):
+		}
+	}
+}
+
+// removeStaleEntries removes everything directly in dir last modified before maxAge ago.
+func removeStaleEntries(dir string, maxAge time.Duration, now time.Time, log *slog.Logger) {
+	entries, err := os.ReadDir(dir)
+	if err != nil && !os.IsNotExist(err) {
+		log.Error("Couldn't read directory", "dir", dir, "err", err)
+	}
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil || now.Sub(info.ModTime()) < maxAge {
+			continue
+		}
+		p := filepath.Join(dir, e.Name())
+		log.Debug("removing stale entry", "path", p)
+		if err := os.RemoveAll(p); err != nil {
+			log.Error("Couldn't remove stale entry", "path", p, "err", err)
 		}
 	}
 }

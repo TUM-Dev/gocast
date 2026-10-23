@@ -306,6 +306,10 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
 	case *protobuf.Notification_SilenceDetected:
 		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
+	case *protobuf.Notification_OfflinePackageReady:
+		return m.handleOfflinePackageReady(ctx, notification.GetOfflinePackageReady())
+	case *protobuf.Notification_OfflinePackageFailed:
+		return m.handleOfflinePackageFailed(ctx, notification.GetOfflinePackageFailed())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
