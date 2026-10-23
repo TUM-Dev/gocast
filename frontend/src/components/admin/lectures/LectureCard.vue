@@ -75,9 +75,15 @@ const watchLink = computed(() =>
 </script>
 
 <template>
+  <!--
+    relative: the editor's sr-only elements (the upload inputs, a legend) are absolutely
+    positioned, and with no positioned ancestor they belonged to the document instead of
+    the scrolling <main>. Far down the page they stretched the document past the h-screen
+    frame, so it scrolled on into the bare body background.
+  -->
   <li
     :id="`lecture-${lecture.id}`"
-    class="overflow-hidden rounded border bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+    class="relative overflow-hidden rounded border bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
   >
     <div class="h-1" :class="STRIP[state]"></div>
     <div class="flex flex-wrap items-start gap-3 p-3">
