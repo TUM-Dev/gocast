@@ -208,6 +208,33 @@ func TestSPAAssetsAreEmbedded(t *testing.T) {
 	}
 }
 
+// The worker has to come from the root to control the whole site, and must not be
+// cached, or browsers would keep running the previous deploy's worker.
+func TestServiceWorkerIsServedFromTheRoot(t *testing.T) {
+	spaIsBuilt(t)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/sw.js", serveServiceWorker)
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/sw.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /sw.js: status %d; is vite-plugin-pwa still in frontend/vite.config.ts?", rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/javascript") {
+		t.Errorf("Content-Type = %q, want text/javascript", ct)
+	}
+	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
+		t.Errorf("Cache-Control = %q, want no-cache", cc)
+	}
+	// The precache list names the hashed assets under the prefix gin mounts them at;
+	// relative to the worker they would resolve to the root, where nothing serves them.
+	if !strings.Contains(rec.Body.String(), `"/spa-assets/assets/`) {
+		t.Errorf("worker does not precache /spa-assets/assets/: %q", truncate(rec.Body.String()))
+	}
+}
+
 func truncate(s string) string {
 	if len(s) > 120 {
 		return s[:120] + "…"
