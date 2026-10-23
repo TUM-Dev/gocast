@@ -136,7 +136,10 @@ func ParseSemesterToProto(semester model.Semester) *protobuf.Semester {
 func ParseStreamToProto(stream model.Stream, course model.Course, user *model.User) *protobuf.Stream {
 	liveNow := stream.LiveNowTimestamp.After(time.Now())
 
-	_ = tools.SetSignedPlaylistsForCourse(&stream, user, course.Slug, course.DownloadsEnabled)
+	// The same rule as the watch page's: the edge downloads whatever the token allows,
+	// so an anonymous caller must not get a token that allows it.
+	canDownload := stream.DownloadableBy(user, course)
+	_ = tools.SetSignedPlaylistsForCourse(&stream, user, course.Slug, canDownload)
 
 	s := &protobuf.Stream{
 		Id:               uint32(stream.ID),
@@ -181,7 +184,7 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		s.Duration = uint32(duration)
 	}
 
-	if course.DownloadsEnabled {
+	if canDownload {
 		for _, download := range stream.GetVodFiles() {
 			s.Downloads = append(s.Downloads, ParseDownloadToProto(download))
 		}

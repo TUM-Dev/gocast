@@ -201,6 +201,14 @@ var services = []service{
 			// Ends the broadcast of a lecture hall; the handler checks the stream is
 			// the course's and live.
 			"endStream": requiresCourseAdmin(),
+
+			// Saving lectures offline. The handlers check the caller may download the
+			// stream (canDownloadStream), and that a package is the caller's own.
+			"requestOfflineLecture":   authenticated,
+			"getOfflineLecture":       authenticated,
+			"completeOfflineDownload": authenticated,
+			"deleteOfflineLecture":    authenticated,
+			"syncOfflineLicenses":     authenticated,
 		},
 	},
 	{

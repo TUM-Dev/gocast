@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import SaveOfflineButton from "@/components/SaveOfflineButton.vue";
 import { announceDownload } from "@/lib/download-notice";
+import { installed } from "@/lib/pwa";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { watchUrl, type Stream, type StreamProgress } from "@/lib/streams";
 
@@ -151,6 +153,11 @@ function toggleWatched(): void {
               >
                 {{ file.friendlyName }}
               </a>
+              <SaveOfflineButton
+                v-if="installed"
+                :stream-id="lecture.id"
+                class="flex items-center gap-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-800"
+              />
             </div>
           </div>
         </div>

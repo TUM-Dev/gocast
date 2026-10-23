@@ -188,6 +188,14 @@ func (s *Stream) IsDownloadable() bool {
 	return s.Recording && (s.PlaylistUrl != "" || s.PlaylistUrlPRES != "" || s.PlaylistUrlCAM != "")
 }
 
+// DownloadableBy decides who may take the recording with them, as a download or saved
+// for offline viewing: signed-in viewers when the course allows downloads, and the
+// course's administrators always. u is nil for an anonymous caller. Whether u may watch
+// the stream at all is the caller's to check.
+func (s *Stream) DownloadableBy(u *User, c Course) bool {
+	return s.IsDownloadable() && ((c.DownloadsEnabled && u != nil) || u.CanAdminister(c))
+}
+
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
 func (s *Stream) IsSelfStream() bool {
 	return s.LectureHallID == 0

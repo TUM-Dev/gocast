@@ -134,6 +134,7 @@ func (r *Runner) Run(ctx context.Context) {
 	go r.InitApiGrpc()
 	go r.livestreamCleanup(ctx, r.log.With("job", "livestreamCleanup"))
 	go r.uploadCleanup(ctx, r.log.With("job", "uploadCleanup"))
+	go r.offlinePackageCleanup(ctx, r.log.With("job", "offlinePackageCleanup"))
 	go r.serveUploads(ctx)
 	go func() {
 		err := r.hlsServer.Start()
@@ -328,7 +329,9 @@ func notificationBackoff(n *protobuf.Notification) retry.Backoff {
 		*protobuf.Notification_VodReady,
 		*protobuf.Notification_ThumbnailReady,
 		*protobuf.Notification_SectionImagesReady,
-		*protobuf.Notification_VodFailed:
+		*protobuf.Notification_VodFailed,
+		*protobuf.Notification_OfflinePackageReady,
+		*protobuf.Notification_OfflinePackageFailed:
 		// Critical notifications retry indefinitely until delivered or runner shuts down
 		return retry.WithCappedDuration(30*time.Second, b)
 	case *protobuf.Notification_TranscodingProgress:
