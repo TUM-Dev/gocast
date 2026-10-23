@@ -27,24 +27,8 @@ func main() {
 	// The process ends through os.Exit below.
 	go r.Run(context.Background())
 
-	shouldShutdown := false // set to true once we receive a shutdown signal
-
-	currentCount := 0
-
-	go func() {
-		for {
-			currentCount += <-r.JobCount // count Job start/stop
-			slog.Info("current job count", "count", currentCount)
-			if shouldShutdown && currentCount == 0 { // if we should shut down and no jobs are running, exit.
-				slog.Info("No jobs left, shutting down")
-				os.Exit(0)
-			}
-		}
-	}()
-
 	<-ctx.Done()
 	slog.Info("Received signal")
-	shouldShutdown = true
 	r.Drain(context.Background())
 
 	// let drainage propagate
@@ -61,13 +45,9 @@ func main() {
 		os.Exit(1)
 	}()
 
-	if currentCount == 0 {
-		slog.Info("No jobs left, shutting down")
-		//nolint:all
-		os.Exit(0)
-	}
-
-	blocking := make(chan struct{})
-	//nolint:all
-	_ = <-blocking
+	// Exit once the jobs, the uploads being received and the notifications that report
+	// their results are done.
+	r.WaitIdle()
+	slog.Info("No jobs left, shutting down")
+	os.Exit(0)
 }

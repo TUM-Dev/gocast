@@ -55,10 +55,16 @@ type Runner struct {
 
 	// draining is read by the heartbeat goroutine while Drain sets it on a signal.
 	draining atomic.Bool
-	JobCount chan int
-	jobsMu   sync.Mutex
-	jobs     map[string]jobCancels
-	discard  map[string]bool
+
+	// busy counts what must finish before the process may exit: running jobs, uploads
+	// that are still being received and critical notifications that are not delivered yet.
+	// See hold.
+	busyMu sync.Mutex
+	busy   int
+
+	jobsMu  sync.Mutex
+	jobs    map[string]jobCancels
+	discard map[string]bool
 
 	// retryMin and retryMax bound the wait between retries of a failing action, see
 	// retryDelay. Zero means the defaults.
@@ -103,7 +109,6 @@ func NewRunner(v string) *Runner {
 	start := time.Now()
 	return &Runner{
 		log:           log,
-		JobCount:      make(chan int),
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
 		startRetries:  make(map[streamVersionKey]context.CancelFunc),
@@ -249,7 +254,7 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 	streamCtx, endStream := context.WithCancel(context.Background())
 	afterCtx, endAfter := context.WithCancel(context.Background())
 	job := uuid.New().String()
-	r.JobCount <- 1
+	release := r.hold()
 	r.jobsMu.Lock()
 	r.jobs[job] = jobCancels{endStream: endStream, endAfter: endAfter}
 	r.jobsMu.Unlock()
@@ -261,7 +266,7 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 			delete(r.jobs, job)
 			delete(r.discard, job)
 			r.jobsMu.Unlock()
-			r.JobCount <- -1
+			release()
 		}()
 
 		run := func(ctx context.Context, action actions.Action) {
@@ -318,12 +323,9 @@ func (r *Runner) discarded(job string) bool {
 	return r.discard[job]
 }
 
-// notificationBackoff returns a fresh backoff for sending n. Backoffs are stateful
-// (retry counter and fibonacci sequence), so every notification needs its own.
-func notificationBackoff(n *protobuf.Notification) retry.Backoff {
-	b := retry.NewFibonacci(1 * time.Second)
-	b = retry.WithJitter(500*time.Millisecond, b)
-
+// isCritical tells whether losing n loses a result: the manager only learns that a stream
+// ended or a VoD is ready from these. The runner may not exit before they are delivered.
+func isCritical(n *protobuf.Notification) bool {
 	switch n.Data.(type) {
 	case *protobuf.Notification_StreamEnd,
 		*protobuf.Notification_StreamStart,
@@ -331,8 +333,62 @@ func notificationBackoff(n *protobuf.Notification) retry.Backoff {
 		*protobuf.Notification_ThumbnailReady,
 		*protobuf.Notification_SectionImagesReady,
 		*protobuf.Notification_VodFailed:
+		return true
+	}
+	return false
+}
+
+// hold marks something the runner must not exit before and returns the func that ends it
+// (safe to call more than once). Taking it synchronously before the thing that it covers
+// is handed over leaves no moment in which the runner looks idle.
+func (r *Runner) hold() func() {
+	r.busyMu.Lock()
+	r.busy++
+	r.busyMu.Unlock()
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			r.busyMu.Lock()
+			r.busy--
+			r.busyMu.Unlock()
+		})
+	}
+}
+
+func (r *Runner) busyCount() int {
+	r.busyMu.Lock()
+	defer r.busyMu.Unlock()
+	return r.busy
+}
+
+// WaitIdle returns once no job, upload or critical notification is pending. A job hands
+// its last notification to handleNotifications before it ends, and the handler only takes
+// the hold for it after receiving, so a zero count alone could be read in between. Sending
+// a heartbeat through the same channel closes that gap: the handler takes it only once it
+// has finished with everything it received before, and the count is checked again after.
+func (r *Runner) WaitIdle() {
+	for {
+		for r.busyCount() > 0 {
+			time.Sleep(100 * time.Millisecond)
+		}
+		r.notifications <- r.heartbeat()
+		if r.busyCount() == 0 {
+			return
+		}
+	}
+}
+
+// notificationBackoff returns a fresh backoff for sending n. Backoffs are stateful
+// (retry counter and fibonacci sequence), so every notification needs its own.
+func notificationBackoff(n *protobuf.Notification) retry.Backoff {
+	b := retry.NewFibonacci(1 * time.Second)
+	b = retry.WithJitter(500*time.Millisecond, b)
+
+	if isCritical(n) {
 		// Critical notifications retry indefinitely until delivered or runner shuts down
 		return retry.WithCappedDuration(30*time.Second, b)
+	}
+	switch n.Data.(type) {
 	case *protobuf.Notification_TranscodingProgress:
 		// Never retried: each one is outdated by the next, and one that is delivered late
 		// could land after the VODReady or VODFailed that ended the conversion.
@@ -380,7 +436,14 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 		select {
 		case n := <-r.notifications:
 			sendCtx, done := r.trackStartRetry(ctx, n)
+			// The hold is taken here, in the loop, and not in the goroutine: WaitIdle relies
+			// on it being taken by the time the loop is back to receiving.
+			release := func() {}
+			if isCritical(n) {
+				release = r.hold()
+			}
 			go func() {
+				defer release()
 				defer done()
 				err := retry.Do(sendCtx, notificationBackoff(n), r.sendNotification(n))
 				if err != nil && ctx.Err() == nil && sendCtx.Err() != nil {

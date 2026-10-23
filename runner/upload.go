@@ -110,6 +110,10 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log := r.log.With("stream_id", slot.streamID, "stream_version", slot.version)
+	// A runner that is draining must not exit while the body is still arriving. The job
+	// RunAction creates holds the runner itself, and it takes that hold before returning,
+	// so there is no gap between this hold and that one.
+	defer r.hold()()
 
 	// Streamed part by part: ParseMultipartForm would spool the whole video through memory and a second temp file.
 	mr, err := req.MultipartReader()
