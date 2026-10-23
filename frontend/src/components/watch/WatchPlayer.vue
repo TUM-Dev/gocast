@@ -6,10 +6,12 @@ import ReactionOverlay from "@/components/watch/ReactionOverlay.vue";
 import SkipSilenceButton from "@/components/watch/SkipSilenceButton.vue";
 import type { Hotkey } from "@/lib/player/hotkeys";
 import type { Clip } from "@/lib/player/clip";
+import { localSource } from "@/lib/offline/source";
 import type { SubtitleTrack } from "@/lib/player/tracks";
 import { spriteSource, type WatchSilence, type WatchView } from "@/lib/watch";
 import type { WatchController } from "@/lib/watch-context";
 import { attachProgressReporting } from "@/lib/watch-progress";
+import { useOfflineStore } from "@/stores/offline";
 
 /**
  * One view of a stream in the video player, with what the watch page adds: the seek
@@ -71,6 +73,14 @@ const controller = ref<WatchController | null>(null);
 
 const sprites = computed(() => spriteSource(props.streamId, props.view));
 
+// A view saved on this device plays from it, online too: it saves the bandwidth. Read
+// once, like the rest of the player's configuration.
+const offline = useOfflineStore();
+const src = props.live
+  ? props.view.playlistUrl
+  : (localSource(offline.byStream(props.streamId), props.view.kind, !!navigator.serviceWorker?.controller) ??
+    props.view.playlistUrl);
+
 let stopReporting: (() => void) | null = null;
 function startReporting(c: WatchController): void {
   stopReporting = attachProgressReporting(c, {
@@ -99,7 +109,7 @@ onBeforeUnmount(() => {
   <div ref="root" class="group relative bg-black" data-testid="watch-player">
     <VideoPlayer
       ref="inner"
-      :src="view.playlistUrl"
+      :src="src"
       :live="live"
       :sprites="sprites"
       :subtitles="subtitles"

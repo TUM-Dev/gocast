@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { applyUpdate, dismissUpdate, online, updateAvailable } from "@/lib/pwa";
+import { RouterLink, useRoute } from "vue-router";
+
+import { applyUpdate, dismissUpdate, installed, online, updateAvailable } from "@/lib/pwa";
+
+const route = useRoute();
 
 /**
  * The service worker's two messages. The offline one explains why pages come up empty:
@@ -18,6 +22,9 @@ import { applyUpdate, dismissUpdate, online, updateAvailable } from "@/lib/pwa";
   >
     <i class="icon fa-solid fa-wifi"></i>
     <span class="title">You're offline. Content will load once you reconnect.</span>
+    <RouterLink v-if="installed && route.name !== 'offline'" to="/offline" class="ml-auto px-2 font-semibold whitespace-nowrap">
+      Saved lectures
+    </RouterLink>
   </div>
   <div
     v-else-if="updateAvailable"

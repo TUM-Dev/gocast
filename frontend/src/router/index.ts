@@ -87,6 +87,14 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/views/SearchView.vue"),
     meta: { footer: true },
   },
+  {
+    // The lectures saved on this device. Anonymous because it must open offline, where
+    // loading the user can only fail; everything it shows comes from the device.
+    path: "/offline",
+    name: "offline",
+    component: () => import("@/views/OfflineView.vue"),
+    meta: { footer: true, anonymous: true },
+  },
   // The three built-in pages keep their own routes rather than falling under
   // "/:slug" below, so their URLs are unaffected by whatever an administrator does
   // to the dynamic ones. Anonymous because nothing on these pages is per-user.

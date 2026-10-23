@@ -82,6 +82,10 @@ type API struct {
 	// Starts self streams for the mediamtx publish webhook; see WithSelfStreamStarter.
 	selfStreams SelfStreamStarter
 
+	// Packaging lectures for offline viewing; see WithOfflinePackager. Optional: nil
+	// means requestOfflineLecture answers 503.
+	offline OfflinePackager
+
 	protobuf.UnimplementedMetaServiceServer
 	protobuf.UnimplementedIntegrationServiceServer
 	protobuf.UnimplementedUserServiceServer

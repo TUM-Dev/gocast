@@ -320,6 +320,10 @@ func (m *Manager) handleNotification(ctx context.Context, notification *protobuf
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
 	case *protobuf.Notification_SilenceDetected:
 		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
+	case *protobuf.Notification_OfflinePackageReady:
+		return m.handleOfflinePackageReady(ctx, notification.GetOfflinePackageReady())
+	case *protobuf.Notification_OfflinePackageFailed:
+		return m.handleOfflinePackageFailed(ctx, notification.GetOfflinePackageFailed())
 	case *protobuf.Notification_DurationProbed:
 		return &protobuf.NotificationResponse{}, m.saveDuration(ctx, notification.GetDurationProbed())
 	case *protobuf.Notification_SpriteReady:
