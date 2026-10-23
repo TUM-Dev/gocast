@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-retry"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
@@ -59,8 +60,15 @@ type Runner struct {
 	// busy counts what must finish before the process may exit: running jobs, uploads
 	// that are still being received and critical notifications that are not delivered yet.
 	// See hold.
-	busyMu sync.Mutex
-	busy   int
+	// pending counts the critical notifications among them, which WaitIdle only waits
+	// for up to notifyGrace.
+	busyMu  sync.Mutex
+	busy    int
+	pending int
+
+	// notifyGrace bounds the wait for pending notifications once all jobs and uploads are
+	// done. Zero means defaultNotifyGrace.
+	notifyGrace time.Duration
 
 	jobsMu  sync.Mutex
 	jobs    map[string]jobCancels
@@ -338,43 +346,89 @@ func isCritical(n *protobuf.Notification) bool {
 	return false
 }
 
-// hold marks something the runner must not exit before and returns the func that ends it
-// (safe to call more than once). Taking it synchronously before the thing that it covers
-// is handed over leaves no moment in which the runner looks idle.
-func (r *Runner) hold() func() {
+// defaultNotifyGrace is how long a runner that is otherwise done waits for the manager to
+// accept the notifications it still holds. It covers the manager being restarted by the
+// same deploy; a notification that is still undelivered after it is not going to be, and
+// waiting on it would keep the node's update hanging until Swarm kills the runner.
+const defaultNotifyGrace = 5 * time.Minute
+
+// hold marks a job or an upload that the runner must not exit before and returns the func
+// that ends it (safe to call more than once). Taking it synchronously before the thing that
+// it covers is handed over leaves no moment in which the runner looks idle.
+func (r *Runner) hold() func() { return r.acquire(&r.busy) }
+
+// holdDelivery is hold for a critical notification that is not delivered yet. Unlike a
+// job it is only waited for a limited time, see WaitIdle.
+func (r *Runner) holdDelivery() func() {
+	releaseBusy := r.acquire(&r.busy)
+	releasePending := r.acquire(&r.pending)
+	return func() { releasePending(); releaseBusy() }
+}
+
+func (r *Runner) acquire(counter *int) func() {
 	r.busyMu.Lock()
-	r.busy++
+	*counter++
 	r.busyMu.Unlock()
 	var once sync.Once
 	return func() {
 		once.Do(func() {
 			r.busyMu.Lock()
-			r.busy--
+			*counter--
 			r.busyMu.Unlock()
 		})
 	}
 }
 
-func (r *Runner) busyCount() int {
+// counts returns the number of holds that must finish and how many of them are critical
+// notifications.
+func (r *Runner) counts() (busy, pending int) {
 	r.busyMu.Lock()
 	defer r.busyMu.Unlock()
-	return r.busy
+	return r.busy, r.pending
 }
 
-// WaitIdle returns once no job, upload or critical notification is pending. A job hands
-// its last notification to handleNotifications before it ends, and the handler only takes
-// the hold for it after receiving, so a zero count alone could be read in between. Sending
-// a heartbeat through the same channel closes that gap: the handler takes it only once it
-// has finished with everything it received before, and the count is checked again after.
+func (r *Runner) busyCount() int {
+	busy, _ := r.counts()
+	return busy
+}
+
+// WaitIdle returns once no job, upload or critical notification is pending. Jobs and
+// uploads are waited for as long as they take; notifications for at most notifyGrace after
+// they are the only thing left, see defaultNotifyGrace.
+//
+// A job hands its last notification to handleNotifications before it ends, and the handler
+// only takes the hold for it after receiving, so a zero count alone could be read in
+// between. Sending a heartbeat through the same channel closes that gap: the handler takes
+// it only once it has finished with everything it received before, and the count is
+// checked again after.
 func (r *Runner) WaitIdle() {
+	grace := r.notifyGrace
+	if grace <= 0 {
+		grace = defaultNotifyGrace
+	}
+	var deadline time.Time
 	for {
-		for r.busyCount() > 0 {
-			time.Sleep(100 * time.Millisecond)
+		busy, pending := r.counts()
+		if busy == 0 {
+			r.notifications <- r.heartbeat()
+			busy, pending = r.counts()
 		}
-		r.notifications <- r.heartbeat()
-		if r.busyCount() == 0 {
+		switch {
+		case busy == 0:
 			return
+		case busy == pending:
+			// only notifications are left
+			if deadline.IsZero() {
+				deadline = time.Now().Add(grace)
+			}
+			if time.Now().After(deadline) {
+				r.log.Error("giving up on undelivered notifications", "pending", pending, "waited", grace.String())
+				return
+			}
+		default:
+			deadline = time.Time{} // a job or upload is running, the grace starts when it ends
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -440,7 +494,7 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 			// on it being taken by the time the loop is back to receiving.
 			release := func() {}
 			if isCritical(n) {
-				release = r.hold()
+				release = r.holdDelivery()
 			}
 			go func() {
 				defer release()
@@ -494,10 +548,27 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 			if shouldReconnect(err) {
 				r.invalidateManagerConn(conn)
 			}
+			if isPermanent(err) {
+				// The manager understood the notification and refuses it, repeating it
+				// gets the same answer. Retrying would only keep the runner from exiting.
+				r.log.Error("notification rejected, dropping it", "type", fmt.Sprintf("%T", notification.Data),
+					"code", status.Code(err).String(), "error", err)
+				return err
+			}
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
 		return nil
 	}
+}
+
+// isPermanent tells whether err is an answer of the manager that a retry cannot change,
+// as opposed to the manager or the connection being unavailable.
+func isPermanent(err error) bool {
+	switch status.Code(err) {
+	case codes.NotFound, codes.InvalidArgument, codes.FailedPrecondition:
+		return true
+	}
+	return false
 }
 
 func getFunctionName(i interface{}) string {
