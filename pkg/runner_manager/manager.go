@@ -268,7 +268,7 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	case *protobuf.Notification_Heartbeat:
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
+			return nil, lookupError(err, "runner %s", notification.GetHeartbeat().GetHostname())
 		}
 		newDraining := notification.GetHeartbeat().GetDraining()
 		newJobCount := notification.GetHeartbeat().GetJobCount()
@@ -300,6 +300,20 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
+}
+
+// lookupError is the gRPC status for a failed lookup of the thing described by format. The
+// runner retries what it is told is temporary and drops what it is told is permanent, so
+// only a record that does not exist may be NotFound: a database that fails for a moment
+// must not make the runner give up on a notification (a thumbnail, say) for good.
+// Internal, and not Unavailable, because the runner takes the latter for a broken
+// connection and replaces it.
+func lookupError(err error, format string, args ...any) error {
+	what := fmt.Sprintf(format, args...)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return status.Errorf(codes.NotFound, "can't find %s: %v", what, err)
+	}
+	return status.Errorf(codes.Internal, "can't look up %s: %v", what, err)
 }
 
 // ErrNoRunner is returned when no runner is alive and accepting jobs.
@@ -559,7 +573,7 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
 	if err != nil {
-		return status.Errorf(codes.NotFound, "can't find stream for id %d: %v", req.Stream.GetId(), err)
+		return lookupError(err, "stream %d", req.Stream.GetId())
 	}
 
 	fpath := filepath.Join(m.massStorage, "thumbs", stream.Start.Format("2006/01"), fmt.Sprintf("%d", stream.CourseID))

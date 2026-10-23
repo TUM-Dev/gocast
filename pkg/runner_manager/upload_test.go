@@ -11,6 +11,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
@@ -279,4 +281,52 @@ func TestHandleVODFailed(t *testing.T) {
 			t.Error("handleVODFailed = nil, want the error so the runner retries")
 		}
 	})
+}
+
+// The runner drops a notification the manager answers NotFound to and retries the rest, so
+// a lookup that failed for another reason than the record being gone must not say NotFound.
+func TestSaveThumbnailLookupFailures(t *testing.T) {
+	req := &protobuf.ThumbnailReadyNotification{
+		Stream:        &protobuf.StreamInfo{Id: ptr.Take(uint64(5))},
+		StreamVersion: ptr.Take(protobuf.StreamVersion_STREAM_VERSION_COMBINED),
+	}
+	for name, tc := range map[string]struct {
+		err  error
+		want codes.Code
+	}{
+		"the stream does not exist":   {gorm.ErrRecordNotFound, codes.NotFound},
+		"the database is unreachable": {errors.New("driver: bad connection"), codes.Internal},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+			streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{}, tc.err)
+			m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+			if got := status.Code(m.saveThumbnail(context.Background(), req)); got != tc.want {
+				t.Errorf("code = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestHeartbeatLookupFailures(t *testing.T) {
+	hb := &protobuf.Notification{Data: &protobuf.Notification_Heartbeat{Heartbeat: &protobuf.HeartbeatNotification{Hostname: ptr.Take("r1")}}}
+	for name, tc := range map[string]struct {
+		err  error
+		want codes.Code
+	}{
+		"the runner is unknown":       {gorm.ErrRecordNotFound, codes.NotFound},
+		"the database is unreachable": {errors.New("driver: bad connection"), codes.Internal},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			runnerDao := mock_dao.NewMockRunnerDao(ctrl)
+			runnerDao.EXPECT().Get(gomock.Any(), "r1").Return(model.Runner{}, tc.err)
+			m := New(dao.DaoWrapper{RunnerDao: runnerDao})
+			_, err := m.Notify(context.Background(), hb)
+			if got := status.Code(err); got != tc.want {
+				t.Errorf("code = %v, want %v", got, tc.want)
+			}
+		})
+	}
 }
