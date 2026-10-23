@@ -300,7 +300,7 @@ func drainBackoff(b interface{ Next() (time.Duration, bool) }, limit int) int {
 }
 
 func TestNotificationBackoffIsNotSharedBetweenNotifications(t *testing.T) {
-	n := &protobuf.Notification{Data: &protobuf.Notification_Heartbeat{}}
+	n := &protobuf.Notification{} // takes the default, limited number of retries
 
 	for i := 0; i < 3; i++ {
 		if got := drainBackoff(notificationBackoff(n), 100); got != 10 {

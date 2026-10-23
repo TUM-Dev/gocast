@@ -240,3 +240,34 @@ func TestWaitIdleGivesUpOnUndeliveredNotificationsAfterTheGrace(t *testing.T) {
 		t.Errorf("gave up after %v, the grace only starts once the job is done", waited)
 	}
 }
+
+// A heartbeat that was built before the drain and is still on its way after the drain
+// heartbeat would tell the manager that the runner accepts jobs again: it stores whatever
+// arrives last.
+func TestStaleHeartbeatIsNotSentOnceDraining(t *testing.T) {
+	mgr := &failingManager{err: nil}
+	r := newManagerTestRunner(t, mgr)
+	stale := r.heartbeat() // built before the signal
+	r.Drain(context.Background())
+	drain := <-r.notifications
+
+	if err := r.sendNotification(stale)(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := mgr.calls.Load(); got != 0 {
+		t.Fatalf("a heartbeat without draining was sent %d times after the drain started", got)
+	}
+	if err := r.sendNotification(drain)(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := mgr.calls.Load(); got != 1 {
+		t.Errorf("the drain heartbeat was sent %d times, want 1", got)
+	}
+}
+
+// The next heartbeat is seconds away, a late retry only delivers outdated state.
+func TestHeartbeatIsNotRetried(t *testing.T) {
+	if n := drainBackoff(notificationBackoff(newTestRunner().heartbeat()), 100); n != 0 {
+		t.Errorf("a heartbeat is retried %d times, want 0", n)
+	}
+}

@@ -443,6 +443,10 @@ func notificationBackoff(n *protobuf.Notification) retry.Backoff {
 		return retry.WithCappedDuration(30*time.Second, b)
 	}
 	switch n.Data.(type) {
+	case *protobuf.Notification_Heartbeat:
+		// Never retried: the next one is seconds away, and one that is delivered late
+		// carries a state that is outdated by then, see sendNotification.
+		return retry.WithMaxRetries(0, b)
 	case *protobuf.Notification_TranscodingProgress:
 		// Never retried: each one is outdated by the next, and one that is delivered late
 		// could land after the VODReady or VODFailed that ended the conversion.
@@ -517,7 +521,13 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 	return func(ctx context.Context) error {
 		switch notification.Data.(type) {
 		case *protobuf.Notification_Heartbeat:
-		// pass: logging this is too noisy
+			// A heartbeat built before the drain says the runner accepts jobs. The manager
+			// stores whatever arrives last, so one that is still on its way once draining
+			// started must not overwrite the drain heartbeat.
+			if !notification.GetHeartbeat().GetDraining() && r.draining.Load() {
+				return nil
+			}
+			// pass: logging this is too noisy
 		case *protobuf.Notification_ThumbnailReady:
 			r.log.Debug("send notification", "notification", &protobuf.Notification_ThumbnailReady{
 				ThumbnailReady: &protobuf.ThumbnailReadyNotification{
