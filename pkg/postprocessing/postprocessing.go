@@ -1,5 +1,6 @@
-// Package thumbnails is how apiv2 reaches VOD thumbnail regeneration.
-package thumbnails
+// Package postprocessing is how apiv2 reaches the redoing of VOD post-processing:
+// thumbnails and silences.
+package postprocessing
 
 import (
 	"context"
@@ -9,16 +10,16 @@ import (
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 )
 
-// Thumbnails redoes the post-processing of one version of one VOD: its large thumbnail and,
+// PostProcessing redoes the post-processing of one version of one VOD: its large thumbnail and,
 // if asked, the silences. Only a
 // runner can do this today, so Manager being nil means there is nobody to ask.
-type Thumbnails struct {
+type PostProcessing struct {
 	Manager *runner_manager.Manager
 }
 
-// Regenerate asks a runner to redo the thumbnail for one version of one VOD, and the
+// Redo asks a runner to redo the thumbnail for one version of one VOD, and the
 // silences of the stream if detectSilence is set. playlistURL must be signed.
-func (t Thumbnails) Regenerate(streamID uint, version model.StreamVersion, playlistURL string, detectSilence bool) error {
+func (t PostProcessing) Redo(streamID uint, version model.StreamVersion, playlistURL string, detectSilence bool) error {
 	if t.Manager == nil {
 		return errors.New("no runner configured")
 	}

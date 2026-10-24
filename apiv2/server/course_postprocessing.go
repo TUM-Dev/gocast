@@ -13,19 +13,19 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// Thumbnails redoes the post-processing of one VOD: its large thumbnail, and the silences. Only a runner understands the
-// versions PlaylistUrl, PlaylistUrlCAM and PlaylistUrlPRES stand for, so the worker
-// half that SectionImages has has no equivalent here. See WithThumbnails.
-type Thumbnails interface {
-	// Regenerate asks a runner to redo the thumbnail for one version of one VOD, and the
+// PostProcessing redoes the post-processing of one VOD: its large thumbnail, and the silences.
+// Only a runner understands the versions PlaylistUrl, PlaylistUrlCAM and PlaylistUrlPRES
+// stand for, so the worker half that SectionImages has has no equivalent here. See WithPostProcessing.
+type PostProcessing interface {
+	// Redo asks a runner to redo the thumbnail for one version of one VOD, and the
 	// silences of the stream if detectSilence is set. playlistURL must be signed.
-	Regenerate(streamID uint, version model.StreamVersion, playlistURL string, detectSilence bool) error
+	Redo(streamID uint, version model.StreamVersion, playlistURL string, detectSilence bool) error
 }
 
-// WithThumbnails lets RedoCoursePostProcessing reach a runner. Without it the RPC
+// WithPostProcessing lets RedoCoursePostProcessing reach a runner. Without it the RPC
 // answers 503.
-func WithThumbnails(t Thumbnails) Option {
-	return func(a *API) { a.thumbnails = t }
+func WithPostProcessing(t PostProcessing) Option {
+	return func(a *API) { a.postProcessing = t }
 }
 
 // RedoCoursePostProcessing starts a background job that asks a runner to redo the
@@ -38,12 +38,12 @@ func (a *API) RedoCoursePostProcessing(ctx context.Context, req *protobuf.RedoCo
 	if err != nil {
 		return nil, err
 	}
-	if a.thumbnails == nil {
+	if a.postProcessing == nil {
 		return nil, e.WithStatus(http.StatusServiceUnavailable, errors.New("no runner configured"))
 	}
 
 	streams := course.Streams
-	thumbnails := a.thumbnails
+	postProcessing := a.postProcessing
 	go func() {
 		for _, stream := range streams {
 			// Signing mutates the playlist fields in place, so each stream gets its
@@ -56,7 +56,7 @@ func (a *API) RedoCoursePostProcessing(ctx context.Context, req *protobuf.RedoCo
 			// silences: the best, or the next if the runner could not be asked about it.
 			scan := true
 			for _, v := range postProcessingVersions(stream) {
-				if err := thumbnails.Regenerate(stream.ID, v.version, v.url, scan); err != nil {
+				if err := postProcessing.Redo(stream.ID, v.version, v.url, scan); err != nil {
 					a.log.Error("can't request post-processing",
 						"stream", stream.ID, "version", v.version, "err", err)
 					continue
