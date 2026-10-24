@@ -16,6 +16,8 @@ type RegenerateThumbnailRequest struct {
 	StreamID    uint
 	Version     model.StreamVersion
 	PlaylistURL string
+	// DetectSilence also has the runner scan the VOD for silences.
+	DetectSilence bool
 }
 
 // protobufStreamVersion maps a model.StreamVersion to the protobuf.StreamVersion the
@@ -48,9 +50,10 @@ func (m *Manager) RequestRegenerateThumbnail(ctx context.Context, req Regenerate
 	defer cancel()
 
 	resp, err := client.RegenerateThumbnail(ctx, &protobuf.RegenerateThumbnailRequest{
-		StreamId:    ptr.Take(uint64(req.StreamID)),
-		Version:     ptr.Take(protobufStreamVersion(req.Version)),
-		PlaylistUrl: ptr.Take(req.PlaylistURL),
+		StreamId:      ptr.Take(uint64(req.StreamID)),
+		Version:       ptr.Take(protobufStreamVersion(req.Version)),
+		PlaylistUrl:   ptr.Take(req.PlaylistURL),
+		DetectSilence: ptr.Take(req.DetectSilence),
 	})
 	if err != nil {
 		return fmt.Errorf("RegenerateThumbnail: %w", err)

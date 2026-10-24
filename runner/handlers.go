@@ -95,6 +95,15 @@ func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionIm
 	return &protobuf.SectionImageResponse{JobId: ptr.Take(jID)}, nil
 }
 
+// regenerateActions is what RegenerateThumbnail runs: the thumbnail, then the silence scan
+// if asked for. The scan is last because it is the long one.
+func regenerateActions(detectSilence bool) []actions.Action {
+	if detectSilence {
+		return []actions.Action{actions.RegenerateThumb, actions.MkSilence}
+	}
+	return []actions.Action{actions.RegenerateThumb}
+}
+
 // RegenerateThumbnail regenerates the thumbnail for an already-recorded VOD. The
 // result is delivered asynchronously in a ThumbnailReadyNotification, so this only
 // acknowledges the job.
@@ -113,7 +122,7 @@ func (r *Runner) RegenerateThumbnail(_ context.Context, req *protobuf.Regenerate
 	}
 
 	// A thumbnail regeneration job has no VoD phase, so there is nothing to skip on discard.
-	jID := r.RunAction([]actions.Action{actions.RegenerateThumb}, nil, data,
+	jID := r.RunAction(regenerateActions(req.GetDetectSilence()), nil, data,
 		r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion()))
 	r.log.Info("thumbnail regeneration job added", "ID", jID)
 

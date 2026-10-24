@@ -372,10 +372,13 @@ func (x *SectionImageResponse) GetJobId() string {
 }
 
 type RegenerateThumbnailRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StreamId      *uint64                `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
-	Version       *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
-	PlaylistUrl   *string                `protobuf:"bytes,3,opt,name=playlist_url,json=playlistUrl" json:"playlist_url,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	StreamId    *uint64                `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
+	Version     *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
+	PlaylistUrl *string                `protobuf:"bytes,3,opt,name=playlist_url,json=playlistUrl" json:"playlist_url,omitempty"`
+	// Also scan the VoD for silences, see StreamRequest.detect_silence. The playlist_url is
+	// read for that too.
+	DetectSilence *bool `protobuf:"varint,4,opt,name=detect_silence,json=detectSilence" json:"detect_silence,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -429,6 +432,13 @@ func (x *RegenerateThumbnailRequest) GetPlaylistUrl() string {
 		return *x.PlaylistUrl
 	}
 	return ""
+}
+
+func (x *RegenerateThumbnailRequest) GetDetectSilence() bool {
+	if x != nil && x.DetectSilence != nil {
+		return *x.DetectSilence
+	}
+	return false
 }
 
 type RegenerateThumbnailResponse struct {
@@ -860,11 +870,12 @@ const file_runner_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12/\n" +
 	"\x05start\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x05start\"-\n" +
 	"\x14SectionImageResponse\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\x8f\x01\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\xb6\x01\n" +
 	"\x1aRegenerateThumbnailRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x121\n" +
 	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\x12!\n" +
-	"\fplaylist_url\x18\x03 \x01(\tR\vplaylistUrl\"4\n" +
+	"\fplaylist_url\x18\x03 \x01(\tR\vplaylistUrl\x12%\n" +
+	"\x0edetect_silence\x18\x04 \x01(\bR\rdetectSilence\"4\n" +
 	"\x1bRegenerateThumbnailResponse\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\x8d\x01\n" +
 	"\x14PrepareUploadRequest\x12\x1b\n" +

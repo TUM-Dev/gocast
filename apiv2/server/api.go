@@ -49,7 +49,7 @@ type API struct {
 	// optional: see WithSectionImages, WithSubtitleGenerator and WithMassStorage.
 	sectionImages SectionImages
 	// Regenerating a VOD's own large thumbnail, as opposed to a section's; see
-	// WithThumbnails. Optional: nil means RegenerateCourseThumbnails answers 503.
+	// WithThumbnails. Optional: nil means RedoCoursePostProcessing answers 503.
 	thumbnails Thumbnails
 	// Where an uploaded recording is converted; see WithUploads. Optional: nil means
 	// uploading a lecture's media answers 503.

@@ -136,7 +136,7 @@ var services = []service{
 			"updateCourseSettings":            requiresCourseAdmin(),
 			"copyCourse":                      requiresCourseAdmin(),
 			"deleteCourse":                    requiresCourseAdmin(),
-			"regenerateCourseThumbnails":      requiresCourseAdmin(),
+			"redoCoursePostProcessing":        requiresCourseAdmin(),
 			"listCourseAdmins":                requiresCourseAdmin(),
 			"addCourseAdmin":                  requiresCourseAdmin(),
 			"removeCourseAdmin":               requiresCourseAdmin(),
