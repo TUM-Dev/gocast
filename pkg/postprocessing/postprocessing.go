@@ -23,7 +23,7 @@ func (t PostProcessing) Redo(streamID uint, version model.StreamVersion, playlis
 	if t.Manager == nil {
 		return errors.New("no runner configured")
 	}
-	return t.Manager.RequestRegenerateThumbnail(context.Background(), runner_manager.RegenerateThumbnailRequest{
+	return t.Manager.RequestRedoPostProcessing(context.Background(), runner_manager.RedoPostProcessingRequest{
 		StreamID:      streamID,
 		Version:       version,
 		PlaylistURL:   playlistURL,
