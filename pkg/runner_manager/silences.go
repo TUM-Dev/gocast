@@ -4,10 +4,11 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/TUM-Dev/gocast/model"
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // silenceDetectionVersion is the one version of a stream whose runner scans for silences.
