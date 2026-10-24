@@ -57,6 +57,14 @@ func MkSilence(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 		input = path.Join(recordingDir, "playlist.m3u8")
 	}
 
+	// Waited for before the scan's own timeout starts, which is only for the scan.
+	release, err := acquirePostProcessing(ctx)
+	if err != nil {
+		logger.Error("silence detection skipped, the job ended while it waited", "err", err)
+		return nil
+	}
+	defer release()
+
 	logger.Info("detecting silence", "input", input)
 	silences, err := detectSilences(ctx, input)
 	if err != nil {
