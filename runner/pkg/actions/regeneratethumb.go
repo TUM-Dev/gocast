@@ -14,7 +14,7 @@ import (
 // to the control plane in a notification. Unlike MkThumb, which reads from a local
 // recording directory produced by a just-finished live stream, this reads directly
 // from the VOD's playlist URL.
-func RegenerateThumb(_ context.Context, logger *slog.Logger, notify chan *protobuf.Notification, d map[string]any, _ *metrics.Broker) error {
+func RegenerateThumb(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notification, d map[string]any, _ *metrics.Broker) error {
 	logger.Info("regenerating thumbnail")
 	streamID, ok := d["streamID"].(uint64)
 	if !ok {
@@ -30,6 +30,12 @@ func RegenerateThumb(_ context.Context, logger *slog.Logger, notify chan *protob
 	if !ok || playlistURL == "" {
 		return AbortingError(fmt.Errorf("no playlist url in context"))
 	}
+
+	release, err := acquirePostProcessing(ctx)
+	if err != nil {
+		return AbortingError(fmt.Errorf("waiting to regenerate the thumbnail: %w", err))
+	}
+	defer release()
 
 	thumb, err := createVideoThumbnail(playlistURL)
 	if err != nil {
