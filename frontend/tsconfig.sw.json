@@ -1,0 +1,12 @@
+{
+  // The service worker runs in a ServiceWorkerGlobalScope, not a window: it needs the
+  // WebWorker lib, whose declarations clash with the DOM lib the app is checked against.
+  // So it is checked on its own; tsconfig.json leaves src/sw.ts out.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker"],
+    // For import.meta.env, which tells the dev worker from the built one.
+    "types": ["vite/client"]
+  },
+  "include": ["src/sw.ts", "src/lib/sw-routes.ts"]
+}

@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "TUM Live",
   "short_name": "TUM Live",
   "icons": [
@@ -15,7 +16,7 @@
   ],
   "start_url": "/?source=pwa",
   "background_color": "#161c22",
-  "display_override": ["window-control-overlay", "minimal-ui"],
+  "display_override": ["minimal-ui"],
   "display": "standalone",
   "scope": "/",
   "theme_color": "#161c22",
