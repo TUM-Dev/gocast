@@ -24,10 +24,21 @@ const uploadTokenTTL = 10 * time.Minute
 // ImportVOD leaves, see its playlistURL. A variable so the tests can swap the import out.
 var importActions = []actions.Action{actions.ImportVOD, actions.RegenerateThumb}
 
+// uploadActions is importActions, followed by the silence scan if asked for.
+func uploadActions(detectSilence bool) []actions.Action {
+	if !detectSilence {
+		return importActions
+	}
+	// Copied: appending to the shared slice could write into its spare capacity.
+	return append(append([]actions.Action(nil), importActions...), actions.MkSilence)
+}
+
 type uploadSlot struct {
 	streamID uint64
 	version  string
-	expires  time.Time
+	// detectSilence is whether the import is followed by a silence scan.
+	detectSilence bool
+	expires       time.Time
 }
 
 // uploadSlots hands out the single-use tokens the upload endpoint accepts. The endpoint
@@ -43,7 +54,7 @@ func newUploadSlots() *uploadSlots {
 	return &uploadSlots{slots: make(map[string]uploadSlot), now: time.Now}
 }
 
-func (u *uploadSlots) create(streamID uint64, version string) (string, error) {
+func (u *uploadSlots) create(streamID uint64, version string, detectSilence bool) (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("generate upload token: %w", err)
@@ -58,7 +69,7 @@ func (u *uploadSlots) create(streamID uint64, version string) (string, error) {
 			delete(u.slots, t)
 		}
 	}
-	u.slots[token] = uploadSlot{streamID: streamID, version: version, expires: u.now().Add(uploadTokenTTL)}
+	u.slots[token] = uploadSlot{streamID: streamID, version: version, detectSilence: detectSilence, expires: u.now().Add(uploadTokenTTL)}
 	return token, nil
 }
 
@@ -161,7 +172,7 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		"streamVersion": slot.version,
 		"uploadPath":    file,
 	}
-	jID := r.RunAction(importActions, nil, data, log)
+	jID := r.RunAction(uploadActions(slot.detectSilence), nil, data, log)
 	log.Info("upload import job added", "ID", jID)
 	w.WriteHeader(http.StatusOK)
 }

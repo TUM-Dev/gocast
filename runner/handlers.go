@@ -34,6 +34,10 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
+	if req.GetDetectSilence() {
+		// Last, and non-fatal on failure: it is a long scan nobody should wait for or retry.
+		vod = append(vod, actions.MkSilence)
+	}
 	jID := r.RunAction(a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
 	r.log.Info("job added", "ID", jID)
 
@@ -128,7 +132,7 @@ func (r *Runner) PrepareUpload(_ context.Context, req *protobuf.PrepareUploadReq
 		return nil, status.Errorf(codes.InvalidArgument, "no valid stream version given")
 	}
 
-	token, err := r.uploads.create(req.GetStreamId(), version)
+	token, err := r.uploads.create(req.GetStreamId(), version, req.GetDetectSilence())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "couldn't create upload token")
 	}

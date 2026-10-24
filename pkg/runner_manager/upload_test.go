@@ -51,7 +51,10 @@ func TestRequestUpload(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	runnerDao := mock_dao.NewMockRunnerDao(ctrl)
 	runnerDao.EXPECT().ReserveRunner(gomock.Any()).Return(model.Runner{Hostname: host, Port: uint32(port)}, nil)
-	m := New(dao.DaoWrapper{RunnerDao: runnerDao})
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	// A combined VoD exists, so the presentation upload is not scanned.
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "12").Return(model.Stream{PlaylistUrl: "http://edge/comb.m3u8"}, nil)
+	m := New(dao.DaoWrapper{RunnerDao: runnerDao, StreamsDao: streamsDao})
 
 	slot, err := m.RequestUpload(context.Background(), 12, model.PRES)
 	if err != nil {
@@ -64,6 +67,42 @@ func TestRequestUpload(t *testing.T) {
 	if fake.got.GetStreamId() != 12 || fake.got.GetVersion() != protobuf.StreamVersion_STREAM_VERSION_PRESENTATION {
 		t.Errorf("runner was asked for %v", fake.got)
 	}
+	if fake.got.GetDetectSilence() {
+		t.Error("a presentation upload next to a combined VoD must not be scanned")
+	}
+}
+
+func TestDetectSilenceOnUpload(t *testing.T) {
+	for name, tc := range map[string]struct {
+		stream  model.Stream
+		version model.StreamVersion
+		want    bool
+	}{
+		"combined always":                {model.Stream{PlaylistUrl: "x", PlaylistUrlCAM: "y"}, model.COMB, true},
+		"camera, nothing else yet":       {model.Stream{}, model.CAM, true},
+		"camera next to combined":        {model.Stream{PlaylistUrl: "x"}, model.CAM, false},
+		"presentation, nothing else yet": {model.Stream{}, model.PRES, true},
+		"presentation next to camera":    {model.Stream{PlaylistUrlCAM: "y"}, model.PRES, false},
+		"presentation next to combined":  {model.Stream{PlaylistUrl: "x"}, model.PRES, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			streamsDao := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+			streamsDao.EXPECT().GetStreamByID(gomock.Any(), "3").Return(tc.stream, nil)
+			m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+			if got := m.detectSilenceOnUpload(context.Background(), 3, tc.version); got != tc.want {
+				t.Errorf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+
+	t.Run("failed lookup", func(t *testing.T) {
+		streamsDao := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "3").Return(model.Stream{}, errors.New("db down"))
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		if m.detectSilenceOnUpload(context.Background(), 3, model.COMB) {
+			t.Error("want no scan when the stream can't be looked up")
+		}
+	})
 }
 
 // TestRequestUpload_NoRunner checks that the empty runner ReserveRunner returns when

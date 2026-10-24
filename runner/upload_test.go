@@ -25,11 +25,11 @@ func TestUploadSlots(t *testing.T) {
 	u := newUploadSlots()
 	u.now = func() time.Time { return now }
 
-	token, err := u.create(5, "STREAM_VERSION_COMB")
+	token, err := u.create(5, "STREAM_VERSION_COMB", false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	other, _ := u.create(5, "STREAM_VERSION_COMB")
+	other, _ := u.create(5, "STREAM_VERSION_COMB", false)
 	if token == other {
 		t.Fatal("tokens must be unique")
 	}
@@ -51,7 +51,7 @@ func TestUploadSlots(t *testing.T) {
 	}
 
 	// creating prunes what expired
-	_, _ = u.create(1, "x")
+	_, _ = u.create(1, "x", false)
 	if len(u.slots) != 1 {
 		t.Errorf("%d slots after pruning, want 1", len(u.slots))
 	}
@@ -91,7 +91,7 @@ func post(r *Runner, token string, body *bytes.Buffer, contentType string) *http
 func TestHandleUpload(t *testing.T) {
 	t.Run("stores the file and starts the import", func(t *testing.T) {
 		r := newUploadTestRunner(t)
-		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA")
+		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA", false)
 		body, ct := multipartBody(t, "file", "video-bytes")
 
 		// The import itself is covered in pkg/actions; here only the hand-over matters.
@@ -132,7 +132,7 @@ func TestHandleUpload(t *testing.T) {
 
 	t.Run("token is single use", func(t *testing.T) {
 		r := newUploadTestRunner(t)
-		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA")
+		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA", false)
 		body, ct := multipartBody(t, "other", "x")
 		post(r, token, body, ct)
 		body, ct = multipartBody(t, "file", "x")
@@ -143,7 +143,7 @@ func TestHandleUpload(t *testing.T) {
 
 	t.Run("no file", func(t *testing.T) {
 		r := newUploadTestRunner(t)
-		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA")
+		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA", false)
 		body, ct := multipartBody(t, "other", "x")
 		if rec := post(r, token, body, ct); rec.Code != http.StatusBadRequest {
 			t.Errorf("status = %d, want 400", rec.Code)
@@ -155,7 +155,7 @@ func TestHandleUpload(t *testing.T) {
 
 	t.Run("empty file", func(t *testing.T) {
 		r := newUploadTestRunner(t)
-		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA")
+		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA", false)
 		body, ct := multipartBody(t, "file", "")
 		if rec := post(r, token, body, ct); rec.Code != http.StatusBadRequest {
 			t.Errorf("status = %d, want 400", rec.Code)
@@ -167,7 +167,7 @@ func TestHandleUpload(t *testing.T) {
 
 	t.Run("not multipart", func(t *testing.T) {
 		r := newUploadTestRunner(t)
-		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA")
+		token, _ := r.uploads.create(9, "STREAM_VERSION_CAMERA", false)
 		if rec := post(r, token, bytes.NewBufferString("raw"), "video/mp4"); rec.Code != http.StatusBadRequest {
 			t.Errorf("status = %d, want 400", rec.Code)
 		}
@@ -209,4 +209,25 @@ func uptr(v uint64) *uint64 { return &v }
 func ver(v int32) *protobuf.StreamVersion {
 	s := protobuf.StreamVersion(v)
 	return &s
+}
+
+func TestUploadActions(t *testing.T) {
+	if got := len(uploadActions(false)); got != len(importActions) {
+		t.Errorf("without silence detection: %d actions, want %d", got, len(importActions))
+	}
+	with := uploadActions(true)
+	if len(with) != len(importActions)+1 {
+		t.Fatalf("with silence detection: %d actions, want %d", len(with), len(importActions)+1)
+	}
+	if len(importActions) != len(uploadActions(false)) {
+		t.Error("importActions was modified")
+	}
+}
+
+func TestUploadSlotKeepsDetectSilence(t *testing.T) {
+	u := newUploadSlots()
+	token, _ := u.create(1, "STREAM_VERSION_COMBINED", true)
+	if s, ok := u.take(token); !ok || !s.detectSilence {
+		t.Errorf("slot = %+v, %v", s, ok)
+	}
 }
