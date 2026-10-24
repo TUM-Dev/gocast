@@ -616,15 +616,15 @@ service CourseService {
     };
   }
 
-  rpc regenerateCourseThumbnails(RegenerateCourseThumbnailsRequest) returns (google.protobuf.Empty) {
+  rpc redoCoursePostProcessing(RedoCoursePostProcessingRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/courses/{course_id}/actions/regenerate-thumbnails"
+      post: "/courses/{course_id}/actions/redo-post-processing"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Course Administration"
-      summary: "Regenerate thumbnails for every VOD in the course."
-      description: "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course."
+      summary: "Redo the post-processing of every VOD in the course."
+      description: "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course, and to detect the silences of each lecture once, on its best version. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course."
     };
   }
 
@@ -2836,7 +2836,7 @@ message DeleteCourseRequest {
   uint32 course_id = 1;
 }
 
-message RegenerateCourseThumbnailsRequest {
+message RedoCoursePostProcessingRequest {
   uint32 course_id = 1;
 }
 

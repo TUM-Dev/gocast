@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import { ApiError } from "@/lib/api";
-import { copyCourse, deleteCourse, regenerateCourseThumbnails, type CourseAdmin } from "@/lib/course-admin";
+import { copyCourse, deleteCourse, redoCoursePostProcessing, type CourseAdmin } from "@/lib/course-admin";
 import { fetchSemesters, semesterLabel, type TeachingTerm } from "@/lib/semesters";
 import { courseError, useCourseAdminStore } from "@/stores/course-admin";
 
@@ -18,7 +18,7 @@ const year = ref(new Date().getFullYear());
 const term = ref<TeachingTerm>("W");
 const busy = ref(false);
 const error = ref("");
-const thumbnailsQueued = ref(false);
+const postProcessingQueued = ref(false);
 
 // The tab stays mounted when a copy navigates to the new course; start that one closed.
 watch(
@@ -26,7 +26,7 @@ watch(
   () => {
     copying.value = false;
     error.value = "";
-    thumbnailsQueued.value = false;
+    postProcessingQueued.value = false;
   },
 );
 
@@ -63,17 +63,17 @@ async function copy(): Promise<void> {
   }
 }
 
-async function regenerateThumbnails(): Promise<void> {
+async function redoPostProcessing(): Promise<void> {
   const confirmed = window.confirm(
-    `Regenerate thumbnails for every recording in "${props.course.name}"? This runs in the background and can take a while.`,
+    `Redo the post-processing (thumbnails and silences) for every recording in "${props.course.name}"? This runs in the background and can take a while.`,
   );
   if (!confirmed) return;
   busy.value = true;
   error.value = "";
-  thumbnailsQueued.value = false;
+  postProcessingQueued.value = false;
   try {
-    await regenerateCourseThumbnails(props.course.id);
-    thumbnailsQueued.value = true;
+    await redoCoursePostProcessing(props.course.id);
+    postProcessingQueued.value = true;
   } catch (err) {
     error.value = courseError(err);
   } finally {
@@ -113,11 +113,11 @@ async function remove(): Promise<void> {
     </p>
 
     <p
-      v-if="thumbnailsQueued"
+      v-if="postProcessingQueued"
       class="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
       role="status"
     >
-      Thumbnails are being regenerated in the background.
+      Post-processing is being redone in the background.
     </p>
 
     <form v-if="copying" class="flex flex-col gap-3 text-sm" @submit.prevent="copy">
@@ -164,9 +164,9 @@ async function remove(): Promise<void> {
         type="button"
         class="tum-live-button-secondary tum-live-button px-4 py-2 text-sm"
         :disabled="busy"
-        @click="regenerateThumbnails"
+        @click="redoPostProcessing"
       >
-        <i class="fa-regular fa-image mr-2" aria-hidden="true"></i>Regenerate thumbnails
+        <i class="fa-solid fa-arrows-rotate mr-2" aria-hidden="true"></i>Redo post-processing
       </button>
       <button
         type="button"

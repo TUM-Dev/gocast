@@ -802,7 +802,7 @@ const (
 	CourseService_UpdateCourseSettings_FullMethodName            = "/protobuf.CourseService/updateCourseSettings"
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
 	CourseService_DeleteCourse_FullMethodName                    = "/protobuf.CourseService/deleteCourse"
-	CourseService_RegenerateCourseThumbnails_FullMethodName      = "/protobuf.CourseService/regenerateCourseThumbnails"
+	CourseService_RedoCoursePostProcessing_FullMethodName        = "/protobuf.CourseService/redoCoursePostProcessing"
 	CourseService_ListCourseAdmins_FullMethodName                = "/protobuf.CourseService/listCourseAdmins"
 	CourseService_AddCourseAdmin_FullMethodName                  = "/protobuf.CourseService/addCourseAdmin"
 	CourseService_RemoveCourseAdmin_FullMethodName               = "/protobuf.CourseService/removeCourseAdmin"
@@ -878,7 +878,7 @@ type CourseServiceClient interface {
 	UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RegenerateCourseThumbnails(ctx context.Context, in *RegenerateCourseThumbnailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RedoCoursePostProcessing(ctx context.Context, in *RedoCoursePostProcessingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListCourseAdmins(ctx context.Context, in *ListCourseAdminsRequest, opts ...grpc.CallOption) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(ctx context.Context, in *AddCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdminUser, error)
 	RemoveCourseAdmin(ctx context.Context, in *RemoveCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdminUser, error)
@@ -1256,10 +1256,10 @@ func (c *courseServiceClient) DeleteCourse(ctx context.Context, in *DeleteCourse
 	return out, nil
 }
 
-func (c *courseServiceClient) RegenerateCourseThumbnails(ctx context.Context, in *RegenerateCourseThumbnailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *courseServiceClient) RedoCoursePostProcessing(ctx context.Context, in *RedoCoursePostProcessingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, CourseService_RegenerateCourseThumbnails_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CourseService_RedoCoursePostProcessing_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1483,7 +1483,7 @@ type CourseServiceServer interface {
 	UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error)
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error)
-	RegenerateCourseThumbnails(context.Context, *RegenerateCourseThumbnailsRequest) (*emptypb.Empty, error)
+	RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error)
 	ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(context.Context, *AddCourseAdminRequest) (*CourseAdminUser, error)
 	RemoveCourseAdmin(context.Context, *RemoveCourseAdminRequest) (*CourseAdminUser, error)
@@ -1616,8 +1616,8 @@ func (UnimplementedCourseServiceServer) CopyCourse(context.Context, *CopyCourseR
 func (UnimplementedCourseServiceServer) DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCourse not implemented")
 }
-func (UnimplementedCourseServiceServer) RegenerateCourseThumbnails(context.Context, *RegenerateCourseThumbnailsRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegenerateCourseThumbnails not implemented")
+func (UnimplementedCourseServiceServer) RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RedoCoursePostProcessing not implemented")
 }
 func (UnimplementedCourseServiceServer) ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCourseAdmins not implemented")
@@ -2318,20 +2318,20 @@ func _CourseService_DeleteCourse_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CourseService_RegenerateCourseThumbnails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegenerateCourseThumbnailsRequest)
+func _CourseService_RedoCoursePostProcessing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RedoCoursePostProcessingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CourseServiceServer).RegenerateCourseThumbnails(ctx, in)
+		return srv.(CourseServiceServer).RedoCoursePostProcessing(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CourseService_RegenerateCourseThumbnails_FullMethodName,
+		FullMethod: CourseService_RedoCoursePostProcessing_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CourseServiceServer).RegenerateCourseThumbnails(ctx, req.(*RegenerateCourseThumbnailsRequest))
+		return srv.(CourseServiceServer).RedoCoursePostProcessing(ctx, req.(*RedoCoursePostProcessingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2772,8 +2772,8 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CourseService_DeleteCourse_Handler,
 		},
 		{
-			MethodName: "regenerateCourseThumbnails",
-			Handler:    _CourseService_RegenerateCourseThumbnails_Handler,
+			MethodName: "redoCoursePostProcessing",
+			Handler:    _CourseService_RedoCoursePostProcessing_Handler,
 		},
 		{
 			MethodName: "listCourseAdmins",

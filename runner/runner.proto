@@ -78,6 +78,9 @@ message RegenerateThumbnailRequest {
   uint64 stream_id = 1;
   StreamVersion version = 2;
   string playlist_url = 3;
+  // Also scan the VoD for silences, see StreamRequest.detect_silence. The playlist_url is
+  // read for that too.
+  bool detect_silence = 4;
 }
 
 message RegenerateThumbnailResponse {

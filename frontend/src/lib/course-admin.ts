@@ -137,12 +137,12 @@ export async function deleteCourse(courseId: number): Promise<void> {
 }
 
 /**
- * Queues a background job that asks a runner to redo the thumbnail for every
- * available version of every recorded lecture in the course. Returns as soon as the
- * jobs are queued, not once they are done.
+ * Queues a background job that asks a runner to redo the post-processing of every
+ * recorded lecture in the course: the thumbnail of every available version, and the
+ * silences. Returns as soon as the jobs are queued, not once they are done.
  */
-export async function regenerateCourseThumbnails(courseId: number): Promise<void> {
-  await apiPost(`/courses/${courseId}/actions/regenerate-thumbnails`, {});
+export async function redoCoursePostProcessing(courseId: number): Promise<void> {
+  await apiPost(`/courses/${courseId}/actions/redo-post-processing`, {});
 }
 
 // ----- Authorized applications -----

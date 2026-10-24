@@ -1982,11 +1982,11 @@
         ]
       }
     },
-    "/courses/{courseId}/actions/regenerate-thumbnails": {
+    "/courses/{courseId}/actions/redo-post-processing": {
       "post": {
-        "summary": "Regenerate thumbnails for every VOD in the course.",
-        "description": "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course.",
-        "operationId": "CourseService_regenerateCourseThumbnails",
+        "summary": "Redo the post-processing of every VOD in the course.",
+        "description": "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course, and to detect the silences of each lecture once, on its best version. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course.",
+        "operationId": "CourseService_redoCoursePostProcessing",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -2015,7 +2015,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CourseServiceregenerateCourseThumbnailsBody"
+              "$ref": "#/definitions/CourseServiceredoCoursePostProcessingBody"
             }
           }
         ],
@@ -5741,7 +5741,7 @@
         }
       }
     },
-    "CourseServiceregenerateCourseThumbnailsBody": {
+    "CourseServiceredoCoursePostProcessingBody": {
       "type": "object"
     },
     "CourseServicerequestLectureSubtitlesBody": {

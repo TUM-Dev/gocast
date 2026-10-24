@@ -9743,27 +9743,27 @@ func (x *DeleteCourseRequest) GetCourseId() uint32 {
 	return 0
 }
 
-type RegenerateCourseThumbnailsRequest struct {
+type RedoCoursePostProcessingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CourseId      uint32                 `protobuf:"varint,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegenerateCourseThumbnailsRequest) Reset() {
-	*x = RegenerateCourseThumbnailsRequest{}
+func (x *RedoCoursePostProcessingRequest) Reset() {
+	*x = RedoCoursePostProcessingRequest{}
 	mi := &file_server_apiv2_proto_msgTypes[146]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RegenerateCourseThumbnailsRequest) String() string {
+func (x *RedoCoursePostProcessingRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegenerateCourseThumbnailsRequest) ProtoMessage() {}
+func (*RedoCoursePostProcessingRequest) ProtoMessage() {}
 
-func (x *RegenerateCourseThumbnailsRequest) ProtoReflect() protoreflect.Message {
+func (x *RedoCoursePostProcessingRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_server_apiv2_proto_msgTypes[146]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -9775,12 +9775,12 @@ func (x *RegenerateCourseThumbnailsRequest) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegenerateCourseThumbnailsRequest.ProtoReflect.Descriptor instead.
-func (*RegenerateCourseThumbnailsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RedoCoursePostProcessingRequest.ProtoReflect.Descriptor instead.
+func (*RedoCoursePostProcessingRequest) Descriptor() ([]byte, []int) {
 	return file_server_apiv2_proto_rawDescGZIP(), []int{146}
 }
 
-func (x *RegenerateCourseThumbnailsRequest) GetCourseId() uint32 {
+func (x *RedoCoursePostProcessingRequest) GetCourseId() uint32 {
 	if x != nil {
 		return x.CourseId
 	}
@@ -20186,8 +20186,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\n" +
 	"num_errors\x18\x02 \x01(\x05R\tnumErrors\"2\n" +
 	"\x13DeleteCourseRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"@\n" +
-	"!RegenerateCourseThumbnailsRequest\x12\x1b\n" +
+	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\">\n" +
+	"\x1fRedoCoursePostProcessingRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"_\n" +
 	"\x0fCourseAdminUser\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
@@ -20983,7 +20983,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0fcreateFirstUser\x12 .protobuf.CreateFirstUserRequest\x1a\x16.google.protobuf.Empty\"\xf5\x01\x92A\xda\x01\n" +
 	"\x04User\x125Create the first administrator of a fresh deployment.\x1a\x9a\x01Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password.\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/users/first\x12\x8b\x02\n" +
 	"\x0fgetLoginOptions\x12\x16.google.protobuf.Empty\x1a!.protobuf.GetLoginOptionsResponse\"\xbc\x01\x92A\xa2\x01\n" +
-	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2ה\x01\n" +
+	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\x9a\x95\x01\n" +
 	"\rCourseService\x12\xc0\x01\n" +
 	"\x10getPublicCourses\x12!.protobuf.GetPublicCoursesRequest\x1a\".protobuf.GetPublicCoursesResponse\"e\x92AR\n" +
 	"\aCourses\x12\x13Get public courses.\x1a2Retrieves the public courses for a given semester.\x82\xd3\xe4\x93\x02\n" +
@@ -21056,9 +21056,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"copyCourse\x12\x1b.protobuf.CopyCourseRequest\x1a\x1c.protobuf.CopyCourseResponse\"\xc3\x02\x92A\x9b\x02\n" +
 	"\x15Course Administration\x12$Copy a course into another semester.\x1a\xdb\x01Copies the course's settings, every one of its lectures and its administrators into a new course in the given semester. Requires administering the course. Answers 409 if that semester already has a course with the slug.\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/courses/{course_id}/copy\x12\xc4\x01\n" +
 	"\fdeleteCourse\x12\x1d.protobuf.DeleteCourseRequest\x1a\x16.google.protobuf.Empty\"}\x92A^\n" +
-	"\x15Course Administration\x12!Delete a course and its lectures.\x1a\"Requires administering the course.\x82\xd3\xe4\x93\x02\x16*\x14/courses/{course_id}\x12\xe4\x03\n" +
-	"\x1aregenerateCourseThumbnails\x12+.protobuf.RegenerateCourseThumbnailsRequest\x1a\x16.google.protobuf.Empty\"\x80\x03\x92A\xbf\x02\n" +
-	"\x15Course Administration\x122Regenerate thumbnails for every VOD in the course.\x1a\xf1\x01Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course.\x82\xd3\xe4\x93\x027:\x01*\"2/courses/{course_id}/actions/regenerate-thumbnails\x12\xd4\x02\n" +
+	"\x15Course Administration\x12!Delete a course and its lectures.\x1a\"Requires administering the course.\x82\xd3\xe4\x93\x02\x16*\x14/courses/{course_id}\x12\xa7\x04\n" +
+	"\x18redoCoursePostProcessing\x12).protobuf.RedoCoursePostProcessingRequest\x1a\x16.google.protobuf.Empty\"\xc7\x03\x92A\x87\x03\n" +
+	"\x15Course Administration\x124Redo the post-processing of every VOD in the course.\x1a\xb7\x02Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course, and to detect the silences of each lecture once, on its best version. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course.\x82\xd3\xe4\x93\x026:\x01*\"1/courses/{course_id}/actions/redo-post-processing\x12\xd4\x02\n" +
 	"\x10listCourseAdmins\x12!.protobuf.ListCourseAdminsRequest\x1a\".protobuf.ListCourseAdminsResponse\"\xf8\x01\x92A\xd1\x01\n" +
 	"\x15Course Administration\x12\x1fList a course's administrators.\x1a\x96\x01Those granted the course explicitly; neither its owner nor the server's administrators are listed unless they were. Requires administering the course.\x82\xd3\xe4\x93\x02\x1d\x12\x1b/courses/{course_id}/admins\x12\xa5\x02\n" +
 	"\x0eaddCourseAdmin\x12\x1f.protobuf.AddCourseAdminRequest\x1a\x19.protobuf.CourseAdminUser\"\xd6\x01\x92A\xac\x01\n" +
@@ -21439,7 +21439,7 @@ var file_server_apiv2_proto_goTypes = []any{
 	(*CopyCourseRequest)(nil),                          // 153: protobuf.CopyCourseRequest
 	(*CopyCourseResponse)(nil),                         // 154: protobuf.CopyCourseResponse
 	(*DeleteCourseRequest)(nil),                        // 155: protobuf.DeleteCourseRequest
-	(*RegenerateCourseThumbnailsRequest)(nil),          // 156: protobuf.RegenerateCourseThumbnailsRequest
+	(*RedoCoursePostProcessingRequest)(nil),            // 156: protobuf.RedoCoursePostProcessingRequest
 	(*CourseAdminUser)(nil),                            // 157: protobuf.CourseAdminUser
 	(*ListCourseAdminsRequest)(nil),                    // 158: protobuf.ListCourseAdminsRequest
 	(*ListCourseAdminsResponse)(nil),                   // 159: protobuf.ListCourseAdminsResponse
@@ -21859,7 +21859,7 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	152, // 258: protobuf.CourseService.updateCourseSettings:input_type -> protobuf.UpdateCourseSettingsRequest
 	153, // 259: protobuf.CourseService.copyCourse:input_type -> protobuf.CopyCourseRequest
 	155, // 260: protobuf.CourseService.deleteCourse:input_type -> protobuf.DeleteCourseRequest
-	156, // 261: protobuf.CourseService.regenerateCourseThumbnails:input_type -> protobuf.RegenerateCourseThumbnailsRequest
+	156, // 261: protobuf.CourseService.redoCoursePostProcessing:input_type -> protobuf.RedoCoursePostProcessingRequest
 	158, // 262: protobuf.CourseService.listCourseAdmins:input_type -> protobuf.ListCourseAdminsRequest
 	160, // 263: protobuf.CourseService.addCourseAdmin:input_type -> protobuf.AddCourseAdminRequest
 	161, // 264: protobuf.CourseService.removeCourseAdmin:input_type -> protobuf.RemoveCourseAdminRequest
@@ -22005,7 +22005,7 @@ var file_server_apiv2_proto_depIdxs = []int32{
 	151, // 404: protobuf.CourseService.updateCourseSettings:output_type -> protobuf.CourseAdmin
 	154, // 405: protobuf.CourseService.copyCourse:output_type -> protobuf.CopyCourseResponse
 	311, // 406: protobuf.CourseService.deleteCourse:output_type -> google.protobuf.Empty
-	311, // 407: protobuf.CourseService.regenerateCourseThumbnails:output_type -> google.protobuf.Empty
+	311, // 407: protobuf.CourseService.redoCoursePostProcessing:output_type -> google.protobuf.Empty
 	159, // 408: protobuf.CourseService.listCourseAdmins:output_type -> protobuf.ListCourseAdminsResponse
 	157, // 409: protobuf.CourseService.addCourseAdmin:output_type -> protobuf.CourseAdminUser
 	157, // 410: protobuf.CourseService.removeCourseAdmin:output_type -> protobuf.CourseAdminUser
