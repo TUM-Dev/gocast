@@ -61,7 +61,6 @@ paths:
   mass: /share
   static: /var/www/public
   branding: /etc/TUM-Live/branding
-workertoken: abc123 # todo changeme
 weburl: https://live.rbg.tum.de
 monitoring:
   sentryDSN: https://abc@sentry.com/2 # todo changeme

@@ -313,7 +313,7 @@ func handleTLS(mux *http.ServeMux) {
 	}
 }
 
-// edgeHandler proxies requests to TUM-Live-Worker and caches immutable files.
+// edgeHandler proxies requests to TUM-Live runners and caches immutable files.
 func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 	if !allowedRe.MatchString(request.URL.Path) {
 		writer.WriteHeader(http.StatusNotFound)

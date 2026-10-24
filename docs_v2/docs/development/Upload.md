@@ -1,7 +1,7 @@
 # Uploading a video
 
 Uploaded videos are converted by a [runner](Architecture.md). Locally you need `tum-live`, a `runner` and the `edge`
-that serves the result; `vod-service` and the legacy `worker` are not involved.
+that serves the result; `vod-service` is not involved.
 
 ## How it works
 

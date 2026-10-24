@@ -86,33 +86,35 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
 
-  worker:
-    image: ghcr.io/joschahenningsen/tum-live/worker:latest
+  runner:
+    image: ghcr.io/tum-dev/gocast/runner:latest
     networks:
       - default
     environment:
-      - Token=abc123 # todo change this here and in gocasts config.yaml
-      - MainBase=tumlive
-      - Host={{.Node.Hostname}}
-      - LrzUploadUrl=http://vodservice:8089
-      - LogLevel=debug
-      - PersistDir=/persist
-      - VodURLTemplate=https://edge.live.rbg.tum.de/vod/%s.mp4/playlist.m3u8 # todo change this depending on your edge-service server url
+      - GOCAST_SERVER=tumlive:50056
+      - REALHOST={{.Node.Hostname}}
+      - EDGE_SERVER=https://edge.live.rbg.tum.de # todo change this depending on your edge-service server url
+      - STORAGE_PATH=/storage/mass
+      - SEGMENT_PATH=/storage/live
+      - UPLOAD_PATH=/storage/uploads
     ports:
-      - target: 1935
-        published: 1935
+      - target: 52735
+        published: 52735
+        mode: host
+        protocol: tcp
+      - target: 8188
+        published: 8188
         mode: host
         protocol: tcp
     volumes:
-      - recordings:/recordings
-      - persist:/persist
-      - /share:/mass # todo make sure /share is available on all nodes
-      - workerlog:/var/log/stream
+      - recordings:/storage/live
+      - uploads:/storage/uploads
+      - /share:/storage/mass # todo make sure /share is available on all nodes
     deploy:
       mode: global # replicate to every node
       placement:
         constraints:
-          - "node.labels.worker==true"
+          - "node.labels.runner==true"
       restart_policy:
         condition: on-failure
 
@@ -143,7 +145,7 @@ services:
       - REC_PORT=50053
 
   edge:
-    image: ghcr.io/tum-dev/gocast/worker-edge:latest
+    image: ghcr.io/tum-dev/gocast/edge-service:latest
     networks:
       - default
     ports:
@@ -188,7 +190,7 @@ services:
       mode: global
       placement:
         constraints:
-          - "node.labels.worker==true"
+          - "node.labels.runner==true"
 
   meilisearch:
     image: getmeili/meilisearch:v0.30
@@ -352,9 +354,8 @@ services:
 
 volumes:
   recordings:
-  persist:
+  uploads:
   mariadb_data:
-  workerlog:
   meilisearch:
   grafana:
   prometheus:
@@ -438,7 +439,6 @@ paths:
   mass: /share
   static: /var/www/public
   branding: /etc/TUM-Live/branding
-workertoken: abc123 # todo changeme
 weburl: https://live.rbg.tum.de
 monitoring:
   sentryDSN: https://abc@sentry.com/2 # todo changeme
