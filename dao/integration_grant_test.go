@@ -182,3 +182,56 @@ func TestRedeemIntegrationAuthorizationCodeIsAtomicAndRequiresLiveGrant(t *testi
 	require.Equal(t, 1, successes)
 	require.Equal(t, 1, missing)
 }
+
+func TestIntegrationGrantStreamIsScopedToVisibleLecturesOfAnActiveGrant(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.Course{}, &model.Integration{}, &model.IntegrationGrant{}))
+	// SQLite cannot build the MySQL FULLTEXT indexes of model.Stream. gorm creates them
+	// after the table, so the full table is there and the query reads every column.
+	if err := db.Migrator().CreateTable(&model.Stream{}); err != nil {
+		require.True(t, db.Migrator().HasTable(&model.Stream{}), err)
+	}
+	require.NoError(t, db.Create(&[]model.Course{
+		{Model: gorm.Model{ID: 1}, Name: "Granted", Slug: "granted"},
+		{Model: gorm.Model{ID: 2}, Name: "Other", Slug: "other"},
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Integration{{ID: 1, Name: "Course portal"}, {ID: 2, Name: "Other portal"}}).Error)
+	revokedAt := time.Now()
+	require.NoError(t, db.Create(&[]model.IntegrationGrant{
+		{ID: 10, IntegrationID: 1, CourseID: 1},
+		{ID: 11, IntegrationID: 1, CourseID: 1, RevokedAt: &revokedAt},
+		{ID: 12, IntegrationID: 2, CourseID: 2},
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Stream{
+		{Model: gorm.Model{ID: 100}, CourseID: 1, Recording: true, PlaylistUrl: "https://edge/comb.m3u8"},
+		{Model: gorm.Model{ID: 101}, CourseID: 1, Private: true},
+		{Model: gorm.Model{ID: 102}, CourseID: 2},
+		{Model: gorm.Model{ID: 103}, CourseID: 1},
+	}).Error)
+	require.NoError(t, db.Delete(&model.Stream{}, 103).Error)
+	d := integrationGrantDao{db: db}
+	ctx := context.Background()
+
+	stream, err := d.GetIntegrationGrantStream(ctx, 10, 1, 100)
+	require.NoError(t, err)
+	require.Equal(t, uint(100), stream.ID)
+	require.Equal(t, uint(1), stream.CourseID)
+	require.Equal(t, "https://edge/comb.m3u8", stream.PlaylistUrl)
+
+	for name, ids := range map[string][3]uint{
+		"private lecture":         {10, 1, 101},
+		"lecture of other course": {10, 1, 102},
+		"deleted lecture":         {10, 1, 103},
+		"revoked grant":           {11, 1, 100},
+		"grant of other app":      {10, 2, 100},
+		"other app's own grant":   {12, 1, 102},
+	} {
+		_, err := d.GetIntegrationGrantStream(ctx, ids[0], ids[1], ids[2])
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound, name)
+	}
+
+	require.NoError(t, db.Delete(&model.Course{}, 1).Error)
+	_, err = d.GetIntegrationGrantStream(ctx, 10, 1, 100)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound, "lecture of deleted course")
+}

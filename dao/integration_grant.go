@@ -21,6 +21,7 @@ type IntegrationGrantDao interface {
 	ApproveIntegrationCourse(context.Context, uint, uint, []byte, []byte, time.Time) (uint, error)
 	RedeemIntegrationAuthorizationCode(context.Context, uint, []byte, []byte, time.Time) (uint, uint, error)
 	GetIntegrationGrantCourse(context.Context, uint, uint) (model.Course, error)
+	GetIntegrationGrantStream(context.Context, uint, uint, uint) (model.Stream, error)
 	GetCourseIntegrationGrants(context.Context, uint) ([]model.IntegrationGrant, error)
 	RevokeIntegrationGrant(context.Context, uint, uint) error
 	RevokeIntegrationGrantForIntegration(context.Context, uint, uint) (model.Course, error)
@@ -125,6 +126,21 @@ func (d integrationGrantDao) GetIntegrationGrantCourse(ctx context.Context, gran
 		Where("integration_grants.id = ? AND integration_grants.integration_id = ? AND integration_grants.revoked_at IS NULL", grantID, integrationID).
 		First(&course).Error
 	return course, err
+}
+
+// GetIntegrationGrantStream reads a lecture of the course behind an active grant. Only
+// lectures that students may see: the consent page promises no access to private
+// videos. Read from the database rather than the stream cache, which can still hold a
+// lecture for some seconds after it was deleted or made private.
+func (d integrationGrantDao) GetIntegrationGrantStream(ctx context.Context, grantID, integrationID, streamID uint) (model.Stream, error) {
+	var stream model.Stream
+	err := d.db.WithContext(ctx).Model(&model.Stream{}).
+		Joins("JOIN courses ON courses.id = streams.course_id AND courses.deleted_at IS NULL").
+		Joins("JOIN integration_grants ON integration_grants.course_id = streams.course_id").
+		Where("streams.id = ? AND streams.private = ?", streamID, false).
+		Where("integration_grants.id = ? AND integration_grants.integration_id = ? AND integration_grants.revoked_at IS NULL", grantID, integrationID).
+		First(&stream).Error
+	return stream, err
 }
 
 func (d integrationGrantDao) RevokeIntegrationGrant(ctx context.Context, grantID, courseID uint) error {

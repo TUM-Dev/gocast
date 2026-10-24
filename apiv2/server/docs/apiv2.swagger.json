@@ -3760,6 +3760,46 @@
         ]
       }
     },
+    "/integration/grants/{grantId}/recordings/{streamId}": {
+      "get": {
+        "summary": "Get a recording of an authorized course.",
+        "description": "Returns the conversion state and a signed playlist of one lecture that is visible to students, in the version the watch page starts with.",
+        "operationId": "IntegrationService_getIntegrationRecording",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetIntegrationRecordingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "grantId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Integrations"
+        ]
+      }
+    },
     "/login-options": {
       "get": {
         "summary": "Get available login methods.",
@@ -7433,6 +7473,32 @@
         },
         "visibility": {
           "type": "string"
+        }
+      }
+    },
+    "protobufGetIntegrationRecordingResponse": {
+      "type": "object",
+      "properties": {
+        "playlistUrl": {
+          "type": "string",
+          "description": "The playlist the watch page starts with for this recording when the viewer chose no\nview: combined, else presentation, else camera, of the versions the course records\nin the lecture hall. Signed like there for seven hours with downloads off. Empty\nwhile the lecture has no recording. As on the watch page, it can still be the live\nplaylist when another version's VOD is ready first, and legacy LRZ playlists are not\nsigned."
+        },
+        "converting": {
+          "type": "boolean",
+          "description": "That version is being converted. A re-upload converts while the old playlist is\nstill served."
+        },
+        "progress": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Percent of the running conversion. Meaningless unless converting."
+        },
+        "failed": {
+          "type": "boolean",
+          "description": "The last conversion of that version ended without a video."
+        },
+        "error": {
+          "type": "string",
+          "description": "Why, in words for the person who uploaded the video. Only set when failed."
         }
       }
     },
