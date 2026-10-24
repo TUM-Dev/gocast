@@ -16,7 +16,6 @@ type DaoWrapper struct {
 	FileDao
 	StreamsDao
 	CoursesDao
-	WorkerDao
 	LectureHallsDao
 	UsersDao
 	StatisticsDao
@@ -46,7 +45,6 @@ func NewDaoWrapper() DaoWrapper {
 		FileDao:               NewFileDao(),
 		StreamsDao:            NewStreamsDao(),
 		CoursesDao:            NewCoursesDao(),
-		WorkerDao:             NewWorkerDao(),
 		LectureHallsDao:       NewLectureHallsDao(),
 		UsersDao:              NewUsersDao(),
 		StatisticsDao:         NewStatisticsDao(),

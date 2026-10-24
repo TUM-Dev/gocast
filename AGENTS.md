@@ -5,14 +5,13 @@ app and API, plus separate services that capture, transcode and deliver video.
 
 ## Layout
 
-Five Go modules, joined by `go.work`:
+Four Go modules, joined by `go.work`:
 
 | Path | What |
 |---|---|
 | `.` | The main server — `cmd/tumlive` is the entrypoint |
-| `worker/` | Captures and transcodes streams |
 | `edge` | Edge delivery node |
-| `runner/` | Newer replacement for the worker |
+| `runner/` | Captures and transcodes streams (replaced the old `worker/`, which is gone) |
 | `vod-service/` | Video-on-demand serving |
 
 Inside the main module: `model/` (GORM models), `dao/` (data access), `api/` (the REST

@@ -11,7 +11,7 @@ type Permission string
 
 const (
 	// PermAdministerServer covers operations belonging to no course: lecture halls,
-	// runners, workers, maintenance, notifications, audits, info pages, statistics.
+	// runners, maintenance, notifications, audits, info pages, statistics.
 	PermAdministerServer Permission = "server.administer"
 
 	// PermAdministerAllCourses grants course administration without an explicit

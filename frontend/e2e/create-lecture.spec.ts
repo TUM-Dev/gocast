@@ -169,7 +169,7 @@ test.describe("creating lectures from the lectures tab", () => {
       await w.getByRole("button", { name: "Create lecture" }).click();
       await expect(w.getByRole("list", { name: "Problems" })).toContainText("Choose at least one video.");
 
-      // The fixture's workers are dead (no heartbeat), so the upload has nowhere to go.
+      // The fixture's runners are dead (no heartbeat), so the upload has nowhere to go.
       await w.getByLabel("Combined video").setInputFiles({
         name: "lecture.mp4",
         mimeType: "video/mp4",

@@ -113,7 +113,7 @@ async function submit(): Promise<void> {
         <div class="border-t pt-3 dark:border-gray-800">
           <h2 class="text-1 font-semibold">Sources</h2>
           <p class="text-5 text-xs">
-            Stream URLs the worker pulls from. Fill in the ones this hall actually offers -- a
+            Stream URLs the runner pulls from. Fill in the ones this hall actually offers -- a
             hall with only a combined feed leaves presentation and camera empty.
           </p>
           <div class="mt-3 grid gap-4 sm:grid-cols-3">

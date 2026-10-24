@@ -3702,8 +3702,6 @@ const (
 	AdminService_CreateIntegration_FullMethodName                   = "/protobuf.AdminService/createIntegration"
 	AdminService_RotateIntegrationKey_FullMethodName                = "/protobuf.AdminService/rotateIntegrationKey"
 	AdminService_RevokeIntegrationKey_FullMethodName                = "/protobuf.AdminService/revokeIntegrationKey"
-	AdminService_ListWorkers_FullMethodName                         = "/protobuf.AdminService/listWorkers"
-	AdminService_DeleteWorker_FullMethodName                        = "/protobuf.AdminService/deleteWorker"
 	AdminService_ListMaintenanceCronJobs_FullMethodName             = "/protobuf.AdminService/listMaintenanceCronJobs"
 	AdminService_RunMaintenanceCronJob_FullMethodName               = "/protobuf.AdminService/runMaintenanceCronJob"
 	AdminService_ListMaintenanceTranscodingFailures_FullMethodName  = "/protobuf.AdminService/listMaintenanceTranscodingFailures"
@@ -3764,8 +3762,6 @@ type AdminServiceClient interface {
 	CreateIntegration(ctx context.Context, in *CreateIntegrationRequest, opts ...grpc.CallOption) (*CreateIntegrationResponse, error)
 	RotateIntegrationKey(ctx context.Context, in *RotateIntegrationKeyRequest, opts ...grpc.CallOption) (*RotateIntegrationKeyResponse, error)
 	RevokeIntegrationKey(ctx context.Context, in *RevokeIntegrationKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	ListWorkers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListWorkersResponse, error)
-	DeleteWorker(ctx context.Context, in *DeleteWorkerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceCronJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceCronJobsResponse, error)
 	RunMaintenanceCronJob(ctx context.Context, in *RunMaintenanceCronJobRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceTranscodingFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceTranscodingFailuresResponse, error)
@@ -3996,26 +3992,6 @@ func (c *adminServiceClient) RevokeIntegrationKey(ctx context.Context, in *Revok
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AdminService_RevokeIntegrationKey_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminServiceClient) ListWorkers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListWorkersResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListWorkersResponse)
-	err := c.cc.Invoke(ctx, AdminService_ListWorkers_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminServiceClient) DeleteWorker(ctx context.Context, in *DeleteWorkerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AdminService_DeleteWorker_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4296,8 +4272,6 @@ type AdminServiceServer interface {
 	CreateIntegration(context.Context, *CreateIntegrationRequest) (*CreateIntegrationResponse, error)
 	RotateIntegrationKey(context.Context, *RotateIntegrationKeyRequest) (*RotateIntegrationKeyResponse, error)
 	RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error)
-	ListWorkers(context.Context, *emptypb.Empty) (*ListWorkersResponse, error)
-	DeleteWorker(context.Context, *DeleteWorkerRequest) (*emptypb.Empty, error)
 	ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error)
 	RunMaintenanceCronJob(context.Context, *RunMaintenanceCronJobRequest) (*emptypb.Empty, error)
 	ListMaintenanceTranscodingFailures(context.Context, *emptypb.Empty) (*ListMaintenanceTranscodingFailuresResponse, error)
@@ -4400,12 +4374,6 @@ func (UnimplementedAdminServiceServer) RotateIntegrationKey(context.Context, *Ro
 }
 func (UnimplementedAdminServiceServer) RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevokeIntegrationKey not implemented")
-}
-func (UnimplementedAdminServiceServer) ListWorkers(context.Context, *emptypb.Empty) (*ListWorkersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListWorkers not implemented")
-}
-func (UnimplementedAdminServiceServer) DeleteWorker(context.Context, *DeleteWorkerRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteWorker not implemented")
 }
 func (UnimplementedAdminServiceServer) ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMaintenanceCronJobs not implemented")
@@ -4838,42 +4806,6 @@ func _AdminService_RevokeIntegrationKey_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).RevokeIntegrationKey(ctx, req.(*RevokeIntegrationKeyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminService_ListWorkers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).ListWorkers(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_ListWorkers_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).ListWorkers(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminService_DeleteWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteWorkerRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).DeleteWorker(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_DeleteWorker_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).DeleteWorker(ctx, req.(*DeleteWorkerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5392,14 +5324,6 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "revokeIntegrationKey",
 			Handler:    _AdminService_RevokeIntegrationKey_Handler,
-		},
-		{
-			MethodName: "listWorkers",
-			Handler:    _AdminService_ListWorkers_Handler,
-		},
-		{
-			MethodName: "deleteWorker",
-			Handler:    _AdminService_DeleteWorker_Handler,
 		},
 		{
 			MethodName: "listMaintenanceCronJobs",

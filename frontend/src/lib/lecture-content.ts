@@ -218,7 +218,7 @@ export const RECORDING_VERSIONS: { type: MediaType; label: string }[] = [
   { type: "CAM", label: "Camera video" },
 ];
 
-/** Hands a recording to a worker, which transcodes it into that version. */
+/** Hands a recording to a runner, which transcodes it into that version. */
 export async function uploadLectureRecording(
   courseId: number,
   streamId: number,
@@ -232,9 +232,9 @@ export async function uploadLectureRecording(
 
 export function recordingUploadErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
-    // No worker alive, or the chosen one did not answer.
+    // No runner alive, or the chosen one did not answer.
     if (err.status === 503) return "No runner is available to receive the upload right now. Please try again later.";
-    // The worker that is streaming it would throw the result away.
+    // The runner that is streaming it would throw the result away.
     if (err.status === 409) return "The recording cannot be replaced while the lecture is live.";
   }
   return contentErrorMessage(err);

@@ -24,9 +24,7 @@ type StreamsDao interface {
 	CreateStreams(streams []model.Stream) error
 	AddVodView(id string) error
 
-	GetDueStreamsForWorkers() []model.Stream
 	GetDueStreamsForRunners() ([]model.Stream, error)
-	GetDuePremieresForWorkers() []model.Stream
 	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
@@ -40,7 +38,6 @@ type StreamsDao interface {
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
 	UpdateStream(stream model.Stream) error
-	SaveWorkerForStream(stream model.Stream, worker model.Worker) error
 	SaveRunnerJobForStream(streamID uint, version model.StreamVersion, runnerHostname, jobID string) error
 	GetRunnerJobsForStream(streamID uint) ([]model.StreamRunnerJob, error)
 	ClearRunnerJobsForStream(streamID uint) error
@@ -164,26 +161,6 @@ func (d streamsDao) AddVodView(id string) error {
 		return tx.Save(&stat).Error
 	})
 	return err
-}
-
-// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall by a worker.
-func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
-	var res []model.Stream
-	DB.Model(&model.Stream{}).
-		Joins("JOIN courses c ON c.id = streams.course_id").
-		Joins("JOIN lecture_halls lh on streams.lecture_hall_id = lh.id").
-		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null " +
-			"AND lh.legacy").
-		Scan(&res)
-	return res
-}
-
-func (d streamsDao) GetDuePremieresForWorkers() []model.Stream {
-	var res []model.Stream
-	DB.Preload("Files").
-		Find(&res, "premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false")
-	return res
 }
 
 func (d streamsDao) GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
@@ -570,12 +547,6 @@ func (d streamsDao) UpdateStream(stream model.Stream) error {
 		"chat_enabled": stream.ChatEnabled,
 	}).Error
 	return err
-}
-
-// SaveWorkerForStream associates a worker with a stream with streamID
-func (d streamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
-	defer Cache.Clear()
-	return DB.Model(&stream).Association("StreamWorkers").Append(&worker)
 }
 
 // SaveRunnerJobForStream records that a runner is executing a job for a given stream version.

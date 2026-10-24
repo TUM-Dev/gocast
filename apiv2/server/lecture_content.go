@@ -25,13 +25,13 @@ import (
 )
 
 // SectionImages generates the thumbnails of a lecture's sections. The generation goes
-// to a runner or else a worker, and the worker half lives in pkg/sectionimages, so it
-// is handed in; sectionimages.SectionImages satisfies it. Deleting one needs neither:
+// to a runner, which lives in pkg/sectionimages, so it is handed in;
+// sectionimages.SectionImages satisfies it. Deleting one needs neither:
 // DeleteLectureSection removes the file itself.
 type SectionImages interface {
 	// Generate makes the thumbnails of sections from the recording at playlistURL,
 	// which must be signed. It blocks until the job is handed off.
-	Generate(streamID uint, playlistURL string, course model.Course, sections []model.VideoSection) error
+	Generate(streamID uint, playlistURL string, sections []model.VideoSection) error
 }
 
 // WithSectionImages lets the section endpoints have thumbnails made. Without it the
@@ -111,15 +111,10 @@ func (a *API) lectureSectionOf(stream model.Stream, sectionID uint32) (model.Vid
 // the job takes as long as fetching frames from the recording does. Failures are only
 // logged, the sections themselves being saved.
 //
-// v1 also sent lectures without a recording, which no runner or worker can do anything
+// v1 also sent lectures without a recording, which no runner can do anything
 // with; those are skipped here.
 func (a *API) generateSectionImages(ctx context.Context, stream model.Stream, sections []model.VideoSection) {
 	if a.sectionImages == nil || len(sections) == 0 || stream.PlaylistUrl == "" {
-		return
-	}
-	course, err := a.dao.GetCourseById(ctx, stream.CourseID)
-	if err != nil {
-		a.log.Error("can't load course for section images", "stream", stream.ID, "err", err)
 		return
 	}
 	if err := signPlaylists(&stream, nil, false); err != nil {
@@ -127,7 +122,7 @@ func (a *API) generateSectionImages(ctx context.Context, stream model.Stream, se
 		return
 	}
 	go func() {
-		if err := a.sectionImages.Generate(stream.ID, stream.PlaylistUrl, course, sections); err != nil {
+		if err := a.sectionImages.Generate(stream.ID, stream.PlaylistUrl, sections); err != nil {
 			a.log.Error("failed to generate video section images", "stream", stream.ID, "err", err)
 		}
 	}()

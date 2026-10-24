@@ -869,7 +869,7 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 
 // EndStream cancels all runner jobs tracked for the given stream, e.g. when an admin manually
 // stops a stream. It is a no-op if no runner jobs are tracked for the stream (e.g. because it
-// is running on a legacy worker instead).
+// has already ended).
 func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool) error {
 	jobs, err := m.dao.StreamsDao.GetRunnerJobsForStream(streamID)
 	if err != nil {

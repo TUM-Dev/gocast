@@ -151,7 +151,7 @@ function setLayout(next: Layout): void {
 
 // ------------------------------------------------------------ processing recording
 
-// A stream that just ended has no recording until the worker has transcoded it. The
+// A stream that just ended has no recording until the runner has made it. The
 // page asks again on a backoff and swaps the recording in; the player remounts through
 // `playerKey` when the phase becomes "vod", so no reload is needed.
 const gaveUp = ref(false);

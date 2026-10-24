@@ -1,4 +1,4 @@
-package workergrpc
+package livepreview
 
 import (
 	"os"

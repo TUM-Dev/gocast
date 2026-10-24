@@ -1,6 +1,6 @@
 // Package api is what is left of the v1 REST API. The SPA and every other first-party
 // caller moved to apiv2 (Protobuf/Connect), and the shared code that used to live here
-// (worker and voice gRPC, search, live state, section images) moved to pkg/. These
+// (the worker gRPC, since removed, and voice gRPC, search, live state, section images) moved to pkg/. These
 // routes remain because something that cannot speak apiv2 calls them:
 //
 //   - POST /api/selfstream/onPublish: the mediamtx ingest server's authHTTPAddress

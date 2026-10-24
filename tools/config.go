@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/meilisearch/meilisearch-go"
-	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
 )
 
@@ -53,14 +52,6 @@ func initConfig() {
 	}
 
 	// set defaults
-	if Cfg.WorkerToken == "" {
-		Cfg.WorkerToken = uuid.NewV4().String()
-		viper.Set("workerToken", Cfg.WorkerToken)
-		err = viper.WriteConfig()
-		if err != nil {
-			logger.Warn("Can't write out config ", "err", err)
-		}
-	}
 	if Cfg.JWTKey == nil {
 		logger.Info("Generating new JWT key")
 		JWTKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
@@ -167,11 +158,10 @@ type Config struct {
 		Port      string `yaml:"port"`
 		AuthToken string `yaml:"authToken"`
 	}
-	IngestBase  string  `yaml:"ingestBase"`
-	WebUrl      string  `yaml:"webUrl"`
-	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool
-	JWTKey      *string `yaml:"jwtKey"`
-	Meili       *struct {
+	IngestBase string  `yaml:"ingestBase"`
+	WebUrl     string  `yaml:"webUrl"`
+	JWTKey     *string `yaml:"jwtKey"`
+	Meili      *struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
