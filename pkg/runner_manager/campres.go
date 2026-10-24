@@ -1,12 +1,17 @@
 package runner_manager
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/draw"
 	"image/jpeg"
+	"io"
+	log "log/slog"
 	"os"
 	"path/filepath"
+
+	"gorm.io/gorm"
 
 	xdraw "golang.org/x/image/draw"
 
@@ -30,13 +35,16 @@ const camPresInset = 5
 // Failing to compose is logged and not returned: the notification that led here was
 // handled, and the runner would repeat it for nothing.
 func (m *Manager) composeCamPres(streamID uint, dir string) {
+	m.camPresLock.Lock()
+	defer m.camPresLock.Unlock()
 	logger := m.logger.With("stream", streamID)
-	pres, err := m.dao.FileDao.GetThumbnail(streamID, model.FILETYPE_THUMB_LG_PRES)
-	if err != nil {
-		return // not there yet, or not at all
+
+	pres, ok := m.camPresSource(logger, streamID, model.FILETYPE_THUMB_LG_PRES)
+	if !ok {
+		return
 	}
-	cam, err := m.dao.FileDao.GetThumbnail(streamID, model.FILETYPE_THUMB_LG_CAM)
-	if err != nil {
+	cam, ok := m.camPresSource(logger, streamID, model.FILETYPE_THUMB_LG_CAM)
+	if !ok {
 		return
 	}
 
@@ -44,9 +52,10 @@ func (m *Manager) composeCamPres(streamID uint, dir string) {
 	dest := filepath.Join(dir, fname)
 	if err := combineThumbnails(pres.Path, cam.Path, dest); err != nil {
 		logger.Warn("can't compose the camera and presentation thumbnails", "err", err)
+		m.dropStaleCamPres(logger, streamID)
 		return
 	}
-	err = m.dao.FileDao.SetThumbnail(streamID, model.File{
+	err := m.dao.FileDao.SetThumbnail(streamID, model.File{
 		StreamID: streamID,
 		Path:     dest,
 		Filename: fname,
@@ -54,6 +63,34 @@ func (m *Manager) composeCamPres(streamID uint, dir string) {
 	})
 	if err != nil {
 		logger.Warn("can't save the composed thumbnail", "err", err)
+	}
+}
+
+// camPresSource looks up one of the thumbnails to compose. A missing one is the normal case
+// of the other arriving first; any other error is logged, as nothing else will tell.
+func (m *Manager) camPresSource(logger *log.Logger, streamID uint, t model.FileType) (model.File, bool) {
+	f, err := m.dao.FileDao.GetThumbnail(streamID, t)
+	if err == nil {
+		return f, true
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		logger.Warn("can't look up a thumbnail to compose", "type", t, "err", err)
+	}
+	return model.File{}, false
+}
+
+// dropStaleCamPres removes the composed thumbnail of an earlier pair. It no longer matches
+// the thumbnails and GetLGThumbnail would keep preferring it over the fresh ones.
+func (m *Manager) dropStaleCamPres(logger *log.Logger, streamID uint) {
+	stale, err := m.dao.FileDao.GetThumbnail(streamID, model.FILETYPE_THUMB_LG_CAM_PRES)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("can't look up the stale composed thumbnail", "err", err)
+		}
+		return
+	}
+	if err := m.dao.FileDao.DeleteFile(stale.ID); err != nil {
+		logger.Warn("can't remove the stale composed thumbnail", "err", err)
 	}
 }
 
@@ -78,13 +115,20 @@ func combineThumbnails(primaryPath, secondaryPath, dest string) error {
 	at := image.Pt(pb.Max.X-small.Rect.Dx()-camPresInset, pb.Min.Y+camPresInset)
 	draw.Draw(combined, small.Rect.Add(at), small, image.Point{}, draw.Over)
 
-	// Written beside the target and renamed, so a reader never sees half a JPEG.
-	tmp, err := os.CreateTemp(filepath.Dir(dest), ".campres-*.jpeg")
+	return writeFileAtomic(dest, func(w io.Writer) error {
+		return jpeg.Encode(w, combined, &jpeg.Options{Quality: camPresQuality})
+	})
+}
+
+// writeFileAtomic writes what write produces to a temporary file beside path and renames it
+// over path, so a reader never sees half a file and a failure leaves the old one in place.
+func writeFileAtomic(path string, write func(io.Writer) error) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".tmp-*")
 	if err != nil {
 		return err
 	}
 	defer func() { _ = os.Remove(tmp.Name()) }() // no-op after the rename
-	if err := jpeg.Encode(tmp, combined, &jpeg.Options{Quality: camPresQuality}); err != nil {
+	if err := write(tmp); err != nil {
 		_ = tmp.Close()
 		return err
 	}
@@ -94,7 +138,7 @@ func combineThumbnails(primaryPath, secondaryPath, dest string) error {
 	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
 		return err
 	}
-	return os.Rename(tmp.Name(), dest)
+	return os.Rename(tmp.Name(), path)
 }
 
 func decodeImage(path string) (image.Image, error) {

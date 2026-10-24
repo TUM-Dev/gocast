@@ -1,12 +1,15 @@
 package runner_manager
 
 import (
+	"context"
+	"errors"
 	"image"
 	"image/color"
 	"image/jpeg"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -14,6 +17,8 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
 func writeSolidJPEG(t *testing.T, path string, w, h int, c color.Color) {
@@ -108,13 +113,105 @@ func TestComposeCamPres(t *testing.T) {
 		New(dao.DaoWrapper{FileDao: files}).composeCamPres(8, dir) // no SetThumbnail expected
 	})
 
-	t.Run("unreadable source: logged, not saved", func(t *testing.T) {
+	t.Run("unreadable source: the stale composite is dropped", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		files := mock_dao.NewMockFileDao(ctrl)
 		files.EXPECT().GetThumbnail(uint(9), model.FileType(model.FILETYPE_THUMB_LG_PRES)).Return(model.File{Path: filepath.Join(dir, "gone.jpeg")}, nil)
 		files.EXPECT().GetThumbnail(uint(9), model.FileType(model.FILETYPE_THUMB_LG_CAM)).Return(model.File{Path: cam}, nil)
+		files.EXPECT().GetThumbnail(uint(9), model.FileType(model.FILETYPE_THUMB_LG_CAM_PRES)).Return(model.File{Model: gorm.Model{ID: 33}}, nil)
+		files.EXPECT().DeleteFile(uint(33)).Return(nil) // GetLGThumbnail would keep preferring it
 
-		New(dao.DaoWrapper{FileDao: files}).composeCamPres(9, dir)
+		New(dao.DaoWrapper{FileDao: files}).composeCamPres(9, dir) // no SetThumbnail expected
 	})
 
+	t.Run("unreadable source and no stale composite: nothing to drop", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		files := mock_dao.NewMockFileDao(ctrl)
+		files.EXPECT().GetThumbnail(uint(9), model.FileType(model.FILETYPE_THUMB_LG_PRES)).Return(model.File{Path: filepath.Join(dir, "gone.jpeg")}, nil)
+		files.EXPECT().GetThumbnail(uint(9), model.FileType(model.FILETYPE_THUMB_LG_CAM)).Return(model.File{Path: cam}, nil)
+		files.EXPECT().GetThumbnail(uint(9), model.FileType(model.FILETYPE_THUMB_LG_CAM_PRES)).Return(model.File{}, gorm.ErrRecordNotFound)
+
+		New(dao.DaoWrapper{FileDao: files}).composeCamPres(9, dir) // no DeleteFile expected
+	})
+
+	t.Run("lookup failure: nothing is composed", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		files := mock_dao.NewMockFileDao(ctrl)
+		files.EXPECT().GetThumbnail(uint(10), model.FileType(model.FILETYPE_THUMB_LG_PRES)).Return(model.File{}, errors.New("driver: bad connection"))
+
+		New(dao.DaoWrapper{FileDao: files}).composeCamPres(10, dir) // the CAM is not even asked for
+	})
+}
+
+func saveThumbnailRequest(version protobuf.StreamVersion, data []byte) *protobuf.ThumbnailReadyNotification {
+	return &protobuf.ThumbnailReadyNotification{
+		Stream:        &protobuf.StreamInfo{Id: ptr.Take(uint64(5))},
+		StreamVersion: &version,
+		Thumbnail:     data,
+	}
+}
+
+func TestSaveThumbnailComposes(t *testing.T) {
+	stream := model.Stream{Model: gorm.Model{ID: 5}, CourseID: 2, Start: time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)}
+	newManager := func(t *testing.T, files *mock_dao.MockFileDao, streams *mock_dao.MockStreamsDao) *Manager {
+		m := New(dao.DaoWrapper{FileDao: files, StreamsDao: streams})
+		m.massStorage = t.TempDir()
+		return m
+	}
+
+	for name, tc := range map[string]struct {
+		version protobuf.StreamVersion
+		compose bool
+	}{
+		"camera":       {protobuf.StreamVersion_STREAM_VERSION_CAMERA, true},
+		"presentation": {protobuf.StreamVersion_STREAM_VERSION_PRESENTATION, true},
+		"combined":     {protobuf.StreamVersion_STREAM_VERSION_COMBINED, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			streams := mock_dao.NewMockStreamsDao(ctrl)
+			files := mock_dao.NewMockFileDao(ctrl)
+			streams.EXPECT().GetStreamByID(gomock.Any(), "5").Return(stream, nil)
+			files.EXPECT().SetThumbnail(uint(5), gomock.Any()).Return(nil)
+			if tc.compose {
+				// the other thumbnail is not there yet, which ends the composition
+				files.EXPECT().GetThumbnail(uint(5), gomock.Any()).Return(model.File{}, gorm.ErrRecordNotFound)
+			}
+			// a COMB thumbnail asking the FileDao anything else would fail as an unexpected call
+			if err := newManager(t, files, streams).saveThumbnail(context.Background(), saveThumbnailRequest(tc.version, []byte("jpeg"))); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+// A regenerated thumbnail can be smaller than the one before. It has to replace it whole
+// and leave no temporary file behind.
+func TestSaveThumbnailReplacesTheFile(t *testing.T) {
+	stream := model.Stream{Model: gorm.Model{ID: 5}, CourseID: 2, Start: time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)}
+	ctrl := gomock.NewController(t)
+	streams := mock_dao.NewMockStreamsDao(ctrl)
+	files := mock_dao.NewMockFileDao(ctrl)
+	streams.EXPECT().GetStreamByID(gomock.Any(), "5").Return(stream, nil).Times(2)
+	files.EXPECT().SetThumbnail(uint(5), gomock.Any()).Return(nil).Times(2)
+
+	m := New(dao.DaoWrapper{FileDao: files, StreamsDao: streams})
+	m.massStorage = t.TempDir()
+	var path string
+	for _, data := range []string{"a much longer first thumbnail", "short"} {
+		if err := m.saveThumbnail(context.Background(), saveThumbnailRequest(protobuf.StreamVersion_STREAM_VERSION_COMBINED, []byte(data))); err != nil {
+			t.Fatal(err)
+		}
+		path = filepath.Join(m.massStorage, "thumbs", "2026/10", "2", "5_STREAM_VERSION_COMBINED.jpeg")
+		got, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != data {
+			t.Errorf("file = %q, want %q", got, data)
+		}
+	}
+	if entries, _ := os.ReadDir(filepath.Dir(path)); len(entries) != 1 {
+		t.Errorf("%d files in the directory, want only the thumbnail", len(entries))
+	}
 }

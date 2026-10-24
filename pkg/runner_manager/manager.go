@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	log "log/slog"
 	"net"
 	"os"
@@ -48,6 +49,11 @@ type Manager struct {
 	// atomic, so two publishes in quick succession can't both start a job.
 	selfStreamLock sync.Mutex
 	massStorage    string
+
+	// camPresLock keeps two compositions of one stream's thumbnails from interleaving: the
+	// CAM and PRES notifications arrive together and each would compose and replace the row.
+	// Composing is quick, so one lock for all streams will do.
+	camPresLock sync.Mutex
 
 	subtitleClient pb.SubtitleGeneratorClient
 	subtitleAuth   string
@@ -596,15 +602,12 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.Internal, "can't make directory: %v", err)
 	}
 
-	f, err := os.OpenFile(filepath.Join(fpath, file.Filename), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
-	if err != nil {
-		return status.Errorf(codes.Internal, "can't open file: %v", err)
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	_, err = f.Write(req.GetThumbnail())
+	// Replaced whole, not rewritten in place: the web UI and composeCamPres read these files,
+	// and a failed write must not leave the previous thumbnail truncated.
+	err = writeFileAtomic(file.Path, func(w io.Writer) error {
+		_, err := w.Write(req.GetThumbnail())
+		return err
+	})
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't write file: %v", err)
 	}
