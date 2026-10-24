@@ -37,7 +37,7 @@ func RegenerateThumb(ctx context.Context, logger *slog.Logger, notify chan *prot
 	}
 	defer release()
 
-	thumb, err := createVideoThumbnail(playlistURL)
+	thumb, err := createVideoThumbnail(ctx, playlistURL)
 	if err != nil {
 		return AbortingError(fmt.Errorf("error creating thumbnail: %v", err))
 	}

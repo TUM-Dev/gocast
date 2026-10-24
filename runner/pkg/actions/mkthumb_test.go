@@ -30,7 +30,7 @@ func TestCreateVideoThumbnailAcrossReconnects(t *testing.T) {
 		}
 	}
 
-	thumb, err := createVideoThumbnail(playlist)
+	thumb, err := createVideoThumbnail(t.Context(), playlist)
 	if err != nil {
 		t.Fatalf("createVideoThumbnail: %v", err)
 	}
