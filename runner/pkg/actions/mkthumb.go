@@ -32,7 +32,7 @@ func MkThumb(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Not
 		return AbortingError(fmt.Errorf("no recordingDir in context"))
 	}
 
-	thumb, err := createVideoThumbnail(ctx, recordingDir+"/playlist.m3u8")
+	thumb, err := createVideoThumbnail(ctx, logger, recordingDir+"/playlist.m3u8")
 	if err != nil {
 		return AbortingError(fmt.Errorf("error creating thumbnail: %v", err))
 	}
@@ -63,16 +63,31 @@ const thumbnailWidth = 720
 // every piece, and ffmpeg then finds no frame at all and fails. For those the fallback seeks
 // on the output, which decodes from the start and counts decoded time, which is what the
 // playlist's duration is made of.
-func createVideoThumbnail(ctx context.Context, source string) ([]byte, error) {
+//
+// The middle is only where a representative frame is likely, not a requirement. Where an
+// input seek on such a playlist does not fail but lands inside one piece, that frame is as
+// good as any, so it is not told apart from the real middle.
+//
+// The fallback is logged: it costs minutes of CPU per thumbnail, and if the input seek ever
+// starts failing for another reason, the old load would come back unnoticed.
+func createVideoThumbnail(ctx context.Context, logger *slog.Logger, source string) ([]byte, error) {
 	duration, err := probeDuration(ctx, source)
 	if err != nil {
 		return nil, err
 	}
 	thumb, err := frameAt(ctx, source, duration/2, true)
 	if err != nil || len(thumb) == 0 {
+		// A cancelled job fails every attempt at once, and its error should say so.
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		logger.Info("no frame from the input seek, seeking on the output", "source", source, "err", err)
 		thumb, err = frameAt(ctx, source, duration/2, false)
 	}
 	if err != nil || len(thumb) == 0 {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		// The duration is only as good as the playlist's own bookkeeping, so rather
 		// no thumbnail from the middle than none at all.
 		thumb, err = frameAt(ctx, source, 0, false)
