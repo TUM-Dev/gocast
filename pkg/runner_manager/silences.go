@@ -27,19 +27,24 @@ func silenceDetectionVersion(lh model.LectureHall) protobuf.StreamVersion {
 	return protobuf.StreamVersion(-1)
 }
 
-// saveSilences replaces the stream's silences with the reported ones. The runner repeats a
-// notification it is unsure was delivered, and replacing makes that harmless.
+// saveSilences replaces the stream's silences with the reported ones, none included: a
+// scan that found no silence (again) has to remove what an earlier one found. The runner
+// repeats a notification it is unsure was delivered, and replacing makes that harmless.
 func (m *Manager) saveSilences(ctx context.Context, req *protobuf.SilenceDetectedNotification) error {
 	if len(req.GetStarts()) != len(req.GetEnds()) {
 		return status.Errorf(codes.InvalidArgument, "%d silence starts but %d ends", len(req.GetStarts()), len(req.GetEnds()))
-	}
-	if len(req.GetStarts()) == 0 {
-		return nil
 	}
 	streamID := strconv.FormatUint(req.GetStream().GetId(), 10)
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, streamID)
 	if err != nil {
 		return lookupError(err, "stream %s", streamID)
+	}
+	if len(req.GetStarts()) == 0 {
+		// UpdateSilences saves the list it is given, which gorm refuses to do when empty.
+		if err := m.dao.StreamsDao.DeleteSilences(streamID); err != nil {
+			return status.Errorf(codes.Internal, "can't delete silences: %v", err)
+		}
+		return nil
 	}
 
 	silences := make([]model.Silence, len(req.GetStarts()))

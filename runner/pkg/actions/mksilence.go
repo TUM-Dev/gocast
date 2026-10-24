@@ -9,6 +9,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
@@ -42,12 +43,13 @@ func MkSilence(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream version in context"))
 	}
-	// A recorded stream leaves its VoD at vodPath, an import at playlistURL.
-	input, ok := d["vodPath"].(string)
-	if !ok {
-		input, ok = d["playlistURL"].(string)
+	// A recorded stream leaves its VoD at vodPath, an import at playlistURL. An empty one
+	// is as good as missing: ffmpeg would only fail on it, and quietly.
+	input, _ := d["vodPath"].(string)
+	if input == "" {
+		input, _ = d["playlistURL"].(string)
 	}
-	if !ok {
+	if input == "" {
 		recordingDir, ok := d["recordingDir"].(string)
 		if !ok {
 			return AbortingError(fmt.Errorf("none of vodPath, playlistURL and recordingDir in context"))
@@ -61,10 +63,8 @@ func MkSilence(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 		logger.Error("silence detection failed", "err", err)
 		return nil
 	}
-	if len(silences) == 0 {
-		return nil
-	}
-
+	// No silence is a result too, and sent: the manager replaces what it has, which for a
+	// redone scan may be silences that are gone.
 	n := &protobuf.SilenceDetectedNotification{
 		Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 		StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[sv])),
@@ -77,7 +77,13 @@ func MkSilence(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	return nil
 }
 
+// silenceScanTimeout bounds one scan. It decodes the whole audio track, often of a remote
+// playlist, and a stalled connection would otherwise hold the runner for good.
+const silenceScanTimeout = time.Hour
+
 func detectSilences(ctx context.Context, input string) ([]Silence, error) {
+	ctx, cancel := context.WithTimeout(ctx, silenceScanTimeout)
+	defer cancel()
 	// -vn: only the audio matters, so skip decoding the video.
 	cmd := exec.CommandContext(ctx, "ffmpeg", "-nostdin", "-nostats", "-i", input, "-vn",
 		"-af", fmt.Sprintf("silencedetect=n=%ddB:d=%d", silenceThresholdDB, minSilenceSeconds), "-f", "null", "-")
