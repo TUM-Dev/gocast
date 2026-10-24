@@ -555,7 +555,8 @@ func (x *TranscodingProgressNotification) GetProgress() int32 {
 }
 
 // SilenceDetectedNotification reports the stretches of a VoD without sound, in whole seconds.
-// starts[i] and ends[i] belong together. An empty list is never sent.
+// starts[i] and ends[i] belong together. Empty lists mean the scan found none, which is not
+// the same as no scan: a scan that failed sends nothing.
 type SilenceDetectedNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`

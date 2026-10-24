@@ -62,6 +62,13 @@ func TestMkSilenceMissingContext(t *testing.T) {
 	}
 }
 
+func TestMkSilenceEmptyPath(t *testing.T) {
+	d := map[string]any{"streamID": uint64(1), "streamVersion": "STREAM_VERSION_COMBINED", "vodPath": "", "playlistURL": ""}
+	if err := MkSilence(context.Background(), testLogger(), make(chan *protobuf.Notification, 1), d, nil); !IsAbortingError(err) {
+		t.Fatalf("want aborting error, got %v", err)
+	}
+}
+
 func TestMkSilenceFFmpeg(t *testing.T) {
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
 		t.Skip("ffmpeg not installed")
@@ -91,5 +98,36 @@ func TestMkSilenceFFmpeg(t *testing.T) {
 		}
 	default:
 		t.Fatal("no notification sent")
+	}
+}
+
+// A scan that finds nothing still reports it, so that an earlier result is replaced; one
+// that fails reports nothing, so that it is kept.
+func TestMkSilenceReportsEmptyResult(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not installed")
+	}
+	file := filepath.Join(t.TempDir(), "in.wav")
+	if out, err := exec.Command("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=3,volume=4", file).CombinedOutput(); err != nil {
+		t.Fatalf("generate input: %v: %s", err, out)
+	}
+	run := func(input string) *protobuf.SilenceDetectedNotification {
+		notify := make(chan *protobuf.Notification, 1)
+		d := map[string]any{"streamID": uint64(7), "streamVersion": "STREAM_VERSION_COMBINED", "vodPath": input}
+		if err := MkSilence(context.Background(), testLogger(), notify, d, &metrics.Broker{}); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case n := <-notify:
+			return n.GetSilenceDetected()
+		default:
+			return nil
+		}
+	}
+	if n := run(file); n == nil || len(n.Starts) != 0 {
+		t.Errorf("clean audio: want an empty notification, got %v", n)
+	}
+	if n := run(filepath.Join(t.TempDir(), "missing.wav")); n != nil {
+		t.Errorf("failed scan: want no notification, got %v", n)
 	}
 }

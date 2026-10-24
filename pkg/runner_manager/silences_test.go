@@ -61,8 +61,11 @@ func TestSaveSilences(t *testing.T) {
 		}
 	})
 
-	t.Run("an empty list touches nothing", func(t *testing.T) {
-		m := New(dao.DaoWrapper{StreamsDao: mock_dao.NewMockStreamsDao(gomock.NewController(t))})
+	t.Run("an empty list removes the old silences", func(t *testing.T) {
+		streamsDao := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}}, nil)
+		streamsDao.EXPECT().DeleteSilences("5").Return(nil)
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
 		if err := m.saveSilences(context.Background(), req(nil, nil)); err != nil {
 			t.Fatal(err)
 		}
