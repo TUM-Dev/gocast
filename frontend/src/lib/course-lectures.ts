@@ -48,7 +48,6 @@ export interface CourseLecture {
   /** Ended and not recorded. */
   past: boolean;
   converting: boolean;
-  premiere: boolean;
   /** Any of COMB, PRES and CAM. */
   vodVersions: string[];
   /** 0 when not known. */
@@ -79,7 +78,6 @@ export function toLecture(l: CourseLectureAdmin): CourseLecture {
     recording: l.recording,
     past: l.past,
     converting: l.converting,
-    premiere: l.premiere,
     vodVersions: [...l.vodVersions],
     durationSeconds: l.durationSeconds,
     files: l.files.map((f) => ({ id: f.id, type: f.type, friendlyName: f.friendlyName })),
@@ -256,7 +254,6 @@ export function lectureBadges(l: CourseLecture): LectureBadge[] {
   const state = lectureState(l);
   const badges: LectureBadge[] = [{ key: state, ...STATE_BADGES[state] }];
   if (l.private) badges.push({ key: "private", label: "Private", tone: "muted" });
-  if (l.premiere) badges.push({ key: "premiere", label: "Premiere", tone: "muted" });
   badges.push(
     l.chatEnabled
       ? { key: "chat", label: "Chat on", tone: "muted" }

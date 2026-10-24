@@ -157,7 +157,6 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		LiveNow:          liveNow,
 		LiveNowTimestamp: timestamppb.New(stream.LiveNowTimestamp),
 		Recording:        stream.Recording,
-		Premiere:         stream.Premiere,
 		Ended:            stream.Ended,
 		VodViews:         uint32(stream.VodViews),
 		StartOffset:      uint32(stream.StartOffset),

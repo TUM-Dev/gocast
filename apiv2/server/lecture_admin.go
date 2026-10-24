@@ -184,7 +184,6 @@ func courseLectureAdmin(s *model.Stream, hallNames map[uint]string) *protobuf.Co
 		Recording:              s.Recording,
 		Past:                   s.IsPast(),
 		Converting:             s.IsConverting(),
-		Premiere:               s.Premiere,
 		VodVersions:            versions,
 		DurationSeconds:        duration,
 		Files:                  files,

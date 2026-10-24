@@ -2,8 +2,6 @@ package apiv2
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -49,7 +47,7 @@ func TestCreateLectures(t *testing.T) {
 			l := s[0]
 			if l.Name != "Lecture 1" || l.CourseID != 1 || !l.Start.Equal(lectureStart) || !l.End.Equal(lectureEnd) ||
 				!l.ChatEnabled || l.LectureHallID != 0 || l.SeriesIdentifier != "" || len(l.StreamKey) != 32 ||
-				l.Premiere || l.Recording || l.LiveNow || len(l.Files) != 0 {
+				l.Recording || l.LiveNow || len(l.Files) != 0 {
 				t.Errorf("created %+v", l)
 			}
 		})
@@ -108,7 +106,7 @@ func TestCreateLectures(t *testing.T) {
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(createCourse, nil)
 		expectCreated(m, func(s []model.Stream) {
 			l := s[0]
-			if !l.End.Equal(lectureStart.Add(time.Hour)) || l.StreamKey != "" || l.Premiere || len(l.Files) != 0 {
+			if !l.End.Equal(lectureStart.Add(time.Hour)) || l.StreamKey != "" || len(l.Files) != 0 {
 				t.Errorf("created %+v", l)
 			}
 		})
@@ -116,32 +114,6 @@ func TestCreateLectures(t *testing.T) {
 
 		if _, err := api.CreateLectures(asCaller(lectureAdmin), req); err != nil {
 			t.Fatalf("CreateLectures: %v", err)
-		}
-	})
-
-	t.Run("each premiere of a series gets its own file", func(t *testing.T) {
-		api, m := newLectureAPI(t)
-		api.massStorage = t.TempDir()
-		req := livestream()
-		req.Kind = protobuf.LectureCreationKind_LECTURE_CREATION_KIND_PREMIERE
-		req.DateSeries = []*timestamppb.Timestamp{timestamppb.New(lectureStart.AddDate(0, 0, 7))}
-		dir := filepath.Join(api.massStorage, "2026", "W", "crs")
-		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(createCourse, nil)
-		expectCreated(m, func(s []model.Stream) {
-			want := []string{dir + "/crs_2026-10-12_08-15.mp4", dir + "/crs_2026-10-19_08-15.mp4"}
-			for i, l := range s {
-				if !l.Premiere || len(l.Files) != 1 || l.Files[0].Path != want[i] || l.StreamKey != "" {
-					t.Errorf("lecture %d: %+v, want file %s", i, l, want[i])
-				}
-			}
-		})
-		m.audits.EXPECT().Create(gomock.Any()).Return(nil).Times(2)
-
-		if _, err := api.CreateLectures(asCaller(lectureAdmin), req); err != nil {
-			t.Fatalf("CreateLectures: %v", err)
-		}
-		if info, err := os.Stat(dir); err != nil || !info.IsDir() {
-			t.Errorf("premiere directory: %v", err)
 		}
 	})
 
@@ -170,10 +142,6 @@ func TestCreateLectures(t *testing.T) {
 	for name, mutate := range map[string]func(*protobuf.CreateLecturesRequest){
 		"a VOD upload in a hall": func(r *protobuf.CreateLecturesRequest) {
 			r.Kind = protobuf.LectureCreationKind_LECTURE_CREATION_KIND_VOD_UPLOAD
-			r.LectureHallId = 3
-		},
-		"a premiere in a hall": func(r *protobuf.CreateLecturesRequest) {
-			r.Kind = protobuf.LectureCreationKind_LECTURE_CREATION_KIND_PREMIERE
 			r.LectureHallId = 3
 		},
 		"a blank title":                func(r *protobuf.CreateLecturesRequest) { r.Title = "  " },
