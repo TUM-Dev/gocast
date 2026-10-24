@@ -596,7 +596,7 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.Internal, "can't make directory: %v", err)
 	}
 
-	f, err := os.OpenFile(filepath.Join(fpath, file.Filename), os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(filepath.Join(fpath, file.Filename), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't open file: %v", err)
 	}
@@ -614,6 +614,9 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.Internal, "can't save thumbnail to db: %v", err)
 	}
 
+	if fileType == model.FILETYPE_THUMB_LG_CAM || fileType == model.FILETYPE_THUMB_LG_PRES {
+		m.composeCamPres(stream.ID, fpath)
+	}
 	return nil
 }
 
