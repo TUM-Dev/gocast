@@ -85,8 +85,15 @@ func detectSilences(ctx context.Context, input string) ([]Silence, error) {
 	ctx, cancel := context.WithTimeout(ctx, silenceScanTimeout)
 	defer cancel()
 	// -vn: only the audio matters, so skip decoding the video.
-	cmd := exec.CommandContext(ctx, "ffmpeg", "-nostdin", "-nostats", "-i", input, "-vn",
-		"-af", fmt.Sprintf("silencedetect=n=%ddB:d=%d", silenceThresholdDB, minSilenceSeconds), "-f", "null", "-")
+	args := []string{"-nostdin", "-nostats", "-i", input, "-vn",
+		"-af", fmt.Sprintf("silencedetect=n=%ddB:d=%d", silenceThresholdDB, minSilenceSeconds), "-f", "null", "-"}
+	name := "ffmpeg"
+	// Niced as the worker did: a scan of a long lecture runs for minutes next to the
+	// recordings and transcodes of the same runner, which must not lose frames to it.
+	if nice, err := exec.LookPath("nice"); err == nil {
+		name, args = nice, append([]string{"ffmpeg"}, args...)
+	}
+	cmd := exec.CommandContext(ctx, name, args...)
 	var out bytes.Buffer
 	cmd.Stderr = &out
 	if err := cmd.Run(); err != nil {
