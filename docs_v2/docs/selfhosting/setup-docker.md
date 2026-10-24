@@ -57,10 +57,10 @@ wkxct5tvzclvc4uqm8w573dlf         vm09             Ready     Active             
 
 We use labels to tag our nodes and to deploy services to appropriate nodes.
 
-This command adds the label worker to the node vm02, instructing our deployment to deploy Workers on this node:
+This command adds the label runner to the node vm02, instructing our deployment to deploy Runners on this node:
 
 ```bash
-docker node update --label-add worker=true vm02
+docker node update --label-add runner=true vm02
 ```
 
 This is a configuration you should aim for:
@@ -71,22 +71,22 @@ docker node ls -q | xargs docker node inspect -f '{{ .ID }} [{{ .Description.Hos
 kwgmm6sxb9nqwojoclxuy4mpt [vmgpu01]: map[voiceservice:true] # optional, this is a server with a GPU for transcription
 ko66mqj76xo9ftunxq78luc8p [vm01]: map[db:true traefik:true tumlive:true] # this server is important, it runs the database and the reverse proxy. Don't under-provision it.
 hj6fkl3j5hwho40uiehc7ikq5 [vm02]: map[grafana:true influx:true meilisearch:true monitoring:true prometheus:true] # these services are not critical - and optional
-ctfdd9mtkse2yxid8zku2wx1f [vm03]: map[worker:true] # the number of Workers depends on the number of concurrent streams you want to process. 1 worker can process around 5 stream in our environment.
-u391iukj6nljosaaygcfkzy2s [vm04]: map[worker:true]
-wkxct5tvzclvc4uqm8w573dlf [vm05]: map[worker:true]
-72weo6nozra1cdgjs5wghe7gh [vm06]: map[worker:true]
-f7ik66qq6tzhsbwphfpdp2vm1 [vm07]: map[worker:true]
-i4l8ouumms96qu96evkb6srol [vm08]: map[worker:true]
-vq5cw2bgwncenr5cp89xzsi32 [vm09]: map[worker:true]
-q4as4i27z2hnwypgzj8ql2dz1 [vm10]: map[worker:true]
-lfged5ra1a7z9wlstxa2bml5c [vm11]: map[worker:true]
-3wu812ybzynnunrpoqdsay0bf [vm12]: map[worker:true]
-itdbo77gempnl251lakioe5y1 [vm13]: map[worker:true]
-zcplsihexr88plf0t8q25tdn7 [vm14]: map[worker:true]
-fbi92hp7s0u3c2x13tgrb6fd6 [vm15]: map[worker:true]
-o6k2egpupik3qjgq2w0azv70o [vm16]: map[worker:true]
-urac70xjf1kx5op39kyulykad [vm17]: map[worker:true]
-wpue8f384h7z71mngov5j72c1 [vm18]: map[worker:true]
+ctfdd9mtkse2yxid8zku2wx1f [vm03]: map[runner:true] # the number of Runners depends on the number of concurrent streams you want to process
+u391iukj6nljosaaygcfkzy2s [vm04]: map[runner:true]
+wkxct5tvzclvc4uqm8w573dlf [vm05]: map[runner:true]
+72weo6nozra1cdgjs5wghe7gh [vm06]: map[runner:true]
+f7ik66qq6tzhsbwphfpdp2vm1 [vm07]: map[runner:true]
+i4l8ouumms96qu96evkb6srol [vm08]: map[runner:true]
+vq5cw2bgwncenr5cp89xzsi32 [vm09]: map[runner:true]
+q4as4i27z2hnwypgzj8ql2dz1 [vm10]: map[runner:true]
+lfged5ra1a7z9wlstxa2bml5c [vm11]: map[runner:true]
+3wu812ybzynnunrpoqdsay0bf [vm12]: map[runner:true]
+itdbo77gempnl251lakioe5y1 [vm13]: map[runner:true]
+zcplsihexr88plf0t8q25tdn7 [vm14]: map[runner:true]
+fbi92hp7s0u3c2x13tgrb6fd6 [vm15]: map[runner:true]
+o6k2egpupik3qjgq2w0azv70o [vm16]: map[runner:true]
+urac70xjf1kx5op39kyulykad [vm17]: map[runner:true]
+wpue8f384h7z71mngov5j72c1 [vm18]: map[runner:true]
 th77fn3s91s06sy4ciprita3s [vm19]: map[edge:true] # the number of Edge nodes depends on the number of concurrent viewers you want to support.
 5bqr01nyefxqmkd3luzhh3sne [vm20]: map[edge:true]
 vrroo1k8kgk8n557pos5wlz5k [vm21]: map[edge:true]

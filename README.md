@@ -38,9 +38,9 @@ Features include:
             │Website     └────────────┘                                      │          │
             │(HTTP)                                                          ▼          │
             │                                                             ┌─────────────▼─────┬─┐
-            │                               ┌────────────────┐            │TUM-Live-Worker #1 │ │ Streaming,
+            │                               ┌────────────────┐            │TUM-Live-Runner #1 │ │ Streaming,
 ┌───────────┴──┐                            │ Shared Storage │            ├───────────────────┘ │ Converting,
-│Student/Viewer│                            │ S3, Ceph, etc. │            │  TUM-Live-Worker #n │ Transcribing, ...
+│Student/Viewer│                            │ S3, Ceph, etc. │            │  TUM-Live-Runner #n │ Transcribing, ...
 └───────────┬──┘                            └─▲────▲─────────┘            └──────┬──▲────▲──────┘
             │                        Serve Vod│    │HLS Files            Push VoD│  │    │RTMP
             │                          Content│    │         ┌───────────┐ (HTTP)│  │    │push
